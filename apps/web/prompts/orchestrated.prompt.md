@@ -1,8 +1,8 @@
 ---
-version: "2.6.38"
+version: "2.6.41"
 pipeline: "orchestrated"
 description: "Orchestrated pipeline prompts with modern type/naming adjustments"
-lastModified: "2026-01-28T00:00:00Z"
+lastModified: "2026-02-12T18:30:00Z"
 variables:
   - currentDate
   - currentDateReadable
@@ -63,6 +63,34 @@ CRITICAL RULES:
 - IMPORTANT: For each AnalysisContext, include an assessedStatement field describing what you are assessing in this context.
 
 Return JSON only matching the schema.
+
+---
+
+## CONTEXT_REFINEMENT_CANDIDATES_BLOCK
+
+CANDIDATE CONTEXTS (heuristic detection - optional):
+${SEED_HINT}
+
+NOTE: These candidates are heuristic suggestions. Use a candidate ONLY if it is supported by >=1 evidence item from the EVIDENCE list above. Drop any candidate that lacks evidence support. You may also identify additional contexts not listed here if the evidence supports them.
+
+---
+
+## CONTEXT_REFINEMENT_USER
+
+INPUT (normalized):
+"${ANALYSIS_INPUT}"
+
+EVIDENCE (unverified extracted statements):
+${EVIDENCE_TEXT}
+
+CURRENT CLAIMS (may be incomplete):
+${CLAIMS_TEXT}
+${CANDIDATE_CONTEXTS_SECTION}
+Return:
+- requiresSeparateAnalysis
+- analysisContexts (1..N)
+- evidenceContextAssignments: map each evidenceId (Evidence item id) listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns Evidence items to AnalysisContexts (not to per-item EvidenceScope).
+- claimContextAssignments: (optional) map any claimIds that clearly belong to a specific contextId
 
 ---
 
@@ -318,6 +346,15 @@ Return JSON with:
 
 ---
 
+## UNDERSTAND_USER
+
+Analyze the input below and return the JSON object requested by the system instructions.
+
+INPUT:
+"${ANALYSIS_INPUT_FOR_LLM}"
+
+---
+
 ## SUPPLEMENTAL_CLAIMS
 
 You are a fact-checking assistant. Add missing subClaims ONLY for the listed contexts.
@@ -332,6 +369,25 @@ You are a fact-checking assistant. Add missing subClaims ONLY for the listed con
 - **CRITICAL**: If the input contains multiple assertions, decompose into ATOMIC claims (one assertion per claim).
 - **CRITICAL**: Do NOT create claims that combine multiple assertions with "and", "which", or "that".
 - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an N-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.
+
+---
+
+## SUPPLEMENTAL_CLAIMS_USER
+
+INPUT:
+"${INPUT_TEXT}"
+
+CONTEXTS NEEDING MORE CLAIMS:
+${MISSING_SUMMARY}
+
+EXISTING CLAIMS (DO NOT DUPLICATE):
+${EXISTING_CLAIMS_SUMMARY}
+
+REQUIREMENTS:
+- Return at least ${MIN_NEW_CLAIMS_TOTAL} new claims in total.
+- Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_CONTEXT} core claims.
+- ${HAS_SCOPES_GUIDANCE}
+- Keep supplemental claims on the same thesis dimension as the original input.
 
 ---
 
@@ -374,6 +430,16 @@ Use empty strings "" and empty arrays [] when unknown.
 
 ---
 
+## SUPPLEMENTAL_CONTEXTS_USER
+
+INPUT:
+"${INPUT_TEXT}"
+
+CURRENT analysisContexts COUNT: ${CURRENT_CONTEXT_COUNT}
+Return JSON only.
+
+---
+
 ## OUTCOME_CLAIMS
 
 You are a fact-checking assistant. Extract specific outcomes, penalties, or consequences mentioned in the evidence items that should be evaluated as separate claims.
@@ -392,7 +458,26 @@ Return empty array if no such outcomes are found.
 
 ---
 
+## OUTCOME_CLAIMS_USER
+
+EVIDENCE DISCOVERED DURING RESEARCH (unverified extracted statements):
+${EVIDENCE_TEXT}
+
+EXISTING CLAIMS (DO NOT DUPLICATE):
+${EXISTING_CLAIMS_TEXT}
+
+CONTEXTS:
+${CONTEXTS_TEXT}
+
+Extract outcomes that need separate evaluation claims.
+
+---
+
 ## EXTRACT_EVIDENCE
+
+Focus: ${focus}
+Target context: ${targetContextId}
+${contextsList}
 
 **ANTI-FABRICATION (CRITICAL)**: Extract ONLY from the provided source text. Do NOT fabricate, infer, or add information not present in the source. If a source is vague or lacks specifics, extract fewer items rather than filling gaps. Do NOT use your training knowledge to supplement what the source actually says.
 
@@ -431,6 +516,31 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
 - temporal: Time period (empty string if not specified)
 
 **IMPORTANT**: Different sources may use different contexts. A "40% efficiency" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing context enables accurate comparisons.
+
+---
+
+## EXTRACT_EVIDENCE_USER
+
+Source: ${SOURCE_TITLE}
+URL: ${SOURCE_URL}
+
+${SOURCE_TEXT}
+
+---
+
+## EXTRACT_EVIDENCE_HIGH_IMPACT_FILTER_USER
+
+Classify each numbered evidence statement below as either a high-impact legal/punitive outcome or not.
+
+High-impact outcomes include: criminal sentencing, conviction results, prison terms, criminal penalties, incarceration details, and similar consequential legal judgments.
+
+NOT high-impact: general legal proceedings, allegations, investigations, civil disputes, policy discussions, regulatory actions.
+
+Evidence statements:
+${ITEM_TEXTS}
+
+Return ONLY a JSON array of booleans, one per statement, where true = high-impact outcome. No explanation.
+Example: [true, false, false, true]
 
 ---
 
@@ -560,6 +670,56 @@ Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you 
 
 ---
 
+## VERDICT_BREVITY_RULES
+
+OUTPUT BREVITY (CRITICAL)
+- Be concise. Avoid long paragraphs.
+- keyFactors: provide 3-5 items max (overall + per context).
+- keyFactors.factor: <= 12 words. keyFactors.explanation: <= 1 sentence.
+- claimVerdicts.reasoning: <= 2 short sentences.
+- supportingEvidenceIds: include up to 5 IDs per claim (or [] if unclear).
+- calibrationNote: keep very short (or "" if not applicable).
+
+FINAL VALIDATION (check before responding)
+- Every claim in reasoning references a supportingEvidenceId
+- ratingConfirmation matches verdict percentage direction
+- Confidence reflects evidence strength, not reasoning confidence
+- No claims in reasoning that aren't supported by cited evidence
+- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)
+
+---
+
+## VERDICT_USER
+
+${inputLabel}
+"${analysisInput}"
+
+CONTEXTS
+${contextsFormatted}
+
+CLAIMS
+${claimsFormatted}
+
+EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
+${evidenceItemsFormatted}
+
+Provide SEPARATE answers for each context.
+
+---
+
+## VERDICT_JSON_ONLY_APPEND
+
+OUTPUT FORMAT (CRITICAL)
+Return ONLY a single JSON object. Do NOT include markdown. Do NOT include any text outside JSON.
+
+The JSON object MUST include these top-level keys:
+- verdictSummary
+- analysisContextAnswers
+- analysisContextSummary
+- claimVerdicts
+
+---
+
 ## ANSWER
 
 Answer the input based on documented evidence.
@@ -588,6 +748,28 @@ You MUST provide a complete verdictSummary with:
 ### COUNTER-EVIDENCE HANDLING
 
 Evidence items are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neutral).
+
+---
+
+## ANSWER_USER
+
+${inputLabel}
+"${analysisInput}"
+
+CLAIMS
+${claimsFormatted}
+
+EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
+${evidenceItemsFormatted}
+
+---
+
+## ANSWER_COMPACT_RETRY_APPEND
+
+COMPACT MODE (RETRY)
+- keyFactors: 3 items max.
+- reasoning: 1-2 short sentences.
+- Be concise to avoid output truncation.
 
 ---
 
@@ -628,3 +810,410 @@ Evidence items are labeled: [SUPPORTING], [COUNTER-EVIDENCE], or unlabeled (neut
 CRITICAL - factualBasis MUST be "opinion" for:
 - Public statements or rhetoric without documented evidence
 - Ideological objections without factual basis
+
+---
+
+## ANALYSIS_CONTEXT_DETECTION_SYSTEM
+
+You identify distinct AnalysisContexts for a claim.
+
+CRITICAL TERMINOLOGY:
+- Use "AnalysisContext" to mean top-level bounded analytical frames.
+- Use "EvidenceScope" only for per-source metadata (methodology/boundaries/time/geo).
+- Avoid the bare word "context" unless you explicitly mean AnalysisContext.
+
+INCOMPATIBILITY TEST: Split contexts ONLY if combining them would be MISLEADING because they evaluate fundamentally different things.
+
+WHEN TO SPLIT (only when clearly supported):
+- Different formal authorities (distinct institutional decision-makers)
+- Different measurement boundaries or system definitions
+- Different regulatory regimes or time periods that change the analytical frame
+
+DO NOT SPLIT ON:
+- Pro vs con viewpoints
+- Different evidence types
+- Incidental geographic/temporal mentions
+- Public perception or meta commentary
+- Third-party reactions/responses to X (when evaluating X itself)
+
+OUTPUT REQUIREMENTS:
+- Provide contexts as JSON array under 'contexts'.
+- Each context must include id, name, type, typeLabel, confidence (0-1), reasoning, metadata.
+- typeLabel: a short category label (e.g., "Electoral", "Scientific", "Regulatory", "General").
+- Use neutral, generic names tied to the input (no domain-specific hardcoding).${SEED_HINT}
+
+---
+
+## ANALYSIS_CONTEXT_DETECTION_USER
+
+Detect distinct AnalysisContexts for:
+
+${INPUT_TEXT}
+
+---
+
+## ANALYSIS_CONTEXT_SIMILARITY_BATCH_USER
+
+Rate the semantic similarity of each analysis context name pair below on a scale from 0.0 (completely different topics) to 1.0 (same topic, possibly paraphrased).
+
+Pairs:
+${PAIR_TEXTS}
+
+Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.
+
+---
+
+## SEARCH_RELEVANCE_BATCH_SYSTEM
+
+You assess the relevance of search results to a claim and its AnalysisContexts.
+${MODE_INSTRUCTIONS}
+
+Classify each result as:
+- "primary_source": directly about the claim/context, contains primary evidence, official records, data, or first-hand documentation
+- "secondary_commentary": discusses the topic but is commentary, reaction, analysis, or indirect discussion
+- "unrelated": not about the claim or context
+
+Return JSON only.
+
+---
+
+## SEARCH_RELEVANCE_BATCH_USER
+
+CLAIM:
+"${CLAIM_TEXT}"
+
+ANALYSISCONTEXTS:
+${CONTEXTS_TEXT}
+
+SEARCH RESULTS:
+${RESULTS_TEXT}
+
+Return JSON with: { "results": [{ "id": "r0", "classification": "...", "reason": "..." }, ...] }
+
+---
+
+## GROUNDED_SEARCH_REQUEST
+
+CURRENT DATE (ISO): ${CURRENT_DATE_ISO}
+
+Context:
+${CONTEXT_TEXT}
+
+Research Task:
+${RESEARCH_TASK}
+
+Provide factual information with specific details, dates, and sources.
+Focus on recent and verifiable information.
+Include explicit dates, names, institutions, and outcomes where possible.
+
+---
+
+## GROUNDING_KEY_TERMS_BATCH_USER
+
+Extract key factual terms from each numbered reasoning text below.
+
+Include:
+- specific domain nouns
+- proper nouns
+- numbers
+- technical terms
+- specific descriptors that could be traced back to cited evidence
+
+Exclude:
+- common language filler
+- generic analysis words (evidence, claim, supports, contradicts, suggests, indicates, based, therefore, however, verdict, true, false, mixed)
+- words shorter than 3 characters
+
+Reasonings:
+${NUMBERED_REASONINGS}
+
+Return ONLY a JSON array of arrays, one inner array of lowercase string terms per reasoning.
+No explanation.
+Example: [["solar", "panels", "efficiency", "2024"], ["battery", "lithium", "cost"]]
+
+---
+
+## CLAIM_VERDICTS_USER
+
+THESIS: "${THESIS_TEXT}"
+
+CLAIMS:
+${CLAIMS_TEXT}
+
+FACTS:
+${EVIDENCE_TEXT}
+
+---
+
+## CLAIM_VERDICTS_KEY_FACTORS_APPEND
+
+KEY FACTORS
+KeyFactors are handled in the understanding phase. Provide an empty keyFactors array: []
+
+---
+
+## CLAIM_VERDICTS_EVIDENCE_QUALITY_APPEND
+
+EVIDENCE QUALITY GUIDANCE:
+- Claims that rely on mechanisms contradicting established physics, chemistry, or biology should be treated with skepticism
+- Claims lacking peer-reviewed scientific evidence, or relying on anecdotes/testimonials, are OPINION not established evidence
+- If a claim's mechanism has no scientific basis, it should be in the MOSTLY-FALSE/FALSE bands (0-28%)
+- However, do NOT place claims in the FALSE band (0-14%) unless directly contradicted by strong evidence
+
+---
+
+## CLAIM_VERDICTS_COMPACT_RETRY_APPEND
+
+COMPACT MODE (RETRY)
+- reasoning: 1-2 short sentences.
+- Be concise to avoid output truncation.
+
+---
+
+## UNDERSTAND_JSON_FALLBACK_SYSTEM
+
+Return ONLY a single JSON object matching the expected schema.
+- Do NOT include markdown
+- Do NOT include explanations
+- Do NOT wrap in code fences
+- Use empty strings "" and empty arrays [] when unknown
+
+Important terminology:
+- backgroundDetails is descriptive narrative/background framing
+- analysisContexts are top-level bounded AnalysisContexts
+- EvidenceScope is per-evidence source metadata and is not AnalysisContext
+
+The JSON object MUST contain at least these top-level keys:
+- detectedInputType
+- analysisIntent
+- originalInputDisplay
+- impliedClaim
+- analysisContexts
+- requiresSeparateAnalysis
+- backgroundDetails
+- mainThesis
+- articleThesis
+- subClaims
+- distinctEvents
+- legalFrameworks
+- researchQueries
+- riskTier
+- keyFactors
+
+---
+
+## UNDERSTAND_STRUCTURED_RETRY_SYSTEM
+
+You are a verification analyst.
+
+Return ONLY a single JSON object that EXACTLY matches the expected schema.
+- No markdown, no prose, no code fences
+- Every required field must exist
+- Use empty strings "" and empty arrays [] when unknown
+
+Critical multi-AnalysisContext detection:
+- Detect whether the input mixes multiple distinct AnalysisContexts (events, methodologies, institutions, timelines, or processes)
+- If there are 2+ distinct AnalysisContexts, include them in analysisContexts and set requiresSeparateAnalysis=true
+- If there is only 1 AnalysisContext, analysisContexts may contain 0 or 1 item and requiresSeparateAnalysis=false
+
+Not distinct AnalysisContexts:
+- Different perspectives on the same event
+- Pro vs con viewpoints
+
+Incompatibility test:
+- Split into separate AnalysisContexts only if combining verdicts would be misleading because they evaluate fundamentally different things
+- Only split when each AnalysisContext has supporting evidence
+
+AnalysisContext relevance requirement:
+- Every AnalysisContext must be directly relevant to the specific topic
+- Do not include unrelated AnalysisContexts that merely share a broad category
+- Prefer fewer AnalysisContexts over marginal ones
+- An AnalysisContext with zero relevant claims/evidence should not exist
+
+Enum rules:
+- detectedInputType: claim | article
+- analysisIntent: verification | exploration | comparison | none
+- riskTier: A | B | C
+
+Claims:
+- Populate subClaims with 3-8 verifiable sub-claims when possible
+- Every subClaim must include all required fields and allowed enum values
+
+Now analyze the input and output JSON only.
+
+---
+
+## JSON_ONLY_USER_APPEND
+
+Return JSON only.
+
+---
+
+## VERDICT_EXTREME_COMPACT_RETRY_APPEND
+
+EXTREME COMPACT MODE (RETRY)
+- keyFactors: provide 3 items max (overall + per AnalysisContext)
+- keyFactors.explanation: 12 words max
+- claimVerdicts.reasoning: 12 words max
+- If unsure, prefer short conservative wording
+
+---
+
+## TEXT_SIMILARITY_BATCH_USER
+
+Rate the semantic similarity of each text pair below on a scale from 0.0 to 1.0.
+
+Scoring intent:
+- 0.0 means completely different meaning/topic
+- 1.0 means same meaning/topic, potentially paraphrased
+- Judge meaning and topic, not just shared words
+
+Pairs:
+${PAIR_TEXTS}
+
+Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.
+Example: [0.85, 0.12, 0.67]
+
+---
+
+## CONTEXT_SIMILARITY_USER
+
+Assess the semantic similarity of two AnalysisContexts.
+
+Consider whether they represent the same analytical frame, including institution, jurisdiction, methodology, subject matter, and assessedStatement.
+
+Context A: ${CONTEXT_A}
+Context B: ${CONTEXT_B}
+
+Return ONLY a JSON number from 0.0 (different analytical frames) to 1.0 (same analytical frame). No explanation.
+
+---
+
+## OUTCOME_ENRICH_SYSTEM
+
+Evaluate outcome specificity from evidence. Return structured JSON only.
+
+---
+
+## OUTCOME_ENRICH_USER
+
+Context: "${CONTEXT_NAME}" (${CONTEXT_SUBJECT})
+Current outcome: "${CURRENT_OUTCOME}"
+
+${EVIDENCE_TEXT}
+
+Decide one action:
+- "keep": current outcome is specific and supported
+- "replace": current outcome is missing/generic and evidence provides a specific outcome
+- "none": evidence does not provide a specific outcome
+
+If action is "replace", provide a concise specific outcome phrase in "outcome".
+If action is "keep" or "none", "outcome" may be empty.
+
+---
+
+## KNOWLEDGE_RECENCY_GUIDANCE
+
+Recent data detected. Prioritize web search results and fetched sources for time-sensitive facts.
+
+Use training knowledge cautiously for recent events.
+- Use knowledge mainly for established procedures, long-stable context, and historical background
+- Use web evidence for dates, announcements, status changes, and events from recent years
+
+If web evidence conflicts with training knowledge, trust the web evidence.
+
+---
+
+## KNOWLEDGE_INSTRUCTION_ALLOW_MODEL
+
+${TEMPORAL_PROMPT_GUARD}
+
+KNOWLEDGE SOURCE INSTRUCTIONS (CRITICAL)
+
+You must actively use relevant background knowledge. This is not optional.
+
+${RECENCY_GUIDANCE}
+
+What to use from background knowledge:
+- Standard procedures in documented domains
+- Public roles and responsibilities
+- Major public events and outcomes
+- Institutional processes
+- Historical outcomes
+
+How to apply it:
+- For process-integrity claims, use known standards rather than defaulting to neutral
+- For decision-maker responsibility, use known role assignments
+- For established information, avoid "unknown" when knowledge is sufficient
+- For applicable standards, evaluate against those standards
+
+Critical rules:
+- Do not mark factors neutral/unknown when relevant knowledge exists
+- Do not stay in UNVERIFIED (43-57) when knowledge clearly supports or contradicts
+- Contestation is not the same as factual uncertainty
+- If process standards are known and met, this can support the claim even without explicit source phrasing
+
+Always defer to provided web evidence when it conflicts with training knowledge.
+
+---
+
+## KNOWLEDGE_INSTRUCTION_EVIDENCE_ONLY
+
+${TEMPORAL_PROMPT_GUARD}
+
+KNOWLEDGE SOURCE INSTRUCTIONS (EVIDENCE-ONLY MODE)
+
+Use only provided evidence and sources for factual assertions.
+
+When evidence is insufficient:
+- State this explicitly
+- Keep verdicts in UNVERIFIED (43-57)
+- Do not fill gaps with unstated knowledge
+
+When evidence conflicts with training knowledge:
+- Always defer to provided web evidence
+
+Do not add evidence not present in sources.
+
+---
+
+## PROVIDER_HINT_OPENAI
+
+OUTPUT FORMAT (IMPORTANT)
+Return only valid JSON matching the schema.
+- Required string fields must be non-empty and descriptive
+- Array fields should include at least one item where appropriate
+
+---
+
+## PROVIDER_HINT_ANTHROPIC
+
+OUTPUT FORMAT (CRITICAL)
+Return only valid JSON with no text outside JSON.
+- Enum values must exactly match allowed options
+- Booleans must be true/false (not strings)
+- Numbers must be numeric (not strings)
+- Do not omit required fields
+- Use [] for empty arrays
+
+---
+
+## PROVIDER_HINT_GOOGLE
+
+OUTPUT FORMAT (CRITICAL)
+Return only valid JSON with no text outside JSON.
+- Enum values must exactly match allowed options
+- Booleans must be true/false (not strings)
+- Numbers must be numeric (not strings)
+- Use [] for empty arrays
+
+---
+
+## PROVIDER_HINT_MISTRAL
+
+OUTPUT FORMAT (CRITICAL)
+Return only valid JSON matching the schema structure.
+- Use exact enum values
+- Do not omit required fields
+- Use empty string "" for optional strings with no value
+- Use [] for optional arrays with no items

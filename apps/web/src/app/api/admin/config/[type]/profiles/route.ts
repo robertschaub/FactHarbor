@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { listProfileKeys, type ConfigType } from "@/lib/config-storage";
+import { listProfileKeys, type ConfigType, VALID_PROMPT_PROFILES } from "@/lib/config-storage";
 import { isValidConfigType, VALID_CONFIG_TYPES } from "@/lib/config-schemas";
 
 export const runtime = "nodejs";
@@ -49,7 +49,7 @@ export async function GET(req: Request, context: RouteParams) {
     // Always include default profiles
     const defaultProfiles =
       type === "prompt"
-        ? ["orchestrated", "monolithic-dynamic", "source-reliability"]
+        ? [...VALID_PROMPT_PROFILES]
         : ["default"];
 
     // Merge: default profiles first, then any from DB not already in defaults

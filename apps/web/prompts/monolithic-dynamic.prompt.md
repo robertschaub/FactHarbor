@@ -2,12 +2,13 @@
 version: "2.6.41"
 pipeline: "monolithic-dynamic"
 description: "Monolithic dynamic pipeline base templates for dynamic_plan and dynamic_analysis tasks"
-lastModified: "2026-01-27T00:00:00Z"
+lastModified: "2026-02-12T18:40:00Z"
 variables:
   - currentDate
 requiredSections:
   - "DYNAMIC_PLAN"
   - "DYNAMIC_ANALYSIS"
+  - "DYNAMIC_ANALYSIS_USER"
 ---
 
 ## DYNAMIC_PLAN
@@ -64,3 +65,15 @@ Your analysis should:
 
 Be honest about uncertainty. If something can't be verified, say so.
 This is an experimental analysis mode - prioritize insight over rigid structure.
+
+---
+
+## DYNAMIC_ANALYSIS_USER
+
+CONTENT TO ANALYZE:
+${TEXT_TO_ANALYZE}
+
+RESEARCH SOURCES:
+${SOURCE_SUMMARY}
+
+Provide your dynamic analysis.

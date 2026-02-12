@@ -30,7 +30,7 @@ import {
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
 import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
-import { loadPromptFile, type Pipeline } from "./prompt-loader";
+import { loadAndRenderSection, loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
 import {
@@ -472,6 +472,13 @@ export async function runMonolithicDynamic(
       sourceSummary,
     },
   });
+  const renderedDynamicUser = await loadAndRenderSection("monolithic-dynamic", "DYNAMIC_ANALYSIS_USER", {
+    TEXT_TO_ANALYZE: textToAnalyze,
+    SOURCE_SUMMARY: sourceSummary,
+  });
+  if (!renderedDynamicUser?.content?.trim()) {
+    throw new Error("Missing DYNAMIC_ANALYSIS_USER prompt section in monolithic-dynamic prompt profile");
+  }
 
   const analysisResult = await generateText({
     model: verdictModel.model,
@@ -482,13 +489,7 @@ export async function runMonolithicDynamic(
       },
       {
         role: "user",
-        content: `CONTENT TO ANALYZE:
-${textToAnalyze}
-
-RESEARCH SOURCES:
-${sourceSummary}
-
-Provide your dynamic analysis.`,
+        content: renderedDynamicUser.content,
       },
     ],
     temperature: getDeterministicTemperature(0.15, pipelineConfig),

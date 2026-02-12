@@ -14,6 +14,10 @@ import { useSearchParams } from "next/navigation";
 import { useAdminAuth } from "../admin-auth-context";
 import styles from "./config.module.css";
 import toast from "react-hot-toast";
+import {
+  DEFAULT_PIPELINE_CONFIG as SHARED_DEFAULT_PIPELINE_CONFIG,
+  type PipelineConfig as SharedPipelineConfig,
+} from "@/lib/config-schemas";
 
 // ============================================================================
 // TYPES
@@ -170,34 +174,7 @@ interface CalcConfig {
 }
 
 // Pipeline config type
-interface PipelineConfig {
-  // Model selection
-  llmProvider: "anthropic" | "openai" | "google" | "mistral";
-  llmTiering: boolean;
-  modelUnderstand: string;
-  modelExtractEvidence: string;
-  modelVerdict: string;
-  // LLM Text Analysis feature flags
-  llmInputClassification: boolean;
-  llmEvidenceQuality: boolean;
-  llmContextSimilarity?: boolean;
-  llmVerdictValidation: boolean;
-  // Analysis behavior
-  analysisMode: "quick" | "deep";
-  allowModelKnowledge: boolean;
-  deterministic: boolean;
-  contextDedupThreshold?: number;
-  // Budget controls
-  maxIterationsPerContext?: number;
-  maxTotalIterations: number;
-  maxTotalTokens: number;
-  enforceBudgets: boolean;
-  // Retrieval
-  pdfParseTimeoutMs?: number;
-  // Pipeline selection
-  defaultPipelineVariant?: "orchestrated" | "monolithic_dynamic";
-  recencyCueTerms?: string[];
-}
+type PipelineConfig = SharedPipelineConfig;
 
 // Source Reliability config type
 interface SRConfig {
@@ -290,28 +267,17 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
   },
 };
 
-const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
-  llmProvider: "anthropic",
-  llmTiering: false,
-  modelUnderstand: "claude-3-5-haiku-20241022",
-  modelExtractEvidence: "claude-3-5-haiku-20241022",
-  modelVerdict: "claude-sonnet-4-20250514",
-  llmInputClassification: true,
-  llmEvidenceQuality: true,
-  llmContextSimilarity: true,
-  llmVerdictValidation: true,
-  analysisMode: "quick",
-  allowModelKnowledge: false,
-  deterministic: true,
-  contextDedupThreshold: 0.85,
-  maxIterationsPerContext: 5,
-  maxTotalIterations: 20,
-  maxTotalTokens: 750000,
-  enforceBudgets: false,
-  pdfParseTimeoutMs: 60000,
-  defaultPipelineVariant: "orchestrated",
-  recencyCueTerms: [],
-};
+const DEFAULT_PIPELINE_CONFIG: PipelineConfig = SHARED_DEFAULT_PIPELINE_CONFIG;
+
+const DEFAULT_PROMPT_PROFILES = [
+  "orchestrated",
+  "monolithic-dynamic",
+  "source-reliability",
+  "text-analysis-input",
+  "text-analysis-evidence",
+  "text-analysis-context",
+  "text-analysis-verdict",
+] as const;
 
 const DEFAULT_SR_CONFIG: SRConfig = {
   enabled: true,
@@ -336,15 +302,16 @@ const DEFAULT_SR_CONFIG: SRConfig = {
  * Get default config for a config type (for form initialization)
  */
 function getDefaultConfigForType(type: ConfigType): SearchConfig | CalcConfig | PipelineConfig | SRConfig | null {
+  const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
   switch (type) {
     case "search":
-      return DEFAULT_SEARCH_CONFIG;
+      return clone(DEFAULT_SEARCH_CONFIG);
     case "calculation":
-      return DEFAULT_CALC_CONFIG;
+      return clone(DEFAULT_CALC_CONFIG);
     case "pipeline":
-      return DEFAULT_PIPELINE_CONFIG;
+      return clone(DEFAULT_PIPELINE_CONFIG);
     case "sr":
-      return DEFAULT_SR_CONFIG;
+      return clone(DEFAULT_SR_CONFIG);
     default:
       return null; // Prompts and lexicons don't have a default form config (use JSON editor)
   }
@@ -1404,6 +1371,175 @@ function PipelineConfigForm({
         </div>
       </div>
 
+      {/* LLM Limits & Timeouts */}
+      <h3 className={styles.formSectionTitle}>LLM Limits & Timeouts</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Understand Max Chars</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.understandMaxChars ?? 12000}
+            min={1000}
+            max={50000}
+            step={500}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("understandMaxChars", isNaN(v) ? 12000 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max input characters sent to UNDERSTAND</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Understand Timeout (ms)</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.understandLlmTimeoutMs ?? 600000}
+            min={10000}
+            max={1200000}
+            step={10000}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("understandLlmTimeoutMs", isNaN(v) ? 600000 : v);
+            }}
+          />
+          <div className={styles.formHelp}>LLM timeout for UNDERSTAND phase</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Extract Timeout (ms)</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.extractEvidenceLlmTimeoutMs ?? 300000}
+            min={10000}
+            max={1200000}
+            step={10000}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("extractEvidenceLlmTimeoutMs", isNaN(v) ? 300000 : v);
+            }}
+          />
+          <div className={styles.formHelp}>LLM timeout for EXTRACT_EVIDENCE phase</div>
+        </div>
+      </div>
+
+      {/* Temporal Prompt Templates */}
+      <h3 className={styles.formSectionTitle}>Temporal Prompt Templates</h3>
+      <div className={styles.formHelp} style={{ marginBottom: 12 }}>
+        UCM-managed text used by temporal prompt guard injection.
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Temporal Contract Template</label>
+        <textarea
+          className={styles.formInput}
+          style={{ minHeight: 90 }}
+          value={config.temporalPromptContractTemplate ?? ""}
+          onChange={(e) => updateField("temporalPromptContractTemplate", e.target.value)}
+        />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Knowledge Rule (Allowed)</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.temporalPromptKnowledgeRuleAllowed ?? ""}
+            onChange={(e) => updateField("temporalPromptKnowledgeRuleAllowed", e.target.value)}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Knowledge Rule (Evidence-Only)</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.temporalPromptKnowledgeRuleEvidenceOnly ?? ""}
+            onChange={(e) => updateField("temporalPromptKnowledgeRuleEvidenceOnly", e.target.value)}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Recency Rule (Sensitive)</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.temporalPromptRecencyRuleSensitive ?? ""}
+            onChange={(e) => updateField("temporalPromptRecencyRuleSensitive", e.target.value)}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Recency Rule (General)</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.temporalPromptRecencyRuleGeneral ?? ""}
+            onChange={(e) => updateField("temporalPromptRecencyRuleGeneral", e.target.value)}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>No Fresh Evidence Rule</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.temporalPromptNoFreshEvidenceRule ?? ""}
+            onChange={(e) => updateField("temporalPromptNoFreshEvidenceRule", e.target.value)}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Relative Time Rule</label>
+          <input
+            type="text"
+            className={styles.formInput}
+            value={config.temporalPromptRelativeTimeRule ?? ""}
+            onChange={(e) => updateField("temporalPromptRelativeTimeRule", e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Gap Research */}
+      <h3 className={styles.formSectionTitle}>Gap-Driven Research</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.gapResearchEnabled ?? true}
+            onChange={(e) => updateField("gapResearchEnabled", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enable Gap Research
+        </label>
+        <div className={styles.formHelp}>Additional focused research after main pass for high-centrality gaps</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Gap Max Iterations</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.gapResearchMaxIterations ?? 2}
+            min={1}
+            max={10}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("gapResearchMaxIterations", isNaN(v) ? 2 : v);
+            }}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Gap Max Queries</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.gapResearchMaxQueries ?? 8}
+            min={1}
+            max={20}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("gapResearchMaxQueries", isNaN(v) ? 8 : v);
+            }}
+          />
+        </div>
+      </div>
+
       {/* Retrieval */}
       <h3 className={styles.formSectionTitle}>Retrieval</h3>
       <div className={styles.formGroup}>
@@ -2025,7 +2161,7 @@ export default function ConfigAdminPage() {
   // Fetch profile options from backend
   const [profileOptions, setProfileOptions] = useState<string[]>(
     selectedType === "prompt"
-      ? ["orchestrated", "monolithic-dynamic", "source-reliability"]
+      ? [...DEFAULT_PROMPT_PROFILES]
       : ["default"]
   );
   const [profileNotFound, setProfileNotFound] = useState(false);
@@ -2058,7 +2194,7 @@ export default function ConfigAdminPage() {
       .catch(() => {
         // Fallback to defaults on error
         const defaults = selectedType === "prompt"
-          ? ["orchestrated", "monolithic-dynamic", "source-reliability"]
+          ? [...DEFAULT_PROMPT_PROFILES]
           : ["default"];
         // Still inject urlProfile if present
         if (urlProfile && !defaults.includes(urlProfile)) {

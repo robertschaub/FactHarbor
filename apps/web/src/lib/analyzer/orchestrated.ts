@@ -84,21 +84,14 @@ import {
   pruneOpinionOnlyFactors,
   monitorOpinionAccumulation,
 } from "./aggregation";
-import { detectContexts, detectContextsHybrid, formatDetectedContextsHint } from "./analysis-contexts";
+import { canonicalizeContexts, canonicalizeContextsWithRemap, ensureAtLeastOneContext, UNASSIGNED_CONTEXT_ID } from "./analysis-contexts";
 import { VERDICT_BANDS } from "./truth-scale";
 import { getModelForTask, getStructuredOutputProviderOptions } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
 } from "./verdict-corrections";
-import {
-  canonicalizeContexts,
-  canonicalizeContextsWithRemap,
-  ensureAtLeastOneContext,
-  UNASSIGNED_CONTEXT_ID,
-} from "./analysis-contexts";
-import { deriveCandidateClaimTexts } from "./claim-decomposition";
-import { loadPromptFile, type Pipeline } from "./prompt-loader";
+import { loadAndRenderSection, loadPromptFile, type Pipeline } from "./prompt-loader";
 import { calibrateConfidence, DEFAULT_CALIBRATION_CONFIG, type ConfidenceCalibrationConfig } from "./confidence-calibration";
 import { checkVerdictGrounding, applyGroundingPenalty, DEFAULT_GROUNDING_PENALTY_CONFIG } from "./grounding-check";
 import { ENGLISH_STOPWORDS } from "./constants/stopwords";
@@ -106,6 +99,7 @@ import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { getAnalyzerConfig, type PipelineConfig, type SearchConfig, type CalcConfig, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 import type { EvidenceItem, AnalysisWarning, VerdictDirectionMismatch } from "./types";
+import { assertValidTruthPercentage } from "./types";
 import {
   getTextAnalysisService,
   isLLMEnabled,
@@ -123,7 +117,6 @@ import { formatFallbackReportMarkdown } from "./format-fallback-report";
 // Phase 2a: Evidence Processor Modules
 import {
   EvidenceDeduplicator,
-  jaccardSimilarity,
   type DeduplicationState,
 } from "./evidence-deduplication";
 import {
@@ -140,6 +133,10 @@ import {
   buildContextDescription,
   buildRelevanceContextSummary,
 } from "./evidence-context-utils";
+import {
+  applyRecencyEvidenceGuard,
+  buildTemporalPromptGuard,
+} from "./temporal-guard";
 
 // Configuration, helpers, and debug utilities imported from modular files above
 
@@ -161,12 +158,12 @@ function getFactualBasisWithFallback(
 ): "established" | "disputed" | "opinion" | "unknown" {
   const validValues = ["established", "disputed", "opinion", "unknown"];
 
-  // LLM provided valid value → use it
+  // LLM provided valid value â†’ use it
   if (llmValue && validValues.includes(llmValue)) {
     return llmValue as any;
   }
 
-  // LLM failed → use safe default
+  // LLM failed â†’ use safe default
   const reason = !llmValue ? 'missing' : 'invalid';
   const defaultValue = "unknown"; // Most conservative default
 
@@ -195,12 +192,12 @@ function getHarmPotentialWithFallback(
 ): "high" | "medium" | "low" {
   const validValues = ["high", "medium", "low"];
 
-  // LLM provided valid value → use it
+  // LLM provided valid value â†’ use it
   if (llmValue && validValues.includes(llmValue)) {
     return llmValue as any;
   }
 
-  // LLM failed → use safe default (NO pattern matching!)
+  // LLM failed â†’ use safe default (NO pattern matching!)
   const reason = !llmValue ? 'missing' : 'invalid';
   const defaultValue = "medium"; // Neutral default
 
@@ -229,12 +226,12 @@ function getSourceAuthorityWithFallback(
 ): "primary" | "secondary" | "opinion" | "contested" {
   const validValues = ["primary", "secondary", "opinion", "contested"];
 
-  // LLM provided valid value → use it
+  // LLM provided valid value â†’ use it
   if (llmValue && validValues.includes(llmValue)) {
     return llmValue as any;
   }
 
-  // LLM failed → use safe default
+  // LLM failed â†’ use safe default
   const reason = !llmValue ? 'missing' : 'invalid';
   const defaultValue = "secondary"; // Neutral default
 
@@ -263,12 +260,12 @@ function getEvidenceBasisWithFallback(
 ): "scientific" | "documented" | "anecdotal" | "theoretical" | "pseudoscientific" {
   const validValues = ["scientific", "documented", "anecdotal", "theoretical", "pseudoscientific"];
 
-  // LLM provided valid value → use it
+  // LLM provided valid value â†’ use it
   if (llmValue && validValues.includes(llmValue)) {
     return llmValue as any;
   }
 
-  // LLM failed → use safe default
+  // LLM failed â†’ use safe default
   const reason = !llmValue ? 'missing' : 'invalid';
   const defaultValue = "anecdotal"; // Conservative default (weakest documented evidence)
 
@@ -295,12 +292,12 @@ function getIsContestedWithFallback(
   keyFactorIndex: number,
   tracker: FallbackTracker
 ): boolean {
-  // LLM provided valid boolean → use it
+  // LLM provided valid boolean â†’ use it
   if (typeof llmValue === 'boolean') {
     return llmValue;
   }
 
-  // LLM failed → use safe default
+  // LLM failed â†’ use safe default
   const defaultValue = false; // Conservative default (don't penalize without evidence)
 
   tracker.recordFallback({
@@ -428,12 +425,12 @@ type RelevanceOptions = {
 type RelevanceClass = "primary_source" | "secondary_commentary" | "unrelated";
 
 function normalizeForMatch(text: string): string {
-  return (text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return (text || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
 /**
  * Extract key words from text for search query construction (structural plumbing, not semantic decisions).
- * Simple word extraction with length filter — no stop-word lists or semantic interpretation.
+ * Simple word extraction with length filter â€” no stop-word lists or semantic interpretation.
  */
 function extractKeyWordsForQuery(text: string, minLength = 4, maxWords = 10): string[] {
   const normalized = normalizeForMatch(text);
@@ -567,7 +564,7 @@ function buildContextAwareCriticismQueries(
   }
 
   if (queries.length === 0) {
-    // No context had jurisdiction/institution — fall back to generic queries
+    // No context had jurisdiction/institution â€” fall back to generic queries
     queries.push(
       `${entityStr} criticism documented evidence ${currentYear}`,
       `${entityStr} official response challenges`,
@@ -627,28 +624,25 @@ async function assessSearchRelevanceBatch(
     url: r.url || "N/A",
   }));
 
-  const systemPrompt = `You assess the relevance of search results to a claim and its AnalysisContexts.
-${modeInstructions}
-
-Classify each result as:
-- "primary_source": directly about the claim/context, contains primary evidence, official records, data, or first-hand documentation
-- "secondary_commentary": discusses the topic but is commentary, reaction, analysis, or indirect discussion
-- "unrelated": not about the claim or context
-
-Return JSON only.`;
-
-  const userPrompt = `CLAIM:
-"${entityStr}"
-
-ANALYSISCONTEXTS:
-${contextSummary}
-
-SEARCH RESULTS:
-${resultEntries.map((r) => `[${r.id}] Title: ${r.title}\nSnippet: ${r.snippet}\nURL: ${r.url}`).join("\n\n")}
-
-Return JSON with: { "results": [{ "id": "r0", "classification": "...", "reason": "..." }, ...] }`;
+  const resultsText = resultEntries
+    .map((r) => `[${r.id}] Title: ${r.title}\nSnippet: ${r.snippet}\nURL: ${r.url}`)
+    .join("\n\n");
 
   try {
+    const renderedSystemPrompt = await loadAndRenderSection("orchestrated", "SEARCH_RELEVANCE_BATCH_SYSTEM", {
+      MODE_INSTRUCTIONS: modeInstructions,
+    });
+    const renderedUserPrompt = await loadAndRenderSection("orchestrated", "SEARCH_RELEVANCE_BATCH_USER", {
+      CLAIM_TEXT: entityStr,
+      CONTEXTS_TEXT: contextSummary,
+      RESULTS_TEXT: resultsText,
+    });
+    if (!renderedSystemPrompt?.content?.trim() || !renderedUserPrompt?.content?.trim()) {
+      throw new Error("Missing SEARCH_RELEVANCE_BATCH_* prompt sections in orchestrated prompt profile");
+    }
+    const systemPrompt = renderedSystemPrompt.content;
+    const userPrompt = renderedUserPrompt.content;
+
     const { model: llmModel } = getModelForTask("extract_evidence");
     const response = await generateText({
       model: llmModel,
@@ -690,7 +684,7 @@ Return JSON with: { "results": [{ "id": "r0", "classification": "...", "reason":
     });
   }
 
-  // Fill in any missing results (LLM didn't classify them) — accept as fallback
+  // Fill in any missing results (LLM didn't classify them) â€” accept as fallback
   for (let i = 0; i < results.length; i++) {
     const id = `r${i}`;
     if (!out.has(id)) {
@@ -1011,14 +1005,8 @@ async function refineContextsFromEvidence(
     .map((c: any) => `${c.id}: ${c.text}`)
     .join("\n");
 
-  // v2.6.39: Compute seed context candidates from heuristics (soft hints, not mandatory)
-  const pipelineCfg = state.pipelineConfig;
-  const detectionMethod =
-    pipelineCfg?.contextDetectionMethod ?? "heuristic";
-  const seedContexts = detectionMethod === "heuristic"
-    ? detectContexts(analysisInput) || []
-    : (await detectContextsHybrid(analysisInput, pipelineCfg!)) || [];
-  const seedHint = seedContexts.length > 0 ? formatDetectedContextsHint(seedContexts, true) : "";
+  // Heuristic seed-context injection removed (LLM-only context intelligence).
+  const seedHint = "";
 
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
@@ -1031,93 +1019,36 @@ async function refineContextsFromEvidence(
       .default([]),
   });
 
-  const systemPrompt = `You are a professional evidence analyst organizing evidence into AnalysisContexts. Your role is to identify distinct AnalysisContexts requiring separate investigation—based on differences in analytical dimensions such as methodology, boundaries, or institutional framework—and organize evidence into the appropriate AnalysisContexts.
-
-Terminology (critical):
-- Background details: High-level narrative frame or topic of the input. This is descriptive only and is NOT a reason to split analysis.
-- AnalysisContext: a bounded analytical frame that should be analyzed separately. You will output these as analysisContexts.
-- EvidenceScope: per-evidence-item source metadata (methodology/boundaries/geography/temporal) attached to individual extracted evidence items (EvidenceItem.evidenceScope). This is NOT the same as AnalysisContext.
-
-Language rules (avoid ambiguity):
-- Always use the term "AnalysisContext" for top-level bounded frames.
-- Use the term "background details" for narrative framing (not a separate verdict space).
-- Use the term "EvidenceScope" ONLY for per-evidence-item metadata shown in the EVIDENCE list.
-- Avoid using the bare word "context" unless you explicitly mean AnalysisContext.
-
-Your job: Identify the DISTINCT AnalysisContexts that are REQUIRED by the evidence. Create a separate AnalysisContext ONLY when the evidence clearly indicates a different analytical frame (methodology/boundary/jurisdiction/etc.) that would require its own verdict. If the evidence does NOT show distinct frames, return a single AnalysisContext.
-
-CRITICAL RULES:
-- SAME QUESTION: every AnalysisContext must answer the user's original question. Third-party reactions/responses to X are INVALID when evaluating X itself.
-- Relevance: every AnalysisContext MUST be directly relevant to the input's specific topic. Do not keep marginally related contexts.
-- Core-subject anchor rule: each AnalysisContext must stay anchored to the same primary subject/entity in the INPUT. If evidence only shares broad geography/institutional vocabulary but does not explicitly track the same subject/entity, reject that AnalysisContext as drift.
-- When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones.
-- Evidence-grounded only: every AnalysisContext MUST be supported by at least one evidenceId from the list.
-- Do NOT invent AnalysisContexts based on guesswork or background knowledge.
-- Split into multiple AnalysisContexts when the evidence indicates different boundaries, methods, time periods, institutions, datasets, or processes that should be analyzed separately.
-- Do NOT split into multiple AnalysisContexts solely due to incidental geographic or temporal strings unless the evidence indicates they materially change the analytical frame (e.g., different regulatory regimes, different datasets/studies, different measurement windows).
-- Also split when evidence clearly covers different phases/components/metrics that are not directly comparable (e.g., upstream vs downstream phases, production vs use-phase, system-wide vs component-level metrics, different denominators/normalizations).
-- **CRITICAL: Separate formal authority = separate contexts (evidence-gated)**: If evidence references decisions, rulings, or processes from DIFFERENT formal bodies (each with independent authority to make determinations on different matters), AND each authority has at least one supporting evidence item, these require separate AnalysisContexts. Do NOT split on incidental mentions without supporting evidence.
-- **CRITICAL: Multiple proceedings for same subject = separate contexts (evidence-gated)**: If evidence shows the same subject/entity is involved in multiple distinct proceedings (different authority, case type, legal track, or procedural mandate), create separate AnalysisContexts for each proceeding.
-- **CRITICAL: Different system boundaries = separate contexts (evidence-gated)**: If the input is a comparative claim and evidence uses different measurement boundaries or system definitions, AND each boundary has at least one supporting evidence item, these require separate AnalysisContexts. Do NOT split on incidental mentions.
-- **Anti-duplication rule**: If you create an authority-specific or boundary-specific context, do NOT also keep a redundant generic parent context UNLESS the parent context (a) answers a different question than the specific contexts, OR (b) has distinct evidence not covered by the specific contexts.
-- Do NOT split into AnalysisContexts just because there are pro vs con viewpoints. Viewpoints are not AnalysisContexts.
-- Do NOT split into AnalysisContexts purely by EVIDENCE GENRE (e.g., expert quotes vs market adoption vs news reporting). Those are source types, not bounded analytical frames.
-- If you split, prefer frames that reflect methodology/boundaries/process-chain segmentation present in the evidence (e.g., end-to-end vs component-level; upstream vs downstream; production vs use-phase).
-- If the evidence does not clearly support multiple AnalysisContexts, return exactly ONE AnalysisContext.
-- Use neutral, generic labels (no domain-specific hardcoding), BUT ensure each AnalysisContext name reflects 1–3 specific identifying details found in the evidence (per-evidence EvidenceScope fields and/or the AnalysisContext metadata).
-- Different evidence reports may define DIFFERENT AnalysisContexts. A single evidence report may contain MULTIPLE AnalysisContexts. Do not restrict AnalysisContexts to one-per-source.
-- Put domain-specific details in metadata (e.g., court/institution/methodology/boundaries/geographic/standardApplied/decisionMakers/charges).
-- Non-example: do NOT create separate AnalysisContexts from background details (e.g., "political frame", "media discourse") unless the evidence itself defines distinct analytical frames.
-- An AnalysisContext with zero relevant claims/evidence should NOT exist.
-- IMPORTANT: For each AnalysisContext, include an assessedStatement field describing what you are assessing in this context. The Assessment summary MUST summarize the assessment of THIS assessedStatement.
-
-Return JSON only matching the schema.`;
-
-  // v2.6.39: Build candidate contexts section if heuristics detected potential contexts
-  const candidateContextsSection = seedHint ? `
-CANDIDATE CONTEXTS (heuristic detection - optional):
-${seedHint}
-
-NOTE: These candidates are heuristic suggestions. Use a candidate ONLY if it is supported by ≥1 evidence item from the EVIDENCE list above. Drop any candidate that lacks evidence support. You may also identify additional contexts not listed here if the evidence supports them.
-` : "";
-
-  const userPrompt = `INPUT (normalized):
-"${analysisInput}"
-
-EVIDENCE (unverified extracted statements):
-${evidenceText}
-
-CURRENT CLAIMS (may be incomplete):
-${claimsText || "(none)"}
-${candidateContextsSection}
-Return:
-- requiresSeparateAnalysis
-- analysisContexts (1..N)
-- evidenceContextAssignments: map each evidenceId (Evidence item id) listed above to exactly one contextId (use contextId from your analysisContexts). NOTE: this assigns Evidence items to AnalysisContexts (not to per-item EvidenceScope).
-- claimContextAssignments: (optional) map any claimIds that clearly belong to a specific contextId
-`;
-
-  // v2.6.39: Log seed detection results for context stability diagnostics
-  if (seedContexts.length > 0) {
-    debugLog("refineContextsFromEvidence: passing seed hints as candidates", {
-      detectionMethod,
-      seedCount: seedContexts.length,
-      seedIds: seedContexts.map((s) => s.id),
-      seedNames: seedContexts.map((s) => s.name),
-    });
-  } else {
-    debugLog("refineContextsFromEvidence: no seed contexts detected", {
-      detectionMethod,
-    });
-  }
+  debugLog("refineContextsFromEvidence: deterministic seed hints disabled");
 
   let refined: any;
   try {
+    const renderedSystem = await loadAndRenderSection("orchestrated", "CONTEXT_REFINEMENT", {});
+    if (!renderedSystem?.content?.trim()) {
+      throw new Error("Missing CONTEXT_REFINEMENT prompt section in orchestrated prompt profile");
+    }
+
+    const candidateContextsSection = seedHint
+      ? (await loadAndRenderSection("orchestrated", "CONTEXT_REFINEMENT_CANDIDATES_BLOCK", {
+          SEED_HINT: seedHint,
+        }))?.content || ""
+      : "";
+
+    const renderedUser = await loadAndRenderSection("orchestrated", "CONTEXT_REFINEMENT_USER", {
+      ANALYSIS_INPUT: analysisInput,
+      EVIDENCE_TEXT: evidenceText,
+      CLAIMS_TEXT: claimsText || "(none)",
+      CANDIDATE_CONTEXTS_SECTION: candidateContextsSection,
+    });
+    if (!renderedUser?.content?.trim()) {
+      throw new Error("Missing CONTEXT_REFINEMENT_USER prompt section in orchestrated prompt profile");
+    }
+
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.1, state.pipelineConfig),
       output: Output.object({ schema }),
@@ -1231,7 +1162,7 @@ Return:
   for (const claim of state.understanding!.subClaims || []) {
     const claimContextId = String((claim as any).contextId || "");
     if (claimContextId && !existingContextIds.has(claimContextId)) {
-      debugLog(`⚠️ Claim ${claim.id} assigned to non-existent context ${claimContextId}`);
+      debugLog(`âš ï¸ Claim ${claim.id} assigned to non-existent context ${claimContextId}`);
       // Unassign orphaned claims - they'll be assigned to General or fallback context later
       (claim as any).contextId = "";
     }
@@ -1701,7 +1632,6 @@ Return:
     debugLog("refineContextsFromEvidence: frame signal check PASSED", {
       contextCount: contextsNow.length,
       contextNames: contextsNow.map((c: any) => c.name),
-      seedCount: seedContexts.length,
     });
   }
 
@@ -1739,7 +1669,7 @@ Return:
   state.understanding = ensureAtLeastOneContext(state.understanding!);
 
   // If we introduced multi-context but claim coverage is thin, add minimal per-context central claims.
-  // (This is generic decomposition; it does not “hunt” for named scenarios.)
+  // (This is generic decomposition; it does not â€œhuntâ€ for named scenarios.)
   if (state.understanding!.analysisContexts.length > 1 && state.understanding!.subClaims.length <= 1) {
     const added = await requestSupplementalSubClaims(analysisInput, model, state.understanding!, state.pipelineConfig);
     if (added.length > 0) {
@@ -1749,18 +1679,6 @@ Return:
   }
 
   return { updated: true, llmCalls: 1 };
-}
-
-export function normalizeYesNoQuestionToStatement(input: string, pipelineConfig?: PipelineConfig): string {
-  void pipelineConfig;
-  // LLM-first minimal normalization:
-  // keep user phrasing intact and only remove trailing question marks/punctuation.
-  // This avoids heuristic sentence rewrites that can produce garbled claims.
-  return String(input || "")
-    .trim()
-    .replace(/\?+$/, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 /**
@@ -1994,74 +1912,99 @@ async function analyzeEvidenceGaps(
 /**
  * LLM-powered text similarity assessment (batch).
  * Returns semantic similarity scores (0-1) for each pair.
- * Falls back to structural Jaccard similarity on LLM failure.
+ * On failure: retries with exponential backoff, then leaves failed pair IDs
+ * unset so caller defaults (?? 1, ?? 0, || 0) apply conservatively.
  */
+const _similaritySleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function assessTextSimilarityBatch(
   pairs: Array<{ id: string; textA: string; textB: string }>,
+  maxRetries: number = 3,
 ): Promise<Map<string, number>> {
   if (pairs.length === 0) return new Map();
 
-  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
-  try {
-    // Chunk into batches of 25 pairs for manageable prompt size
-    const chunkSize = 25;
-    const resultMap = new Map<string, number>();
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier â€” fast, cheap
+  const chunkSize = 25;
+  const resultMap = new Map<string, number>();
 
-    for (let offset = 0; offset < pairs.length; offset += chunkSize) {
-      const chunk = pairs.slice(offset, offset + chunkSize);
-      const pairTexts = chunk
-        .map((p, i) => `[${i}] A: "${p.textA.slice(0, 200)}" | B: "${p.textB.slice(0, 200)}"`)
-        .join("\n");
+  for (let offset = 0; offset < pairs.length; offset += chunkSize) {
+    const chunk = pairs.slice(offset, offset + chunkSize);
+    let chunkSuccess = false;
 
-      const result = await generateText({
-        model: modelInfo.model,
-        messages: [{
-          role: "user",
-          content: `Rate the semantic similarity of each text pair below on a scale from 0.0 (completely different topics/meanings) to 1.0 (same topic and meaning, possibly paraphrased).
-
-Consider meaning and topic, not just word overlap. Two texts about the same topic using different words should score high. Two texts with shared common words but different topics should score low.
-
-Pairs:
-${pairTexts}
-
-Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.
-Example: [0.85, 0.12, 0.67]`,
-        }],
-        temperature: 0,
-      });
-
-      let text = result.text.trim();
-      text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
-      const scores = JSON.parse(text);
-
-      if (Array.isArray(scores) && scores.length === chunk.length) {
-        for (let i = 0; i < chunk.length; i++) {
-          const score = typeof scores[i] === "number" ? Math.max(0, Math.min(1, scores[i])) : 0;
-          resultMap.set(chunk[i].id, score);
+    // Retry loop for this chunk
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const pairTexts = chunk
+          .map((p, i) => `[${i}] A: "${p.textA.slice(0, 200)}" | B: "${p.textB.slice(0, 200)}"`)
+          .join("\n");
+        const renderedPrompt = await loadAndRenderSection("orchestrated", "TEXT_SIMILARITY_BATCH_USER", {
+          PAIR_TEXTS: pairTexts,
+        });
+        if (!renderedPrompt?.content?.trim()) {
+          throw new Error("Missing TEXT_SIMILARITY_BATCH_USER prompt section in orchestrated prompt profile");
         }
-      } else {
-        // Invalid LLM response for this chunk — fallback
-        for (const pair of chunk) {
-          resultMap.set(pair.id, jaccardSimilarity(pair.textA, pair.textB));
+
+        const result = await generateText({
+          model: modelInfo.model,
+          messages: [{
+            role: "user",
+            content: renderedPrompt.content,
+          }],
+          temperature: 0,
+        });
+
+        let text = result.text.trim();
+        text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+        const scores = JSON.parse(text);
+
+        // Schema validation
+        if (Array.isArray(scores) && scores.length === chunk.length) {
+          for (let i = 0; i < chunk.length; i++) {
+            if (typeof scores[i] === "number") {
+              const score = Math.max(0, Math.min(1, scores[i]));
+              resultMap.set(chunk[i].id, score);
+            } else {
+              // Non-numeric element: leave this pair unset; caller default applies
+              console.warn(`[assessTextSimilarityBatch] Non-numeric score at index ${i}; leaving unset`);
+            }
+          }
+          chunkSuccess = true;
+          break; // Success â€” exit retry loop for this chunk
+        } else {
+          // Invalid schema â€” retry if attempts remain
+          console.warn(`[assessTextSimilarityBatch] Invalid schema (attempt ${attempt}/${maxRetries}): expected array[${chunk.length}], got ${typeof scores}`);
+          if (attempt < maxRetries) {
+            const baseDelay = 100 * Math.pow(2, attempt - 1); // 100ms, 200ms, 400ms
+            const jitter = Math.floor(Math.random() * 51) - 25; // Â±25ms
+            await _similaritySleep(baseDelay + jitter);
+            continue;
+          }
+        }
+      } catch (err) {
+        // LLM call failed â€” retry if attempts remain
+        console.warn(`[assessTextSimilarityBatch] LLM error (attempt ${attempt}/${maxRetries}):`, err);
+        if (attempt < maxRetries) {
+          const baseDelay = 100 * Math.pow(2, attempt - 1); // 100ms, 200ms, 400ms
+          const jitter = Math.floor(Math.random() * 51) - 25; // Â±25ms
+          await _similaritySleep(baseDelay + jitter);
+          continue;
         }
       }
     }
-    return resultMap;
-  } catch {
-    // LLM call failed — structural fallback for all pairs
+
+    // All retries exhausted for this chunk â€” leave chunk pair IDs unset
+    if (!chunkSuccess) {
+      console.error(`[assessTextSimilarityBatch] All retries exhausted for chunk (offset ${offset}). Leaving scores unset; caller defaults will apply.`);
+    }
   }
 
-  const map = new Map<string, number>();
-  for (const pair of pairs) {
-    map.set(pair.id, jaccardSimilarity(pair.textA, pair.textB));
-  }
-  return map;
+  return resultMap;
 }
 
 /**
  * LLM-powered context similarity assessment.
  * Replaces the deterministic weighted Jaccard approach with semantic LLM assessment.
- * Falls back to the text-analysis service's analyzeContextSimilarity, then structural fallback.
+ * Returns neutral similarity when the LLM path fails.
  */
 async function assessContextSimilarity(a: AnalysisContext, b: AnalysisContext): Promise<number> {
   const modelInfo = getModelForTask("extract_evidence"); // Haiku tier
@@ -2076,17 +2019,19 @@ async function assessContextSimilarity(a: AnalysisContext, b: AnalysisContext): 
       assessedStatement: (b as any).assessedStatement,
       metadata: (b as any).metadata,
     });
+    const renderedPrompt = await loadAndRenderSection("orchestrated", "CONTEXT_SIMILARITY_USER", {
+      CONTEXT_A: contextA,
+      CONTEXT_B: contextB,
+    });
+    if (!renderedPrompt?.content?.trim()) {
+      throw new Error("Missing CONTEXT_SIMILARITY_USER prompt section in orchestrated prompt profile");
+    }
 
     const result = await generateText({
       model: modelInfo.model,
       messages: [{
         role: "user",
-        content: `Assess the semantic similarity of two analysis contexts. Consider whether they describe the same analytical frame (same institution, jurisdiction, methodology, subject matter, and assessedStatement).
-
-Context A: ${contextA}
-Context B: ${contextB}
-
-Return ONLY a JSON number from 0.0 (completely different analytical frames) to 1.0 (same analytical frame, possibly worded differently). No explanation.`,
+        content: renderedPrompt.content,
       }],
       temperature: 0,
     });
@@ -2096,18 +2041,9 @@ Return ONLY a JSON number from 0.0 (completely different analytical frames) to 1
     const score = JSON.parse(text);
     if (typeof score === "number") return Math.max(0, Math.min(1, score));
   } catch {
-    // LLM call failed — fall through to structural fallback
+    // LLM call failed â€” return neutral score (no hidden deterministic fallback).
   }
-
-  // Structural fallback: weighted Jaccard across key fields
-  const nameA = String(a?.name || "");
-  const nameB = String(b?.name || "");
-  const nameSim = jaccardSimilarity(nameA, nameB);
-  const subjectSim = a?.subject && b?.subject
-    ? jaccardSimilarity(String(a.subject), String(b.subject)) : 0;
-  const assessedSim = (a as any)?.assessedStatement && (b as any)?.assessedStatement
-    ? jaccardSimilarity(String((a as any).assessedStatement), String((b as any).assessedStatement)) : 0;
-  return nameSim * 0.4 + subjectSim * 0.2 + assessedSim * 0.4;
+  return 0.5;
 }
 
 async function selectEvidenceItemsForContextRefinementPrompt(
@@ -2176,7 +2112,7 @@ async function selectEvidenceItemsForContextRefinementPrompt(
   return chosen.slice(0, maxEvidenceItems);
 }
 
-// calculateContextSimilarity removed — replaced by assessContextSimilarity (LLM-powered)
+// calculateContextSimilarity removed â€” replaced by assessContextSimilarity (LLM-powered)
 
 async function deduplicateContexts(
   contexts: AnalysisContext[],
@@ -2364,7 +2300,7 @@ async function validateAndFixContextNameAlignment(
     const name = String((s as any)?.name || "").toLowerCase();
     for (let ii = 0; ii < ids.length; ii++) {
       const id = ids[ii].toLowerCase().trim();
-      if (!id || name.includes(id)) continue; // structural inclusion — no LLM needed
+      if (!id || name.includes(id)) continue; // structural inclusion â€” no LLM needed
       coversPairsList.push({ contextIdx: ci, idIdx: ii, name, identifier: id });
     }
   }
@@ -2377,7 +2313,7 @@ async function validateAndFixContextNameAlignment(
   }));
   const coversScores = await assessTextSimilarityBatch(simPairs);
 
-  // Build covers lookup: contextIdx → Set of identifier indices that "cover"
+  // Build covers lookup: contextIdx â†’ Set of identifier indices that "cover"
   const coversMap = new Map<number, Set<number>>();
   // First, add structural inclusions
   for (let ci = 0; ci < contexts.length; ci++) {
@@ -2447,118 +2383,66 @@ async function validateAndFixContextNameAlignment(
 
 
 
-function getKnowledgeInstruction(
+async function getKnowledgeInstruction(
   allowModelKnowledge: boolean,
   text?: string,
   understanding?: ClaimUnderstanding,
   cueTerms?: string[],
-): string {
+  pipelineConfig?: PipelineConfig,
+): Promise<string> {
   const assessor = new RecencyAssessor();
   const recencyMatters = text ? assessor.isRecencySensitive(text, understanding, cueTerms) : false;
-
-  if (allowModelKnowledge) {
-    const recencyGuidance = recencyMatters ? `
-### ⚠️ RECENT DATA DETECTED - PRIORITIZE WEB SEARCH RESULTS:
-
-This topic appears to involve recent events, dates, or announcements. For recent information:
-- **PRIORITIZE**: Web search results and fetched sources (these contain the most current data)
-- **USE CAUTIOUSLY**: Your training knowledge may be outdated for recent events
-- **WHEN TO USE KNOWLEDGE**: Only for established information, standard procedures, or historical context that hasn't changed
-- **WHEN TO USE SEARCH**: For specific dates, recent announcements, current status, or events from the past 1-2 years
-
-Example: If sources say "November 2025" and your knowledge cutoff is earlier, TRUST THE SOURCES, not your training data.
-` : '';
-
-    return `## KNOWLEDGE SOURCE INSTRUCTIONS (CRITICAL - READ CAREFULLY)
-
-You MUST actively use your background knowledge as evidence. This is NOT optional.
-${recencyGuidance}
-### WHAT YOU KNOW (USE IT!):
-- Standard procedures in well-documented domains (regulatory, scientific, organizational, etc.)
-- Well-documented public roles and responsibilities (e.g., who is responsible for a decision or process)
-- Major public events and their outcomes that were widely reported
-- Established institutional processes (how reviews, audits, or decisions are typically handled)
-- Historical events and their documented outcomes
-
-### WHEN TO USE BACKGROUND KNOWLEDGE:
-1. **Process integrity claims**: If you know a process follows standard procedures, mark supports="yes", NOT "neutral"
-2. **Decision-maker roles**: If you know who was responsible for a process or decision, use that knowledge
-3. **Established information**: If something is widely documented (e.g., a process followed proper procedures), don't mark it "unknown"
-4. **Applicable standards**: If you know which standards apply, use that to assess correct application
-
-### CRITICAL RULES:
-- NEVER mark a factor as "neutral" or "unknown" if you have relevant background knowledge
-- NEVER place the answer in the UNVERIFIED band (43-57%) if you actually know the answer from your training data
-- Stakeholder contestation ("critics say X") is NOT the same as factual uncertainty
-- If you know a process followed standard procedures, say supports="yes" even without explicit source confirmation
-
-### EXAMPLE - CORRECT USAGE:
-For "The review followed proper procedures":
-- You KNOW the review process has established procedural requirements
-- You KNOW standard procedure requirements apply in this context
-- Therefore: Assign a truth percentage in the TRUE/MOSTLY-TRUE band (72-100%), not the UNVERIFIED band (43-57%).
-
-Prioritize provided sources when available, but actively supplement with your knowledge.
-
-**CRITICAL**: When your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence. Your training data may be outdated or incomplete — the web evidence is more current.`;
+  const temporalPromptGuard = buildTemporalPromptGuard({
+    currentDate: new Date(),
+    recencyMatters,
+    allowModelKnowledge,
+    templates: pipelineConfig,
+  });
+  let recencyGuidance = "";
+  if (allowModelKnowledge && recencyMatters) {
+    const renderedRecencyGuidance = await loadAndRenderSection("orchestrated", "KNOWLEDGE_RECENCY_GUIDANCE", {});
+    if (!renderedRecencyGuidance?.content?.trim()) {
+      throw new Error("Missing KNOWLEDGE_RECENCY_GUIDANCE prompt section in orchestrated prompt profile");
+    }
+    recencyGuidance = renderedRecencyGuidance.content;
   }
-  return `## KNOWLEDGE SOURCE INSTRUCTIONS (EVIDENCE-ONLY MODE)
-
-Use ONLY the provided evidence and sources. Do NOT rely on training data for factual assertions.
-
-**When evidence is insufficient**: If evidence does not cover a claim, say so explicitly and keep the verdict in the UNVERIFIED band (43-57%). Do NOT fill reasoning gaps with your own knowledge — this causes "bounce-back" hallucination where confident-sounding but fabricated reasoning replaces missing evidence.
-
-**When web evidence contradicts your training knowledge**: ALWAYS defer to the provided web evidence, regardless of what your training data suggests. Your training data may be outdated or incomplete.
-
-Do not add evidence not present in the sources.`;
+  const sectionName = allowModelKnowledge
+    ? "KNOWLEDGE_INSTRUCTION_ALLOW_MODEL"
+    : "KNOWLEDGE_INSTRUCTION_EVIDENCE_ONLY";
+  const renderedInstruction = await loadAndRenderSection("orchestrated", sectionName, {
+    TEMPORAL_PROMPT_GUARD: temporalPromptGuard,
+    RECENCY_GUIDANCE: recencyGuidance,
+  });
+  if (!renderedInstruction?.content?.trim()) {
+    throw new Error(`Missing ${sectionName} prompt section in orchestrated prompt profile`);
+  }
+  return renderedInstruction.content;
 }
 
 /**
  * Get provider-specific prompt hints for better cross-provider compatibility
  * Different LLMs have different strengths/weaknesses with structured output
  */
-function getProviderPromptHint(providerOverride?: string): string {
+async function getProviderPromptHint(providerOverride?: string): Promise<string> {
   const provider = (providerOverride ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic").toLowerCase();
+  let sectionName = "";
 
   if (provider === "openai" || provider === "gpt") {
-    return `
-## OUTPUT FORMAT (IMPORTANT)
-Return ONLY valid JSON matching the schema. All string fields must be non-empty (use descriptive text, not empty strings for required fields).
-For array fields, always include at least one item where appropriate.`;
+    sectionName = "PROVIDER_HINT_OPENAI";
+  } else if (provider === "anthropic" || provider === "claude") {
+    sectionName = "PROVIDER_HINT_ANTHROPIC";
+  } else if (provider === "google" || provider === "gemini") {
+    sectionName = "PROVIDER_HINT_GOOGLE";
+  } else if (provider === "mistral") {
+    sectionName = "PROVIDER_HINT_MISTRAL";
   }
+  if (!sectionName) return "";
 
-  if (provider === "anthropic" || provider === "claude") {
-    return `
-## OUTPUT FORMAT (CRITICAL)
-Return ONLY valid JSON. Do NOT include any explanation text outside the JSON.
-- All enum fields must use EXACT values from the allowed options (case-sensitive)
-- All boolean fields must be true or false (not strings)
-- All number fields must be numbers (not strings)
-- Do not omit any required fields
-- For empty arrays, use [] not null`;
+  const rendered = await loadAndRenderSection("orchestrated", sectionName, {});
+  if (!rendered?.content?.trim()) {
+    throw new Error(`Missing ${sectionName} prompt section in orchestrated prompt profile`);
   }
-
-  if (provider === "google" || provider === "gemini") {
-    return `
-## OUTPUT FORMAT (CRITICAL)
-Return ONLY valid JSON. Do NOT include any explanation text outside the JSON.
-- All enum fields must use EXACT values from the allowed options
-- All boolean fields must be true or false (not strings)
-- All number fields must be numbers (not strings)
-- For empty arrays, use [] not null`;
-  }
-
-  if (provider === "mistral") {
-    return `
-## OUTPUT FORMAT (CRITICAL)
-Return ONLY valid JSON matching the exact schema structure.
-- Use the exact enum values specified (case-sensitive)
-- Do not omit any required fields
-- Use empty string "" for optional string fields with no value
-- Use empty array [] for optional array fields with no items`;
-  }
-
-  return "";
+  return rendered.content;
 }
 
 function isAnthropicProvider(providerOverride?: string): boolean {
@@ -2731,7 +2615,7 @@ type ArticleVerdict7Point =
 // Confidence threshold to distinguish MIXED from UNVERIFIED (default; overridden by CalcConfig at runtime)
 let MIXED_CONFIDENCE_THRESHOLD = DEFAULT_CALC_CONFIG.mixedConfidenceThreshold;
 
-// VERDICT_BANDS imported from truth-scale.ts — system constant, not configurable via UCM.
+// VERDICT_BANDS imported from truth-scale.ts â€” system constant, not configurable via UCM.
 
 /**
  * Context similarity weights derived from CalcConfig.contextSimilarity.
@@ -2816,16 +2700,16 @@ function truthFromBand(
   const mfUpper = lf - 1;                                    // 28
   switch (band) {
     case "strong":
-      // MOSTLY-TRUE lower → 100: default 72 + 28*conf
+      // MOSTLY-TRUE lower â†’ 100: default 72 + 28*conf
       return Math.round(mt + (100 - mt) * conf);
     case "partial":
-      // MIXED midpoint → MOSTLY-TRUE upper: default 50 + 35*conf
+      // MIXED midpoint â†’ MOSTLY-TRUE upper: default 50 + 35*conf
       return Math.round(mxMid + (mtUpper - mxMid) * conf);
     case "uncertain":
-      // LEANING-FALSE midpoint → LEANING-TRUE midpoint: default 35 + 30*conf
+      // LEANING-FALSE midpoint â†’ LEANING-TRUE midpoint: default 35 + 30*conf
       return Math.round(lfMid + (ltMid - lfMid) * conf);
     case "refuted":
-      // 0 → MOSTLY-FALSE upper (inverse): default 28*(1-conf)
+      // 0 â†’ MOSTLY-FALSE upper (inverse): default 28*(1-conf)
       return Math.round(mfUpper * (1 - conf));
   }
 }
@@ -2873,31 +2757,6 @@ export function normalizeTrackRecordScore(score: number): number {
 }
 
 
-/**
- * Clamp truth percentage to valid [0, 100] range (PR-C: defensive safety)
- *
- * Prevents mathematically invalid verdict outputs that can occur from
- * incorrect trackRecordScore scaling or weighting calculations.
- *
- * @param value - Calculated truth percentage
- * @returns Clamped value in [0, 100] range
- */
-export function clampTruthPercentage(value: number): number {
-  if (!Number.isFinite(value)) {
-    console.error(`[Analyzer] Non-finite truthPercentage: ${value}, clamping to 50`);
-    return 50;
-  }
-
-  if (value < 0 || value > 100) {
-    console.error(
-      `[Analyzer] truthPercentage out of bounds: ${value}, clamping to [0, 100]`
-    );
-    return Math.max(0, Math.min(100, value));
-  }
-
-  return value;
-}
-
 function anchorVerdictTowardClaims(options: {
   verdictPct: number;
   claimsAvgPct: number;
@@ -2920,11 +2779,12 @@ function anchorVerdictTowardClaims(options: {
     return { applied: false, divergence, anchoredPct: options.verdictPct };
   }
 
-  const anchoredPct = clampTruthPercentage(
+  const anchoredPct = assertValidTruthPercentage(
     Math.round(
       (1 - claimsWeight) * options.verdictPct +
       claimsWeight * options.claimsAvgPct,
     ),
+    "anchor verdict toward claims"
   );
   return { applied: true, divergence, anchoredPct };
 }
@@ -3009,7 +2869,7 @@ function calculateArticleTruthPercentage(
  * Calculate claim weight based on centrality and confidence.
  * Higher centrality claims with higher confidence have more influence on the overall verdict.
  *
- * Weight = centralityMultiplier × (confidence / 100)
+ * Weight = centralityMultiplier Ã— (confidence / 100)
  * where centralityMultiplier: high=3.0, medium=2.0, low=1.0
  */
 // NOTE: weighted aggregation helpers extracted to ./analyzer/aggregation
@@ -3463,77 +3323,8 @@ import {
 // Re-export for backward compatibility
 export { prefetchSourceReliability, getTrackRecordScore };
 
-/**
- * Calculate de-duplicated weighted average truth percentage
- * Clusters near-duplicate claims and down-weights them so each semantic cluster
- * contributes approximately 1 unit to the average (prevents double-counting)
- */
-function dedupeWeightedAverageTruth(verdicts: ClaimVerdict[]): number {
-  if (verdicts.length === 0) return 50;
-  if (verdicts.length === 1) return Math.round(verdicts[0].truthPercentage);
-
-  // Simple token-based similarity clustering
-  const tokenize = (text: string): Set<string> => {
-    return new Set(
-      text
-        .toLowerCase()
-        .replace(/[^\w\s]/g, " ")
-        .split(/\s+/)
-        .filter((t) => t.length > 3) // Ignore short words
-    );
-  };
-
-  const jaccardSimilarity = (setA: Set<string>, setB: Set<string>): number => {
-    const intersection = new Set([...setA].filter((x) => setB.has(x)));
-    const union = new Set([...setA, ...setB]);
-    return union.size === 0 ? 0 : intersection.size / union.size;
-  };
-
-  // Cluster claims by similarity (configurable threshold from CalcConfig)
-  const clusterThreshold = CLAIM_CLUSTERING_CONFIG.jaccardSimilarityThreshold;
-  const clusters: ClaimVerdict[][] = [];
-  for (const verdict of verdicts) {
-    const tokens = tokenize(verdict.claimText);
-    let addedToCluster = false;
-
-    for (const cluster of clusters) {
-      const clusterTokens = tokenize(cluster[0].claimText);
-      if (jaccardSimilarity(tokens, clusterTokens) >= clusterThreshold) {
-        cluster.push(verdict);
-        addedToCluster = true;
-        break;
-      }
-    }
-
-    if (!addedToCluster) {
-      clusters.push([verdict]);
-    }
-  }
-
-  // Calculate weighted average: each cluster contributes ~1 unit
-  let totalWeight = 0;
-  let weightedSum = 0;
-
-  for (const cluster of clusters) {
-    // Primary claim gets weight 1.0, duplicates share remaining weight (configurable)
-    const primaryWeight = 1.0;
-    const dupShare = CLAIM_CLUSTERING_CONFIG.duplicateWeightShare;
-    const duplicateWeight = cluster.length > 1 ? dupShare / (cluster.length - 1) : 0;
-
-    // Sort by truthPercentage descending to pick primary
-    const sorted = [...cluster].sort((a, b) => b.truthPercentage - a.truthPercentage);
-
-    weightedSum += sorted[0].truthPercentage * primaryWeight;
-    totalWeight += primaryWeight;
-
-    for (let i = 1; i < sorted.length; i++) {
-      weightedSum += sorted[i].truthPercentage * duplicateWeight;
-      totalWeight += duplicateWeight;
-    }
-  }
-
-  return Math.round(weightedSum / totalWeight);
-}
+// Exported for unit testing (not part of public API)
+export { assessTextSimilarityBatch as _assessTextSimilarityBatch };
 
 // ============================================================================
 // TRUTH PERCENTAGE ADJUSTMENT PIPELINE
@@ -3787,41 +3578,12 @@ function validateVerdictDirections(
 }
 
 /**
- * Sanitize temporal error phrases from LLM-generated reasoning
- * Removes false "temporal error", "in the future", "date discrepancy" comments
- * that occur when LLM incorrectly assumes dates are impossible
+ * Temporal reasoning post-processing is intentionally disabled.
+ * Avoid deterministic phrase rewriting; temporal interpretation stays LLM-driven.
  */
 function sanitizeTemporalErrors(reasoning: string, currentDate: Date): string {
-  const temporalErrorPatterns = [
-    /temporal\s+error/gi,
-    /in\s+the\s+future\s+from\s+the\s+current\s+date/gi,
-    /date\s+discrepancy/gi,
-    /(?:claim|statement|event)\s+(?:is|was)\s+(?:in\s+the\s+)?future/gi,
-    /(?:occurred|happened)\s+in\s+the\s+future/gi,
-    /cannot\s+have\s+occurred\s+yet/gi,
-    /has\s+not\s+yet\s+happened/gi,
-    /impossible\s+(?:date|timing)/gi,
-  ];
-
-  let sanitized = reasoning;
-  let hasTemporalError = false;
-
-  for (const pattern of temporalErrorPatterns) {
-    if (pattern.test(sanitized)) {
-      hasTemporalError = true;
-      // Replace with neutral phrasing
-      sanitized = sanitized.replace(pattern, "[date evaluated]");
-    }
-  }
-
-  if (hasTemporalError) {
-    debugLog("sanitizeTemporalErrors: Cleaned temporal error text", {
-      before: reasoning.substring(0, 150),
-      after: sanitized.substring(0, 150),
-    });
-  }
-
-  return sanitized;
+  void currentDate;
+  return reasoning;
 }
 
 // ============================================================================
@@ -4009,7 +3771,7 @@ async function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: an
         const similarity = simScores.get(`tr_${idx}`) || 0;
         if (similarity >= 0.5) {
           thesisRelevance = "direct";
-          debugLog("enforceThesisRelevanceInvariants: High similarity → direct", {
+          debugLog("enforceThesisRelevanceInvariants: High similarity â†’ direct", {
             claimText: String(claim?.text || "").slice(0, 80),
             thesis: thesisLower.slice(0, 80),
             similarity,
@@ -4054,7 +3816,10 @@ function enforceMinimumDirectClaimsPerContext(
   const contexts = Array.isArray(understanding.analysisContexts) ? understanding.analysisContexts : [];
   if (claims.length === 0) return understanding;
 
-  const isCompound = isCompoundLikeText(analysisInput) || analysisInput.includes("\n");
+  const llmSignalsCompound =
+    Boolean((understanding as any)?.requiresSeparateAnalysis) ||
+    String((understanding as any)?.complexity || "").toLowerCase() === "complex";
+  const isCompound = llmSignalsCompound || analysisInput.includes("\n");
   if (!isCompound) return understanding;
 
   const contextIds = contexts.length > 0 ? contexts.map((c) => c.id) : [""];
@@ -4145,7 +3910,7 @@ async function ensureUnassignedClaimsContext(
   });
 
   if (unassigned.length > 0) {
-    // Batch LLM similarity: all unassigned claims × all candidate contexts
+    // Batch LLM similarity: all unassigned claims Ã— all candidate contexts
     const pairs: Array<{ id: string; textA: string; textB: string }> = [];
     for (let ci = 0; ci < unassigned.length; ci++) {
       const text = String(unassigned[ci]?.text || "").trim();
@@ -4474,7 +4239,7 @@ const UNDERSTANDING_SCHEMA_LENIENT = z.object({
 });
 
 // Supplemental claim backfill should ensure each context has at least one substantive/core claim,
-// but MUST NOT force “central” marking. Centrality is determined by the LLM + guardrails.
+// but MUST NOT force â€œcentralâ€ marking. Centrality is determined by the LLM + guardrails.
 // Raise minimums to avoid collapsing compound inputs into a single claim.
 let MIN_CORE_CLAIMS_PER_PROCEEDING = DEFAULT_CALC_CONFIG.claimDecomposition?.minCoreClaimsPerContext ?? 2;
 let MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE = DEFAULT_CALC_CONFIG.claimDecomposition?.minTotalClaimsWithSingleCore ?? 3;
@@ -4498,62 +4263,6 @@ function expandClaimsForVerdicts(
 
   const needed = Math.max(0, MIN_DIRECT_CLAIMS_PER_CONTEXT - directClaims.length);
   return directClaims.concat(extraClaims.slice(0, needed));
-}
-
-function isComparativeLikeText(text: string): boolean {
-  const t = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
-  if (!t.includes(" than ")) return false;
-  const before = t.split(" than ")[0] || "";
-  const window = before.split(/\s+/).slice(-6).join(" ");
-  // Generic comparative cues (topic-agnostic; no domain keywords).
-  if (/\b(more|less|better|worse|higher|lower|fewer|greater|smaller)\b/.test(window)) return true;
-  // Heuristic: common comparative adjective/adverb form (e.g., "faster", "cheaper") near "than".
-  if (/\b[a-z]{3,}er\b/.test(window)) return true;
-  return false;
-}
-
-function isCompoundLikeText(text: string): boolean {
-  const t = (text || "").toLowerCase();
-  if (!t) return false;
-  if (/[;,]/.test(t)) return true;
-  if (/\b(and|or|but|while|which|that)\b/.test(t)) return true;
-  // Simple enumeration cue: multiple numerals or roman numerals separated by commas.
-  if (/\b[ivxlcdm]+\b/.test(t) && t.includes(",")) return true;
-  return false;
-}
-
-function buildHeuristicSubClaims(
-  input: string,
-  existingClaims: ClaimUnderstanding["subClaims"],
-  contextId: string,
-  maxClaims = 6,
-): ClaimUnderstanding["subClaims"] {
-  const normalize = (text: string) =>
-    (text || "").toLowerCase().replace(/\s+/g, " ").trim();
-  const existing = new Set(existingClaims.map((c) => normalize(c.text || "")).filter(Boolean));
-  const candidates = deriveCandidateClaimTexts(input)
-    .filter((c) => !existing.has(normalize(c)))
-    .slice(0, maxClaims);
-
-  let idx = 0;
-  return candidates.map((text) => ({
-    id: `HC${++idx}`,
-    text,
-    type: "factual" as const,
-    claimRole: "core" as const,
-    dependsOn: [],
-    keyEntities: [],
-    checkWorthiness: "high" as const,
-    harmPotential: "medium" as const,
-    centrality: "medium" as const,
-    isCentral: false,
-    thesisRelevance: "direct" as const,
-    thesisRelevanceConfidence: 100,
-    isCounterClaim: false, // Heuristic claims default to thesis-aligned
-    contextId,
-    approximatePosition: "",
-    keyFactorId: "",
-  }));
 }
 
 async function understandClaim(
@@ -4621,671 +4330,34 @@ async function understandClaim(
       decomposedClaimsCount: inputClassification.decomposedClaims.length,
     });
   } catch (err) {
-    // Non-fatal: fall back to inline heuristics if service fails
-    debugLog("understandClaim: inputClassification failed, using inline heuristics", {
+    // Non-fatal: continue without classification-based hints.
+    debugLog("understandClaim: inputClassification failed; proceeding without classification hints", {
       error: err instanceof Error ? err.message : String(err),
     });
   }
 
-  // v2.8: Pre-detect contexts using heuristics (shared implementation from analysis-contexts.ts)
-  const contextDetectionMethod =
-    pipelineConfig?.contextDetectionMethod ?? "heuristic";
-  // v2.9.2: Context detection is now done entirely by LLM - no pattern-based pre-detection
-  // The LLM should discover analytical contexts independently based on the input content
-  const preDetectedContexts = contextDetectionMethod === "heuristic"
-    ? detectContexts(analysisInput)
-    : pipelineConfig
-      ? await detectContextsHybrid(analysisInput, pipelineConfig)
-      : detectContexts(analysisInput);
-  // Note: preDetectedContexts are internal hints and are NOT passed to the LLM prompt
-  debugLog("understandClaim: preDetectedContexts (heuristic, not passed to LLM)", {
-    count: preDetectedContexts?.length ?? 0,
-    ids: (preDetectedContexts || []).map((s: any) => String(s?.id || "")).filter(Boolean),
+  // Deterministic context pre-detection removed (LLM-only context intelligence).
+  const preDetectedContexts: any[] = [];
+  debugLog("understandClaim: deterministic preDetectedContexts disabled", {
+    count: 0,
+    ids: [],
   });
 
-  const systemPrompt = `You are a professional evidence analyst analyzing inputs for verification. Your role is to identify distinct AnalysisContexts requiring separate evaluation, detect background details if present, extract verifiable claims while separating attribution from core content, establish claim dependencies, and generate strategic search queries.
-
-TERMINOLOGY (critical):
-- Background details: Optional narrative frame or topic of the input. Descriptive only and NOT a reason to split analysis. Output as backgroundDetails.
-- AnalysisContext: a bounded analytical frame that should be analyzed separately. Output as analysisContexts.
-- EvidenceScope: per-evidence source metadata (methodology/boundaries/geography/temporal) attached to individual evidence items later in the pipeline. NOT the same as AnalysisContext.
-
-NOT DISTINCT ANALYSIS CONTEXTS:
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate AnalysisContexts by themselves.
-- Pro vs con viewpoints are NOT AnalysisContexts.
-- "Public perception", "trust", or "confidence in institutions" AnalysisContexts - AVOID unless explicitly the main topic.
-- Meta-level commentary AnalysisContexts (how people feel about the topic) - AVOID, focus on factual AnalysisContexts.
-
-ANALYSIS CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
-- Every AnalysisContext MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include AnalysisContexts from unrelated domains just because they share a general category
-- Example: If input is about "Topic A's efficiency", do NOT include AnalysisContexts about "Topic B regulations" or "Topic C subsidies" just because all are in a broad category
-- Example: If input is about "Substance A effects", do NOT include AnalysisContexts about "Substance B studies" or "Substance C research" just because all involve consumption
-- Each AnalysisContext must have a clear, direct connection to the input's subject matter
-- When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones
-- An AnalysisContext with zero relevant claims/evidence should NOT exist
-
-**CRITICAL: The Incompatibility Test (apply to ALL inputs)**
-Before finalizing AnalysisContexts, ask: "If I combined verdicts from these potential AnalysisContexts, would the result be MISLEADING because they evaluate fundamentally different things?"
-- If YES and combining would change what is being evaluated: Create separate AnalysisContexts
-- If NO: Keep as single AnalysisContext
-
-Common incompatibility signals (only split if evidence supports each):
-- Different formal bodies with separate authority
-- Different measurement system boundaries
-- Different process phases that yield incomparable outputs
-
-${(pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) === false ? `## KNOWLEDGE CONSTRAINT (EVIDENCE-ONLY MODE)
-
-Base claim decomposition and AnalysisContext identification on the input text only.
-Do NOT create AnalysisContexts based on your background knowledge of the topic.
-Research queries may use your knowledge of search strategies, but AnalysisContexts must emerge from the input.
-` : ''}${recencyMatters ? `## ⚠️ RECENT DATA DETECTED
-
-This input appears to involve recent events, dates, or announcements. When generating research queries:
-- **PRIORITIZE**: Queries that will help find the most current information via web search
-- **INCLUDE**: Date-specific queries (e.g., "November 2025", "2025", "recent")
-- **FOCUS**: Recent developments, current status, latest announcements
-- **NOTE**: Web search will be used to find current sources - structure your research queries accordingly
-
-` : ''}## CRITICAL: TEMPORAL REASONING
-
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
-
-**DATE REASONING RULES**:
-- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
-- Do NOT assume dates are in the future without checking against the current date
-- A date like "November 2025" is in the PAST if the current date is January 2026 or later
-- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
-- If a date seems inconsistent, verify it against the current date before making judgments
-- When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
-
-**EXAMPLE**: If the current date is January 6, 2026, then "late November 2025" is in the PAST (approximately 6 weeks ago), not the future.
-
-## CRITICAL: ARTICLE THESIS (articleThesis)
-
-The articleThesis should NEUTRALLY SUMMARIZE what the article claims, covering ALL main points.
-- Include ALL major claims, not just one
-- Use neutral language ("claims that", "alleges that")
-- Keep the source attribution ("according to X", "allegedly from Y")
-- Example: "The article claims a regulator announced stricter rules and alleges an internal review found harms linked to a product."
-
-## CRITICAL: CLAIM STRUCTURE ANALYSIS
-
-When extracting claims, identify their ROLE and DEPENDENCIES:
-
-### Claim Roles:
-- **attribution**: WHO said it (person's identity, role) - e.g., "Person X is the agency director"
-- **source**: WHERE/HOW it was communicated (document type, channel) - e.g., "in an internal email"
-- **timing**: WHEN it happened - e.g., "in late November"
-- **core**: THE ACTUAL VERIFIABLE ASSERTION - MUST be isolated from source/attribution
-
-### CRITICAL: ISOLATING CORE CLAIMS
-
-Core claims must be PURE FACTUAL ASSERTIONS without embedded source/attribution:
-- WRONG: "An internal review found that 10 people were harmed by Product X" (embeds source)
-- CORRECT: "At least 10 people were harmed by Product X" (pure factual claim)
-
-The source attribution belongs in a SEPARATE claim:
-- SC1: "An internal review exists" (source claim)
-- SC2: "At least 10 people were harmed by Product X" (core claim, depends on SC1)
-
-### CRITICAL: SEPARATING ATTRIBUTION FROM EVALUATIVE CONTENT
-
-**THIS IS MANDATORY** - When someone CRITICIZES, CLAIMS, or ASSERTS something, YOU MUST create separate claims:
-1. The FACT that they said/criticized it (attribution - verifiable: did they say it?)
-2. The CONTENT of what they said (the actual claim to verify - is it TRUE?)
-
-**NEVER CREATE CLAIMS LIKE THESE** (they conflate attribution with content):
-❌ WRONG: "A spokesperson criticized an agency's processes as based on weak and misleading evidence"
-❌ WRONG: "Expert claims the treatment is dangerous"
-❌ WRONG: "Study found that X causes Y"
-
-**ALWAYS SPLIT INTO TWO CLAIMS:**
-
-Example 1: "A spokesperson criticized an agency's processes as based on weak evidence"
-✅ SC-A: "A spokesperson has publicly criticized past agency processes"
-   → claimRole: "attribution", type: "factual", centrality: LOW
-   → Verifies: Did the spokesperson make critical statements about the agency?
-✅ SC-B: "Past agency processes were based on weak and misleading evidence"
-   → claimRole: "core", type: "evaluative", centrality: HIGH, dependsOn: ["SC-A"]
-   → Verifies: Is this assessment ACCURATE based on evidence?
-
-Example 2: "An internal review found 10 people were harmed by Product X"
-✅ SC-A: "An internal review exists making claims about harms"
-   → claimRole: "source", type: "factual", centrality: LOW
-✅ SC-B: "At least 10 people were harmed by Product X"
-   → claimRole: "core", type: "factual", centrality: HIGH, dependsOn: ["SC-A"]
-   → This is THE claim readers care about - is it TRUE?
-
-**WHY THIS MATTERS:**
-- SC-A (attribution) might be TRUE (yes, he said it)
-- SC-B (content) might be FALSE (what he said is wrong)
-- If you only verify SC-A, you're NOT verifying the article's actual claims!
-- The article's credibility depends on SC-B, not SC-A.
-
-### Claim Dependencies (dependsOn):
-Core claims often DEPEND on attribution/source/timing claims being true.
-
-EXAMPLE: "An agency director claimed in an internal memo that 10 people were harmed by Product X"
-- SC1 (attribution): "Person X is agency director" → claimRole: "attribution", dependsOn: []
-- SC2 (source): "An internal memo exists making claims about harms" → claimRole: "source", dependsOn: ["SC1"]
-- SC3 (core): "At least 10 people were harmed by Product X" → claimRole: "core", dependsOn: ["SC2"], isCentral: true
-
-If SC2 is FALSE (no such memo exists), then SC3 has NO evidential basis from this source.
-
-### THREE-ATTRIBUTE CLAIM ASSESSMENT
-
-For EACH claim, assess these three attributes (high/medium/low):
-
-**1. checkWorthiness** - Is it a factual assertion a reader would challenge?
-- HIGH: Specific factual claim that can be verified, readers would want proof
-- MEDIUM: Somewhat verifiable but less likely to be challenged
-- LOW: Pure opinion with no factual component, or not independently verifiable
-
-NOTE: Broad institutional claims ARE verifiable (checkWorthiness: HIGH):
-- "The regulator has acted on weak evidence in the past" → Can check documented cases, audits, expert analyses
-- "The government has lied about X" → Can check historical record, declassified documents
-- "Company X has a history of fraud" → Can check court records, SEC filings, news archives
-These are not opinions - they're historical assertions that can be verified.
-
-**2. harmPotential** - Does it impact high-stakes areas?
-- HIGH: Public health, safety, democratic integrity, financial markets, legal outcomes
-- MEDIUM: Affects specific groups or has moderate societal impact
-- LOW: Limited impact, affects few people, low stakes
-
-IMPORTANT: harmPotential is CLAIM-LEVEL, not topic-level.
-- Do NOT set harmPotential=HIGH just because the overall topic is “high risk” or because other claims are high-stakes.
-- Attribution/source/timing/background claims are usually NOT harmPotential=HIGH even in high-stakes topics.
-- Reserve harmPotential=HIGH for claims where being wrong could plausibly cause material real-world harm (directly, not just “credibility harm”).
-
-**3. centrality** - Is it pivotal to the author's argument?
-- HIGH: Core assertion the argument depends on; removing it collapses the narrative
-- MEDIUM: Supports the main argument but not essential
-- LOW: Peripheral detail, context, or attribution
-
-**CRITICAL: Source/Attribution claims are NEVER centrality HIGH**
-Claims with claimRole "source", "attribution", or "timing" should ALWAYS have centrality: LOW
-- "An internal email exists" → centrality: LOW (source claim, not the argument itself)
-- "Dr. X is director of Y" → centrality: LOW (attribution, establishes who said it)
-- "The statement was made in November" → centrality: LOW (timing detail)
-- "The methodology used is scientifically valid" → centrality: LOW (meta-claim about analysis, not the subject)
-- "The study followed ISO standards" → centrality: LOW (methodology validation, not the main claim)
-- "The data collection methods were appropriate" → centrality: LOW (methodological, not substantive)
-
-Only CORE claims (claimRole: "core") can have centrality: HIGH
-- The existence of a document is not the argument - what the document SAYS is the argument
-- Who said something is not the argument - what they SAID is the argument
-
-**CRITICAL: Policy/Action claims that DEPEND on source claims are NOT central**
-If a policy claim depends on a source claim being true, it inherits LOW centrality:
-- "The regulator will impose stricter rules" (depends on memo/email existing) → centrality: LOW
-- "Company will lay off 1000 workers" (depends on memo existing) → centrality: LOW
-These are CONDITIONAL claims - they're only meaningful IF the source exists.
-
-The CENTRAL claims are the **factual assertions about real-world impact**:
-- "At least 10 people were harmed by Product X" → centrality: HIGH (factual impact claim)
-- "Past agency processes were based on weak evidence" → centrality: HIGH (evaluative but verifiable)
-
-**RULE: When multiple claims compete for centrality, ask: "Which claim, if false, would completely undermine the article's credibility?"**
-- If "The regulator will impose stricter rules" is false → article is wrong about policy
-- If "At least 10 people were harmed by Product X" is false → article is spreading serious misinformation
-The second is MORE CENTRAL because it has greater real-world harm potential.
-
-**isCentral = true** if centrality is "high"
-- harmPotential affects risk tier and warning display, NOT centrality
-- checkWorthiness does NOT affect isCentral (a high checkWorthiness alone doesn't make it central)
-- However, if checkWorthiness is "low", the claim should NOT be investigated or displayed
-- Attribution, source, and timing claims should typically have centrality = "low" (not central to the argument)
-- Only core evaluative claims that are the main thesis should have centrality = "high"
-
-IMPORTANT: riskTier is ANALYSIS-LEVEL only.
-- riskTier must NOT be used as a shortcut to set claim-level harmPotential/centrality.
-- You may set riskTier based on the overall analysis, but claim-level harmPotential/centrality must be justified by each claim's content.
-
-**CRITICAL HEURISTIC for centrality = "high"**:
-Ask yourself: "Does this claim DIRECTLY address the user's primary thesis?"
-→ If yes, it's central. If it's supporting evidence or background, it's not.
-
-**CRITICAL: Centrality calibration (prevent over-centrality + redundancy)**
-- There should be **AT MOST 1-2 HIGH centrality claims per AnalysisContext**.
-- If multiple claims seem equally important, most should be **MEDIUM**, not HIGH.
-- Do NOT create multiple near-duplicate HIGH centrality claims that all mean "the process was fair/proper" in slightly different wording. Prefer ONE canonical claim.
-- Claims about specific outcomes/penalties/consequences are usually MEDIUM unless the user's thesis is specifically about that outcome.
-
-**EXPECT 3-6 CLAIMS** in most analyses (hard cap: do not output more than 8). The number depends on the thesis type:
-- Simple factual claim: 2-3 central claims (break down into testable parts)
-- Comparative claim ("X vs Y"): 3-5 central claims (one per major aspect of comparison)
-- Compound statement: 4-6 central claims (each atomic assertion separately)
-- Multi-faceted thesis: 3-5 central claims (one per facet)
-
-**CRITICAL: BREAK DOWN COMPOUND STATEMENTS INTO ATOMIC CLAIMS**
-
-⛔ **FORBIDDEN**: Do NOT synthesize or combine multiple assertions into a single claim
-⛔ **FORBIDDEN**: Do NOT create claims with "and", "which", or multiple verbs
-⛔ **FORBIDDEN**: Do NOT paraphrase the entire input as one claim
-
-Each atomic claim should make ONE testable assertion that can be verified independently.
-
-**DECOMPOSITION RULES** (apply to ANY compound input):
-1. Count the number of distinct verbs/assertions in the input
-2. Each verb/assertion becomes its OWN claim
-3. Characterizations (adjectives like "unfair", "illegal", "largest") become separate claims
-4. Magnitude/superlative claims ("biggest", "first", "most") become separate claims
-
-**Pattern Recognition**:
-- "X did A and B" → 2 claims (one for A, one for B)
-- "X did Y through method Z" → 2 claims (action vs method characterization)
-- "Event E happened and was [adjective]" → 2 claims (event vs characterization)
-- "This was the [superlative] example of category C" → 2 claims (event vs magnitude)
-- Clauses joined by "and", "which", "that", "while" → separate claims
-
-**Minimum Output**: For inputs with 3+ distinct assertions, generate 3+ separate claims.
-
-Only assign centrality: "high" when the claim:
-1. DIRECTLY addresses the user's thesis, AND
-2. Represents a distinct aspect that needs independent verification
-
-**Examples of NON-central claims (centrality = "low" or "medium")**:
-- ❌ "Source X stated Y" (attribution - NOT central)
-- ❌ "Event happened on date Z" (timing/background - NOT central)
-- ❌ "Document was published by institution W" (source verification - NOT central)
-- ❌ "Person A has credentials B" (background context - NOT central)
-- ❌ "Study used methodology M" (methodological detail - NOT central unless methodology IS the main claim)
-- ❌ "The [analysis method] is valid/accurate/complete" (methodology validation - NOT central, the claim is about the SUBJECT, not the method)
-- ❌ "The study/analysis framework is appropriate" (meta-analysis about methods - NOT central)
-- ❌ "The analysis excludes/includes factor X" (methodological boundary - NOT central)
-- ❌ Supporting evidence for the main thesis (evidence - NOT central, only the thesis itself is central)
-
-**CRITICAL FOR COMPARATIVE CLAIMS**: If the main claim is "X is better/more/faster than Y", then:
-- ✓ CENTRAL: "X performs better than Y in aspect A" (direct comparison)
-- ✓ CENTRAL: "X performs better than Y in aspect B" (another direct comparison)
-- ✓ CENTRAL: "Expert consensus supports X over Y" (direct evaluative claim)
-- ❌ NOT CENTRAL: "The methodology for comparing X and Y is valid" (meta-analysis)
-- ❌ NOT CENTRAL: "The analysis framework is appropriate" (meta-analysis)
-- ❌ NOT CENTRAL: "The comparison includes/excludes certain factors" (methodological boundary)
-
-**IMPORTANT**: For comparative claims, EACH distinct aspect of the comparison that directly addresses the thesis should have centrality="high". For "Technology A vs Technology B efficiency", claims about end-to-end efficiency, production efficiency, AND expert consensus can all be central because they address the thesis from different angles.
-
-**Examples of CENTRAL claims (centrality = "high")**:
-- ✓ "The trial was fair and impartial" (PRIMARY evaluative thesis)
-- ✓ "The product causes serious side effects" (PRIMARY factual thesis)
-- ✓ "The policy violated constitutional rights" (PRIMARY legal thesis)
-
-**Rule of thumb**: In an analysis of "Was X fair?", only the fairness conclusion itself is central. All supporting evidence items, sources, dates, and background are NOT central.
-
-NOT "high" for:
-- Supporting evidence (even if important)
-- Attribution claims (who said what)
-- Source verification (does document exist)
-- Background context
-- Peripheral details
-
-## THESIS RELEVANCE (thesisRelevance field) - NEW v2.6.31
-
-**thesisRelevance** determines whether a claim should CONTRIBUTE to the overall verdict:
-
-- **"direct"**: The claim DIRECTLY tests part of the main thesis
-  → These claims contribute to the verdict calculation
-
-- **"tangential"**: Related context but does NOT test the thesis
-  → These claims are displayed but EXCLUDED from verdict calculation
-
-- **"irrelevant"**: Not meaningfully about the input’s specific topic (noise)
-  → These claims should be dropped and not shown
-
-**CRITICAL DISTINCTION**:
-- "Was the trial fair?" → claims about the trial's fairness = "direct"
-- "Was the trial fair?" → claims about foreign reactions/sanctions to the trial = "tangential"
-- The thesis is about the TRIAL, not about how others REACTED to it
-
-**Examples for input "The court judgment was fair and based on applicable law"**:
-
-✓ thesisRelevance="direct" (evaluates the THESIS):
-- "The process followed proper procedures" → directly tests the claim
-- "The evidence was properly evaluated" → directly tests the claim
-- "Applicable standards were applied" → directly tests the claim
-- "The outcome was proportionate" → directly tests the claim
-- "Proper authority was established" → directly tests the claim
-
-✗ thesisRelevance="tangential" (does NOT evaluate the thesis):
-- "Foreign trade restrictions were proportionate" → reaction, not the judgment itself
-- "Foreign sanctions were justified" → reaction, not the judgment itself
-- "International relations deteriorated" → consequence, not the judgment itself
-- "Tariffs imposed by an external government were proportionate" → foreign reaction, NOT the judgment
-- "Sanctions imposed by an external government were justified" → foreign reaction, NOT the judgment
-- "Other countries condemned the proceedings" → foreign reaction, NOT the judgment
-
-**CRITICAL - FOREIGN GOVERNMENT RESPONSES ARE ALWAYS TANGENTIAL**:
-When the thesis is about whether a domestic legal proceeding was fair/lawful, claims about
-how foreign governments responded (tariffs, sanctions, diplomatic statements, condemnations)
-are TANGENTIAL - they are reactions TO the proceeding, not evaluations OF the proceeding.
-Even if a foreign government claims the proceeding was unfair, that claim is about the
-foreign government's RESPONSE, not about the proceeding's actual fairness.
-
-**Rule**: If you can rephrase the claim as "The thesis is true/false BECAUSE [claim]" = direct
-          If the claim is "BECAUSE the thesis is true/false, [consequence]" = tangential
-          If the claim is "Foreign entity X responded to the event by doing Y" = tangential
-
-**FILTERING RULE**: Claims with checkWorthiness = "low" should be excluded from investigation
-
-**Examples:**
-
-"At least 10 people were harmed by Product X"
-→ checkWorthiness: HIGH (specific factual claim, readers want proof)
-→ harmPotential: HIGH (public safety)
-→ centrality: HIGH (core assertion of the article) ← HIGH
-→ isCentral: TRUE (centrality is HIGH)
-
-"The regulator will require stricter testing for all products"
-→ checkWorthiness: HIGH (policy claim that can be verified)
-→ harmPotential: HIGH (affects safety/compliance, public impact)
-→ centrality: HIGH (major policy change claim) ← HIGH
-→ isCentral: TRUE (centrality is HIGH)
-
-"Person X is the agency director"
-→ claimRole: attribution
-→ checkWorthiness: MEDIUM (verifiable but routine)
-→ harmPotential: LOW (credential, not harmful if wrong)
-→ centrality: LOW (attribution, not the main point)
-→ isCentral: FALSE (centrality is not HIGH)
-
-"An internal memo exists stating the regulator will impose stricter rules"
-→ claimRole: source (establishes document existence)
-→ checkWorthiness: HIGH (verifiable - does such email exist?)
-→ harmPotential: MEDIUM (affects credibility of subsequent claims)
-→ centrality: LOW ← MUST BE LOW - this is a source claim, not the core argument!
-→ isCentral: FALSE
-→ NOTE: Even though this claim is important as a prerequisite, it's NOT central to the ARGUMENT.
-→ The argument is about the policy change, not about memo existence.
-
-"The email was sent on November 28"
-→ checkWorthiness: LOW (timing detail) ← LOW = EXCLUDE FROM INVESTIGATION
-→ harmPotential: LOW (no significant impact)
-→ centrality: LOW (peripheral detail)
-→ isCentral: FALSE
-→ NOTE: This claim should NOT be investigated or displayed (checkWorthiness is LOW)
-
-"The regulator has acted on weak and misleading evidence in the past"
-→ checkWorthiness: HIGH (historical claim, verifiable via documented cases, audits, expert analyses)
-→ harmPotential: HIGH (public safety, regulatory trust) ← HIGH
-→ centrality: MEDIUM (supports main argument but not the core claim)
-→ isCentral: FALSE (centrality is not HIGH - supporting evidence, not the core thesis)
-
-"Expert says the policy change is controversial"
-→ checkWorthiness: HIGH (verifiable who said what)
-→ harmPotential: MEDIUM (affects policy debate)
-→ centrality: MEDIUM (contextual, not core)
-→ isCentral: FALSE (neither harmPotential nor centrality is HIGH)
-
-### EXAMPLE: Attribution vs Evaluative Content Split
-
-Original text: "A spokesperson criticized agency processes as based on weak evidence"
-
-CORRECT claim extraction (2 separate claims):
-
-SC5: "A spokesperson has publicly criticized past agency processes"
-→ type: factual (did he criticize? YES/NO)
-→ claimRole: attribution
-→ checkWorthiness: MEDIUM (routine verification)
-→ harmPotential: LOW (just confirms he said something)
-→ centrality: LOW (attribution only)
-→ isCentral: FALSE
-→ dependsOn: []
-
-SC6: "Past agency processes were based on weak and misleading evidence"
-→ type: evaluative (is this assessment accurate?)
-→ claimRole: core
-→ checkWorthiness: HIGH (historical claim about the agency, verifiable)
-→ harmPotential: HIGH (public health, regulatory trust)
-→ centrality: HIGH (core evaluative assertion)
-→ isCentral: TRUE
-→ dependsOn: ["SC5"] (claim originates from the spokesperson's criticism)
-
-NOTE: SC5 may be TRUE (he did criticize) while SC6 may fall in the UNVERIFIED or LEANING-TRUE bands (43-71%).
-The system must verify BOTH: (1) did he say it? AND (2) is what he said accurate?
-
-### Dependencies:
-1. List dependencies in dependsOn array (claim IDs that must be true for this claim to matter)
-2. Core claims typically depend on attribution claims
-
-## COUNTER-CLAIM DETECTION (isCounterClaim field) - v2.8.4
-
-For EACH sub-claim, determine if it tests the OPPOSITE of the main thesis:
-
-**isCounterClaim = true** when the claim evaluates the OPPOSITE position:
-- Thesis: "X is fair" → Claim: "X violated due process" (tests unfairness) → **isCounterClaim: true**
-- Thesis: "A is more efficient than B" → Claim: "B outperforms A" (tests opposite) → **isCounterClaim: true**
-- Thesis: "The decision was justified" → Claim: "The decision lacked basis" (tests unjustified) → **isCounterClaim: true**
-
-**isCounterClaim = false** when the claim is thesis-aligned:
-- Thesis: "X is fair" → Claim: "X followed procedures" (supports fairness) → **isCounterClaim: false**
-- Thesis: "A is more efficient than B" → Claim: "A has higher output" (supports thesis) → **isCounterClaim: false**
-- Thesis: "The decision was justified" → Claim: "Evidence supported the decision" → **isCounterClaim: false**
-
-**WHY THIS MATTERS**: Counter-claims have their verdicts INVERTED during aggregation.
-If a counter-claim is rated TRUE (85%), it means the OPPOSITE of the thesis is true,
-so it contributes as FALSE (15%) to the overall verdict.
-
-## MULTI-CONTEXT DETECTION
-
-Look for multiple distinct contexts (AnalysisContexts) that should be analyzed separately.
-**Definition**: A "Context" is a bounded analytical frame with defined boundaries, methodology, temporal period, and subject matter.
-
-If the input mixes timelines, distinct contexts, or different analytical frames, split them.
-
-### IMPORTANT: What is a VALID distinct context
-- Separate formal proceedings or processes
-- Distinct temporal events or phases
-- Different institutional processes
-- Different analytical methodologies or boundaries
-- Different measurement boundaries
-- Different regulatory or governance frameworks
-
-### IMPORTANT: What is NOT a distinct context
-- Different national/political perspectives on the SAME event (e.g., "Country A view" vs "Country B view")
-- Different stakeholder viewpoints on a single topic
-- Contested interpretations of the same event
-- Pro vs con arguments about the same topic
-- Claims and counter-claims about one event
-
-**Only create separate contexts for GENUINELY DISTINCT events, proceedings, or analytical frames - not for different perspectives on the same event.**
-
-### GENERIC EXAMPLES - MUST DETECT MULTIPLE CONTEXTS:
-
-**Legal Domain:**
-1. **CTX_COURT_A**: Legal proceeding A
-   - subject: Case A allegations
-   - temporal: 2024
-   - status: concluded
-   - outcome: Ruling issued
-   - assessedStatement: (what is being assessed in this context)
-   - metadata: { institution: "Court A", charges: [...], decisionMakers: [...] }
-
-2. **CTX_COURT_B**: Legal proceeding B
-   - subject: Case B allegations
-   - temporal: 2024
-   - status: ongoing
-   - outcome: Unresolved
-   - assessedStatement: (what is being assessed in this context)
-   - metadata: { institution: "Court B", charges: [...], decisionMakers: [...] }
-
-**Scientific Domain:**
-1. **CTX_BOUNDARY_A**: Narrow boundary analysis
-   - subject: Performance/efficiency within a limited boundary
-   - temporal: 2024
-   - status: concluded
-   - outcome: Example numeric estimate
-   - assessedStatement: (what is being assessed in this context)
-   - metadata: { methodology: "Standard X", boundaries: "Narrow boundary", geographic: "Region A" }
-
-2. **CTX_BOUNDARY_B**: Broad boundary analysis
-   - subject: Performance/efficiency across a broader boundary
-   - temporal: 2024
-   - status: concluded
-   - outcome: Example numeric estimate
-   - assessedStatement: (what is being assessed in this context)
-   - metadata: { methodology: "Standard Y", boundaries: "Broad boundary", geographic: "Region A" }
-
-**CRITICAL - assessedStatement field (v2.6.39)**:
-For each AnalysisContext, include an assessedStatement that describes what you are assessing in this context.
-- The assessedStatement MUST describe what is being evaluated in THIS specific context
-- The Assessment summary MUST summarize the assessment OF the assessedStatement
-- These two fields must be consistent: Assessment answers/evaluates the assessedStatement
-
-**CRITICAL: metadata.decisionMakers field**
-- Extract key decision-makers or primary actors only when they are explicitly mentioned in the input or evidence.
-- Do NOT rely on background knowledge for names/roles (avoid hallucination).
-
-**CRITICAL: Comparative claims and boundary sensitivity (MANDATORY)**
-If the input compares alternatives (e.g., "X is better/more efficient than Y", "X causes more harm than Y"):
-- Ask: "Could the answer change depending on the measurement boundary, phase, or system definition?"
-- If yes (or plausibly yes), you MUST create **at least TWO** AnalysisContexts representing distinct boundaries (e.g., end-to-end vs use-phase only; upstream vs downstream; lifecycle vs operational).
-- Set requiresSeparateAnalysis=true.
-
-**MANDATORY for efficiency/performance comparisons**
-If the user's claim compares **efficiency / performance / effectiveness / impact** between alternatives:
-- You MUST create **at least TWO** AnalysisContexts representing different measurement boundaries/phases (same metric, different boundary), even if the input does not explicitly name the boundaries.
-- Set requiresSeparateAnalysis=true.
-This requirement OVERRIDES the general heuristic of using fewer contexts when in doubt.
-
-**CRITICAL: Comparative contexts must be SAME-METRIC boundary variants (MANDATORY)**
-When creating multiple AnalysisContexts for a comparison claim:
-- ALL contexts MUST evaluate the SAME metric/dimension stated in the user's claim.
-- Contexts may vary the measurement boundary/phase/system definition, but MUST NOT shift to unrelated dimensions.
-- DO NOT create contexts for other dimensions (e.g., cost, environmental impact, popularity) unless the user's claim explicitly includes them.
-
-Set requiresSeparateAnalysis = true when multiple contexts are detected.
-
-## FOR ANY INPUT STYLE
-
-- **impliedClaim**: What claim would "YES" confirm? Must be AFFIRMATIVE.
-  - CORRECT: "The process was fair and followed applicable standards"
-  - WRONG: "may or may not have been fair"
-
-- **subClaims**: Generate sub-claims that need to be verified to address the thesis.
-
-  ⚠️ **MINIMUM CLAIM COUNT**: Generate AT LEAST 3-4 separate claims for any non-trivial input
-  ⚠️ **IF YOU GENERATE ONLY 1 CLAIM, YOU ARE DOING IT WRONG** - go back and decompose!
-
-  - **MANDATORY: Break compound statements into ATOMIC claims** (each testing ONE assertion)
-  - Each atomic claim must be independently verifiable with its own evidence
-  - **ALL core atomic claims should have thesisRelevance="direct"** since they each test part of the input
-  - For multi-context cases, ensure meaningful coverage across all contexts (set contextId appropriately)
-  - **DECOMPOSE COMPOUND CLAIMS**: Split claims that combine multiple assertions into separate claims:
-    - Each distinct factual assertion becomes a separate claim with claimRole="core"
-    - Multiple core claims can have isCentral=true if they test different parts of the thesis
-    - Separate source/attribution claims as non-central (isCentral: false, claimRole: "source" or "attribution")
-    - Use dependsOn to link claims to their prerequisites
-  - For each AnalysisContext, consider claims covering:
-    - Standards application (were relevant rules/standards/methods applied correctly?)
-    - Process integrity (were appropriate procedures followed?)
-    - Evidence basis (were conclusions based on evidence?)
-    - Decision-maker independence (any conflicts of interest?)
-    - Outcome proportionality/impact (was the outcome proportionate and consistent with similar situations?)
-  - **CRITICAL: DECOMPOSE SPECIFIC OUTCOMES**: When specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban, ineligibility duration), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate for the context.
-  - **CRITICAL: DO NOT SYNTHESIZE MULTIPLE CLAIMS INTO ONE** - each distinct assertion should remain separate for independent verification
-
-- **researchQueries**: Generate specific queries to research, including:
-  - Potential conflicts of interest for key decision-makers
-  - Comparisons to similar cases, phases, or precedents
-  - Criticisms and rebuttals with documented evidence
-
-## KEY FACTORS (Emergent Decomposition)
-
-**IMPORTANT**: KeyFactors are OPTIONAL and EMERGENT - only generate them if the thesis naturally decomposes into distinct evaluation dimensions.
-
-${keyFactorHints && keyFactorHints.length > 0
-  ? `\n**OPTIONAL HINTS** (you may consider these, but are not required to use them):
-The following KeyFactor dimensions have been suggested as potentially relevant. Use them only if they genuinely apply to this thesis. If they don't fit, ignore them and generate factors that actually match the thesis:
-${keyFactorHints.map((hint, i) => `- ${hint.factor} (${hint.category}): "${hint.evaluationCriteria}"`).join("\n")}`
-  : ""}
-
-**WHEN TO GENERATE**: Create keyFactors array when the thesis involves:
-- Complex multi-dimensional evaluation (e.g., fairness, legitimacy, effectiveness)
-- Topics where truth depends on multiple independent criteria
-- Situations requiring structured assessment beyond simple yes/no
-
-**WHEN NOT TO GENERATE**: Leave keyFactors as empty array [] for:
-- Simple factual claims ("Did X happen?")
-- Single-dimension claims ("Is Y true?")
-- Straightforward verifications
-
-**HOW TO GENERATE**: Break down the thesis into 2-5 fundamental queries that must ALL be answered "yes" for the thesis to be true.
-
-**FORMAT**:
-- **id**: Unique identifier (KF1, KF2, etc.)
-- **evaluationCriteria**: The evaluation criteria (e.g., "Was due process followed?")
-- **factor**: SHORT ABSTRACT LABEL (2-5 words ONLY, e.g., "Due Process", "Expert Consensus", "Energy Efficiency")
-- **category**: Choose from: "procedural", "evidential", "methodological", "factual", "evaluative"
-
-**CRITICAL: factor MUST be abstract, NOT claim text**:
-- GOOD: "Energy efficiency comparison", "Expert consensus", "Procedural fairness"
-- BAD: "A professor claims Technology A needs 3x more input than Technology B" (TOO SPECIFIC)
-- BAD: "Multiple experts say Option A is more efficient" (CONTAINS ATTRIBUTION)
-- BAD: "Technology A is more efficient than Technology B" (THIS IS A CLAIM)
-
-KeyFactors are CATEGORIES for evaluation, NOT the claims themselves. Specific claims belong in subClaims array.
-
-**EXAMPLES**:
-
-For "The trial was fair."
-[
-  {
-    "id": "KF1",
-    "evaluationCriteria": "Were proper legal procedures and due process followed throughout the trial?",
-    "factor": "Procedural Fairness",
-    "category": "procedural"
-  },
-  {
-    "id": "KF2",
-    "evaluationCriteria": "Were decisions based on documented evidence rather than assumptions or bias?",
-    "factor": "Evidence Basis",
-    "category": "evidential"
-  },
-  {
-    "id": "KF3",
-    "evaluationCriteria": "Were the judges and decision-makers free from conflicts of interest?",
-    "factor": "Impartiality",
-    "category": "procedural"
+  const renderedUnderstandSystem = await loadAndRenderSection("orchestrated", "UNDERSTAND", {
+    currentDate: currentDateStr,
+    currentDateReadable,
+    contextHint: "",
+    contextDetectionHint: "",
+    keyFactorHints: "",
+  });
+  const renderedUnderstandUser = await loadAndRenderSection("orchestrated", "UNDERSTAND_USER", {
+    ANALYSIS_INPUT_FOR_LLM: analysisInputForLLM,
+  });
+  if (!renderedUnderstandSystem?.content?.trim() || !renderedUnderstandUser?.content?.trim()) {
+    throw new Error("Missing UNDERSTAND prompt sections in orchestrated prompt profile");
   }
-]
-
-For "This product causes a specific harm."
-[
-  {
-    "id": "KF1",
-    "evaluationCriteria": "Is there documented evidence of a plausible causal mechanism linking the product to the claimed harm?",
-    "factor": "Causal Mechanism",
-    "category": "factual"
-  },
-  {
-    "id": "KF2",
-    "evaluationCriteria": "Do controlled studies and high-quality analyses support this causal relationship?",
-    "factor": "Controlled Evidence",
-    "category": "evidential"
-  },
-  {
-    "id": "KF3",
-    "evaluationCriteria": "What does the relevant expert community conclude about this relationship?",
-    "factor": "Expert Consensus",
-    "category": "evaluative"
-  }
-]
-**CLAIM-TO-FACTOR MAPPING**: If you generate keyFactors, map each claim to the most relevant factor using keyFactorId. Claims can only map to one factor. Use empty string "" for claims that don't address any specific factor.
-
-**COMPARATIVE CLAIM GUIDANCE (evidence-gated)**:
-For comparative efficiency/performance/effectiveness claims:
-- Use 2+ \`analysisContexts\` with \`requiresSeparateAnalysis=true\` ONLY when evidence indicates distinct analytical frames (e.g., different boundaries, methodologies, institutions, jurisdictions, or time windows).
-- If evidence stays within one consistent analytical frame, keep exactly 1 \`analysisContext\` and set \`requiresSeparateAnalysis=false\`.
-
-### FINAL OUTPUT CHECKLIST (MANDATORY)
-- If you output 2+ \`analysisContexts\`: did you set \`requiresSeparateAnalysis=true\` and assign each core claim a non-empty \`contextId\`?
-- If you output 1 \`analysisContext\`: did you avoid artificial topic-dimension splits that are not evidence-backed?
-- Did you avoid adding off-thesis dimensions (do not invent unrelated metrics that are not in the user's claim)?`;
-
-// Use normalized analysisInput (yes/no→statement) for consistent LLM analysis
-  const userPrompt = `Analyze for verification:\n\n"${analysisInputForLLM}"`;
+  const systemPrompt = renderedUnderstandSystem.content;
+  const userPrompt = renderedUnderstandUser.content;
 
   function extractFirstJsonObject(text: string): string | null {
     const start = text.indexOf("{");
@@ -5397,7 +4469,13 @@ For comparative efficiency/performance/effectiveness claims:
 
   const tryJsonTextFallback = async () => {
     debugLog("understandClaim: FALLBACK JSON TEXT ATTEMPT");
-    const system = `Return ONLY a single JSON object matching the expected schema.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap in code fences.\n- Use empty strings \"\" and empty arrays [] when unknown.\n\nIMPORTANT TERMINOLOGY:\n- backgroundDetails is the broader narrative frame or topic of the input (descriptive only).\n- analysisContexts represents AnalysisContexts (top-level bounded analytical frames).\n- EvidenceScope is per-evidence source metadata (do NOT confuse with AnalysisContext).\n\nThe JSON object MUST contain at least these top-level keys:\n- detectedInputType\n- analysisIntent\n- originalInputDisplay\n- impliedClaim\n- analysisContexts\n- requiresSeparateAnalysis\n- backgroundDetails\n- mainThesis\n- articleThesis\n- subClaims\n- distinctEvents\n- legalFrameworks\n- researchQueries\n- riskTier\n- keyFactors`;
+    const renderedSystem = await loadAndRenderSection("orchestrated", "UNDERSTAND_JSON_FALLBACK_SYSTEM", {});
+    const renderedJsonOnlyAppend = await loadAndRenderSection("orchestrated", "JSON_ONLY_USER_APPEND", {});
+    if (!renderedSystem?.content?.trim() || !renderedJsonOnlyAppend?.content?.trim()) {
+      throw new Error(
+        "Missing UNDERSTAND_JSON_FALLBACK_SYSTEM or JSON_ONLY_USER_APPEND prompt section in orchestrated prompt profile",
+      );
+    }
     const llmTimeoutMsRaw =
       pipelineConfig?.understandLlmTimeoutMs ??
       DEFAULT_PIPELINE_CONFIG.understandLlmTimeoutMs ??
@@ -5410,8 +4488,8 @@ For comparative efficiency/performance/effectiveness claims:
       generateText({
       model,
       messages: [
-        { role: "system", content: system },
-        { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: `${userPrompt}\n\n${renderedJsonOnlyAppend.content}` },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       }),
@@ -5442,11 +4520,11 @@ For comparative efficiency/performance/effectiveness claims:
 
   const handleApiKeyOrQuota = (errMsg: string) => {
     if (errMsg.includes("credit balance is too low") || errMsg.includes("insufficient_quota")) {
-      console.error("[Analyzer] ❌ ANTHROPIC API CREDITS EXHAUSTED - Please add credits at https://console.anthropic.com/settings/plans");
+      console.error("[Analyzer] âŒ ANTHROPIC API CREDITS EXHAUSTED - Please add credits at https://console.anthropic.com/settings/plans");
       throw new Error("Anthropic API credits exhausted. Please add credits or switch provider in UCM pipeline config (llmProvider).");
     }
     if (errMsg.includes("invalid_api_key") || errMsg.includes("401")) {
-      console.error("[Analyzer] ❌ INVALID API KEY - Check your ANTHROPIC_API_KEY or OPENAI_API_KEY");
+      console.error("[Analyzer] âŒ INVALID API KEY - Check your ANTHROPIC_API_KEY or OPENAI_API_KEY");
       throw new Error("Invalid API key. Please check your LLM provider API key.");
     }
   };
@@ -5465,43 +4543,12 @@ For comparative efficiency/performance/effectiveness claims:
 
   if (!parsed) {
     // Retry once with a smaller, schema-focused prompt (providers sometimes fail on long prompts + strict schemas).
-    // v2.6.30: Changed detectedInputType to "claim | article" - yes/no inputs are normalized to claims at entry point
-    const retryPrompt = `You are a verification analyst.
-
-Return ONLY a single JSON object that EXACTLY matches the expected schema.
-- No markdown, no prose, no code fences.
-- Every required field must exist.
-- Use empty strings "" and empty arrays [] when unknown.
-
-CRITICAL: MULTI-ANALYSIS-CONTEXT DETECTION
-- Detect whether the input mixes multiple distinct AnalysisContexts (e.g., different events, methodologies, institutions, timelines, or processes).
-- If there are 2+ distinct AnalysisContexts, put them in analysisContexts (one per AnalysisContext) and set requiresSeparateAnalysis=true.
-- If there is only 1 AnalysisContext, analysisContexts may contain 0 or 1 item, and requiresSeparateAnalysis=false.
-
-NOT DISTINCT ANALYSIS CONTEXTS:
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate AnalysisContexts by themselves.
-- Pro vs con viewpoints are NOT AnalysisContexts.
-
-INCOMPATIBILITY TEST: Split into separate AnalysisContexts ONLY IF combining verdicts would be MISLEADING because they evaluate fundamentally different things (e.g., different formal authorities, different measurement boundaries). Only split if each AnalysisContext has supporting evidence.
-
-ANALYSIS CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
-- Every AnalysisContext MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include AnalysisContexts from unrelated domains just because they share a general category
-- When in doubt, use fewer AnalysisContexts rather than including marginally relevant ones
-- An AnalysisContext with zero relevant claims/evidence should NOT exist
-
-ENUM RULES
-- detectedInputType must be exactly one of: claim | article
-- analysisIntent must be exactly one of: verification | exploration | comparison | none
-- riskTier must be exactly one of: A | B | C
-
-CLAIMS
-- Populate subClaims with 3–8 verifiable sub-claims when possible.
-- Every subClaim must include ALL required fields and use allowed enum values.
-
-Now analyze the input and output JSON only.`;
+    const renderedRetryPrompt = await loadAndRenderSection("orchestrated", "UNDERSTAND_STRUCTURED_RETRY_SYSTEM", {});
+    if (!renderedRetryPrompt?.content?.trim()) {
+      throw new Error("Missing UNDERSTAND_STRUCTURED_RETRY_SYSTEM prompt section in orchestrated prompt profile");
+    }
     try {
-      parsed = await tryStructured(retryPrompt, "structured-2");
+      parsed = await tryStructured(renderedRetryPrompt.content, "structured-2");
     } catch (err: any) {
       const errMsg = err?.message || String(err);
       debugLog("understandClaim: FAILED (structured-2)", errMsg);
@@ -5631,9 +4678,9 @@ Now analyze the input and output JSON only.`;
   // - deterministic mode is enabled (reproducible runs need consistent context splits)
   // - input is comparative-like (boundary-sensitive, e.g., "X before vs after Y")
   // In non-deterministic/exploratory runs, let the model + evidence-based refinement decide contexts.
-  // v2.9: Use cached inputClassification if available, fall back to inline heuristics
-  const isComparativeInput = inputClassification?.isComparative ?? isComparativeLikeText(analysisInput);
-  const isCompoundInput = inputClassification?.isCompound ?? isCompoundLikeText(analysisInput);
+  // Use LLM classification only; no deterministic linguistic fallback.
+  const isComparativeInput = inputClassification?.isComparative ?? false;
+  const isCompoundInput = inputClassification?.isCompound ?? false;
 
   const shouldForceSeedContexts =
     deterministic === true &&
@@ -5745,17 +4792,13 @@ Now analyze the input and output JSON only.`;
   // Post-processing: Ensure keyEntities are populated for each claim
   for (const claim of parsed.subClaims) {
     if (!claim.keyEntities || claim.keyEntities.length === 0) {
-      // Extract key terms from claim text
-      const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "and", "but", "if", "or", "because", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
-      const words = claim.text
+      // Structural fallback only (language-agnostic): unique normalized tokens.
+      const words = String(claim.text || "")
         .toLowerCase()
-        .replace(/[^\w\s]/g, " ")
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
         .split(/\s+/)
-        .filter((word: string) => word.length > 2 && !stopWords.has(word));
-      // Take unique words, prioritize capitalized words from original text
-      const capitalizedWords = claim.text
-        .match(/[A-Z][a-z]+/g) || [];
-      const uniqueTerms = [...new Set([...capitalizedWords, ...words])].slice(0, 5);
+        .filter((word: string) => word.length > 2);
+      const uniqueTerms = [...new Set(words)].slice(0, 5);
       claim.keyEntities = uniqueTerms;
       console.log(`[Analyzer] Auto-populated keyEntities for claim "${claim.id}": ${uniqueTerms.join(", ")}`);
     }
@@ -5804,33 +4847,7 @@ Now analyze the input and output JSON only.`;
     }
   }
 
-  // Heuristic fallback: if we still have too few claims for non-trivial inputs, derive atomic claims
-  // directly from the input text to avoid collapsing complex statements into a single claim.
-  if (!isShortSimpleInput && (parsed.subClaims?.length || 0) < MIN_TOTAL_CLAIMS_WITH_SINGLE_CORE) {
-    const contexts = parsed.analysisContexts || [];
-    const singleContextId = contexts.length === 1 ? contexts[0].id : "";
-    const candidateSources = [
-      parsed.originalInputDisplay,
-      analysisInput,
-      parsed.articleThesis,
-      parsed.impliedClaim,
-    ]
-      .filter((value) => typeof value === "string" && value.trim().length > 0)
-      .map((value) => value.trim());
-    const sourceText =
-      candidateSources.sort((a, b) => b.length - a.length)[0] || analysisInput;
-    const heuristicClaims = buildHeuristicSubClaims(
-      sourceText,
-      parsed.subClaims as any,
-      singleContextId,
-    );
-    if (heuristicClaims.length > 0) {
-      parsed.subClaims.push(...heuristicClaims);
-      console.log(`[Analyzer] Added ${heuristicClaims.length} heuristic claims from input text`);
-      // Heuristic claims may violate role/centrality invariants; re-normalize deterministically.
-      normalizeSubClaimsImportance(parsed.subClaims as any);
-    }
-  }
+  // Deterministic text-derived subclaim fallback removed.
 
   // Note: Full Gate 1 validation exists (apps/web/src/lib/analyzer/quality-gates.ts) but the orchestrated
   // pipeline currently treats Gate 1 as characterization/telemetry rather than a hard filter.
@@ -5934,28 +4951,6 @@ async function requestSupplementalSubClaims(
     })
     .join("\n");
 
-  const systemPrompt = `You are a verification assistant. Add missing subClaims ONLY for the listed contexts.
- - Return ONLY new claims (do not repeat existing ones).
-- Each claim must be tied to a single AnalysisContext via contextId.${hasScopes ? "" : " Use an empty string if no AnalysisContexts are listed."}
- - Use claimRole="core" and checkWorthiness="high".
- - Set thesisRelevance="direct" for ALL supplemental claims you generate.
- - Set harmPotential and centrality realistically. **Default centrality to "medium" for ALL supplemental claims.** Only set centrality="high" if this claim IS a primary thesis question being evaluated in that AnalysisContext (rare for supplemental claims).
- - **CRITICAL**: Avoid redundant or near-duplicate claims. Before adding a claim, verify it is meaningfully distinct from existing claims.
- - **CRITICAL**: Do NOT add more than 2 supplemental claims per context unless explicitly instructed.
- - Set isCentral=true if centrality==="high" (harmPotential affects risk tier, not centrality).
- - Use dependsOn=[] unless a dependency is truly required.
- - **CRITICAL**: If the input contains multiple assertions, decompose into ATOMIC claims (one assertion per claim).
- - **CRITICAL**: Do NOT create claims that combine multiple assertions with "and", "which", or "that".
- - **CRITICAL**: Return at least ${minNewClaimsTotal} new claims in total across all listed contexts.
- - Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_PROCEEDING} core claims.
- - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an \(N\)-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.
- - **CRITICAL: Thesis dimension lock (MANDATORY)**:
-   - Identify the SPECIFIC metric/dimension the user's claim evaluates (e.g., efficiency, fairness, harm, cost).
-   - ALL supplemental claims MUST evaluate the SAME metric/dimension.
-   - Do NOT add claims about other dimensions not present in the user's original claim.`;
-
-  const userPrompt = `INPUT:\n"${input}"\n\nCONTEXTS NEEDING MORE CLAIMS:\n${missingSummary}\n\nEXISTING CLAIMS (DO NOT DUPLICATE):\n${existingClaimsSummary}`;
-
   debugLog("requestSupplementalSubClaims: START", {
     contextsNeedingCoverage: missingProceedings.length,
     minNewClaimsTotal,
@@ -5964,11 +4959,24 @@ async function requestSupplementalSubClaims(
 
   let supplemental: any;
   try {
+    const renderedSystem = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CLAIMS", {});
+    const renderedUser = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CLAIMS_USER", {
+      INPUT_TEXT: input,
+      MISSING_SUMMARY: missingSummary,
+      EXISTING_CLAIMS_SUMMARY: existingClaimsSummary,
+      MIN_NEW_CLAIMS_TOTAL: String(minNewClaimsTotal),
+      MIN_CORE_CLAIMS_PER_CONTEXT: String(MIN_CORE_CLAIMS_PER_PROCEEDING),
+      HAS_SCOPES_GUIDANCE: hasScopes ? "" : "Use an empty string for contextId when no AnalysisContexts are listed.",
+    });
+    if (!renderedSystem?.content?.trim() || !renderedUser?.content?.trim()) {
+      throw new Error("Missing SUPPLEMENTAL_CLAIMS prompt sections in orchestrated prompt profile");
+    }
+
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA_LITE }),
@@ -6095,56 +5103,26 @@ async function requestSupplementalContexts(
     : 0;
   if (currentCount > 1) return null;
 
-  const systemPrompt = `You are a verification assistant.
-
-Return ONLY a single JSON object with keys:
-- analysisContexts: array
-- requiresSeparateAnalysis: boolean
-
-CRITICAL:
-- Detect whether the input mixes 2+ distinct AnalysisContexts (e.g., different events, phases, institutions, timelines, or processes).
-- Only split when there are clearly 2+ distinct contexts that would benefit from separate analysis.
-- If there is only 1 context, return an empty array or a 1-item array and set requiresSeparateAnalysis=false.
-
-NOT DISTINCT CONTEXTS:
-- Different perspectives on the same event (e.g., "Country A view" vs "Country B view") are NOT separate contexts by themselves.
-- Pro vs con viewpoints are NOT contexts.
-
-INCOMPATIBILITY TEST: Split into separate contexts ONLY IF combining verdicts would be MISLEADING because they evaluate fundamentally different things (e.g., different formal authorities, different measurement boundaries). Only split if each context has supporting evidence.
-
-CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
-- Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
-- Do NOT include contexts from unrelated domains just because they share a general category
-- When in doubt, use fewer contexts rather than including marginally relevant ones
-- A context with zero relevant claims/evidence should NOT exist
-
-SCHEMA:
-analysisContexts items must include:
-- id (string)
-- name (string)
-- shortName (string)
-- subject (string)
-- temporal (string)
-- status (concluded|ongoing|pending|unknown)
-- outcome (string)
-- assessedStatement (string): What is being assessed in this context (Assessment MUST summarize assessment of THIS)
-- metadata (object, may include domain-specific fields like institution/methodology/boundaries/geographic/standardApplied)
-
-Use empty strings "" and empty arrays [] when unknown.`;
-
-  const userPrompt = `INPUT:\n"${input}"\n\nCURRENT analysisContexts COUNT: ${currentCount}\nReturn JSON only.`;
-
   const schema = z.object({
     requiresSeparateAnalysis: z.boolean(),
     analysisContexts: z.array(ANALYSIS_CONTEXT_SCHEMA),
   });
 
   try {
+    const renderedSystem = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CONTEXTS", {});
+    const renderedUser = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CONTEXTS_USER", {
+      INPUT_TEXT: input,
+      CURRENT_CONTEXT_COUNT: String(currentCount),
+    });
+    if (!renderedSystem?.content?.trim() || !renderedUser?.content?.trim()) {
+      throw new Error("Missing SUPPLEMENTAL_CONTEXTS prompt sections in orchestrated prompt profile");
+    }
+
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema }),
@@ -6193,38 +5171,12 @@ async function extractOutcomeClaimsFromEvidence(
 
   if (!evidenceText || evidenceText.length < 100) return [];
 
-  // Quick structural check: skip LLM call if evidence has no numeric quantities
-  // (outcomes are typically quantifiable: durations, amounts, percentages).
-  // This replaces a previous domain-specific keyword list per AGENTS.md rules.
-  const hasQuantifiableContent = /\d+\s*[-–]?\s*(?:year|month|day|week|hour|percent|%|\$|€|£)/i.test(evidenceText);
-  if (!hasQuantifiableContent) {
+  // Cheap structural guard: skip only when no digits are present at all.
+  // Do not apply language-dependent unit keyword filters here.
+  const hasNumericSignal = /\d/.test(evidenceText);
+  if (!hasNumericSignal) {
     return [];
   }
-
-  const systemPrompt = `You are an evidence-analysis assistant. Extract specific outcomes, penalties, or consequences mentioned in the evidence items that should be evaluated as separate claims.
-
-Return ONLY a JSON object with an "outcomes" array. Each outcome should have:
-- "outcome": The specific outcome mentioned (e.g., "27-year prison sentence", "8-year ineligibility", "$1M fine")
-- "contextId": The context ID this outcome relates to (or empty string if unclear)
-- "claimText": A claim evaluating whether this outcome was fair/proportionate (e.g., "The 27-year prison sentence was proportionate to the crimes committed")
-
-Only extract outcomes that:
-1. Are specific and quantifiable (e.g., "27-year sentence", not just "sentenced")
-2. Are NOT already covered by existing claims
-3. Are relevant to evaluating fairness/proportionality
-
-Return empty array if no such outcomes are found.`;
-
-  const userPrompt = `EVIDENCE DISCOVERED DURING RESEARCH (unverified extracted statements):
-${evidenceText}
-
-EXISTING CLAIMS (DO NOT DUPLICATE):
-${existingClaims.map((c) => `- ${c.id}: ${c.text}`).join("\n")}
-
-CONTEXTS:
-${contexts.map((s) => `- ${s.id}: ${s.name}`).join("\n")}
-
-Extract outcomes that need separate evaluation claims.`;
 
   const OUTCOME_SCHEMA = z.object({
     outcomes: z.array(
@@ -6237,11 +5189,21 @@ Extract outcomes that need separate evaluation claims.`;
   });
 
   try {
+    const renderedSystem = await loadAndRenderSection("orchestrated", "OUTCOME_CLAIMS", {});
+    const renderedUser = await loadAndRenderSection("orchestrated", "OUTCOME_CLAIMS_USER", {
+      EVIDENCE_TEXT: evidenceText,
+      EXISTING_CLAIMS_TEXT: existingClaims.map((c) => `- ${c.id}: ${c.text}`).join("\n"),
+      CONTEXTS_TEXT: contexts.map((s) => `- ${s.id}: ${s.name}`).join("\n"),
+    });
+    if (!renderedSystem?.content?.trim() || !renderedUser?.content?.trim()) {
+      throw new Error("Missing OUTCOME_CLAIMS prompt sections in orchestrated prompt profile");
+    }
+
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, state.pipelineConfig),
       output: Output.object({ schema: OUTCOME_SCHEMA }),
@@ -6310,19 +5272,13 @@ async function enrichContextsWithOutcomes(state: ResearchState, model: any): Pro
   const evidenceItems = state.evidenceItems || [];
   if (evidenceItems.length === 0) return;
   const deterministic = state.pipelineConfig?.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic;
+  const OUTCOME_ENRICH_SCHEMA = z.object({
+    action: z.enum(["keep", "replace", "none"]),
+    outcome: z.string().default(""),
+  });
 
   for (const proc of state.understanding.analysisContexts) {
-    // Skip if already has a specific outcome (not vague placeholders)
-    const currentOutcome = (proc.outcome || "").toLowerCase().trim();
-    const isVagueOutcome = !currentOutcome ||
-      currentOutcome === "unknown" ||
-      currentOutcome === "pending" ||
-      currentOutcome.includes("investigation") ||
-      currentOutcome.includes("ongoing") ||
-      currentOutcome.includes("not yet") ||
-      currentOutcome.includes("to be determined");
-
-    if (!isVagueOutcome) continue;
+    const currentOutcome = String(proc.outcome || "").trim();
 
     // Get evidence items related to this context
     const relevantEvidenceItems = evidenceItems.filter(item =>
@@ -6334,32 +5290,40 @@ async function enrichContextsWithOutcomes(state: ResearchState, model: any): Pro
     const evidenceText = relevantEvidenceItems.map(item => `- ${item.statement}`).join("\n").slice(0, 4000);
 
     try {
-      // Use LLM to extract outcome - generic, not domain-specific
+      const renderedSystem = await loadAndRenderSection("orchestrated", "OUTCOME_ENRICH_SYSTEM", {});
+      const renderedUser = await loadAndRenderSection("orchestrated", "OUTCOME_ENRICH_USER", {
+        CONTEXT_NAME: proc.name,
+        CONTEXT_SUBJECT: proc.subject || "",
+        CURRENT_OUTCOME: currentOutcome || "(empty)",
+        EVIDENCE_TEXT: evidenceText,
+      });
+      if (!renderedSystem?.content?.trim() || !renderedUser?.content?.trim()) {
+        throw new Error("Missing OUTCOME_ENRICH prompt sections in orchestrated prompt profile");
+      }
+
+      // LLM decides whether current outcome is specific enough and whether to replace it.
       const result = await generateText({
         model,
         temperature: deterministic ? 0 : undefined,
         messages: [
-          { role: "system", content: "You extract specific outcomes from evidence. Return ONLY the outcome phrase, nothing else." },
-          { role: "user", content: `Given this evidence about "${proc.name}" (${proc.subject || ""}):
-
-${evidenceText}
-
-What is the specific, concrete outcome or result mentioned?
-- Return ONLY the outcome in a short phrase (e.g., "8-year penalty", "approved", "rejected", "settled for $X")
-- If no specific outcome is mentioned, return exactly: NONE
-- Do NOT return vague terms like "pending", "ongoing", "under investigation"` },
+          {
+            role: "system",
+            content: renderedSystem.content,
+          },
+          { role: "user", content: renderedUser.content },
         ],
+        output: Output.object({ schema: OUTCOME_ENRICH_SCHEMA }),
+        providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
       });
-      const text = result.text;
+      const parsed = extractStructuredOutput(result) as z.infer<typeof OUTCOME_ENRICH_SCHEMA> | null;
+      if (!parsed) continue;
 
-      const outcome = text.trim();
-      if (outcome && outcome !== "NONE" && outcome.length < 100) {
-        console.log(`[Analyzer] Enriched context "${proc.name}" outcome: "${proc.outcome}" → "${outcome}"`);
+      if (parsed.action === "replace") {
+        const outcome = String(parsed.outcome || "").trim().slice(0, 100);
+        if (!outcome) continue;
+        console.log(`[Analyzer] Enriched context "${proc.name}" outcome: "${proc.outcome}" -> "${outcome}"`);
         proc.outcome = outcome;
-        // Update status if we found a concrete outcome
-        if (proc.status === "pending" || proc.status === "ongoing" || proc.status === "unknown") {
-          proc.status = "concluded";
-        }
+        proc.status = "concluded";
       }
     } catch (err: any) {
       debugLog("enrichContextsWithOutcomes: LLM call failed", err?.message || String(err));
@@ -6530,29 +5494,13 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     // For each CENTRAL core claim, try to obtain at least one evidence or counter-evidence item.
     // This is best-effort and bounded: at most 1 targeted search per central claim.
     // =========================================================================
-    const normalizeText = (text: string) =>
-      text.toLowerCase().replace(/\s+/g, " ").trim();
-
-    const hasAnyEvidenceForClaim = (claim: any): boolean => {
-      const claimText = String(claim?.text || "");
-      const claimEntities = (claim?.keyEntities || []).map((e: string) =>
-        String(e || "").toLowerCase(),
-      );
-      const claimLower = claimText.toLowerCase();
-      const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
-      const claimProc = String(claim?.contextId || "");
-
-      return state.evidenceItems.some((f: EvidenceItem) => {
-        // If we have proceeding context, prefer matching within that context.
-        if (claimProc && f.contextId && f.contextId !== claimProc) return false;
-        const factLower = String(f.statement || "").toLowerCase();
-        // Entity overlap
-        const hasEntityOverlap = claimEntities.some((entity: string) =>
-          entity.length > 3 && factLower.includes(entity),
-        );
-        // Word overlap (at least 2 meaningful words)
-        const wordOverlap = claimWords.filter((w: string) => factLower.includes(w)).length;
-        return hasEntityOverlap || wordOverlap >= 2;
+    const hasStructurallyLinkedEvidence = (claim: any): boolean => {
+      const claimId = String(claim?.id || "");
+      const claimContextId = String(claim?.contextId || "");
+      return state.evidenceItems.some((item: EvidenceItem) => {
+        if (claimId && String((item as any)?.relatedClaimId || "") === claimId) return true;
+        if (claimContextId && String(item.contextId || "") === claimContextId) return true;
+        return false;
       });
     };
 
@@ -6563,7 +5511,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     for (const c of centralCoreClaims) {
       if (!c?.id) continue;
       if (state.centralClaimsSearched.has(c.id)) continue;
-      if (hasAnyEvidenceForClaim(c)) continue;
+      if (hasStructurallyLinkedEvidence(c)) continue;
 
       const basis = String(c.text || understanding.impliedClaim || state.originalInput || "").trim();
       if (!basis) continue;
@@ -6611,25 +5559,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         state.pipelineConfig?.recencyCueTerms,
       );
 
-      // Check if this claim has any supporting evidence
-      // Evidence items are linked via relatedClaimId or by matching claim text/entities
-      const claimEntities = (claim.keyEntities || []).map((e: string) => e.toLowerCase());
-      const hasEvidence = state.evidenceItems.some((item: EvidenceItem) => {
-        // Direct match via claim text in evidence item
-        const evidenceLower = item.statement.toLowerCase();
-        const claimLower = claimText.toLowerCase();
-
-        // Check if any key entity from the claim appears in the evidence item
-        const hasEntityOverlap = claimEntities.some((entity: string) =>
-          entity.length > 3 && evidenceLower.includes(entity)
-        );
-
-        // Check for significant word overlap (at least 2 meaningful words)
-        const claimWords = claimLower.split(/\s+/).filter((w: string) => w.length > 4);
-        const wordOverlap = claimWords.filter((w: string) => evidenceLower.includes(w)).length;
-
-        return hasEntityOverlap || wordOverlap >= 2;
-      });
+      const hasEvidence = hasStructurallyLinkedEvidence(claim);
 
       return isRecentClaim && !hasEvidence;
     });
@@ -6947,8 +5877,8 @@ function decodeHtmlEntities(text: string): string {
     "&#x2D;": "-",
     "&nbsp;": " ",
     "&#160;": " ",
-    "&ndash;": "–",
-    "&mdash;": "—",
+    "&ndash;": "â€“",
+    "&mdash;": "â€”",
   };
 
   let result = text;
@@ -7015,14 +5945,14 @@ function extractTitle(text: string, url: string): string {
   // Check for PDF header patterns - these indicate raw PDF bytes
   const isPdfHeader =
     /^%PDF-\d+\.\d+/.test(firstLine) ||
-    firstLine.includes("%���") ||
+    firstLine.includes("%ï¿½ï¿½ï¿½") ||
     firstLine.includes("\x00") ||
     /^[\x00-\x1f\x7f-\xff]{3,}/.test(firstLine);
 
   // Check for other binary/garbage patterns
   const isGarbage =
     firstLine.length < 3 ||
-    !/[a-zA-Z]{3,}/.test(firstLine) || // Must have some letters
+    !/\p{L}{3,}/u.test(firstLine) || // Must have some letters (any language)
     (firstLine.match(/[^\x20-\x7E]/g)?.length || 0) > firstLine.length * 0.3; // >30% non-printable
 
   if (isPdfHeader || isGarbage) {
@@ -7034,7 +5964,7 @@ function extractTitle(text: string, url: string): string {
       if (
         cleaned.length >= 10 &&
         cleaned.length <= 150 &&
-        /[a-zA-Z]{4,}/.test(cleaned) &&
+        /\p{L}{4,}/u.test(cleaned) &&
         !/^%PDF/.test(cleaned) &&
         (cleaned.match(/[^\x20-\x7E]/g)?.length || 0) < cleaned.length * 0.1
       ) {
@@ -7204,50 +6134,6 @@ async function extractEvidence(
   const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  // v2.6.29: Include original claim for counter-evidence identification
-  const originalClaimSection = originalClaim
-    ? `\n\n## ORIGINAL USER CLAIM (for claimDirection evaluation)
-The user's original claim is: "${originalClaim}"
-
-For EVERY extracted evidence item, evaluate claimDirection:
-- **"supports"**: This evidence item provides evidence that SUPPORTS the user's claim being TRUE
-- **"contradicts"**: This evidence item provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- **"neutral"**: This evidence item is contextual/background information that doesn't directly support or contradict the claim
-
-CRITICAL: Be precise about direction! If the user claims "X is better than Y" and the source says "Y is better than X", that is CONTRADICTING evidence, not supporting evidence.`
-    : "";
-
-  const systemPrompt = `Extract SPECIFIC evidence items. Focus: ${focus}
- ${targetContextId ? `Target context: ${targetContextId}` : ""}
-
-**ANTI-FABRICATION (CRITICAL)**: Extract ONLY from the provided source text. Do NOT fabricate, infer, or add information not present in the source. If a source is vague or lacks specifics, extract fewer items rather than filling gaps.
-
-Track contested claims with isContestedClaim and claimSource.
-Only HIGH/MEDIUM specificity.
-If the source contains evidence items relevant to MULTIPLE known contexts, include them (do not restrict to only the target),
-and set contextId accordingly. Do not omit key numeric outcomes (durations, amounts, counts) when present.
-
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}). When extracting dates, compare them to this current date.${originalClaimSection}
-
-## EVIDENCE SCOPE EXTRACTION (per-evidence EvidenceScope)
-
-Evidence documents often define their EvidenceScope (methodology/boundaries/geography/temporal). Extract this when present:
-
-**Look for explicit EvidenceScope definitions**:
-- Methodology: "This study uses a specific analysis method", "Based on ISO 14040 LCA"
-- Boundaries: "From initial inputs to final outcomes", "Excluding upstream production"
-- Geographic: "Region A market", "Region B regulations", "national coverage"
-- Temporal: "2020-2025 data", "FY2024", "as of March 2024"
-
-**Set evidenceScope when the source defines its analytical frame**:
-- name: Short label (e.g., "Broad boundary", "Narrow boundary", "EU-LCA", "Agency report")
-- methodology: Standard referenced (empty string if none)
-- boundaries: What's included/excluded (empty string if not specified)
-- geographic: Geographic coverage (empty string if not specified)
-- temporal: Time period (empty string if not specified)
-
-**IMPORTANT**: Different sources may use different EvidenceScopes. A "40% reported value" from a broad-boundary study is NOT directly comparable to a number from a narrow-boundary study. Capturing EvidenceScope enables accurate comparisons.${contextsList}`;
-
   debugLog(`extractEvidence: Calling LLM for ${source.id}`, {
     textLength: source.fullText.length,
     title: source.title?.substring(0, 50),
@@ -7255,6 +6141,23 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
   });
 
   try {
+    const renderedSystem = await loadAndRenderSection("orchestrated", "EXTRACT_EVIDENCE", {
+      focus,
+      targetContextId: targetContextId || "",
+      currentDateReadable,
+      currentDate: currentDateStr,
+      originalClaim: originalClaim || "",
+      contextsList,
+    });
+    const renderedUser = await loadAndRenderSection("orchestrated", "EXTRACT_EVIDENCE_USER", {
+      SOURCE_TITLE: source.title || "",
+      SOURCE_URL: source.url || "",
+      SOURCE_TEXT: source.fullText,
+    });
+    if (!renderedSystem?.content?.trim() || !renderedUser?.content?.trim()) {
+      throw new Error("Missing EXTRACT_EVIDENCE prompt sections in orchestrated prompt profile");
+    }
+
     const startTime = Date.now();
     const llmTimeoutMsRaw =
       pipelineConfig?.extractEvidenceLlmTimeoutMs ??
@@ -7268,11 +6171,8 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       generateText({
       model,
       messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Source: ${source.title}\nURL: ${source.url}\n\n${source.fullText}`,
-        },
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
       output: Output.object({ schema: EVIDENCE_SCHEMA }),
@@ -7329,23 +6229,21 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
       const before = filteredEvidenceItems.length;
       // LLM-powered high-impact outcome detection (replaces hardcoded keywords)
       try {
-        const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
+        const modelInfo = getModelForTask("extract_evidence"); // Haiku tier â€” fast, cheap
         const itemTexts = filteredEvidenceItems.map((item, idx) =>
           `[${idx}]: ${(item.statement + " " + (item.sourceExcerpt || "")).slice(0, 300)}`
         ).join("\n");
+        const renderedImpactPrompt = await loadAndRenderSection(
+          "orchestrated",
+          "EXTRACT_EVIDENCE_HIGH_IMPACT_FILTER_USER",
+          { ITEM_TEXTS: itemTexts },
+        );
+        if (!renderedImpactPrompt?.content?.trim()) {
+          throw new Error("Missing EXTRACT_EVIDENCE_HIGH_IMPACT_FILTER_USER prompt section in orchestrated prompt profile");
+        }
         const impactResult = await generateText({
           model: modelInfo.model,
-          messages: [{ role: "user", content: `Classify each numbered evidence statement below as either a high-impact legal/punitive outcome or not.
-
-High-impact outcomes include: criminal sentencing, conviction results, prison terms, criminal penalties, incarceration details, and similar consequential legal judgments.
-
-NOT high-impact: general legal proceedings, allegations, investigations, civil disputes, policy discussions, regulatory actions.
-
-Evidence statements:
-${itemTexts}
-
-Return ONLY a JSON array of booleans, one per statement, where true = high-impact outcome. No explanation.
-Example: [true, false, false, true]` }],
+          messages: [{ role: "user", content: renderedImpactPrompt.content }],
           temperature: 0,
         });
         let responseText = impactResult.text.trim();
@@ -7355,7 +6253,7 @@ Example: [true, false, false, true]` }],
           filteredEvidenceItems = filteredEvidenceItems.filter((_, idx) => !flags[idx]);
         }
       } catch (err) {
-        // LLM call failed — skip high-impact filtering rather than blocking the pipeline
+        // LLM call failed â€” skip high-impact filtering rather than blocking the pipeline
         console.warn(`[Analyzer] extractEvidence: LLM high-impact assessment failed for ${source.id}, skipping filter`, err);
       }
       if (before !== filteredEvidenceItems.length) {
@@ -7550,7 +6448,7 @@ Example: [true, false, false, true]` }],
         if (falsePositiveRate > 0.05) {
           const llmPrefix = llmFilterSuccess ? " (LLM quality pre-filter applied)" : "";
           console.warn(
-            `[Evidence Filter] ⚠️ High false positive rate${llmPrefix}: ${Math.round(falsePositiveRate * 100)}% ` +
+            `[Evidence Filter] âš ï¸ High false positive rate${llmPrefix}: ${Math.round(falsePositiveRate * 100)}% ` +
             `of filtered items had probativeValue="high"`
           );
         }
@@ -7583,12 +6481,12 @@ Example: [true, false, false, true]` }],
 
     // Check for specific API errors
     if (errorMsg.includes("credit balance is too low") || errorMsg.includes("insufficient_quota")) {
-      debugLog("❌ ANTHROPIC API CREDITS EXHAUSTED");
+      debugLog("âŒ ANTHROPIC API CREDITS EXHAUSTED");
     }
 
     // Check for OpenAI schema validation errors
     if (errorMsg.includes("Invalid schema") || errorMsg.includes("required")) {
-      debugLog("❌ OpenAI SCHEMA VALIDATION ERROR - check for .optional() fields in EVIDENCE_SCHEMA");
+      debugLog("âŒ OpenAI SCHEMA VALIDATION ERROR - check for .optional() fields in EVIDENCE_SCHEMA");
     }
 
     return [];
@@ -8221,249 +7119,48 @@ async function generateMultiContextVerdicts(
   );
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
-  const systemPromptBase = `You are a professional evidence analyst rendering evidence-based verdicts. Your role is to rate the truthfulness of claims by critically weighing evidence quality across AnalysisContexts, ensuring EvidenceScope compatibility when comparing evidence items, distinguishing causation from correlation, and assessing source credibility.
+  const allowModelKnowledgePrompt = await getKnowledgeInstruction(
+    state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+    state.originalInput,
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
+    state.pipelineConfig,
+  );
+  const renderedVerdictSystem = await loadAndRenderSection("orchestrated", "VERDICT", {
+    inputLabel,
+    currentDateReadable,
+    currentDate: currentDateStr,
+    analysisInput,
+    contextsFormatted,
+    allowModelKnowledge: allowModelKnowledgePrompt,
+  });
+  const renderedVerdictBrevity = await loadAndRenderSection("orchestrated", "VERDICT_BREVITY_RULES", {});
+  const renderedVerdictUser = await loadAndRenderSection("orchestrated", "VERDICT_USER", {
+    inputLabel,
+    analysisInput,
+    contextsFormatted,
+    claimsFormatted,
+    evidenceItemsFormatted,
+  });
+  const renderedVerdictCompactRetry = await loadAndRenderSection(
+    "orchestrated",
+    "VERDICT_EXTREME_COMPACT_RETRY_APPEND",
+    {},
+  );
+  const renderedJsonOnlyAppend = await loadAndRenderSection("orchestrated", "JSON_ONLY_USER_APPEND", {});
+  if (
+    !renderedVerdictSystem?.content?.trim() ||
+    !renderedVerdictBrevity?.content?.trim() ||
+    !renderedVerdictUser?.content?.trim() ||
+    !renderedVerdictCompactRetry?.content?.trim() ||
+    !renderedJsonOnlyAppend?.content?.trim()
+  ) {
+    throw new Error("Missing VERDICT prompt sections in orchestrated prompt profile");
+  }
 
-## CRITICAL: OUTPUT STRUCTURE - verdictSummary
-
-You MUST provide a complete verdictSummary with:
-- **answer**: A NUMBER from 0-100 representing the overall truth percentage of the ${inputLabel}
-  * 86-100 = TRUE (strong evidence supports the claim)
-  * 72-85 = MOSTLY-TRUE (mostly supported)
-  * 58-71 = LEANING-TRUE (some support)
-  * 43-57 = UNVERIFIED (insufficient evidence)
-  * 29-42 = LEANING-FALSE (some counter-evidence)
-  * 15-28 = MOSTLY-FALSE (strong counter-evidence)
-  * 0-14 = FALSE (direct contradiction)
-- **confidence**: A NUMBER from 0-100 measuring EVIDENCE STRENGTH (not reasoning confidence):
-  * 80-100: Multiple high-quality sources agree, consistent evidence
-  * 60-79: Good sources, minor gaps or dated info
-  * 40-59: Mixed source quality or some contradictions
-  * Below 40: Limited evidence or significant uncertainty
-- **shortAnswer**: A descriptive sentence summarizing the finding
-- **nuancedAnswer**: A longer explanation of the verdict
-- **keyFactors**: Array of key factors evaluated
-
-CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect the weighted assessment of the claim based on evidence. Do NOT default to 50 - actively evaluate the evidence!
-
-## CRITICAL: TEMPORAL REASONING
-
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
-
-**DATE REASONING RULES**:
-- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
-- Do NOT assume dates are in the future without checking against the current date
-- A date like "November 2025" is in the PAST if the current date is January 2026 or later
-- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
-- If a date seems inconsistent, verify it against the current date before making judgments
-- When in doubt about temporal relationships, use the evidence from sources rather than making assumptions
-
-## EVIDENCE-SCOPE-AWARE EVALUATION
-
-Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
-
-- **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
-- **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
-- **Note in reasoning**: When EvidenceScope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
-
-## CRITICAL: RATING DIRECTION
-
-**ORIGINAL ${inputLabel} TO RATE**:
-"${analysisInput}"
-
-**YOUR TASK**: Rate the ORIGINAL ${inputLabel} above AS STATED by the user.
-- If the user claims "X is better than Y" and evidence shows Y is better, rate as FALSE/LOW percentage
-- If the user claims "X increased" and evidence shows X decreased, rate as FALSE/LOW percentage
-- Preserve the directional/comparative aspect of the original claim
-- DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
-
-## COUNTER-EVIDENCE HANDLING
-
-Evidence items in the EVIDENCE section are labeled with their relationship to the user's claim:
-- **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
-- **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- Unlabeled items are neutral/contextual
-
-**How to use these labels:**
-- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
-- Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
-
-## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
-
-When a claim contains causal language ("due to", "caused by", "because of", "linked to", "result of"):
-- **Do NOT conflate "after" with "due to"**: Temporal sequence does NOT establish causation
-- **Require causal evidence**: Association/correlation is NOT causation
-- **Weight methodology criticism**: If the methodology used to establish causation is contested (e.g., unverified reporting systems, missing control groups, passive surveillance data), this DIRECTLY reduces the claim's truth value
-
-**EXAMPLES**:
-- Claim: "10 deaths occurred after X" - evaluate temporal sequence (easier to verify)
-- Claim: "10 deaths were due to X" - evaluate CAUSATION (requires stronger evidence)
-- Claim: "10 deaths after or due to X" - must evaluate the CAUSAL part ("due to") separately; temporal sequence alone is insufficient
-
-**CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
-
-## CONTEXTS - PROVIDE SEPARATE ANSWER FOR EACH
-${contextsFormatted}
-
-## INSTRUCTIONS
-
-1. For EACH context (use contextId/contextName in the schema), provide:
-   - contextId (must match: ${understanding.analysisContexts.map((p: AnalysisContext) => p.id).join(", ")})
-   - contextName (use the context name)
-   - answer: Truth percentage (0-100) rating THE ORIGINAL USER CLAIM shown above
-     * CRITICAL: Rate whether the USER'S CLAIM is true, NOT whether your analysis is correct
-     * If user claims "X is MORE efficient" and evidence shows "X is LESS efficient", answer should be 0-28% (FALSE/MOSTLY FALSE)
-     * Preserve the direction/comparative aspect of the original claim
-     * **CRITICAL: Evaluate SUBSTANCE, Not Attribution**
-       - When evaluating a claim like "X happened according to Y's review":
-         Do NOT evaluate whether Y's review EXISTS or what it SAID
-         EVALUATE whether X is ACTUALLY TRUE based on evidence
-       - The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
-       - If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
-       - Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
-   - shortAnswer (Assessment): A 1-sentence summary that MUST evaluate the assessedStatement shown above for this context
-     * CRITICAL: The shortAnswer must answer/evaluate the assessedStatement for THIS context
-     * MUST be a descriptive sentence, NOT just a percentage or scale label
-
-   **CRITICAL: Direction consistency check (MANDATORY)**
-   Before finalizing each context's answer:
-   1. Decide clearly: does the evidence SUPPORT the user's claim as stated, CONTRADICT it, or is it UNVERIFIED/MIXED?
-   2. Your numeric answer MUST match that direction:
-      - SUPPORTS → answer should be ≥ 58 (leaning-true or higher)
-      - CONTRADICTS → answer should be ≤ 42 (leaning-false or lower)
-      - UNVERIFIED/MIXED → answer should be 43-57
-   3. For comparison claims: if evidence supports the OPPOSITE direction (user claims "X > Y" but evidence shows "Y > X"), the answer MUST be ≤ 42.
-
-   - keyFactors: Array of factors that address the SUBSTANCE of the original claim:
-     * CRITICAL: Key factors must evaluate whether THE USER'S CLAIM is true, NOT whether your analysis is correct
-     * For comparative claims ("X is better than Y"), factors should evaluate the actual comparison
-     * For factual claims, factors should cover the main evidence points that support or refute the claim
-     * For procedural/legal claims, include: standards application, process integrity, evidence basis, decision-maker independence
-     * DO NOT generate meta-methodology factors like "Was the analysis done correctly?" - focus on the CLAIM ITSELF
-
-2. KEY FACTOR SCORING RULES - VERY IMPORTANT:
-   - supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge of widely-reported information)
-   - supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
-   - supports="neutral": Use ONLY when you genuinely have no information about this factor
-
-   ${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events, established procedures/standards, and widely-reported information, you ALREADY KNOW the relevant information - use it!
-   DO NOT mark factors as "neutral" if you know the answer from your training data.
-   However, when your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence.` : `Use ONLY the provided evidence and sources.
-   If evidence is insufficient for a factor, mark as "neutral" — do NOT fill gaps with your own knowledge.`}
-
-   CRITICAL: Being "contested" or "disputed" by stakeholders = supports="yes" (if evidence supports it), NOT "neutral"
-   Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
-
-3. Mark contested factors:
-   - isContested: true ONLY if this factor is genuinely disputed with documented factual counter-evidence
-   - **CRITICAL: Do NOT set isContested=true for:**
-     * Mere disagreement or different viewpoints without documented counter-evidence
-     * Rhetorical opposition without factual basis
-     * Normal debate where both sides cite evidence (this is not "contested"; it's "disputed")
-   - contestedBy: Be SPECIFIC about who disputes it (e.g., "supplier group A", "regulator X", "employee union")
-     * Do NOT use vague terms like "some people" - specify WHICH group/organization
-     * **NO CIRCULAR CONTESTATION**: The entity making a decision CANNOT contest its own decision
-       - WRONG: "Due process adherence" contested by "Court X judiciary" (they conducted it!)
-       - RIGHT: "Due process adherence" contested by "international observers" or "defense counsel"
-   - factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-     * **CRITICAL: factualBasis classification determines weight in aggregation**
-     * "established" = Opposition cites SPECIFIC DOCUMENTED EVIDENCE that contradicts (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
-     * "disputed" = Opposition has some factual counter-evidence but it's debatable or incomplete
-     * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political statements, or actions without documentation
-       - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
-       - **Do NOT use "opinion" for**: Documented violations, measured discrepancies, recorded non-compliance
-     * "unknown" = Cannot determine
-
-   **EXAMPLES of factualBasis classification**:
-   - "External government says the proceeding was unfair" → "opinion" (no specific violation cited)
-   - "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
-   - "Audit found violation of Regulation 47(b)" → "established" (specific documented violation)
-   - "Study measured 38 units vs claimed 55 units" → "established" (documented measurement contradiction)
-   - "Defense presented conflicting expert testimony" → "disputed" (some counter-evidence but debatable)
-
-   CRITICAL - factualBasis MUST be "opinion" for ALL of these:
-   - Policy announcements or institutional actions without evidence
-   - Statements by supporters, officials, or advocacy groups (claims are not evidence)
-   - Calling something "unfair", "persecution", or "political" without citing specific documented violations
-   - Public protests, position papers, or other responses without evidence
-
-   factualBasis can ONLY be "established" or "disputed" when opposition provides:
-   - Specific documents, records, logs, or audits showing actual procedural violations
-   - Verifiable data or documents contradicting the findings
-   - Documented evidence of specific errors, bias, or misconduct (not just allegations)
-
-4. Calibration: Neutral contested factors don't reduce verdicts
-   - Positive factors with evidence + neutral contested factors => keep the answer in the TRUE/MOSTLY-TRUE band (>=72%)
-   - Only actual negative factors with documented evidence can reduce verdict
-
-5. CLAIM VERDICT RULES (for claimVerdicts array):
-   **CRITICAL**: You MUST generate verdicts for ALL claims listed in the CLAIMS section above. Those are the DIRECT thesis-relevant claims. Every listed claim must have a corresponding entry in claimVerdicts. Do NOT add verdicts for tangential/irrelevant claims that are not listed.
-
-   - For each context, ensure ALL claims with that contextId (or claims that logically belong to that context) have verdicts
-   - If a claim doesn't have a contextId, assign it to the most relevant context based on the claim content
-
-   **CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
-   - The verdict MUST rate whether THE CLAIM AS STATED is true
-   - If the claim says "X was proportionate" but evidence shows X was NOT proportionate → verdict should be LOW (15-28%)
-   - If the claim says "X was justified" but evidence shows X was NOT justified → verdict should be LOW (15-28%)
-   - DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
-   - The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
-   - Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
-
-   - Provide a truth percentage (0-100) for each claim.
-   - Use these bands to calibrate:
-     * 86-100: TRUE (strong support, no credible counter-evidence)
-     * 72-85: MOSTLY-TRUE (mostly supported, minor gaps)
-     * 58-71: LEANING-TRUE (mixed evidence)
-     * 43-57: UNVERIFIED (insufficient evidence)
-     * 29-42: LEANING-FALSE (more counter-evidence than support)
-     * 15-28: MOSTLY-FALSE (strong counter-evidence)
-     * 0-14: FALSE (direct contradiction)
-
-   CRITICAL: Stakeholder contestation ("critics say it was unfair") is NOT the same as counter-evidence.
-   Use the TRUE/MOSTLY-TRUE band (>=72%), not the UNVERIFIED band (43-57%), if you know the evidence supports the claim despite stakeholder opposition.
-
-${getKnowledgeInstruction(
-  state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
-  state.originalInput,
-  understanding,
-  state.pipelineConfig?.recencyCueTerms,
-)}
-${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
-
-  // Prevent structured-output truncation (common cause of JSON/schema parse failures).
-  // Keep outputs concise so they fit within typical provider output token limits.
-  const brevityRules = `
-## OUTPUT BREVITY (CRITICAL)
-- Be concise. Avoid long paragraphs.
-- keyFactors: provide 3–5 items max (overall + per context).
-- keyFactors.factor: <= 12 words. keyFactors.explanation: <= 1 sentence.
-- claimVerdicts.reasoning: <= 2 short sentences.
-- supportingEvidenceIds: include up to 5 IDs per claim (or [] if unclear).
-- calibrationNote: keep very short (or "" if not applicable).
-
-## FINAL VALIDATION (check before responding)
-- Every claim in reasoning references a supportingEvidenceId
-- ratingConfirmation matches verdict percentage direction
-- Confidence reflects evidence strength, not reasoning confidence
-- No claims in reasoning that aren't supported by cited evidence
-- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)`;
-
-  const systemPrompt = systemPromptBase + brevityRules;
-
-  const userPrompt = `## ${inputLabel}
-"${analysisInput}"
-
-## CONTEXTS
-${contextsFormatted}
-
-## CLAIMS
-${claimsFormatted}
-
-## EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
-${evidenceItemsFormatted}
-
-Provide SEPARATE answers for each context.`;
+  const providerPromptHint = await getProviderPromptHint(state.pipelineConfig?.llmProvider);
+  const systemPrompt = `${renderedVerdictSystem.content}\n${providerPromptHint}\n${renderedVerdictBrevity.content}`;
+  const userPrompt = renderedVerdictUser.content;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
   const multiContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
@@ -8476,13 +7173,7 @@ Provide SEPARATE answers for each context.`;
     { label: "primary", extraSystem: "" },
     {
       label: "retry-compact",
-      extraSystem: `
-
-## EXTREME COMPACT MODE (RETRY)
-- keyFactors: provide 3 items max (overall + per AnalysisContext).
-- keyFactors.explanation: <= 12 words.
-- claimVerdicts.reasoning: <= 12 words.
-- If unsure, prefer short, conservative wording over long explanations.`,
+      extraSystem: `\n\n${renderedVerdictCompactRetry.content}`,
     },
   ];
 
@@ -8602,25 +7293,18 @@ Provide SEPARATE answers for each context.`;
     z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null
   > => {
     debugLog("generateMultiContextVerdicts: FALLBACK JSON TEXT ATTEMPT");
-    const system =
-      systemPrompt +
-      `
-
-## OUTPUT FORMAT (CRITICAL)
-Return ONLY a single JSON object. Do NOT include markdown. Do NOT include any text outside JSON.
-
-The JSON object MUST include these top-level keys:
-- verdictSummary
-- analysisContextAnswers
-- analysisContextSummary
-- claimVerdicts`;
+    const renderedJsonAppend = await loadAndRenderSection("orchestrated", "VERDICT_JSON_ONLY_APPEND", {});
+    if (!renderedJsonAppend?.content?.trim()) {
+      throw new Error("Missing VERDICT_JSON_ONLY_APPEND prompt section in orchestrated prompt profile");
+    }
+    const system = `${systemPrompt}\n${renderedJsonAppend.content}`;
 
     try {
       const result: any = await generateText({
         model,
         messages: [
           { role: "system", content: system },
-          { role: "user", content: `${userPrompt}\n\nReturn JSON only.` },
+          { role: "user", content: `${userPrompt}\n\n${renderedJsonOnlyAppend.content}` },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
         maxOutputTokens: 8192,
@@ -8731,10 +7415,10 @@ The JSON object MUST include these top-level keys:
 
       // Check for OpenAI schema validation errors
       if (errMsg.includes("Invalid schema") || errMsg.includes("required")) {
-        debugLog("❌ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_CONTEXT");
+        debugLog("âŒ OpenAI SCHEMA VALIDATION ERROR in VERDICTS_SCHEMA_MULTI_CONTEXT");
       }
       if (errMsg.includes("output_format.schema") && errMsg.includes("maximum, minimum")) {
-        debugLog("❌ Anthropic schema constraint error (numeric bounds unsupported)");
+        debugLog("âŒ Anthropic schema constraint error (numeric bounds unsupported)");
       }
       state.llmCalls++;
 
@@ -8985,13 +7669,13 @@ The JSON object MUST include these top-level keys:
       factorAnalysis.verdictExplanation = `Corrected: All ${negativeFactors} factors are contested`;
     }
 
-    // PR-C: Clamp truth percentage to valid range
-    const clampedTruthPct = clampTruthPercentage(answerTruthPct);
+    // Validate truth percentage is in valid range
+    const validatedTruthPct = assertValidTruthPercentage(answerTruthPct, "single-context verdict");
     return {
       ...pa,
-      answer: clampedTruthPct,
+      answer: validatedTruthPct,
       confidence: correctedConfidence,
-      truthPercentage: clampedTruthPct,
+      truthPercentage: validatedTruthPct,
       shortAnswer: sanitizeContextShortAnswer(String(pa.shortAnswer || ""), ctxStatus),
       factorAnalysis,
     } as AnalysisContextAnswer;
@@ -9006,7 +7690,7 @@ The JSON object MUST include these top-level keys:
   // v2.6.38: Context count warning (detect over-splitting)
   const CONTEXT_WARNING_THRESHOLD = 5;
   if (correctedAnalysisContextAnswers.length > CONTEXT_WARNING_THRESHOLD) {
-    debugLog(`⚠️ High context count detected: ${correctedAnalysisContextAnswers.length} contexts may indicate over-splitting`);
+    debugLog(`âš ï¸ High context count detected: ${correctedAnalysisContextAnswers.length} contexts may indicate over-splitting`);
   }
 
   // Calculate average for display (UI can choose to de-emphasize when hasMultipleContexts=true)
@@ -9187,8 +7871,8 @@ The JSON object MUST include these top-level keys:
     }
 
     // Derive 7-point verdict from percentage
-    // PR-C: Clamp truth percentage to valid range
-    const clampedTruthPct = clampTruthPercentage(truthPct);
+    // Validate truth percentage is in valid range
+    const clampedTruthPct = assertValidTruthPercentage(truthPct, "multi-context verdict");
     return {
       ...cv,
       verdict: clampedTruthPct,
@@ -9207,8 +7891,28 @@ The JSON object MUST include these top-level keys:
     };
   }));
 
+  const recencyMatters = new RecencyAssessor().isRecencySensitive(
+    analysisInput,
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
+  );
+  const guardedMultiContextVerdicts = applyRecencyEvidenceGuard(claimVerdicts, {
+    recencyMatters,
+  });
+  if (guardedMultiContextVerdicts.adjustedClaimIds.length > 0) {
+    state.analysisWarnings.push({
+      type: "recency_evidence_gap",
+      severity: "warning",
+      message:
+        "Recency-sensitive claims without supporting evidence were capped to UNVERIFIED for temporal safety.",
+      details: {
+        adjustedClaimIds: guardedMultiContextVerdicts.adjustedClaimIds,
+      },
+    });
+  }
+
   const weightedClaimVerdicts = applyEvidenceWeighting(
-    claimVerdicts,
+    guardedMultiContextVerdicts.verdicts,
     state.evidenceItems,
     state.sources,
   );
@@ -9258,8 +7962,8 @@ The JSON object MUST include these top-level keys:
     ? "Some factors are contested with documented evidence and receive reduced weight."
     : undefined;
 
-  // PR-C: Clamp truth percentage to valid range (defensive)
-  const clampedAvgTruthPct = clampTruthPercentage(avgTruthPct);
+  // Validate truth percentage is in valid range
+  const clampedAvgTruthPct = assertValidTruthPercentage(avgTruthPct, "average across contexts");
 
   const summaryKeyFactors = parsed.verdictSummary?.keyFactors || [];
   const monitoredSummaryKeyFactors = monitorOpinionAccumulation(summaryKeyFactors, {
@@ -9285,7 +7989,7 @@ The JSON object MUST include these top-level keys:
     hasContestedFactors,
   };
 
-  // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
+  // Calculate claims average truth percentage (v2.6.30: weighted by centrality Ã— confidence)
   const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts, state.calcConfig.aggregation);
 
   // v2.9.0: Context-claims consistency anchoring (multi-context path)
@@ -9335,7 +8039,7 @@ The JSON object MUST include these top-level keys:
         correctedAnalysisContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) / correctedAnalysisContextAnswers.length
       );
       // Update verdictSummary to reflect anchored values
-      const anchoredClamped = clampTruthPercentage(avgTruthPct);
+      const anchoredClamped = assertValidTruthPercentage(avgTruthPct, "anchored verdict summary");
       verdictSummary.answer = anchoredClamped;
       verdictSummary.truthPercentage = anchoredClamped;
       debugLog(`Context-claims anchoring: avgTruthPct updated to ${avgTruthPct}`);
@@ -9421,183 +8125,31 @@ async function generateSingleContextVerdicts(
   // v2.6.21: Use neutral label to ensure phrasing-neutral verdicts
   const inputLabel = "STATEMENT";
 
-  const systemPrompt = `Answer the input based on documented evidence.
-
-## CRITICAL: OUTPUT STRUCTURE - verdictSummary
-
-You MUST provide a complete verdictSummary with:
-- **answer**: A NUMBER from 0-100 representing the overall truth percentage of the ${inputLabel}
-  * 86-100 = TRUE (strong evidence supports the claim)
-  * 72-85 = MOSTLY-TRUE (mostly supported)
-  * 58-71 = LEANING-TRUE (some support)
-  * 43-57 = UNVERIFIED (insufficient evidence)
-  * 29-42 = LEANING-FALSE (some counter-evidence)
-  * 15-28 = MOSTLY-FALSE (strong counter-evidence)
-  * 0-14 = FALSE (direct contradiction)
-- **confidence**: A NUMBER from 0-100 measuring EVIDENCE STRENGTH (not reasoning confidence):
-  * 80-100: Multiple high-quality sources agree, consistent evidence
-  * 60-79: Good sources, minor gaps or dated info
-  * 40-59: Mixed source quality or some contradictions
-  * Below 40: Limited evidence or significant uncertainty
-- **shortAnswer**: A descriptive sentence summarizing the finding
-- **nuancedAnswer**: A longer explanation of the verdict
-- **keyFactors**: Array of key factors evaluated
-
-CRITICAL: The "answer" field must be a NUMBER (not a string), and must reflect the weighted assessment of the claim based on evidence. Do NOT default to 50 - actively evaluate the evidence!
-
-## CRITICAL: TEMPORAL REASONING
-
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
-
-**DATE REASONING RULES**:
-- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
-- Do NOT assume dates are in the future without checking against the current date
-- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
-- If a date seems inconsistent, verify it against the current date before making judgments
-
-## CRITICAL: RATING DIRECTION
-
-**YOUR TASK**: Rate the ORIGINAL ${inputLabel} AS STATED by the user (shown below in the user prompt).
-- If the user claims "X is better than Y" and evidence shows Y is better, rate as FALSE/LOW percentage
-- If the user claims "X increased" and evidence shows X decreased, rate as FALSE/LOW percentage
-- Preserve the directional/comparative aspect of the original claim
-- DO NOT rate your analysis conclusion - rate whether the USER'S CLAIM matches the evidence
-
-**CRITICAL: Evaluate SUBSTANCE, Not Attribution**
-- When evaluating a claim like "X happened according to Y's review":
-  - Do NOT evaluate whether Y's review EXISTS or what it SAID
-  - EVALUATE whether X is ACTUALLY TRUE based on evidence
-- The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
-- If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
-- Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
-
-## COUNTER-EVIDENCE HANDLING
-
-Evidence items in the EVIDENCE section are labeled with their relationship to the user's claim:
-- **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
-- **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- Unlabeled items are neutral/contextual
-
-**How to use these labels:**
-- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
-- Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
-
-## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
-
-When a claim contains causal language ("due to", "caused by", "because of", "linked to", "result of"):
-- **Do NOT conflate "after" with "due to"**: Temporal sequence does NOT establish causation
-- **Require causal evidence**: Association/correlation is NOT causation
-- **Weight methodology criticism**: If the methodology used to establish causation is contested (e.g., unverified reporting systems, missing control groups, passive surveillance data), this DIRECTLY reduces the claim's truth value
-
-**EXAMPLES**:
-- Claim: "10 deaths occurred after X" - evaluate temporal sequence (easier to verify)
-- Claim: "10 deaths were due to X" - evaluate CAUSATION (requires stronger evidence)
-- Claim: "10 deaths after or due to X" - must evaluate the CAUSAL part ("due to") separately; temporal sequence alone is insufficient
-
-**CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
-
-## EVIDENCE-SCOPE-AWARE EVALUATION
-
-Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
-
-- **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
-- **Flag EvidenceScope mismatches**: Different EvidenceScopes are NOT directly comparable
-- **Note in reasoning**: When EvidenceScope affects interpretation, mention it
-
-## SHORT ANSWER GUIDANCE:
-- shortAnswer MUST be a complete descriptive sentence summarizing the finding
-- Example: "The evidence shows proper procedures were followed."
-- NEVER use just a percentage value or scale label as the shortAnswer
-
-## KEY FACTORS - CRITICAL GUIDANCE:
-Key factors must address the SUBSTANCE of the original claim:
-- CRITICAL: Key factors must evaluate whether THE USER'S CLAIM is true, NOT whether your analysis is correct
-- For comparative claims ("X is better than Y"), factors should evaluate the actual comparison
-- For factual claims, factors should cover the main evidence points that support or refute the claim
-- For procedural/legal claims, include: standards application, process integrity, evidence basis
-- DO NOT generate meta-methodology factors like "Was the analysis done correctly?" - focus on the CLAIM ITSELF
-
-## KEY FACTOR SCORING RULES - VERY IMPORTANT:
-- supports="yes": Factor supports the claim with evidence (from sources OR your background knowledge)
-- supports="no": Factor refutes the claim with counter-evidence (NOT just disputed/contested)
-- supports="neutral": Use ONLY when you genuinely have no information about this factor
-
-${(state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge) ? `IMPORTANT: You MUST use your background knowledge! For well-known public events and widely-reported information, use what you know!
-DO NOT mark factors as "neutral" if you know the answer from your training data.
-However, when your training knowledge CONTRADICTS the provided web evidence, ALWAYS defer to the web evidence.` : `Use ONLY the provided evidence and sources.
-If evidence is insufficient for a factor, mark as "neutral" — do NOT fill gaps with your own knowledge.`}
-
-CRITICAL: Being "contested" by stakeholders does NOT make something neutral.
-Example: "Critics claim X was unfair" but X followed proper procedures = "yes", not "neutral"
-
-## Mark contested factors:
-- isContested: true ONLY if this factor is genuinely disputed with documented factual counter-evidence
-- **CRITICAL: Do NOT set isContested=true for:**
-  * Mere disagreement or different viewpoints without documented counter-evidence
-  * Rhetorical opposition without factual basis
-  * Normal debate where both sides cite evidence (this is not "contested"; it's "disputed")
-- contestedBy: Who disputes it (empty string if not contested)
-  * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest it
-  * Example: If evaluating "Was Court X's trial fair?", contestedBy CANNOT be "Court X" or "Court X judiciary"
-- factualBasis: Does opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * "established" = Opposition cites SPECIFIC DOCUMENTED EVIDENCE (audits, logs, datasets)
-  * "disputed" = Opposition has some factual counter-evidence but debatable
-  * "opinion" = NO factual counter-evidence (just claims, political statements, executive orders)
-  * "unknown" = Cannot determine
-
-CRITICAL - factualBasis MUST be "opinion" for:
-- Policy announcements or institutional actions without evidence
-- Statements by supporters, officials, or advocacy groups (claims are not evidence)
-- Calling something "unfair" or "persecution" without documented violations
-
-## CLAIM VERDICT RULES:
-
-**CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
-- The verdict MUST rate whether THE CLAIM AS STATED is true
-- If the claim says "X was proportionate" but evidence shows X was NOT proportionate → verdict should be LOW (15-28%)
-- If the claim says "X was justified" but evidence shows X was NOT justified → verdict should be LOW (15-28%)
-- DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
-- The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
-- Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
-
-- Provide a truth percentage (0-100) for each claim.
-- Use these bands to calibrate:
-  * 86-100: TRUE (strong support, no credible counter-evidence)
-  * 72-85: MOSTLY-TRUE (mostly supported, minor gaps)
-  * 58-71: LEANING-TRUE (mixed evidence)
-  * 43-57: UNVERIFIED (insufficient evidence)
-  * 29-42: LEANING-FALSE (more counter-evidence than support)
-  * 15-28: MOSTLY-FALSE (strong counter-evidence)
-  * 0-14: FALSE (direct contradiction)
-
-CRITICAL: Stakeholder contestation is NOT counter-evidence.
-Use the TRUE/MOSTLY-TRUE band (>=72%) if you know the evidence supports the claim despite stakeholder opposition.
-
-${getKnowledgeInstruction(
-  state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
-  state.originalInput,
-  understanding,
-  state.pipelineConfig?.recencyCueTerms,
-)}
-
-## FINAL VALIDATION (check before responding)
-- Every claim in reasoning references a supportingEvidenceId
-- ratingConfirmation matches verdict percentage direction
-- Confidence reflects evidence strength, not reasoning confidence
-- No claims in reasoning that aren't supported by cited evidence
-- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)
-
-${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
-
-  const userPrompt = `## ${inputLabel}
-"${analysisInput}"
-
-## CLAIMS
-${claimsFormatted}
-
-## EVIDENCE (UNVERIFIED EXTRACTED STATEMENTS)
-${evidenceItemsFormatted}`;
+  const allowModelKnowledgePrompt = await getKnowledgeInstruction(
+    state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+    state.originalInput,
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
+    state.pipelineConfig,
+  );
+  const renderedAnswerSystem = await loadAndRenderSection("orchestrated", "ANSWER", {
+    inputLabel,
+    currentDateReadable,
+    currentDate: currentDateStr,
+  });
+  const renderedAnswerUser = await loadAndRenderSection("orchestrated", "ANSWER_USER", {
+    inputLabel,
+    analysisInput,
+    claimsFormatted,
+    evidenceItemsFormatted,
+  });
+  const renderedAnswerCompactRetry = await loadAndRenderSection("orchestrated", "ANSWER_COMPACT_RETRY_APPEND", {});
+  if (!renderedAnswerSystem?.content?.trim() || !renderedAnswerUser?.content?.trim() || !renderedAnswerCompactRetry?.content?.trim()) {
+    throw new Error("Missing ANSWER prompt sections in orchestrated prompt profile");
+  }
+  const providerPromptHint = await getProviderPromptHint(state.pipelineConfig?.llmProvider);
+  const systemPrompt = `${renderedAnswerSystem.content}\n${allowModelKnowledgePrompt}\n${providerPromptHint}`;
+  const userPrompt = renderedAnswerUser.content;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
   const singleContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
@@ -9609,7 +8161,7 @@ ${evidenceItemsFormatted}`;
     { label: "primary", extraSystem: "" },
     {
       label: "retry-compact",
-      extraSystem: `\n\n## COMPACT MODE (RETRY)\n- keyFactors: 3 items max.\n- reasoning: 1-2 short sentences.\n- Be concise to avoid output truncation.`,
+      extraSystem: `\n\n${renderedAnswerCompactRetry.content}`,
     },
   ];
 
@@ -9880,7 +8432,7 @@ ${evidenceItemsFormatted}`;
       );
 
       // PR-C: Clamp truth percentage to valid range
-      const clampedTruthPct = clampTruthPercentage(truthPct);
+      const clampedTruthPct = assertValidTruthPercentage(truthPct);
       return {
         ...cv,
         claimId: claim.id,
@@ -9905,8 +8457,28 @@ ${evidenceItemsFormatted}`;
     },
   ));
 
+  const recencyMatters = new RecencyAssessor().isRecencySensitive(
+    analysisInput,
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
+  );
+  const guardedSingleContextVerdicts = applyRecencyEvidenceGuard(claimVerdicts, {
+    recencyMatters,
+  });
+  if (guardedSingleContextVerdicts.adjustedClaimIds.length > 0) {
+    state.analysisWarnings.push({
+      type: "recency_evidence_gap",
+      severity: "warning",
+      message:
+        "Recency-sensitive claims without supporting evidence were capped to UNVERIFIED for temporal safety.",
+      details: {
+        adjustedClaimIds: guardedSingleContextVerdicts.adjustedClaimIds,
+      },
+    });
+  }
+
   const weightedClaimVerdicts = applyEvidenceWeighting(
-    claimVerdicts,
+    guardedSingleContextVerdicts.verdicts,
     state.evidenceItems,
     state.sources,
   );
@@ -10001,7 +8573,7 @@ ${evidenceItemsFormatted}`;
   });
 
   // PR-C: Clamp truth percentage to valid range (defensive)
-  const clampedAnswerTruthPct = clampTruthPercentage(answerTruthPct);
+  const clampedAnswerTruthPct = assertValidTruthPercentage(answerTruthPct);
   console.log("[generateSingleContextVerdicts] Final clampedAnswerTruthPct =", clampedAnswerTruthPct);
   const verdictSummary: VerdictSummary = {
     displayText: displayText,
@@ -10015,7 +8587,7 @@ ${evidenceItemsFormatted}`;
     hasContestedFactors,
   };
 
-  // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence)
+  // Calculate claims average truth percentage (v2.6.30: weighted by centrality Ã— confidence)
   const claimsAvgTruthPct = calculateWeightedVerdictAverage(finalVerdicts, state.calcConfig.aggregation);
 
   // v2.9.0: Single-context verdict-claims consistency anchoring
@@ -10118,6 +8690,7 @@ async function generateClaimVerdicts(
     understanding,
     directClaimsForVerdicts,
   );
+  const analysisInput = resolveAnalysisPromptInput(understanding, state);
 
   // Also add Article Verdict Problem analysis per POC1 spec
   // Get current date for temporal reasoning
@@ -10128,212 +8701,54 @@ async function generateClaimVerdicts(
   const currentDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const currentDateReadable = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  let systemPrompt = `Generate verdicts for each claim AND an independent article-level verdict.
+  const allowModelKnowledgePrompt = await getKnowledgeInstruction(
+    state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+    state.originalInput,
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
+    state.pipelineConfig,
+  );
+  const renderedClaimSystem = await loadAndRenderSection("orchestrated", "CLAIM_VERDICTS", {
+    currentDateReadable,
+    currentDate: currentDateStr,
+  });
+  const renderedClaimUser = await loadAndRenderSection("orchestrated", "CLAIM_VERDICTS_USER", {
+    THESIS_TEXT: understanding.articleThesis,
+    CLAIMS_TEXT: claimsFormatted,
+    EVIDENCE_TEXT: evidenceItemsFormatted,
+  });
+  const renderedClaimKeyFactors = await loadAndRenderSection(
+    "orchestrated",
+    "CLAIM_VERDICTS_KEY_FACTORS_APPEND",
+    {},
+  );
+  const renderedClaimEvidenceQuality = await loadAndRenderSection(
+    "orchestrated",
+    "CLAIM_VERDICTS_EVIDENCE_QUALITY_APPEND",
+    {},
+  );
+  const renderedClaimCompactRetry = await loadAndRenderSection(
+    "orchestrated",
+    "CLAIM_VERDICTS_COMPACT_RETRY_APPEND",
+    {},
+  );
+  if (
+    !renderedClaimSystem?.content?.trim() ||
+    !renderedClaimUser?.content?.trim() ||
+    !renderedClaimKeyFactors?.content?.trim() ||
+    !renderedClaimEvidenceQuality?.content?.trim() ||
+    !renderedClaimCompactRetry?.content?.trim()
+  ) {
+    throw new Error("Missing CLAIM_VERDICTS prompt sections in orchestrated prompt profile");
+  }
+  const providerPromptHint = await getProviderPromptHint(state.pipelineConfig?.llmProvider);
 
-## CRITICAL: TEMPORAL REASONING
+  let systemPrompt = `${renderedClaimSystem.content}
+${allowModelKnowledgePrompt}
+${providerPromptHint}`;
 
-**CURRENT DATE**: Today is ${currentDateReadable} (${currentDateStr}).
-
-**DATE REASONING RULES**:
-- When evaluating dates mentioned in claims, compare them to the CURRENT DATE above
-- Do NOT assume dates are in the future without checking against the current date
-- Do NOT reject claims as "impossible" based on incorrect temporal assumptions
-- If a date seems inconsistent, verify it against the current date before making judgments
-
-## CLAIM VERDICT CALIBRATION (IMPORTANT):
-
-**CRITICAL - RATING DIRECTION FOR SUB-CLAIMS**:
-- The verdict MUST rate whether THE CLAIM AS STATED is true
-- If the claim says "X was proportionate" but evidence shows X was NOT proportionate → verdict should be LOW (15-28%)
-- If the claim says "X was justified" but evidence shows X was NOT justified → verdict should be LOW (15-28%)
-- DO NOT rate whether your analysis reasoning is correct - rate whether THE CLAIM TEXT matches the evidence
-- The reasoning field explains why the verdict is high or low - the verdict percentage MUST match the reasoning's conclusion
-- Example: If reasoning says "tariffs were NOT proportionate", the verdict for a claim stating "tariffs were proportionate" MUST be LOW
-
-**CRITICAL: Evaluate SUBSTANCE, Not Attribution**
-- When evaluating a claim like "X happened according to Y's review":
-  - Do NOT evaluate whether Y's review EXISTS or what it SAID
-  - EVALUATE whether X is ACTUALLY TRUE based on evidence
-- The claim's truth depends on the SUBSTANCE (did X happen?), not the source's existence
-- If the source's methodology is contested by experts, the underlying claim's truth is UNCERTAIN regardless of what the source said
-- Example: "10 died due to Z per report R" → evaluate if deaths were CAUSED BY Z, not just whether R exists
-
-- Provide a truth percentage (0-100) for each claim.
-- Use these bands to calibrate:
-  * 86-100: TRUE (strong support, no credible counter-evidence)
-  * 72-85: MOSTLY-TRUE (mostly supported, minor gaps)
-  * 58-71: LEANING-TRUE (mixed evidence)
-  * 43-57: UNVERIFIED (insufficient evidence)
-  * 29-42: LEANING-FALSE (more counter-evidence than support)
-  * 15-28: MOSTLY-FALSE (strong counter-evidence)
-  * 0-14: FALSE (direct contradiction)
-
-Use the MOSTLY-FALSE/FALSE bands (0-28%) for any claim that evidence contradicts, regardless of certainty level.
-
-## COUNTER-EVIDENCE HANDLING
-
-Evidence items in the EVIDENCE section are labeled with their relationship to the user's claim:
-- **[SUPPORTING]**: Evidence that supports the user's claim being TRUE
-- **[COUNTER-EVIDENCE]**: Evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- Unlabeled items are neutral/contextual
-
-**How to use these labels:**
-- If most evidence items are [COUNTER-EVIDENCE], the verdict should be LOW (FALSE/MOSTLY-FALSE range: 0-28%)
-- If most evidence items are [SUPPORTING], the verdict should be HIGH (TRUE/MOSTLY-TRUE range: 72-100%)
-- Weight counter-evidence appropriately - strong counter-evidence should significantly lower the verdict
-
-## CRITICAL: CAUSAL vs TEMPORAL CLAIMS
-
-When a claim contains causal language ("due to", "caused by", "because of", "linked to", "result of"):
-- **Do NOT conflate "after" with "due to"**: Temporal sequence does NOT establish causation
-- **Require causal evidence**: Association/correlation is NOT causation
-- **Weight methodology criticism**: If the methodology used to establish causation is contested (e.g., unverified reporting systems, missing control groups, passive surveillance data), this DIRECTLY reduces the claim's truth value
-
-**EXAMPLES**:
-- Claim: "10 deaths occurred after X" - evaluate temporal sequence (easier to verify)
-- Claim: "10 deaths were due to X" - evaluate CAUSATION (requires stronger evidence)
-- Claim: "10 deaths after or due to X" - must evaluate the CAUSAL part ("due to") separately; temporal sequence alone is insufficient
-
-**CRITICAL**: If causation is claimed but only temporal/correlational evidence exists (e.g., deaths reported after an event in an unverified system), the verdict should be LOW (29-42% LEANING-FALSE) because causation is NOT established.
-
-## CLAIM CONTESTATION (for each claim):
-- isContested: true ONLY if this claim is genuinely disputed with documented factual counter-evidence
-- **CRITICAL: Do NOT set isContested=true for:**
-  * Mere disagreement or different viewpoints without documented counter-evidence
-  * Rhetorical opposition without factual basis
-  * Normal debate where both sides cite evidence (this is not "contested"; it's "disputed")
-- contestedBy: Who disputes it (e.g., "critics", "opponents") - empty string if not contested
-  * **NO CIRCULAR CONTESTATION**: The entity that made the decision CANNOT contest its own decision
-- factualBasis: Does the opposition have ACTUAL DOCUMENTED COUNTER-EVIDENCE?
-  * **CRITICAL: factualBasis classification determines weight in aggregation**
-  * "established" = Opposition cites SPECIFIC DOCUMENTED FACTS that contradict (e.g., audits showing violations, logs contradicting timeline, datasets contradicting measurements, official reports documenting non-compliance)
-  * "disputed" = Opposition has some factual counter-evidence but it's debatable or incomplete
-  * "opinion" = Opposition has NO factual counter-evidence - just claims, rhetoric, political statements, or actions without documentation
-    - **Use "opinion" for**: Political criticism without specifics, "says it was unfair" without citing violated procedures, "claims bias" without evidence
-    - **Do NOT use "opinion" for**: Documented violations, measured discrepancies, recorded non-compliance
-  * "unknown" = Cannot determine
-
-**EXAMPLES of factualBasis classification**:
-- "External government says the proceeding was unfair" → "opinion" (no specific violation cited)
-- "Critics claim procedure violated" → "opinion" (no specific procedure number/statute cited)
-- "Audit found violation of Regulation 47(b)" → "established" (specific documented violation)
-- "Study measured 38 units vs claimed 55 units" → "established" (documented measurement contradiction)
-- "Defense presented conflicting expert testimony" → "disputed" (some counter-evidence but debatable)
-
-CRITICAL - factualBasis MUST be "opinion" for:
-- Public statements or rhetoric without documented evidence
-- Ideological objections without factual basis
-- "Some people say" or "critics claim" without specific counter-evidence
-
-## RATING CONFIRMATION (ratingConfirmation field) - v2.8.4
-
-For EACH claim verdict, EXPLICITLY confirm what direction you are rating:
-
-**ratingConfirmation** confirms your verdict direction:
-- **"claim_supported"**: Evidence SUPPORTS the claim being TRUE → verdict should be 58-100%
-- **"claim_refuted"**: Evidence REFUTES the claim → verdict should be 0-42%
-- **"mixed"**: Evidence is balanced or insufficient → verdict should be 43-57%
-
-**CRITICAL VALIDATION**: Your ratingConfirmation MUST match your verdict:
-- ratingConfirmation: "claim_supported" + verdict: 25% = ERROR (mismatch!)
-- ratingConfirmation: "claim_refuted" + verdict: 80% = ERROR (mismatch!)
-- ratingConfirmation: "claim_supported" + verdict: 75% = CORRECT
-
-**BEFORE OUTPUTTING**: Ask yourself:
-"Am I rating THE USER'S CLAIM as true/false, or am I rating my analysis quality?"
-→ Rate THE CLAIM, not your analysis.
-
-## CAUSAL CLAIM CALIBRATION (CRITICAL)
-
-When a claim uses causal language (e.g., "caused by", "due to", "because of"):
-- Do NOT treat "after" / temporal sequence as proof of causation.
-- If evidence only shows temporal association, unverified reports, or speculation (no causal methodology), the verdict should be in the **FALSE/MOSTLY-FALSE** bands (0-28%).
-- Only rate causal claims above 42% if there is credible causal evidence (e.g., controlled analysis, clear causal mechanism with strong evidence, or authoritative findings with methodology).
-
-## EVIDENCE-SCOPE-AWARE EVALUATION
-
-Evidence may come from sources with DIFFERENT EvidenceScopes (per-evidence source methodology/boundaries; e.g., broad-boundary vs narrow-boundary, Region A vs Region B methodology).
-
-**When evaluating claims with EvidenceScope-specific evidence**:
-1. **Check EvidenceScope alignment**: Are evidence items being compared from compatible EvidenceScopes?
-2. **Flag EvidenceScope mismatches**: If Source A uses a broad boundary and Source B uses a narrow boundary, these are NOT directly comparable
-3. **Note in reasoning**: When EvidenceScope affects interpretation, mention it (e.g., "Under broad-boundary analysis...")
-4. **Don't treat EvidenceScope differences as contradictions**: "40% efficient (broad boundary)" and "60% efficient (narrow boundary)" can BOTH be correct under different EvidenceScopes
-
-**Example EvidenceScope mismatch to flag**:
-- Claim: "Method A is more efficient than Method B"
-- Source A (narrow boundary): "A is 60% efficient (use-phase only)"
-- Source B (broad boundary): "B is 80% efficient (full lifecycle)"
-→ These use different EvidenceScopes - NOT a valid comparison. Note in reasoning.
-
-## ARTICLE VERDICT ANALYSIS (CRITICAL - Article Verdict Problem)
-
-The article's overall credibility is NOT simply the average of individual claim verdicts!
-An article with mostly accurate evidence items can still be MISLEADING if:
-1. The main conclusion doesn't follow from the evidence
-2. There are logical fallacies (correlation ≠ causation, cherry-picking, etc.)
-3. The framing creates a false impression despite accurate individual evidence items
-
-AFTER analyzing individual claims, evaluate the article as a whole:
-
-1. What is the article's main argument or conclusion (thesis)?
-2. Does this conclusion LOGICALLY FOLLOW from the evidence presented?
-3. Are there LOGICAL FALLACIES?
-   - Correlation presented as causation
-   - Cherry-picking evidence
-   - False equivalence
-   - Appeal to authority without substance
-   - Hasty generalization
-4. Even if individual evidence items are accurate, is the article's framing MISLEADING?
-5. Are CENTRAL claims (marked [CENTRAL]) true? If central claims are FALSE but supporting claims are TRUE, the article is MISLEADING.
-
-6. **Central-claim dominance rule (generic)**:
-   - If a CENTRAL claim is refuted in the **MOSTLY-FALSE/FALSE** bands (0-28%) AND that claim is a key pillar of the thesis, the articleVerdict should typically also fall in **15-28%** unless the thesis is clearly separable and primarily about other central claims.
-   - If the refuted CENTRAL claim is also framed as causal/high-impact, weight it more heavily than peripheral accurate details.
-
-ARTICLE VERDICT TRUTH PERCENTAGE:
-- Provide articleVerdict as a truth percentage (0-100).
-- Use these bands to calibrate:
-  * 86-100: TRUE (thesis strongly supported, no significant logical issues)
-  * 72-85: MOSTLY-TRUE (mostly supported, minor issues)
-  * 58-71: LEANING-TRUE (mixed framing or gaps)
-  * 43-57: UNVERIFIED (mixed support)
-  * 29-42: LEANING-FALSE (notable logical gaps or framing issues)
-  * 15-28: MOSTLY-FALSE (strong counter-evidence to the thesis)
-  * 0-14: FALSE (thesis is directly contradicted)
-
-IMPORTANT: Set verdictDiffersFromClaimAverage=true if the article verdict differs from what a simple average would suggest.
-Example: If 3/4 claims are true but the main conclusion is false -> set articleVerdict in the LEANING-FALSE band (29-42%).
-
-${getKnowledgeInstruction(
-  state.pipelineConfig?.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
-  state.originalInput,
-  understanding,
-  state.pipelineConfig?.recencyCueTerms,
-)}
-
-## FINAL VALIDATION (check before responding)
-- Every claim in reasoning references a supportingEvidenceId
-- ratingConfirmation matches verdict percentage direction
-- Confidence reflects evidence strength, not reasoning confidence
-- No claims in reasoning that aren't supported by cited evidence
-- If evidence was insufficient for any claim, that claim's verdict is in UNVERIFIED band (43-57%)
-
-${getProviderPromptHint(state.pipelineConfig?.llmProvider)}`;
-
-  // KeyFactors are now generated in understanding phase, not verdict generation
-  systemPrompt += `
-
-## KEY FACTORS
-KeyFactors are handled in the understanding phase. Provide an empty keyFactors array: []`;
-
-  // v2.9.2: Generic instruction for unscientific evidence (replaces pattern-based pseudoscience detection)
-  // LLM should independently identify claims lacking scientific basis based on evidence quality
-  systemPrompt += `\n\nEVIDENCE QUALITY GUIDANCE:
-- Claims that rely on mechanisms contradicting established physics, chemistry, or biology should be treated with skepticism
-- Claims lacking peer-reviewed scientific evidence, or relying on anecdotes/testimonials, are OPINION not established evidence
-- If a claim's mechanism has no scientific basis, it should be in the MOSTLY-FALSE/FALSE bands (0-28%)
-- However, do NOT place claims in the FALSE band (0-14%) unless directly contradicted by strong evidence`;
+  systemPrompt += `\n\n${renderedClaimKeyFactors.content}`;
+  systemPrompt += `\n\n${renderedClaimEvidenceQuality.content}`;
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_CLAIM> | null = null;
   const claimOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
@@ -10345,7 +8760,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
     { label: "primary", extraSystem: "" },
     {
       label: "retry-compact",
-      extraSystem: `\n\n## COMPACT MODE (RETRY)\n- reasoning: 1-2 short sentences.\n- Be concise to avoid output truncation.`,
+      extraSystem: `\n\n${renderedClaimCompactRetry.content}`,
     },
   ];
 
@@ -10359,7 +8774,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
           { role: "system", content: systemPrompt + attempt.extraSystem },
           {
             role: "user",
-            content: `THESIS: "${understanding.articleThesis}"\n\nCLAIMS:\n${claimsFormatted}\n\nFACTS:\n${evidenceItemsFormatted}`,
+            content: renderedClaimUser.content,
           },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
@@ -10619,7 +9034,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       }
 
       // PR-C: Clamp truth percentage to valid range
-      const clampedTruthPct = clampTruthPercentage(truthPct);
+      const clampedTruthPct = assertValidTruthPercentage(truthPct);
       return {
         ...cv,
         claimId: claim.id,
@@ -10692,7 +9107,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
 
         // Apply inversion correction if detected
         if (validation.isInverted && validation.suggestedCorrection !== undefined && validation.suggestedCorrection !== null) {
-          const correctedPct = clampTruthPercentage(validation.suggestedCorrection);
+          const correctedPct = assertValidTruthPercentage(validation.suggestedCorrection);
           debugLog("Verdict inversion detected (LLM)", {
             claimId: cv.claimId,
             originalPct: cv.truthPercentage,
@@ -10733,8 +9148,28 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
     }
   }
 
+  const recencyMatters = new RecencyAssessor().isRecencySensitive(
+    analysisInput,
+    understanding,
+    state.pipelineConfig?.recencyCueTerms,
+  );
+  const guardedClaimVerdicts = applyRecencyEvidenceGuard(validatedClaimVerdicts, {
+    recencyMatters,
+  });
+  if (guardedClaimVerdicts.adjustedClaimIds.length > 0) {
+    state.analysisWarnings.push({
+      type: "recency_evidence_gap",
+      severity: "warning",
+      message:
+        "Recency-sensitive claims without supporting evidence were capped to UNVERIFIED for temporal safety.",
+      details: {
+        adjustedClaimIds: guardedClaimVerdicts.adjustedClaimIds,
+      },
+    });
+  }
+
   const weightedClaimVerdicts = applyEvidenceWeighting(
-    validatedClaimVerdicts,
+    guardedClaimVerdicts.verdicts,
     state.evidenceItems,
     state.sources,
   );
@@ -10825,7 +9260,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
     dependencyFailedCount: finalVerdicts.filter((v) => v.dependencyFailed).length,
   };
 
-  // Calculate claims average truth percentage (v2.6.30: weighted by centrality × confidence, only independent claims)
+  // Calculate claims average truth percentage (v2.6.30: weighted by centrality Ã— confidence, only independent claims)
   const claimsAvgTruthPct = calculateWeightedVerdictAverage(independentVerdicts, state.calcConfig.aggregation);
 
   // Article Verdict Problem: Check central claims specifically (using independent verdicts only)
@@ -10867,7 +9302,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   if (hasMisleadingPattern && articleTruthPct > misleadingTarget) {
     const blendStrength = Math.min(centralRefutedRatio, maxBlendStrength);
     const blendedPct = Math.round(articleTruthPct * (1 - blendStrength) + misleadingTarget * blendStrength);
-    console.log(`[Analyzer] Article Verdict Problem detected: ${centralRefuted.length}/${centralClaims.length} central claims refuted (${Math.round(centralRefutedRatio * 100)}%), ${nonCentralSupported.length} supporting claims true, avg=${claimsAvgTruthPct}%. Blending ${articleTruthPct}→${blendedPct}.`);
+    console.log(`[Analyzer] Article Verdict Problem detected: ${centralRefuted.length}/${centralClaims.length} central claims refuted (${Math.round(centralRefutedRatio * 100)}%), ${nonCentralSupported.length} supporting claims true, avg=${claimsAvgTruthPct}%. Blending ${articleTruthPct}â†’${blendedPct}.`);
     articleTruthPct = blendedPct;
     articleVerdictOverrideReason = `${centralRefuted.length}/${centralClaims.length} central claim(s) refuted despite ${nonCentralSupported.length} accurate supporting evidence`;
   }
@@ -11167,6 +9602,78 @@ function generateMethodologyAssessment(
   return parts.join("; ");
 }
 
+const REPORT_DAMAGE_TRIGGER_TYPES = new Set<string>([
+  "structured_output_failure",
+  "budget_exceeded",
+  "search_provider_error",
+]);
+
+function reportDamageHintForType(type: string): string {
+  switch (type) {
+    case "structured_output_failure":
+      return "Retry with fewer claims/contexts or shorter outputs; structured output failures are often truncation-related.";
+    case "budget_exceeded":
+      return "Increase token/iteration budget in config or reduce scope so the full pipeline can complete.";
+    case "search_provider_error":
+      return "Check search provider key/quota/availability and rerun after provider health is restored.";
+    case "grounding_check":
+      return "Ensure verdict reasoning references concrete evidence IDs extracted from sources.";
+    case "evidence_filter_degradation":
+      return "Investigate evidence-filter LLM failures; heuristic fallback reduces evidence quality precision.";
+    case "recency_evidence_gap":
+      return "Add fresh date-anchored sources before trusting high-truth recency-sensitive verdicts.";
+    default:
+      return "Review warning details, fix upstream failures, and rerun analysis.";
+  }
+}
+
+function synthesizeReportDamageWarning(state: ResearchState): {
+  damaged: boolean;
+  triggerTypes: string[];
+  remediationHints: string[];
+  criticalIssues: Array<{ type: string; severity: string; message: string }>;
+} {
+  const criticalWarnings = (state.analysisWarnings || []).filter(
+    (w) =>
+      (w.severity === "error" || REPORT_DAMAGE_TRIGGER_TYPES.has(w.type)) &&
+      w.type !== "report_damaged",
+  );
+  const triggerTypes = Array.from(new Set(criticalWarnings.map((w) => w.type)));
+  const remediationHints = Array.from(
+    new Set(criticalWarnings.map((w) => reportDamageHintForType(w.type))),
+  );
+  const criticalIssues = criticalWarnings.map((w) => ({
+    type: w.type,
+    severity: w.severity,
+    message: w.message,
+  }));
+
+  const damaged = triggerTypes.length > 0;
+  if (damaged && !state.analysisWarnings.some((w) => w.type === "report_damaged")) {
+    state.analysisWarnings.push({
+      type: "report_damaged",
+      severity: "error",
+      message:
+        `Analysis report integrity is degraded due to ${criticalIssues.length} critical issue(s). Treat verdicts as damaged until resolved.`,
+      details: {
+        triggeredWarningTypes: triggerTypes,
+        issues: criticalIssues,
+        remediationHints,
+        recommendedNextStep:
+          remediationHints[0] ||
+          "Resolve critical warnings and re-run analysis before trusting verdict outputs.",
+      },
+    });
+    debugLog("Report integrity degraded", {
+      triggerTypes,
+      criticalIssueCount: criticalIssues.length,
+      remediationHints,
+    });
+  }
+
+  return { damaged, triggerTypes, remediationHints, criticalIssues };
+}
+
 async function generateReport(
   state: ResearchState,
   claimVerdicts: ClaimVerdict[],
@@ -11179,12 +9686,12 @@ async function generateReport(
   const analysisMode = state.pipelineConfig?.analysisMode ?? DEFAULT_PIPELINE_CONFIG.analysisMode;
   const hasMultipleContexts = articleAnalysis.hasMultipleContexts;
   const useRich = CONFIG.reportStyle === "rich";
-  const iconPositive = useRich ? "✅" : "";
-  const iconNegative = useRich ? "❌" : "";
-  const iconNeutral = useRich ? "❓" : "";
-  const iconWarning = useRich ? "⚠️" : "";
-  const iconOk = useRich ? "✅" : "";
-  const iconFail = useRich ? "❌" : "";
+  const iconPositive = useRich ? "âœ…" : "";
+  const iconNegative = useRich ? "âŒ" : "";
+  const iconNeutral = useRich ? "â“" : "";
+  const iconWarning = useRich ? "âš ï¸" : "";
+  const iconOk = useRich ? "âœ…" : "";
+  const iconFail = useRich ? "âŒ" : "";
 
   let report = `# FactHarbor Analysis Report\n\n`;
   report += `**Analysis ID:** ${twoPanelSummary.factharborAnalysis.analysisId}\n`;
@@ -11270,7 +9777,7 @@ async function generateReport(
   if (state.searchQueries.length > 0) {
     report += `### Web Search Queries\n\n`;
     for (const sq of state.searchQueries) {
-      report += `- \`${sq.query}\` → ${sq.resultsCount} results (${sq.focus})\n`;
+      report += `- \`${sq.query}\` â†’ ${sq.resultsCount} results (${sq.focus})\n`;
     }
     report += `\n`;
   }
@@ -11283,6 +9790,34 @@ async function generateReport(
     if (fallbackReport) {
       report += `\n${fallbackReport}\n`;
     }
+  }
+
+  if (state.analysisWarnings.length > 0) {
+    report += `\n### Analysis Quality Warnings\n\n`;
+    for (const warning of state.analysisWarnings) {
+      report += `- [${warning.severity.toUpperCase()}] ${warning.type}: ${warning.message}\n`;
+      const issues = Array.isArray((warning.details as any)?.issues)
+        ? (warning.details as any).issues
+        : [];
+      if (issues.length > 0) {
+        for (const issue of issues.slice(0, 5)) {
+          report += `  - issue: ${issue.type} (${issue.severity}) â€” ${issue.message}\n`;
+        }
+      }
+      const hints = Array.isArray((warning.details as any)?.remediationHints)
+        ? (warning.details as any).remediationHints
+        : [];
+      if (hints.length > 0) {
+        for (const hint of hints.slice(0, 3)) {
+          report += `  - hint: ${hint}\n`;
+        }
+      }
+      const recommended = String((warning.details as any)?.recommendedNextStep || "").trim();
+      if (recommended) {
+        report += `  - next step: ${recommended}\n`;
+      }
+    }
+    report += `\n`;
   }
 
   return report;
@@ -11660,7 +10195,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       console.warn(`[Budget] ${reason}`);
       markBudgetExceeded(state.budgetTracker, reason);
       await emit(
-        `⚠️ Budget limit reached: ${reason}`,
+        `âš ï¸ Budget limit reached: ${reason}`,
         Math.round(10 + (iteration / config.maxResearchIterations) * 50),
       );
       break;
@@ -11720,7 +10255,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Check if search is enabled
     if (!searchConfig.enabled) {
       await emit(
-        `⚠️ Search disabled (UCM search.enabled=false)`,
+        `âš ï¸ Search disabled (UCM search.enabled=false)`,
         baseProgress + 1,
       );
       state.searchQueries.push({
@@ -11742,12 +10277,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       isGroundedSearchAvailable(state.pipelineConfig?.llmProvider)
     ) {
       await emit(
-        `🔍 Using Gemini Grounded Search for: "${decision.focus}"`,
+        `ðŸ” Using Gemini Grounded Search for: "${decision.focus}"`,
         baseProgress + 1,
       );
 
       const groundedResult = await searchWithGrounding({
-        prompt: `Find recent, factual information about: ${decision.focus}`,
+        prompt: decision.focus || "",
         context: state.originalInput || state.originalText || "",
       });
 
@@ -11774,7 +10309,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           const domainPreview = uniqueGroundedDomains.length <= 3
             ? uniqueGroundedDomains.join(', ')
             : `${uniqueGroundedDomains.slice(0, 3).join(', ')} +${uniqueGroundedDomains.length - 3} more`;
-          await emit(`📊 Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
+          await emit(`ðŸ“Š Checking source reliability (${uniqueGroundedDomains.length}): ${domainPreview}`, baseProgress + 3);
           // v2.9.0: Use SR service interface
           await srService.prefetch(groundedUrls);
 
@@ -11796,7 +10331,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
           const successfulSources = validSources.filter((s) => s.fetchSuccess);
           await emit(
-            `  → ${successfulSources.length}/${validSources.length} grounded sources fetched successfully`,
+            `  â†’ ${successfulSources.length}/${validSources.length} grounded sources fetched successfully`,
             baseProgress + 4,
           );
 
@@ -11849,7 +10384,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         }
       } else {
         console.log(`[Analyzer] Grounded search did not return results, falling back to standard search`);
-        await emit(`⚠️ Grounded search unavailable, using standard search`, baseProgress + 1);
+        await emit(`âš ï¸ Grounded search unavailable, using standard search`, baseProgress + 1);
       }
     }
 
@@ -11899,7 +10434,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const searchProviders = getActiveSearchProviders(searchConfig).join("+");
       const dateFilterMsg = dateRestrict ? ` [filtering: past ${dateRestrict === "y" ? "year" : dateRestrict === "m" ? "month" : "week"}]` : "";
       await emit(
-        `🔍 Searching [${searchProviders}]${dateFilterMsg}: "${query}"`,
+        `ðŸ” Searching [${searchProviders}]${dateFilterMsg}: "${query}"`,
         baseProgress + 1,
       );
 
@@ -11925,7 +10460,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         // Surface search provider errors as analysis warnings
         if (searchResponse.errors && searchResponse.errors.length > 0) {
           for (const err of searchResponse.errors) {
-            console.error(`[Analyzer] ❌ SEARCH PROVIDER ERROR: ${err.provider} (HTTP ${err.status ?? "N/A"}): ${err.message}`);
+            console.error(`[Analyzer] âŒ SEARCH PROVIDER ERROR: ${err.provider} (HTTP ${err.status ?? "N/A"}): ${err.message}`);
             state.analysisWarnings.push({
               type: "search_provider_error",
               severity: "error",
@@ -11934,7 +10469,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             });
             if (err.fatal) recordProviderFailure("search", err.message);
           }
-          await emit(`  ⚠️ Search provider error: ${searchResponse.errors.map(e => `${e.provider} HTTP ${e.status ?? "?"}`).join(", ")}`, baseProgress + 2);
+          await emit(`  âš ï¸ Search provider error: ${searchResponse.errors.map(e => `${e.provider} HTTP ${e.status ?? "?"}`).join(", ")}`, baseProgress + 2);
         } else if (results.length > 0) {
           recordProviderSuccess("search");
         }
@@ -11951,9 +10486,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         });
 
         searchResults.push(...results.map((r: any) => ({ ...r, query })));
-        await emit(`  → ${results.length} results`, baseProgress + 2);
+        await emit(`  â†’ ${results.length} results`, baseProgress + 2);
       } catch (err) {
-        await emit(`  → Search failed: ${err}`, baseProgress + 2);
+        await emit(`  â†’ Search failed: ${err}`, baseProgress + 2);
         state.searchQueries.push({
           query,
           iteration,
@@ -12007,7 +10542,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     let relevantResults: typeof uniqueResults = [];
 
-    // Domain pre-filter (structural — no semantic decision)
+    // Domain pre-filter (structural â€” no semantic decision)
     const domainFilteredResults = uniqueResults.filter((result) => {
       const domain = extractDomain(result.url || "");
       if (domain && !isImportantSource(domain)) {
@@ -12246,7 +10781,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
         if (fallbackQueries.length > 0) {
           await emit(
-            `🔁 Adaptive fallback step 3: broad search (${relevantResults.length}/${adaptiveMinCandidates} candidates)`,
+            `ðŸ” Adaptive fallback step 3: broad search (${relevantResults.length}/${adaptiveMinCandidates} candidates)`,
             baseProgress + 2,
           );
         }
@@ -12413,7 +10948,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const domainPreview2 = uniqueDomainsToFetch.length <= 3
       ? uniqueDomainsToFetch.join(', ')
       : `${uniqueDomainsToFetch.slice(0, 3).join(', ')} +${uniqueDomainsToFetch.length - 3} more`;
-    await emit(`📊 Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
+    await emit(`ðŸ“Š Checking source reliability (${uniqueDomainsToFetch.length}): ${domainPreview2}`, baseProgress + 4);
     // v2.9.0: Use SR service interface
     await srService.prefetch(urlsToFetch);
 
@@ -12434,7 +10969,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     const successfulSources = validSources.filter((s) => s.fetchSuccess);
     await emit(
-      `  → ${successfulSources.length}/${validSources.length} fetched successfully`,
+      `  â†’ ${successfulSources.length}/${validSources.length} fetched successfully`,
       baseProgress + 5,
     );
 
@@ -12486,9 +11021,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // Pipeline Phase 1: Gap-driven research continuation
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //
   // BUDGET DESIGN DECISION:
   // Gap research uses a SEPARATE, bounded query budget (gapResearchMaxQueries)
@@ -12505,7 +11040,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   //   - Check checkTokenBudget() before gap queries
   //   - Deduct gap iterations from state.budgetTracker.totalIterations
   //
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // Gap research configuration - now configurable via PipelineConfig
   const maxGapIterations = state.pipelineConfig.gapResearchMaxIterations ?? 2;
   const maxGapQueriesTotal = state.pipelineConfig.gapResearchMaxQueries ?? 8;
@@ -12929,7 +11464,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       }
     }
 
-    // Layer 5: Grounding check — validate verdict reasoning against cited evidence
+    // Layer 5: Grounding check â€” validate verdict reasoning against cited evidence
     if (claimVerdicts.length > 0 && state.evidenceItems.length > 0) {
       const groundingResult = await checkVerdictGrounding(claimVerdicts, state.evidenceItems);
       debugLog("Grounding check result", {
@@ -12965,7 +11500,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         state.analysisWarnings.push({
           type: "grounding_check",
           severity: "warning",
-          message: `Grounding ratio: ${(groundingResult.groundingRatio * 100).toFixed(0)}% — ${groundingResult.warnings.length} verdict(s) with low evidence grounding`,
+          message: `Grounding ratio: ${(groundingResult.groundingRatio * 100).toFixed(0)}% â€” ${groundingResult.warnings.length} verdict(s) with low evidence grounding`,
           details: {
             groundingRatio: groundingResult.groundingRatio,
             warnings: groundingResult.warnings,
@@ -13096,7 +11631,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const finalClaimVerdicts = validatedVerdicts;
 
   // Fix 3: Low-source confidence penalty
-  // When evidence base is thin (≤ lowSourceThreshold unique sources), penalize confidence
+  // When evidence base is thin (â‰¤ lowSourceThreshold unique sources), penalize confidence
   // to prevent over-confident verdicts based on insufficient evidence.
   // NOTE: Use state.sources (fetched sources) for consistency with the displayed source count
   // in the report/UI, NOT state.evidenceItems (which only counts sources that produced evidence).
@@ -13135,7 +11670,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     });
   }
 
-  // Fix 1: Confidence floor guard — ensure confidence never reaches 0 on successful verdicts
+  // Fix 1: Confidence floor guard â€” ensure confidence never reaches 0 on successful verdicts
   // Applied after all penalties (recency, low-source) as a final safety net
   {
     const confFloor = state.pipelineConfig.minConfidenceFloor ?? 10;
@@ -13162,14 +11697,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // STEP 7: Report
   await emit("Step 5: Generating report", 85);
-  const reportMarkdown = await generateReport(
-    state,
-    finalClaimVerdicts,
-    articleAnalysis,
-    twoPanelSummary,
-    model,
-    searchConfig.provider,
-  );
+  let reportMarkdown = "";
 
   // Safety: ensure we never emit a result with zero contexts, even if context refinement was
   // skipped/rejected and the initial understanding produced no contexts.
@@ -13177,15 +11705,17 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // PR 6: Log budget stats and warn if exceeded
   const budgetStats = getBudgetStats(state.budgetTracker, state.budget);
-  console.log(
-    `[Budget] Usage: ${budgetStats.tokensUsed} tokens (${budgetStats.tokensPercent}%), ` +
-    `${budgetStats.totalIterations} iterations (${budgetStats.iterationsPercent}%), ` +
-    `${budgetStats.llmCalls} LLM calls`
-  );
+  debugLog("[Budget] Usage", {
+    tokensUsed: budgetStats.tokensUsed,
+    tokensPercent: budgetStats.tokensPercent,
+    totalIterations: budgetStats.totalIterations,
+    iterationsPercent: budgetStats.iterationsPercent,
+    llmCalls: budgetStats.llmCalls,
+  });
   if (state.budgetTracker.budgetExceeded) {
-    console.warn(
-      `[Budget] ⚠️ Analysis terminated early due to budget limits: ${state.budgetTracker.exceedReason}`
-    );
+    debugLog("[Budget] Analysis terminated early due to budget limits", {
+      reason: state.budgetTracker.exceedReason,
+    });
     // P2: Add budget_exceeded warning to analysisWarnings for UI display
     state.analysisWarnings.push({
       type: "budget_exceeded",
@@ -13203,9 +11733,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // P3: Add warning if evidence filter degraded to heuristics
   if (state.evidenceFilterLlmFailures > 0) {
-    console.warn(
-      `[Evidence Filter] ⚠️ LLM evidence quality filter failed ${state.evidenceFilterLlmFailures} time(s), fell back to heuristics`
-    );
+    debugLog("[Evidence Filter] LLM evidence quality filter degraded to heuristic fallback", {
+      failureCount: state.evidenceFilterLlmFailures,
+    });
     state.analysisWarnings.push({
       type: "evidence_filter_degradation",
       severity: "warning",
@@ -13219,6 +11749,18 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // P0: Final verification - catch any classifications that bypassed entry-point normalization
   verifyFinalClassifications(state, finalClaimVerdicts, articleAnalysis);
+
+  // Synthesize a top-level "report_damaged" warning for clear UI surfacing.
+  const reportIntegrity = synthesizeReportDamageWarning(state);
+
+  reportMarkdown = await generateReport(
+    state,
+    finalClaimVerdicts,
+    articleAnalysis,
+    twoPanelSummary,
+    model,
+    searchConfig.provider,
+  );
 
   await emit("Analysis complete", 100);
 
@@ -13268,6 +11810,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           exceedReason: state.budgetTracker.exceedReason,
         };
       })(),
+      reportIntegrity: {
+        damaged: reportIntegrity.damaged,
+        triggerTypes: reportIntegrity.triggerTypes,
+        remediationHints: reportIntegrity.remediationHints,
+        criticalIssues: reportIntegrity.criticalIssues,
+      },
     },
     verdictSummary: verdictSummary || null,
     analysisContexts: state.understanding!.analysisContexts,
@@ -13346,9 +11894,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const highCentralityClaims = state.understanding?.subClaims?.filter(c => c.centrality === "high") || [];
       const claimsWithEvidence = highCentralityClaims.filter(claim => {
         return state.evidenceItems.some(e => {
+          if (String((e as any)?.relatedClaimId || "") === String(claim.id || "")) return true;
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
-          const similarity = jaccardSimilarity(e.statement, claim.text);
-          return similarity > similarityThreshold;
+          return false;
         });
       });
       const highCentralityCoverage = highCentralityClaims.length > 0
@@ -13359,9 +11907,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const claimsWithCounterEvidence = highCentralityClaims.filter(claim => {
         return state.evidenceItems.some(e => {
           if (e.claimDirection !== "contradicts") return false;
+          if (String((e as any)?.relatedClaimId || "") === String(claim.id || "")) return true;
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
-          const similarity = jaccardSimilarity(e.statement, claim.text);
-          return similarity > similarityThreshold;
+          return false;
         });
       });
       const counterEvidenceRate = highCentralityClaims.length > 0
