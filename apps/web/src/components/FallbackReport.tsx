@@ -7,25 +7,7 @@
 import React from 'react';
 import styles from './FallbackReport.module.css';
 import type { FallbackSummary } from '@/lib/analyzer/classification-fallbacks';
-
-// Analysis warning types (matches types.ts)
-export type AnalysisWarningSeverity = "error" | "warning" | "info";
-export type AnalysisWarningType =
-  | "verdict_direction_mismatch"
-  | "structured_output_failure"
-  | "evidence_filter_degradation"
-  | "search_fallback"
-  | "budget_exceeded"
-  | "classification_fallback"
-  | "low_evidence_count"
-  | "context_without_evidence";
-
-export interface AnalysisWarning {
-  type: AnalysisWarningType;
-  severity: AnalysisWarningSeverity;
-  message: string;
-  details?: Record<string, any>;
-}
+import type { AnalysisWarning } from '@/lib/analyzer/types';
 
 interface FallbackReportProps {
   summary: FallbackSummary | undefined;
@@ -40,22 +22,57 @@ const fieldDefaults: Record<string, string> = {
   isContested: 'false'
 };
 
-const WARNING_TYPE_LABELS: Record<AnalysisWarningType, string> = {
+const WARNING_TYPE_LABELS: Record<string, string> = {
+  report_damaged: "Report Damaged",
   verdict_direction_mismatch: "Verdict Direction Mismatch",
   structured_output_failure: "Structured Output Failure",
   evidence_filter_degradation: "Evidence Filter Degradation",
   search_fallback: "Search Fallback",
+  search_provider_error: "Search Provider Error",
   budget_exceeded: "Budget Exceeded",
   classification_fallback: "Classification Fallback",
   low_evidence_count: "Low Evidence Count",
   context_without_evidence: "Context Without Evidence",
+  recency_evidence_gap: "Recency Evidence Gap",
+  confidence_calibration: "Confidence Calibration",
+  low_source_count: "Low Source Count",
+  grounding_check: "Grounding Check",
 };
 
-const SEVERITY_ICONS: Record<AnalysisWarningSeverity, string> = {
+const WARNING_TYPE_HINTS: Record<string, string> = {
+  report_damaged: "Treat this report as non-final until critical issues are resolved and the analysis is re-run.",
+  structured_output_failure: "Retry with reduced output scope or shorter prompts to avoid structured-output truncation.",
+  budget_exceeded: "Increase token/iteration budget or narrow analysis scope.",
+  search_provider_error: "Check search provider quota/key health and rerun after recovery.",
+  recency_evidence_gap: "Add fresh date-anchored evidence for recency-sensitive claims.",
+  grounding_check: "Verify reasoning is explicitly linked to cited evidence IDs.",
+  evidence_filter_degradation: "Inspect evidence-filter LLM failures; heuristic fallback may lower precision.",
+};
+
+const SEVERITY_ICONS: Record<AnalysisWarning["severity"], string> = {
   error: "❌",
   warning: "⚠️",
   info: "ℹ️",
 };
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => String(v || "").trim())
+    .filter(Boolean);
+}
+
+function getWarningHints(warning: AnalysisWarning): string[] {
+  const explicitHints = toStringArray((warning.details as any)?.remediationHints);
+  const recommended = String((warning.details as any)?.recommendedNextStep || "").trim();
+  const typeHint = WARNING_TYPE_HINTS[warning.type] ? [WARNING_TYPE_HINTS[warning.type]] : [];
+  const combined = [
+    ...explicitHints,
+    ...(recommended ? [recommended] : []),
+    ...typeHint,
+  ];
+  return Array.from(new Set(combined));
+}
 
 export function FallbackReport({ summary, analysisWarnings = [] }: FallbackReportProps) {
   const hasFallbacks = summary && summary.totalFallbacks > 0;
@@ -112,6 +129,26 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
                       {WARNING_TYPE_LABELS[warning.type] || warning.type}
                     </span>
                     <p className={styles.warningMessage}>{warning.message}</p>
+                    {Array.isArray((warning.details as any)?.issues) && (warning.details as any).issues.length > 0 && (
+                      <ul className={styles.warningIssueList}>
+                        {(warning.details as any).issues.slice(0, 4).map((issue: any, idx: number) => (
+                          <li key={`issue-${idx}`}>
+                            <strong>{issue?.type || "issue"}:</strong> {issue?.message || "No message"}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {(() => {
+                      const hints = getWarningHints(warning);
+                      if (hints.length === 0) return null;
+                      return (
+                        <ul className={styles.warningHintList}>
+                          {hints.slice(0, 3).map((hint, hintIdx) => (
+                            <li key={`hint-${hintIdx}`}>{hint}</li>
+                          ))}
+                        </ul>
+                      );
+                    })()}
                     {warning.details && Object.keys(warning.details).length > 0 && (
                       <details className={styles.warningDetails}>
                         <summary>Details</summary>

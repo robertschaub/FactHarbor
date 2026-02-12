@@ -310,6 +310,28 @@ export default function JobPage() {
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
   const analysisWarnings = result?.analysisWarnings || [];  // P1: Analysis warnings for UI
+  const reportIntegrity = result?.meta?.reportIntegrity;
+  const reportDamagedWarning = analysisWarnings.find((w: any) => w?.type === "report_damaged");
+  const isReportDamaged =
+    !!reportIntegrity?.damaged ||
+    !!reportDamagedWarning ||
+    analysisWarnings.some((w: any) => w?.severity === "error");
+  const reportDamageTriggerTypes: string[] =
+    reportDamagedWarning?.details?.triggeredWarningTypes ||
+    reportIntegrity?.triggerTypes ||
+    [];
+  const reportDamageIssues: Array<{ type?: string; severity?: string; message?: string }> =
+    reportDamagedWarning?.details?.issues ||
+    reportIntegrity?.criticalIssues ||
+    [];
+  const reportDamageHints: string[] =
+    reportDamagedWarning?.details?.remediationHints ||
+    reportIntegrity?.remediationHints ||
+    [];
+  const reportDamageNextStep: string =
+    reportDamagedWarning?.details?.recommendedNextStep ||
+    reportDamageHints[0] ||
+    "Resolve critical warning causes and rerun analysis.";
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
@@ -607,6 +629,39 @@ export default function JobPage() {
                   originalInput={job?.inputValue || ""}
                   transformedInput={impliedClaim}
                 />
+              )}
+
+              {isReportDamaged && (
+                <div className={styles.reportDamageBanner}>
+                  <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
+                  <div className={styles.reportDamageText}>
+                    {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
+                  </div>
+                  {reportDamageTriggerTypes.length > 0 && (
+                    <div className={styles.reportDamageMeta}>
+                      Triggers: {reportDamageTriggerTypes.join(", ")}
+                    </div>
+                  )}
+                  {reportDamageIssues.length > 0 && (
+                    <ul className={styles.reportDamageList}>
+                      {reportDamageIssues.slice(0, 5).map((issue, idx) => (
+                        <li key={`issue-${idx}`}>
+                          <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {reportDamageHints.length > 0 && (
+                    <ul className={styles.reportDamageHints}>
+                      {reportDamageHints.slice(0, 3).map((hint, idx) => (
+                        <li key={`hint-${idx}`}>{hint}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className={styles.reportDamageNextStep}>
+                    Next step: {reportDamageNextStep}
+                  </div>
+                </div>
               )}
 
               {/* Input neutrality: same banner for all input styles */}

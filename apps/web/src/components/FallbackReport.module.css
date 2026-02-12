@@ -220,6 +220,28 @@
   line-height: 1.4;
 }
 
+.warningIssueList {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.warningIssueList li {
+  margin: 0.125rem 0;
+}
+
+.warningHintList {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.75rem;
+  color: #1f2937;
+}
+
+.warningHintList li {
+  margin: 0.125rem 0;
+}
+
 .warningDetails {
   margin-top: 0.5rem;
 }

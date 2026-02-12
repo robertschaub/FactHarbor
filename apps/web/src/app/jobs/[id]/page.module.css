@@ -102,6 +102,60 @@
   background-color: #fff;
 }
 
+.reportDamageBanner {
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid #d9534f;
+  border-radius: 8px;
+  background: #fff4f4;
+}
+
+.reportDamageTitle {
+  color: #a94442;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.reportDamageText {
+  color: #7f2b29;
+  font-size: 13px;
+}
+
+.reportDamageMeta {
+  margin-top: 6px;
+  color: #7f2b29;
+  font-size: 12px;
+}
+
+.reportDamageList {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #7f2b29;
+  font-size: 12px;
+}
+
+.reportDamageList li {
+  margin: 2px 0;
+}
+
+.reportDamageHints {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #7f2b29;
+  font-size: 12px;
+}
+
+.reportDamageHints li {
+  margin: 2px 0;
+}
+
+.reportDamageNextStep {
+  margin-top: 8px;
+  color: #7f2b29;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .jsonContainer {
   border: 1px solid #ddd;
   border-radius: 10px;
@@ -1687,4 +1741,3 @@
 .showMoreBtn:hover {
   text-decoration: underline;
 }
-
