@@ -42,6 +42,12 @@ describe.sequential("llm integration", () => {
 
     loadEnvFile(envPath);
 
+    // Skip on CI - this test requires real LLM calls
+    if (process.env.CI === "true") {
+      console.warn("[LLM Integration] Skipping on CI - requires real LLM calls");
+      return;
+    }
+
     if (!fs.existsSync(configPath)) {
       throw new Error(`Missing config file: ${configPath}`);
     }
@@ -52,7 +58,7 @@ describe.sequential("llm integration", () => {
       return;
     }
 
-    // Skip when no LLM API keys are available (e.g., in CI)
+    // Skip when no LLM API keys are available
     const hasApiKey =
       !!process.env.OPENAI_API_KEY ||
       !!process.env.ANTHROPIC_API_KEY ||

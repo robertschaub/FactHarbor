@@ -129,6 +129,16 @@ describe("Input Neutrality", () => {
     // Enable deterministic mode for reproducibility
     process.env.FH_DETERMINISTIC = "true";
 
+    // Load pairs first (needed even for skip checks)
+    pairs = loadNeutralityPairs();
+
+    // Skip on CI - these tests require real LLM calls
+    if (process.env.CI === "true") {
+      console.warn("[Input Neutrality] Skipping on CI - requires real LLM calls");
+      testsEnabled = false;
+      return;
+    }
+
     // Check if we have necessary API keys
     const hasOpenAI = !!process.env.OPENAI_API_KEY;
     const hasClaude = !!process.env.ANTHROPIC_API_KEY;
@@ -138,8 +148,6 @@ describe("Input Neutrality", () => {
       console.warn("[Input Neutrality] No LLM API keys found, tests will be skipped");
       testsEnabled = false;
     }
-
-    pairs = loadNeutralityPairs();
 
     // Set up output directory for test results
     outputDir = path.join(webRoot, "test", "output", "neutrality");
