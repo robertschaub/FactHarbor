@@ -8,7 +8,7 @@
 flowchart TB
     subgraph Entry["Entry Point"]
         INPUT["runFactHarborAnalysis()"]
-        NORM["Input Normalization"]
+        NORM["Input Intake<br/>(trim only, no semantic rewrite)"]
         BUDGET["Initialize Budget Tracker<br/>+ Evidence Processors"]
     end
 

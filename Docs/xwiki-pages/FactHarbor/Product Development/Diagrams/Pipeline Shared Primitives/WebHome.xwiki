@@ -3,7 +3,7 @@
 {{mermaid}}
 flowchart TD
     subgraph Shared["Shared Primitives"]
-        NORM["Input Normalization"]
+        NORM["Input Intake (trim only)"]
         BUDGETS["Budget Framework"]
         SEARCH["Search + Fetch Adapters"]
         PROV["Provenance Validation"]
