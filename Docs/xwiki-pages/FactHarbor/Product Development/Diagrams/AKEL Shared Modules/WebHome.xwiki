@@ -19,6 +19,13 @@ flowchart TB
         VC["verdict-corrections.ts\nVerdict inversion detection"]
     end
 
+    subgraph Evidence["Evidence Processing"]
+        EN["evidence-normalization.ts\nID migration, classification"]
+        ER["evidence-recency.ts\nTemporal analysis, dates"]
+        EC["evidence-context-utils.ts\nContext metadata utilities"]
+        ED["evidence-deduplication.ts\nDuplicate detection"]
+    end
+
     subgraph Trust["Trust & Scoring"]
         SR["source-reliability.ts\nSource credibility scoring"]
         TS["truth-scale.ts\n7-point verdict mapping"]
@@ -27,6 +34,7 @@ flowchart TB
 
     ORCH --> Analysis
     ORCH --> Quality
+    ORCH --> Evidence
     ORCH --> Trust
     DYN --> SR
     DYN --> TS
@@ -35,7 +43,8 @@ flowchart TB
     style Pipelines fill:#e8f5e9,stroke:#2e7d32,color:#000
     style Analysis fill:#e3f2fd,stroke:#1565c0,color:#000
     style Quality fill:#fff9c4,stroke:#f9a825,color:#000
+    style Evidence fill:#fce4ec,stroke:#c2185b,color:#000
     style Trust fill:#f3e5f5,stroke:#6a1b9a,color:#000
 {{/mermaid}}
 
-//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; the Monolithic Dynamic variant uses a subset.//
+//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), Evidence Processing (normalization, recency assessment, deduplication, context utilities), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; the Monolithic Dynamic variant uses a subset. Phase 2a (2026-02-12) extracted evidence processing modules from orchestrated.ts, reducing complexity by 493 lines.//

@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
 **Version**: Pre-release (targeting v1.0)
-**Last Updated**: 2026-02-04
-**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled)
+**Last Updated**: 2026-02-12
+**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled + Phase 2a Refactoring)
 
 ---
 
@@ -58,6 +58,15 @@
 - `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
 - `claim-decomposition.ts`: Claim parsing utilities
 - Consistent behavior across orchestrated and dynamic pipelines
+
+**Code Quality & Refactoring (Phase 2a Complete - 2026-02-12):**
+- ✅ **Evidence Processor Module Extraction**: 3 new modules created (705 lines)
+  - `evidence-normalization.ts`: ID migration, classification validation
+  - `evidence-recency.ts`: Temporal analysis, date extraction, staleness scoring
+  - `evidence-context-utils.ts`: Context metadata utilities
+- ✅ **orchestrated.ts Reduction**: 13,905 → 13,412 lines (493 lines removed)
+- ✅ **Benefits**: Improved testability, reduced complexity, focused modules
+- See: [QA Review & Code Quality Plan](../../.claude/plans/polished-tumbling-hare.md)
 
 **Infrastructure:**
 - Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)
