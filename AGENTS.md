@@ -40,6 +40,25 @@ Deterministic text-analysis logic that makes analytical decisions MUST be replac
 
 Full migration plan and function inventory: `Docs/WIP/Efficient_LLM_Intelligence_Migration_Plan.md`
 
+### Multilingual Robustness (MANDATORY)
+Analysis behavior must be robust across languages (e.g., English, French, German, and others), not just English.
+
+- **No English-only semantic assumptions.** Do not rely on English-specific regex/keywords/word-order rules for analytical decisions.
+- **Meaning over wording, in any language.** Semantic interpretation, equivalence, relevance, and classification must go through LLM intelligence.
+- **Preserve original language.** Do not force translation as a prerequisite for analysis unless explicitly required by the feature.
+- **Test beyond English.** For analysis-affecting changes, include multilingual validation scenarios to confirm input neutrality and stable outcomes across languages.
+
+### String Usage Boundary (MANDATORY)
+Strings that influence analysis are only allowed in:
+- LLM prompt text
+- Web search text (query construction / provider-facing search strings)
+
+Outside of those two areas, do not use language-dependent strings, keyword lists, or regex phrase matching to make analysis decisions.
+
+All text that goes into LLM prompts or Web search must be managed in UCM (Admin-configurable), not hardcoded inline in code.
+
+Exception: Structural constants are allowed in code (e.g., enum-like labels, schema literals, status/type keys) when they define data contracts rather than analysis meaning.
+
 ### Analysis Prompt Rules
 These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is welcome — but only with explicit human approval.
 - **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
