@@ -73,7 +73,7 @@ When introducing a tunable parameter, place it in the correct tier:
 |------|------|----------|
 | **UCM** (Admin UI, runtime) | Anything that affects analysis behavior or quality and may need tuning without redeployment | Thresholds, weights, limits, model selection, prompt profiles, search parameters, SR weights |
 | **Env var** (startup, infra) | Infrastructure, secrets, paths, concurrency — things set once per environment | `FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, DB paths |
-| **Hardcoded** (code change) | Structural constants, fixed design decisions that should not be tunable (tuning would break system integrity or confuse users) | Status enum values, API route paths, field names, confidence band boundaries (7-band scale), mathematical constants |
+| **Hardcoded** (code change) | Structural constants, fixed design decisions that should not be tunable (making these tunable would compromise system correctness or create confusion) | Status enum values, API route paths, field names, confidence band boundaries (7-band scale), mathematical constants |
 
 **Default to UCM.** If a parameter influences analysis output and you're unsure where it belongs — make it UCM-configurable. Never hardcode a value that an admin might need to tune.
 
