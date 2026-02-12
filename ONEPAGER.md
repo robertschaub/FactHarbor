@@ -72,4 +72,4 @@ FactHarbor combines structured methodology with AI assistance and human oversigh
 
 *FactHarbor: Making complex claims transparent through evidence, context, and open reasoning.*
 
-**Learn more:** https://schaubgroup.ch/bin/view/FactHarbor/
+**Learn more:** https://robertschaub.github.io/FactHarbor/

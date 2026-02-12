@@ -18,6 +18,8 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 ## Documentation
 
+**[One-Pager](ONEPAGER.md)** — Vision, mission, and why FactHarbor exists in one page.
+
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
 ## Getting Started
