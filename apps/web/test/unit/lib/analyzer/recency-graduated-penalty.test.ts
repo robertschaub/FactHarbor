@@ -8,10 +8,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { calculateGraduatedRecencyPenalty } from "@/lib/analyzer/orchestrated";
+import { RecencyAssessor } from "@/lib/analyzer/evidence-recency";
 
 describe("calculateGraduatedRecencyPenalty", () => {
   const NOW = new Date("2026-02-08T00:00:00Z");
+  const assessor = new RecencyAssessor(NOW);
   const MAX_PENALTY = 20;
   const WINDOW = 6; // months
 
@@ -21,8 +22,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
   describe("Factor 1: Staleness Curve", () => {
     it("should return 0 penalty when evidence is within the window", () => {
       // Evidence from 3 months ago (within 6-month window)
-      const result = calculateGraduatedRecencyPenalty(
-        "2025-11-08T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "week", 5,
+      const result = assessor.calculateGraduatedPenalty(
+        "2025-11-08T00:00:00Z", WINDOW, MAX_PENALTY, "week", 5,
       );
       expect(result.effectivePenalty).toBe(0);
       expect(result.breakdown.stalenessMultiplier).toBe(0);
@@ -30,8 +31,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
 
     it("should return 0 penalty when evidence is exactly at window boundary", () => {
       // Evidence from exactly 6 months ago (calendar months ≠ 30.44-day months, allow tolerance)
-      const result = calculateGraduatedRecencyPenalty(
-        "2025-08-08T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "week", 5,
+      const result = assessor.calculateGraduatedPenalty(
+        "2025-08-08T00:00:00Z", WINDOW, MAX_PENALTY, "week", 5,
       );
       expect(result.effectivePenalty).toBe(0);
       expect(result.breakdown.stalenessMultiplier).toBeCloseTo(0, 1);
@@ -40,8 +41,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
     it("should apply partial staleness for evidence just outside the window", () => {
       // Evidence from ~9 months ago (3 months past the 6-month window)
       // stalenessMultiplier ≈ (9-6)/6 = 0.5
-      const result = calculateGraduatedRecencyPenalty(
-        "2025-05-08T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "2025-05-08T00:00:00Z", WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.stalenessMultiplier).toBeCloseTo(0.5, 1);
     });
@@ -49,23 +50,23 @@ describe("calculateGraduatedRecencyPenalty", () => {
     it("should cap staleness at 1.0 for evidence at 2× window", () => {
       // Evidence from 12 months ago (6 months past the 6-month window)
       // stalenessMultiplier ≈ (12-6)/6 ≈ 1.0 (calendar months cause slight variance)
-      const result = calculateGraduatedRecencyPenalty(
-        "2025-02-08T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "2025-02-08T00:00:00Z", WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.stalenessMultiplier).toBeCloseTo(1.0, 1);
     });
 
     it("should cap staleness at 1.0 for very old evidence (beyond 2× window)", () => {
       // Evidence from 24 months ago
-      const result = calculateGraduatedRecencyPenalty(
-        "2024-02-08T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "2024-02-08T00:00:00Z", WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.stalenessMultiplier).toBe(1.0);
     });
 
     it("should use staleness 1.0 when no date is available", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        undefined, NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        undefined, WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.stalenessMultiplier).toBe(1.0);
       expect(result.breakdown.monthsOld).toBeNull();
@@ -80,40 +81,40 @@ describe("calculateGraduatedRecencyPenalty", () => {
     const OLD_DATE = "2024-01-01T00:00:00Z";
 
     it("should apply full penalty for 'week' granularity (breaking news)", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.volatilityMultiplier).toBe(1.0);
       expect(result.effectivePenalty).toBe(20);
     });
 
     it("should apply 0.8 multiplier for 'month' granularity", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "month", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "month", 0,
       );
       expect(result.breakdown.volatilityMultiplier).toBe(0.8);
       expect(result.effectivePenalty).toBe(16);
     });
 
     it("should apply 0.4 multiplier for 'year' granularity (institutional)", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "year", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "year", 0,
       );
       expect(result.breakdown.volatilityMultiplier).toBe(0.4);
       expect(result.effectivePenalty).toBe(8);
     });
 
     it("should apply 0.2 multiplier for 'none' granularity (enduring)", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "none", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "none", 0,
       );
       expect(result.breakdown.volatilityMultiplier).toBe(0.2);
       expect(result.effectivePenalty).toBe(4);
     });
 
     it("should apply 0.7 fallback when granularity is undefined", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, undefined, 0,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, undefined, 0,
       );
       expect(result.breakdown.volatilityMultiplier).toBe(0.7);
       expect(result.effectivePenalty).toBe(14);
@@ -128,39 +129,39 @@ describe("calculateGraduatedRecencyPenalty", () => {
     const OLD_DATE = "2024-01-01T00:00:00Z";
 
     it("should apply full penalty with 0 dateCandidates", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.volumeMultiplier).toBe(1.0);
       expect(result.effectivePenalty).toBe(20);
     });
 
     it("should apply 0.9 multiplier for 1-10 dateCandidates", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "week", 5,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "week", 5,
       );
       expect(result.breakdown.volumeMultiplier).toBe(0.9);
       expect(result.effectivePenalty).toBe(18);
     });
 
     it("should apply 0.9 multiplier at boundary (10 dateCandidates)", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "week", 10,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "week", 10,
       );
       expect(result.breakdown.volumeMultiplier).toBe(0.9);
     });
 
     it("should apply 0.7 multiplier for 11-25 dateCandidates", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "week", 15,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "week", 15,
       );
       expect(result.breakdown.volumeMultiplier).toBe(0.7);
       expect(result.effectivePenalty).toBe(14);
     });
 
     it("should apply 0.5 multiplier for 26+ dateCandidates", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        OLD_DATE, NOW, WINDOW, MAX_PENALTY, "week", 35,
+      const result = assessor.calculateGraduatedPenalty(
+        OLD_DATE, WINDOW, MAX_PENALTY, "week", 35,
       );
       expect(result.breakdown.volumeMultiplier).toBe(0.5);
       expect(result.effectivePenalty).toBe(10);
@@ -178,9 +179,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
       // volatility = 0.4 (granularity = "year")
       // volume = 0.5 (35 dateCandidates)
       // effectivePenalty = round(20 × 1.0 × 0.4 × 0.5) = 4
-      const result = calculateGraduatedRecencyPenalty(
+      const result = assessor.calculateGraduatedPenalty(
         "2024-12-30T00:00:00Z",
-        new Date("2026-02-08T00:00:00Z"),
         6, 20, "year", 35,
       );
       expect(result.effectivePenalty).toBe(4);
@@ -198,8 +198,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
       const eightMonthsAgo = new Date(NOW);
       eightMonthsAgo.setMonth(eightMonthsAgo.getMonth() - 8);
 
-      const result = calculateGraduatedRecencyPenalty(
-        eightMonthsAgo.toISOString(), NOW, 6, 20, "week", 3,
+      const result = assessor.calculateGraduatedPenalty(
+        eightMonthsAgo.toISOString(), 6, 20, "week", 3,
       );
       expect(result.effectivePenalty).toBeGreaterThanOrEqual(5);
       expect(result.effectivePenalty).toBeLessThanOrEqual(7);
@@ -214,8 +214,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
       const sevenMonthsAgo = new Date(NOW);
       sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 7);
 
-      const result = calculateGraduatedRecencyPenalty(
-        sevenMonthsAgo.toISOString(), NOW, 6, 20, "none", 30,
+      const result = assessor.calculateGraduatedPenalty(
+        sevenMonthsAgo.toISOString(), 6, 20, "none", 30,
       );
       expect(result.effectivePenalty).toBe(0);
     });
@@ -229,8 +229,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
       const tenMonthsAgo = new Date(NOW);
       tenMonthsAgo.setMonth(tenMonthsAgo.getMonth() - 10);
 
-      const result = calculateGraduatedRecencyPenalty(
-        tenMonthsAgo.toISOString(), NOW, 6, 20, "month", 20,
+      const result = assessor.calculateGraduatedPenalty(
+        tenMonthsAgo.toISOString(), 6, 20, "month", 20,
       );
       expect(result.effectivePenalty).toBeGreaterThanOrEqual(6);
       expect(result.effectivePenalty).toBeLessThanOrEqual(9);
@@ -242,8 +242,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
   // =========================================================================
   describe("Edge Cases", () => {
     it("should handle maxPenalty of 0", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        "2024-01-01T00:00:00Z", NOW, WINDOW, 0, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "2024-01-01T00:00:00Z", WINDOW, 0, "week", 0,
       );
       expect(result.effectivePenalty).toBe(0);
     });
@@ -251,8 +251,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
     it("should handle windowMonths of 1", () => {
       // Evidence ~1.27 months old, window = 1
       // staleness = (1.27-1)/1 = 0.27
-      const result = calculateGraduatedRecencyPenalty(
-        "2026-01-01T00:00:00Z", NOW, 1, 20, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "2026-01-01T00:00:00Z", 1, 20, "week", 0,
       );
       expect(result.breakdown.stalenessMultiplier).toBeGreaterThan(0);
       expect(result.breakdown.stalenessMultiplier).toBeLessThan(0.5);
@@ -260,16 +260,16 @@ describe("calculateGraduatedRecencyPenalty", () => {
 
     it("should handle windowMonths of 24", () => {
       // Evidence 14 months old, window = 24 → within window
-      const result = calculateGraduatedRecencyPenalty(
-        "2024-12-30T00:00:00Z", NOW, 24, 20, "year", 35,
+      const result = assessor.calculateGraduatedPenalty(
+        "2024-12-30T00:00:00Z", 24, 20, "year", 35,
       );
       expect(result.effectivePenalty).toBe(0);
       expect(result.breakdown.stalenessMultiplier).toBe(0);
     });
 
     it("should handle invalid date string gracefully", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        "not-a-date", NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "not-a-date", WINDOW, MAX_PENALTY, "week", 0,
       );
       // Invalid date → staleness defaults to 1.0
       expect(result.breakdown.stalenessMultiplier).toBe(1.0);
@@ -277,8 +277,8 @@ describe("calculateGraduatedRecencyPenalty", () => {
     });
 
     it("should return formula string in breakdown", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        "2024-01-01T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "year", 15,
+      const result = assessor.calculateGraduatedPenalty(
+        "2024-01-01T00:00:00Z", WINDOW, MAX_PENALTY, "year", 15,
       );
       expect(result.breakdown.formula).toContain("round(");
       expect(result.breakdown.formula).toContain("=");
@@ -286,15 +286,15 @@ describe("calculateGraduatedRecencyPenalty", () => {
     });
 
     it("should set monthsOld to null when no date provided", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        undefined, NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        undefined, WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.monthsOld).toBeNull();
     });
 
     it("should set monthsOld to a positive number when date is provided", () => {
-      const result = calculateGraduatedRecencyPenalty(
-        "2025-05-08T00:00:00Z", NOW, WINDOW, MAX_PENALTY, "week", 0,
+      const result = assessor.calculateGraduatedPenalty(
+        "2025-05-08T00:00:00Z", WINDOW, MAX_PENALTY, "week", 0,
       );
       expect(result.breakdown.monthsOld).toBeGreaterThan(0);
     });

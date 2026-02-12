@@ -4291,7 +4291,7 @@ const ANALYSIS_CONTEXT_SCHEMA = z.object({
     decisionMakers: z.array(z.object({
       name: z.string(),
       role: z.string(),
-      affiliation: z.string().optional(),
+      affiliation: z.string().default(""),  // Fixed: OpenAI strict mode compatibility
     })).optional(),
 
     // Scientific domain
