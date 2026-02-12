@@ -77,13 +77,6 @@ For completed work, historical documents, and reference materials, see:
 
 **Related:** Shadow_Mode_Architecture.md
 
-### POC to Alpha Transition (2026-02-07)
-**Status:** ✅ APPROVED — Steps 4-5 complete (xWiki conversion done)
-- **Document:** [POC_to_Alpha_Transition.md](POC_to_Alpha_Transition.md)
-- **Type:** Assessment / Transition Plan
-- **Scope:** Assess POC completion, define Alpha transition, phase redefinition
-- **Remaining:** Run baseline quality test (Alpha 0.1 gate), integrate metrics
-
 ### Storage, Database & Caching Strategy (2026-02-07)
 **Status:** 🧭 PARTIALLY APPROVED — DEFER decisions agreed
 - **Document:** [Storage_DB_Caching_Strategy.md](Storage_DB_Caching_Strategy.md)
@@ -108,6 +101,19 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [Documentation_Cleanup_Plan.md](Documentation_Cleanup_Plan.md)
 - **Type:** Cleanup Plan
 - **Scope:** .md + xWiki terminology, phase label, and accuracy updates
+
+### Quality Issues Investigation & Implementation (2026-02-12)
+**Status:** 🔧 IN PROGRESS — Steps 1-4 complete, Step 5 pending
+- **Documents:**
+  - [Quality Issues Investigations and Plan.md](Quality%20Issues%20Investigations%20and%20Plan.md)
+  - [Quality_Issues_Consolidated_Implementation_Plan.md](Quality_Issues_Consolidated_Implementation_Plan.md)
+  - [Consolidated_Report_Quality_Execution_Plan.md](Consolidated_Report_Quality_Execution_Plan.md)
+- **Type:** Quality Improvement Implementation
+- **Scope:** Classification fallbacks, grounding check (LLM-powered), direction validation (LLM-powered), degraded mode handling
+- **Completed:**
+  - ✅ Steps 1-3: Code fixes, prompt alignment, schema enforcement
+  - ✅ Step 4: LLM-powered grounding adjudication + direction validation with degraded mode
+- **Remaining:** Step 5: Telemetry gates, regression tests, deprecation notices
 
 ---
 
@@ -149,6 +155,14 @@ When adding new work to this folder:
 ---
 
 ## Cleanup History
+
+**2026-02-12**: Completed docs archival
+- Moved 4 completed documents to ARCHIVE:
+  - Agent_Instructions_Audit_and_Improvement_Plan.md (IMPLEMENTED)
+  - Evidence_Balance_Fix_Proposal.md (superseded by LLM direction validation)
+  - Pipeline_Improvement_Plan.md (Phase 1 COMPLETE)
+  - POC_to_Alpha_Transition.md (APPROVED, steps 4-5 complete)
+- Updated Quality Issues docs with completion markers (Steps 1-4 done)
 
 **2026-02-04**: Major WIP cleanup
 - Moved 11 completed documents to ARCHIVE

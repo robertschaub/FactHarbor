@@ -210,7 +210,7 @@ In sampled recent runs, we observed generic failure modes that can happen for **
 
 **Current system strengths** :
 
-* Already has `sourceAuthority` (primary/secondary/opinion/contested)
+* Already has `sourceAuthority` (primary/secondary/opinion)
 * Already has `evidenceBasis` (scientific/documented/anecdotal/theoretical/pseudoscientific)
 * Already has `probativeValue` (high/medium/low)
 * Already filters low probativeValue items
@@ -241,7 +241,7 @@ In sampled recent runs, we observed generic failure modes that can happen for **
 
 The plan should **reuse existing fields** and **avoid schema changes** unless absolutely necessary:
 
-- `EvidenceItem.sourceAuthority` (primary/secondary/opinion/contested)
+- `EvidenceItem.sourceAuthority` (primary/secondary/opinion)
 - `EvidenceItem.evidenceBasis` (scientific/documented/anecdotal/theoretical/pseudoscientific)
 - `EvidenceItem.probativeValue` (high/medium/low)
 - `EvidenceItem.claimDirection` (supports/contradicts/neutral)
@@ -508,7 +508,7 @@ IF sourceAuthority = "opinion" THEN discard evidence item (reason: opinion_sourc
 ```
 
 Optional follow-ups (still generic, but lower priority than the P0 rule above):
-- Cap `"high" → "medium"` when `sourceAuthority="contested"` or `evidenceBasis` is non-empirical.
+- Cap `"high" → "medium"` when `evidenceBasis` is non-empirical.
 - Add correction telemetry (counts by rule) for monitoring without relying on lexical keyword lists.
 
 ---

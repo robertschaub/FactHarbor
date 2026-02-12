@@ -126,7 +126,7 @@ Earlier sessions had created NEW deterministic text-analysis code that violated 
 
 #### T2.3: Post-verdict grounding check (Phase B1)
 - **Status:** DONE — `grounding-check.ts` is implemented and integrated at `orchestrated.ts:13461`
-- **Note:** After revert, grounding check uses simple substring matching (no stemming). This is less sophisticated but rule-compliant. Future improvement should use LLM-based term extraction.
+- **Note:** ~~After revert, grounding check uses simple substring matching (no stemming). This is less sophisticated but rule-compliant. Future improvement should use LLM-based term extraction.~~ **UPDATE (2026-02-12):** Substring matching replaced with LLM-powered adjudication (`adjudicateGroundingBatch`). Degraded fallback returns 0.5 with `degraded: true` flag. UCM-configurable thresholds in `groundingPenalty` section of `calculation.default.json`.
 
 ---
 
@@ -156,7 +156,7 @@ Earlier sessions had created NEW deterministic text-analysis code that violated 
 | ID | Item | Why Deferred | Status |
 |----|------|-------------|--------|
 | T4.1 | Replace `calculateTextSimilarity`, `extractCoreEntities`, `isRecencySensitive` (Migration P1s) | Requires T3.3 service foundation | NOT DONE |
-| T4.2 | Replace `extractKeyTerms`/STOP_WORDS in grounding-check (Migration P2s) | Requires T3.3 + pre-existing code, not urgent | NOT DONE |
+| T4.2 | ~~Replace `extractKeyTerms`/STOP_WORDS in grounding-check (Migration P2s)~~ | **CLOSED** — Grounding adjudication now fully LLM-powered (`adjudicateGroundingBatch`); term extraction retained only for backward-compat export | DONE ✅ |
 | T4.3 | Edge case test coverage (15+ tests) | Quality infrastructure, not direct quality fix | NOT DONE |
 | T4.4 | LLM Text Analysis A/B Testing (promptfoo) | Requires stable baseline first (T1.1) | NOT DONE |
 | T4.5 | Central-claim evidence coverage pass | Medium effort, bounded benefit per claim | NOT DONE |

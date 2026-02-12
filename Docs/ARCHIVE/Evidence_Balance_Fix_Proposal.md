@@ -1,7 +1,7 @@
 # Evidence Balance Fix Proposal
 
 **Author:** Claude (Principal Architect)
-**Status:** PROPOSED - AWAITING APPROVAL
+**Status:** PARTIALLY IMPLEMENTED — Direction counting superseded by LLM validation (2026-02-12)
 **Created:** 2026-02-07
 **Priority:** HIGH (directly affects verdict accuracy)
 **Triggered By:** Bolsonaro judgment analysis showing 16 counter vs 4 supporting evidence items
@@ -23,19 +23,24 @@ From analysis job `64393f1a6c2d4664896e3caefd7a02b8` (Bolsonaro judgment fairnes
 
 ## Root Cause Analysis
 
-### Root Cause 1: Source-Blind Direction Counting
+### Root Cause 1: Source-Blind Direction Counting — ✅ SUPERSEDED
 
-**File:** [orchestrated.ts:3773-3791](apps/web/src/lib/analyzer/orchestrated.ts#L3773-L3791)
+> **UPDATE (2026-02-12):** The `totalDirectional` counter-based gate has been **removed**. Direction validation now uses LLM-based per-claim semantic evaluation (`batchDirectionValidationLLM`). The `claimDirection` counters are retained only as `legacyDirectionalMetadata` in warning payloads for debugging. Source deduplication (`countBySourceDeduped`) is still used for diagnostic metadata but no longer gates verdicts.
+
+**File:** ~~[orchestrated.ts:3773-3791](apps/web/src/lib/analyzer/orchestrated.ts#L3773-L3791)~~
 
 ```typescript
-// Current: simple count - each extracted item = 1 vote
-const supportCount = linkedEvidence.filter(e => e.claimDirection === "supports").length;
-const contradictCount = linkedEvidence.filter(e => e.claimDirection === "contradicts").length;
-const contradictRatio = contradictCount / totalDirectional; // 16/20 = 80%
+// HISTORICAL — this code pattern has been replaced:
+// const supportCount = linkedEvidence.filter(e => e.claimDirection === "supports").length;
+// const contradictCount = linkedEvidence.filter(e => e.claimDirection === "contradicts").length;
+// const contradictRatio = contradictCount / totalDirectional; // 16/20 = 80%
 // 80% >= 60% threshold → auto-corrects verdict to max 35%
+//
+// CURRENT: LLM evaluates each sub-claim + evidence + verdict triple semantically.
+// Only structural gate remains: linkedEvidence.length >= minEvidenceCount
 ```
 
-**Problem:** If one URL yields 4 extracted evidence items (all "contradicts"), that URL gets 4x voting power. The White House EO alone contributes 4/16 = 25% of all counter-evidence.
+**Problem (historical):** If one URL yields 4 extracted evidence items (all "contradicts"), that URL gets 4x voting power. The White House EO alone contributes 4/16 = 25% of all counter-evidence.
 
 ### Root Cause 2: Quantity-Based Prompt Guidance
 
@@ -64,50 +69,16 @@ const contradictRatio = contradictCount / totalDirectional; // 16/20 = 80%
 
 ## Proposed Fixes
 
-### Fix 1: Source-Deduplicated Direction Counting (CRITICAL)
+### Fix 1: Source-Deduplicated Direction Counting (CRITICAL) — ✅ PARTIALLY IMPLEMENTED, SUPERSEDED
+
+> **UPDATE (2026-02-12):** `countBySourceDeduped` was implemented but the `totalDirectional` gate was removed entirely. Direction validation now uses LLM semantic evaluation. The deduped counts are used only in `legacyDirectionalMetadata` diagnostic payloads.
 
 **File:** `apps/web/src/lib/analyzer/orchestrated.ts`
-**Location:** Lines 3773-3791
-
-**Replace simple count with source-deduplicated count:**
 
 ```typescript
-// NEW: Count unique sources per direction (one URL = one vote)
-function countBySourceDeduped(evidence: EvidenceItem[]): {
-  supports: number;
-  contradicts: number;
-  neutral: number;
-} {
-  const sourceVotes = new Map<string, "supports" | "contradicts" | "neutral">();
-
-  for (const item of evidence) {
-    const sourceKey = item.sourceId || item.sourceUrl || item.id;
-    const direction = item.claimDirection || "neutral";
-
-    // First item from a source sets the direction
-    // If same source has both supports and contradicts → neutral
-    const existing = sourceVotes.get(sourceKey);
-    if (!existing) {
-      sourceVotes.set(sourceKey, direction as any);
-    } else if (existing !== direction) {
-      sourceVotes.set(sourceKey, "neutral"); // Conflicting → neutral
-    }
-  }
-
-  let supports = 0, contradicts = 0, neutral = 0;
-  for (const vote of sourceVotes.values()) {
-    if (vote === "supports") supports++;
-    else if (vote === "contradicts") contradicts++;
-    else neutral++;
-  }
-  return { supports, contradicts, neutral };
-}
-
-// Use in direction validation:
-const dedupedCounts = countBySourceDeduped(linkedEvidence);
-const totalDirectional = dedupedCounts.supports + dedupedCounts.contradicts;
-const supportRatio = dedupedCounts.supports / totalDirectional;
-const contradictRatio = dedupedCounts.contradicts / totalDirectional;
+// countBySourceDeduped IS implemented (used for diagnostic metadata)
+// But totalDirectional, supportRatio, contradictRatio are NO LONGER used for gating.
+// Direction validation is now LLM-based: batchDirectionValidationLLM()
 ```
 
 **Effect on Bolsonaro example:**
