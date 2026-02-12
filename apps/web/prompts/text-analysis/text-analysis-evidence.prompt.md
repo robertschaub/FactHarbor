@@ -1,5 +1,5 @@
 ---
-version: "1.2.0"
+version: "1.3.0"
 pipeline: "text-analysis"
 description: "Evidence quality assessment for probative value filtering"
 lastModified: "2026-01-30T00:00:00Z"
@@ -26,7 +26,7 @@ Your task is to assess the probative value of each evidence item for fact-checki
 Evaluate each evidence item against these criteria:
 
 **Statement Quality:**
-- Specificity: Not vague - FILTER these phrases (from evidence-filter.ts:73-87):
+- Specificity: Not vague - FILTER evidence with these patterns:
   - Attribution without specifics: "some say/believe/argue/claim/think/suggest", "many people/experts/critics/scientists/researchers", "according to some"
   - Passive hedging: "it is said/believed/argued/thought/claimed", "purportedly", "supposedly", "allegedly", "reportedly"
   - Uncertainty markers: "opinions vary/differ", "the debate continues", "controversy exists", "it's unclear"
@@ -55,6 +55,12 @@ Evaluate each evidence item against these criteria:
 - **medium**: Meets most criteria, usable but not ideal
 - **low**: Has vague attribution OR insufficient excerpt
 - **filter**: Statement < 25 chars OR statistic without numbers OR vague phrases
+
+**Near-Duplicate Detection:**
+- Compare all items in the batch against each other
+- If two or more items make substantially the same factual claim (even with different wording), keep only the highest-quality instance
+- Mark later/lower-quality duplicates as `filter` with issue `duplicate_or_near_duplicate`
+- Items from different sources making the same claim ARE duplicates (keep the one with better source linkage)
 
 Evidence items to evaluate:
 ${EVIDENCE_ITEMS}

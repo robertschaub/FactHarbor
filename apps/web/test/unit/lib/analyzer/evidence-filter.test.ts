@@ -1,13 +1,19 @@
 /**
- * Evidence Filter module tests - v2.8 (Phase 1.5 Layer 2)
+ * Evidence Filter module tests — Structural Safety Net
  *
- * Tests the deterministic evidence quality filter including:
- * - Statement quality filtering (length, vague phrases)
- * - Source linkage requirements (excerpt, URL)
- * - Category-specific rules (statistic, expert_quote, event, legal_provision)
- * - Deduplication (similarity-based)
- * - False positive rate calculation
+ * Tests the structural evidence quality filter.
+ * Semantic quality checks (vague phrases, attribution, citations, temporal
+ * anchors, near-duplicate detection) are handled by the LLM evidence quality
+ * service (assessEvidenceQuality) and are NOT tested here.
+ *
+ * Tests cover:
+ * - Source authority filtering (metadata field check)
+ * - ProbativeValue filtering (LLM-assigned field check)
+ * - Statement length filtering (character count)
+ * - Source linkage requirements (excerpt presence/length, URL presence)
+ * - Statistics number requirement (digit presence)
  * - Edge cases (empty arrays, all filtered, none filtered)
+ * - False positive rate calculation
  */
 
 import { describe, it, expect } from 'vitest';
@@ -104,89 +110,18 @@ describe('filterByProbativeValue', () => {
       });
     });
 
-    describe('vague phrase detection', () => {
-      it('should filter statements with excessive vague phrases (>2)', () => {
+    describe('probativeValue filtering', () => {
+      it('should filter low probativeValue evidence', () => {
         const evidence = [
-          createEvidenceItem({
-            statement: 'Some say that many people believe it is said that this is true.',
-          }), // Contains 3 vague phrases
-          createEvidenceItem({
-            statement: 'According to a study, the results show clear evidence.',
-          }), // No vague phrases
+          createEvidenceItem({ probativeValue: 'low' }),
+          createEvidenceItem({ probativeValue: 'high' }),
         ];
 
         const result = filterByProbativeValue(evidence);
 
         expect(result.kept).toHaveLength(1);
         expect(result.filtered).toHaveLength(1);
-        expect(result.stats.filterReasons.excessive_vague_phrases).toBe(1);
-      });
-
-      it('should keep statements with acceptable vague phrase count (≤2)', () => {
-        const evidence = [
-          createEvidenceItem({
-            statement: 'Some experts argue that the policy was effective based on data.',
-          }), // 1 vague phrase
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should detect "some say" pattern', () => {
-        const evidence = [
-          createEvidenceItem({
-            statement: 'Some say this is true. Many people believe it. It is said that opinions vary on this matter.',
-          }), // 3 different vague phrase patterns
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.filtered).toHaveLength(1);
-        expect(result.stats.filterReasons.excessive_vague_phrases).toBe(1);
-      });
-
-      it('should detect "many people/experts" pattern', () => {
-        const evidence = [
-          createEvidenceItem({
-            statement: 'Many people claim X. It is believed Y. The debate continues on this topic.',
-          }), // 3 different vague phrase patterns
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.filtered).toHaveLength(1);
-      });
-
-      it('should detect passive voice vague patterns', () => {
-        const evidence = [
-          createEvidenceItem({
-            statement: 'It is said that something happened. Allegedly it occurred. Opinions vary on what really took place.',
-          }), // 3 different vague phrase patterns
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.filtered).toHaveLength(1);
-      });
-
-      it('should allow custom maximum vague phrase count', () => {
-        const evidence = [
-          createEvidenceItem({
-            statement: 'Some say that many people believe this is true.',
-          }), // 2 vague phrases
-        ];
-
-        const config: Partial<ProbativeFilterConfig> = {
-          maxVaguePhraseCount: 1,
-        };
-
-        const result = filterByProbativeValue(evidence, config);
-
-        expect(result.filtered).toHaveLength(1);
-        expect(result.stats.filterReasons.excessive_vague_phrases).toBe(1);
+        expect(result.stats.filterReasons.low_probative_value).toBe(1);
       });
     });
   });
@@ -286,11 +221,11 @@ describe('filterByProbativeValue', () => {
   });
 
   // ============================================================================
-  // CATEGORY-SPECIFIC RULES TESTS
+  // CATEGORY-SPECIFIC RULES TESTS (structural only)
   // ============================================================================
 
   describe('category-specific rules', () => {
-    describe('statistic category', () => {
+    describe('statistic category (structural: digit presence)', () => {
       it('should filter statistics without numbers', () => {
         const evidence = [
           createEvidenceItem({
@@ -380,401 +315,35 @@ describe('filterByProbativeValue', () => {
       });
     });
 
-    describe('expert_quote category', () => {
-      it('should filter expert quotes without attribution', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'This policy is fundamentally flawed and will not achieve its goals.',
-            sourceExcerpt: 'Critics have raised concerns about the effectiveness of the approach.',
-          }),
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'Dr. Johnson stated that the methodology was rigorous and scientifically sound.',
-            sourceExcerpt: 'Professor Smith commented on the study design and execution.',
-          }),
-        ];
+    // NOTE: expert_quote attribution, event temporal anchors, and legal_provision
+    // citation checks are now handled by the LLM evidence quality service
+    // (assessEvidenceQuality). These categories pass through the structural filter
+    // as long as they meet length/URL/excerpt requirements.
 
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(1);
-        expect(result.stats.filterReasons.expert_quote_without_attribution).toBe(1);
-      });
-
-      it('should keep expert quotes with clear attribution in statement', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'Prof. Martinez explained that the research supports the hypothesis.',
-            sourceExcerpt: 'The interview covered multiple aspects of the study.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should keep expert quotes with attribution in excerpt', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'The evidence strongly suggests a causal relationship.',
-            sourceExcerpt: 'Dr. Williams said the evidence strongly suggests a causal relationship.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should detect various attribution patterns', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'According to Anderson, the theory holds in most cases.',
-          }),
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'Johnson Smith argued that the approach was innovative.',
-          }),
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'Ms. Davis claimed the results were statistically significant.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(3);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should allow disabling attribution requirement', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'expert_quote',
-            statement: 'The analysis reveals significant methodological concerns.',
-            sourceExcerpt: 'The expert commentary discusses methodological issues.',
-          }),
-        ];
-
-        const config: Partial<ProbativeFilterConfig> = {
-          categoryRules: {
-            ...DEFAULT_FILTER_CONFIG.categoryRules,
-            expert_quote: { requireAttribution: false },
-          },
-        };
-
-        const result = filterByProbativeValue(evidence, config);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-    });
-
-    describe('event category', () => {
-      it('should filter events without temporal anchors', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The conference took place with significant international attendance.',
-            sourceExcerpt: 'Participants discussed various topics during the event.',
-          }),
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The summit occurred in December 2023 with leaders from 15 nations.',
-            sourceExcerpt: 'The December meeting addressed climate and trade issues.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(1);
-        expect(result.stats.filterReasons.event_without_temporal_anchor).toBe(1);
-      });
-
-      it('should keep events with year in statement', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The earthquake struck the region in 2020 causing widespread damage.',
-            sourceExcerpt: 'Disaster response teams were deployed to affected areas.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should keep events with month names', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The legislation was passed in March after extensive debate.',
-            sourceExcerpt: 'The parliamentary session concluded with the vote.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should keep events with date patterns', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The agreement was signed on 05/12/2022 at the headquarters.',
-          }),
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The incident happened last year during the festival.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(2);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should allow disabling temporal anchor requirement', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'event',
-            statement: 'The meeting concluded with unanimous support for the resolution.',
-            sourceExcerpt: 'Delegates expressed satisfaction with the outcome.',
-          }),
-        ];
-
-        const config: Partial<ProbativeFilterConfig> = {
-          categoryRules: {
-            ...DEFAULT_FILTER_CONFIG.categoryRules,
-            event: { requireTemporalAnchor: false },
-          },
-        };
-
-        const result = filterByProbativeValue(evidence, config);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-    });
-
-    describe('legal_provision category', () => {
-      it('should filter legal provisions without citations', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'The law prohibits discrimination in employment practices.',
-            sourceExcerpt: 'Anti-discrimination measures are established by statute.',
-          }),
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'Article 7 establishes the framework for environmental protection.',
-            sourceExcerpt: 'The environmental protection statute includes specific provisions.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(1);
-        expect(result.stats.filterReasons.legal_provision_without_citation).toBe(1);
-      });
-
-      it('should keep legal provisions with section citations', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'Section 12 defines the penalties for non-compliance.',
-            sourceExcerpt: 'The statute outlines enforcement mechanisms.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should keep legal provisions with case citations', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'In Smith v. Jones, the court held that the regulation was constitutional.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should keep legal provisions with statute references', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'Under 42 USC § 1983, citizens may sue state officials for rights violations.',
-          }),
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'The regulation pursuant to § 501 governs tax-exempt status.',
-          }),
-        ];
-
-        const result = filterByProbativeValue(evidence);
-
-        expect(result.kept).toHaveLength(2);
-        expect(result.filtered).toHaveLength(0);
-      });
-
-      it('should allow disabling citation requirement', () => {
-        const evidence = [
-          createEvidenceItem({
-            category: 'legal_provision',
-            statement: 'The statute requires annual reporting of financial activities.',
-            sourceExcerpt: 'Reporting requirements are defined in the legislation.',
-          }),
-        ];
-
-        const config: Partial<ProbativeFilterConfig> = {
-          categoryRules: {
-            ...DEFAULT_FILTER_CONFIG.categoryRules,
-            legal_provision: { requireCitation: false },
-          },
-        };
-
-        const result = filterByProbativeValue(evidence, config);
-
-        expect(result.kept).toHaveLength(1);
-        expect(result.filtered).toHaveLength(0);
-      });
-    });
-  });
-
-  // ============================================================================
-  // DEDUPLICATION TESTS
-  // ============================================================================
-
-  describe('deduplication', () => {
-    it('should remove exact duplicates', () => {
+    it('should pass non-statistic categories through structural filter', () => {
       const evidence = [
         createEvidenceItem({
-          id: 'E1',
-          statement: 'The study found that 75% of participants agreed with the statement.',
+          category: 'expert_quote',
+          statement: 'The analysis reveals significant methodological concerns in the study.',
+          sourceExcerpt: 'Expert commentary on the study methodology and findings.',
         }),
         createEvidenceItem({
-          id: 'E2',
-          statement: 'The study found that 75% of participants agreed with the statement.',
+          category: 'event',
+          statement: 'The conference took place with significant international attendance.',
+          sourceExcerpt: 'Participants discussed various topics during the event.',
+        }),
+        createEvidenceItem({
+          category: 'legal_provision',
+          statement: 'The law prohibits discrimination in employment practices.',
+          sourceExcerpt: 'Anti-discrimination measures are established by statute.',
         }),
       ];
 
       const result = filterByProbativeValue(evidence);
 
-      expect(result.kept).toHaveLength(1);
-      expect(result.filtered).toHaveLength(1);
-      expect(result.stats.filterReasons.duplicate_or_near_duplicate).toBe(1);
-    });
-
-    it('should remove near-duplicates above similarity threshold (0.85)', () => {
-      const evidence = [
-        createEvidenceItem({
-          id: 'E1',
-          statement: 'The comprehensive research study found that approximately seventy-five percent of surveyed participants agreed with the statement provided.',
-        }),
-        createEvidenceItem({
-          id: 'E2',
-          statement: 'The comprehensive research study found that approximately seventy-five percent of surveyed participants agreed with statement provided.',
-        }),
-      ];
-
-      const result = filterByProbativeValue(evidence);
-
-      expect(result.kept).toHaveLength(1);
-      expect(result.filtered).toHaveLength(1);
-      expect(result.stats.filterReasons.duplicate_or_near_duplicate).toBe(1);
-    });
-
-    it('should keep distinct evidence below similarity threshold', () => {
-      const evidence = [
-        createEvidenceItem({
-          id: 'E1',
-          statement: 'The study examined urban transportation patterns in European cities.',
-        }),
-        createEvidenceItem({
-          id: 'E2',
-          statement: 'Research analyzed renewable energy adoption in Asian countries.',
-        }),
-      ];
-
-      const result = filterByProbativeValue(evidence);
-
-      expect(result.kept).toHaveLength(2);
+      // All pass structural checks (sufficient length, URL, excerpt)
+      expect(result.kept).toHaveLength(3);
       expect(result.filtered).toHaveLength(0);
-    });
-
-    it('should allow custom deduplication threshold', () => {
-      const evidence = [
-        createEvidenceItem({
-          id: 'E1',
-          statement: 'The study found significant correlation between education and income levels.',
-        }),
-        createEvidenceItem({
-          id: 'E2',
-          statement: 'Research discovered strong correlation between education and income levels.',
-        }),
-      ];
-
-      // With default threshold (0.85), these might be considered duplicates
-      const resultDefault = filterByProbativeValue(evidence);
-
-      // With stricter threshold (0.95), they should be kept as distinct
-      const config: Partial<ProbativeFilterConfig> = {
-        deduplicationThreshold: 0.95,
-      };
-      const resultStrict = filterByProbativeValue(evidence, config);
-
-      // Verify stricter threshold keeps more items
-      expect(resultStrict.kept.length).toBeGreaterThanOrEqual(resultDefault.kept.length);
-    });
-
-    it('should deduplicate only among kept items, not filtered items', () => {
-      const evidence = [
-        createEvidenceItem({
-          id: 'E1',
-          statement: 'First valid statement about renewable energy adoption in urban areas.',
-        }),
-        createEvidenceItem({
-          id: 'E2',
-          statement: 'Second valid statement about healthcare policy changes in rural regions.',
-        }),
-        createEvidenceItem({
-          id: 'E3',
-          statement: 'Short', // Will be filtered for length
-        }),
-        createEvidenceItem({
-          id: 'E4',
-          statement: 'Also', // Will be filtered for length
-        }),
-      ];
-
-      const result = filterByProbativeValue(evidence);
-
-      // E1 and E2 kept (distinct), E3 and E4 filtered (too short)
-      expect(result.kept).toHaveLength(2);
-      expect(result.filtered).toHaveLength(2);
-      expect(result.stats.filterReasons.statement_too_short).toBe(2);
     });
   });
 
@@ -855,18 +424,14 @@ describe('filterByProbativeValue', () => {
         createEvidenceItem({ statement: 'Short' }), // Too short
         createEvidenceItem({ statement: 'Tiny' }), // Too short
         createEvidenceItem({ sourceUrl: undefined }), // Missing URL
-        createEvidenceItem({
-          statement: 'Some say many people believe it is said opinions vary.',
-        }), // Vague phrases
       ];
 
       const result = filterByProbativeValue(evidence);
 
       expect(result.stats.filterReasons.statement_too_short).toBe(2);
       expect(result.stats.filterReasons.missing_source_url).toBe(1);
-      expect(result.stats.filterReasons.excessive_vague_phrases).toBe(1);
-      expect(result.stats.total).toBe(4);
-      expect(result.stats.filtered).toBe(4);
+      expect(result.stats.total).toBe(3);
+      expect(result.stats.filtered).toBe(3);
     });
 
     it('should handle evidence with missing optional fields gracefully', () => {
@@ -920,16 +485,12 @@ describe('filterByProbativeValue', () => {
       const evidence = [
         createEvidenceItem({ statement: 'Short' }),
         createEvidenceItem({ sourceUrl: undefined }),
-        createEvidenceItem({
-          statement: 'Some say many believe it is argued opinions vary the debate continues.',
-        }),
       ];
 
       const result = filterByProbativeValue(evidence);
 
       expect(Object.keys(result.stats.filterReasons)).toContain('statement_too_short');
       expect(Object.keys(result.stats.filterReasons)).toContain('missing_source_url');
-      expect(Object.keys(result.stats.filterReasons)).toContain('excessive_vague_phrases');
     });
   });
 });

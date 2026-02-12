@@ -66,6 +66,19 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
 - **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 
+### Configuration Placement
+When introducing a tunable parameter, place it in the correct tier:
+
+| Tier | When | Examples |
+|------|------|----------|
+| **UCM** (Admin UI, runtime) | Anything that affects analysis behavior or quality and may need tuning without redeployment | Thresholds, weights, limits, model selection, prompt profiles, search parameters, SR weights |
+| **Env var** (startup, infra) | Infrastructure, secrets, paths, concurrency — things set once per environment | `FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, DB paths |
+| **Hardcoded** (code change) | Structural constants, fixed design decisions that should not be tunable (tuning would break system integrity or confuse users) | Status enum values, API route paths, field names, confidence band boundaries (7-band scale), mathematical constants |
+
+**Default to UCM.** If a parameter influences analysis output and you're unsure where it belongs — make it UCM-configurable. Never hardcode a value that an admin might need to tune.
+
+UCM implementation: `apps/web/src/lib/config-storage.ts`. UCM docs: see Area-to-Documents mapping for "Configuration" in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2.
+
 ---
 
 ## Architecture
