@@ -213,14 +213,14 @@ export async function detectContextsHybrid(
 
   if (method === "llm") return llmContexts;
 
-  return mergeAndDeduplicateContexts(heuristic, llmContexts, config);
+  return await mergeAndDeduplicateContexts(heuristic, llmContexts, config);
 }
 
-function mergeAndDeduplicateContexts(
+async function mergeAndDeduplicateContexts(
   heuristic: DetectedAnalysisContext[] | null,
   llmContexts: DetectedAnalysisContext[],
   config: PipelineConfig,
-): DetectedAnalysisContext[] {
+): Promise<DetectedAnalysisContext[]> {
   const merged = new Map<string, DetectedAnalysisContext>();
 
   for (const context of heuristic || []) {
@@ -239,10 +239,26 @@ function mergeAndDeduplicateContexts(
     0.85;
   const deduplicated: DetectedAnalysisContext[] = [];
 
-  for (const context of merged.values()) {
-    const isDuplicate = deduplicated.some(
-      (existing) => calculateTextSimilarity(context.name, existing.name) >= threshold,
-    );
+  // LLM-powered context name deduplication
+  const mergedContexts = Array.from(merged.values());
+  const dedupPairs: Array<{ id: string; textA: string; textB: string }> = [];
+  for (let i = 0; i < mergedContexts.length; i++) {
+    for (let j = 0; j < i; j++) {
+      dedupPairs.push({
+        id: `cd-${i}-${j}`,
+        textA: mergedContexts[i].name,
+        textB: mergedContexts[j].name,
+      });
+    }
+  }
+  const dedupScores = await assessContextNameSimilarityBatch(dedupPairs);
+  for (const context of mergedContexts) {
+    const idx = mergedContexts.indexOf(context);
+    const isDuplicate = deduplicated.some((existing) => {
+      const existIdx = mergedContexts.indexOf(existing);
+      const pairId = idx > existIdx ? `cd-${idx}-${existIdx}` : `cd-${existIdx}-${idx}`;
+      return (dedupScores.get(pairId) ?? 0) >= threshold;
+    });
     if (!isDuplicate) deduplicated.push(context);
   }
 
@@ -253,24 +269,64 @@ function mergeAndDeduplicateContexts(
   });
 }
 
-function calculateTextSimilarity(text1: string, text2: string): number {
+/**
+ * LLM-powered context name similarity assessment (batch).
+ * Falls back to Jaccard similarity on LLM failure.
+ */
+async function assessContextNameSimilarityBatch(
+  pairs: Array<{ id: string; textA: string; textB: string }>,
+): Promise<Map<string, number>> {
+  if (pairs.length === 0) return new Map();
+
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier
+  try {
+    const pairTexts = pairs
+      .map((p, i) => `[${i}] A: "${p.textA.slice(0, 200)}" | B: "${p.textB.slice(0, 200)}"`)
+      .join("\n");
+
+    const result = await generateText({
+      model: modelInfo.model,
+      messages: [{
+        role: "user",
+        content: `Rate the semantic similarity of each analysis context name pair below on a scale from 0.0 (completely different topics) to 1.0 (same topic, possibly paraphrased).
+
+Pairs:
+${pairTexts}
+
+Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.`,
+      }],
+      temperature: 0,
+    });
+
+    let text = result.text.trim();
+    text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+    const scores = JSON.parse(text);
+
+    if (Array.isArray(scores) && scores.length === pairs.length) {
+      const map = new Map<string, number>();
+      for (let i = 0; i < pairs.length; i++) {
+        const score = typeof scores[i] === "number" ? Math.max(0, Math.min(1, scores[i])) : 0;
+        map.set(pairs[i].id, score);
+      }
+      return map;
+    }
+  } catch {
+    // LLM call failed — structural fallback
+  }
+
+  // Structural fallback: Jaccard similarity
   const normalize = (s: string) =>
-    (s || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((w) => w.length > 2);
-
-  const words1 = new Set(normalize(text1));
-  const words2 = new Set(normalize(text2));
-
-  if (words1.size === 0 && words2.size === 0) return 1;
-  if (words1.size === 0 || words2.size === 0) return 0;
-
-  const intersection = new Set([...words1].filter((w) => words2.has(w)));
-  const union = new Set([...words1, ...words2]);
-
-  return union.size === 0 ? 0 : intersection.size / union.size;
+    (s || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
+  const map = new Map<string, number>();
+  for (const pair of pairs) {
+    const words1 = new Set(normalize(pair.textA));
+    const words2 = new Set(normalize(pair.textB));
+    if (words1.size === 0 || words2.size === 0) { map.set(pair.id, 0); continue; }
+    const intersection = new Set([...words1].filter((w) => words2.has(w)));
+    const union = new Set([...words1, ...words2]);
+    map.set(pair.id, union.size === 0 ? 0 : intersection.size / union.size);
+  }
+  return map;
 }
 
 /**

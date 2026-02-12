@@ -204,13 +204,39 @@ export interface VerdictValidationResult {
 }
 
 // ============================================================================
+// CALL 5: COUNTER-CLAIM DETECTION
+// ============================================================================
+
+/** Single claim input for counter-claim detection */
+export interface CounterClaimClaimInput {
+  claimId: string;
+  claimText: string;
+  truthPercentage?: number;
+  evidenceDirections?: { supporting: number; contradicting: number };
+}
+
+/** Request for counter-claim detection */
+export interface CounterClaimRequest {
+  thesis: string;
+  claims: CounterClaimClaimInput[];
+  verdictBands?: { LEANING_TRUE: number; MIXED: number };
+}
+
+/** Result for a single claim's counter-claim assessment */
+export interface CounterClaimResult {
+  claimId: string;
+  isCounterClaim: boolean;
+  reasoning: string;
+}
+
+// ============================================================================
 // SERVICE INTERFACE
 // ============================================================================
 
 /**
  * Text Analysis Service Interface
  *
- * Provides methods for all 4 analysis points.
+ * Provides methods for all analysis points.
  * Implementations are LLM-based, using admin-editable prompts.
  */
 export interface ITextAnalysisService {
@@ -237,6 +263,12 @@ export interface ITextAnalysisService {
    * Pipeline stage: VERDICT
    */
   validateVerdicts(request: VerdictValidationRequest): Promise<VerdictValidationResult[]>;
+
+  /**
+   * Call 5: Detect counter-claims (claims testing the opposite of the thesis)
+   * Pipeline stage: VERDICT
+   */
+  detectCounterClaims(request: CounterClaimRequest): Promise<CounterClaimResult[]>;
 }
 
 // ============================================================================

@@ -2,17 +2,17 @@
  * Post-Verdict Grounding Check (M2 from Anti-Hallucination Strategy)
  *
  * Validates that verdict reasoning is grounded in cited evidence items.
- * Uses a heuristic approach (zero LLM cost): extracts key terms from
- * reasoning and checks if they appear in the cited evidence text.
+ * Key term extraction from reasoning is now LLM-powered (AGENTS.md compliance).
+ * Term matching against evidence corpus remains structural.
  *
  * Returns a groundingRatio (0-1) used by confidence calibration (Layer 5).
- *
- * All functions are pure (no side effects, no LLM calls).
  *
  * @module analyzer/grounding-check
  */
 
+import { generateText } from "ai";
 import type { ClaimVerdict, EvidenceItem } from "./types";
+import { getModelForTask } from "./llm";
 
 // ============================================================================
 // TYPES
@@ -57,46 +57,72 @@ export const DEFAULT_GROUNDING_PENALTY_CONFIG: GroundingPenaltyConfig = {
 };
 
 // ============================================================================
-// TERM EXTRACTION
+// LLM-POWERED TERM EXTRACTION
 // ============================================================================
 
-// Common stop words to ignore when extracting key terms
-const STOP_WORDS = new Set([
-  "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-  "have", "has", "had", "do", "does", "did", "will", "would", "could",
-  "should", "may", "might", "shall", "can", "need", "must", "ought",
-  "that", "this", "these", "those", "which", "who", "whom", "what",
-  "where", "when", "how", "why", "not", "no", "nor", "but", "or",
-  "and", "if", "then", "than", "too", "very", "just", "also", "so",
-  "for", "from", "with", "about", "against", "between", "through",
-  "during", "before", "after", "above", "below", "to", "of", "in",
-  "on", "at", "by", "into", "out", "up", "down", "off", "over",
-  "under", "again", "further", "once", "here", "there", "all", "each",
-  "every", "both", "few", "more", "most", "other", "some", "such",
-  "only", "own", "same", "any", "its", "it", "they", "them", "their",
-  "we", "our", "he", "she", "him", "her", "his", "you", "your",
-  "evidence", "claim", "supports", "contradicts", "shows", "indicates",
-  "suggests", "based", "according", "therefore", "however", "although",
-  "while", "since", "because", "overall", "generally", "specifically",
-  "verdict", "true", "false", "mixed", "unverified", "mostly",
-]);
+/**
+ * Extract meaningful key terms from multiple reasoning texts using LLM.
+ * Batches all reasonings into a single call for efficiency.
+ *
+ * @returns Array of term arrays, one per reasoning text
+ */
+async function extractKeyTermsBatch(reasonings: string[]): Promise<string[][]> {
+  if (reasonings.length === 0) return [];
+
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
+
+  const numberedReasonings = reasonings
+    .map((r, i) => `[${i}]: ${r.slice(0, 500)}`)
+    .join("\n");
+
+  const prompt = `Extract key factual terms from each numbered reasoning text below. These terms should be specific domain nouns, proper nouns, numbers, technical terms, and specific descriptors that could be traced back to cited evidence sources.
+
+Exclude: common English words, analysis words (evidence, claim, supports, contradicts, suggests, indicates, based, therefore, however, verdict, true, false, mixed), and words shorter than 3 characters.
+
+Reasonings:
+${numberedReasonings}
+
+Return ONLY a JSON array of arrays, one inner array of lowercase string terms per reasoning. No explanation.
+Example: [["solar", "panels", "efficiency", "2024"], ["battery", "lithium", "cost"]]`;
+
+  try {
+    const result = await generateText({
+      model: modelInfo.model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+    });
+
+    // Parse JSON response
+    let text = result.text.trim();
+    text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+    const parsed = JSON.parse(text);
+
+    if (Array.isArray(parsed) && parsed.length === reasonings.length) {
+      return parsed.map((terms: unknown) =>
+        Array.isArray(terms) ? terms.filter((t): t is string => typeof t === "string") : []
+      );
+    }
+  } catch {
+    // LLM call failed — fall through to fallback
+  }
+
+  // Fallback: simple tokenization (no stop words, just length filter)
+  return reasonings.map((r) =>
+    [...new Set(
+      r.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((t) => t.length >= 4)
+    )]
+  );
+}
 
 /**
  * Extract meaningful key terms from reasoning text.
- * Returns lowercased terms with stop words removed.
+ * Uses LLM for intelligent term extraction.
+ * Exported for backward compatibility with tests.
  */
-export function extractKeyTerms(reasoning: string): string[] {
+export async function extractKeyTerms(reasoning: string): Promise<string[]> {
   if (!reasoning || reasoning.trim().length === 0) return [];
-
-  // Tokenize: split on non-alphanumeric, filter short words and stop words
-  const tokens = reasoning
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(t => t.length >= 3 && !STOP_WORDS.has(t));
-
-  // Deduplicate
-  return [...new Set(tokens)];
+  const results = await extractKeyTermsBatch([reasoning]);
+  return results[0] ?? [];
 }
 
 // ============================================================================
@@ -128,30 +154,33 @@ function buildEvidenceCorpus(
  * Check how well a verdict's reasoning is grounded in its cited evidence.
  *
  * For each claim verdict:
- * 1. Extract key terms from the reasoning text
+ * 1. Extract key terms from the reasoning text (LLM-powered)
  * 2. Build a corpus from the cited supportingEvidenceIds
  * 3. Count how many key terms appear in the evidence corpus
  * 4. Return ratio of grounded terms / total terms
  */
-export function checkVerdictGrounding(
+export async function checkVerdictGrounding(
   claimVerdicts: ClaimVerdict[],
   allEvidence: EvidenceItem[],
-): GroundingCheckResult {
+): Promise<GroundingCheckResult> {
   if (!claimVerdicts || claimVerdicts.length === 0) {
     return { groundingRatio: 1, verdictDetails: [], warnings: [] };
   }
+
+  // Batch extract key terms from all verdict reasonings in one LLM call
+  const reasonings = claimVerdicts.map((v) => v.reasoning || "");
+  const allKeyTerms = await extractKeyTermsBatch(reasonings);
 
   const verdictDetails: VerdictGroundingDetail[] = [];
   const warnings: string[] = [];
   let totalGroundedTerms = 0;
   let totalTerms = 0;
 
-  for (const verdict of claimVerdicts) {
-    const reasoning = verdict.reasoning || "";
+  for (let i = 0; i < claimVerdicts.length; i++) {
+    const verdict = claimVerdicts[i];
     const evidenceIds = verdict.supportingEvidenceIds || [];
     const hasCitedEvidence = evidenceIds.length > 0;
-
-    const keyTerms = extractKeyTerms(reasoning);
+    const keyTerms = allKeyTerms[i] ?? [];
 
     if (keyTerms.length === 0) {
       // No meaningful terms to check — consider fully grounded (trivial reasoning)
@@ -181,12 +210,12 @@ export function checkVerdictGrounding(
       continue;
     }
 
-    // Build evidence corpus and check term presence
+    // Build evidence corpus and check term presence (structural)
     const corpus = buildEvidenceCorpus(evidenceIds, allEvidence);
     let groundedCount = 0;
 
     for (const term of keyTerms) {
-      if (corpus.includes(term)) {
+      if (corpus.includes(term.toLowerCase())) {
         groundedCount++;
       }
     }

@@ -22,6 +22,8 @@ import {
   ContextSimilarityResult,
   VerdictValidationRequest,
   VerdictValidationResult,
+  CounterClaimRequest,
+  CounterClaimResult,
   AnalysisPoint,
   TextAnalysisMeta,
   TextAnalysisResponse,
@@ -113,6 +115,18 @@ const VerdictValidationResultSchema = z.object({
 const VerdictValidationResponseSchema = z.object({
   _meta: MetaSchema,
   result: z.array(VerdictValidationResultSchema).nullable(),
+  error: z.string().optional(),
+});
+
+const CounterClaimResultSchema = z.object({
+  claimId: z.string(),
+  isCounterClaim: z.boolean(),
+  reasoning: z.string(),
+});
+
+const CounterClaimResponseSchema = z.object({
+  _meta: MetaSchema,
+  result: z.array(CounterClaimResultSchema).nullable(),
   error: z.string().optional(),
 });
 
@@ -508,6 +522,79 @@ export class LLMTextAnalysisService implements ITextAnalysisService {
     });
 
     throw lastError || new Error("Failed to validate verdicts after retries");
+  }
+
+  /**
+   * Call 5: Detect counter-claims (claims testing opposite of thesis)
+   */
+  async detectCounterClaims(request: CounterClaimRequest): Promise<CounterClaimResult[]> {
+    const startTime = Date.now();
+    let retryCount = 0;
+    let lastError: Error | null = null;
+
+    const claimsJson = JSON.stringify(
+      request.claims.map((c) => ({
+        claimId: c.claimId,
+        claimText: c.claimText,
+        truthPercentage: c.truthPercentage,
+        evidenceDirections: c.evidenceDirections,
+        thresholds: request.verdictBands
+          ? { leaningTrue: request.verdictBands.LEANING_TRUE, mixed: request.verdictBands.MIXED }
+          : undefined,
+      })),
+      null,
+      2
+    );
+
+    const promptData = await loadAndRenderPrompt("text-analysis-counter-claim", {
+      THESIS_TEXT: request.thesis,
+      CLAIMS_JSON: claimsJson,
+      PROMPT_HASH: "",
+    });
+
+    if (!promptData) {
+      throw new Error("Failed to load counter-claim detection prompt");
+    }
+
+    const prompt = promptData.prompt.replace("${PROMPT_HASH}", promptData.promptHash);
+
+    for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
+      try {
+        const responseText = await this.callLLM("verdict", prompt, 2000);
+        const parsed = parseJSONResponse(responseText, CounterClaimResponseSchema, this.config);
+
+        if (parsed.error || !parsed.result) {
+          throw new Error(parsed.error || "No result in response");
+        }
+
+        recordMetrics({
+          analysisPoint: "verdict",
+          success: true,
+          latencyMs: Date.now() - startTime,
+          retryCount,
+          usedFallback: false,
+        });
+
+        return parsed.result;
+      } catch (e) {
+        lastError = e as Error;
+        retryCount++;
+        if (attempt < this.config.maxRetries) {
+          await new Promise((r) => setTimeout(r, this.config.retryDelayMs * (attempt + 1)));
+        }
+      }
+    }
+
+    recordMetrics({
+      analysisPoint: "verdict",
+      success: false,
+      latencyMs: Date.now() - startTime,
+      retryCount,
+      usedFallback: false,
+      error: lastError?.message,
+    });
+
+    throw lastError || new Error("Failed to detect counter-claims after retries");
   }
 }
 
