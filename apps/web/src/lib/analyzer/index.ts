@@ -110,9 +110,6 @@ export {
   // Configuration
   SR_CONFIG,
   DEFAULT_UNKNOWN_SOURCE_SCORE,
-
-  // Legacy (deprecated)
-  loadSourceBundle,
 } from "./source-reliability";
 
 export type { PrefetchResult, CachedReliabilityData, SourceReliabilityData } from "./source-reliability";

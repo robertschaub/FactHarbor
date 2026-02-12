@@ -101,6 +101,7 @@ import { deriveCandidateClaimTexts } from "./claim-decomposition";
 import { loadPromptFile, type Pipeline } from "./prompt-loader";
 import { calibrateConfidence, DEFAULT_CALIBRATION_CONFIG, type ConfidenceCalibrationConfig } from "./confidence-calibration";
 import { checkVerdictGrounding, applyGroundingPenalty, DEFAULT_GROUNDING_PENALTY_CONFIG } from "./grounding-check";
+import { ENGLISH_STOPWORDS } from "./constants/stopwords";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { getAnalyzerConfig, type PipelineConfig, type SearchConfig, type CalcConfig, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
@@ -450,17 +451,7 @@ function normalizeEvidenceClassifications<T extends {
 interface RelevanceCheck {
   isRelevant: boolean;
   reason?: string;
-  signals?: {
-    entityMatchCount: number;
-    strongEntityMatchCount: number;
-    passesEntityGate: boolean;
-    contextMatchCount: number;
-    institutionMatchCount: number;
-    institutionMentioned: boolean;
-    entityTokens: string[];
-    contextTokens: string[];
-    institutionTokens: string[];
-  };
+  classification?: RelevanceClass;
 }
 
 type RelevanceOptions = {
@@ -475,67 +466,23 @@ function normalizeForMatch(text: string): string {
   return (text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-const COMMON_STOPWORDS = new Set([
-  "a", "an", "and", "are", "as", "at", "be", "been", "being", "but", "by",
-  "for", "from", "how", "if", "in", "into", "is", "it", "its", "of", "on", "or",
-  "that", "the", "their", "them", "then", "these", "they", "this", "those", "to",
-  "was", "we", "were", "what", "when", "where", "which", "who", "why", "with",
-  "you", "your"
-]);
-
-function tokenizeForMatch(text: string, minLength = 4): string[] {
+/**
+ * Extract key words from text for search query construction (structural plumbing, not semantic decisions).
+ * Simple word extraction with length filter — no stop-word lists or semantic interpretation.
+ */
+function extractKeyWordsForQuery(text: string, minLength = 4, maxWords = 10): string[] {
   const normalized = normalizeForMatch(text);
   if (!normalized) return [];
-  const tokens = normalized
-    .split(/\s+/)
-    .filter((t) => t.length >= minLength && !COMMON_STOPWORDS.has(t));
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const t of tokens) {
-    if (!seen.has(t)) {
-      seen.add(t);
-      out.push(t);
+  for (const word of normalized.split(/\s+/)) {
+    if (word.length >= minLength && !seen.has(word)) {
+      seen.add(word);
+      out.push(word);
+      if (out.length >= maxWords) break;
     }
   }
   return out;
-}
-
-function hasToken(haystack: string, token: string): boolean {
-  if (!haystack || !token) return false;
-  const escaped = token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
-  const exactPattern = new RegExp(`\\b${escaped}\\b`, "i");
-  if (exactPattern.test(haystack)) return true;
-
-  if (token.length >= 5) {
-    const pluralPattern = new RegExp(`\\b${escaped}(s|es)\\b`, "i");
-    if (pluralPattern.test(haystack)) return true;
-    if (token.endsWith("s")) {
-      const singular = token.slice(0, -1);
-      if (singular.length >= 4) {
-        const singularPattern = new RegExp(`\\b${singular}\\b`, "i");
-        if (singularPattern.test(haystack)) return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-function containsAnyToken(haystack: string, tokens: string[]): boolean {
-  if (!haystack || tokens.length === 0) return false;
-  for (const t of tokens) {
-    if (hasToken(haystack, t)) return true;
-  }
-  return false;
-}
-
-function countTokenMatches(haystack: string, url: string, tokens: string[]): number {
-  if ((!haystack && !url) || tokens.length === 0) return 0;
-  let count = 0;
-  for (const t of tokens) {
-    if (hasToken(haystack, t) || hasToken(url, t)) count += 1;
-  }
-  return count;
 }
 
 function normalizeContextAlias(raw: unknown): string {
@@ -601,8 +548,8 @@ function buildAdaptiveFallbackQueries(params: {
   const { entityText, focus, category, originalQueries, maxQueries, currentYear } = params;
   if (maxQueries <= 0) return [];
 
-  const entityAnchor = tokenizeForMatch(entityText, 3).slice(0, 6).join(" ");
-  const focusAnchor = tokenizeForMatch(String(focus || ""), 4).slice(0, 4).join(" ");
+  const entityAnchor = extractKeyWordsForQuery(entityText, 3, 6).join(" ");
+  const focusAnchor = extractKeyWordsForQuery(String(focus || ""), 4, 4).join(" ");
   const baseAnchor = [entityAnchor, focusAnchor].filter(Boolean).join(" ").trim() || entityAnchor || focusAnchor;
   if (!baseAnchor) return [];
 
@@ -625,69 +572,19 @@ function buildAdaptiveFallbackQueries(params: {
     .slice(0, maxQueries);
 }
 
-function extractContextTokens(contexts: AnalysisContext[]): string[] {
-  if (!Array.isArray(contexts) || contexts.length === 0) return [];
-  const rawCore: string[] = [];
-  const rawFallback: string[] = [];
-  const metadataExcludeKeys = new Set(["geographic", "jurisdiction", "boundaries"]);
-
-  for (const ctx of contexts) {
-    if (!ctx) continue;
-    if (ctx.subject) {
-      rawCore.push(ctx.subject);
-    } else if (ctx.assessedStatement) {
-      rawCore.push(ctx.assessedStatement);
-    }
-
-    if (ctx.name) rawFallback.push(ctx.name);
-    const contextAlias = normalizeContextAlias(ctx.shortName);
-    if (contextAlias) rawFallback.push(contextAlias);
-
-    const meta = ctx.metadata || {};
-    for (const [key, value] of Object.entries(meta)) {
-      if (metadataExcludeKeys.has(key)) continue;
-      if (typeof value === "string" && value.trim()) {
-        rawFallback.push(value);
-      } else if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
-        rawFallback.push(value.join(" "));
-      }
-    }
-  }
-
-  const coreTokens = tokenizeForMatch(rawCore.join(" "), 4);
-  if (coreTokens.length > 0) return coreTokens;
-  return tokenizeForMatch(rawFallback.join(" "), 4);
-}
-
-function extractInstitutionTokens(contexts: AnalysisContext[]): string[] {
-  if (!Array.isArray(contexts) || contexts.length === 0) return [];
-  const raw: string[] = [];
-  const acronyms = new Set<string>();
-  for (const ctx of contexts) {
-    if (!ctx) continue;
-    const contextAlias = normalizeContextAlias(ctx.shortName);
-    if (contextAlias) {
-      raw.push(contextAlias);
-      const shortNameAcronyms = String(contextAlias).match(/\b[A-Z]{2,8}\b/g) || [];
-      for (const token of shortNameAcronyms) {
-        if (!isGenericAliasToken(token)) acronyms.add(token.toLowerCase());
-      }
-    }
-    const meta = ctx.metadata || {};
-    for (const value of [meta.institution, meta.court, meta.regulatoryBody]) {
-      if (!value) continue;
-      const text = String(value);
-      raw.push(text);
-      const matches = text.match(/\b[A-Z]{2,8}\b/g) || [];
-      for (const token of matches) {
-        if (!isGenericAliasToken(token)) acronyms.add(token.toLowerCase());
-      }
-    }
-  }
-  const lexicalTokens = tokenizeForMatch(raw.join(" "), 5);
-  const tokens = new Set<string>(lexicalTokens);
-  for (const token of acronyms) tokens.add(token);
-  return Array.from(tokens);
+/**
+ * Build a concise textual description of a context for LLM prompts (structural plumbing).
+ */
+function buildContextDescription(ctx: AnalysisContext): string {
+  if (!ctx) return "";
+  const meta = (ctx.metadata || {}) as Record<string, any>;
+  const parts = [
+    ctx.subject || ctx.assessedStatement || ctx.name || "",
+    meta.institution || meta.court || meta.regulatoryBody || "",
+    meta.jurisdiction || meta.geographic || "",
+    normalizeContextAlias(ctx.shortName) || "",
+  ].filter(Boolean);
+  return parts.join(" | ");
 }
 
 /**
@@ -730,109 +627,141 @@ function buildContextAwareCriticismQueries(
 }
 
 /**
- * Quick heuristic check for obvious irrelevance.
- * Does NOT replace LLM extraction - just filters clear noise.
+ * LLM-powered batch search result relevance assessment.
+ * Replaces the deterministic checkSearchResultRelevance heuristic.
+ * Batches all results into a single LLM call for efficiency.
  */
-function checkSearchResultRelevance(
-  result: WebSearchResult,
+const BATCH_RELEVANCE_SCHEMA = z.object({
+  results: z.array(z.object({
+    id: z.string(),
+    classification: z.enum(["primary_source", "secondary_commentary", "unrelated"]),
+    reason: z.string(),
+  })),
+});
+
+const BATCH_RELEVANCE_SCHEMA_ANTHROPIC = z.object({
+  results: z.array(z.object({
+    id: z.string(),
+    classification: z.enum(["primary_source", "secondary_commentary", "unrelated"]),
+    reason: z.string(),
+  })),
+});
+
+async function assessSearchRelevanceBatch(
+  results: WebSearchResult[],
   entityStr: string,
   contexts: AnalysisContext[],
-  options: RelevanceOptions = {}
-): RelevanceCheck {
-  const title = (result.title || "").toLowerCase();
-  const snippet = (result.snippet || "").toLowerCase();
-  const url = (result.url || "").toLowerCase();
-  const combined = `${title} ${snippet}`.trim();
+  options: RelevanceOptions = {},
+  pipelineConfig?: PipelineConfig,
+): Promise<Map<string, RelevanceCheck>> {
+  const out = new Map<string, RelevanceCheck>();
+  if (!results || results.length === 0) return out;
 
-  const entityTokens = tokenizeForMatch(entityStr, 3);
-  const contextTokens = extractContextTokens(contexts);
-  const institutionTokens = extractInstitutionTokens(contexts);
+  const mode = options.requireContextMatch
+    ? (options.strictInstitutionMatch ? "strict" : "moderate")
+    : "relaxed";
 
-  const entityMatchCount = countTokenMatches(combined, url, entityTokens);
-  const contextMatchCount = countTokenMatches(combined, url, contextTokens);
-  const contextMinMatches = contextTokens.length >= 4 ? 2 : 1;
-  const strongEntityTokens = entityTokens.filter((t) => t.length >= 7);
-  const strongEntityMatchCount = countTokenMatches(combined, url, strongEntityTokens);
-  const entityMinMatches = entityTokens.length >= 4 ? 2 : 1;
-  const passesEntityGate =
-    strongEntityTokens.length > 0
-      ? strongEntityMatchCount > 0
-      : entityMatchCount >= entityMinMatches;
-  const hasContextTokens = contextTokens.length > 0;
-  const passesContextGate = hasContextTokens && contextMatchCount >= contextMinMatches;
-  const passesContextOrMissing = !hasContextTokens || contextMatchCount >= contextMinMatches;
+  const modeInstructions = mode === "strict"
+    ? "STRICT mode: Result must directly reference the specific institution/court/entity AND the analytical context. Reject results that are about a different institution or unrelated context."
+    : mode === "moderate"
+      ? "MODERATE mode: Result should reference the entity and relate to the analytical context. Institution match is preferred but not required if the result clearly discusses the same subject matter."
+      : "RELAXED mode: Result should be about the same general topic/entity. Accept results with meaningful entity or context overlap.";
 
-  const institutionMentioned =
-    institutionTokens.length > 0 &&
-    (containsAnyToken(combined, institutionTokens) || containsAnyToken(url, institutionTokens));
-  const institutionMatchCount = countTokenMatches(combined, url, institutionTokens);
-  const strictInstitutionMinMatches = institutionTokens.length >= 3 ? 2 : 1;
+  const contextSummary = buildRelevanceContextSummary(contexts);
 
-  const signals = {
-    entityMatchCount,
-    strongEntityMatchCount,
-    passesEntityGate,
-    contextMatchCount,
-    institutionMatchCount,
-    institutionMentioned,
-    entityTokens,
-    contextTokens,
-    institutionTokens,
-  };
+  const resultEntries = results.map((r, idx) => ({
+    id: `r${idx}`,
+    title: r.title || "N/A",
+    snippet: r.snippet || "N/A",
+    url: r.url || "N/A",
+  }));
 
-  if (options.requireContextMatch) {
-    if (institutionTokens.length > 0) {
-      if (options.strictInstitutionMatch) {
-        if (
-          institutionMatchCount >= strictInstitutionMinMatches &&
-          passesEntityGate &&
-          passesContextOrMissing
-        ) {
-          return { isRelevant: true, signals };
+  const systemPrompt = `You assess the relevance of search results to a claim and its AnalysisContexts.
+${modeInstructions}
+
+Classify each result as:
+- "primary_source": directly about the claim/context, contains primary evidence, official records, data, or first-hand documentation
+- "secondary_commentary": discusses the topic but is commentary, reaction, analysis, or indirect discussion
+- "unrelated": not about the claim or context
+
+Return JSON only.`;
+
+  const userPrompt = `CLAIM:
+"${entityStr}"
+
+ANALYSISCONTEXTS:
+${contextSummary}
+
+SEARCH RESULTS:
+${resultEntries.map((r) => `[${r.id}] Title: ${r.title}\nSnippet: ${r.snippet}\nURL: ${r.url}`).join("\n\n")}
+
+Return JSON with: { "results": [{ "id": "r0", "classification": "...", "reason": "..." }, ...] }`;
+
+  try {
+    const { model: llmModel } = getModelForTask("extract_evidence");
+    const response = await generateText({
+      model: llmModel,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: getDeterministicTemperature(0.1, pipelineConfig),
+      output: Output.object({
+        schema: isAnthropicProvider(pipelineConfig?.llmProvider)
+          ? BATCH_RELEVANCE_SCHEMA_ANTHROPIC
+          : BATCH_RELEVANCE_SCHEMA,
+      }),
+      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
+    });
+
+    const parsed = extractStructuredOutput(response);
+    if (parsed && Array.isArray(parsed.results)) {
+      const safe = BATCH_RELEVANCE_SCHEMA.safeParse(parsed);
+      if (safe.success) {
+        for (const item of safe.data.results) {
+          const idx = parseInt(item.id.replace("r", ""), 10);
+          if (idx >= 0 && idx < results.length) {
+            const isRelevant = item.classification === "primary_source" ||
+              (mode === "relaxed" && item.classification === "secondary_commentary");
+            out.set(item.id, {
+              isRelevant,
+              reason: isRelevant ? undefined : item.reason,
+              classification: item.classification,
+            });
+          }
         }
-        return { isRelevant: false, reason: "institution_not_mentioned", signals };
       }
-      if (institutionMentioned && passesEntityGate && passesContextOrMissing) return { isRelevant: true, signals };
-      if (
-        options.allowInstitutionFallback !== false &&
-        !institutionMentioned &&
-        passesEntityGate &&
-        passesContextOrMissing &&
-        strongEntityMatchCount > 0
-      ) {
-        return { isRelevant: true, signals };
-      }
-      return { isRelevant: false, reason: "insufficient_context_match", signals };
     }
-    if (passesEntityGate && passesContextOrMissing) return { isRelevant: true, signals };
-    return { isRelevant: false, reason: "insufficient_context_match", signals };
+  } catch (err: any) {
+    debugLog("assessSearchRelevanceBatch: LLM failed, accepting all results as fallback", {
+      error: err?.message || String(err),
+      resultCount: results.length,
+    });
   }
 
-  if (passesEntityGate || passesContextGate) return { isRelevant: true, signals };
-  if (entityTokens.length === 0 && contextTokens.length === 0) return { isRelevant: true, signals };
+  // Fill in any missing results (LLM didn't classify them) — accept as fallback
+  for (let i = 0; i < results.length; i++) {
+    const id = `r${i}`;
+    if (!out.has(id)) {
+      out.set(id, { isRelevant: true, reason: "llm_fallback" });
+    }
+  }
 
-  return {
-    isRelevant: false,
-    reason: entityTokens.length > 0 ? "entity_not_mentioned" : "context_not_mentioned",
-    signals,
-  };
-}
-
-function getStrongAnchorTokens(text: string): string[] {
-  return tokenizeForMatch(text || "", 7).slice(0, 10);
+  return out;
 }
 
 /**
  * Remove low-evidence drift contexts that are not anchored to the primary subject/entity.
  * Conservative by design:
  * - only applies when at least one other context has anchor evidence
- * - only drops contexts with <=2 evidence items and zero anchor token matches
+ * - only drops contexts with <=2 evidence items and zero anchor similarity
+ * Uses LLM-powered similarity to assess anchor relevance.
  */
-function pruneWeakAnchorContexts(
+async function pruneWeakAnchorContexts(
   understanding: ClaimUnderstanding,
   evidenceItems: EvidenceItem[],
   analysisInput: string,
-): { understanding: ClaimUnderstanding; droppedContextIds: string[] } {
+): Promise<{ understanding: ClaimUnderstanding; droppedContextIds: string[] }> {
   const contexts = Array.isArray(understanding.analysisContexts)
     ? understanding.analysisContexts
     : [];
@@ -840,35 +769,58 @@ function pruneWeakAnchorContexts(
     return { understanding, droppedContextIds: [] };
   }
 
-  const anchorTokens = getStrongAnchorTokens(analysisInput);
-  if (anchorTokens.length === 0) {
+  if (!analysisInput || !analysisInput.trim()) {
     return { understanding, droppedContextIds: [] };
+  }
+
+  // Build similarity pairs: each evidence item's content vs the analysis input
+  const pairs: Array<{ id: string; textA: string; textB: string }> = [];
+  const evidenceByContext = new Map<string, EvidenceItem[]>();
+  for (const item of evidenceItems) {
+    const cid = String(item?.contextId || "");
+    if (!cid) continue;
+    if (!evidenceByContext.has(cid)) evidenceByContext.set(cid, []);
+    evidenceByContext.get(cid)!.push(item);
+  }
+
+  for (const context of contexts) {
+    const contextId = String(context.id || "");
+    const ctxEvidence = evidenceByContext.get(contextId) || [];
+    for (const item of ctxEvidence) {
+      const combined = `${item?.statement || ""} ${item?.sourceTitle || ""}`;
+      if (combined.trim()) {
+        pairs.push({ id: `${contextId}__${item.id}`, textA: analysisInput, textB: combined });
+      }
+    }
+  }
+
+  if (pairs.length === 0) {
+    return { understanding, droppedContextIds: [] };
+  }
+
+  const simScores = await assessTextSimilarityBatch(pairs);
+
+  // Aggregate: max similarity score per context
+  const contextMaxSim = new Map<string, number>();
+  for (const [pairId, score] of simScores) {
+    const contextId = pairId.split("__")[0];
+    contextMaxSim.set(contextId, Math.max(contextMaxSim.get(contextId) || 0, score));
   }
 
   const contextStats = contexts.map((context) => {
     const contextId = String(context.id || "");
-    const contextEvidence = evidenceItems.filter(
-      (item) => String(item?.contextId || "") === contextId,
-    );
-    const anchorHits = contextEvidence.reduce((sum, item) => {
-      const combined = `${item?.statement || ""} ${item?.sourceTitle || ""} ${item?.sourceExcerpt || ""}`.toLowerCase();
-      const url = String(item?.sourceUrl || "").toLowerCase();
-      return sum + countTokenMatches(combined, url, anchorTokens);
-    }, 0);
-    return {
-      contextId,
-      evidenceCount: contextEvidence.length,
-      anchorHits,
-    };
+    const evidenceCount = (evidenceByContext.get(contextId) || []).length;
+    const anchorSim = contextMaxSim.get(contextId) || 0;
+    return { contextId, evidenceCount, anchorSim };
   });
 
-  const maxAnchorHits = Math.max(...contextStats.map((s) => s.anchorHits), 0);
-  if (maxAnchorHits <= 0) {
+  const maxAnchorSim = Math.max(...contextStats.map((s) => s.anchorSim), 0);
+  if (maxAnchorSim <= 0.1) {
     return { understanding, droppedContextIds: [] };
   }
 
   const droppedContextIds = contextStats
-    .filter((s) => s.evidenceCount > 0 && s.evidenceCount <= 2 && s.anchorHits === 0)
+    .filter((s) => s.evidenceCount > 0 && s.evidenceCount <= 2 && s.anchorSim < 0.15)
     .map((s) => s.contextId);
 
   if (droppedContextIds.length === 0 || droppedContextIds.length >= contexts.length) {
@@ -878,7 +830,7 @@ function pruneWeakAnchorContexts(
   const keptStats = contextStats
     .filter((s) => !droppedContextIds.includes(s.contextId))
     .sort((a, b) => {
-      if (b.anchorHits !== a.anchorHits) return b.anchorHits - a.anchorHits;
+      if (b.anchorSim !== a.anchorSim) return b.anchorSim - a.anchorSim;
       return b.evidenceCount - a.evidenceCount;
     });
   const fallbackContextId =
@@ -912,18 +864,6 @@ function pruneWeakAnchorContexts(
   };
 }
 
-const SEARCH_RELEVANCE_SCHEMA = z.object({
-  classification: z.enum(["primary_source", "secondary_commentary", "unrelated"]),
-  confidence: z.number().min(0).max(100),
-  reason: z.string().max(400),
-});
-
-const SEARCH_RELEVANCE_SCHEMA_ANTHROPIC = z.object({
-  classification: z.enum(["primary_source", "secondary_commentary", "unrelated"]),
-  confidence: z.number(),
-  reason: z.string(),
-});
-
 function buildRelevanceContextSummary(contexts: AnalysisContext[]): string {
   if (!contexts || contexts.length === 0) return "No contexts available.";
   return contexts
@@ -942,62 +882,6 @@ function buildRelevanceContextSummary(contexts: AnalysisContext[]): string {
         .join(" | ");
     })
     .join("\n");
-}
-
-async function classifySearchResultRelevanceLLM(
-  result: WebSearchResult,
-  entityStr: string,
-  contexts: AnalysisContext[],
-  model: any,
-  pipelineConfig?: PipelineConfig,
-): Promise<{ classification: RelevanceClass; confidence: number; reason: string } | null> {
-  const systemPrompt = `You classify the relevance of a search result to a claim and its AnalysisContexts.
-Return JSON only. Classify as:
-- "primary_source": directly about the claim/context and contains primary evidence, official records, data, or first-hand documentation.
-- "secondary_commentary": discusses the topic but is commentary, reaction, analysis, or indirect discussion without primary evidence.
-- "unrelated": not about the claim or context.`;
-
-  const userPrompt = `CLAIM:
-"${entityStr}"
-
-ANALYSISCONTEXTS:
-${buildRelevanceContextSummary(contexts)}
-
-SEARCH RESULT:
-Title: ${result.title || "N/A"}
-Snippet: ${result.snippet || "N/A"}
-URL: ${result.url || "N/A"}
-
-Return JSON with: classification, confidence (0-100), reason.`;
-
-  try {
-    const response = await generateText({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: getDeterministicTemperature(0.1, pipelineConfig),
-      output: Output.object({
-        schema: isAnthropicProvider(pipelineConfig?.llmProvider)
-          ? SEARCH_RELEVANCE_SCHEMA_ANTHROPIC
-          : SEARCH_RELEVANCE_SCHEMA,
-      }),
-      providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
-    });
-
-    const parsed = extractStructuredOutput(response);
-    if (!parsed) return null;
-    // Always validate with the strict schema (clamps confidence to 0-100)
-    const safe = SEARCH_RELEVANCE_SCHEMA.safeParse(parsed);
-    if (!safe.success) return null;
-    return safe.data;
-  } catch (err: any) {
-    debugLog("classifySearchResultRelevanceLLM: failed", {
-      error: err?.message || String(err),
-    });
-    return null;
-  }
 }
 
 /**
@@ -1174,7 +1058,7 @@ async function refineContextsFromEvidence(
     : 40;
 
   const promptEvidenceItems = shouldEnableScopePromptSelection
-    ? selectEvidenceItemsForContextRefinementPrompt(evidenceItems, analysisInput, contextPromptMaxEvidenceItems)
+    ? await selectEvidenceItemsForContextRefinementPrompt(evidenceItems, analysisInput, contextPromptMaxEvidenceItems)
     : evidenceItems.slice(0, contextPromptMaxEvidenceItems);
 
   const evidenceText = promptEvidenceItems.map((item) => {
@@ -1543,38 +1427,41 @@ Return:
     const anchor = preRefineContexts[0] as any;
     const contextsNow = (state.understanding!.analysisContexts || []) as any[];
     const anchorRecoverySim = CONTEXT_SIMILARITY_CONFIG.anchorRecoveryThreshold ?? 0.6;
-    const anchorStillRepresented = contextsNow.some(
-      (ctx) => calculateContextSimilarity(ctx, anchor) >= anchorRecoverySim,
+    const anchorSims = await Promise.all(
+      contextsNow.map((ctx) => assessContextSimilarity(ctx, anchor)),
     );
+    const anchorStillRepresented = anchorSims.some((sim) => sim >= anchorRecoverySim);
 
     if (!anchorStillRepresented) {
-      const inputTokens = tokenizeForMatch(analysisInput, 4);
-      const scoreContext = (ctx: any): number => {
+      // Score each context by LLM similarity to input + structural authority bonus
+      const ctxSimPairs = contextsNow.map((ctx: any, idx: number) => {
         const meta = (ctx?.metadata || {}) as Record<string, any>;
         const ctxText = [
           String(ctx?.name || ""),
           String(ctx?.subject || ""),
           String(ctx?.assessedStatement || ""),
           String(meta.institution || ""),
-          String(meta.court || ""),
-          String(meta.regulatoryBody || ""),
           String(meta.jurisdiction || ""),
-          String(meta.geographic || ""),
-        ]
-          .filter(Boolean)
-          .join(" ");
+        ].filter(Boolean).join(" ");
+        return { id: `ctx_${idx}`, textA: analysisInput, textB: ctxText };
+      });
+      const ctxSimScores = await assessTextSimilarityBatch(ctxSimPairs);
 
-        const relevanceScore = countTokenMatches(normalizeForMatch(ctxText), "", inputTokens);
+      const scoreContext = (ctx: any, idx: number): number => {
+        const meta = (ctx?.metadata || {}) as Record<string, any>;
+        const relevanceScore = ctxSimScores.get(`ctx_${idx}`) || 0;
         let authorityScore = 0;
         if (meta.court) authorityScore += 3;
         if (meta.institution) authorityScore += 2;
         if (Array.isArray(meta.decisionMakers) && meta.decisionMakers.length > 0) authorityScore += 2;
         if (Array.isArray(meta.charges) && meta.charges.length > 0) authorityScore += 1;
-        return relevanceScore * 10 + authorityScore;
+        return relevanceScore * 100 + authorityScore;
       };
 
       const targetCount = Math.max(2, contextsNow.length);
-      const ranked = [...contextsNow].sort((a, b) => scoreContext(b) - scoreContext(a));
+      const ranked = contextsNow.map((ctx: any, idx: number) => ({ ctx, score: scoreContext(ctx, idx) }))
+        .sort((a, b) => b.score - a.score)
+        .map((s) => s.ctx);
       const kept: any[] = [anchor];
       for (const ctx of ranked) {
         if (kept.length >= targetCount) break;
@@ -1591,20 +1478,30 @@ Return:
         }
       }
       if (restoredEvidenceCount === 0 && (state.evidenceItems?.length ?? 0) > 0) {
-        const anchorTokens = extractContextTokens([anchor]);
-        let bestItem: any = null;
-        let bestScore = 0;
-        for (const item of state.evidenceItems || []) {
-          const haystack = normalizeForMatch(`${item.statement || ""} ${item.sourceTitle || ""}`);
-          const score = countTokenMatches(haystack, normalizeForMatch(String(item.sourceUrl || "")), anchorTokens);
-          if (score > bestScore) {
-            bestScore = score;
-            bestItem = item;
+        const anchorDesc = buildContextDescription(anchor);
+        const evidSimPairs = (state.evidenceItems || [])
+          .filter((item) => item.statement || item.sourceTitle)
+          .map((item, idx) => ({
+            id: `ev_${idx}`,
+            textA: anchorDesc,
+            textB: `${item.statement || ""} ${item.sourceTitle || ""}`,
+          }));
+        if (evidSimPairs.length > 0) {
+          const evidSimScores = await assessTextSimilarityBatch(evidSimPairs);
+          let bestItem: any = null;
+          let bestScore = 0;
+          const items = (state.evidenceItems || []).filter((item) => item.statement || item.sourceTitle);
+          for (let ei = 0; ei < items.length; ei++) {
+            const score = evidSimScores.get(`ev_${ei}`) || 0;
+            if (score > bestScore) {
+              bestScore = score;
+              bestItem = items[ei];
+            }
           }
-        }
-        if (bestItem) {
-          (bestItem as any).contextId = String(anchor.id || "");
-          restoredEvidenceCount = 1;
+          if (bestItem && bestScore > 0.1) {
+            (bestItem as any).contextId = String(anchor.id || "");
+            restoredEvidenceCount = 1;
+          }
         }
       }
 
@@ -1666,22 +1563,37 @@ Return:
       }
 
       const allEvidence = state.evidenceItems || [];
-      for (const ctx of state.understanding!.analysisContexts || []) {
-        if ((evidenceCountByContext.get(ctx.id) || 0) > 0) continue;
-        const ctxTokens = extractContextTokens([ctx as any]);
-        let bestItem: any = null;
-        let bestScore = 0;
-        for (const item of allEvidence) {
-          const haystack = normalizeForMatch(`${item.statement || ""} ${item.sourceTitle || ""}`);
-          const score = countTokenMatches(haystack, normalizeForMatch(String(item.sourceUrl || "")), ctxTokens);
-          if (score > bestScore) {
-            bestScore = score;
-            bestItem = item;
+      const contextsNeedingEvidence = (state.understanding!.analysisContexts || [])
+        .filter((ctx) => (evidenceCountByContext.get(ctx.id) || 0) === 0);
+      if (contextsNeedingEvidence.length > 0 && allEvidence.length > 0) {
+        // Batch all context-evidence pairs for LLM similarity
+        const ctxEvPairs: Array<{ id: string; textA: string; textB: string }> = [];
+        for (const ctx of contextsNeedingEvidence) {
+          const ctxDesc = buildContextDescription(ctx as any);
+          for (let ei = 0; ei < allEvidence.length; ei++) {
+            const item = allEvidence[ei];
+            ctxEvPairs.push({
+              id: `${ctx.id}__${ei}`,
+              textA: ctxDesc,
+              textB: `${item.statement || ""} ${item.sourceTitle || ""}`,
+            });
           }
         }
-        if (bestItem) {
-          (bestItem as any).contextId = String(ctx.id || "");
-          evidenceCountByContext.set(ctx.id, 1);
+        const ctxEvScores = await assessTextSimilarityBatch(ctxEvPairs);
+        for (const ctx of contextsNeedingEvidence) {
+          let bestItem: any = null;
+          let bestScore = 0;
+          for (let ei = 0; ei < allEvidence.length; ei++) {
+            const score = ctxEvScores.get(`${ctx.id}__${ei}`) || 0;
+            if (score > bestScore) {
+              bestScore = score;
+              bestItem = allEvidence[ei];
+            }
+          }
+          if (bestItem && bestScore > 0.1) {
+            (bestItem as any).contextId = String(ctx.id || "");
+            evidenceCountByContext.set(ctx.id, 1);
+          }
         }
       }
 
@@ -1763,8 +1675,11 @@ Return:
     if (!hasStrongFrameSignal && contextsNow.length >= 2) {
       const nameThreshold = state.calcConfig.frameSignal?.nameDistinctnessThreshold ?? 0.35;
       const assessedThreshold = state.calcConfig.frameSignal?.assessedDistinctnessThreshold ?? 0.45;
-      for (let i = 0; i < contextsNow.length && !hasStrongFrameSignal; i++) {
-        for (let j = i + 1; j < contextsNow.length && !hasStrongFrameSignal; j++) {
+      // Batch all frame signal pairs for LLM assessment
+      const framePairs: Array<{ id: string; textA: string; textB: string }> = [];
+      const framePairIndices: Array<{ i: number; j: number }> = [];
+      for (let i = 0; i < contextsNow.length; i++) {
+        for (let j = i + 1; j < contextsNow.length; j++) {
           const cA = contextsNow[i] as any;
           const cB = contextsNow[j] as any;
           const nameA = String(cA?.name || "").trim();
@@ -1772,18 +1687,25 @@ Return:
           const assessedA = String(cA?.assessedStatement || "").trim();
           const assessedB = String(cB?.assessedStatement || "").trim();
           if (nameA && nameB && assessedA && assessedB) {
-            const nSim = calculateTextSimilarity(nameA, nameB);
-            const aSim = calculateTextSimilarity(assessedA, assessedB);
-            if (nSim < nameThreshold && aSim < assessedThreshold) {
-              hasStrongFrameSignal = true;
-              debugLog("refineContextsFromEvidence: text distinctness provides strong frame signal", {
-                contextA: nameA,
-                contextB: nameB,
-                nameSimilarity: nSim,
-                assessedSimilarity: aSim,
-              });
-            }
+            framePairs.push({ id: `n-${i}-${j}`, textA: nameA, textB: nameB });
+            framePairs.push({ id: `a-${i}-${j}`, textA: assessedA, textB: assessedB });
+            framePairIndices.push({ i, j });
           }
+        }
+      }
+      const frameScores = await assessTextSimilarityBatch(framePairs);
+      for (const { i, j } of framePairIndices) {
+        const nSim = frameScores.get(`n-${i}-${j}`) ?? 1;
+        const aSim = frameScores.get(`a-${i}-${j}`) ?? 1;
+        if (nSim < nameThreshold && aSim < assessedThreshold) {
+          hasStrongFrameSignal = true;
+          debugLog("refineContextsFromEvidence: text distinctness provides strong frame signal", {
+            contextA: (contextsNow[i] as any)?.name,
+            contextB: (contextsNow[j] as any)?.name,
+            nameSimilarity: nSim,
+            assessedSimilarity: aSim,
+          });
+          break;
         }
       }
     }
@@ -1816,12 +1738,16 @@ Return:
         0.7;
       const simThreshold = Number.isFinite(thrRaw) ? Math.max(0, Math.min(1, thrRaw)) : 0.7;
       const pairs: Array<{ a: string; b: string; sim: number }> = [];
+      const contextPairPromises: Array<{ i: number; j: number; promise: Promise<number> }> = [];
       for (let i = 0; i < contextsNow.length; i++) {
         for (let j = i + 1; j < contextsNow.length; j++) {
-          const sim = calculateContextSimilarity(contextsNow[i] as any, contextsNow[j] as any);
-          if (sim >= simThreshold) {
-            pairs.push({ a: (contextsNow[i] as any).name, b: (contextsNow[j] as any).name, sim });
-          }
+          contextPairPromises.push({ i, j, promise: assessContextSimilarity(contextsNow[i] as any, contextsNow[j] as any) });
+        }
+      }
+      for (const { i, j, promise } of contextPairPromises) {
+        const sim = await promise;
+        if (sim >= simThreshold) {
+          pairs.push({ a: (contextsNow[i] as any).name, b: (contextsNow[j] as any).name, sim });
         }
       }
       debugLog("refineContextsFromEvidence: rejected (likely dimension split, weak frame signals)", {
@@ -1858,7 +1784,7 @@ Return:
       DEFAULT_PIPELINE_CONFIG.contextNameAlignmentThreshold ??
       0.3;
     const threshold = Number.isFinite(thr) ? Math.max(0, Math.min(1, thr)) : 0.3;
-    state.understanding!.analysisContexts = validateAndFixContextNameAlignment(
+    state.understanding!.analysisContexts = await validateAndFixContextNameAlignment(
       state.understanding!.analysisContexts || [],
       state.evidenceItems || [],
       threshold,
@@ -2006,12 +1932,12 @@ interface EvidenceGap {
  * Pipeline Phase 1: Analyze evidence gaps for claims
  * Returns a list of gaps with suggested queries to fill them
  */
-function analyzeEvidenceGaps(
+async function analyzeEvidenceGaps(
   evidenceItems: EvidenceItem[],
   understanding: ClaimUnderstanding,
   searchQueries: Array<{ query: string; iteration: number }>,
   evidenceSimilarityThreshold: number = 0.4,
-): EvidenceGap[] {
+): Promise<EvidenceGap[]> {
   const gaps: EvidenceGap[] = [];
   const contextById = new Map<string, AnalysisContext>();
   for (const context of understanding.analysisContexts || []) {
@@ -2019,13 +1945,21 @@ function analyzeEvidenceGaps(
   }
 
   for (const claim of understanding.subClaims) {
-    // Find evidence items that might be relevant to this claim
+    // Batch LLM similarity for evidence-to-claim relevance scoring
+    const needsScoring = evidenceItems.filter((e) =>
+      !(e.contextId && claim.contextId && e.contextId === claim.contextId),
+    );
+    const pairs = needsScoring.map((e) => ({
+      id: e.id || `ev-${Math.random().toString(36).slice(2)}`,
+      textA: e.statement,
+      textB: claim.text,
+    }));
+    const scores = await assessTextSimilarityBatch(pairs);
+
     const relevantEvidence = evidenceItems.filter((e) => {
-      // Check if evidence is assigned to same context
       if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
-      // MIGRATION: semantic decision — replace with LLM-based relevance scoring
-      const similarity = calculateTextSimilarity(e.statement, claim.text);
-      return similarity > evidenceSimilarityThreshold;
+      const pairId = e.id || "";
+      return (scores.get(pairId) ?? 0) > evidenceSimilarityThreshold;
     });
 
     // Get queries that were attempted for this claim's context
@@ -2125,33 +2059,158 @@ function analyzeEvidenceGaps(
 }
 
 /**
- * NEW v2.6.29: Calculate similarity between two strings (Jaccard similarity on words)
- * Returns a value between 0 (completely different) and 1 (identical)
+ * LLM-powered text similarity assessment (batch).
+ * Returns semantic similarity scores (0-1) for each pair.
+ * Falls back to structural Jaccard similarity on LLM failure.
  */
-function calculateTextSimilarity(text1: string, text2: string): number {
+async function assessTextSimilarityBatch(
+  pairs: Array<{ id: string; textA: string; textB: string }>,
+): Promise<Map<string, number>> {
+  if (pairs.length === 0) return new Map();
+
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
+  try {
+    // Chunk into batches of 25 pairs for manageable prompt size
+    const chunkSize = 25;
+    const resultMap = new Map<string, number>();
+
+    for (let offset = 0; offset < pairs.length; offset += chunkSize) {
+      const chunk = pairs.slice(offset, offset + chunkSize);
+      const pairTexts = chunk
+        .map((p, i) => `[${i}] A: "${p.textA.slice(0, 200)}" | B: "${p.textB.slice(0, 200)}"`)
+        .join("\n");
+
+      const result = await generateText({
+        model: modelInfo.model,
+        messages: [{
+          role: "user",
+          content: `Rate the semantic similarity of each text pair below on a scale from 0.0 (completely different topics/meanings) to 1.0 (same topic and meaning, possibly paraphrased).
+
+Consider meaning and topic, not just word overlap. Two texts about the same topic using different words should score high. Two texts with shared common words but different topics should score low.
+
+Pairs:
+${pairTexts}
+
+Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.
+Example: [0.85, 0.12, 0.67]`,
+        }],
+        temperature: 0,
+      });
+
+      let text = result.text.trim();
+      text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+      const scores = JSON.parse(text);
+
+      if (Array.isArray(scores) && scores.length === chunk.length) {
+        for (let i = 0; i < chunk.length; i++) {
+          const score = typeof scores[i] === "number" ? Math.max(0, Math.min(1, scores[i])) : 0;
+          resultMap.set(chunk[i].id, score);
+        }
+      } else {
+        // Invalid LLM response for this chunk — fallback
+        for (const pair of chunk) {
+          resultMap.set(pair.id, jaccardSimilarity(pair.textA, pair.textB));
+        }
+      }
+    }
+    return resultMap;
+  } catch {
+    // LLM call failed — structural fallback for all pairs
+  }
+
+  const map = new Map<string, number>();
+  for (const pair of pairs) {
+    map.set(pair.id, jaccardSimilarity(pair.textA, pair.textB));
+  }
+  return map;
+}
+
+/**
+ * Structural Jaccard word-overlap similarity (fallback + reporting).
+ * Used when LLM is unavailable and for non-decision reporting metrics.
+ */
+function jaccardSimilarity(text1: string, text2: string): number {
   const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
   const words1 = new Set(normalize(text1));
   const words2 = new Set(normalize(text2));
-
   if (words1.size === 0 || words2.size === 0) return 0;
-
   const intersection = new Set([...words1].filter(w => words2.has(w)));
   const union = new Set([...words1, ...words2]);
-
   return intersection.size / union.size;
 }
 
-function selectEvidenceItemsForContextRefinementPrompt(
+/**
+ * LLM-powered context similarity assessment.
+ * Replaces the deterministic weighted Jaccard approach with semantic LLM assessment.
+ * Falls back to the text-analysis service's analyzeContextSimilarity, then structural fallback.
+ */
+async function assessContextSimilarity(a: AnalysisContext, b: AnalysisContext): Promise<number> {
+  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier
+  try {
+    const contextA = JSON.stringify({
+      name: a.name, subject: a.subject,
+      assessedStatement: (a as any).assessedStatement,
+      metadata: (a as any).metadata,
+    });
+    const contextB = JSON.stringify({
+      name: b.name, subject: b.subject,
+      assessedStatement: (b as any).assessedStatement,
+      metadata: (b as any).metadata,
+    });
+
+    const result = await generateText({
+      model: modelInfo.model,
+      messages: [{
+        role: "user",
+        content: `Assess the semantic similarity of two analysis contexts. Consider whether they describe the same analytical frame (same institution, jurisdiction, methodology, subject matter, and assessedStatement).
+
+Context A: ${contextA}
+Context B: ${contextB}
+
+Return ONLY a JSON number from 0.0 (completely different analytical frames) to 1.0 (same analytical frame, possibly worded differently). No explanation.`,
+      }],
+      temperature: 0,
+    });
+
+    let text = result.text.trim();
+    text = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+    const score = JSON.parse(text);
+    if (typeof score === "number") return Math.max(0, Math.min(1, score));
+  } catch {
+    // LLM call failed — fall through to structural fallback
+  }
+
+  // Structural fallback: weighted Jaccard across key fields
+  const nameA = String(a?.name || "");
+  const nameB = String(b?.name || "");
+  const nameSim = jaccardSimilarity(nameA, nameB);
+  const subjectSim = a?.subject && b?.subject
+    ? jaccardSimilarity(String(a.subject), String(b.subject)) : 0;
+  const assessedSim = (a as any)?.assessedStatement && (b as any)?.assessedStatement
+    ? jaccardSimilarity(String((a as any).assessedStatement), String((b as any).assessedStatement)) : 0;
+  return nameSim * 0.4 + subjectSim * 0.2 + assessedSim * 0.4;
+}
+
+async function selectEvidenceItemsForContextRefinementPrompt(
   evidenceItems: EvidenceItem[],
   analysisInput: string,
   maxEvidenceItems: number,
-): EvidenceItem[] {
+): Promise<EvidenceItem[]> {
   if (!Array.isArray(evidenceItems) || evidenceItems.length === 0) return [];
   if (evidenceItems.length <= maxEvidenceItems) return evidenceItems;
 
   const mustKeepIds = new Set<string>();
-  const bestByContext = new Map<string, { evidenceItem: EvidenceItem; score: number }>();
   const input = (analysisInput || "").trim();
+
+  // Batch LLM similarity for all evidence items against analysis input
+  const allPairs = input
+    ? evidenceItems
+        .filter((item) => item?.id)
+        .map((item) => ({ id: item.id!, textA: input, textB: item.statement || "" }))
+    : [];
+  const allScores = await assessTextSimilarityBatch(allPairs);
+
+  const bestByContext = new Map<string, { evidenceItem: EvidenceItem; score: number }>();
   for (const item of evidenceItems) {
     if (!item?.id) continue;
     if (item.category === "criticism") mustKeepIds.add(item.id);
@@ -2159,8 +2218,7 @@ function selectEvidenceItemsForContextRefinementPrompt(
     if (item.fromOppositeClaimSearch) mustKeepIds.add(item.id);
     if (item.evidenceScope) mustKeepIds.add(item.id);
     if (item.contextId) {
-      // MIGRATION: semantic decision — replace with LLM-based evidence relevance scoring
-      const score = input ? calculateTextSimilarity(input, item.statement || "") : 0;
+      const score = allScores.get(item.id) ?? 0;
       const existing = bestByContext.get(item.contextId);
       if (!existing || score > existing.score) {
         bestByContext.set(item.contextId, { evidenceItem: item, score });
@@ -2176,8 +2234,7 @@ function selectEvidenceItemsForContextRefinementPrompt(
   const scored = evidenceItems
     .filter((item) => item?.id && !mustKeepIds.has(item.id))
     .map((item) => {
-      // MIGRATION: semantic decision — replace with LLM-based evidence relevance scoring
-      const score = input ? calculateTextSimilarity(input, item.statement || "") : 0;
+      const score = allScores.get(item.id!) ?? 0;
       return { item, score };
     })
     .sort((a, b) => {
@@ -2200,109 +2257,7 @@ function selectEvidenceItemsForContextRefinementPrompt(
   return chosen.slice(0, maxEvidenceItems);
 }
 
-function calculateContextSimilarity(a: AnalysisContext, b: AnalysisContext): number {
-  const nameA = String(a?.name || "");
-  const nameB = String(b?.name || "");
-
-  const nameSim = calculateTextSimilarity(nameA, nameB);
-  const subjectSim =
-    a?.subject && b?.subject ? calculateTextSimilarity(String(a.subject), String(b.subject)) : 0;
-
-  const assessedSim =
-    (a as any)?.assessedStatement && (b as any)?.assessedStatement
-      ? calculateTextSimilarity(String((a as any).assessedStatement), String((b as any).assessedStatement))
-      : 0;
-
-  // NOTE: geographic/timeframe can be noisy and should not dominate similarity/dedup.
-  // Treat them as secondary modifiers, not primary identity signals.
-  const primaryKeys = [
-    "court",            // authority venue (if present)
-    "institution",      // who is the authority
-    "jurisdiction",     // where the authority applies (if present)
-    "methodology",      // how was it measured/determined
-    "definition",       // what does the term mean
-    "framework",        // what evaluative structure applies
-    "boundaries",       // limits of applicability
-  ];
-
-  const secondaryKeys = [
-    "geographic",       // where
-    "timeframe",        // when
-    "scale",            // individual vs aggregate
-  ];
-
-  const metaA: Record<string, any> = (a as any)?.metadata || {};
-  const metaB: Record<string, any> = (b as any)?.metadata || {};
-
-  let primarySim = 0;
-  let primaryCount = 0;
-  for (const k of primaryKeys) {
-    const va = String((metaA as any)?.[k] ?? "").trim();
-    const vb = String((metaB as any)?.[k] ?? "").trim();
-    if (!va || !vb) continue;
-    primarySim += calculateTextSimilarity(va, vb);
-    primaryCount++;
-  }
-  if (primaryCount > 0) primarySim /= primaryCount;
-
-  let secondarySim = 0;
-  let secondaryCount = 0;
-  for (const k of secondaryKeys) {
-    const va = String((metaA as any)?.[k] ?? "").trim();
-    const vb = String((metaB as any)?.[k] ?? "").trim();
-    if (!va || !vb) continue;
-    secondarySim += calculateTextSimilarity(va, vb);
-    secondaryCount++;
-  }
-  if (secondaryCount > 0) secondarySim /= secondaryCount;
-
-  // Weighted average:
-  // - name (35%): still important, but names can vary while describing the same context
-  // - primary metadata (30%): includes institutional/boundary identity signals (now also includes court)
-  // - assessedStatement (20%): directly captures the analytical question for this context
-  // - subject (10%): often overlaps across all contexts (thesis), so keep secondary
-  // - geo/time (5%): noisy, keep minimal
-  const csCfg = CONTEXT_SIMILARITY_CONFIG;
-  let similarity =
-    nameSim * csCfg.nameWeight +
-    primarySim * csCfg.primaryMetadataWeight +
-    assessedSim * csCfg.assessedStatementWeight +
-    subjectSim * csCfg.subjectWeight +
-    secondarySim * csCfg.secondaryMetadataWeight;
-
-  // Generic near-duplicate override: if two contexts are essentially asking the same assessed question
-  // (high assessedStatement similarity) and have at least mild agreement on identity signals, merge them.
-  // This helps collapse redundant rephrasings like:
-  // - "procedural compliance ..." vs "procedural compliance in Jurisdiction A ..."
-  // BUT: protect contexts that have distinct institutional identity (different court, institution,
-  // or jurisdiction) — these represent genuinely separate analytical frames even when the assessed
-  // question is phrased similarly.
-  const institutionalKeys = ["court", "institution", "jurisdiction"];
-  let hasDistinctInstitution = false;
-  for (const k of institutionalKeys) {
-    const va = String((metaA as any)?.[k] ?? "").trim().toLowerCase();
-    const vb = String((metaB as any)?.[k] ?? "").trim().toLowerCase();
-    if (va && vb && va !== vb) {
-      hasDistinctInstitution = true;
-      break;
-    }
-  }
-  // Subject distinctness guard: if subjects are clearly different, don't force-merge
-  // even when assessed statements are similar (e.g., same question applied to different entities)
-  const subjectGuardThreshold = csCfg.nearDuplicateSubjectGuardThreshold ?? 0.5;
-  const hasDistinctSubject = subjectSim > 0 && subjectSim < subjectGuardThreshold;
-  // Name distinctness guard: if context names are clearly different, don't force-merge
-  // even when assessed statements are similar (e.g., "Criminal proceedings" vs "Electoral eligibility")
-  const nameGuardThreshold = csCfg.nearDuplicateNameGuardThreshold ?? 0.4;
-  const hasDistinctName = nameSim > 0 && nameSim < nameGuardThreshold;
-  const minNameSim = csCfg.nearDuplicateMinNameSim ?? 0.25;
-  const minPrimarySim = csCfg.nearDuplicateMinPrimarySim ?? 0.15;
-  if (assessedSim >= csCfg.nearDuplicateAssessedThreshold && (nameSim >= minNameSim || primarySim >= minPrimarySim) && !hasDistinctInstitution && !hasDistinctSubject && !hasDistinctName) {
-    similarity = Math.max(similarity, csCfg.nearDuplicateForceScore);
-  }
-
-  return Math.min(1.0, similarity);
-}
+// calculateContextSimilarity removed — replaced by assessContextSimilarity (LLM-powered)
 
 function mergeContextMetadata(primary: AnalysisContext, duplicates: AnalysisContext[]): AnalysisContext {
   const merged: AnalysisContext = { ...(primary as any) };
@@ -2422,11 +2377,11 @@ async function deduplicateContexts(
           shouldMerge = llmResult.shouldMerge;
         } else {
           // Fall back to heuristic for pairs not in LLM results
-          sim = calculateContextSimilarity(cur, other);
+          sim = await assessContextSimilarity(cur, other);
           shouldMerge = sim >= similarityThreshold;
         }
       } else {
-        sim = calculateContextSimilarity(cur, other);
+        sim = await assessContextSimilarity(cur, other);
         shouldMerge = sim >= similarityThreshold;
       }
 
@@ -2445,11 +2400,11 @@ async function deduplicateContexts(
   return { contexts: kept, merged };
 }
 
-function validateAndFixContextNameAlignment(
+async function validateAndFixContextNameAlignment(
   contexts: AnalysisContext[],
   evidenceItems: EvidenceItem[],
   similarityThreshold: number,
-): AnalysisContext[] {
+): Promise<AnalysisContext[]> {
   if (!Array.isArray(contexts) || contexts.length === 0) return contexts || [];
   if (!Array.isArray(evidenceItems) || evidenceItems.length === 0) return contexts;
 
@@ -2472,55 +2427,90 @@ function validateAndFixContextNameAlignment(
     evidenceItemsByContext.get(pid)!.push(f);
   }
 
-  const covers = (name: string, identifier: string) => {
-    const n = String(name || "").toLowerCase();
-    const id = String(identifier || "").toLowerCase().trim();
-    if (!id) return false;
-    if (n.includes(id)) return true;
-    return calculateTextSimilarity(n, id) >= similarityThreshold;
-  };
+  // Pre-compute all name-identifier similarity pairs via LLM batch
+  const coversPairsList: Array<{ contextIdx: number; idIdx: number; name: string; identifier: string }> = [];
+  const contextIdentifiers: Array<{ context: AnalysisContext; identifiers: string[] }> = [];
 
-  return contexts.map((s) => {
+  for (let ci = 0; ci < contexts.length; ci++) {
+    const s = contexts[ci];
+    const contextEvidenceItemsLocal = evidenceItemsByContext.get(String((s as any)?.id || "")) || [];
+    const metaLocal: Record<string, any> = ((s as any)?.metadata as any) || {};
+
+    const countsLocal = new Map<string, number>();
+    const bumpLocal = (v: string, w: number = 1) => {
+      const vv = String(v || "").trim();
+      if (!vv) return;
+      countsLocal.set(vv, (countsLocal.get(vv) || 0) + Math.max(1, Math.floor(w)));
+    };
+    for (const f of contextEvidenceItemsLocal) {
+      const es: any = (f as any)?.evidenceScope;
+      if (!es) continue;
+      bumpLocal(es.name, 3);
+      bumpLocal(es.methodology, 3);
+      bumpLocal(es.boundaries, 3);
+      bumpLocal(es.geographic, 1);
+      bumpLocal(es.temporal, 1);
+    }
+    for (const k of primaryMetaKeys) {
+      const v = metaLocal?.[k];
+      if (typeof v === "string" && v.trim()) bumpLocal(v.trim());
+    }
+    for (const k of secondaryMetaKeys) {
+      const v = metaLocal?.[k];
+      if (typeof v === "string" && v.trim()) bumpLocal(v.trim());
+    }
+    const ids = Array.from(countsLocal.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([v]) => v);
+    contextIdentifiers.push({ context: s, identifiers: ids });
+
+    const name = String((s as any)?.name || "").toLowerCase();
+    for (let ii = 0; ii < ids.length; ii++) {
+      const id = ids[ii].toLowerCase().trim();
+      if (!id || name.includes(id)) continue; // structural inclusion — no LLM needed
+      coversPairsList.push({ contextIdx: ci, idIdx: ii, name, identifier: id });
+    }
+  }
+
+  // Batch LLM similarity for name-identifier pairs that didn't match structurally
+  const simPairs = coversPairsList.map((p, i) => ({
+    id: `cov-${i}`,
+    textA: p.name,
+    textB: p.identifier,
+  }));
+  const coversScores = await assessTextSimilarityBatch(simPairs);
+
+  // Build covers lookup: contextIdx → Set of identifier indices that "cover"
+  const coversMap = new Map<number, Set<number>>();
+  // First, add structural inclusions
+  for (let ci = 0; ci < contexts.length; ci++) {
+    const name = String((contexts[ci] as any)?.name || "").toLowerCase();
+    const ids = contextIdentifiers[ci].identifiers;
+    const coveredSet = new Set<number>();
+    for (let ii = 0; ii < ids.length; ii++) {
+      const id = ids[ii].toLowerCase().trim();
+      if (id && name.includes(id)) coveredSet.add(ii);
+    }
+    coversMap.set(ci, coveredSet);
+  }
+  // Then, add LLM-scored pairs
+  for (let pi = 0; pi < coversPairsList.length; pi++) {
+    const { contextIdx, idIdx } = coversPairsList[pi];
+    const score = coversScores.get(`cov-${pi}`) ?? 0;
+    if (score >= similarityThreshold) {
+      coversMap.get(contextIdx)!.add(idIdx);
+    }
+  }
+
+  return contexts.map((s, ci) => {
+    const { identifiers } = contextIdentifiers[ci];
     const contextEvidenceItems = evidenceItemsByContext.get(String((s as any)?.id || "")) || [];
     const meta: Record<string, any> = ((s as any)?.metadata as any) || {};
 
-    // Gather candidate identifiers from per-evidence evidenceScope (prioritize common values)
-    const counts = new Map<string, number>();
-    const bump = (v: string, w: number = 1) => {
-      const vv = String(v || "").trim();
-      if (!vv) return;
-      counts.set(vv, (counts.get(vv) || 0) + Math.max(1, Math.floor(w)));
-    };
-    for (const f of contextEvidenceItems) {
-      const es: any = (f as any)?.evidenceScope;
-      if (!es) continue;
-      // Higher weight for core methodology/boundaries/name signals.
-      bump(es.name, 3);
-      bump(es.methodology, 3);
-      bump(es.boundaries, 3);
-      // Lower weight for geo/time to avoid misleading names.
-      bump(es.geographic, 1);
-      bump(es.temporal, 1);
-    }
-
-    // Add stable metadata string values as lower-priority candidates
-    for (const k of primaryMetaKeys) {
-      const v = meta?.[k];
-      if (typeof v === "string" && v.trim()) bump(v.trim());
-    }
-    for (const k of secondaryMetaKeys) {
-      const v = meta?.[k];
-      if (typeof v === "string" && v.trim()) bump(v.trim());
-    }
-
-    const identifiers = Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([v]) => v);
-
     if (identifiers.length === 0) return s;
 
-    const name = String((s as any)?.name || "");
-    const alreadyAligned = identifiers.some((id) => covers(name, id));
+    const coveredIds = coversMap.get(ci) ?? new Set<number>();
+    const alreadyAligned = identifiers.some((_, ii) => coveredIds.has(ii));
 
     // Opportunistically copy consistent per-evidence evidenceScope fields into metadata
     const uniqueValue = (vals: Array<string | undefined>) => {
@@ -2607,24 +2597,30 @@ function deduplicateSearchUrls<T extends { url: string }>(
  * NEW v2.6.29: Check if an evidence item is a duplicate or near-duplicate of existing items
  * Returns true if the evidence item should be skipped (is duplicate)
  */
-function isDuplicateEvidenceItem(
+async function isDuplicateEvidenceItem(
   newItem: EvidenceItem,
   existingItems: EvidenceItem[],
   threshold: number = 0.85,
-): boolean {
+): Promise<boolean> {
   const newItemLower = newItem.statement.toLowerCase().trim();
 
+  // First pass: check for exact matches (structural)
   for (const existing of existingItems) {
-    const existingLower = existing.statement.toLowerCase().trim();
-
-    // Exact match
-    if (newItemLower === existingLower) {
+    if (newItemLower === existing.statement.toLowerCase().trim()) {
       return true;
     }
+  }
 
-    // Near-duplicate based on text similarity
-    const similarity = calculateTextSimilarity(newItem.statement, existing.statement);
-    if (similarity >= threshold) {
+  // Second pass: batch LLM similarity for near-duplicate detection
+  if (existingItems.length === 0) return false;
+  const pairs = existingItems.map((existing, i) => ({
+    id: `dup-${i}`,
+    textA: newItem.statement,
+    textB: existing.statement,
+  }));
+  const scores = await assessTextSimilarityBatch(pairs);
+  for (let i = 0; i < existingItems.length; i++) {
+    if ((scores.get(`dup-${i}`) ?? 0) >= threshold) {
       return true;
     }
   }
@@ -2636,15 +2632,15 @@ function isDuplicateEvidenceItem(
  * NEW v2.6.29: Filter out duplicate evidence items from a list, keeping the first occurrence
  * Optionally merges fromOppositeClaimSearch flag if duplicate found from opposite search
  */
-function deduplicateEvidenceItems(
+async function deduplicateEvidenceItems(
   newEvidenceItems: EvidenceItem[],
   existingEvidenceItems: EvidenceItem[],
   threshold?: number,
-): EvidenceItem[] {
+): Promise<EvidenceItem[]> {
   const result: EvidenceItem[] = [];
 
   for (const item of newEvidenceItems) {
-    if (!isDuplicateEvidenceItem(item, existingEvidenceItems, threshold) && !isDuplicateEvidenceItem(item, result, threshold)) {
+    if (!await isDuplicateEvidenceItem(item, existingEvidenceItems, threshold) && !await isDuplicateEvidenceItem(item, result, threshold)) {
       result.push(item);
     } else {
       // Log deduplication for debugging
@@ -4426,65 +4422,34 @@ export function validateThesisRelevance<T extends {
   return claims;
 }
 
-function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any; text?: any }>(
+async function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; centrality?: any; isCentral?: any; text?: any }>(
   claims: T[],
   thesis?: string,
-): T[] {
+): Promise<T[]> {
   const thesisLower = (thesis || "").toLowerCase();
 
-  const STOP_WORDS = new Set([
-    "the",
-    "a",
-    "an",
-    "and",
-    "or",
-    "but",
-    "of",
-    "to",
-    "in",
-    "on",
-    "for",
-    "with",
-    "at",
-    "by",
-    "from",
-    "as",
-    "into",
-    "than",
-    "over",
-    "under",
-    "using",
-    "use",
-    "is",
-    "are",
-    "was",
-    "were",
-    "be",
-    "been",
-    "being",
-    "this",
-    "that",
-    "these",
-    "those",
-  ]);
-  const tokenize = (text: string) =>
-    text
-      .toLowerCase()
-      .replace(/[^\w\s]/g, " ")
-      .split(/\s+/)
-      .map((t) => t.trim())
-      .filter((t) => t.length > 3 && !STOP_WORDS.has(t));
-  const overlapRatio = (a: string, b: string): number => {
-    const aTokens = tokenize(a);
-    const bTokens = tokenize(b);
-    if (aTokens.length === 0 || bTokens.length === 0) return 0;
-    const aSet = new Set(aTokens);
-    const bSet = new Set(bTokens);
-    let inter = 0;
-    for (const t of aSet) if (bSet.has(t)) inter++;
-    const denom = Math.min(aSet.size, bSet.size);
-    return denom > 0 ? inter / denom : 0;
-  };
+  // Collect tangential claims that might need upgrading to "direct"
+  const tangentialPairs: Array<{ id: string; textA: string; textB: string }> = [];
+  const tangentialIndices: number[] = [];
+
+  for (let i = 0; i < claims.length; i++) {
+    const claim = claims[i] as any;
+    const raw = String(claim?.thesisRelevance || "direct").trim();
+    const thesisRelevance =
+      raw === "direct" || raw === "tangential" || raw === "irrelevant" ? raw : "direct";
+    if (thesisRelevance === "tangential" && thesisLower) {
+      const claimText = String(claim?.text || "");
+      if (claimText) {
+        tangentialPairs.push({ id: `tr_${i}`, textA: claimText, textB: thesisLower });
+        tangentialIndices.push(i);
+      }
+    }
+  }
+
+  // Batch LLM similarity for tangential claims vs thesis
+  const simScores = tangentialPairs.length > 0
+    ? await assessTextSimilarityBatch(tangentialPairs)
+    : new Map<string, number>();
 
   for (const claim of claims as any[]) {
     const raw = String(claim?.thesisRelevance || "direct").trim();
@@ -4492,17 +4457,20 @@ function enforceThesisRelevanceInvariants<T extends { thesisRelevance?: any; cen
       raw === "direct" || raw === "tangential" || raw === "irrelevant" ? raw : "direct";
     const isMarkedCentral = claim?.isCentral === true || claim?.centrality === "high";
 
-    // If a claim substantially overlaps the thesis text, it should be direct (not tangential).
+    // If a claim substantially overlaps the thesis, it should be direct (not tangential).
     if (thesisRelevance === "tangential") {
-      const claimText = String(claim?.text || "");
-      const overlap = overlapRatio(claimText, thesisLower);
-      if (overlap >= 0.5) {
-        thesisRelevance = "direct";
-        debugLog("enforceThesisRelevanceInvariants: High overlap → direct", {
-          claimText: claimText.slice(0, 80),
-          thesis: thesisLower.slice(0, 80),
-          overlap,
-        });
+      const idx = claims.indexOf(claim);
+      const simIdx = tangentialIndices.indexOf(idx);
+      if (simIdx >= 0) {
+        const similarity = simScores.get(`tr_${idx}`) || 0;
+        if (similarity >= 0.5) {
+          thesisRelevance = "direct";
+          debugLog("enforceThesisRelevanceInvariants: High similarity → direct", {
+            claimText: String(claim?.text || "").slice(0, 80),
+            thesis: thesisLower.slice(0, 80),
+            similarity,
+          });
+        }
       }
     }
 
@@ -4576,9 +4544,9 @@ function enforceMinimumDirectClaimsPerContext(
   return understanding;
 }
 
-function ensureUnassignedClaimsContext(
+async function ensureUnassignedClaimsContext(
   understanding: ClaimUnderstanding,
-): ClaimUnderstanding {
+): Promise<ClaimUnderstanding> {
   const contexts = Array.isArray((understanding as any).analysisContexts)
     ? ((understanding as any).analysisContexts as any[])
     : [];
@@ -4625,29 +4593,39 @@ function ensureUnassignedClaimsContext(
 
   if (candidates.length === 0) return understanding;
 
-  const pickBestContextId = (claimText: string): string => {
-    const text = String(claimText || "").trim();
-    let bestId = candidates[0].id;
-    let bestScore = -1;
-    for (const c of candidates) {
-      // MIGRATION: semantic decision — replace with LLM-based claim-to-context assignment
-      const score = text ? calculateTextSimilarity(text, c.signature) : 0;
-      if (score > bestScore) {
-        bestScore = score;
-        bestId = c.id;
-      } else if (score === bestScore && c.id.localeCompare(bestId) < 0) {
-        bestId = c.id;
+  // Collect all unassigned claims
+  const unassigned = claims.filter((c) => {
+    const tr = String(c?.thesisRelevance || "direct");
+    const pid = String(c?.contextId || "").trim();
+    return tr !== "irrelevant" && !pid;
+  });
+
+  if (unassigned.length > 0) {
+    // Batch LLM similarity: all unassigned claims × all candidate contexts
+    const pairs: Array<{ id: string; textA: string; textB: string }> = [];
+    for (let ci = 0; ci < unassigned.length; ci++) {
+      const text = String(unassigned[ci]?.text || "").trim();
+      if (!text) continue;
+      for (let ki = 0; ki < candidates.length; ki++) {
+        pairs.push({ id: `ctx-${ci}-${ki}`, textA: text, textB: candidates[ki].signature });
       }
     }
-    return bestId;
-  };
+    const scores = await assessTextSimilarityBatch(pairs);
 
-  for (const c of claims) {
-    const tr = String(c?.thesisRelevance || "direct");
-    if (tr === "irrelevant") continue;
-    const pid = String(c?.contextId || "").trim();
-    if (pid) continue;
-    c.contextId = pickBestContextId(String(c?.text || ""));
+    for (let ci = 0; ci < unassigned.length; ci++) {
+      let bestId = candidates[0].id;
+      let bestScore = -1;
+      for (let ki = 0; ki < candidates.length; ki++) {
+        const score = scores.get(`ctx-${ci}-${ki}`) ?? 0;
+        if (score > bestScore) {
+          bestScore = score;
+          bestId = candidates[ki].id;
+        } else if (score === bestScore && candidates[ki].id.localeCompare(bestId) < 0) {
+          bestId = candidates[ki].id;
+        }
+      }
+      unassigned[ci].contextId = bestId;
+    }
   }
 
   (understanding as any).requiresSeparateAnalysis = contexts.length > 1;
@@ -6316,7 +6294,7 @@ Now analyze the input and output JSON only.`;
   // Pass thesis to detect foreign response claims that should be tangential
   const thesis = parsed.impliedClaim || parsed.articleThesis || analysisInput;
   const relevanceValidatedClaims = validateThesisRelevance(validatedClaims as any, pipelineConfig);
-  const claimsWithThesisRelevanceInvariant = enforceThesisRelevanceInvariants(relevanceValidatedClaims as any, thesis);
+  const claimsWithThesisRelevanceInvariant = await enforceThesisRelevanceInvariants(relevanceValidatedClaims as any, thesis);
   const claimsPolicyB = applyThesisRelevancePolicyBToSubClaims(claimsWithThesisRelevanceInvariant as any);
   const withMinimumDirect = enforceMinimumDirectClaimsPerContext(
     { ...parsed, subClaims: claimsPolicyB } as ClaimUnderstanding,
@@ -6910,11 +6888,11 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
 
   const entities = directClaimsForResearch
     .flatMap((c: any) => c.keyEntities)
-    .slice(0, 4);
+    .slice(0, state.searchConfig.queryGeneration?.maxEntitiesPerClaim ?? 4);
 
   // For claim inputs (normalized), prioritize the implied claim for better search results
   const isClaimLike = isClaimInput(understanding);
-  const stopWords = new Set(["the", "a", "an", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "need", "dare", "ought", "used", "to", "of", "in", "for", "on", "with", "at", "by", "from", "as", "into", "through", "during", "before", "after", "above", "below", "between", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "just", "and", "but", "if", "or", "because", "until", "while", "although", "though", "whether", "this", "that", "these", "those", "it", "its", "what", "which", "who", "whom", "whose", "based"]);
+  const stopWords = ENGLISH_STOPWORDS;
 
   let entityStr = "";
 
@@ -6924,9 +6902,9 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       new Set(
         entities
           .map((value) => String(value || "").toLowerCase().trim())
-          .filter((word) => word.length > 2 && !stopWords.has(word)),
+          .filter((word) => word.length > (state.searchConfig.queryGeneration?.maxWordLength ?? 2) && !stopWords.has(word)),
       ),
-    ).slice(0, 8);
+    ).slice(0, state.searchConfig.queryGeneration?.maxSearchTerms ?? 8);
 
     if (entityHints.length >= 2) {
       entityStr = entityHints.join(" ");
@@ -6935,8 +6913,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         .toLowerCase()
         .replace(/[^\w\s]/g, " ")
         .split(/\s+/)
-        .filter(word => word.length > 2 && !stopWords.has(word))
-        .slice(0, 8)
+        .filter(word => word.length > (state.searchConfig.queryGeneration?.maxWordLength ?? 2) && !stopWords.has(word))
+        .slice(0, state.searchConfig.queryGeneration?.maxSearchTerms ?? 8)
         .join(" ");
     }
   } else {
@@ -6955,8 +6933,8 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter(word => word.length > 2 && !stopWords.has(word))
-      .slice(0, 6)
+      .filter(word => word.length > (state.searchConfig.queryGeneration?.maxWordLength ?? 2) && !stopWords.has(word))
+      .slice(0, state.searchConfig.queryGeneration?.maxFallbackTerms ?? 6)
       .join(" ");
   }
 
@@ -7162,7 +7140,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         ).trim();
         const contextDescriptor =
           String(context.subject || context.assessedStatement || context.name || "").trim();
-        const contextNameKey = tokenizeForMatch(contextDescriptor, 4).slice(0, 4).join(" ");
+        const contextNameKey = extractKeyWordsForQuery(contextDescriptor, 4, 4).join(" ");
         const contextAlias = normalizeContextAlias(context.shortName);
         const contextKey = [contextAuthority, contextAlias, contextNameKey]
           .filter(Boolean)
@@ -7853,20 +7831,37 @@ Evidence documents often define their EvidenceScope (methodology/boundaries/geog
     // If no source bundle is configured, trackRecordScore is null (unknown) and we should NOT discard evidence items.
     if (typeof track === "number" && track < 0.6) {
       const before = filteredEvidenceItems.length;
-      filteredEvidenceItems = filteredEvidenceItems.filter((item) => {
-        const hay = `${item.statement}\n${item.sourceExcerpt}`.toLowerCase();
-        // MIGRATION: semantic decision — replace with LLM-based impact assessment.
-        // These hardcoded terms violate AGENTS.md "No hardcoded keywords" but are kept
-        // as a safety filter for low-trackRecord sources until LLM replacement is available.
-        const isHighImpactOutcome =
-          hay.includes("sentenced") ||
-          hay.includes("convicted") ||
-          hay.includes("years in prison") ||
-          hay.includes("year prison") ||
-          hay.includes("months in prison") ||
-          (hay.includes("prison") && hay.includes("year"));
-        return !isHighImpactOutcome;
-      });
+      // LLM-powered high-impact outcome detection (replaces hardcoded keywords)
+      try {
+        const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
+        const itemTexts = filteredEvidenceItems.map((item, idx) =>
+          `[${idx}]: ${(item.statement + " " + (item.sourceExcerpt || "")).slice(0, 300)}`
+        ).join("\n");
+        const impactResult = await generateText({
+          model: modelInfo.model,
+          messages: [{ role: "user", content: `Classify each numbered evidence statement below as either a high-impact legal/punitive outcome or not.
+
+High-impact outcomes include: criminal sentencing, conviction results, prison terms, criminal penalties, incarceration details, and similar consequential legal judgments.
+
+NOT high-impact: general legal proceedings, allegations, investigations, civil disputes, policy discussions, regulatory actions.
+
+Evidence statements:
+${itemTexts}
+
+Return ONLY a JSON array of booleans, one per statement, where true = high-impact outcome. No explanation.
+Example: [true, false, false, true]` }],
+          temperature: 0,
+        });
+        let responseText = impactResult.text.trim();
+        responseText = responseText.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "");
+        const flags = JSON.parse(responseText);
+        if (Array.isArray(flags) && flags.length === filteredEvidenceItems.length) {
+          filteredEvidenceItems = filteredEvidenceItems.filter((_, idx) => !flags[idx]);
+        }
+      } catch (err) {
+        // LLM call failed — skip high-impact filtering rather than blocking the pipeline
+        console.warn(`[Analyzer] extractEvidence: LLM high-impact assessment failed for ${source.id}, skipping filter`, err);
+      }
       if (before !== filteredEvidenceItems.length) {
         console.warn(
           `[Analyzer] extractEvidence: filtered ${before - filteredEvidenceItems.length} high-impact outcome evidence items from low/unknown trackRecord source ${source.id} (track=${track})`,
@@ -8189,7 +8184,7 @@ async function extractEvidenceParallel(
           llmFilterFailures++;
         }
         // Deduplicate against existing and already-collected items
-        const uniqueItems = deduplicateEvidenceItems(
+        const uniqueItems = await deduplicateEvidenceItems(
           result.value.items,
           [...existingEvidenceItems, ...allEvidenceItems],
           options.claimSimilarityThreshold,
@@ -9595,7 +9590,7 @@ The JSON object MUST include these top-level keys:
     }
   }
 
-  const claimVerdicts: ClaimVerdict[] = parsed.claimVerdicts.map((cv: any) => {
+  const claimVerdicts: ClaimVerdict[] = await Promise.all(parsed.claimVerdicts.map(async (cv: any) => {
     const claim = understanding.subClaims.find((c: any) => c.id === cv.claimId);
     const ctxId = cv.contextId || claim?.contextId || "";
 
@@ -9657,7 +9652,7 @@ The JSON object MUST include these top-level keys:
         ? cv.supportingEvidenceIds
         : [];
     const claimFacts = state.evidenceItems.filter((f) => supportingEvidenceIds.includes(f.id));
-    const isCounterClaim = claim?.isCounterClaim ?? detectCounterClaim(
+    const isCounterClaim = claim?.isCounterClaim ?? await detectCounterClaim(
       claim?.text || cv.claimId || "",
       understanding.impliedClaim || understanding.articleThesis || "",
       truthPct,
@@ -9710,7 +9705,7 @@ The JSON object MUST include these top-level keys:
       highlightColor: getHighlightColor7Point(clampedTruthPct),
       isCounterClaim,
     };
-  });
+  }));
 
   const weightedClaimVerdicts = applyEvidenceWeighting(
     claimVerdicts,
@@ -10304,8 +10299,8 @@ ${evidenceItemsFormatted}`;
   );
 
   // Ensure ALL claims get a verdict
-  const claimVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
-    (claim: any) => {
+  const claimVerdicts: ClaimVerdict[] = await Promise.all(claimsForVerdicts.map(
+    async (claim: any) => {
       const cv = llmVerdictMap.get(claim.id);
 
       if (!cv) {
@@ -10375,7 +10370,7 @@ ${evidenceItemsFormatted}`;
       const claimFacts = state.evidenceItems.filter(f =>
         supportingEvidenceIds.includes(f.id)
       );
-      const isCounterClaim = claim.isCounterClaim ?? detectCounterClaim(
+      const isCounterClaim = claim.isCounterClaim ?? await detectCounterClaim(
         claim.text || cv.claimId || "",
         understanding.impliedClaim || understanding.articleThesis || "",
         truthPct,
@@ -10407,7 +10402,7 @@ ${evidenceItemsFormatted}`;
         supportingEvidenceIds,
       } as ClaimVerdict;
     },
-  );
+  ));
 
   const weightedClaimVerdicts = applyEvidenceWeighting(
     claimVerdicts,
@@ -11022,8 +11017,8 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
   );
 
   // Ensure ALL claims get a verdict (fill in missing ones)
-  const claimVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
-    (claim: any) => {
+  const claimVerdicts: ClaimVerdict[] = await Promise.all(claimsForVerdicts.map(
+    async (claim: any) => {
       const cv = llmVerdictMap.get(claim.id);
 
       // If LLM didn't return a verdict for this claim, create a default one
@@ -11100,7 +11095,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
       const claimFacts = state.evidenceItems.filter(f =>
         supportingEvidenceIds.includes(f.id)
       );
-      const isCounterClaim = claim.isCounterClaim ?? detectCounterClaim(
+      const isCounterClaim = claim.isCounterClaim ?? await detectCounterClaim(
         claim.text || cv.claimId || "",
         understanding.impliedClaim || understanding.articleThesis || "",
         truthPct,
@@ -11149,7 +11144,7 @@ KeyFactors are handled in the understanding phase. Provide an empty keyFactors a
         supportingEvidenceIds,
       } as ClaimVerdict;
     },
-  );
+  ));
 
   // v2.9: LLM Verdict Validation
   // Validates verdicts for harm potential, contestation, and inversion detection
@@ -12141,7 +12136,6 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
   // STEP 2-4: Research with search tracking
   let iteration = 0;
-  let relevanceLlmCalls = 0;
   while (
     iteration < config.maxResearchIterations &&
     state.sources.length < config.maxTotalSources
@@ -12503,10 +12497,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
 
     let relevantResults: typeof uniqueResults = [];
-    const relevanceMode = state.pipelineConfig.searchRelevanceLlmMode ?? "auto";
-    const relevanceLlmMaxCalls = state.pipelineConfig.searchRelevanceLlmMaxCalls ?? 3;
 
-    for (const result of uniqueResults) {
+    // Domain pre-filter (structural — no semantic decision)
+    const domainFilteredResults = uniqueResults.filter((result) => {
       const domain = extractDomain(result.url || "");
       if (domain && !isImportantSource(domain)) {
         debugLog("Pre-filter rejected", {
@@ -12516,95 +12509,37 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           domain,
           query: (result as any).query,
         });
-        continue;
+        return false;
       }
+      return true;
+    });
 
-      const check = checkSearchResultRelevance(
-        result,
+    // LLM-powered batch relevance assessment (replaces heuristic + LLM escalation)
+    if (domainFilteredResults.length > 0) {
+      const batchResults = await assessSearchRelevanceBatch(
+        domainFilteredResults,
         entityStrForRelevance,
         analysisContexts,
         { requireContextMatch, strictInstitutionMatch, allowInstitutionFallback },
+        state.pipelineConfig,
       );
+      state.llmCalls += 1;
 
-      if (check.isRelevant) {
-        relevantResults.push(result);
-        continue;
-      }
-
-      const signals = check.signals;
-      const isAmbiguous =
-        !!signals &&
-        (signals.entityMatchCount > 0 ||
-          signals.contextMatchCount > 0 ||
-          signals.institutionMentioned);
-
-      const allowLlm =
-        relevanceMode === "on" ||
-        (relevanceMode === "auto" && isAmbiguous);
-
-      if (allowLlm && relevanceLlmCalls < relevanceLlmMaxCalls) {
-        relevanceLlmCalls += 1;
-        const llmDecision = await classifySearchResultRelevanceLLM(
-          result,
-          entityStrForRelevance,
-          analysisContexts,
-          understandModelInfo.model,
-          state.pipelineConfig,
-        );
-        state.llmCalls += 1;
-
-        if (llmDecision?.classification === "primary_source") {
-          debugLog("Pre-filter LLM keep", {
-            url: result.url,
-            title: result.title,
-            classification: llmDecision.classification,
-            confidence: llmDecision.confidence,
-          });
+      for (let i = 0; i < domainFilteredResults.length; i++) {
+        const result = domainFilteredResults[i];
+        const check = batchResults.get(`r${i}`);
+        if (check?.isRelevant) {
           relevantResults.push(result);
-          continue;
-        }
-
-        if (!llmDecision) {
-          // LLM classifier unavailable or schema-mismatch: fall back to heuristic ambiguity check.
-          const hasStrongEntityAnchor =
-            !!signals &&
-            (signals.strongEntityMatchCount > 0 || signals.passesEntityGate === true);
-          const hardContextMiss =
-            check.reason === "institution_not_mentioned" ||
-            check.reason === "insufficient_context_match";
-          if (isAmbiguous && hasStrongEntityAnchor && !hardContextMiss) {
-            debugLog("Pre-filter keep (LLM unavailable fallback)", {
-              url: result.url,
-              title: result.title,
-              reason: "ambiguous_heuristic_fallback",
-            });
-            relevantResults.push(result);
-            continue;
-          }
+        } else {
           debugLog("Pre-filter rejected", {
             url: result.url,
             title: result.title,
-            reason: check.reason || "llm_unavailable",
+            reason: check?.reason || "llm_not_relevant",
+            classification: check?.classification,
             query: (result as any).query,
           });
-          continue;
         }
-
-        debugLog("Pre-filter rejected", {
-          url: result.url,
-          title: result.title,
-          reason: `llm_${llmDecision.classification}`,
-          query: (result as any).query,
-        });
-        continue;
       }
-
-      debugLog("Pre-filter rejected", {
-        url: result.url,
-        title: result.title,
-        reason: check.reason,
-        query: (result as any).query,
-      });
     }
 
     const adaptiveMinCandidates = state.pipelineConfig.searchAdaptiveFallbackMinCandidates ?? 5;
@@ -12666,22 +12601,29 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           });
 
           // Evaluate retry results with ORIGINAL strictness (not relaxed)
+          const newRetryResults: typeof uniqueResults = [];
           for (const result of results) {
             const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
             const existingUrl = relevantResults.some(
               (r) => normalizeUrlForDedup(String((r as any).url || "")) === normalizedUrl,
             );
-            if (existingUrl) continue;
-
-            const taggedResult = { ...result, query } as typeof uniqueResults[number];
-            const check = checkSearchResultRelevance(
-              taggedResult,
+            if (!existingUrl) {
+              newRetryResults.push({ ...result, query } as typeof uniqueResults[number]);
+            }
+          }
+          if (newRetryResults.length > 0) {
+            const retryBatch = await assessSearchRelevanceBatch(
+              newRetryResults,
               entityStrForRelevance,
               analysisContexts,
               { requireContextMatch, strictInstitutionMatch, allowInstitutionFallback: true },
+              state.pipelineConfig,
             );
-            if (check.isRelevant) {
-              relevantResults.push(taggedResult);
+            state.llmCalls += 1;
+            for (let ri = 0; ri < newRetryResults.length; ri++) {
+              if (retryBatch.get(`r${ri}`)?.isRelevant) {
+                relevantResults.push(newRetryResults[ri]);
+              }
             }
           }
         } catch (err) {
@@ -12707,28 +12649,30 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       // Step 1: Relax institution match only, keep context match.
       // This allows results from different institutions about the same context.
       if (FALLBACK_CONFIG.step1RelaxInstitution) {
-        for (const result of uniqueResults) {
+        const step1Candidates = uniqueResults.filter((result) => {
           const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
-          if (selectedUrlKeys.has(normalizedUrl)) continue;
-
+          if (selectedUrlKeys.has(normalizedUrl)) return false;
           const domain = extractDomain(result.url || "");
-          if (domain && !isImportantSource(domain)) continue;
-
-          const relaxed = checkSearchResultRelevance(
-            result,
+          if (domain && !isImportantSource(domain)) return false;
+          return true;
+        });
+        if (step1Candidates.length > 0) {
+          const step1Batch = await assessSearchRelevanceBatch(
+            step1Candidates,
             entityStrForRelevance,
             analysisContexts,
-            {
-              requireContextMatch: true,
-              strictInstitutionMatch: false,
-              allowInstitutionFallback: true,
-            },
+            { requireContextMatch: true, strictInstitutionMatch: false, allowInstitutionFallback: true },
+            state.pipelineConfig,
           );
-          if (relaxed.isRelevant) {
-            (result as any)._isFallback = true;
-            (result as any)._fallbackStep = 1;
-            relevantResults.push(result);
-            selectedUrlKeys.add(normalizedUrl);
+          state.llmCalls += 1;
+          for (let si = 0; si < step1Candidates.length; si++) {
+            if (step1Batch.get(`r${si}`)?.isRelevant) {
+              const result = step1Candidates[si];
+              (result as any)._isFallback = true;
+              (result as any)._fallbackStep = 1;
+              relevantResults.push(result);
+              selectedUrlKeys.add(normalizeUrlForDedup(String((result as any).url || "")));
+            }
           }
         }
         debugLog("adaptive_fallback_step1", {
@@ -12743,28 +12687,30 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       // Only accept results that still have meaningful entity overlap.
       if (relevantResults.length < adaptiveMinCandidates) {
         const step2Before = relevantResults.length;
-        for (const result of uniqueResults) {
+        const step2Candidates = uniqueResults.filter((result) => {
           const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
-          if (selectedUrlKeys.has(normalizedUrl)) continue;
-
+          if (selectedUrlKeys.has(normalizedUrl)) return false;
           const domain = extractDomain(result.url || "");
-          if (domain && !isImportantSource(domain)) continue;
-
-          const relaxed = checkSearchResultRelevance(
-            result,
+          if (domain && !isImportantSource(domain)) return false;
+          return true;
+        });
+        if (step2Candidates.length > 0) {
+          const step2Batch = await assessSearchRelevanceBatch(
+            step2Candidates,
             entityStrForRelevance,
             analysisContexts,
-            {
-              requireContextMatch: false,
-              strictInstitutionMatch: false,
-              allowInstitutionFallback: true,
-            },
+            { requireContextMatch: false, strictInstitutionMatch: false, allowInstitutionFallback: true },
+            state.pipelineConfig,
           );
-          if (relaxed.isRelevant) {
-            (result as any)._isFallback = true;
-            (result as any)._fallbackStep = 2;
-            relevantResults.push(result);
-            selectedUrlKeys.add(normalizedUrl);
+          state.llmCalls += 1;
+          for (let si = 0; si < step2Candidates.length; si++) {
+            if (step2Batch.get(`r${si}`)?.isRelevant) {
+              const result = step2Candidates[si];
+              (result as any)._isFallback = true;
+              (result as any)._fallbackStep = 2;
+              relevantResults.push(result);
+              selectedUrlKeys.add(normalizeUrlForDedup(String((result as any).url || "")));
+            }
           }
         }
         debugLog("adaptive_fallback_step2", {
@@ -12861,27 +12807,30 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             searchConfig.maxSourcesPerIteration,
           );
 
-          for (const result of fallbackCandidates) {
+          const step3Filtered = fallbackCandidates.filter((result) => {
             const normalizedUrl = normalizeUrlForDedup(String((result as any).url || ""));
-            if (selectedUrlKeys.has(normalizedUrl)) continue;
+            if (selectedUrlKeys.has(normalizedUrl)) return false;
             const domain = extractDomain(result.url || "");
-            if (domain && !isImportantSource(domain)) continue;
-
-            const relaxed = checkSearchResultRelevance(
-              result,
+            if (domain && !isImportantSource(domain)) return false;
+            return true;
+          });
+          if (step3Filtered.length > 0) {
+            const step3Batch = await assessSearchRelevanceBatch(
+              step3Filtered,
               entityStrForRelevance,
               analysisContexts,
-              {
-                requireContextMatch: false,
-                strictInstitutionMatch: false,
-                allowInstitutionFallback: true,
-              },
+              { requireContextMatch: false, strictInstitutionMatch: false, allowInstitutionFallback: true },
+              state.pipelineConfig,
             );
-            if (relaxed.isRelevant) {
-              (result as any)._isFallback = true;
-              (result as any)._fallbackStep = 3;
-              relevantResults.push(result);
-              selectedUrlKeys.add(normalizedUrl);
+            state.llmCalls += 1;
+            for (let si = 0; si < step3Filtered.length; si++) {
+              if (step3Batch.get(`r${si}`)?.isRelevant) {
+                const result = step3Filtered[si];
+                (result as any)._isFallback = true;
+                (result as any)._fallbackStep = 3;
+                relevantResults.push(result);
+                selectedUrlKeys.add(normalizeUrlForDedup(String((result as any).url || "")));
+              }
             }
           }
         }
@@ -13062,7 +13011,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         break;
       }
 
-      const gaps = analyzeEvidenceGaps(
+      const gaps = await analyzeEvidenceGaps(
         state.evidenceItems,
         state.understanding,
         state.searchQueries,
@@ -13153,8 +13102,9 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       const gapAnalysisContexts = state.understanding?.analysisContexts || [];
       const gapEntity = state.understanding?.impliedClaim || state.originalInput || state.originalText || "";
-      const relevantGapResults: typeof deduplicatedGapResults = [];
-      for (const result of deduplicatedGapResults) {
+
+      // Domain pre-filter (structural)
+      const gapDomainFiltered = deduplicatedGapResults.filter((result) => {
         const gapDomain = extractDomain(result.url || "");
         if (gapDomain && !isImportantSource(gapDomain)) {
           debugLog("Gap pre-filter rejected", {
@@ -13164,29 +13114,36 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             domain: gapDomain,
             query: (result as any).query,
           });
-          continue;
+          return false;
         }
+        return true;
+      });
 
-        const check = checkSearchResultRelevance(
-          result,
+      // LLM-powered batch relevance for gap results
+      const relevantGapResults: typeof deduplicatedGapResults = [];
+      if (gapDomainFiltered.length > 0) {
+        const gapBatch = await assessSearchRelevanceBatch(
+          gapDomainFiltered,
           gapEntity,
           gapAnalysisContexts,
-          {
-            requireContextMatch: true,
-            strictInstitutionMatch: true,
-            allowInstitutionFallback: false,
-          },
+          { requireContextMatch: true, strictInstitutionMatch: true, allowInstitutionFallback: false },
+          state.pipelineConfig,
         );
-        if (!check.isRelevant) {
-          debugLog("Gap pre-filter rejected", {
-            url: result.url,
-            title: result.title,
-            reason: check.reason || "not_relevant",
-            query: (result as any).query,
-          });
-          continue;
+        state.llmCalls += 1;
+        for (let gi = 0; gi < gapDomainFiltered.length; gi++) {
+          const result = gapDomainFiltered[gi];
+          const check = gapBatch.get(`r${gi}`);
+          if (check?.isRelevant) {
+            relevantGapResults.push(result);
+          } else {
+            debugLog("Gap pre-filter rejected", {
+              url: result.url,
+              title: result.title,
+              reason: check?.reason || "not_relevant",
+              query: (result as any).query,
+            });
+          }
         }
-        relevantGapResults.push(result);
       }
 
       if (relevantGapResults.length === 0) {
@@ -13303,7 +13260,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     state.originalInput ||
     state.originalText ||
     "";
-  const anchorPrune = pruneWeakAnchorContexts(
+  const anchorPrune = await pruneWeakAnchorContexts(
     state.understanding!,
     state.evidenceItems,
     anchorPruneInput,
@@ -13329,7 +13286,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Pass thesis to detect foreign response claims that should be tangential
     const thesis = state.understanding!.impliedClaim || state.understanding!.articleThesis || state.originalInput;
     state.understanding!.subClaims = applyThesisRelevancePolicyBToSubClaims(
-      enforceThesisRelevanceInvariants(
+      await enforceThesisRelevanceInvariants(
         validateThesisRelevance(state.understanding!.subClaims as any, state.pipelineConfig) as any,
         thesis,
       ) as any,
@@ -13349,7 +13306,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // Deterministic backstop for the Context Relevance Requirement:
   // 1) if we're already in multi-context mode, place any unassigned (direct/tangential) claims into a special UNASSIGNED context
   // 2) prune contexts that have zero claims AND zero evidence, and recompute requiresSeparateAnalysis.
-  state.understanding = ensureUnassignedClaimsContext(state.understanding!);
+  state.understanding = await ensureUnassignedClaimsContext(state.understanding!);
   state.understanding = pruneContextsByCoverage(state.understanding!, state.evidenceItems);
   state.understanding = ensureAtLeastOneContext(state.understanding!);
   validateContextReferences(state.understanding!, state.evidenceItems);
@@ -13466,7 +13423,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     // Layer 5: Grounding check — validate verdict reasoning against cited evidence
     if (claimVerdicts.length > 0 && state.evidenceItems.length > 0) {
-      const groundingResult = checkVerdictGrounding(claimVerdicts, state.evidenceItems);
+      const groundingResult = await checkVerdictGrounding(claimVerdicts, state.evidenceItems);
       debugLog("Grounding check result", {
         groundingRatio: groundingResult.groundingRatio.toFixed(2),
         warnings: groundingResult.warnings,
@@ -13874,7 +13831,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       },
     },
     // Pipeline Phase 1: Research metrics for gap reporting
-    researchMetrics: (() => {
+    researchMetrics: await (async () => {
       // Use configurable threshold from pipeline config
       const similarityThreshold = state.pipelineConfig.evidenceSimilarityThreshold ?? 0.4;
 
@@ -13883,7 +13840,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       const claimsWithEvidence = highCentralityClaims.filter(claim => {
         return state.evidenceItems.some(e => {
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
-          const similarity = calculateTextSimilarity(e.statement, claim.text);
+          const similarity = jaccardSimilarity(e.statement, claim.text);
           return similarity > similarityThreshold;
         });
       });
@@ -13896,7 +13853,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         return state.evidenceItems.some(e => {
           if (e.claimDirection !== "contradicts") return false;
           if (e.contextId && claim.contextId && e.contextId === claim.contextId) return true;
-          const similarity = calculateTextSimilarity(e.statement, claim.text);
+          const similarity = jaccardSimilarity(e.statement, claim.text);
           return similarity > similarityThreshold;
         });
       });
@@ -13913,7 +13870,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
       // Analyze gaps for reporting
       const gaps = state.understanding
-        ? analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries, similarityThreshold)
+        ? await analyzeEvidenceGaps(state.evidenceItems, state.understanding, state.searchQueries, similarityThreshold)
         : [];
 
       return {

@@ -613,12 +613,3 @@ export function calculateOverallCredibility(
 // ============================================================================
 // LEGACY COMPATIBILITY (to be removed)
 // ============================================================================
-
-/**
- * @deprecated Use prefetchSourceReliability() instead
- */
-export function loadSourceBundle(): void {
-  console.warn(
-    "[SR] loadSourceBundle() is deprecated. Source reliability now uses LLM evaluation with caching."
-  );
-}

@@ -59,6 +59,14 @@ export const SearchConfigSchema = z.object({
   dateRestrict: z.enum(["y", "m", "w"]).nullable(),
   domainWhitelist: z.array(z.string().regex(/^[a-z0-9.-]+$/i)).max(50),
   domainBlacklist: z.array(z.string().regex(/^[a-z0-9.-]+$/i)).max(50),
+
+  // Query generation parameters
+  queryGeneration: z.object({
+    maxEntitiesPerClaim: z.number().int().min(1).max(20),
+    maxWordLength: z.number().int().min(1).max(10),
+    maxSearchTerms: z.number().int().min(1).max(20),
+    maxFallbackTerms: z.number().int().min(1).max(15),
+  }).optional(),
 });
 
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;
@@ -73,6 +81,12 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   dateRestrict: null,
   domainWhitelist: [],
   domainBlacklist: [],
+  queryGeneration: {
+    maxEntitiesPerClaim: 4,
+    maxWordLength: 2,
+    maxSearchTerms: 8,
+    maxFallbackTerms: 6,
+  },
 };
 
 // ============================================================================
@@ -903,6 +917,12 @@ export const CalcConfigSchema = z.object({
     nameDistinctnessThreshold: z.number().min(0).max(1),
     assessedDistinctnessThreshold: z.number().min(0).max(1),
   }).optional(),
+
+  processing: z.object({
+    similarityBatchSize: z.number().int().min(1).max(100),
+    maxEvidenceSelection: z.number().int().min(1).max(50),
+    maxContextsPerClaim: z.number().int().min(1).max(20),
+  }).optional(),
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
@@ -1008,6 +1028,11 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   frameSignal: {
     nameDistinctnessThreshold: 0.35,
     assessedDistinctnessThreshold: 0.45,
+  },
+  processing: {
+    similarityBatchSize: 25,
+    maxEvidenceSelection: 10,
+    maxContextsPerClaim: 5,
   },
 };
 

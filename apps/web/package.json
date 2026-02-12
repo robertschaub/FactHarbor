@@ -15,8 +15,6 @@
     "test:llm": "vitest run test/unit/lib/llm-integration.test.ts",
     "test:jobs": "vitest run test/unit/lib/job-lifecycle.test.ts",
     "test:baseline": "node scripts/baseline-runner.js",
-    "test:ab": "node scripts/ab-runner.js",
-    "test:ab:quick": "node scripts/ab-runner.js --quick",
     "promptfoo": "promptfoo eval --env-file .env.local",
     "promptfoo:sr": "promptfoo eval -c promptfooconfig.source-reliability.yaml --env-file .env.local",
     "promptfoo:view": "promptfoo view"
