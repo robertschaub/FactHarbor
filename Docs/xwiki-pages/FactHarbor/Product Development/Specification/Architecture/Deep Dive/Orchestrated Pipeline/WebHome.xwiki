@@ -12,27 +12,42 @@ The Orchestrated Pipeline follows a fixed 5-step AKEL flow: Understand → Resea
 
 {{include reference="FactHarbor.Product Development.Diagrams.Orchestrated Pipeline Detail.WebHome"/}}
 
+== LLM vs Web Search (At a Glance) ==
+
+{{info}}
+**Quick visibility guide**
+* **LLM-heavy phases**: Understand, Verdict
+* **Web-heavy phase**: Research
+* **Hybrid phase**: Research combines web retrieval with LLM evidence extraction
+{{/info}}
+
+|= Phase |= Primary Driver |= LLM Activity |= Web/Search Activity
+| Understand | LLM reasoning | Claim understanding, context shaping, decomposition | None
+| Research | Web retrieval | Query planning + evidence extraction per source | Search provider calls + source fetch
+| Verdict | LLM reasoning | Claim verdicts + article verdict + grounding checks | None
+| Summary / Report | Deterministic formatting | None | None
+
 == Step-by-Step Reference ==
 
 === Step 1: UNDERSTAND ===
 
-|= Function |= Purpose |= LLM Calls
-| ##runFactHarborAnalysis()## | Main entry point, initializes state | 0
-| ##understandClaim()## | Extracts claims, detects input type (question/claim/article), identifies thesis (LLM handles question/statement equivalence) | 1
-| ##detectContexts()## | Heuristic pre-detection of AnalysisContexts from input text | 0
-| Gate 1 | Filters opinions, predictions, low-specificity claims (keeps central claims) | 0
+|= Function |= Purpose |= LLM Calls |= Web/Search Calls
+| ##runFactHarborAnalysis()## | Main entry point, initializes state | 0 | 0
+| ##understandClaim()## | Extracts claims, detects input type, identifies thesis, builds/normalizes AnalysisContexts | 1 | 0
+| ##detectContexts()## | Deterministic wrapper (currently disabled for semantic pre-detection) | 0 | 0
+| Gate 1 | Structural claim gate before research | 0 | 0
 
 **Output**: Array of validated claims with types, roles, dependencies, and context assignments.
 
 === Step 2: RESEARCH ===
 
-|= Function |= Purpose |= LLM Calls
-| ##decideNextResearch()## | Generates targeted search queries based on claims and gaps | 1 per iteration
-| ##searchWebWithProvider()## | Executes web search (Google CSE or SerpAPI) | 0
-| ##fetchSourceContent()## | Parallel content fetching with timeout | 0
-| ##prefetchSourceReliability()## | Batch source reliability evaluation (async boundary) | 0 (external API)
-| ##buildAdaptiveFallbackQueries()## | Relaxes search constraints when candidates < threshold | 0
-| ##extractEvidence()## | Extracts evidence items from each source document | 1 per source
+|= Function |= Purpose |= LLM Calls |= Web/Search Calls
+| ##decideNextResearch()## | Generates targeted search queries based on claims and gaps | 1 per iteration | 0
+| ##searchWebWithProvider()## | Executes web search (Google CSE or SerpAPI) | 0 | 1+ per iteration
+| ##fetchSourceContent()## | Parallel content fetching with timeout | 0 | 1 per selected source URL
+| ##prefetchSourceReliability()## | Batch source reliability lookup/evaluation | 0 (in orchestrated flow) | 0 (SR cache/service boundary)
+| ##buildAdaptiveFallbackQueries()## | Relaxes search constraints when candidates < threshold | 0 | 0
+| ##extractEvidence()## | Extracts evidence items from each source document | 1 per source | 0
 
 **Adaptive Fallback**: When fewer than 5 candidate sources are found, the system generates up to 2 additional fallback queries with relaxed constraints.
 
@@ -40,13 +55,13 @@ The Orchestrated Pipeline follows a fixed 5-step AKEL flow: Understand → Resea
 
 === Step 3: VERDICT ===
 
-|= Function |= Purpose |= LLM Calls
-| ##generateClaimVerdicts()## | Per-claim verdict with truth percentage, confidence, reasoning | 1
-| ##calculateWeightedVerdictAverage()## | Aggregates claim verdicts into weighted averages | 0
-| ##detectClaimContestation()## | Identifies claims with significant counter-evidence | 0
-| ##detectHarmPotential()## | Flags claims with potential harm implications | 0
-| Gate 4 | Assesses verdict confidence (source count, fact count, reasoning quality) | 0
-| ##generateArticleVerdict()## | Overall article verdict aggregated from claims | 1
+|= Function |= Purpose |= LLM Calls |= Web/Search Calls
+| ##generateClaimVerdicts()## | Per-claim verdict with truth percentage, confidence, reasoning | 1 | 0
+| ##calculateWeightedVerdictAverage()## | Aggregates claim verdicts into weighted averages | 0 | 0
+| ##detectClaimContestation()## | Identifies claims with significant counter-evidence | 0 | 0
+| ##detectHarmPotential()## | Flags claims with potential harm implications | 0 | 0
+| Gate 4 | Assesses verdict confidence (source count, fact count, reasoning quality) | 0 | 0
+| ##generateArticleVerdict()## | Overall article verdict aggregated from claims | 1 | 0
 
 **Post-Processing** — After LLM verdict generation, deterministic corrections are applied:
 * ##detectAndCorrectVerdictInversion()## — Fixes direction mismatches between truth% and verdict label
@@ -55,9 +70,9 @@ The Orchestrated Pipeline follows a fixed 5-step AKEL flow: Understand → Resea
 
 === Steps 4-5: SUMMARY and REPORT ===
 
-|= Function |= Purpose |= LLM Calls
-| ##generateTwoPanelSummary()## | Formats results for the UI two-panel display | 0
-| ##generateReport()## | Generates human-readable Markdown report | 0
+|= Function |= Purpose |= LLM Calls |= Web/Search Calls
+| ##generateTwoPanelSummary()## | Formats results for the UI two-panel display | 0 | 0
+| ##generateReport()## | Generates human-readable Markdown report | 0 | 0
 
 No LLM calls — these steps use deterministic formatting of the verdict results.
 
@@ -78,12 +93,13 @@ Budget limits prevent runaway costs and ensure predictable analysis times.
 
 == LLM Call Summary ==
 
-|= Pipeline Phase |= Call Count |= Model Tier
-| Understand (claim extraction) | 1 | Standard
-| Research (query generation) | 1 per iteration | Budget
-| Research (evidence extraction) | 1 per source | Budget
-| Verdict (claim verdicts) | 1 | Premium
-| Verdict (article verdict) | 1 | Premium
+|= Pipeline Phase |= LLM Call Count |= Web/Search Call Count |= Model Tier
+| Understand (claim extraction) | 1 | 0 | Standard
+| Research (query generation) | 1 per iteration | 0 | Budget
+| Research (search + fetch) | 0 | 1+ search per iteration + 1 fetch per selected source | N/A
+| Research (evidence extraction) | 1 per source | 0 | Budget
+| Verdict (claim verdicts) | 1 | 0 | Premium
+| Verdict (article verdict) | 1 | 0 | Premium
 
 **Typical total**: 8-15 LLM calls for a standard article analysis (5-10 claims, 5-8 sources).
 

@@ -13,42 +13,42 @@ flowchart TB
     end
 
     subgraph Step1["Step 1: UNDERSTAND"]
-        CLASSIFY["classifyInput()<br/>Input type classification"]
-        UC["understandClaim()<br/>Claim extraction + dependencies"]
-        CTX["detectContexts()<br/>Heuristic + LLM hybrid"]
+        CLASSIFY["[LLM] classifyInput()<br/>Input type classification"]
+        UC["[LLM] understandClaim()<br/>Claim extraction + dependencies"]
+        CTX["[LLM] Context detection<br/>within understand flow"]
         GATE1["Gate 1: Claim Validation<br/>Filter opinions, predictions"]
-        SUPP["requestSupplementalContexts()<br/>+ requestSupplementalSubClaims()"]
-        DEDUP_CTX["deduplicateContexts()<br/>Merge similar contexts"]
+        SUPP["[LLM] requestSupplementalContexts()<br/>+ requestSupplementalSubClaims()"]
+        DEDUP_CTX["[LLM] deduplicateContexts()<br/>Merge similar contexts"]
         QUERIES["Initial research queries"]
     end
 
     subgraph Step2["Step 2: RESEARCH (Iterative Loop)"]
         DECIDE["decideNextResearch()<br/>Select category + query"]
-        SEARCH["searchWebWithProvider()"]
-        RELEVANCE["assessSearchRelevanceBatch()<br/>Classify: primary / secondary / unrelated"]
+        SEARCH["[WEB] searchWebWithProvider()"]
+        RELEVANCE["[LLM] assessSearchRelevanceBatch()<br/>Classify: primary / secondary / unrelated"]
         ADAPTIVE{"Candidates<br/>≥ threshold?"}
-        FALLBACK["Retry + Fallback Searches<br/>Relax constraints, broaden terms"]
-        FETCH["fetchSourceContent()<br/>Parallel web fetch"]
-        SR["prefetchSourceReliability()<br/>Batch reliability lookup"]
+        FALLBACK["[WEB] Retry + Fallback Searches<br/>Relax constraints, broaden terms"]
+        FETCH["[WEB] fetchSourceContent()<br/>Parallel web fetch"]
+        SR["[EXT] prefetchSourceReliability()<br/>Batch reliability lookup"]
         PROV["Provenance Validation<br/>Reject synthetic content"]
-        EXTRACT["extractEvidence()<br/>per source"]
+        EXTRACT["[LLM] extractEvidence()<br/>per source"]
         EV_PROC["Evidence Processing<br/>Dedup · Normalize · Recency"]
         BUDGET_CHK{"Budget exceeded<br/>or sufficient<br/>evidence?"}
     end
 
     subgraph Step2b["Post-Research Refinement"]
-        REFINE["refineContextsFromEvidence()<br/>Enrich context metadata"]
-        ENRICH["enrichContextsWithOutcomes()<br/>Fill vague outcomes"]
-        PRUNE["pruneWeakAnchorContexts()<br/>Remove low-evidence contexts"]
-        SELECT["selectEvidenceForVerdicts()<br/>Diverse evidence selection"]
+        REFINE["[LLM] refineContextsFromEvidence()<br/>Enrich context metadata"]
+        ENRICH["[LLM] enrichContextsWithOutcomes()<br/>Fill vague outcomes"]
+        PRUNE["[LLM] pruneWeakAnchorContexts()<br/>Remove low-evidence contexts"]
+        SELECT["[LLM] selectEvidenceForVerdicts()<br/>Diverse evidence selection"]
     end
 
     subgraph Step3["Step 3: VERDICT"]
-        VERDICTS["generateVerdicts()<br/>Multi-context / single / claim"]
+        VERDICTS["[LLM] generateVerdicts()<br/>Multi-context / single / claim"]
         WEIGHT["calculateWeightedVerdictAverage()<br/>+ articleVerdict"]
         CONTEST["detectClaimContestation()"]
         HARM["detectHarmPotential()"]
-        GROUND["checkVerdictGrounding()<br/>Validate reasoning ↔ evidence"]
+        GROUND["[LLM] checkVerdictGrounding()<br/>Validate reasoning ↔ evidence"]
         GATE4["Gate 4: Confidence Assessment"]
     end
 
@@ -107,7 +107,7 @@ flowchart TB
     style GATE4 fill:#fff9c4,stroke:#f9a825,color:#000
 {{/mermaid}}
 
-**Legend:** (% blue %) LLM calls ~· (% green %) Web search / fetch ~· (% orange %) Evidence processing (deterministic) ~· (% yellow %) Quality gates
+**Legend:** ##[LLM]## = LLM call ~· ##[WEB]## = Web/Search/Fetch call ~· ##[EXT]## = External service/cache boundary. (Colors remain as secondary visual cue.)
 
 == LLM Call Inventory ==
 
