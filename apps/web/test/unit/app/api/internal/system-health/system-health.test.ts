@@ -22,7 +22,7 @@ vi.mock("@/lib/provider-webhook", () => ({
 }));
 
 // Mock drainRunnerQueue to avoid the full run-job dependency chain
-vi.mock("@/app/api/internal/run-job/route", () => ({
+vi.mock("@/lib/internal-runner-queue", () => ({
   drainRunnerQueue: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -137,7 +137,7 @@ describe("system-health internal API route", () => {
     });
 
     it("triggers drainRunnerQueue on resume", async () => {
-      const { drainRunnerQueue } = await import("@/app/api/internal/run-job/route");
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       pauseSystem("test");
 
       const { POST } = await import("@/app/api/internal/system-health/route");
