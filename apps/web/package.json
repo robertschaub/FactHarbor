@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev --webpack -p 3000",
+    "dev:turbo": "next dev -p 3000",
     "build": "next build",
     "postbuild": "npx tsx scripts/reseed-all-prompts.ts --quiet",
     "start": "next start -p 3000",
