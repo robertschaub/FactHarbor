@@ -42,16 +42,15 @@ const hasSpecificOutcome = extractNumericClaims(text);
 
 **Hard requirements**:
 * **No separate analysis paths**: There must be **zero branching** in analysis logic based on whether the user wrote a question or a statement.
-* **Entry-point normalization**: If input is yes/no phrasing (including trailing ##?##), convert to an **affirmative statement** **before any analysis stage runs**.
-* **Single canonical analysis string**: All analysis steps (context detection, research, evidence extraction, verdict generation, weighting, quality gates, inversion correction) must use the **normalized statement** only.
-* **Raw input is UI-only**: Preserve the original input (question or statement) **only for display**. It must not influence LLM prompts, research queries, context splitting, or scoring.
+* **LLM-first equivalence**: The LLM handles question/statement equivalence naturally without deterministic text transformation. Raw user input (question or statement) is passed directly to ##understandClaim()##.
+* **Single analysis string**: All analysis steps (context detection, research, evidence extraction, verdict generation, weighting, quality gates, inversion correction) use the same input text.
 * **No question-specific metadata**: Do not emit or persist flags/fields such as ##wasQuestionInput##, ##questionBeingAsked##, ##questionIntent##, ##QuestionAnswer##, ##calculateQuestionTruthPercentage##, etc.
 * **UI neutrality**: UI must not show question badges/labels or question-specific layouts. The same components and result fields must be used regardless of phrasing.
-* **Equivalence guarantee**: For meaning-equivalent inputs, verdict and reasoning must be effectively identical; any drift should be **<1%** and treated as a regression.
+* **Equivalence guarantee**: For meaning-equivalent inputs, verdict and reasoning must be effectively identical; any drift should be **≤4%** (tolerance increased from <1% due to LLM variability).
 
 **Implementation guidance**:
-* Normalize to statements **at the earliest entry point** to guarantee full neutrality.
-* Use a single variable (e.g., ##analysisInput##) as the canonical input for all downstream logic and LLM calls.
+* Pass raw user input to the LLM with minimal preprocessing (whitespace normalization only).
+* Trust the LLM to understand semantic equivalence between "Was X fair?" and "X was fair".
 * Store the original input in a dedicated display-only field (e.g., ##originalInputDisplay##) for UI rendering.
 
 === 3. Pipeline Integrity ===

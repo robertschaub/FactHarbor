@@ -18,8 +18,7 @@ The Orchestrated Pipeline follows a fixed 5-step AKEL flow: Understand → Resea
 
 |= Function |= Purpose |= LLM Calls
 | ##runFactHarborAnalysis()## | Main entry point, initializes state | 0
-| ##normalizeYesNoQuestionToStatement()## | Converts yes/no questions to neutral statements | 0
-| ##understandClaim()## | Extracts claims, detects input type (question/claim/article), identifies thesis | 1
+| ##understandClaim()## | Extracts claims, detects input type (question/claim/article), identifies thesis (LLM handles question/statement equivalence) | 1
 | ##detectContexts()## | Heuristic pre-detection of AnalysisContexts from input text | 0
 | Gate 1 | Filters opinions, predictions, low-specificity claims (keeps central claims) | 0
 

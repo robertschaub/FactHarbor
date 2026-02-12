@@ -93,7 +93,7 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number;
 export function extractDomain(url: string): string | null;
 export function isImportantSource(domain: string): boolean;
 export function normalizeTrackRecordScore(score: number): number;
-export function clampTruthPercentage(value: number): number;
+export function assertValidTruthPercentage(value: number, context?: string): number;  // Fail-fast validation (replaces clampTruthPercentage)
 export function clearPrefetchedScores(): void;
 {{/code}}
 

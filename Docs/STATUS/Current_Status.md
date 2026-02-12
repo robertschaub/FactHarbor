@@ -68,6 +68,21 @@
 - ✅ **Benefits**: Improved testability, reduced complexity, focused modules
 - See: [QA Review & Code Quality Plan](../../.claude/plans/polished-tumbling-hare.md)
 
+**Phase 1 QA Cleanup (2026-02-12):**
+- ✅ **Normalization Removal**: All heuristic normalization code deleted (~500 lines)
+  - `normalizeYesNoQuestionToStatement()` removed from pipeline
+  - Test file deleted (330 lines, 22 tests)
+  - Config parameters removed (143 lines)
+  - LLM-first input handling (question/statement equivalence)
+- ✅ **Defensive Clamping Replacement**: `clampTruthPercentage` → `assertValidTruthPercentage`
+  - Replaced silent bug masking with fail-fast validation
+  - 10 call sites updated with context strings for better diagnostics
+  - Two duplicate implementations removed
+- ✅ **Canonical Pipeline Removal**: Monolithic Canonical variant removed (~2,281 lines)
+  - Twin-Path architecture (Orchestrated + Monolithic Dynamic)
+  - Graceful backward compatibility for historical job records
+  - Documentation updated across codebase
+
 **Infrastructure:**
 - Job lifecycle management (QUEUED → RUNNING → SUCCEEDED/FAILED)
 - Real-time progress updates via Server-Sent Events (SSE)

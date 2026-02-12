@@ -3,7 +3,7 @@
 **Session**: 32 (continued)
 **Date**: 2026-02-11
 **Updated**: 2026-02-12
-**Status**: LARGELY SUPERSEDED — Pipeline uses LLM-first normalization. Heuristic normalization is dead code.
+**Status**: CLOSED — All heuristic normalization code deleted (2026-02-12). Pipeline uses LLM-first normalization exclusively.
 
 ---
 
@@ -11,7 +11,13 @@
 
 The `normalizeYesNoQuestionToStatement()` function (orchestrated.ts:1895) was designed to convert question-form inputs to statement-form before sending to `understandClaim`. This was intended to ensure input neutrality ("Was X fair?" and "X was fair" produce identical analysis, tolerance <=4%).
 
-**Current state (2026-02-12):** The main pipeline (`runFactHarborAnalysis`) does NOT call any normalization function. It passes raw user input directly to the LLM. The function exists only as an exported utility for backward compatibility.
+**Current state (2026-02-12):** The main pipeline (`runFactHarborAnalysis`) does NOT call any normalization function. It passes raw user input directly to the LLM.
+
+**Update (2026-02-12 evening):** The function has been DELETED along with all related code:
+- `normalizeYesNoQuestionToStatement()` removed from `orchestrated.ts`
+- Export removed from `analyzer.ts`
+- Test file `normalization-contract.test.ts` deleted (22 tests, 330 lines)
+- Config parameters `normalizationPredicateStarters` and `normalizationAdjectiveSuffixes` removed from `config-schemas.ts` and `pipeline.default.json`
 
 ---
 
