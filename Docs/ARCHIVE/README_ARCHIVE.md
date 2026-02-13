@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-13
 
 ---
 
@@ -51,6 +51,9 @@ The following documents had valuable content extracted and merged into active do
 1. `FactHarbor POC1 Architecture Analysis.md`
 2. `WORKSHOP_REPORT_2026-01-21.md`
 3. `Mermaid_Fix_Summary.md`
+4. `Analysis_Quality_Issues_2026-02-13.md`
+5. `Report_Issues_Review_and_Fix_Plan_2026-02-13.md`
+6. `Phase2_Prompt_Approval_Patch_2026-02-13.md`
 
 ### Source Reliability Service Reviews
 
@@ -118,4 +121,3 @@ If you need to reference archived documents:
 **Archive Maintainer**: Plan Coordinator
 **Last Review**: 2026-02-02
 **Next Review**: Quarterly (or when major features complete)
-
