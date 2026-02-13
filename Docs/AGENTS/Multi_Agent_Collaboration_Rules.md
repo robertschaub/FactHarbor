@@ -667,6 +667,40 @@ After each phase: run tests/build, update the document status, and report progre
 If you encounter blockers or deviations from the plan, stop and report to the Captain.
 ```
 
+#### Activation Walkthrough (Captain Quick Reference)
+
+**Step 1 — Create the document** (once)
+
+Copy the §4.5 template into `Docs/WIP/{Topic}_Investigation_{date}.md`. Fill in:
+- Investigation Brief (task, inputs, scope boundaries)
+- Participant Tracker — one row per agent, status `ASSIGNED`
+
+Example:
+```markdown
+## Participant Tracker
+| # | Role | Agent/Tool/Model | Status | Temp File | Updated |
+|---|------|-----------------|--------|-----------|---------|
+| 1 | Senior Developer | Claude Code / Sonnet | ASSIGNED | — | 2026-02-13 |
+| 2 | Lead Developer | Cursor / Codex | ASSIGNED | — | 2026-02-13 |
+| 3 | LLM Expert | Cline / Kimi K2 | ASSIGNED | — | 2026-02-13 |
+```
+
+**Step 2 — Activate each participant** (one prompt per agent session)
+
+Open each agent's tool and paste the **INVESTIGATE** command with the document path and an optional focus area. Each agent can run in parallel — the Write Lock + Temp File Protocol handles concurrency.
+
+**Step 3 — Monitor progress**
+
+Paste the **STATUS** command into any available agent to check the Participant Tracker. When all participants show `DONE`, proceed to consolidation.
+
+**Step 4 — Consolidate**
+
+Paste the **CONSOLIDATE** command into a high-capability agent (e.g., Opus). The consolidator merges any remaining temp files, reads all reports, and writes the unified analysis + plan.
+
+**Step 5 — Review, Propose, or Implement**
+
+Use **REVIEW**, **PROPOSE**, or **IMPLEMENT** commands as needed. These can go to the same or different agents.
+
 ---
 
 ### 3.4 Role Handoff Protocol
