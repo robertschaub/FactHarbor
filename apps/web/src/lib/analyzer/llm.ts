@@ -385,6 +385,30 @@ export function getProviderType(modelInfo: ModelInfo): ProviderType {
 }
 
 // ============================================================================
+// PROMPT CACHING
+// ============================================================================
+
+/**
+ * Get providerOptions to enable Anthropic prompt caching on a system message.
+ *
+ * Returns `{ anthropic: { cacheControl: { type: 'ephemeral' } } }` for
+ * Anthropic providers, enabling the 5-min prompt cache (90% discount on
+ * cached input tokens). Returns undefined for non-Anthropic providers.
+ *
+ * Usage: Add to system messages in generateText() calls:
+ *   { role: "system", content: prompt, providerOptions: getPromptCachingOptions(provider) }
+ */
+export function getPromptCachingOptions(
+  provider?: string,
+): { anthropic: { cacheControl: { type: string } } } | undefined {
+  const p = (provider || "anthropic").toLowerCase();
+  if (p !== "anthropic" && p !== "claude") return undefined;
+  return {
+    anthropic: { cacheControl: { type: "ephemeral" } },
+  };
+}
+
+// ============================================================================
 // UTILITY
 // ============================================================================
 

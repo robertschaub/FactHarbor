@@ -1,7 +1,7 @@
 # Storage, Database & Caching Strategy
 
 **Date**: February 2026
-**Status**: DISCUSSION DRAFT — For review and decision-making
+**Status**: 🧭 PARTIALLY APPROVED — DEFER decisions agreed (Redis, Vector DB); ADD decisions pending (URL cache, claim cache, PostgreSQL for Alpha)
 **Purpose**: Re-evaluate the caching and database strategy given current implementation reality
 
 ---

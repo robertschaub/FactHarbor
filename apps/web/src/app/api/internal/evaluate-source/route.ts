@@ -22,6 +22,7 @@ import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
 import { debugLog } from "@/lib/analyzer/debug";
+import { getPromptCachingOptions } from "@/lib/analyzer/llm";
 import { loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import { getConfig } from "@/lib/config-storage";
@@ -2309,7 +2310,8 @@ async function evaluateWithModel(
 (5) Self-published pages (source's own website) do NOT count as independent assessments.
 (6) Default to insufficient_data when evidence is sparse (confidence < 0.50).
 (7) Separate political bias from accuracy - bias alone does not reduce score.
-Always respond with valid JSON only.`
+Always respond with valid JSON only.`,
+          providerOptions: getPromptCachingOptions(modelProvider),
         },
         { role: "user", content: prompt },
       ],

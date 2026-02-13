@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-13
-**Status**: Cleaned up - Historical work moved to ARCHIVE
+**Last Updated**: 2026-02-13 (WIP Consolidation)
+**Status**: Consolidated — 7 files archived, 8 updated, 9 kept active (16 files remain)
 
 ---
 
@@ -49,13 +49,6 @@ For completed work, historical documents, and reference materials, see:
 - 🧭 Unique sources vs evidence count in agreement
 
 **Related:** Docs/ARCHITECTURE/Calculations.md, Docs/ARCHITECTURE/Evidence_Quality_Filtering.md
-
-### Generic Evidence Quality Principles
-**Status:** 🧭 PROPOSED — Awaiting Implementation
-- **Document:** [Generic_Evidence_Quality_Principles.md](Generic_Evidence_Quality_Principles.md)
-- **Type:** Quality Improvement / Principles
-- **Scope:** Evidence source classification, probativeValue enforcement, jurisdiction relevance
-- **Origin:** Extracted from Bolsonaro analysis investigation (archived)
 
 ### Shadow Mode: Self-Learning Prompt Optimization System
 **Status:** 🔬 Design Ready (Awaiting Prioritization)
@@ -105,30 +98,76 @@ For completed work, historical documents, and reference materials, see:
 - **Type:** Quality Improvement Plan
 - **Scope:** Opinion filtering, search quality, verdict accuracy, evidence quality controls
 
-### Reporting Improvement Exchange (2026-02-07)
-**Status:** 🔧 ACTIVE — Paired programming exchange
-- **Document:** [Reporting_Improvement_Exchange.md](Reporting_Improvement_Exchange.md)
-- **Type:** Working Exchange Document
-- **Scope:** Model strategy, LLM tiering, verdict accuracy, validation protocol
-
 ### Documentation Cleanup Plan (2026-02-07)
 **Status:** ✅ APPROVED — Consolidated for execution
 - **Document:** [Documentation_Cleanup_Plan.md](Documentation_Cleanup_Plan.md)
 - **Type:** Cleanup Plan
 - **Scope:** .md + xWiki terminology, phase label, and accuracy updates
 
-### Quality Issues Investigation & Implementation (2026-02-12)
+### Quality Issues Implementation (2026-02-12)
 **Status:** 🔧 IN PROGRESS — Steps 1-4 complete, Step 5 pending
 - **Documents:**
-  - [Quality Issues Investigations and Plan.md](Quality%20Issues%20Investigations%20and%20Plan.md)
   - [Quality_Issues_Consolidated_Implementation_Plan.md](Quality_Issues_Consolidated_Implementation_Plan.md)
   - [Consolidated_Report_Quality_Execution_Plan.md](Consolidated_Report_Quality_Execution_Plan.md)
+- **Investigation:** [Archived](../ARCHIVE/Quality%20Issues%20Investigations%20and%20Plan.md) (raw multi-agent findings; synthesized into plans above)
+- **Related:** [Pipeline_Quality_Investigation_2026-02-13.md](Pipeline_Quality_Investigation_2026-02-13.md) (includes 2026-02-13 addendum on quick-mode contradiction-search starvation + single-context enrichment gaps)
+- **Related:** [Phase4_Context_ID_Stability_Handoff.md](Phase4_Context_ID_Stability_Handoff.md) (Phase 4 implemented; includes same 2026-02-13 regression note)
 - **Type:** Quality Improvement Implementation
 - **Scope:** Classification fallbacks, grounding check (LLM-powered), direction validation (LLM-powered), degraded mode handling
 - **Completed:**
   - ✅ Steps 1-3: Code fixes, prompt alignment, schema enforcement
   - ✅ Step 4: LLM-powered grounding adjudication + direction validation with degraded mode
 - **Remaining:** Step 5: Telemetry gates, regression tests, deprecation notices
+
+### Efficient LLM Intelligence Migration (2026-02-12)
+**Status:** 🔧 IN PROGRESS — Phase 0 mostly done, Phases 1-4 pending
+- **Document:** [Efficient_LLM_Intelligence_Migration_Plan.md](Efficient_LLM_Intelligence_Migration_Plan.md)
+- **Type:** Architecture / AGENTS.md Compliance
+- **Scope:** Migrate 19 deterministic text-analysis functions to LLM-powered decisions
+- **Completed:** ✅ Phase 0 inventory, P0 `inferContextTypeLabel` removed, dead code deleted
+- **Remaining:** Phases 1-4 (service foundation + 19 function migrations)
+
+### Jaccard Similarity AGENTS Violations v2 (2026-02-12)
+**Status:** 🔧 IN PROGRESS — Phase 1 complete, Phases 2-4 pending
+- **Document:** [Jaccard_Similarity_AGENTS_Violations_v2.md](Jaccard_Similarity_AGENTS_Violations_v2.md)
+- **Type:** AGENTS.md Compliance / Code Quality
+- **Scope:** Replace deterministic Jaccard similarity fallbacks with LLM-only paths
+- **Completed:** ✅ Phase 1 (assessTextSimilarityBatch — 14/14 tests)
+- **Remaining:** Phase 2 (evidence dedup), Phase 3 (context canonicalization), Phase 4 (inverse query)
+
+### LLM Call Optimization Goals (2026-02-12)
+**Status:** ✅ APPROVED — Awaiting Phase Execution Plan
+- **Document:** [LLM_Call_Optimization_Goals_Proposal.md](LLM_Call_Optimization_Goals_Proposal.md)
+- **Type:** Cost Optimization / Framework
+- **Scope:** Decision framework for LLM cost/latency/quality trade-offs; P2 Balanced path approved by Senior Architect
+- **Related:** [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md) (pricing/infrastructure-level savings)
+
+### LLM Prompt Improvement Plan (2026-02-10)
+**Status:** 🧭 NOT STARTED — Phases A+B ready to execute
+- **Document:** [LLM_Prompt_Improvement_Plan.md](LLM_Prompt_Improvement_Plan.md)
+- **Type:** Quality Improvement / Anti-Hallucination
+- **Scope:** Phase A: 6 zero-cost prompt edits; Phase B: 3 low-cost post-processing additions
+- **Related:** [Anti_Hallucination_Strategies.md](Anti_Hallucination_Strategies.md)
+
+### Anti-Hallucination Strategies (Reference)
+**Status:** ✅ Research Complete — P0-P3 measures awaiting execution
+- **Document:** [Anti_Hallucination_Strategies.md](Anti_Hallucination_Strategies.md)
+- **Type:** Reference / Strategy
+- **Scope:** Risk matrix (R1-R10), mitigation measures (M1-M10) with cost/priority mapping
+- **Quick Wins:** M1 (negative prompting) + M4 (evidence-over-priors) are P0 zero-cost prompt edits
+
+### Pipeline Phase 2 Plan
+**Status:** 🧭 PLANNING — Awaiting Phase 1 stabilization
+- **Document:** [Pipeline_Phase2_Plan.md](Pipeline_Phase2_Plan.md)
+- **Type:** Architecture / Enhancement
+- **Scope:** Context-parallel research, adaptive budgets, evidence dedup, LLM counter-queries
+
+### QA Review Findings (2026-02-12)
+**Status:** 🧭 NOT ACTIONED — Findings ready for execution
+- **Document:** [QA_Review_Findings_2026-02-12.md](QA_Review_Findings_2026-02-12.md)
+- **Type:** Code Quality / Audit
+- **Scope:** Priority 1: 879 lines dead code removal; Priority 2: config migration to UCM
+- **Referenced in:** [Backlog.md](../STATUS/Backlog.md) (Dead Code Removal, Config Migration)
 
 ---
 
@@ -140,11 +179,7 @@ Completed work has been moved to **[Docs/ARCHIVE/](../ARCHIVE/)**. See also `Doc
 
 ## Current Development Backlog
 
-For active development work items (P1-P3 priorities), see **[Docs/BACKLOG.md](../BACKLOG.md)**:
-
-**P1 (High)**: Edge Case Test Coverage (4-6 hours)
-**P2 (Medium)**: Classification Monitoring System (3-4 hours)
-**P3 (Low)**: Confidence Scoring System, Documentation Improvements
+For active development work items, see **[Docs/STATUS/Backlog.md](../STATUS/Backlog.md)**.
 
 ---
 
@@ -170,6 +205,28 @@ When adding new work to this folder:
 ---
 
 ## Cleanup History
+
+**2026-02-13 (WIP Trimming)**: Removed obsolete detail from 5 heavily-bloated partially-done files
+- Quality_Issues_Consolidated_Implementation_Plan.md: 659 → 58 lines (collapsed completed Steps 1-4)
+- Jaccard_Similarity_AGENTS_Violations_v2.md: 354 → 60 lines (collapsed completed Phase 1)
+- Efficient_LLM_Intelligence_Migration_Plan.md: 574 → 99 lines (collapsed completed reviews and resolved items)
+- Consolidated_Report_Quality_Execution_Plan.md: 247 → 83 lines (collapsed completed enforcement sections)
+- Generic Evidence Quality Enhancement Plan.md: 1960 → 127 lines (collapsed 15 session histories and resolved solutions)
+- Checked remaining 11 files: lean enough (no significant done/resolved bloat)
+
+**2026-02-13 (WIP Consolidation)**: Full audit per Consolidate WIP Procedure (AGENTS.md)
+- Archived 7 files:
+  - Phase1_Implementation_Plan.md (DONE — Jaccard Phase 1 fully implemented)
+  - Jaccard_Similarity_AGENTS_Violations.md v1 (SUPERSEDED by v2)
+  - Quality Issues Investigations and Plan.md (SUPERSEDED by Consolidated Implementation Plan)
+  - WIP_Documentation_Audit_2026-02-12.md (DONE — actions executed; "Triple-Path" refs added to Backlog)
+  - POC_Approval_Readiness_Assessment_2026-02-07.md (STALE — findings in Current_Status known issues)
+  - Reporting_Improvement_Exchange.md (DONE — 30 sessions complete)
+  - Generic_Evidence_Quality_Principles.md (DONE — all 5 principles implemented in codebase)
+- Updated 8 partially-done files with completion markers
+- Added 7 unlisted files to this README
+- Added "Triple-Path" doc reference cleanup to Backlog
+- Cross-checked Generic_Evidence_Quality_Principles: all 5 implemented (opinion filter, knowledge cutoff, sourceType, jurisdiction, probativeValue)
 
 **2026-02-13**: Archived completed report-quality investigation documents
 - Moved 3 completed documents to ARCHIVE:
@@ -209,6 +266,8 @@ When adding new work to this folder:
 - ❌ Meeting notes (use appropriate location)
 
 **Keep WIP lean**: If a document hasn't been referenced in 3 months and isn't blocking a decision, consider archiving it.
+
+**Consolidate WIP**: When the Captain requests a WIP consolidation, agents follow the **Consolidate WIP Procedure** defined in `/AGENTS.md` § "Consolidate WIP Procedure". This is an interactive process — agents audit each file, sync status docs, archive completed work, and report findings for Captain approval.
 
 ---
 

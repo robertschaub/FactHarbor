@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-13
+**Last Updated**: 2026-02-13 (WIP Consolidation)
 
 ---
 
@@ -54,6 +54,19 @@ The following documents had valuable content extracted and merged into active do
 4. `Analysis_Quality_Issues_2026-02-13.md`
 5. `Report_Issues_Review_and_Fix_Plan_2026-02-13.md`
 6. `Phase2_Prompt_Approval_Patch_2026-02-13.md`
+
+### WIP Consolidation (2026-02-13)
+
+**Description**: Documents archived during WIP consolidation — completed proposals, superseded reports, and historical working documents.
+
+**Files**:
+1. `Phase1_Implementation_Plan.md` - Jaccard Phase 1 implementation spec (DONE — 14/14 tests, all items complete; tracked in Jaccard v2)
+2. `Jaccard_Similarity_AGENTS_Violations.md` - v1 violations report (SUPERSEDED — replaced by v2 after reviewer corrections)
+3. `Quality Issues Investigations and Plan.md` - Multi-agent raw investigation findings (SUPERSEDED — synthesized into Quality_Issues_Consolidated_Implementation_Plan.md)
+4. `WIP_Documentation_Audit_2026-02-12.md` - WIP cleanup audit (DONE — actions executed in Feb 12-13 cleanups; remaining "Triple-Path" refs added to Backlog)
+5. `POC_Approval_Readiness_Assessment_2026-02-07.md` - POC readiness snapshot from Feb 7 (STALE — findings captured in Current_Status.md known issues)
+6. `Reporting_Improvement_Exchange.md` - 30-session paired-programming exchange log (DONE — all sessions complete; outcomes reflected in code and status docs)
+7. `Generic_Evidence_Quality_Principles.md` - 5 evidence quality principles (DONE — all 5 principles implemented in evidence-filter.ts, types.ts, prompts, orchestrated.ts)
 
 ### Source Reliability Service Reviews
 
@@ -119,5 +132,5 @@ If you need to reference archived documents:
 ---
 
 **Archive Maintainer**: Plan Coordinator
-**Last Review**: 2026-02-02
+**Last Review**: 2026-02-13 (WIP Consolidation)
 **Next Review**: Quarterly (or when major features complete)

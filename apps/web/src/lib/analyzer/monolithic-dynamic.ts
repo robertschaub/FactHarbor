@@ -16,7 +16,7 @@
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getModel, getModelForTask, getStructuredOutputProviderOptions } from "./llm";
+import { getModel, getModelForTask, getStructuredOutputProviderOptions, getPromptCachingOptions } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { filterEvidenceByProvenance } from "./provenance-validation";
@@ -327,6 +327,7 @@ export async function runMonolithicDynamic(
       {
         role: "system",
         content: planPrompt,
+        providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider),
       },
       { role: "user", content: textToAnalyze },
     ],
@@ -486,6 +487,7 @@ export async function runMonolithicDynamic(
       {
         role: "system",
         content: dynamicAnalysisPrompt,
+        providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider),
       },
       {
         role: "user",

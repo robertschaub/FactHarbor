@@ -15,7 +15,7 @@ import {
 } from "./config";
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import { getModelForTask, extractStructuredOutput, getStructuredOutputProviderOptions } from "./llm";
+import { getModelForTask, extractStructuredOutput, getStructuredOutputProviderOptions, getPromptCachingOptions } from "./llm";
 import { getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
 import { loadAndRenderSection } from "./prompt-loader";
@@ -162,7 +162,7 @@ export async function detectContextsLLM(
     const result = await generateText({
       model: modelInfo.model,
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPrompt, providerOptions: getPromptCachingOptions(config.llmProvider) },
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.2, config),
