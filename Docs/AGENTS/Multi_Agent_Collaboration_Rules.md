@@ -479,6 +479,8 @@ When activated in a role, use this table to identify which areas are within your
 ## 3. Workflow Patterns
 
 > **Usage:** The 5-phase workflow below is active for complex or risky tasks. For simple changes, use the Quick Fix Workflow (3.2).
+>
+> **Pre-task fitness check:** Before starting any workflow, every agent must verify that their current role and LLM model tier are appropriate for the task. If not, inform the Captain and propose a better fit. See the Agent Handoff Protocol in `/AGENTS.md` and Model-Class Guidelines in §6.
 
 ### 3.1 Standard Feature Workflow
 

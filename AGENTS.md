@@ -168,7 +168,8 @@ Preserve existing syntax when editing. Full rules: `Docs/AGENTS/GlobalMasterKnow
 When starting any new task, every agent MUST:
 
 1. **Assess fit**: Is this task best suited for the current agent/tool, or would another be more effective?
-2. **Recommend if not**: Tell the user which agent/tool to use, why, what context it needs (files to read, decisions already made), and any work completed so far.
+2. **Check role and model**: Identify your current role and underlying LLM model. If either is a poor match for the task (e.g., a lightweight model assigned deep architectural reasoning, or a Technical Writer role asked to implement code), inform the Captain and propose a better-suited role, model tier, or both. Reference the Model-Class Guidelines in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6 for tier strengths.
+3. **Recommend if not**: Tell the user which agent/tool to use, why, what context it needs (files to read, decisions already made), and any work completed so far.
 
 ### Role Activation Protocol
 
