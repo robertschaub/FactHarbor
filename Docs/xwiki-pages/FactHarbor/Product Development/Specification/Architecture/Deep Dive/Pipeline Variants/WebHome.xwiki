@@ -3,7 +3,7 @@
 {{info}}
 **Developer Reference** — Twin-path pipeline architecture: the two selectable analysis variants, their shared primitives, invariants, result model, and configuration.
 
-**Key Files**: ##orchestrated.ts##, ##monolithic-dynamic.ts##
+**Key Files**: ##orchestrated.ts##, ##monolithic-dynamic.ts##, ##apps/web/prompts/orchestrated.prompt.md##, ##apps/web/prompts/monolithic-dynamic.prompt.md##
 {{/info}}
 
 == Architecture Overview ==
@@ -59,7 +59,7 @@ flowchart TD
 
 == Monolithic Dynamic Internals ==
 
-Internal execution flow, budget constraints, safety contract, and output schema of the Monolithic Dynamic pipeline:
+System and user prompts are loaded from UCM database via ##loadAndRenderSection()## from ##apps/web/prompts/monolithic-dynamic.prompt.md##. Provider-specific structured output sections (##STRUCTURED_OUTPUT_ANTHROPIC##, etc.) are dynamically selected based on the detected LLM provider. Internal execution flow, budget constraints, safety contract, and output schema:
 
 {{include reference="FactHarbor.Product Development.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome"/}}
 

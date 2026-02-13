@@ -2,7 +2,7 @@
 
 **Version**: Pre-release (targeting v1.0)
 **Last Updated**: 2026-02-13
-**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled + Phase 2a Refactoring + Report Quality Hardening + Cost Optimization)
+**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Externalization v2.8.2 + LLM Tiering Enabled + Phase 2a Refactoring + Report Quality Hardening + Cost Optimization)
 
 ---
 
@@ -328,6 +328,25 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 ---
 
 ## Recent Changes
+
+### 2026-02-13 Prompt Externalization to UCM (v2.8.2)
+**Status: ✅ Complete**
+
+All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant with AGENTS.md String Usage Boundary ("All text that goes into LLM prompts must be managed in UCM, not hardcoded inline in code").
+
+**Changes:**
+- Monolithic-dynamic system prompts externalized from `buildPrompt()` to `loadAndRenderSection()` (branch: `feat/monolithic-dynamic-prompt-externalization`)
+- Orchestrated search relevance mode instructions moved from inline code to prompt file sections (commit ef2def6)
+- 4 provider-specific structured output sections added to `monolithic-dynamic.prompt.md`
+- Bug fix: changed `## JSON OUTPUT REQUIREMENTS` sub-headings to `###` (level-2 headers were being parsed as separate sections)
+- TypeScript prompt modules under `apps/web/src/lib/analyzer/prompts/` retained for `prompt-testing.ts` harness only
+- 27 new CI-safe tests validating prompt file structure and content
+- Documentation updated: `Docs/ARCHITECTURE/Prompt_Architecture.md`, xWiki Prompt Architecture, Pipeline Variants
+
+**Impact:**
+- Both orchestrated and monolithic-dynamic pipelines now load all prompts from UCM
+- Prompts are admin-configurable via Admin UI without code changes
+- `buildPrompt()` and related TS modules are no longer called from any production pipeline
 
 ### 2026-02-13 Report Quality Hardening (Phase 1 + Phase 2)
 **Status: ✅ Implemented**
@@ -870,4 +889,4 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 
 **Last Updated**: February 13, 2026
 **Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 + Report Quality Hardening (Phase 1/2) + Cost Optimization
+**Document Status**: Reflects UCM Integration + Prompt Externalization v2.8.2 + Report Quality Hardening (Phase 1/2) + Cost Optimization

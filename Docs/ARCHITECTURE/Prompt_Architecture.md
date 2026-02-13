@@ -1,154 +1,139 @@
 # Prompt Architecture
 
-**Version**: 2.8.1
-**Last Updated**: February 5, 2026
+**Version**: 2.8.2
+**Last Updated**: February 13, 2026
 **Audience**: Developers, Prompt Engineers
-**Purpose**: Document the modular prompt composition system used across all pipelines
+**Purpose**: Document the prompt management system used across all pipelines
 
 ---
 
 ## Overview
 
-FactHarbor uses a modular prompt architecture that separates:
+FactHarbor uses **UCM-managed prompt files** (`.prompt.md`) as the single source of truth for all LLM prompts at runtime. Per AGENTS.md String Usage Boundary, all text that goes into LLM prompts must be UCM-managed, not hardcoded in TypeScript.
 
-1. **Base prompts** - Task-specific instructions (understand, extract facts, verdict)
-2. **Provider variants** - LLM-specific optimizations (Claude, GPT, Gemini, Mistral)
-3. **Configuration adaptations** - Runtime adjustments (fast-tier models, knowledge mode)
+### Runtime Architecture (Production)
 
-This separation ensures:
-- Consistent behavior across pipelines
-- Provider-specific optimizations without code duplication
-- Easy maintenance and testing of prompt components
+Both pipelines load prompts via `loadAndRenderSection()` from UCM-managed `.prompt.md` files:
+
+1. **Section-based prompts** — Each `.prompt.md` file contains named sections (`## SECTION_NAME`) with variable substitution (`${variableName}`)
+2. **Provider-specific structured output** — Separate sections per provider (e.g., `STRUCTURED_OUTPUT_ANTHROPIC`)
+3. **UCM database backing** — Prompt files are seeded into SQLite config DB on first use and can be edited via Admin UI
+
+### Legacy Testing Harness (Test-Only)
+
+A separate TypeScript prompt composition system exists under `apps/web/src/lib/analyzer/prompts/` but is **only used by the `prompt-testing.ts` test harness**. It is NOT called by any production pipeline.
 
 ---
 
 ## Directory Structure
 
+### Runtime Prompts (UCM-Managed)
+
 ```
-apps/web/src/lib/analyzer/prompts/
-├── prompt-builder.ts              # Central builder that composes prompts
-├── OUTPUT_SCHEMAS.md              # Centralized JSON schema reference (v2.10.2)
-│
-├── base/                          # Task-specific base prompts
-│   ├── understand-base.ts         # Claim understanding (shared)
-│   ├── extract-evidence-base.ts   # Evidence extraction (shared)
-│   ├── verdict-base.ts            # Verdict generation (shared)
-│   ├── scope-refinement-base.ts   # Context refinement (shared)
-│   ├── dynamic-plan-base.ts       # Dynamic pipeline planning
-│   ├── dynamic-analysis-base.ts   # Dynamic pipeline analysis
-│   ├── orchestrated-understand.ts # Orchestrated pipeline understanding
-│   └── orchestrated-supplemental.ts # Supplemental claims/contexts
-│
-├── providers/                     # LLM provider-specific variants
-│   ├── anthropic.ts              # Claude optimizations
-│   ├── openai.ts                 # GPT optimizations
-│   ├── google.ts                 # Gemini optimizations
-│   └── mistral.ts                # Mistral optimizations
-│
-└── config-adaptations/            # Configuration-based adaptations
-    ├── tiering.ts                # Fast-tier model simplifications
-    ├── knowledge-mode.ts         # Model knowledge on/off
-    └── structured-output.ts      # Output format guidance
+apps/web/prompts/
+├── orchestrated.prompt.md          # Orchestrated pipeline prompts (all sections)
+├── monolithic-dynamic.prompt.md    # Monolithic Dynamic pipeline prompts
+├── source-reliability.prompt.md    # Source reliability evaluation prompts
+└── text-analysis/                  # LLM text analysis pipeline prompts
+    ├── *.prompt.md
+    └── README.md
+```
+
+Each `.prompt.md` file has YAML frontmatter (version, pipeline, variables, requiredSections) followed by `## SECTION_NAME` headers with prompt content. The `loadAndRenderSection(pipeline, sectionName, variables)` function extracts and renders sections with variable substitution.
+
+### Testing Harness (TypeScript, Not Used in Production)
+
+```
+apps/web/src/lib/analyzer/prompts/  # TESTING HARNESS ONLY — not used at runtime
+├── prompt-builder.ts              # Composition engine (testing only)
+├── prompt-testing.ts              # Testing utilities
+├── OUTPUT_SCHEMAS.md              # Schema documentation
+├── base/                          # Task-specific base prompts (testing only)
+├── providers/                     # LLM-specific variants (testing only)
+└── config-adaptations/            # Configuration adaptations (testing only)
 ```
 
 ---
 
-## Prompt Composition Flow
+## Prompt Loading Flow (Runtime)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        buildPrompt()                             │
+│                   loadAndRenderSection()                         │
 │                                                                  │
 │  Input:                                                          │
-│  ├─ task: 'understand' | 'extract_evidence' | 'verdict' | ...   │
-│  ├─ provider: 'anthropic' | 'openai' | 'google' | 'mistral'     │
-│  ├─ modelName: string                                            │
-│  ├─ config: { allowModelKnowledge, isLLMTiering, isBudgetModel } │
-│  └─ variables: { currentDate, originalClaim, ... }              │
+│  ├─ pipeline: 'orchestrated' | 'monolithic-dynamic' | ...       │
+│  ├─ sectionName: 'DYNAMIC_PLAN' | 'UNDERSTAND' | ...            │
+│  └─ variables: { currentDate, TEXT_TO_ANALYZE, ... }            │
 │                                                                  │
-│  Composition:                                                    │
+│  Flow:                                                           │
 │  ┌──────────────────┐                                           │
-│  │   Base Prompt    │ ← Task-specific instructions              │
-│  │ (understand-base)│                                           │
+│  │  UCM Database    │ ← Config DB with seeded prompt content    │
+│  │  (config_blobs)  │                                           │
 │  └────────┬─────────┘                                           │
-│           │                                                      │
+│           │ loadPromptConfig()                                   │
 │  ┌────────▼─────────┐                                           │
-│  │ Provider Variant │ ← LLM-specific optimizations              │
-│  │   (anthropic)    │                                           │
+│  │  Parse Sections  │ ← Extract ## SECTION_NAME headers         │
+│  │  (extractSections)│                                           │
 │  └────────┬─────────┘                                           │
-│           │                                                      │
+│           │ renderSection()                                      │
 │  ┌────────▼─────────┐                                           │
-│  │ Config Adaptations│ ← Fast-tier model, knowledge mode        │
-│  │   (tiering)      │                                           │
+│  │ Variable Subst.  │ ← Replace ${currentDate}, etc.            │
 │  └────────┬─────────┘                                           │
 │           │                                                      │
 │           ▼                                                      │
-│     Final Prompt                                                 │
+│     Rendered Prompt Section                                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+Provider-specific structured output is loaded as a separate section (e.g., `STRUCTURED_OUTPUT_ANTHROPIC`) and concatenated to the main prompt.
+
+---
+
+## Pipeline Prompt Sections
+
+### Monolithic Dynamic Pipeline (`monolithic-dynamic.prompt.md`)
+
+| Section | Purpose | Variables |
+|---------|---------|-----------|
+| `DYNAMIC_PLAN` | System prompt for planning/research phase | `${currentDate}` |
+| `DYNAMIC_ANALYSIS` | System prompt for analysis/verdict phase | `${currentDate}` |
+| `DYNAMIC_ANALYSIS_USER` | User message template with input + sources | `${TEXT_TO_ANALYZE}`, `${SOURCE_SUMMARY}` |
+| `STRUCTURED_OUTPUT_ANTHROPIC` | JSON output guidance for Claude | (none) |
+| `STRUCTURED_OUTPUT_OPENAI` | JSON output guidance for GPT | (none) |
+| `STRUCTURED_OUTPUT_GOOGLE` | JSON output guidance for Gemini | (none) |
+| `STRUCTURED_OUTPUT_MISTRAL` | JSON output guidance for Mistral | (none) |
+
+### Orchestrated Pipeline (`orchestrated.prompt.md`)
+
+Uses many more sections — see the prompt file for the complete list. Key sections include `UNDERSTAND`, `EXTRACT_EVIDENCE`, `VERDICT`, `CONTEXT_REFINEMENT`, `SEARCH_RELEVANCE_*`, etc.
 
 ---
 
 ## Provider-Specific Optimizations
 
-### Anthropic (Claude)
-
-- **XML-structured prompts** - Claude excels with XML tags for clarity
-- **Format-only variants** - Content guidance stays in base prompts
-- **Output structure hints** - JSON validity and empty-string rules
-- **Nuanced reasoning** - Trust judgment on complex assessments
+Provider-specific structured output guidance is embedded as named sections in each `.prompt.md` file. The pipeline code dynamically selects the right section based on the detected provider:
 
 ```typescript
-// Example: Claude-optimized prompt structure (format-only)
-<claude_optimization>
-## FORMAT
-Use XML tags. Follow schema precisely.
-
-## OUTPUT
-- Valid JSON matching schema
-- Empty strings "" for missing optional fields
-- All arrays as arrays (even if empty)
-
-## STRENGTHS
-Apply nuanced reasoning. Be direct and confident.
-</claude_optimization>
+const provider = detectProvider(model.modelName);  // "anthropic" | "openai" | "google" | "mistral"
+const section = `STRUCTURED_OUTPUT_${provider.toUpperCase()}`;
+const rendered = await loadAndRenderSection("monolithic-dynamic", section, {});
 ```
 
-### OpenAI (GPT)
+### Anthropic (Claude)
+- JSON format rules (valid JSON, empty strings, no null)
+- Field validation (id formats, enum values, boolean/number types)
 
-- **Step-by-step instructions** - Sequential numbered steps
-- **Format examples** - Concrete output examples
-- **System/user separation** - Clear role delineation
-- **JSON mode guidance** - Explicit JSON formatting instructions
+### OpenAI (GPT)
+- Field completeness (all required fields even if empty)
+- Common GPT errors to avoid (omitting fields, null vs "", casing)
 
 ### Google (Gemini)
-
-- **Concise prompts** - Gemini prefers brevity
-- **Grounded references** - Citation format guidance
-- **Multi-turn context** - Conversation history handling
-- **Safety guidance** - Content policy alignment
+- Length enforcement (verify field limits before output)
+- No explanatory text outside JSON structure
 
 ### Mistral
-
-- **Structured brevity** - Short, direct instructions
-- **Output templates** - Clear structure expectations
-- **French language awareness** - Better multilingual support
-
----
-
-## Task Types
-
-| Task | Pipeline(s) | Base Prompt File |
-|------|-------------|------------------|
-| `understand` | Orchestrated | `understand-base.ts` |
-| `extract_evidence` | Orchestrated | `extract-evidence-base.ts` |
-| `verdict` | Orchestrated | `verdict-base.ts` |
-| `context_refinement` | Orchestrated | `context-refinement-base.ts` |
-| `dynamic_plan` | Dynamic | `dynamic-plan-base.ts` |
-| `dynamic_analysis` | Dynamic | `dynamic-analysis-base.ts` |
-| `orchestrated_understand` | Orchestrated | `orchestrated-understand.ts` |
-| `supplemental_claims` | Orchestrated | `orchestrated-supplemental.ts` |
-| `supplemental_contexts` | Orchestrated | `orchestrated-supplemental.ts` |
+- Validation checklist format (field types, presence)
 
 ---
 
@@ -177,45 +162,51 @@ For fast-tier models (Haiku, Mini, Flash):
 ## Usage Example
 
 ```typescript
-import { buildPrompt, detectProvider } from './prompts/prompt-builder';
+import { loadAndRenderSection } from './prompt-loader';
+import { detectProvider } from './prompts/prompt-builder';
 
-// In a pipeline:
-const understandPrompt = buildPrompt({
-  task: 'understand',
-  provider: detectProvider(model.modelId),  // Auto-detect from model ID
-  modelName: model.modelId,
-  config: {
-    allowModelKnowledge: false,
-    isLLMTiering: true,
-    isBudgetModel: model.modelId.includes('haiku'),
-  },
-  variables: {
-    currentDate: new Date().toISOString().split('T')[0],
-    originalClaim: userInput,
-  },
+// Runtime prompt loading (production):
+const currentDate = new Date().toISOString().split('T')[0];
+const provider = detectProvider(model.modelName);
+
+const rendered = await loadAndRenderSection("monolithic-dynamic", "DYNAMIC_PLAN", {
+  currentDate,
 });
+const structuredOutput = await loadAndRenderSection(
+  "monolithic-dynamic",
+  `STRUCTURED_OUTPUT_${provider.toUpperCase()}`,
+  {},
+);
+const systemPrompt = rendered.content + (structuredOutput?.content || "");
 ```
 
 ---
 
-## Adding New Provider Support
+## Adding a New Provider
 
-1. Create `providers/newprovider.ts` with variant functions:
-   ```typescript
-   export function getNewProviderUnderstandVariant(): string { ... }
-   export function getNewProviderExtractFactsVariant(): string { ... }
-   export function getNewProviderVerdictVariant(): string { ... }
-   ```
-
-2. Add imports and cases to `prompt-builder.ts`
-
-3. Update `detectProvider()` to recognize new model IDs
-
-4. Test with prompt optimization tests in `prompt-optimization.test.ts`
+1. Add a `STRUCTURED_OUTPUT_NEWPROVIDER` section to the relevant `.prompt.md` files
+2. Update `detectProvider()` in `prompt-builder.ts` to recognize new model IDs
+3. Update `isBudgetModel()` if the provider has fast-tier models
+4. Test with `prompt-optimization.test.ts` and `monolithic-dynamic-prompt.test.ts`
 
 ---
 
 ## Prompt Content Improvements
+
+### v2.8.2: Prompt Externalization to UCM (Feb 13, 2026)
+
+**Achievement**: All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant with AGENTS.md String Usage Boundary.
+
+**Changes**:
+- Monolithic-dynamic system prompts moved from `buildPrompt()` → `loadAndRenderSection()` (commit 0d05947)
+- Orchestrated search relevance mode instructions moved from inline code → prompt file sections (commit ef2def6)
+- 4 provider-specific structured output sections added to `monolithic-dynamic.prompt.md`
+- TypeScript prompt modules under `prompts/` retained for testing harness only
+
+**Impact**:
+- All LLM prompt text is now admin-configurable via UCM without code changes
+- Both orchestrated and monolithic-dynamic pipelines load prompts from UCM database
+- 27 new CI-safe tests validate prompt file structure and content
 
 ### v2.8.0: Token Optimization - Estimated 20-30% Reduction (Feb 3, 2026)
 
@@ -233,28 +224,11 @@ const understandPrompt = buildPrompt({
 - **Additional token savings**: ~230 tokens per prompt (estimated 5-10% reduction)
 - **Cumulative reduction**: estimated 20-30% across all prompts
 
-**Files Modified**:
-- **Provider variants** (Phase 1): `providers/{anthropic,openai,google,mistral}.ts`
-- **Base prompts** (Phase 1): `base/{understand-base,scope-refinement-base,extract-facts-base,orchestrated-understand}.ts`
-- **Condensed content** (Phase 2): `base/{understand-base,orchestrated-understand}.ts`
-
 **Critical Guidance Preserved**:
 - Death/injury claims = MANDATORY HIGH centrality
 - Attribution/source/timing = LOW centrality
 - Incidental temporal mentions ≠ multi-context (unless time IS the subject)
 - Measurement frameworks = distinct analytical boundaries
-
-**Quality Validation**:
-- ✅ Build verification: All code compiles successfully
-- ✅ Manual review: Prompts remain coherent and complete
-- ✅ Test file updated: `prompt-optimization.test.ts`
-- ✅ Quality tests created: `prompt-quality.test.ts`
-
-**Impact**:
-- Estimated LLM API cost reduction of ~20-30% per analysis
-- Faster prompt processing and response times
-- Maintained analytical quality and accuracy
-- Improved prompt readability through condensation
 
 ---
 
@@ -267,22 +241,6 @@ const understandPrompt = buildPrompt({
 **Solution**: Clarified distinction between:
 - **Incidental temporal mentions** (e.g., "in 2020, the court...") - Do NOT create separate contexts
 - **Time period as primary subject** (e.g., "2000s event" vs "1970s event" as distinct historical events) - DO create separate contexts
-
-**Files Updated**:
-- `base/understand-base.ts`
-- `base/scope-refinement-base.ts` (legacy name)
-- `base/orchestrated-understand.ts`
-
-**New Guidance**:
-```
-CRITICAL - Do NOT split for:
-- Incidental temporal mentions (e.g., "in 2020, the court..." - when not central to the claim)
-
-KEEP SEPARATE when ANY of these differ:
-- Time period AS PRIMARY SUBJECT (e.g., "2000s event" vs "1970s event" - comparing distinct historical events) → DISTINCT
-```
-
-This ensures consistent behavior across all three pipelines while preventing both under-splitting (missing genuine temporal contexts) and over-splitting (creating contexts for incidental date mentions).
 
 ---
 
