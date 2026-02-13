@@ -616,6 +616,24 @@ No manual document preparation needed. The Captain simply:
 - The consolidated document is the single source of truth for the downstream reviewer/implementer
 - Agents MUST update their row in the **Participant Tracker** (§4.5) when changing state
 
+#### Decision Authority & Escalation
+
+Decisions during investigation and consolidation follow a tiered authority model based on impact and risk. Escalate upward when the threshold is exceeded.
+
+| Level | Who decides | Scope | Examples |
+|-------|------------|-------|---------|
+| **1 — Lead agent** | The individual agent decides alone | Low impact, easily reversible, within own report | Investigation methodology, which files to analyze, report structure, internal findings |
+| **2 — Agent consent** | Lead agent + one relevant agent agree | Medium impact, affects shared output | Proposing a specific fix approach, recommending a tool/library, flagging a finding as critical |
+| **3 — Agent consensus** | All participating agents agree (via document) | High impact, affects multiple areas | Consolidation priorities, plan phasing, recommending architectural changes, disagreement resolution between agents |
+| **4 — Captain approval** | Captain must explicitly approve | Very high impact, irreversible, or outside investigation scope | Schema migrations, prompt modifications, security-related changes, removing functionality, expanding investigation scope, approving the final plan |
+
+**Escalation rules:**
+- When in doubt, escalate one level up — over-escalating is safer than under-escalating
+- An agent who identifies a Level 4 decision must flag it in **Open Questions** and NOT proceed without Captain approval
+- The consolidator operates at Level 3: they synthesize and structure, but cannot make Level 4 decisions unilaterally
+- Level 2–3 decisions must be documented in the report or consolidated plan with rationale
+- The Captain can override any lower-level decision
+
 #### Captain Commands
 
 The Captain uses these standardized prompts to direct agents. Copy, fill in the blanks, and paste to the agent.
