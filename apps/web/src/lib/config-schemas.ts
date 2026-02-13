@@ -959,6 +959,7 @@ export const CalcConfigSchema = z.object({
   contextRefinement: z.object({
     minAssignmentCoverage: z.number().min(0).max(1),
     maxEvidenceCeiling: z.number().int().min(5).max(20),
+    oldToNewSimilarityThreshold: z.number().min(0).max(1),
   }).optional(),
 
   frameSignal: z.object({
@@ -1083,6 +1084,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   contextRefinement: {
     minAssignmentCoverage: 0.7,
     maxEvidenceCeiling: 8,
+    oldToNewSimilarityThreshold: 0.65,
   },
   frameSignal: {
     nameDistinctnessThreshold: 0.35,

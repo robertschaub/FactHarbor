@@ -1124,6 +1124,7 @@ async function refineContextsFromEvidence(
   // NOTE: Do this BEFORE applying evidenceContextAssignments/claimContextAssignments (or legacy fields)
   // so assignments are mapped consistently.
   let dedupMerged: Map<string, string> | null = null;
+  let oldToNewRemap: Map<string, string> | null = null;
   const dedupEnabled =
     state.pipelineConfig?.contextDedupEnabled ??
     DEFAULT_PIPELINE_CONFIG.contextDedupEnabled;
@@ -1157,14 +1158,65 @@ async function refineContextsFromEvidence(
     }
   }
 
-  // v2.6.38: Validate claim assignments (all claims assigned to existing contexts)
-  const existingContextIds = new Set(state.understanding!.analysisContexts.map(ctx => ctx.id));
-  for (const claim of state.understanding!.subClaims || []) {
-    const claimContextId = String((claim as any).contextId || "");
-    if (claimContextId && !existingContextIds.has(claimContextId)) {
-      debugLog(`âš ï¸ Claim ${claim.id} assigned to non-existent context ${claimContextId}`);
-      // Unassign orphaned claims - they'll be assigned to General or fallback context later
-      (claim as any).contextId = "";
+  // Phase 4b+4c: Batched LLM similarity remap for orphaned old→new context IDs.
+  // Collects IDs referenced by claims/evidence that no longer exist in current contexts,
+  // filters out IDs already resolvable by canon/dedup remaps, then uses LLM similarity
+  // to match remaining orphans to their replacement contexts.
+  {
+    const currentContextIds = new Set(state.understanding!.analysisContexts.map(ctx => ctx.id));
+    const referencedIds = new Set<string>();
+    for (const claim of state.understanding!.subClaims || []) {
+      const cid = String((claim as any).contextId || "");
+      if (cid) referencedIds.add(cid);
+    }
+    for (const item of state.evidenceItems || []) {
+      const cid = String((item as any).contextId || "");
+      if (cid) referencedIds.add(cid);
+    }
+    // Identify truly orphaned IDs: referenced but not in current contexts AND not
+    // resolvable by canon remap or dedup merge.
+    const trulyOrphanedIds: string[] = [];
+    for (const refId of referencedIds) {
+      if (currentContextIds.has(refId)) continue;
+      // Check if canon remap resolves it
+      const canonResolved = remapId(refId);
+      if (canonResolved && currentContextIds.has(canonResolved)) continue;
+      // Check if dedup merge resolves it
+      if (dedupMerged) {
+        let chased = canonResolved || refId;
+        const seen = new Set<string>();
+        while (chased && dedupMerged.has(chased) && !seen.has(chased)) {
+          seen.add(chased);
+          chased = dedupMerged.get(chased)!;
+        }
+        if (currentContextIds.has(chased)) continue;
+      }
+      trulyOrphanedIds.push(refId);
+    }
+    if (trulyOrphanedIds.length > 0) {
+      // Reconstruct orphaned old contexts from preRefineContexts
+      const orphanedOldContexts = preRefineContexts.filter(ctx => trulyOrphanedIds.includes(ctx.id));
+      const similarityThreshold = state.calcConfig?.contextRefinement?.oldToNewSimilarityThreshold ?? 0.65;
+      oldToNewRemap = await buildOldToNewContextRemap(
+        orphanedOldContexts,
+        state.understanding!.analysisContexts,
+        similarityThreshold,
+      );
+      if (oldToNewRemap.size > 0) {
+        const remapResult = applyContextIdRemap(oldToNewRemap, state);
+        debugLog("Phase 4 old\u2192new context remap applied", {
+          orphanedCount: trulyOrphanedIds.length,
+          matchedCount: oldToNewRemap.size,
+          remappedClaims: remapResult.remappedClaims,
+          remappedEvidence: remapResult.remappedEvidence,
+          threshold: similarityThreshold,
+        });
+      } else {
+        debugLog("Phase 4 old\u2192new context remap: no LLM matches found", {
+          orphanedCount: trulyOrphanedIds.length,
+          unmatchedIds: trulyOrphanedIds.slice(0, 8),
+        });
+      }
     }
   }
 
@@ -1182,6 +1234,8 @@ async function refineContextsFromEvidence(
         pid = dedupMerged.get(pid)!;
       }
     }
+    // Phase 4b: Chase old→new remap from LLM similarity matching
+    if (oldToNewRemap?.has(pid)) pid = oldToNewRemap.get(pid)!;
     return pid;
   };
 
@@ -1284,6 +1338,27 @@ async function refineContextsFromEvidence(
   };
 
   ensureContextsCoverAssignments();
+
+  // Phase 4a: Final orphan check — clear truly-orphaned contextIds that survived
+  // all remap layers (canon, dedup, LLM similarity) AND ensureContextsCoverAssignments restoration.
+  // Covers BOTH claims AND evidence items.
+  {
+    const finalContextIds = new Set(state.understanding!.analysisContexts.map(ctx => ctx.id));
+    for (const claim of state.understanding!.subClaims || []) {
+      const cid = String((claim as any).contextId || "");
+      if (cid && !finalContextIds.has(cid)) {
+        debugLog(`Final orphan check: claim ${claim.id} still references non-existent context ${cid}, clearing`);
+        (claim as any).contextId = "";
+      }
+    }
+    for (const item of state.evidenceItems || []) {
+      const cid = String((item as any).contextId || "");
+      if (cid && !finalContextIds.has(cid)) {
+        debugLog(`Final orphan check: evidence ${item.id} still references non-existent context ${cid}, clearing`);
+        (item as any).contextId = "";
+      }
+    }
+  }
 
   // If refinement replaced the original anchor AnalysisContext with unrelated alternatives,
   // recover the anchor deterministically and keep the most input-relevant contexts.
@@ -1999,6 +2074,108 @@ async function assessTextSimilarityBatch(
   }
 
   return resultMap;
+}
+
+/**
+ * Phase 4c: Apply a context ID remap to all contextId carriers in the state.
+ * Updates claims and evidence items. Pure mutation, no LLM calls.
+ */
+function applyContextIdRemap(
+  remap: Map<string, string>,
+  state: {
+    understanding?: { subClaims?: Array<{ contextId?: string; [k: string]: any }> } | null;
+    evidenceItems: Array<{ contextId?: string; [k: string]: any }>;
+  },
+): { remappedClaims: number; remappedEvidence: number } {
+  if (remap.size === 0) return { remappedClaims: 0, remappedEvidence: 0 };
+
+  let remappedClaims = 0;
+  let remappedEvidence = 0;
+
+  for (const claim of state.understanding?.subClaims || []) {
+    const cid = String((claim as any).contextId || "");
+    if (cid && remap.has(cid)) {
+      (claim as any).contextId = remap.get(cid)!;
+      remappedClaims++;
+    }
+  }
+
+  for (const item of state.evidenceItems || []) {
+    const cid = String((item as any).contextId || "");
+    if (cid && remap.has(cid)) {
+      (item as any).contextId = remap.get(cid)!;
+      remappedEvidence++;
+    }
+  }
+
+  return { remappedClaims, remappedEvidence };
+}
+
+/**
+ * Phase 4b: Build a remap from orphaned pre-refinement context IDs to their
+ * best-matching post-refinement context IDs using batched LLM similarity.
+ *
+ * Uses assessTextSimilarityBatch with buildContextDescription (from evidence-context-utils.ts)
+ * to serialize contexts into text for comparison.
+ *
+ * Returns empty map if no orphaned IDs, no matches above threshold, or LLM call fails.
+ */
+async function buildOldToNewContextRemap(
+  orphanedOldContexts: AnalysisContext[],
+  newContexts: AnalysisContext[],
+  similarityThreshold: number = 0.65,
+): Promise<Map<string, string>> {
+  const remap = new Map<string, string>();
+  if (orphanedOldContexts.length === 0 || newContexts.length === 0) return remap;
+
+  // Build cross-product pairs: each orphaned old × each new context
+  const pairs: Array<{ id: string; textA: string; textB: string }> = [];
+  for (const oldCtx of orphanedOldContexts) {
+    const descA = buildContextDescription(oldCtx);
+    if (!descA) continue;
+    for (const newCtx of newContexts) {
+      const descB = buildContextDescription(newCtx);
+      if (!descB) continue;
+      pairs.push({
+        id: `${oldCtx.id}__${newCtx.id}`,
+        textA: descA,
+        textB: descB,
+      });
+    }
+  }
+
+  if (pairs.length === 0) return remap;
+
+  // One batched LLM call (assessTextSimilarityBatch handles chunking at 25, retries, graceful degradation)
+  const scores = await assessTextSimilarityBatch(pairs);
+
+  // For each old context, find the new context with the highest similarity score
+  for (const oldCtx of orphanedOldContexts) {
+    let bestNewId: string | null = null;
+    let bestScore = 0;
+    for (const newCtx of newContexts) {
+      const key = `${oldCtx.id}__${newCtx.id}`;
+      const score = scores.get(key);
+      if (score !== undefined && score >= similarityThreshold && score > bestScore) {
+        bestScore = score;
+        bestNewId = newCtx.id;
+      }
+    }
+    if (bestNewId) {
+      remap.set(oldCtx.id, bestNewId);
+    }
+  }
+
+  if (remap.size > 0) {
+    debugLog("buildOldToNewContextRemap: LLM similarity matches found", {
+      orphanedCount: orphanedOldContexts.length,
+      matchedCount: remap.size,
+      threshold: similarityThreshold,
+      mappings: Array.from(remap.entries()).slice(0, 8),
+    });
+  }
+
+  return remap;
 }
 
 /**
