@@ -923,6 +923,24 @@ Return ONLY a JSON array of numbers (0.0 to 1.0), one per pair. No explanation.
 
 ---
 
+## SEARCH_RELEVANCE_MODE_STRICT
+
+STRICT mode: Result must directly reference the specific institution/court/entity AND the analytical context. Reject results that are about a different institution or unrelated context.
+
+---
+
+## SEARCH_RELEVANCE_MODE_MODERATE
+
+MODERATE mode: Result should reference the entity and relate to the analytical context. Institution match is preferred but not required if the result clearly discusses the same subject matter.
+
+---
+
+## SEARCH_RELEVANCE_MODE_RELAXED
+
+RELAXED mode: Result should be about the same general topic/entity. Accept results with meaningful entity or context overlap.
+
+---
+
 ## SEARCH_RELEVANCE_BATCH_SYSTEM
 
 You assess the relevance of search results to a claim and its AnalysisContexts.

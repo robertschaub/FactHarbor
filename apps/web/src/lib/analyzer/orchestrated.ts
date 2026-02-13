@@ -609,11 +609,13 @@ async function assessSearchRelevanceBatch(
     ? (options.strictInstitutionMatch ? "strict" : "moderate")
     : "relaxed";
 
-  const modeInstructions = mode === "strict"
-    ? "STRICT mode: Result must directly reference the specific institution/court/entity AND the analytical context. Reject results that are about a different institution or unrelated context."
+  const modeSectionName = mode === "strict"
+    ? "SEARCH_RELEVANCE_MODE_STRICT"
     : mode === "moderate"
-      ? "MODERATE mode: Result should reference the entity and relate to the analytical context. Institution match is preferred but not required if the result clearly discusses the same subject matter."
-      : "RELAXED mode: Result should be about the same general topic/entity. Accept results with meaningful entity or context overlap.";
+      ? "SEARCH_RELEVANCE_MODE_MODERATE"
+      : "SEARCH_RELEVANCE_MODE_RELAXED";
+  const renderedMode = await loadAndRenderSection("orchestrated", modeSectionName, {});
+  const modeInstructions = renderedMode?.content?.trim() || `${mode.toUpperCase()} mode`;
 
   const contextSummary = buildRelevanceContextSummary(contexts as AnalysisContext[]);
 
