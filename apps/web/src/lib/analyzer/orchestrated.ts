@@ -9594,9 +9594,19 @@ ${providerPromptHint}`;
           updatedVerdict.reasoning = `[LLM INVERSION CORRECTED] ${cv.reasoning || ""}`;
         }
 
-        // Override harm potential if LLM assessment differs
+        // Override harm potential only for downgrades (high→medium, medium→low) or
+        // upgrades from low. Do NOT unconditionally escalate medium→high — the understand
+        // phase has richer context for initial classification; validation should only correct
+        // clear misclassifications, not inflate based on topic-adjacent keywords.
         if (validation.harmPotential !== cv.harmPotential) {
-          updatedVerdict.harmPotential = validation.harmPotential;
+          const harmRank = { low: 0, medium: 1, high: 2 } as const;
+          const oldRank = harmRank[cv.harmPotential || "medium"];
+          const newRank = harmRank[validation.harmPotential || "medium"];
+          const isDowngrade = newRank < oldRank;
+          const isUpgradeFromLow = oldRank === 0 && newRank > 0;
+          if (isDowngrade || isUpgradeFromLow) {
+            updatedVerdict.harmPotential = validation.harmPotential;
+          }
         }
 
         // Apply counter-claim detection

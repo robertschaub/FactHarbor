@@ -194,12 +194,15 @@ For EACH claim, assess these three attributes (high/medium/low):
 NOTE: Broad institutional claims ARE verifiable (checkWorthiness: HIGH):
 - "The regulator has acted on weak evidence in the past" → Can check documented cases, audits, expert analyses
 
-**2. harmPotential** - Does it impact high-stakes areas?
-- HIGH: Public health, safety, democratic integrity, financial markets, legal outcomes
-- MEDIUM: Affects specific groups or has moderate societal impact
-- LOW: Limited impact, affects few people, low stakes
+**2. harmPotential** - Does the SPECIFIC CLAIM allege direct, severe real-world harm?
+- HIGH: Death, severe injury, serious safety hazards, major fraud/crime allegations
+- MEDIUM: Moderate economic, legal, or reputational impact
+- LOW: Minimal real-world impact (routine updates, low-stakes claims)
 
 IMPORTANT: harmPotential is CLAIM-LEVEL, not topic-level.
+- A claim about energy policy is NOT automatically HIGH just because the topic involves safety
+- Only mark HIGH when the claim ITSELF alleges death, severe injury, or major crime
+- If uncertain, default to MEDIUM (do NOT inflate to HIGH without clear harm)
 
 **3. centrality** - Is it pivotal to the author's argument?
 - HIGH: Core assertion the argument depends on; removing it collapses the narrative

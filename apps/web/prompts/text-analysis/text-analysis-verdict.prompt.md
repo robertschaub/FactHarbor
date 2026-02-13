@@ -59,16 +59,18 @@ Negative reasoning words (reasoning negates the positive claim):
 - Claim says "X has lower efficiency" but reasoning shows positive performance → INVERTED
 
 ### Harm Potential (always check)
-Keywords that indicate HIGH harm potential:
-- Death/injury: die, dies, died, death, dead, kill, killed, fatal, fatality
-- Injury: injury, injuries, harm, harmed, damage, damaged, victim, victims
-- Safety risk: danger, unsafe, risk, threat, hazard
-- Fraud/crime: fraud, crime, corrupt, illegal, stolen, theft
+Assess whether the SPECIFIC CLAIM alleges direct, severe real-world harm.
+Do NOT classify based on topic keywords — classify based on what the claim ITSELF asserts.
 
 Classification:
-- **high**: Contains death/injury claims, safety risks, or fraud accusations
-- **medium**: Default for most claims
-- **low**: Only for explicitly benign/positive claims
+- **high**: The claim ITSELF alleges death, severe injury, serious safety hazards, or major fraud/crime
+- **medium**: Moderate economic, legal, or reputational impact. Default if uncertain.
+- **low**: Minimal real-world impact (routine updates, low-stakes claims)
+
+Examples:
+- "Hydrogen fuel cells can explode under pressure" → HIGH (alleges direct safety hazard)
+- "Hydrogen is less cost-effective than batteries" → MEDIUM (economic comparison, no severe harm alleged)
+- "The report was published in March" → LOW (procedural, no harm)
 
 ### Contestation Detection (always check)
 **Contestation Signals** (look for these keywords):

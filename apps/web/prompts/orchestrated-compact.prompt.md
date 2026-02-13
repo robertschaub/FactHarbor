@@ -73,7 +73,7 @@ ${contextHint}${contextDetectionHint}
 
 **Three attributes** per claim:
 - checkWorthiness: HIGH (verifiable, readers want proof), MEDIUM (verifiable but less challenged), LOW (opinion)
-- harmPotential: HIGH (health/safety/democracy/legal), MEDIUM (affects groups), LOW (limited impact)
+- harmPotential: HIGH (death/severe injury/safety hazards/major fraud), MEDIUM (moderate impact, default if uncertain), LOW (minimal impact)
 - centrality: HIGH (core assertion), MEDIUM (supporting), LOW (peripheral/attribution)
 
 **thesisRelevance**: "direct" (contributes to verdict), "tangential" (displayed but excluded), "irrelevant" (dropped)
