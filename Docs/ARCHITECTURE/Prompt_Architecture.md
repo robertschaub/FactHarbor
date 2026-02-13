@@ -245,6 +245,7 @@ function detectProvider(modelName: string): ProviderType {
 **Impact**:
 - All LLM prompt text is now admin-configurable via UCM without code changes
 - Both orchestrated and monolithic-dynamic pipelines load prompts from UCM database
+- 27 new CI-safe tests validate prompt file structure and content
 
 ### v2.8.0: Token Optimization - Estimated 20-30% Reduction (Feb 3, 2026)
 

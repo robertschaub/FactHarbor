@@ -1,14 +1,20 @@
 ---
-version: "2.6.41"
+version: "2.6.42"
 pipeline: "monolithic-dynamic"
-description: "Monolithic dynamic pipeline base templates for dynamic_plan and dynamic_analysis tasks"
-lastModified: "2026-02-12T18:40:00Z"
+description: "Monolithic dynamic pipeline — all prompts UCM-managed (system + user)"
+lastModified: "2026-02-13T22:00:00Z"
 variables:
   - currentDate
+  - TEXT_TO_ANALYZE
+  - SOURCE_SUMMARY
 requiredSections:
   - "DYNAMIC_PLAN"
   - "DYNAMIC_ANALYSIS"
   - "DYNAMIC_ANALYSIS_USER"
+  - "STRUCTURED_OUTPUT_ANTHROPIC"
+  - "STRUCTURED_OUTPUT_OPENAI"
+  - "STRUCTURED_OUTPUT_GOOGLE"
+  - "STRUCTURED_OUTPUT_MISTRAL"
 ---
 
 ## DYNAMIC_PLAN
@@ -77,3 +83,76 @@ RESEARCH SOURCES:
 ${SOURCE_SUMMARY}
 
 Provide your dynamic analysis.
+
+---
+
+## STRUCTURED_OUTPUT_ANTHROPIC
+
+### JSON OUTPUT REQUIREMENTS (Claude)
+
+**Format Rules:**
+- Return ONLY a valid JSON object (no markdown code fences in output)
+- Use empty strings "" for optional string fields (never null)
+- Use empty arrays [] for optional array fields (never null)
+- Ensure all required fields are present
+
+**Field Validation:**
+- id fields: Use exact format specified (SC1, E1, CTX_XXX)
+- enum fields: Use exact string values (not variations)
+- boolean fields: Use true/false (not "true"/"false")
+- number fields: Use numeric values (not strings)
+
+---
+
+## STRUCTURED_OUTPUT_OPENAI
+
+### JSON OUTPUT REQUIREMENTS (GPT)
+
+**Critical for GPT:**
+- Return ONLY a valid JSON object
+- Include ALL required fields even if empty
+- Use "" for empty strings (NEVER omit or use null)
+- Use [] for empty arrays (NEVER omit)
+- Ensure consistent field naming (exact case match)
+
+**Common GPT Errors to Avoid:**
+- Omitting optional fields entirely → Include with "" or []
+- Using null instead of "" → Use empty string ""
+- Inconsistent casing → Match schema exactly
+- Adding extra fields → Only include schema fields
+
+---
+
+## STRUCTURED_OUTPUT_GOOGLE
+
+### JSON OUTPUT REQUIREMENTS (Gemini)
+
+**Critical for Gemini:**
+- Return ONLY a valid JSON object (no explanatory text)
+- Keep all string values within specified length limits
+- Ensure array fields are always arrays (even single items)
+- Use "" for empty strings, never null
+
+**Length Enforcement:**
+- Before output, verify each field meets length limits
+- Truncate verbose values to fit limits
+- No explanatory text outside JSON structure
+
+---
+
+## STRUCTURED_OUTPUT_MISTRAL
+
+### JSON OUTPUT REQUIREMENTS (Mistral)
+
+**Critical for Mistral:**
+- Return ONLY valid JSON
+- Follow field naming exactly as specified
+- Include all required fields
+- Use correct types for each field
+
+**Validation Checklist:**
+[ ] All required fields present
+[ ] String fields are strings (quoted)
+[ ] Number fields are numbers (unquoted)
+[ ] Boolean fields are true/false (unquoted)
+[ ] Arrays use square brackets []

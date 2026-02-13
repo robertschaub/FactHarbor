@@ -29,7 +29,7 @@ import {
 } from "./budgets";
 import { searchWebWithProvider } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
-import { buildPrompt, detectProvider, isBudgetModel } from "./prompts/prompt-builder";
+import { detectProvider } from "./prompts/prompt-builder";
 import { loadAndRenderSection, loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
 import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
@@ -303,22 +303,23 @@ export async function runMonolithicDynamic(
   }
 
   const understandModel = getModelForTask("understand", undefined, pipelineConfig ?? undefined);
-  const planPrompt = buildPrompt({
-    task: 'dynamic_plan',
-    provider: detectProvider(understandModel.modelName || ''),
-    modelName: understandModel.modelName || '',
-    config: {
-      allowModelKnowledge: pipelineConfig.allowModelKnowledge,
-      isLLMTiering: pipelineConfig.llmTiering,
-      isBudgetModel: isBudgetModel(understandModel.modelName || ''),
-    },
-    variables: {
-      currentDate: new Date().toISOString().split('T')[0],
-    },
+  const currentDate = new Date().toISOString().split('T')[0];
+  const understandProvider = detectProvider(understandModel.modelName || "");
+
+  const renderedPlan = await loadAndRenderSection("monolithic-dynamic", "DYNAMIC_PLAN", {
+    currentDate,
   });
+  if (!renderedPlan?.content?.trim()) {
+    throw new Error("Missing DYNAMIC_PLAN prompt section in monolithic-dynamic prompt profile");
+  }
+  const renderedPlanOutput = await loadAndRenderSection(
+    "monolithic-dynamic",
+    `STRUCTURED_OUTPUT_${understandProvider.toUpperCase()}`,
+    {},
+  );
+  const planPrompt = renderedPlan.content + (renderedPlanOutput?.content || "");
 
   const maxSearchQueries = pipelineConfig?.planningMaxSearchQueries ?? 8;
-  const understandProvider = detectProvider(understandModel.modelName || "");
   const planOutputSchema =
     understandProvider === "anthropic" ? DynamicPlanSchemaAnthropic : DynamicPlanSchema;
   const planResult = await generateText({
@@ -458,21 +459,18 @@ export async function runMonolithicDynamic(
   const dynamicOutputSchema = verdictProvider === "anthropic"
     ? DynamicAnalysisSchemaAnthropic
     : DynamicAnalysisSchema;
-  const dynamicAnalysisPrompt = buildPrompt({
-    task: 'dynamic_analysis',
-    provider: verdictProvider,
-    modelName: verdictModel.modelName || '',
-    config: {
-      allowModelKnowledge: pipelineConfig.allowModelKnowledge,
-      isLLMTiering: pipelineConfig.llmTiering,
-      isBudgetModel: isBudgetModel(verdictModel.modelName || ''),
-    },
-    variables: {
-      currentDate: new Date().toISOString().split('T')[0],
-      textToAnalyze,
-      sourceSummary,
-    },
+  const renderedAnalysis = await loadAndRenderSection("monolithic-dynamic", "DYNAMIC_ANALYSIS", {
+    currentDate,
   });
+  if (!renderedAnalysis?.content?.trim()) {
+    throw new Error("Missing DYNAMIC_ANALYSIS prompt section in monolithic-dynamic prompt profile");
+  }
+  const renderedAnalysisOutput = await loadAndRenderSection(
+    "monolithic-dynamic",
+    `STRUCTURED_OUTPUT_${verdictProvider.toUpperCase()}`,
+    {},
+  );
+  const dynamicAnalysisPrompt = renderedAnalysis.content + (renderedAnalysisOutput?.content || "");
   const renderedDynamicUser = await loadAndRenderSection("monolithic-dynamic", "DYNAMIC_ANALYSIS_USER", {
     TEXT_TO_ANALYZE: textToAnalyze,
     SOURCE_SUMMARY: sourceSummary,
