@@ -3,7 +3,7 @@
 {{info}}
 **Developer Reference** — Detailed implementation of the default pipeline with function names, LLM call points, budget controls, and adaptive fallback mechanisms.
 
-**Key File**: ##apps/web/src/lib/analyzer/orchestrated.ts##
+**Key Files**: ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
 {{/info}}
 
 == Pipeline Flow ==
@@ -44,10 +44,20 @@ The Orchestrated Pipeline follows a fixed 5-step AKEL flow: Understand → Resea
 |= Function |= Purpose |= LLM Calls |= Web/Search Calls
 | ##decideNextResearch()## | Generates targeted search queries based on claims and gaps | 1 per iteration | 0
 | ##searchWebWithProvider()## | Executes web search (Google CSE or SerpAPI) | 0 | 1+ per iteration
+| ##assessSearchRelevanceBatch()## | LLM-classifies results as primary / secondary / unrelated | 1 per batch | 0
 | ##fetchSourceContent()## | Parallel content fetching with timeout | 0 | 1 per selected source URL
 | ##prefetchSourceReliability()## | Batch source reliability lookup/evaluation | 0 (in orchestrated flow) | 0 (SR cache/service boundary)
 | ##buildAdaptiveFallbackQueries()## | Relaxes search constraints when candidates < threshold | 0 | 0
 | ##extractEvidence()## | Extracts evidence items from each source document | 1 per source | 0
+
+**Search Relevance Modes**: Before fetching, ##assessSearchRelevanceBatch()## classifies search results using one of three UCM-managed relevance modes loaded from ##orchestrated.prompt.md##:
+
+|= Mode |= Prompt Section |= When Used
+| **Strict** | ##SEARCH_RELEVANCE_MODE_STRICT## | ##requireContextMatch## + ##strictInstitutionMatch## — demands exact institution/entity AND context match
+| **Moderate** | ##SEARCH_RELEVANCE_MODE_MODERATE## | ##requireContextMatch## only — entity match preferred, same subject matter accepted
+| **Relaxed** | ##SEARCH_RELEVANCE_MODE_RELAXED## | Neither constraint — general topic/entity overlap suffices
+
+The selected mode instructions are injected as ##${MODE_INSTRUCTIONS}## into the ##SEARCH_RELEVANCE_BATCH_SYSTEM## prompt section.
 
 **Adaptive Fallback**: When fewer than 5 candidate sources are found, the system generates up to 2 additional fallback queries with relaxed constraints.
 
@@ -128,6 +138,24 @@ The pipeline produces the **canonical result schema** used by the Jobs UI:
 | ##evidenceItems## | array | Evidence extracted from sources
 | ##sources## | array | Source metadata with reliability scores
 | ##meta## | object | Providers, timing, gate stats, budget usage
+
+== Prompt Loading ==
+
+All LLM prompts are loaded from UCM-managed ##orchestrated.prompt.md## via ##loadAndRenderSection()##. The prompt file contains 40+ named sections covering every LLM call point in the pipeline. Key section groups:
+
+|= Section Group |= Sections |= Pipeline Phase
+| Understand | ##UNDERSTAND##, ##UNDERSTAND_USER##, ##UNDERSTAND_JSON_FALLBACK_SYSTEM##, ##UNDERSTAND_STRUCTURED_RETRY_SYSTEM## | Step 1
+| Supplemental | ##SUPPLEMENTAL_CLAIMS##, ##SUPPLEMENTAL_CONTEXTS##, ##OUTCOME_CLAIMS##, ##OUTCOME_ENRICH_*## | Step 1 (post-Gate 1)
+| Context Refinement | ##CONTEXT_REFINEMENT##, ##CONTEXT_REFINEMENT_CANDIDATES_BLOCK##, ##CONTEXT_REFINEMENT_USER## | Post-Research
+| Evidence Extraction | ##EXTRACT_EVIDENCE##, ##EXTRACT_EVIDENCE_USER##, ##EXTRACT_EVIDENCE_HIGH_IMPACT_FILTER_USER## | Step 2
+| Search Relevance | ##SEARCH_RELEVANCE_MODE_STRICT##, ##SEARCH_RELEVANCE_MODE_MODERATE##, ##SEARCH_RELEVANCE_MODE_RELAXED##, ##SEARCH_RELEVANCE_BATCH_SYSTEM##, ##SEARCH_RELEVANCE_BATCH_USER## | Step 2
+| Grounding | ##GROUNDED_SEARCH_REQUEST##, ##GROUNDING_KEY_TERMS_BATCH_USER##, ##GROUNDING_ADJUDICATION_BATCH_USER## | Step 2-3
+| Verdict | ##VERDICT##, ##VERDICT_USER##, ##VERDICT_BREVITY_RULES##, ##VERDICT_DIRECTION_VALIDATION_BATCH_USER## | Step 3
+| Claim Verdicts | ##CLAIM_VERDICTS##, ##CLAIM_VERDICTS_USER##, ##CLAIM_VERDICTS_KEY_FACTORS_APPEND## | Step 3
+| Knowledge Config | ##KNOWLEDGE_RECENCY_GUIDANCE##, ##KNOWLEDGE_INSTRUCTION_ALLOW_MODEL##, ##KNOWLEDGE_INSTRUCTION_EVIDENCE_ONLY## | Cross-cutting
+| Provider Hints | ##PROVIDER_HINT_OPENAI##, ##PROVIDER_HINT_ANTHROPIC##, ##PROVIDER_HINT_GOOGLE##, ##PROVIDER_HINT_MISTRAL## | Cross-cutting
+
+See [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] for the full loading mechanism.
 
 ----
 

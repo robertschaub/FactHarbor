@@ -25,7 +25,7 @@ flowchart TB
     subgraph Step2["Step 2: RESEARCH (Iterative Loop)"]
         DECIDE["decideNextResearch()<br/>Select category + query"]
         SEARCH["[WEB] searchWebWithProvider()"]
-        RELEVANCE["[LLM] assessSearchRelevanceBatch()<br/>Classify: primary / secondary / unrelated"]
+        RELEVANCE["[LLM] assessSearchRelevanceBatch()<br/>Classify: primary / secondary / unrelated<br/>(UCM mode: strict / moderate / relaxed)"]
         ADAPTIVE{"Candidates<br/>≥ threshold?"}
         FALLBACK["[WEB] Retry + Fallback Searches<br/>Relax constraints, broaden terms"]
         FETCH["[WEB] fetchSourceContent()<br/>Parallel web fetch"]
