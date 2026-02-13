@@ -1068,8 +1068,9 @@ Example B:
 ${VERDICT_DIRECTION_PAIRS}
 
 Return ONLY a JSON array, one entry per verdict:
-[{"aligned": true}, {"aligned": false, "expectedDirection": "high", "reason": "brief explanation"}]
-expectedDirection: "high" means evidence suggests >=50%, "low" means <50%.
+[{"aligned": true}, {"aligned": false, "expectedDirection": "high", "suggestedPct": 65, "reason": "brief explanation"}]
+- expectedDirection: "high" means evidence suggests >=50%, "low" means <50%.
+- suggestedPct (required when aligned=false): Your best estimate of the correct truth percentage (0-100) given the evidence. Base this on the strength and clarity of the evidence, not just direction. Use the full range: 55-75 for moderately supported claims, 75-90 for strongly supported, 25-45 for moderately contradicted, 10-25 for strongly contradicted.
 No explanation outside the JSON.
 
 ---

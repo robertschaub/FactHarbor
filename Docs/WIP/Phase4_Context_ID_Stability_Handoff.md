@@ -114,7 +114,7 @@ After implementation, verify:
 ## Hotfix (2026-02-13) — Claim Assignment Ordering Bug
 
 **Found by:** Claude Code Opus (investigating regression reported by Captain after `61050da`)
-**Status:** Code fix applied to `orchestrated.ts`. Pending commit + end-to-end validation.
+**Status:** COMMITTED — `ab28b01`
 
 **Bug:** Commit `61050da` caused **all context refinements to roll back**. The claim assignment block from the LLM refinement response was applied at line ~1732 — far AFTER `ensureContextsCoverAssignments` (~1340) and the zero-evidence check (~1546). The old orphan check (removed by Phase 4) used to clear claim contextIds before reconciliation, which prevented old contexts from being restored. Without it:
 
@@ -142,6 +142,21 @@ While reviewing a “very bad” single-context run (analysisId `FH-MLL7OZEM`), 
    - Single-context claim verdict objects also typically have no `contextId`, so per-context `claimVerdicts` joining can be empty even though top-level `claimVerdicts[]` is populated.
 
 Action: Track these separately from Phase 4; they affect perceived quality/UX and quality-gate outcomes for single-context + quick runs.
+
+**UPDATE:** Both items now FIXED in commit `93a5813`:
+1. Contradiction search moved before cross-context discovery in `decideNextResearch()`
+2. `enrichContextsForReport()` synthesizes per-context verdict from `verdictSummary` for single-context; `generateSingleContextVerdicts()` stamps `contextId` on claim verdicts
+
+## Additional Fix (2026-02-13) — Verdict Direction Auto-Correction
+
+**Found by:** Captain (flagged SC3 mismatch in test job FH-MLLB1ZU7), investigated by Claude Code Opus
+**Status:** IMPLEMENTED (uncommitted)
+
+**Problem:** `claimDirection` on evidence is scoped to the ORIGINAL user claim, not sub-claims. Direction validation (`validateVerdictDirections()`) correctly detected mismatches but `autoCorrect: false` meant it only warned. SC3 stayed at 41% despite evidence supporting it.
+
+**Fix:** Enabled auto-correct with LLM-provided `suggestedPct` (Captain-approved prompt change). Direction validation LLM now provides both direction AND calibrated correction percentage. Capped fallback formula (55-75 / 25-45) prevents extreme swings if LLM omits `suggestedPct`. Direction Semantics xWiki doc updated.
+
+**See:** Hub doc and SR Developer report for full details.
 
 ## Files to Touch
 

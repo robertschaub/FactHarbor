@@ -223,8 +223,8 @@ Fox News: 38 searches → 228 results → 2 fetched → 1 successful → 6 evide
 - Fixed budget counter to use `state.llmCalls` (Issue 6)
 - Added `EnrichedAnalysisContext`, `ContextVerdict` types
 
-### Phase 4: Context ID Stability — DONE (hotfix applied)
-**Commit:** `61050da` on main | **Hotfix:** pending commit
+### Phase 4: Context ID Stability — DONE (hotfix committed)
+**Commit:** `61050da` on main | **Hotfix:** `ab28b01`
 **Agent:** Senior Developer (Claude Code Opus)
 - Added batched LLM similarity remap (`buildOldToNewContextRemap`) using `assessTextSimilarityBatch` (Issue 3)
 - Moved orphan check AFTER `ensureContextsCoverAssignments` — expanded to cover both claims AND evidence
@@ -243,10 +243,10 @@ rolled back to pre-refinement state | reason: "context-with-zero-evidence"
 ```
 **Fix:** Moved claim assignment application from line ~1732 to line ~1275 (right after evidence assignments, before `ensureContextsCoverAssignments`). Now both claims and evidence reference new context IDs before reconciliation runs.
 **File:** `orchestrated.ts:1275-1288`
-**Build:** passes. Awaiting end-to-end test job validation.
+**Commit:** `ab28b01`
 
 ### Bonus: harmPotential "High Harm" Inflation Fix — DONE
-**Commit:** pending (ready to commit)
+**Commit:** `0c97838`
 **Agent:** Senior Developer (Claude Code Opus)
 **Root Cause:** Verdict validation prompt used keyword lists (die, kill, harm, risk, fraud...) to classify `harmPotential`, overriding the understand phase's more nuanced assessment. Nearly all real-world topics triggered HIGH.
 **Fix:**
@@ -256,12 +256,49 @@ rolled back to pre-refinement state | reason: "context-with-zero-evidence"
 **Files:** `orchestrated.prompt.md`, `orchestrated-compact.prompt.md`, `text-analysis-verdict.prompt.md`, `orchestrated.ts:9593`
 **Impact:** Claims like "hydrogen is less cost-effective" will correctly stay MEDIUM instead of being inflated to HIGH because the topic mentions "hazard".
 
+### Addendum Fixes — DONE
+**Commit:** `93a5813`
+**Agent:** Senior Developer (Claude Code Opus)
+Fixes for the 3 regression items found during post-Phase-4 review:
+1. **Single-context enrichment:** `enrichContextsForReport()` now synthesizes per-context verdict from `verdictSummary` when `VERDICTS_SCHEMA_SIMPLE` doesn't produce `analysisContextAnswers`. Claim verdicts stamped with `contextId` in `generateSingleContextVerdicts()`.
+2. **Contradiction search starvation:** Moved cross-context discovery block after contradiction/inverse-claim searches in `decideNextResearch()`, preventing budget exhaustion before contradiction search runs in quick mode (4 iterations).
+
+### Prompt Caching — DONE
+**Commit:** `3a1012a`
+Added `getPromptCachingOptions()` for Anthropic ephemeral cache headers on system messages (90% discount on cached input tokens). Applied to `detectContextsLLM`, monolithic pipeline, and source evaluation.
+
+### Verdict Direction Auto-Correction — DONE (uncommitted)
+**Agent:** Senior Developer (Claude Code Opus)
+**Root Cause:** `claimDirection` on evidence items is scoped to the ORIGINAL user claim, not individual sub-claims. When the verdict LLM evaluates per-sub-claim verdicts, it receives `[SUPPORTING]`/`[COUNTER-EVIDENCE]` labels relative to the parent claim. This can mislead verdicts for sub-claims with different logical relationships to the evidence (e.g., SC3 at 41% "Mostly False" despite supporting evidence in test job FH-MLLB1ZU7).
+
+The detection system (`validateVerdictDirections()` → `batchDirectionValidationLLM()`) was already working — it correctly flagged SC3's mismatch. But `autoCorrect: false` at all 3 call sites meant it only generated warnings, never corrected.
+
+**Investigation findings:**
+- No double-inversion risk: direction validation (Layer 4) and counter-claim aggregation (Layer 2) are properly decoupled
+- Old correction formula `max(65, 100-verdictPct)` was unsafe: could produce 90-point swings (5%→95%) from a binary direction signal
+- Direction Semantics doc (xWiki) explicitly warned against this pattern
+
+**Fix (Option 3 — LLM-provided correction percentage, Captain-approved):**
+1. **Prompt change:** Added `suggestedPct` to `VERDICT_DIRECTION_VALIDATION_BATCH_USER` response schema — LLM provides a calibrated correction percentage based on evidence strength, not just direction
+2. **Code:** Updated `batchDirectionValidationLLM` parser to extract `suggestedPct`; auto-correct uses LLM `suggestedPct` when available, falls back to capped formula `max(55, min(75, ...))` / `max(25, min(45, ...))` to prevent extreme swings
+3. **Enabled** `autoCorrect: true` at all 3 verdict paths
+4. **Doc sync:** Updated Direction Semantics xWiki doc (sections 5.3, 5.4, 8, 10, 11 + stale line numbers)
+
+**Files:**
+- `orchestrated.prompt.md:1070-1073` — `suggestedPct` in response schema
+- `orchestrated.ts:3734,3781,3906-3916` — type, parser, correction logic
+- `orchestrated.ts:8354,8960,9697` — `autoCorrect: true`
+- `Direction Semantics/WebHome.xwiki` — full sync
+
 ### Remaining: End-to-End Validation
-- Re-run 2-3 multi-context test jobs to verify:
+- Re-run 2-3 test jobs (single-context + multi-context) to verify:
   - No orphaned contextId warnings in debug log
   - `articleVerdict` populated, contexts enriched with verdicts/evidence
+  - Single-context `analysisContexts[0]` has `verdict`, `claimVerdicts`, `evidenceItems`
+  - `qualityGates.passed` not false due to missing contradiction search
   - Rating labels applied, fallback tracking active
   - harmPotential distribution is reasonable (not all HIGH)
+  - Direction mismatches auto-corrected with LLM `suggestedPct` (check `analysisWarnings` for `verdict_direction_mismatch` entries with `correctionSource: "LLM-suggested"`)
 
 ---
 

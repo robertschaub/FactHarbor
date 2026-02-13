@@ -3731,7 +3731,7 @@ function countBySourceDeduped(evidence: EvidenceItem[]): {
  * Resolves the claimDirection scope mismatch by having the LLM
  * evaluate the sub-claim/evidence relationship directly.
  */
-type DirectionValidationResult = { aligned: boolean; expectedDirection?: "high" | "low"; reason?: string };
+type DirectionValidationResult = { aligned: boolean; expectedDirection?: "high" | "low"; suggestedPct?: number; reason?: string };
 
 interface DirectionValidationBatchResult {
   results: DirectionValidationResult[] | null;
@@ -3782,6 +3782,8 @@ async function batchDirectionValidationLLM(
           aligned: item?.aligned !== false,
           expectedDirection: item?.expectedDirection === "high" || item?.expectedDirection === "low"
             ? item.expectedDirection : undefined,
+          suggestedPct: typeof item?.suggestedPct === "number" && item.suggestedPct >= 0 && item.suggestedPct <= 100
+            ? Math.round(item.suggestedPct) : undefined,
           reason: typeof item?.reason === "string" ? item.reason : undefined,
         })),
         degraded: false,
@@ -3903,14 +3905,19 @@ async function validateVerdictDirections(
 
     if (autoCorrect) {
       let correctedPct: number;
-      if (expectedDirection === "low") {
-        correctedPct = Math.min(35, 100 - verdict.truthPercentage);
+      if (llmResult.suggestedPct != null) {
+        // LLM-provided correction — use directly (already validated 0-100 in parser)
+        correctedPct = llmResult.suggestedPct;
+      } else if (expectedDirection === "low") {
+        // Fallback: capped inversion formula (moderate band, never extreme)
+        correctedPct = Math.max(25, Math.min(45, 100 - verdict.truthPercentage));
       } else {
-        correctedPct = Math.max(65, 100 - verdict.truthPercentage);
+        correctedPct = Math.max(55, Math.min(75, 100 - verdict.truthPercentage));
       }
       mismatch.correctedVerdictPct = correctedPct;
       mismatches.push(mismatch);
 
+      const correctionSource = llmResult.suggestedPct != null ? "LLM-suggested" : "capped-fallback";
       warnings.push({
         type: "verdict_direction_mismatch",
         severity: "warning",
@@ -3918,7 +3925,7 @@ async function validateVerdictDirections(
           `Verdict for "${claimTextPreview}..." misaligned with evidence (LLM-assessed). ` +
           `Original verdict: ${verdict.truthPercentage}%. ` +
           `LLM: ${llmResult.reason || "direction inconsistent"}. ` +
-          `Auto-corrected to ${correctedPct}%.`,
+          `Auto-corrected to ${correctedPct}% (${correctionSource}).`,
         details: {
           claimId: verdict.claimId,
           expectedDirection,
@@ -3926,6 +3933,7 @@ async function validateVerdictDirections(
           actualVerdictPct: verdict.truthPercentage,
           evidenceIds: evidenceIds.slice(0, 10),
           correctedVerdictPct: correctedPct,
+          correctionSource,
           llmReason: llmResult.reason,
           legacyDirectionalMetadata: {
             note: "claimDirection counts are scoped to original user claim, not sub-claims; use LLM assessment instead",
@@ -3940,6 +3948,7 @@ async function validateVerdictDirections(
         ...verdict,
         truthPercentage: correctedPct,
         verdict: correctedPct,
+        rating: percentageToClaimVerdict(correctedPct, verdict.confidence),
         highlightColor: getHighlightColor7Point(correctedPct),
         verdictDirectionCorrected: true,
         originalVerdictPct: verdict.truthPercentage,
@@ -8350,7 +8359,7 @@ async function generateMultiContextVerdicts(
     warnings: verdictDirectionWarnings,
     degraded: directionValidationDegraded,
   } = await validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
-    autoCorrect: false,
+    autoCorrect: true,
     minEvidenceCount: 2,
   });
 
@@ -8956,7 +8965,7 @@ async function generateSingleContextVerdicts(
     warnings: verdictDirectionWarnings,
     degraded: directionValidationDegraded,
   } = await validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
-    autoCorrect: false,
+    autoCorrect: true,
     minEvidenceCount: 2,
   });
 
@@ -9693,7 +9702,7 @@ ${providerPromptHint}`;
     warnings: verdictDirectionWarnings,
     degraded: directionValidationDegraded,
   } = await validateVerdictDirections(weightedClaimVerdicts, state.evidenceItems, {
-    autoCorrect: false,
+    autoCorrect: true,
     minEvidenceCount: 2,
   });
 

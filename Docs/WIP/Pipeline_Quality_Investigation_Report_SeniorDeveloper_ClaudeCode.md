@@ -12,10 +12,13 @@
 |-------|--------|------|
 | 1-3 (Report Assembly + Fallback + Budget) | `4e000e9` | Enriched contexts, rating labels, DEGRADED status, budget fix |
 | 4 (Context ID Stability) | `61050da` | Batched LLM similarity remap, moved orphan check, 4-layer defense |
-| 4-hotfix (Claim assignment ordering) | pending commit | Moved claim assignments before `ensureContextsCoverAssignments` — fixes rollback regression |
-| Bonus (harmPotential inflation) | pending | Narrowed HIGH criteria, removed keyword list from verdict prompt, made override one-directional |
+| 4-hotfix (Claim assignment ordering) | `ab28b01` | Moved claim assignments before `ensureContextsCoverAssignments` — fixes rollback regression |
+| Bonus (harmPotential inflation) | `0c97838` | Narrowed HIGH criteria, removed keyword list from verdict prompt, made override one-directional |
+| Prompt caching + docs | `3a1012a` | Anthropic ephemeral cache on system messages; WIP cleanup; investigation files |
+| Single-context enrichment + search ordering | `93a5813` | Synthesize per-context verdict for single-context; stamp contextId on claim verdicts; move contradiction search before cross-context discovery |
+| Verdict direction auto-correction | *uncommitted* | Enable `autoCorrect: true` with LLM `suggestedPct`; capped fallback formula; `rating` update; Direction Semantics doc sync |
 
-**Build:** passes. **Tests:** 816/816 pass.
+**Build:** passes.
 
 ### harmPotential "High Harm" Inflation (discovered during implementation)
 **Finding:** Most claims showed "High Harm" because the verdict validation prompt (`text-analysis-verdict.prompt.md`) used a broad keyword list (die, kill, harm, risk, fraud...) to override the understand phase's classification. Nearly all real-world topics matched at least one keyword.
@@ -126,10 +129,49 @@ The issue has been corrected in the current codebase.
 
 ---
 
+## CONFIRMED: Issue 7 — Verdict Direction Mismatch (claimDirection scope)
+
+**Status:** FIXED (uncommitted)
+
+**Root cause:** `claimDirection` on evidence items is evaluated relative to the **original user claim** (top-level thesis), NOT relative to each individual sub-claim. When the verdict LLM evaluates per-sub-claim verdicts, it receives evidence labeled `[SUPPORTING]`/`[COUNTER-EVIDENCE]` based on the parent claim's direction. This can mislead the verdict for sub-claims with different logical relationships to the evidence.
+
+**Example from test job FH-MLLB1ZU7:**
+- Original claim: "Can government statements be trusted?"
+- SC3: "Trust in government statements depends on consistency between statements and documented facts"
+- Evidence supports SC3's assertion (consistency = trust factor), but direction labels were relative to parent
+- Result: SC3 rated 41% ("Mostly False") despite supporting evidence
+
+**Detection was already working:** `validateVerdictDirections()` (line 3809) uses an LLM-powered batch call to detect direction mismatches. The analysis warnings for job FH-MLLB1ZU7 correctly flagged SC3's mismatch.
+
+**What was broken:** `autoCorrect: false` at all 3 call sites (lines 8353, 8959, 9696). The system detected the mismatch but did not apply the correction — it only generated warnings.
+
+**Fix (v2 — LLM-provided correction percentage):**
+1. Changed `autoCorrect: false` → `autoCorrect: true` at all 3 verdict paths (multi-context, single-context, standalone)
+2. Added `suggestedPct` to the `VERDICT_DIRECTION_VALIDATION_BATCH_USER` prompt — the LLM now provides the corrected percentage along with the direction assessment
+3. Updated `batchDirectionValidationLLM` parser to extract `suggestedPct` (validated 0-100, rounded)
+4. Updated auto-correction block: uses LLM `suggestedPct` when available; capped fallback `max(55, min(75, 100-verdictPct))` / `max(25, min(45, 100-verdictPct))` if LLM omits it
+5. Added `rating: percentageToClaimVerdict(correctedPct, verdict.confidence)` so 7-point label stays consistent
+6. Updated Direction Semantics xWiki doc (sections 5.3, 5.4, 8, 10, 11 + all stale line numbers)
+
+**Correction strategy:**
+- **Primary**: LLM provides `suggestedPct` based on evidence strength assessment (not just direction)
+- **Fallback**: Capped inversion to moderate band (55-75 for "high", 25-45 for "low") — prevents extreme swings
+
+**Why the old formula was unsafe:** `max(65, 100 - verdictPct)` could produce 90-point swings (5% → 95%) from a binary direction signal. The new approach lets the same LLM that detects the mismatch also calibrate the magnitude.
+
+**Files changed:**
+- `orchestrated.prompt.md:1070-1073` — added `suggestedPct` to response schema
+- `orchestrated.ts:3734` — added `suggestedPct` to `DirectionValidationResult` type
+- `orchestrated.ts:3781-3785` — parser extracts `suggestedPct`
+- `orchestrated.ts:3906-3916` — correction uses `suggestedPct` with capped fallback
+- `orchestrated.ts:8354,8960,9697` — `autoCorrect: true`
+- `Direction Semantics/WebHome.xwiki` — sections 5.3, 5.4, 8, 10, 11 updated
+
+---
+
 ## Note to Workgroup
 
-All issues verified. Phase 1-4 DONE, pending validation. "High Harm" RESOLVED.
-Awaiting Captain consolidation decision.
+All issues verified. Phase 1-4 DONE + verdict direction correction enabled with LLM-calibrated magnitude. "High Harm" RESOLVED. Direction Semantics doc updated to reflect new state.
 
 ---
 
@@ -138,3 +180,4 @@ Awaiting Captain consolidation decision.
 1. Report assembly changes could break UI
 2. Context ID remapping complexity (~500 line function)
 3. Type changes needed for `AnalysisContext` interface
+4. LLM may not always provide `suggestedPct` (fallback formula handles this with capped range)

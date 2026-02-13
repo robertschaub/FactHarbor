@@ -6,8 +6,8 @@
 **Key Files**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
 {{/info}}
 
-**Version**: 2.6.41+
-**Status**: Operational (Step 4 LLM-based validation + Phase 2 semantic hardening on 2026-02-13)
+**Version**: 2.6.41+ (auto-correct enabled 2026-02-13)
+**Status**: Operational (Step 4 LLM-based validation + Phase 2 semantic hardening + auto-correct with LLM suggestedPct)
 
 ----
 
@@ -172,13 +172,13 @@ WHY THIS MATTERS: Counter-claims have their verdicts INVERTED during aggregation
 
 **Version**: v2.6.41+ (Step 4)
 
-**File**: ##apps/web/src/lib/analyzer/orchestrated.ts:3487##
+**File**: ##apps/web/src/lib/analyzer/orchestrated.ts:3741##
 
 The validation uses **LLM-based per-claim semantic evaluation** instead of comparing ##claimDirection## counters:
 
 {{code language="typescript"}}
 // Function: batchDirectionValidationLLM
-// Location: orchestrated.ts:3487
+// Location: orchestrated.ts:3741
 async function batchDirectionValidationLLM(
   inputs: Array<{
     claimText: string;
@@ -199,6 +199,7 @@ interface DirectionValidationBatchResult {
   results: Array<{
     aligned: boolean;
     expectedDirection?: "high" | "low";
+    suggestedPct?: number;  // LLM-provided corrected percentage (0-100)
     reason?: string
   }> | null;
   degraded: boolean;  // true if LLM call failed, results may be null
@@ -230,11 +231,11 @@ Semantic hardening (2026-02-13):
 
 === 5.4 Auto-Correct Status ===
 
-**Auto-correct is DISABLED** (warning-only mode):
+**Auto-correct is ENABLED** (LLM-powered correction with suggestedPct):
 
 {{code language="typescript"}}
 // File: apps/web/src/lib/analyzer/orchestrated.ts
-// Lines: 8097, 8694, 9414 (three verdict generation paths)
+// Lines: 8354, 8960, 9697 (three verdict generation paths)
 const {
   validatedVerdicts: directionValidatedVerdicts,
   mismatches: verdictMismatches,
@@ -243,9 +244,15 @@ const {
 } = await validateVerdictDirections(
   weightedClaimVerdicts,
   state.evidenceItems,
-  { autoCorrect: false }  // DISABLED until LLM per-claim validation is proven
+  { autoCorrect: true }  // ENABLED: LLM provides suggestedPct; capped fallback if missing
 );
 {{/code}}
+
+**Correction strategy** (2026-02-13):
+1. **Primary**: LLM provides ##suggestedPct## in the direction validation response — used directly as the corrected percentage. The LLM evaluates evidence strength, not just direction, so the correction magnitude is semantically calibrated.
+2. **Fallback** (if LLM omits ##suggestedPct##): Capped inversion formula — ##max(55, min(75, 100 - verdictPct))## for "high", ##max(25, min(45, 100 - verdictPct))## for "low". This bounds corrections to a moderate range regardless of original verdict magnitude.
+
+**Why the old formula was unsafe**: The previous formula ##max(65, 100 - verdictPct)## could produce 90-point swings (e.g., 5% → 95%) from a binary direction signal. The LLM-provided ##suggestedPct## resolves this by letting the same LLM that detects the mismatch also assess the magnitude.
 
 === 5.5 Degraded Mode Behavior ===
 
@@ -416,7 +423,7 @@ const llmBatch = await batchDirectionValidationLLM(llmInputs);
 // Result includes semantic assessment, ignoring direction label scope issues
 {{/code}}
 
-**Current status**: Auto-correct is **DISABLED** (warning-only mode). See ##orchestrated.ts:8097,8694,9414##.
+**Current status**: Auto-correct is **ENABLED** with LLM-provided ##suggestedPct##. See ##orchestrated.ts:8354,8960,9697##. The LLM evaluates each sub-claim semantically (correct approach above) and provides both direction and magnitude. A capped fallback formula is used if the LLM omits ##suggestedPct##.
 {{/warning}}
 
 ----
@@ -454,13 +461,13 @@ interface DirectionMismatchWarning {
 To ensure LLM-code alignment:
 
 |= Check |= Code Location |= Prompt Location
-| ##claimDirection## defined relative to original claim | ##types.ts:477## | ##orchestrated.prompt.md## EXTRACT_EVIDENCE
-| Counter-claim direction semantics | ##types.ts:563## (isCounterClaim) | ##orchestrated.prompt.md## UNDERSTAND
+| ##claimDirection## defined relative to original claim | ##types.ts:500## | ##orchestrated.prompt.md## EXTRACT_EVIDENCE
+| Counter-claim direction semantics | ##types.ts:586## (isCounterClaim) | ##orchestrated.prompt.md## UNDERSTAND
 | Qualifier preservation for decomposition | N/A (prompt contract) | ##orchestrated.prompt.md## UNDERSTAND + SUPPLEMENTAL_CLAIMS
 | Evidence-to-verdict mapping | ##orchestrated.ts:validateVerdictDirections## | ##orchestrated.prompt.md## VERDICT
-| Auto-correct disabled | ##orchestrated.ts:8097,8694,9414## | N/A (code-only)
-| Contestation ≠ False | ##types.ts:315-318,471## | ##orchestrated.prompt.md## VERDICT
-| LLM per-claim validation | ##orchestrated.ts:3487## (batchDirectionValidationLLM) | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
+| Auto-correct enabled with LLM suggestedPct | ##orchestrated.ts:8354,8960,9697## | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
+| Contestation ≠ False | ##types.ts:339-341,494## | ##orchestrated.prompt.md## VERDICT
+| LLM per-claim validation | ##orchestrated.ts:3741## (batchDirectionValidationLLM) | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
 | Semantic interpretation rules for direction | ##orchestrated.ts:batchDirectionValidationLLM## | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
 | Contestation fields separate from direction | ##types.ts## (isContestedClaim, contestedBy) | ##orchestrated.prompt.md## VERDICT
 | Degraded mode handling | ##orchestrated.ts:validateVerdictDirections## | N/A (code-only)
@@ -471,7 +478,8 @@ To ensure LLM-code alignment:
 
 |= Pitfall |= Symptom |= Fix
 | **Conflating layers** | Wrong verdict flips | Use LLM per-claim validation
-| **Auto-correct with scope mismatch** | Correct verdicts flipped to wrong | Disable auto-correct, warning-only
+| **Counter-based auto-correct** | Correct verdicts flipped to wrong | Use LLM ##suggestedPct## for correction magnitude, not deterministic inversion
+| **Uncapped deterministic correction** | Extreme swings (5%→95%) from binary signal | Cap fallback formula to moderate range (55-75 / 25-45)
 | **Contestation treated as contradiction** | High verdicts become low | Separate contestation from direction in prompts
 | **Evidence direction used for sub-claim validation** | Counter-claims flagged incorrectly | Use semantic LLM validation instead
 | **Ignoring degraded mode** | Silent validation failures | Monitor ##direction_validation_degraded## warnings
