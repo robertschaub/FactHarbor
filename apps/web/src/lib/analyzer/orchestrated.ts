@@ -86,7 +86,7 @@ import {
 } from "./aggregation";
 import { canonicalizeContexts, canonicalizeContextsWithRemap, ensureAtLeastOneContext, UNASSIGNED_CONTEXT_ID } from "./analysis-contexts";
 import { VERDICT_BANDS } from "./truth-scale";
-import { getModelForTask, getStructuredOutputProviderOptions } from "./llm";
+import { getModelForTask, getStructuredOutputProviderOptions, getPromptCachingOptions } from "./llm";
 import {
   detectAndCorrectVerdictInversion,
   detectCounterClaim,
@@ -647,7 +647,7 @@ async function assessSearchRelevanceBatch(
     const response = await generateText({
       model: llmModel,
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPrompt, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.1, pipelineConfig),
@@ -1047,7 +1047,7 @@ async function refineContextsFromEvidence(
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: renderedSystem.content },
+        { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
         { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.1, state.pipelineConfig),
@@ -2924,6 +2924,52 @@ function calculateArticleTruthPercentage(
 }
 
 // ============================================================================
+// REPORT ENRICHMENT (v2.9.1)
+// ============================================================================
+
+/**
+ * Enrich analysis contexts with their verdicts, evidence, and claim verdicts for report output.
+ * Joins flat arrays by contextId into self-contained context objects.
+ */
+function enrichContextsForReport(
+  contexts: AnalysisContext[],
+  verdictSummary: VerdictSummary | null,
+  evidenceItems: EvidenceItem[],
+  claimVerdicts: ClaimVerdict[],
+): Array<AnalysisContext & {
+  verdict?: {
+    rating: ClaimVerdict7Point;
+    truthPercentage: number;
+    confidence: number;
+    shortAnswer?: string;
+    keyFactors?: KeyFactor[];
+  };
+  evidenceItems?: EvidenceItem[];
+  claimVerdicts?: ClaimVerdict[];
+}> {
+  return contexts.map(ctx => {
+    const ctxAnswer = verdictSummary?.analysisContextAnswers?.find(
+      (a: any) => a.contextId === ctx.id,
+    );
+    const ctxEvidence = evidenceItems.filter(e => e.contextId === ctx.id);
+    const ctxClaims = claimVerdicts.filter(cv => cv.contextId === ctx.id);
+
+    return {
+      ...ctx,
+      verdict: ctxAnswer ? {
+        rating: percentageToClaimVerdict(ctxAnswer.truthPercentage, ctxAnswer.confidence),
+        truthPercentage: ctxAnswer.truthPercentage,
+        confidence: ctxAnswer.confidence,
+        shortAnswer: ctxAnswer.shortAnswer,
+        keyFactors: ctxAnswer.keyFactors,
+      } : undefined,
+      evidenceItems: ctxEvidence.length > 0 ? ctxEvidence : undefined,
+      claimVerdicts: ctxClaims.length > 0 ? ctxClaims : undefined,
+    };
+  });
+}
+
+// ============================================================================
 // WEIGHTED VERDICT CALCULATION (v2.6.30)
 // ============================================================================
 
@@ -3274,6 +3320,8 @@ interface ClaimVerdict {
   harmPotential?: "high" | "medium" | "low";
   // v2.9: Counter-claim detection (claim opposes thesis rather than supporting it)
   isCounterClaim?: boolean;
+  // v2.9.1: 7-point rating label derived from truthPercentage + confidence
+  rating?: ClaimVerdict7Point;
 }
 
 // v2.6.27: Renamed from VerdictSummary for input neutrality
@@ -4554,7 +4602,7 @@ async function understandClaim(
       generateText({
       model,
       messages: [
-        { role: "system", content: prompt },
+        { role: "system", content: prompt, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: userPrompt },
       ],
       temperature: getDeterministicTemperature(0.3, pipelineConfig),
@@ -4640,7 +4688,7 @@ async function understandClaim(
       generateText({
       model,
       messages: [
-        { role: "system", content: renderedSystem.content },
+        { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: `${userPrompt}\n\n${renderedJsonOnlyAppend.content}` },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
@@ -5127,7 +5175,7 @@ async function requestSupplementalSubClaims(
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: renderedSystem.content },
+        { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
@@ -5273,7 +5321,7 @@ async function requestSupplementalContexts(
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: renderedSystem.content },
+        { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
@@ -5354,7 +5402,7 @@ async function extractOutcomeClaimsFromEvidence(
     const result = await generateText({
       model,
       messages: [
-        { role: "system", content: renderedSystem.content },
+        { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
         { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, state.pipelineConfig),
@@ -5461,6 +5509,7 @@ async function enrichContextsWithOutcomes(state: ResearchState, model: any): Pro
           {
             role: "system",
             content: renderedSystem.content,
+            providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider),
           },
           { role: "user", content: renderedUser.content },
         ],
@@ -6322,7 +6371,7 @@ async function extractEvidence(
       generateText({
       model,
       messages: [
-        { role: "system", content: renderedSystem.content },
+        { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: renderedUser.content },
       ],
       temperature: getDeterministicTemperature(0.2, pipelineConfig),
@@ -7455,7 +7504,7 @@ async function generateMultiContextVerdicts(
       const result: any = await generateText({
         model,
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: system, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
           { role: "user", content: `${userPrompt}\n\n${renderedJsonOnlyAppend.content}` },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
@@ -7513,7 +7562,7 @@ async function generateMultiContextVerdicts(
       const result = await generateText({
         model,
         messages: [
-          { role: "system", content: systemPrompt + attempt.extraSystem },
+          { role: "system", content: systemPrompt + attempt.extraSystem, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
           { role: "user", content: userPrompt },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
@@ -8354,7 +8403,7 @@ async function generateSingleContextVerdicts(
       const result = await generateText({
         model,
         messages: [
-          { role: "system", content: systemPrompt + attempt.extraSystem },
+          { role: "system", content: systemPrompt + attempt.extraSystem, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
           { role: "user", content: userPrompt },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
@@ -8562,6 +8611,13 @@ async function generateSingleContextVerdicts(
         console.warn(
           `[Analyzer] Missing verdict for claim ${claim.id}, using default`,
         );
+        // v2.9.1: Track per-claim fallback in analysisWarnings (was console.warn only)
+        state.analysisWarnings.push({
+          type: "verdict_fallback_partial",
+          severity: "warning",
+          message: `Verdict fallback for claim ${claim.id}: LLM did not return verdict`,
+          details: { claimId: claim.id, fallbackType: "per_claim" },
+        });
         return {
           claimId: claim.id,
           claimText: claim.text,
@@ -8984,7 +9040,7 @@ ${providerPromptHint}`;
       const result = await generateText({
         model,
         messages: [
-          { role: "system", content: systemPrompt + attempt.extraSystem },
+          { role: "system", content: systemPrompt + attempt.extraSystem, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
           {
             role: "user",
             content: renderedClaimUser.content,
@@ -9174,6 +9230,13 @@ ${providerPromptHint}`;
         console.warn(
           `[Analyzer] Missing verdict for claim ${claim.id}, using default`,
         );
+        // v2.9.1: Track per-claim fallback in analysisWarnings (was console.warn only)
+        state.analysisWarnings.push({
+          type: "verdict_fallback_partial",
+          severity: "warning",
+          message: `Verdict fallback for claim ${claim.id}: LLM did not return verdict`,
+          details: { claimId: claim.id, fallbackType: "per_claim" },
+        });
         return {
           claimId: claim.id,
           claimText: claim.text,
@@ -12039,6 +12102,20 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   // P0: Final verification - catch any classifications that bypassed entry-point normalization
   verifyFinalClassifications(state, finalClaimVerdicts, articleAnalysis);
 
+  // v2.9.1: Summary fallback warning — if any claims used per-claim 50/50 fallback, flag it.
+  // Uses "structured_output_failure" type to trigger reportIntegrity.damaged when ALL claims fell back.
+  const fallbackCount = finalClaimVerdicts.filter(
+    cv => cv.reasoning?.includes("No verdict returned by LLM for this claim."),
+  ).length;
+  if (fallbackCount > 0) {
+    state.analysisWarnings.push({
+      type: "structured_output_failure",
+      severity: fallbackCount === finalClaimVerdicts.length ? "error" : "warning",
+      message: `${fallbackCount}/${finalClaimVerdicts.length} claims received fallback verdicts (50/50 defaults)`,
+      details: { fallbackCount, totalClaims: finalClaimVerdicts.length },
+    });
+  }
+
   // Synthesize a top-level "report_damaged" warning for clear UI surfacing.
   const reportIntegrity = synthesizeReportDamageWarning(state);
 
@@ -12052,6 +12129,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   );
 
   await emit("Analysis complete", 100);
+
+  // v2.9.1: Apply 7-point rating labels to claim verdicts
+  for (const cv of finalClaimVerdicts) {
+    cv.rating = percentageToClaimVerdict(cv.truthPercentage, cv.confidence);
+  }
+
+  // v2.9.1: Enrich analysis contexts with their verdicts, evidence, and claim verdicts
+  const enrichedContexts = enrichContextsForReport(
+    state.understanding!.analysisContexts,
+    verdictSummary || null,
+    state.evidenceItems,
+    finalClaimVerdicts,
+  );
 
   // Result JSON with search data (NEW v2.4.3)
   const resultJson = {
@@ -12096,7 +12186,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
           tokensPercent: stats.tokensPercent,
           totalIterations: stats.totalIterations,
           iterationsPercent: stats.iterationsPercent,
-          llmCalls: stats.llmCalls,
+          // v2.9.1: Use state.llmCalls (authoritative counter) instead of budgetTracker.llmCalls (selective)
+          llmCalls: state.llmCalls,
           budgetExceeded: stats.budgetExceeded,
           exceedReason: state.budgetTracker.exceedReason,
         };
@@ -12109,7 +12200,19 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       },
     },
     verdictSummary: verdictSummary || null,
-    analysisContexts: state.understanding!.analysisContexts,
+    // v2.9.1: Top-level article verdict for API consumers (additive — UI uses articleAnalysis fallback chain)
+    articleVerdict: {
+      rating: percentageToArticleVerdict(
+        articleAnalysis?.articleTruthPercentage ?? 50,
+        verdictSummary?.confidence ?? 50,
+      ),
+      truthPercentage: articleAnalysis?.articleTruthPercentage ?? null,
+      confidence: verdictSummary?.confidence ?? null,
+      summary: verdictSummary?.shortAnswer ?? null,
+      articleVerdictReliability: articleAnalysis?.articleVerdictReliability ?? null,
+    },
+    // v2.9.1: Enriched contexts with verdicts, evidence, and claim verdicts joined by contextId
+    analysisContexts: enrichedContexts,
     twoPanelSummary,
     articleAnalysis,
     claimVerdicts: finalClaimVerdicts,

@@ -262,6 +262,29 @@ export interface AnalysisContext {
 }
 
 /**
+ * ContextVerdict: The verdict/answer for a single AnalysisContext, enriched into the report.
+ * v2.9.1: Added for report assembly enrichment.
+ */
+export interface ContextVerdict {
+  rating: ClaimVerdict7Point;
+  truthPercentage: number;
+  confidence: number;
+  shortAnswer?: string;
+  keyFactors?: KeyFactor[];
+}
+
+/**
+ * EnrichedAnalysisContext: AnalysisContext with verdict and evidence data joined in.
+ * v2.9.1: Added so the report contains self-contained context objects
+ * with their verdicts, evidence items, and claim verdicts inline.
+ */
+export interface EnrichedAnalysisContext extends AnalysisContext {
+  verdict?: ContextVerdict;
+  evidenceItems?: EvidenceItem[];
+  claimVerdicts?: ClaimVerdict[];
+}
+
+/**
  * EvidenceScope: Per-evidence source methodology metadata defined BY a source document
  *
  * This is DIFFERENT from AnalysisContext! EvidenceScope describes the methodology,
@@ -561,6 +584,8 @@ export interface ClaimVerdict {
   // v2.6.31: Counter-claim tracking - true if this claim evaluates the OPPOSITE of the user's thesis
   // When aggregating, counter-claim verdicts should be inverted (TRUE 85% → contributes as FALSE 15%)
   isCounterClaim?: boolean;
+  // v2.9.1: 7-point rating label derived from truthPercentage + confidence
+  rating?: ClaimVerdict7Point;
 }
 
 export interface ArticleAnalysis {
@@ -699,7 +724,8 @@ export type AnalysisWarningType =
   | "source_acquisition_collapse"   // Many searches performed but no sources fetched — pipeline stall
   | "grounding_check"               // Verdict reasoning poorly grounded in cited evidence
   | "grounding_check_degraded"      // LLM grounding adjudication failed; ratios are fallback values
-  | "direction_validation_degraded"; // LLM direction validation failed; verdicts kept unchanged
+  | "direction_validation_degraded" // LLM direction validation failed; verdicts kept unchanged
+  | "verdict_fallback_partial";     // v2.9.1: Individual claim got 50/50 fallback (LLM didn't return verdict)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
