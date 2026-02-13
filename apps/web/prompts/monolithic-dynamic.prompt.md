@@ -88,7 +88,7 @@ Provide your dynamic analysis.
 
 ## STRUCTURED_OUTPUT_ANTHROPIC
 
-## JSON OUTPUT REQUIREMENTS (Claude)
+### JSON OUTPUT REQUIREMENTS (Claude)
 
 **Format Rules:**
 - Return ONLY a valid JSON object (no markdown code fences in output)
@@ -106,7 +106,7 @@ Provide your dynamic analysis.
 
 ## STRUCTURED_OUTPUT_OPENAI
 
-## JSON OUTPUT REQUIREMENTS (GPT)
+### JSON OUTPUT REQUIREMENTS (GPT)
 
 **Critical for GPT:**
 - Return ONLY a valid JSON object
@@ -125,7 +125,7 @@ Provide your dynamic analysis.
 
 ## STRUCTURED_OUTPUT_GOOGLE
 
-## JSON OUTPUT REQUIREMENTS (Gemini)
+### JSON OUTPUT REQUIREMENTS (Gemini)
 
 **Critical for Gemini:**
 - Return ONLY a valid JSON object (no explanatory text)
@@ -142,7 +142,7 @@ Provide your dynamic analysis.
 
 ## STRUCTURED_OUTPUT_MISTRAL
 
-## JSON OUTPUT REQUIREMENTS (Mistral)
+### JSON OUTPUT REQUIREMENTS (Mistral)
 
 **Critical for Mistral:**
 - Return ONLY valid JSON
