@@ -662,8 +662,10 @@ Read Docs/WIP/{filename}.md and report:
 ```
 As {Role}, read Docs/WIP/{filename}.md and propose next steps.
 Consider the current document status, completed reports, and open questions.
-Write your proposal under ## Consolidated Plan or as a new ## Proposed Next Steps section.
+Append your proposal as a new report under # INVESTIGATION REPORTS:
+### Proposal: {Role} ({Agent/Model}) — {Date}
 Include: what to do next, who should do it, priorities, and any blockers.
+Do NOT write into the # CONSOLIDATED OUTPUT sections — those are reserved for the consolidator.
 ```
 
 **IMPLEMENT** — Assign an agent to execute the approved plan (after Phase 3):
@@ -822,14 +824,14 @@ Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP
 ---
 
 ## Participant Tracker
-<!-- Each agent adds their own row when joining. No manual setup needed. -->
+
+Each agent adds their own row when joining. No manual setup needed.
 
 | # | Role | Agent/Tool/Model | Status | Temp File | Updated |
 |---|------|-----------------|--------|-----------|---------|
-<!-- Agents: append a row here with your role and agent/model name when you start -->
 
-<!-- Status values: INVESTIGATING → WRITING → DONE | CONSOLIDATING → DONE | REVIEWING → DONE -->
-<!-- Temp File: path to temp file if document was locked during write, "—" otherwise -->
+Status values: `INVESTIGATING` → `WRITING` → `DONE` | `CONSOLIDATING` → `DONE` | `REVIEWING` → `DONE`
+Temp File: path to temp file if document was locked during write, `—` otherwise.
 
 ---
 
@@ -840,42 +842,57 @@ Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP
 **Scope boundaries:** {What is NOT in scope for this investigation}
 
 ---
+---
+
+# CONSOLIDATED OUTPUT
+
+> **Reading guide:** Everything below this line in Part 1 is the authoritative, consolidated result.
+> It is written by the consolidator in Phase 2 and reviewed/approved in Phase 3.
+> During Phase 1 (investigation) these sections are empty — do not fill them in during investigation.
 
 ## Consolidated Analysis
-<!-- Written by the consolidator in Phase 2. Empty during Phase 1. -->
 
 ### Summary
-{Unified findings across all investigators}
+*(empty until Phase 2)*
 
 ### Agreement Matrix
 
 | Finding | Agent 1 | Agent 2 | Agent N |
 |---------|---------|---------|---------|
-| {finding} | Full / Partial / — | ... | ... |
 
 ### Strongest Contributions
-{What each investigator uniquely contributed}
+*(empty until Phase 2)*
 
 ---
 
 ## Consolidated Plan
-<!-- Written by the consolidator in Phase 2. Empty during Phase 1. -->
 
-### Phase 1: {title}
-| Change | File | Risk |
-|--------|------|------|
-| ... | ... | ... |
-
-### Phase N: {title}
-...
+*(empty until Phase 2)*
 
 ### Open Questions
-{Unresolved disagreements or gaps requiring Captain decision}
+*(empty until Phase 2)*
 
 ---
 
-## Investigation Reports
-<!-- Each agent appends their report here during Phase 1. Do not edit others' reports. -->
+## Review Log
+
+| Date | Reviewer Role | Assessment | Comments |
+|------|---------------|------------|----------|
+
+---
+
+## Decision Record
+
+*(Decisions made by the Captain after review, with rationale)*
+
+---
+---
+
+# INVESTIGATION REPORTS
+
+> **Reading guide:** Everything below this line contains raw, unedited reports from individual investigators (Phase 1).
+> After consolidation, these serve as historical reference and traceability — the consolidated output above is authoritative.
+> Each agent appends their report here. Do not edit or delete other agents' reports.
 
 ### Report: {Role} ({Agent/Model}) — {Date}
 **Files Analyzed:** {list}
@@ -887,8 +904,8 @@ Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP
 ```
 
 **Status transitions:**
-- `INVESTIGATING` → Captain sets on creation; agents are writing reports
-- `CONSOLIDATING` → Captain sets when all investigators are done; consolidator is working
+- `INVESTIGATING` → First agent sets on document creation; agents are writing reports
+- `CONSOLIDATING` → Set when all investigators are `DONE`; consolidator is working
 - `READY_FOR_REVIEW` → Consolidator sets when synthesis is complete
 - `APPROVED` → Captain sets after review; implementation may begin
 - `IMPLEMENTED` → Move to `Docs/ARCHIVE/` or appropriate subfolder
