@@ -134,7 +134,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 3. Der Vorstand kann einzelne Aufgaben an Vorstandsmitglieder, Kommissionen oder Mitarbeitende delegieren, wobei er die Gesamtverantwortung behält.
 
 ### Art. 16 — Sitzungen und Beschlüsse
-1. Der Vorstand tritt mindestens **vier (4) Mal pro Jahr** zusammen (quartalsweise).
+1. Der Vorstand tritt mindestens **einmal pro Jahr** zusammen. Weitere Sitzungen werden bei Bedarf einberufen.
 2. Die Sitzungen können persönlich oder auf elektronischem Weg abgehalten werden.
 3. Der Vorstand fasst seine Beschlüsse mit einfacher Mehrheit der anwesenden Mitglieder. Beschlussfähigkeit ist gegeben, wenn die Mehrheit der Vorstandsmitglieder anwesend ist.
 4. Bei Stimmengleichheit hat der/die Präsident/in den Stichentscheid.

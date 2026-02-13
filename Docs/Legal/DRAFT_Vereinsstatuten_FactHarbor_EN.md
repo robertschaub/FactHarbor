@@ -135,7 +135,7 @@ The General Assembly is the supreme governing body of the association. It has th
 3. The Governing Team may delegate specific tasks to individual members, committees, or team members, while retaining overall responsibility.
 
 ### Article 16 — Meetings and Decisions
-1. The Governing Team meets at least **four (4) times per year** (quarterly).
+1. The Governing Team meets at least **once per year**. Additional meetings are convened as needed.
 2. Meetings may be held in person or by electronic means.
 3. The Governing Team passes resolutions by a simple majority of members present. A quorum requires the presence of a majority of Governing Team members.
 4. In the event of a tie, the President has the casting vote.
