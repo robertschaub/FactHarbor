@@ -543,13 +543,13 @@ For complex tasks where the Captain wants multiple agents to independently inves
 ```mermaid
 flowchart TB
     subgraph Init["Phase 0: Initiation"]
-        C1[Captain creates WIP document<br/>with investigation brief]
+        C1[Captain sends INVESTIGATE command<br/>to each agent with task description]
     end
 
     subgraph Investigate["Phase 1: Independent Investigation"]
-        A1[Agent 1<br/>Writes findings to §Investigation]
-        A2[Agent 2<br/>Writes findings to §Investigation]
-        AN[Agent N<br/>Writes findings to §Investigation]
+        A1[Agent 1 — first agent<br/>Creates WIP document + investigates]
+        A2[Agent 2<br/>Self-registers + investigates]
+        AN[Agent N<br/>Self-registers + investigates]
     end
 
     subgraph Consolidate["Phase 2: Consolidation"]
@@ -565,18 +565,20 @@ flowchart TB
 ```
 
 **Phase 0 — Initiation (Captain)**
-1. Create a WIP document using the Investigation Document Template (§4.5)
-2. Fill in the **Investigation Brief** section: what to investigate, which inputs/files to examine, what questions to answer
-3. Set document status to `INVESTIGATING`
-4. Assign agents and tell each one: the document path, their role, and that they must append findings to the document
+
+No manual document preparation needed. The Captain simply:
+1. Sends the **INVESTIGATE** command to each agent, including the task description, document path, and optional focus area
+2. The **first agent** to start creates the WIP document from the §4.5 template and populates the Investigation Brief
+3. Subsequent agents find the document already created and add themselves
 
 **Phase 1 — Independent Investigation (each agent)**
-1. Read the Investigation Brief from the shared document
-2. Update your row in the **Participant Tracker** → status `INVESTIGATING`
-3. Perform investigation (read code, analyze data, research)
-4. Update Participant Tracker → status `WRITING`
-5. Acquire the Write Lock (§4.3). If locked, use the **Temp File Protocol** (§4.3) instead
-6. Append a new subsection under `## Investigation Reports` using this format:
+1. **If the document does not exist** → create it from the Investigation Document Template (§4.5), fill in the **Investigation Brief** from the Captain's task description, set status to `INVESTIGATING`
+2. **If the document exists** → read the Investigation Brief
+3. Add your own row to the **Participant Tracker** (role, agent/model name) → status `INVESTIGATING`
+4. Perform investigation (read code, analyze data, research)
+5. Update Participant Tracker → status `WRITING`
+6. Acquire the Write Lock (§4.3). If locked, use the **Temp File Protocol** (§4.3) instead
+7. Append a new subsection under `## Investigation Reports` using this format:
    ```markdown
    ### Report: {Role} ({Agent/Model}) — {Date}
    **Files Analyzed:** {list}
@@ -584,10 +586,10 @@ flowchart TB
    **Proposals:** {proposed fixes or approaches}
    **Risks/Concerns:** {anything the consolidator should weigh}
    ```
-7. If pending temp files exist from other agents, merge them into the document (see §4.3 Merge responsibility)
-8. Release the Write Lock and update Participant Tracker → status `DONE`
-9. Do NOT edit or delete other agents' reports
-10. Do NOT attempt consolidation — that is Phase 2
+8. If pending temp files exist from other agents, merge them into the document (see §4.3 Merge responsibility)
+9. Release the Write Lock and update Participant Tracker → status `DONE`
+10. Do NOT edit or delete other agents' reports
+11. Do NOT attempt consolidation — that is Phase 2
 
 **Phase 2 — Consolidation (designated agent)**
 1. Captain assigns a consolidator agent (typically a high-capability model)
@@ -620,10 +622,15 @@ The Captain uses these standardized prompts to direct agents. Copy, fill in the 
 
 **INVESTIGATE** — Assign an agent to investigate (Phase 1):
 ```
-As {Role}, investigate the task described in Docs/WIP/{filename}.md
-Read the Investigation Brief, then append your findings under ## Investigation Reports.
-Follow the Write Lock Protocol (§4.3) and update your row in the Participant Tracker.
+As {Role}, investigate using the Multi-Agent Investigation Workflow (§3.5).
+Document: Docs/WIP/{filename}.md
+Task: {what to investigate — clear questions to answer}
+Inputs: {files, data, reports, or artifacts to examine}
+Scope: {what is NOT in scope}
 Focus on: {optional specific focus area or questions for this agent}
+
+If the document does not exist, create it from the §4.5 template and populate the Investigation Brief.
+Add yourself to the Participant Tracker, then investigate and write your report.
 ```
 
 **CONSOLIDATE** — Assign the consolidator (Phase 2):
@@ -669,35 +676,21 @@ If you encounter blockers or deviations from the plan, stop and report to the Ca
 
 #### Activation Walkthrough (Captain Quick Reference)
 
-**Step 1 — Create the document** (once)
+No manual document preparation needed — agents handle it.
 
-Copy the §4.5 template into `Docs/WIP/{Topic}_Investigation_{date}.md`. Fill in:
-- Investigation Brief (task, inputs, scope boundaries)
-- Participant Tracker — one row per agent, status `ASSIGNED`
+**Step 1 — Activate each participant** (one prompt per agent session)
 
-Example:
-```markdown
-## Participant Tracker
-| # | Role | Agent/Tool/Model | Status | Temp File | Updated |
-|---|------|-----------------|--------|-----------|---------|
-| 1 | Senior Developer | Claude Code / Sonnet | ASSIGNED | — | 2026-02-13 |
-| 2 | Lead Developer | Cursor / Codex | ASSIGNED | — | 2026-02-13 |
-| 3 | LLM Expert | Cline / Kimi K2 | ASSIGNED | — | 2026-02-13 |
-```
+Paste the **INVESTIGATE** command into each agent's tool, filling in the task description, document path, and optional focus area. The first agent creates the document; subsequent agents find it and self-register. All agents can run in parallel — the Write Lock + Temp File Protocol handles concurrency.
 
-**Step 2 — Activate each participant** (one prompt per agent session)
-
-Open each agent's tool and paste the **INVESTIGATE** command with the document path and an optional focus area. Each agent can run in parallel — the Write Lock + Temp File Protocol handles concurrency.
-
-**Step 3 — Monitor progress**
+**Step 2 — Monitor progress**
 
 Paste the **STATUS** command into any available agent to check the Participant Tracker. When all participants show `DONE`, proceed to consolidation.
 
-**Step 4 — Consolidate**
+**Step 3 — Consolidate**
 
 Paste the **CONSOLIDATE** command into a high-capability agent (e.g., Opus). The consolidator merges any remaining temp files, reads all reports, and writes the unified analysis + plan.
 
-**Step 5 — Review, Propose, or Implement**
+**Step 4 — Review, Propose, or Implement**
 
 Use **REVIEW**, **PROPOSE**, or **IMPLEMENT** commands as needed. These can go to the same or different agents.
 
@@ -829,14 +822,13 @@ Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP
 ---
 
 ## Participant Tracker
-<!-- Each agent updates their row when changing state. Captain fills initial assignments. -->
+<!-- Each agent adds their own row when joining. No manual setup needed. -->
 
 | # | Role | Agent/Tool/Model | Status | Temp File | Updated |
 |---|------|-----------------|--------|-----------|---------|
-| 1 | {role} | {agent} | ASSIGNED | — | {date} |
-| 2 | {role} | {agent} | ASSIGNED | — | {date} |
+<!-- Agents: append a row here with your role and agent/model name when you start -->
 
-<!-- Status values: ASSIGNED → INVESTIGATING → WRITING → DONE | CONSOLIDATING → DONE | REVIEWING → DONE -->
+<!-- Status values: INVESTIGATING → WRITING → DONE | CONSOLIDATING → DONE | REVIEWING → DONE -->
 <!-- Temp File: path to temp file if document was locked during write, "—" otherwise -->
 
 ---
