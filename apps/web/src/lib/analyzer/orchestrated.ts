@@ -1272,6 +1272,21 @@ async function refineContextsFromEvidence(
     // (they may have pre-existing assignments or will be reconciled by ensureScopesCoverAssignments)
   }
 
+  // Phase 4 fix: Apply claim assignments from LLM refinement BEFORE ensureContextsCoverAssignments.
+  // Claims must reference new (finalized) context IDs so that reconciliation and zero-evidence
+  // checks see the correct state. Previously this ran at the very end of the function, causing
+  // reconciliation to restore old contexts (which had zero evidence) and trigger rollback.
+  const claimAssignments = new Map<string, string>();
+  for (const a of claimAssignmentsList) {
+    const pid = finalizeContextId(a.contextId || "");
+    if (!a.claimId || !pid) continue;
+    claimAssignments.set(a.claimId, pid);
+  }
+  for (const c of state.understanding!.subClaims || []) {
+    const pid = claimAssignments.get(c.id);
+    if (pid) c.contextId = pid;
+  }
+
   // IMPORTANT: ensure we never end up with orphaned assignments (evidence/claims referencing a
   // context ID that does not exist in analysisContexts). This can happen because:
   // - understandClaim/extractEvidence may assign IDs from the initial context list
@@ -1727,17 +1742,6 @@ async function refineContextsFromEvidence(
       state.evidenceItems || [],
       threshold,
     );
-  }
-
-  const claimAssignments = new Map<string, string>();
-  for (const a of claimAssignmentsList) {
-    const pid = finalizeContextId(a.contextId || "");
-    if (!a.claimId || !pid) continue;
-    claimAssignments.set(a.claimId, pid);
-  }
-  for (const c of state.understanding!.subClaims || []) {
-    const pid = claimAssignments.get(c.id);
-    if (pid) c.contextId = pid;
   }
 
   // Ensure we never end up with zero contexts.
