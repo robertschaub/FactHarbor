@@ -34,7 +34,8 @@ Two apps + one tool:
 - Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
 - Web: `cd apps/web && npm run dev` (port 3000)
 - API: `cd apps/api && dotnet run` (port 5000)
-- Tests: `npm test` (vitest). Build: `npm -w apps/web run build`.
+- Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
+- **Do NOT run** `test:llm`, `test:neutrality`, `test:contexts`, `test:adversarial`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
 
 ## Patterns & conventions
 

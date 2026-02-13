@@ -67,9 +67,9 @@ export interface BudgetTracker {
  * termination with fewer searches and lower quality.
  */
 export const DEFAULT_BUDGET: ResearchBudget = {
-  maxIterationsPerContext: 5, // v2.8.2: was 3 - increased for better research depth
-  maxTotalIterations: 20, // v2.8.2: was 12 - increased for multi-context analyses
-  maxTotalTokens: 750_000, // v2.8.2: was 500_000 - ~$2.25 max cost at Claude rates
+  maxIterationsPerContext: 3, // v2.11.1: was 5 (v2.8.2: was 3) - reduced for cost optimization
+  maxTotalIterations: 10, // v2.11.1: was 20 (v2.8.2: was 12) - reduced for cost optimization
+  maxTotalTokens: 500_000, // v2.11.1: was 750_000 (v2.8.2: was 500_000) - ~$1.50 max cost at Claude rates
   maxTokensPerCall: 100_000, // Prevent single runaway calls
   enforceHard: false, // v2.8.2: was true - warn but don't hard-stop
 };

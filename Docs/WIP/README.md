@@ -17,6 +17,21 @@ For completed work, historical documents, and reference materials, see:
 
 ## 📋 Active Future Proposals
 
+### API Cost Reduction Strategy (2026-02-13)
+**Status:** Draft — Awaiting Review
+- **Document:** [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md)
+- **Type:** Cost Optimization / Strategy
+- **Scope:** Anthropic API pricing plans, Batch API, prompt caching, NPO/OSS credit programs, UCM config tuning
+- **Related:** [LLM_Call_Optimization_Goals_Proposal.md](LLM_Call_Optimization_Goals_Proposal.md) (pipeline code-level optimizations)
+
+**Key Findings:**
+- Batch API provides 50% flat discount (no code changes to pipeline logic)
+- Prompt caching provides 90% discount on repeated system prompts
+- Combined Batch + Caching: up to 95% off input tokens
+- NPO programs: up to $20K Anthropic credits, $10K/year Google Cloud, $1K/year AWS
+- UCM config tuning: 25-40% savings with minimal quality impact
+- Projected reduction: $340/13 days -> ~$85-120/13 days (all layers combined)
+
 ### Report Evidence Calculation Review (2026-02-05)
 **Status:** ✅ Critical Issues Fixed / 🧭 Design Decisions Pending
 - **Document:** [Report_Evidence_Calculation_Review_2026-02-05.md](Report_Evidence_Calculation_Review_2026-02-05.md)

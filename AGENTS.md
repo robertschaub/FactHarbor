@@ -137,8 +137,31 @@ Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` 
 | Web dev server | `cd apps/web; npm run dev` (port 3000) |
 | API dev server | `cd apps/api; dotnet watch run` (port 5000) |
 | Build web | `npm -w apps/web run build` |
-| Tests | `npm test` — runs vitest (`npm -w apps/web test`) |
+| Tests (safe) | `npm test` — runs vitest, excludes expensive LLM tests |
+| Tests (expensive) | `npm -w apps/web run test:expensive` — runs ALL tests including real LLM calls |
+| Test: LLM integration | `npm -w apps/web run test:llm` — real LLM calls to multiple providers |
+| Test: input neutrality | `npm -w apps/web run test:neutrality` — full analysis x2 per pair |
+| Test: context preservation | `npm -w apps/web run test:contexts` — full analysis runs |
+| Test: adversarial | `npm -w apps/web run test:adversarial` — full analysis runs |
 | Lint | `npm run lint` — placeholder (not yet configured) |
+
+### Test Cost Warning
+
+**`npm test` is safe** — it excludes tests that make real LLM API calls.
+
+The following tests are **excluded from `npm test`** because they call real LLM APIs and incur Anthropic/OpenAI charges ($1-5+ per run):
+
+- `test/unit/lib/llm-integration.test.ts` — multi-provider LLM integration
+- `test/unit/lib/input-neutrality.test.ts` — full analysis x2 per neutrality pair
+- `test/unit/lib/analyzer/context-preservation.test.ts` — full multi-context analysis
+- `test/unit/lib/analyzer/adversarial-context-leak.test.ts` — full adversarial analysis
+
+**NEVER run these tests routinely or as part of verification.** Only run them when:
+1. Explicitly asked by the user
+2. Validating a specific quality-affecting change (e.g., verdict logic, prompt changes)
+3. Collecting baseline measurements for optimization work
+
+Use `npm test` (safe) for build verification. Use `npm -w apps/web run build` to verify compilation.
 
 ---
 

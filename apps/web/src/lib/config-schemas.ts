@@ -573,13 +573,13 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
   keyFactorHints: undefined,
-  contextDedupThreshold: 0.85, // NEW: Use new key name (v2.9.0: Default to 0.85 per original config.ts:187)
+  contextDedupThreshold: 0.70, // v2.11.1: was 0.85 - lowered to merge similar contexts more aggressively (cost optimization)
 
   // Context detection settings (NEW: Use new key names)
   contextDetectionMethod: "hybrid",
   contextDetectionEnabled: true,
   contextDetectionMinConfidence: 0.7,
-  contextDetectionMaxContexts: 5,
+  contextDetectionMaxContexts: 3, // v2.11.1: was 5 - reduced to limit context multiplication (cost optimization)
   contextDetectionCustomPatterns: undefined,
   contextFactorHints: undefined,
   contextPromptSelectionEnabled: true,
@@ -640,10 +640,10 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextClaimsAnchorClaimsWeight: 0.6,
   probativeDeduplicationThreshold: 0.75,
 
-  // Budget controls
-  maxIterationsPerContext: 5, // NEW: Use new key name
-  maxTotalIterations: 20,
-  maxTotalTokens: 750000,
+  // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
+  maxIterationsPerContext: 3, // v2.11.1: was 5 - balance cost vs research depth
+  maxTotalIterations: 10, // v2.11.1: was 20 - cap deep research loops
+  maxTotalTokens: 500000, // v2.11.1: was 750000 - ~$1.50 max cost at Claude rates
   maxTokensPerCall: 100000,
   enforceBudgets: false,
 
