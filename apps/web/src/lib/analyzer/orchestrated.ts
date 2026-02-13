@@ -3493,7 +3493,7 @@ async function batchDirectionValidationLLM(
 ): Promise<DirectionValidationBatchResult> {
   if (inputs.length === 0) return { results: [], degraded: false };
 
-  const modelInfo = getModelForTask("extract_evidence"); // Haiku tier
+  const modelInfo = getModelForTask("verdict"); // Verdict tier for nuanced semantic direction checks
 
   const pairs = inputs
     .map((v, i) => {
@@ -11896,6 +11896,37 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   const lowSourceThreshold = state.pipelineConfig.lowSourceThreshold ?? 2;
   const lowSourcePenalty = state.pipelineConfig.lowSourceConfidencePenalty ?? 15;
   const uniqueSourceCount = state.sources.filter(s => s.fetchSuccess).length;
+  const totalSearchCount = state.searchQueries?.length ?? 0;
+
+  // Zero successful sources: explicit acquisition failure warning
+  if (uniqueSourceCount === 0) {
+    state.analysisWarnings.push({
+      type: "no_successful_sources",
+      severity: "error",
+      message: "No sources were successfully fetched. Insufficient fetched evidence; results may be unreliable.",
+      details: {
+        uniqueSourceCount: 0,
+        totalSearches: totalSearchCount,
+        totalSourceCandidates: state.sources?.length ?? 0,
+      },
+    });
+
+    // Acquisition collapse: many searches but zero fetched sources — pipeline stall pattern
+    if (totalSearchCount >= 10) {
+      state.analysisWarnings.push({
+        type: "source_acquisition_collapse",
+        severity: "error",
+        message: `Source acquisition collapsed: ${totalSearchCount} searches performed but 0 sources successfully fetched. Analysis quality is severely degraded.`,
+        details: {
+          totalSearches: totalSearchCount,
+          totalSourceCandidates: state.sources?.length ?? 0,
+          successfulFetches: 0,
+          evidenceItemCount: state.evidenceItems?.length ?? 0,
+        },
+      });
+    }
+  }
+
   if (uniqueSourceCount <= lowSourceThreshold && uniqueSourceCount > 0 && lowSourcePenalty > 0) {
     const confFloor = state.pipelineConfig.minConfidenceFloor ?? 10;
     const applyLowSourcePenalty = (value: number) =>

@@ -695,6 +695,8 @@ export type AnalysisWarningType =
   | "recency_evidence_gap"          // Time-sensitive claim lacks recent evidence
   | "confidence_calibration"        // Confidence was adjusted by calibration system
   | "low_source_count"              // Thin evidence base (few unique sources)
+  | "no_successful_sources"         // Zero successfully fetched sources after research phase
+  | "source_acquisition_collapse"   // Many searches performed but no sources fetched — pipeline stall
   | "grounding_check"               // Verdict reasoning poorly grounded in cited evidence
   | "grounding_check_degraded"      // LLM grounding adjudication failed; ratios are fallback values
   | "direction_validation_degraded"; // LLM direction validation failed; verdicts kept unchanged

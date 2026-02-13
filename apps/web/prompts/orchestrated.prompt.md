@@ -234,6 +234,19 @@ Each atomic claim should make ONE testable assertion that can be verified indepe
 3. Characterizations (adjectives like "unfair", "illegal", "largest") become separate claims
 4. Magnitude/superlative claims ("biggest", "first", "most") become separate claims
 
+### QUALIFIER PRESERVATION (CRITICAL)
+
+When decomposing into atomic claims, preserve the thesis-critical qualifiers exactly.
+
+Do NOT drop or weaken qualifiers such as:
+- negation/absence: "without", "no", "never"
+- modality/requirement: "requires", "must", "only if"
+- scope/universality: "always", "all", "in general"
+- independence qualifiers: "independent", "external"
+- temporal qualifiers: "current", "recent", date-bound scope
+
+If a qualifier changes truth conditions, it must appear in at least one direct/core sub-claim.
+
 ### THESIS RELEVANCE (thesisRelevance field)
 
 **thesisRelevance** determines whether a claim should CONTRIBUTE to the overall verdict:
@@ -371,6 +384,7 @@ You are a fact-checking assistant. Add missing subClaims ONLY for the listed con
 - **CRITICAL**: If the input contains multiple assertions, decompose into ATOMIC claims (one assertion per claim).
 - **CRITICAL**: Do NOT create claims that combine multiple assertions with "and", "which", or "that".
 - **CRITICAL**: If specific outcomes, penalties, or consequences are mentioned (e.g., an N-year term, a monetary fine, a time-bound ban), create a SEPARATE claim evaluating whether that specific outcome was fair, proportionate, or appropriate.
+- **CRITICAL**: Preserve thesis-critical qualifiers from the input (e.g., negation, requirement, independence, temporal scope). Do not generate replacement claims that remove these constraints.
 
 ---
 
@@ -1015,6 +1029,38 @@ A verdict is MISALIGNED if:
 A verdict is ALIGNED if:
 - Evidence direction is consistent with the verdict range
 - Mixed or ambiguous evidence yields a mixed verdict (43-72%)
+
+### SEMANTIC INTERPRETATION RULES (CRITICAL)
+
+Evaluate meaning through explicit inference chains, not keyword matching.
+
+1. Requirement evidence vs. outcome evidence:
+   - If evidence says a process REQUIRES verification/corroboration, that supports claims that verification is needed.
+   - The same evidence contradicts claims that reliability exists WITHOUT verification/corroboration.
+
+2. Verification mechanisms count as corroboration:
+   - Peer review, independent checks, quality controls, audits, and formal verification mechanisms are forms of corroboration.
+   - Do not treat "has verification mechanisms" as evidence that corroboration is unnecessary.
+
+3. Preserve claim qualifiers:
+   - Respect qualifiers such as "without", "only if", "requires", "independent", "in all cases", and time qualifiers.
+   - A verdict is misaligned if those qualifiers are ignored in the support/contradiction assessment.
+
+4. Contestation vs contradiction:
+   - Dispute over interpretation can reduce confidence but does not automatically invert factual direction.
+   - Only direct factual contradiction should drive low-direction judgments.
+
+### ABSTRACT EXAMPLES
+
+Example A:
+- Claim: "Entity outputs are reliable without independent verification."
+- Evidence: "Formal standards require independent verification and peer review."
+- Correct directional reading: evidence CONTRADICTS the claim.
+
+Example B:
+- Claim: "Entity outputs require corroboration to be considered reliable."
+- Evidence: "Standards mandate peer review, independence safeguards, and documentation checks."
+- Correct directional reading: evidence SUPPORTS the claim.
 
 ${VERDICT_DIRECTION_PAIRS}
 
