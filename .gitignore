@@ -40,6 +40,7 @@ apps/web/devserver.err
 
 # Node / Next.js
 node_modules/
+next-env.d.ts
 .next/
 out/
 dist/
