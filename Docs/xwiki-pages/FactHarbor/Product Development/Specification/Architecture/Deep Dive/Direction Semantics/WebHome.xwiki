@@ -6,8 +6,8 @@
 **Key Files**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
 {{/info}}
 
-**Version**: 2.6.41
-**Status**: Operational (Step 4 LLM-based validation)
+**Version**: 2.6.41+
+**Status**: Operational (Step 4 LLM-based validation + Phase 2 semantic hardening on 2026-02-13)
 
 ----
 
@@ -218,6 +218,12 @@ A verdict is MISALIGNED if:
 - Evidence mostly supports the sub-claim BUT verdict is below 43%
 - Evidence mostly contradicts the sub-claim BUT verdict is above 72%
 - Note: Contestation or dispute about interpretation does NOT make a factual claim false
+
+Semantic hardening (2026-02-13):
+- Requirement evidence vs outcome evidence must be interpreted explicitly
+- Verification mechanisms (peer review/audit/independent checks) count as corroboration
+- Thesis-critical qualifiers ("without", "requires", "only if", temporal scope) must be preserved
+- Interpretation dispute lowers confidence but does not invert factual direction by itself
 {{/code}}
 
 **Critical**: "ignore direction labels — assess meaning directly" — This resolves the scope mismatch by having the LLM evaluate the sub-claim directly, not via original-claim direction.
@@ -266,6 +272,19 @@ if (llmBatch.degraded || !llmBatch.results) {
 - In degraded mode, verdicts are NOT validated for direction alignment
 - A warning is emitted for monitoring
 - Manual review may be needed for affected analyses
+
+=== 5.6 Qualifier Preservation in Claim Decomposition (2026-02-13) ===
+
+Direction consistency depends on preserving thesis-critical qualifiers from understanding to verdict validation.
+
+Prompt contract additions in ##orchestrated.prompt.md##:
+- ##UNDERSTAND##: "QUALIFIER PRESERVATION (CRITICAL)" block requires preserving negation/modality/independence/temporal qualifiers in atomic claims.
+- ##SUPPLEMENTAL_CLAIMS##: Explicit rule to preserve thesis-critical qualifiers when generating additional claims.
+- ##VERDICT_DIRECTION_VALIDATION_BATCH_USER##: Semantic interpretation rules and abstract examples to prevent implication inversion.
+
+**Why this matters**:
+- If qualifiers are dropped (for example "without independent corroboration"), direction-validation mismatch warnings can become false positives.
+- Preserving qualifiers keeps Layer 1 thesis semantics aligned with Layer 4 verdict interpretation.
 
 ----
 
@@ -437,10 +456,12 @@ To ensure LLM-code alignment:
 |= Check |= Code Location |= Prompt Location
 | ##claimDirection## defined relative to original claim | ##types.ts:477## | ##orchestrated.prompt.md## EXTRACT_EVIDENCE
 | Counter-claim direction semantics | ##types.ts:563## (isCounterClaim) | ##orchestrated.prompt.md## UNDERSTAND
+| Qualifier preservation for decomposition | N/A (prompt contract) | ##orchestrated.prompt.md## UNDERSTAND + SUPPLEMENTAL_CLAIMS
 | Evidence-to-verdict mapping | ##orchestrated.ts:validateVerdictDirections## | ##orchestrated.prompt.md## VERDICT
 | Auto-correct disabled | ##orchestrated.ts:8097,8694,9414## | N/A (code-only)
 | Contestation ≠ False | ##types.ts:315-318,471## | ##orchestrated.prompt.md## VERDICT
 | LLM per-claim validation | ##orchestrated.ts:3487## (batchDirectionValidationLLM) | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
+| Semantic interpretation rules for direction | ##orchestrated.ts:batchDirectionValidationLLM## | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
 | Contestation fields separate from direction | ##types.ts## (isContestedClaim, contestedBy) | ##orchestrated.prompt.md## VERDICT
 | Degraded mode handling | ##orchestrated.ts:validateVerdictDirections## | N/A (code-only)
 

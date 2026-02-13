@@ -1,6 +1,6 @@
 # FactHarbor Development History
 
-**Last Updated**: February 8, 2026
+**Last Updated**: February 13, 2026
 **Current Version**: 2.10.2 (Code) | 2.7.0 (Schema Output)
 **Schema Version**: 2.7.0
 
@@ -121,7 +121,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 - Input neutrality (question ≈ statement)
 - Fail closed on ambiguity
 
-**Status**: ❌ NEVER VALIDATED - No A/B testing performed, no real API calls to measure actual token reduction or quality impact.
+**Status**: ✅ REVIEW VALIDATED (v2.10.2) - Lead-dev review validated format-only/provider-variant changes. Full empirical A/B remains an optional follow-up.
 
 ---
 
@@ -190,11 +190,30 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 ---
 
-### Prompt Optimization Validation (Pending)
+### Prompt Optimization Validation (Updated)
 
-**Problem**: v2.8 prompt optimizations (provider-specific formatting, budget model optimization) deployed without A/B testing. All 83 tests validate syntax only, not LLM behavior.
+**Original Problem**: v2.8 prompt optimizations (provider-specific formatting, budget model optimization) were deployed without empirical A/B validation.
 
-**Status**: ❌ NEVER VALIDATED. Infrastructure ready (baseline suite, A/B framework, metrics). Awaiting budget approval ($20-50 baseline, $100-200 A/B).
+**Current Status**: ✅ Code review and contract validation completed in v2.10.2. Prompt behavior remains eligible for empirical A/B follow-up when budget is approved.
+
+---
+
+### Report Quality Hardening (February 13, 2026)
+
+**Problem**: Report quality investigation identified two systemic gaps:
+- Source-acquisition collapse had no explicit warning path when searches were high but successful sources were zero.
+- Direction-semantic validation was vulnerable to qualifier loss and implication inversion in nuanced claims.
+
+**Fixes Implemented**:
+- Added explicit warning coverage:
+  - `no_successful_sources`
+  - `source_acquisition_collapse`
+- Hardened orchestrated prompts:
+  - Qualifier preservation rules for decomposition and supplemental claims
+  - Semantic interpretation rules for direction validation
+- Updated direction-validation model routing to verdict-tier selection.
+
+**Status**: ✅ Phase 1 + Phase 2 implemented and verified (TypeScript clean; targeted regression tests passing).
 
 ---
 
@@ -207,7 +226,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 4. A/B Testing Framework
 5. Schema Retry Logic
 6. Parallel Verdict Generation (50-80% speed improvement)
-7. Tiered LLM Routing (50-70% cost reduction)
+7. Tiered LLM Routing (enabled)
 
 **Status**: Infrastructure complete, database migration ready, but not integrated into analyzer.ts. Tests not executed (require $20-200 API budget).
 
@@ -217,9 +236,9 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 ### Critical Issues
 
-**1. v2.8 Prompts Never Validated** (CRITICAL)
-- **Impact**: Unknown quality impact of large optimization work
-- **Solution**: Run baseline + A/B tests ($120-250 in API calls)
+**1. Empirical Prompt A/B Baseline Pending** (HIGH)
+- **Impact**: Full measured cost/quality deltas for prompt optimization are not yet benchmarked end-to-end.
+- **Solution**: Run baseline + A/B tests ($120-250 in API calls) as a follow-up validation track.
 
 **2. Metrics Not Integrated** (HIGH)
 - **Impact**: No observability into analysis quality/performance
@@ -238,7 +257,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 ### High Priority
 
-**6. Quality Gate Display** (UX) - Gate decisions exist in JSON but not shown in UI
+**6. Source Acquisition Resilience (QUALITY)** - Warning coverage implemented; stall-recovery branch remains pending
 **7. Model Knowledge Toggle** (QUALITY) - `pipeline.allowModelKnowledge=false` not fully respected
 
 ---
@@ -291,6 +310,6 @@ This history reflects work by the FactHarbor development team and AI coding assi
 
 ---
 
-**Document Status**: Comprehensive history compiled from 45+ source documents
+**Document Status**: Comprehensive history compiled from 45+ source documents, updated through 2026-02-13
 **Consolidation Date**: January 19, 2026
 **Source Documents**: CHANGELOG.md, EVOLUTION.md, investigation reports, bug fix reports, implementation summaries, architecture reviews

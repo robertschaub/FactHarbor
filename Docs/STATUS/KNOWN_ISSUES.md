@@ -1,6 +1,6 @@
 # FactHarbor Known Issues
 
-**Last Updated**: February 5, 2026
+**Last Updated**: February 13, 2026
 **Current Version**: 2.10.2
 **Schema Version**: 2.7.0
 
@@ -21,22 +21,22 @@ This document tracks all known bugs, limitations, and technical debt in FactHarb
 
 ## Critical Issues
 
-### 1. v2.8 Prompt Optimizations Never Validated
+### 1. Historical: v2.8 Prompt Optimizations Never Validated
 
-**Status**: ❌ UNVALIDATED  
+**Status**: ✅ RESOLVED (v2.10.2 review)  
 **Discovered**: January 2026  
-**Severity**: CRITICAL
+**Severity**: Resolved / Historical
 
 **Description**:
-Large prompt optimization work (v2.8) was deployed without A/B testing:
+Large prompt optimization work (v2.8) was originally deployed without A/B testing:
 - Provider-specific formatting (Claude XML, GPT few-shot, Gemini format, Mistral step-by-step)
 - Claims ~40% token reduction for fast-tier models
 - 83 tests added but only validate syntax, not actual LLM behavior
 
 **Impact**:
-- Unknown whether optimizations actually improve or degrade quality
-- May be contributing to quality regression observed Jan 13-19
-- No empirical data on token reduction or quality impact
+- Historical risk was documented and tracked.
+- Lead-dev review in v2.10.2 confirmed format-only/provider-variant safety and backward compatibility.
+- Empirical A/B benchmarking remains optional follow-up work (not a blocking defect).
 
 **Workaround**:
 None. Optimizations are in production code.
@@ -451,17 +451,17 @@ const verdicts = await generateClaimVerdictsParallel(
 
 ---
 
-### P2. Tiered LLM Routing Not Enabled
+### P2. Tiered LLM Routing (Enabled)
 
-**Status**: ✅ BUILT BUT NOT INTEGRATED  
+**Status**: ✅ ENABLED  
 **Potential Savings**: 50-70% cost reduction
 
 **Description**:
-Model tiering system exists (fast-tier models for extraction, premium for reasoning) but is not enabled.
+Model tiering is active in production paths (Haiku-tier for extract/understand and Sonnet-tier for verdict/context refinement).
 
 **Solution**:
-1. Enable tiering in the pipeline config (UCM)
-2. Use `getModelForTask()` to select appropriate model per task:
+1. Keep model/task mapping under UCM governance.
+2. Continue using `getModelForTask()` to select appropriate model per task:
    - Budget models: Haiku ($0.25/M), Mini ($0.15/M), Flash ($0.075/M)
    - Premium models: Sonnet-4 ($3/M) for verdicts
 
@@ -473,7 +473,9 @@ Model tiering system exists (fast-tier models for extraction, premium for reason
 
 ## Summary Statistics
 
-**Total Issues**: 20 (1 resolved in v2.10.2)
+**Total Tracked Items**: 20 (historical + active)
+- Resolved: 3
+- Active: 17
 - Critical: 2
 - High: 4 (1 resolved)
 - Medium: 5
@@ -481,8 +483,10 @@ Model tiering system exists (fast-tier models for extraction, premium for reason
 - Security: 3 (LOW for POC, HIGH for production)
 - Performance: 2 (ready to deploy)
 
-**Resolved in v2.10.2**:
+**Resolved items**:
+- ✅ Issue #1: Prompt optimization validation risk (resolved by review in v2.10.2)
 - ✅ Issue #3: Quality Gate Decisions Not Displayed in UI
+- ✅ P2: Tiered LLM Routing enabled
 
 **By Category**:
 - Quality/Validation: 4 issues (1 resolved)

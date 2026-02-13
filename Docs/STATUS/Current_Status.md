@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
 **Version**: Pre-release (targeting v1.0)
-**Last Updated**: 2026-02-12
-**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled + Phase 2a Refactoring)
+**Last Updated**: 2026-02-13
+**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled + Phase 2a Refactoring + Report Quality Hardening)
 
 ---
 
@@ -33,6 +33,11 @@
 - LLM Tiering for cost optimization
 - Provenance validation (Ground Realism enforcement)
 - **Harm Potential Detection**: Shared heuristic for death/injury/fraud claims
+
+**Report Quality Hardening (2026-02-13):**
+- ✅ **Zero-Source Warning Coverage**: Added `no_successful_sources` and `source_acquisition_collapse` for source-acquisition failures
+- ✅ **Direction Semantics Prompt Hardening**: Added qualifier-preservation and semantic-interpretation guardrails in orchestrated prompts
+- ✅ **Direction Validation Tier Update**: Direction validation now routes through verdict-tier model selection
 
 **Phase 2 Quality Improvements (v2.6.41):**
 - **Evidence Quality Filtering**: Two-layer enforcement (prompts + deterministic filter) for probative value
@@ -128,7 +133,7 @@
 2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
 
 **HIGH**:
-3. **Quality Gate Display**: Gate stats exist in JSON but not shown in UI with per-item reasons
+3. **Source Acquisition Recovery Branch**: Phase 1 warning coverage is complete, but Phase 4 stall-recovery behavior is still pending
 4. **Input Neutrality Context Variance**: Question vs statement can yield different context counts in some cases
 5. **Model Knowledge Toggle**: `pipeline.allowModelKnowledge=false` not fully respected in Understanding phase
 
@@ -156,7 +161,7 @@
    - ✅ Generic examples policy enforced
    - ✅ Lead Dev code review passed
    - ✅ Backward compatibility confirmed
-   - **Status**: Complete - See [Prompt Optimization Summary](../WIP/Prompt_Optimization_Investigation.md)
+   - **Status**: Complete - See [Prompt Optimization Summary](../ARCHIVE/Prompt_Optimization_Investigation.md)
 
 2. **Integrate Metrics Collection**
    - ⏸️ Add metrics hooks to analyzer.ts (15-30 minute task)
@@ -168,13 +173,13 @@
 
 3. **Deploy Performance Optimizations**
    - ⏸️ Enable parallel verdict generation (50-80% faster)
-   - ⏸️ Enable tiered LLM routing (50-70% cost savings)
+   - ⏸️ Extend regression coverage for source-acquisition and direction-semantics hardening paths
    - **Status**: Code ready, needs integration into analyzer.ts
 
 4. **Fix Quality Regression Issues**
    - ⏸️ Review and adjust budget constraints
    - ⏸️ Validate input neutrality with more test cases
-   - ⏸️ Display quality gate decisions in UI
+   - ⏸️ Investigate remaining high-variance context-splitting cases
    - **Status**: Root causes identified, fixes planned
 
 ### Medium-Term (BEFORE PUBLIC DEPLOYMENT)
@@ -314,6 +319,18 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 
 ## Recent Changes
 
+### 2026-02-13 Report Quality Hardening (Phase 1 + Phase 2)
+**Status: ✅ Implemented**
+
+**Completed:**
+- Added explicit zero-source warnings for source acquisition collapse patterns:
+  - `no_successful_sources`
+  - `source_acquisition_collapse` (when searches are high and successful sources remain zero)
+- Added prompt hardening for qualifier preservation and direction-semantic interpretation:
+  - `UNDERSTAND` and `SUPPLEMENTAL_CLAIMS`: preserve thesis-critical qualifiers
+  - `VERDICT_DIRECTION_VALIDATION_BATCH_USER`: semantic interpretation rules + abstract examples
+- Updated direction-validation model routing to verdict-tier selection for stronger entailment handling.
+
 ### v2.10.2 Prompt Optimization v2.8.0-2.8.1 Complete (February 4, 2026)
 **Status: ✅ APPROVED** - All phases complete, Lead Dev review passed
 
@@ -349,7 +366,7 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 - [Prompt_Optimization_Code_Review.md](../ARCHIVE/REVIEWS/Prompt_Optimization_Code_Review.md)
 - [Prompt_Optimization_Architecture_Review.md](../ARCHIVE/REVIEWS/Prompt_Optimization_Architecture_Review.md)
 
-See: [Prompt Optimization Summary](../WIP/Prompt_Optimization_Investigation.md)
+See: [Prompt Optimization Summary](../ARCHIVE/Prompt_Optimization_Investigation.md)
 
 ---
 
@@ -828,6 +845,6 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 
 ---
 
-**Last Updated**: February 4, 2026
+**Last Updated**: February 13, 2026
 **Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 complete
+**Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 + Report Quality Hardening (Phase 1/2)
