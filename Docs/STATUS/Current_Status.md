@@ -2,7 +2,7 @@
 
 **Version**: Pre-release (targeting v1.0)
 **Last Updated**: 2026-02-13
-**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled + Phase 2a Refactoring + Report Quality Hardening)
+**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Optimization v2.8.1 + LLM Tiering Enabled + Phase 2a Refactoring + Report Quality Hardening + Cost Optimization)
 
 ---
 
@@ -33,6 +33,13 @@
 - LLM Tiering for cost optimization
 - Provenance validation (Ground Realism enforcement)
 - **Harm Potential Detection**: Shared heuristic for death/injury/fraud claims
+
+**API Cost Optimization (2026-02-13):**
+- ✅ **Budget defaults reduced**: `maxIterationsPerContext` 5→3, `maxTotalIterations` 20→10, `maxTotalTokens` 750K→500K
+- ✅ **Context detection tightened**: `contextDetectionMaxContexts` 5→3, `contextDedupThreshold` 0.85→0.70
+- ✅ **Expensive tests excluded from `npm test`**: 4 LLM integration tests now require explicit `test:expensive` script
+- ✅ **Cost reduction strategy documented**: Batch API, prompt caching, NPO/OSS programs researched
+- See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
 
 **Report Quality Hardening (2026-02-13):**
 - ✅ **Zero-Source Warning Coverage**: Added `no_successful_sources` and `source_acquisition_collapse` for source-acquisition failures
@@ -138,7 +145,7 @@
 5. **Model Knowledge Toggle**: `pipeline.allowModelKnowledge=false` not fully respected in Understanding phase
 
 **MEDIUM**:
-6. **Budget Constraints**: May be too strict, could limit research quality
+6. **Budget Constraints**: Reduced from v2.8.2 highs for cost optimization (3 iter/context, 10 total, 500K tokens). May need tuning per UCM if quality is insufficient for complex analyses
 7. **No Claim Caching**: Recomputes every analysis, wastes API calls on duplicates
 8. **No Normalized Data Model**: All data stored as JSON blobs, no relational queries
 9. **Error Pattern Tracking**: No systematic tracking of error types/frequencies
@@ -264,16 +271,19 @@
 
 ### Test Coverage
 
-**Unit Tests:**
+**Unit Tests** (`npm test` — safe, no API calls):
 - Analyzer core functions (partial)
 - Quality gates (partial)
 - Truth scale calculations (partial)
 - Job lifecycle (basic)
+- 46 test files, all mocked (no real LLM calls)
 
-**Integration Tests:**
-- Complete analysis flow (manual)
-- LLM provider switching (manual)
-- Search provider switching (manual)
+**Expensive Integration Tests** (explicit scripts only, $1-5+ per run):
+- `npm run test:llm` — Multi-provider LLM integration
+- `npm run test:neutrality` — Input neutrality (full analysis x2 per pair)
+- `npm run test:contexts` — Context preservation (full analysis)
+- `npm run test:adversarial` — Adversarial context leak (full analysis)
+- `npm run test:expensive` — All 4 expensive tests combined
 
 **Missing Tests:**
 - API controller tests
@@ -725,10 +735,13 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - Fetches 4-8 sources total
 - Parallel source fetching with 5-second timeout per source
 
-**Cost Estimates** (varies by provider and model):
+**Cost Estimates** (varies by provider and model, standard API pricing):
 - Short analysis: $0.10 - $0.50
-- Medium analysis: $0.50 - $2.00
-- Long analysis: $2.00 - $10.00
+- Medium analysis: $0.50 - $1.50
+- Long analysis: $1.50 - $5.00
+- Budget ceiling: ~$1.50/analysis (500K token cap)
+- **With Batch API (50% off)**: Halve all estimates above
+- See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
 
 ---
 
@@ -803,9 +816,12 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 ## What's Next
 
 **Immediate Actions** (User decisions required):
-1. Run baseline test to establish quality metrics ($20-50)
-2. Integrate metrics collection into analyzer.ts (15-30 min)
-3. Deploy performance optimizations (parallel verdicts + tiered routing)
+1. **Implement Batch API** — 50% flat discount on all LLM calls (no pipeline logic changes)
+2. **Implement prompt caching** — 90% off repeated system prompts (AI SDK code change)
+3. **Apply for NPO/OSS credit programs** — Up to $20K Anthropic, $10K/year Google, $1K/year AWS
+4. Run baseline test to establish quality metrics ($20-50)
+5. Integrate metrics collection into analyzer.ts (15-30 min)
+6. Deploy performance optimizations (parallel verdicts + tiered routing)
 
 **See**: 
 - [Known Issues](KNOWN_ISSUES.md) for complete bug list
@@ -821,14 +837,21 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 - Technical debt reduction
 
 **Priority Order:**
-1. **Quick Wins**:
+1. **Cost Optimization** (in progress):
+   - ✅ Budget defaults reduced (25-40% savings)
+   - ✅ Expensive tests excluded from `npm test`
+   - Batch API integration (50% discount — next priority)
+   - Prompt caching (90% off repeated inputs)
+   - NPO/OSS credit applications ($11K+/year potential)
+   - See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
+
+2. **Quick Wins**:
    - Parallel verdict generation (50-80% faster)
    - Quality Gate UI display (transparency)
    - Cost quotas (financial safety) - *LOW urgency for POC*
    - Admin authentication - *LOW urgency for POC*
 
-2. **High-Value Performance**:
-   - Tiered LLM routing (50-70% cost savings)
+3. **High-Value Performance**:
    - Claim-level caching (30-50% savings on repeats)
    - Observability dashboard
 
@@ -847,4 +870,4 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 
 **Last Updated**: February 13, 2026
 **Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 + Report Quality Hardening (Phase 1/2)
+**Document Status**: Reflects UCM Integration + Prompt Optimization v2.8.1 + Report Quality Hardening (Phase 1/2) + Cost Optimization
