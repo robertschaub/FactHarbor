@@ -524,7 +524,7 @@ For small, well-understood changes:
 
 ### 3.3 Complex Investigation Workflow
 
-For issues requiring deep analysis:
+For issues requiring deep analysis by a **single investigator** with sequential review:
 
 1. **LLM Expert** or **Lead Architect** investigates root cause
 2. **Lead Developer** validates findings
@@ -532,100 +532,104 @@ For issues requiring deep analysis:
 4. **All roles** discuss trade-offs (async via document)
 5. Proceed to Standard Feature Workflow
 
-### 3.5 Multi-Agent Investigation Workflow
+> **§3.3 vs §3.4:** Use §3.3 when one expert can investigate and the team reviews sequentially. Use §3.4 when you want **independent parallel perspectives** from multiple agents on the same problem.
+
+### 3.4 Multi-Agent Investigation Workflow
 
 For complex tasks where the Captain wants multiple agents to independently investigate, propose solutions, and produce a consolidated plan.
 
 **When to use:** The Captain assigns the same investigation task to 2+ agents (potentially different roles, tools, or models) and wants a single unified output document.
+
+**Concurrency model: Hub-and-Spoke.** Each agent writes to their own spoke file (zero contention). Only the hub document requires brief lock acquisition for Participant Tracker updates. The consolidator is the only agent that reads all spoke files and merges them into the hub.
 
 **Workflow:**
 
 ```mermaid
 flowchart TB
     subgraph Init["Phase 0: Initiation"]
-        C1[Captain sends INVESTIGATE command<br/>to each agent with task description]
+        C1[Captain sends INVESTIGATE to first agent]
+        C2[First agent creates hub document]
+        C3[Captain sends INVESTIGATE to remaining agents]
     end
 
     subgraph Investigate["Phase 1: Independent Investigation"]
-        A1[Agent 1 — first agent<br/>Creates WIP document + investigates]
-        A2[Agent 2<br/>Self-registers + investigates]
-        AN[Agent N<br/>Self-registers + investigates]
+        A1[Agent 1<br/>Writes to own spoke file]
+        A2[Agent 2<br/>Writes to own spoke file]
+        AN[Agent N<br/>Writes to own spoke file]
     end
 
     subgraph Consolidate["Phase 2: Consolidation"]
-        CON[Consolidator Agent<br/>Synthesizes all findings into<br/>§Consolidated Analysis + §Plan]
+        CON[Consolidator Agent<br/>Reads all spoke files<br/>Writes consolidated output to hub]
     end
 
     subgraph Review["Phase 3: Review & Approval"]
-        REV[Reviewer / Implementer<br/>Reads consolidated document]
+        REV[Reviewer / Implementer<br/>Reads hub document]
         CAP[Captain approves plan]
     end
 
-    C1 --> A1 & A2 & AN --> CON --> REV --> CAP
+    C1 --> C2 --> C3 --> A1 & A2 & AN --> CON --> REV --> CAP
 ```
 
 **Phase 0 — Initiation (Captain)**
 
-No manual document preparation needed. The Captain simply:
-1. Sends the **INVESTIGATE** command to each agent, including the task description, document path, and optional focus area
-2. The **first agent** to start creates the WIP document from the §4.5 template and populates the Investigation Brief
-3. Subsequent agents find the document already created and add themselves
+1. Send the **INVESTIGATE** command to the **first agent** and wait for confirmation that the hub document has been created
+2. Once confirmed, send **INVESTIGATE** to the remaining agents — they can all run in parallel
+
+This two-step dispatch eliminates the document-creation race condition. No other manual preparation is needed.
 
 **Phase 1 — Independent Investigation (each agent)**
-1. **If the document does not exist** → create it from the Investigation Document Template (§4.5), fill in the **Investigation Brief** from the Captain's task description, set status to `INVESTIGATING`
-2. **If the document exists** → read the Investigation Brief
-3. Add your own row to the **Participant Tracker** (role, agent/model name) → status `INVESTIGATING`
-4. Perform investigation (read code, analyze data, research)
-5. Update Participant Tracker → status `WRITING`
-6. Acquire the Write Lock (§4.3). If locked, use the **Temp File Protocol** (§4.3) instead
-7. Append a new subsection under `## Investigation Reports` using this format:
-   ```markdown
-   ### Report: {Role} ({Agent/Model}) — {Date}
-   **Files Analyzed:** {list}
-   **Findings:** {structured findings per investigation question}
-   **Proposals:** {proposed fixes or approaches}
-   **Risks/Concerns:** {anything the consolidator should weigh}
-   ```
-8. If pending temp files exist from other agents, merge them into the document (see §4.3 Merge responsibility)
-9. Release the Write Lock and update Participant Tracker → status `DONE`
-10. Do NOT edit or delete other agents' reports
-11. Do NOT attempt consolidation — that is Phase 2
+
+1. **If the hub document does not exist** (first agent only):
+   a. Create it from the Investigation Document Template (§4.5), populate the **Investigation Brief** from the Captain's task description
+   b. Set document status to `INVESTIGATING`
+   c. Add your row to the **Participant Tracker** with your spoke file path
+2. **If the hub document exists** (subsequent agents):
+   a. Read the Investigation Brief
+   b. Acquire the Write Lock (§4.3) → add your row to the Participant Tracker (with spoke file path) → release lock
+3. **Create your spoke file**: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md` using the Spoke File Format (§4.5)
+4. Perform investigation (read code, analyze data, research) — write everything to **your spoke file** (no lock needed)
+5. When done: acquire Write Lock → update your Participant Tracker row to `DONE` → release lock
+6. Do NOT read other agents' spoke files (anti-anchoring rule — reports are in separate files, making this naturally enforced)
+7. Do NOT attempt consolidation — that is Phase 2
 
 **Phase 2 — Consolidation (designated agent)**
+
 1. Captain assigns a consolidator agent (typically a high-capability model)
-2. Consolidator reads ALL investigation reports in the document
-3. Consolidator writes the following sections:
-   - **Consolidated Analysis**: Unified root-cause analysis, noting where investigators agree/disagree
-   - **Agreement Matrix**: Table showing which investigators confirmed each finding (see §4.5)
-   - **Consolidated Plan**: Phased implementation plan with files, risks, and effort indicators
-   - **Open Questions**: Unresolved disagreements or gaps requiring Captain decision
-4. Set document status to `READY_FOR_REVIEW`
-5. Raw investigation reports remain in the document (below the consolidated sections) for traceability
+2. Consolidator sets hub document status to `CONSOLIDATING`
+3. Consolidator reads ALL spoke files listed in the Participant Tracker (where status = `DONE`)
+4. Consolidator writes the following sections in the hub document under `# CONSOLIDATED OUTPUT`:
+   - **Consolidated Analysis**: Summary, Agreement Matrix (which investigators confirmed each finding), Strongest Contributions per investigator
+   - **Consolidated Plan**: Phased implementation plan with files, risks, and effort indicators — with **Open Questions** subsection for unresolved disagreements requiring Captain decision
+5. Consolidator appends each spoke file's content under `# INVESTIGATION REPORTS` in the hub for traceability
+6. Set document status to `READY_FOR_REVIEW`
 
 **Phase 3 — Review & Implementation**
-1. Captain (or assigned reviewer) reads the consolidated document
+
+1. Captain (or assigned reviewer) reads the hub document
 2. Captain approves, requests changes, or escalates open questions
-3. Once approved, the document serves as the implementation brief for the implementing agent
-4. Set document status to `APPROVED` → implementer proceeds using Standard Feature Workflow (§3.1) or Quick Fix Workflow (§3.2)
+3. Decisions are recorded in the **Decision Record** section of the hub
+4. Once approved: set status to `APPROVED` → implementer proceeds using Standard Feature Workflow (§3.1) or Quick Fix Workflow (§3.2)
 
 **Rules:**
 - Participants, their roles, and their number vary per task — the Captain decides who participates
-- Each agent writes independently — no reading other agents' reports during Phase 1 (to avoid anchoring bias)
+- Each agent writes to their own spoke file — no shared-file contention during Phase 1
+- Anti-anchoring: agents must NOT read other agents' spoke files during Phase 1 (file separation makes this naturally enforced)
 - The consolidator must not discard minority findings — disagreements are valuable signal
-- If an agent discovers something outside the investigation scope, it flags it in a `**Out of Scope**` note but does not investigate further
-- The consolidated document is the single source of truth for the downstream reviewer/implementer
-- Agents MUST update their row in the **Participant Tracker** (§4.5) when changing state
+- If an agent discovers something outside the investigation scope, it flags it in an `**Out of Scope**` note in their spoke file but does not investigate further
+- The hub document is the single source of truth for the downstream reviewer/implementer
+- Agents MUST update their row in the **Participant Tracker** when changing state
+- If a participant remains in `INVESTIGATING` or `WRITING` status and their agent session is no longer active, the Captain may set their status to `ABANDONED` and proceed with consolidation using available reports. The consolidator should note the missing perspective.
 
 #### Decision Authority & Escalation
 
-Decisions during investigation and consolidation follow a tiered authority model based on impact and risk. Escalate upward when the threshold is exceeded.
+Decisions during investigation and consolidation follow a tiered authority model based on impact and risk. Escalate upward when the threshold is exceeded. See also the general Escalation Protocol (§7).
 
-| Level | Who decides | Scope | Examples |
-|-------|------------|-------|---------|
-| **1 — Lead agent** | The individual agent decides alone | Low impact, easily reversible, within own report | Investigation methodology, which files to analyze, report structure, internal findings |
-| **2 — Agent consent** | Lead agent + one relevant agent agree | Medium impact, affects shared output | Proposing a specific fix approach, recommending a tool/library, flagging a finding as critical |
-| **3 — Agent consensus** | All participating agents agree (via document) | High impact, affects multiple areas | Consolidation priorities, plan phasing, recommending architectural changes, disagreement resolution between agents |
-| **4 — Captain approval** | Captain must explicitly approve | Very high impact, irreversible, or outside investigation scope | Schema migrations, prompt modifications, security-related changes, removing functionality, expanding investigation scope, approving the final plan |
+| Level | Who decides | Scope | When applicable | Examples |
+|-------|------------|-------|-----------------|---------|
+| **1 — Lead agent** | The individual agent decides alone | Low impact, easily reversible, within own report | All phases | Investigation methodology, which files to analyze, report structure, internal findings |
+| **2 — Agent consent** | Lead agent + one relevant agent agree | Medium impact, affects shared output | Phase 2–3 only (agents cannot communicate during Phase 1) | Proposing a specific fix approach, recommending a tool/library, flagging a finding as critical |
+| **3 — Agent consensus** | All participating agents agree (via document) | High impact, affects multiple areas | Phase 2–3, orchestrated by Captain | Consolidation priorities, plan phasing, recommending architectural changes, disagreement resolution between agents |
+| **4 — Captain approval** | Captain must explicitly approve | Very high impact, irreversible, or outside investigation scope | Any phase | Schema migrations, prompt modifications, security-related changes, removing functionality, expanding investigation scope, approving the final plan |
 
 **Escalation rules:**
 - When in doubt, escalate one level up — over-escalating is safer than under-escalating
@@ -640,24 +644,26 @@ The Captain uses these standardized prompts to direct agents. Copy, fill in the 
 
 **INVESTIGATE** — Assign an agent to investigate (Phase 1):
 ```
-As {Role}, investigate using the Multi-Agent Investigation Workflow (§3.5).
+As {Role}, investigate using the Multi-Agent Investigation Workflow (§3.4).
 Document: Docs/WIP/{filename}.md
 Task: {what to investigate — clear questions to answer}
 Inputs: {files, data, reports, or artifacts to examine}
 Scope: {what is NOT in scope}
 Focus on: {optional specific focus area or questions for this agent}
 
-If the document does not exist, create it from the §4.5 template and populate the Investigation Brief.
-Add yourself to the Participant Tracker, then investigate and write your report.
+If the hub document does not exist, create it from the §4.5 template and populate the Investigation Brief.
+Add yourself to the Participant Tracker, create your spoke file (§4.5), and write your report there.
 ```
 
 **CONSOLIDATE** — Assign the consolidator (Phase 2):
 ```
 As {Role}, consolidate the investigation in Docs/WIP/{filename}.md
-Read ALL reports under ## Investigation Reports, then write:
+Set document status to CONSOLIDATING.
+Read ALL spoke files listed in the Participant Tracker (where Status = DONE), then write:
 - ## Consolidated Analysis (summary, agreement matrix, strongest contributions)
 - ## Consolidated Plan (phased, with files and risks)
-- ## Open Questions (unresolved disagreements needing Captain decision)
+- ### Open Questions (unresolved disagreements needing Captain decision)
+Copy each spoke file's content under # INVESTIGATION REPORTS for traceability.
 Set document status to READY_FOR_REVIEW when done.
 ```
 
@@ -673,7 +679,7 @@ Add your review under ## Review Log using the Review Comment Format (§4.4).
 Read Docs/WIP/{filename}.md and report:
 - Document status
 - Participant Tracker state (who is done, who is still working)
-- Any pending temp files that need merging
+- Any agents with ABANDONED status or stale sessions
 ```
 
 **PROPOSE** — Ask an agent to propose next steps (after any phase):
@@ -698,25 +704,29 @@ If you encounter blockers or deviations from the plan, stop and report to the Ca
 
 No manual document preparation needed — agents handle it.
 
-**Step 1 — Activate each participant** (one prompt per agent session)
+**Step 1 — Dispatch first agent**
 
-Paste the **INVESTIGATE** command into each agent's tool, filling in the task description, document path, and optional focus area. The first agent creates the document; subsequent agents find it and self-register. All agents can run in parallel — the Write Lock + Temp File Protocol handles concurrency.
+Paste the **INVESTIGATE** command into the first agent. Wait for confirmation that the hub document has been created and the Investigation Brief is populated.
 
-**Step 2 — Monitor progress**
+**Step 2 — Dispatch remaining agents** (in parallel)
+
+Paste the **INVESTIGATE** command into each additional agent. They find the hub document, self-register in the Participant Tracker, and create their own spoke files. All agents write to their own files — no contention.
+
+**Step 3 — Monitor progress**
 
 Paste the **STATUS** command into any available agent to check the Participant Tracker. When all participants show `DONE`, proceed to consolidation.
 
-**Step 3 — Consolidate**
+**Step 4 — Consolidate**
 
-Paste the **CONSOLIDATE** command into a high-capability agent (e.g., Opus). The consolidator merges any remaining temp files, reads all reports, and writes the unified analysis + plan.
+Paste the **CONSOLIDATE** command into a high-capability agent (e.g., Opus). The consolidator reads all spoke files, writes the unified analysis + plan into the hub, and copies spoke content under Investigation Reports for traceability.
 
-**Step 4 — Review, Propose, or Implement**
+**Step 5 — Review, Propose, or Implement**
 
 Use **REVIEW**, **PROPOSE**, or **IMPLEMENT** commands as needed. These can go to the same or different agents.
 
 ---
 
-### 3.4 Role Handoff Protocol
+### 3.5 Role Handoff Protocol
 
 When the user switches roles mid-conversation or continues work from a previous session:
 
@@ -749,7 +759,7 @@ Examples:
 - Docs/WIP/Shadow_Mode_Architecture_Review.md
 - Docs/WIP/Shadow_Mode_Code_Review.md
 - Docs/WIP/Report_Quality_Analysis.md
-- Docs/WIP/Grounding_Logic_Investigation_2026-02-13.md  (§3.5 multi-agent investigation)
+- Docs/WIP/Grounding_Logic_Investigation_2026-02-13.md  (§3.4 multi-agent investigation)
 ```
 
 ### 4.2 Document Structure
@@ -795,6 +805,8 @@ Every collaborative document MUST include:
 
 **MANDATORY** when multiple agents edit shared documents concurrently.
 
+> **§3.4 investigations:** The hub-and-spoke model minimizes lock usage. Each agent writes to their own spoke file (no lock needed). The Write Lock is only required for brief Participant Tracker updates in the hub document. The Temp File Protocol below applies to non-investigation shared documents.
+
 **Lock file:** `Docs/WIP/WRITE_LOCK.md`
 
 **Every agent MUST follow this sequence before writing to any shared `Docs/WIP/` document:**
@@ -814,23 +826,46 @@ Every collaborative document MUST include:
 
 #### Temp File Protocol (when locked)
 
+> **Not needed for §3.4 investigations** — agents write to their own spoke files and never contend on the hub document's content sections. This protocol applies to non-investigation shared documents (e.g., shared plans, reviews).
+
 When an agent needs to write but the shared document is locked, the agent MUST NOT wait indefinitely. Instead:
 
 1. **Write to a temp file**: `Docs/WIP/{OriginalFileName}_temp_{Role}.md`
-   - Use the same report format as if writing directly to the shared document
-   - Example: `Docs/WIP/Grounding_Investigation_2026-02-13_temp_SrDev_Opus.md`
-2. **Record the temp file** in the Participant Tracker (acquire lock briefly just to update your row's Temp File column)
-3. **Report to Captain**: "Lock held by {Holder}. Wrote findings to {temp file path}."
+   - Use the same format as if writing directly to the shared document
+   - Example: `Docs/WIP/Shadow_Mode_Plan_temp_SrDev_Opus.md`
+2. **Report to Captain**: "Lock held by {Holder}. Wrote findings to {temp file path}."
 
 **Merge responsibility:**
-- The **next agent who acquires the lock** checks the Participant Tracker for pending temp files
-- If temp files exist: read each temp file, append its content to the correct section of the shared document, then delete the temp file and clear the Temp File column
+- The **next agent who acquires the lock** checks for pending temp files (matching `{OriginalFileName}_temp_*.md`)
+- If temp files exist: read each, append its content to the correct section of the shared document, then delete the temp file
 - Alternatively, the **Captain** can instruct any agent to merge pending temp files
-- The **consolidator** (Phase 2) MUST merge all remaining temp files before starting consolidation
+
+### 4.4 Review Comment Format
+
+When adding review comments:
+
+```markdown
+### Review: {Reviewer Role} - {Date}
+
+**Overall Assessment:** {APPROVE | REQUEST_CHANGES | COMMENT_ONLY}
+
+#### Strengths
+- {positive observation}
+
+#### Concerns
+- **[CRITICAL]** {must fix before proceeding}
+- **[SUGGESTION]** {optional improvement}
+- **[QUESTION]** {clarification needed}
+
+#### Specific Comments
+- Line/Section X: {comment}
+```
 
 ### 4.5 Investigation Document Template
 
-Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP/{Topic}_Investigation_{date}.md`
+Used with the Multi-Agent Investigation Workflow (§3.4). File naming: `Docs/WIP/{Topic}_Investigation_{date}.md`
+
+#### Hub Document (shared)
 
 ```markdown
 # {Topic} — Multi-Agent Investigation
@@ -845,11 +880,11 @@ Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP
 
 Each agent adds their own row when joining. No manual setup needed.
 
-| # | Role | Agent/Tool/Model | Status | Temp File | Updated |
-|---|------|-----------------|--------|-----------|---------|
+| # | Role | Agent/Tool/Model | Report File | Status | Updated |
+|---|------|-----------------|-------------|--------|---------|
 
-Status values: `INVESTIGATING` → `WRITING` → `DONE` | `CONSOLIDATING` → `DONE` | `REVIEWING` → `DONE`
-Temp File: path to temp file if document was locked during write, `—` otherwise.
+Status values: `INVESTIGATING` → `WRITING` → `DONE` | `ABANDONED` | `CONSOLIDATING` → `DONE` | `REVIEWING` → `DONE`
+Report File: path to the agent's spoke file (e.g., `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`).
 
 ---
 
@@ -864,7 +899,7 @@ Temp File: path to temp file if document was locked during write, `—` otherwis
 
 # CONSOLIDATED OUTPUT
 
-> **Reading guide:** Everything below this line in Part 1 is the authoritative, consolidated result.
+> **Reading guide:** Everything below this line is the authoritative, consolidated result.
 > It is written by the consolidator in Phase 2 and reviewed/approved in Phase 3.
 > During Phase 1 (investigation) these sections are empty — do not fill them in during investigation.
 
@@ -908,48 +943,51 @@ Temp File: path to temp file if document was locked during write, `—` otherwis
 
 # INVESTIGATION REPORTS
 
-> **Reading guide:** Everything below this line contains raw, unedited reports from individual investigators (Phase 1).
+> **Reading guide:** Everything below this line contains reports copied from spoke files by the consolidator.
 > After consolidation, these serve as historical reference and traceability — the consolidated output above is authoritative.
-> Each agent appends their report here. Do not edit or delete other agents' reports.
 
-### Report: {Role} ({Agent/Model}) — {Date}
-**Files Analyzed:** {list}
-**Findings:** ...
-**Proposals:** ...
-**Risks/Concerns:** ...
+*(Consolidator copies each spoke file's content here in Phase 2 for traceability)*
 
 ---
 ```
 
-**Status transitions:**
-- `INVESTIGATING` → First agent sets on document creation; agents are writing reports
+#### Spoke File Format (one per agent)
+
+File naming: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`
+
+```markdown
+# {Topic} — Report: {Role} ({Agent/Model})
+
+**Date:** {date}
+**Hub Document:** Docs/WIP/{Topic}_Investigation_{date}.md
+**Status:** INVESTIGATING | WRITING | DONE
+
+---
+
+## Files Analyzed
+- {file path} — {what was examined and why}
+
+## Findings
+{Detailed findings from the investigation}
+
+## Proposals
+{Proposed solutions, approaches, or next steps}
+
+## Risks / Concerns
+{Identified risks, edge cases, caveats}
+
+## Out of Scope
+{Items discovered but outside the investigation scope — flagged for awareness}
+
+---
+```
+
+**Status transitions (hub document):**
+- `INVESTIGATING` → First agent sets on document creation; agents are writing spoke files
 - `CONSOLIDATING` → Set when all investigators are `DONE`; consolidator is working
 - `READY_FOR_REVIEW` → Consolidator sets when synthesis is complete
 - `APPROVED` → Captain sets after review; implementation may begin
 - `IMPLEMENTED` → Move to `Docs/ARCHIVE/` or appropriate subfolder
-
----
-
-### 4.4 Review Comment Format
-
-When adding review comments:
-
-```markdown
-### Review: {Reviewer Role} - {Date}
-
-**Overall Assessment:** {APPROVE | REQUEST_CHANGES | COMMENT_ONLY}
-
-#### Strengths
-- {positive observation}
-
-#### Concerns
-- **[CRITICAL]** {must fix before proceeding}
-- **[SUGGESTION]** {optional improvement}
-- **[QUESTION]** {clarification needed}
-
-#### Specific Comments
-- Line/Section X: {comment}
-```
 
 ---
 
