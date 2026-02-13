@@ -651,6 +651,22 @@ Read Docs/WIP/{filename}.md and report:
 - Any pending temp files that need merging
 ```
 
+**PROPOSE** — Ask an agent to propose next steps (after any phase):
+```
+As {Role}, read Docs/WIP/{filename}.md and propose next steps.
+Consider the current document status, completed reports, and open questions.
+Write your proposal under ## Consolidated Plan or as a new ## Proposed Next Steps section.
+Include: what to do next, who should do it, priorities, and any blockers.
+```
+
+**IMPLEMENT** — Assign an agent to execute the approved plan (after Phase 3):
+```
+As {Role}, implement the approved plan in Docs/WIP/{filename}.md
+Read ## Consolidated Plan and execute it phase by phase.
+After each phase: run tests/build, update the document status, and report progress.
+If you encounter blockers or deviations from the plan, stop and report to the Captain.
+```
+
 ---
 
 ### 3.4 Role Handoff Protocol
