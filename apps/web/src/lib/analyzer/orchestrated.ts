@@ -3128,7 +3128,7 @@ function enrichContextsForReport(
   evidenceItems?: EvidenceItem[];
   claimVerdicts?: ClaimVerdict[];
 }> {
-  return contexts.map(ctx => {
+  const result = contexts.map(ctx => {
     const ctxAnswer = verdictSummary?.analysisContextAnswers?.find(
       (a: any) => a.contextId === ctx.id,
     );
@@ -3148,6 +3148,31 @@ function enrichContextsForReport(
       claimVerdicts: ctxClaims.length > 0 ? ctxClaims : undefined,
     };
   });
+
+  // Single-context fallback: VERDICTS_SCHEMA_SIMPLE doesn't produce analysisContextAnswers,
+  // so the per-context verdict join above finds nothing. Synthesize from top-level verdictSummary.
+  if (contexts.length === 1 && !result[0]?.verdict && verdictSummary) {
+    const vs = verdictSummary as any;
+    const tp = vs.answer ?? vs.truthPercentage ?? 50;
+    const conf = vs.confidence ?? 50;
+    result[0] = {
+      ...result[0],
+      verdict: {
+        rating: percentageToClaimVerdict(tp, conf),
+        truthPercentage: tp,
+        confidence: conf,
+        shortAnswer: vs.shortAnswer,
+        keyFactors: vs.keyFactors,
+      },
+      // If claim verdict join was empty (claims lacked contextId before 2a fix),
+      // assign all top-level claim verdicts to the sole context
+      claimVerdicts: result[0].claimVerdicts?.length
+        ? result[0].claimVerdicts
+        : claimVerdicts.length > 0 ? claimVerdicts : undefined,
+    };
+  }
+
+  return result;
 }
 
 // ============================================================================
@@ -6029,39 +6054,6 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     }
   }
 
-  // Cross-proceeding discovery pass:
-  // When only one context is detected, run one focused search for other formal proceedings
-  // involving the same subject/entity but different authority.
-  if (
-    contexts.length === 1 &&
-    state.iterations.length >= 2 &&
-    !state.sources.some((s) => s.category === "cross_context")
-  ) {
-    const primaryMeta = (contexts[0]?.metadata || {}) as Record<string, any>;
-    const primaryAuthority = String(
-      primaryMeta.institution || primaryMeta.court || primaryMeta.regulatoryBody || "",
-    ).trim();
-    const crossQueries = [
-      `${entityStr} related proceeding different authority ruling`,
-      `${entityStr} parallel legal case court decision`,
-      `${entityStr} additional institution proceeding ruling`,
-      ...(recencyMatters ? [`${entityStr} separate proceeding ${currentYear}`] : []),
-    ];
-    if (primaryAuthority) {
-      crossQueries.push(
-        `${entityStr} separate proceeding different from ${primaryAuthority}`,
-        `${entityStr} other authority court ruling ${currentYear}`,
-      );
-    }
-    return {
-      complete: false,
-      focus: "Related proceedings (cross-authority)",
-      category: "cross_context",
-      queries: crossQueries,
-      recencyMatters,
-    };
-  }
-
   if (
     !hasLegal &&
     understanding.legalFrameworks.length > 0 &&
@@ -6151,6 +6143,39 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
         recencyMatters,
       };
     }
+  }
+
+  // Cross-proceeding discovery pass (moved after contradiction/inverse to prevent budget starvation):
+  // When only one context is detected, run one focused search for other formal proceedings
+  // involving the same subject/entity but different authority.
+  if (
+    contexts.length === 1 &&
+    state.iterations.length >= 2 &&
+    !state.sources.some((s) => s.category === "cross_context")
+  ) {
+    const primaryMeta = (contexts[0]?.metadata || {}) as Record<string, any>;
+    const primaryAuthority = String(
+      primaryMeta.institution || primaryMeta.court || primaryMeta.regulatoryBody || "",
+    ).trim();
+    const crossQueries = [
+      `${entityStr} related proceeding different authority ruling`,
+      `${entityStr} parallel legal case court decision`,
+      `${entityStr} additional institution proceeding ruling`,
+      ...(recencyMatters ? [`${entityStr} separate proceeding ${currentYear}`] : []),
+    ];
+    if (primaryAuthority) {
+      crossQueries.push(
+        `${entityStr} separate proceeding different from ${primaryAuthority}`,
+        `${entityStr} other authority court ruling ${currentYear}`,
+      );
+    }
+    return {
+      complete: false,
+      focus: "Related proceedings (cross-authority)",
+      category: "cross_context",
+      queries: crossQueries,
+      recencyMatters,
+    };
   }
 
   // NEW v2.6.18: Search for decision-makers and potential conflicts of interest
@@ -8802,6 +8827,7 @@ async function generateSingleContextVerdicts(
         return {
           claimId: claim.id,
           claimText: claim.text,
+          contextId: claim.contextId || (state.understanding?.analysisContexts?.[0]?.id ?? ""),
           verdict: 50,
           confidence: 50,
           truthPercentage: 50,
@@ -8875,6 +8901,7 @@ async function generateSingleContextVerdicts(
       return {
         ...cv,
         claimId: claim.id,
+        contextId: claim.contextId || (state.understanding?.analysisContexts?.[0]?.id ?? ""),
         verdict: clampedTruthPct,
         truthPercentage: clampedTruthPct,
         reasoning: sanitizedReasoning,
