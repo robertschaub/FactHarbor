@@ -572,9 +572,11 @@ flowchart TB
 
 **Phase 1 — Independent Investigation (each agent)**
 1. Read the Investigation Brief from the shared document
-2. Perform investigation (read code, analyze data, research)
-3. Follow the Write Lock Protocol (§4.3) before writing
-4. Append a new subsection under `## Investigation Reports` using this format:
+2. Update your row in the **Participant Tracker** → status `INVESTIGATING`
+3. Perform investigation (read code, analyze data, research)
+4. Update Participant Tracker → status `WRITING`
+5. Acquire the Write Lock (§4.3). If locked, use the **Temp File Protocol** (§4.3) instead
+6. Append a new subsection under `## Investigation Reports` using this format:
    ```markdown
    ### Report: {Role} ({Agent/Model}) — {Date}
    **Files Analyzed:** {list}
@@ -582,8 +584,10 @@ flowchart TB
    **Proposals:** {proposed fixes or approaches}
    **Risks/Concerns:** {anything the consolidator should weigh}
    ```
-5. Do NOT edit or delete other agents' reports
-6. Do NOT attempt consolidation — that is Phase 2
+7. If pending temp files exist from other agents, merge them into the document (see §4.3 Merge responsibility)
+8. Release the Write Lock and update Participant Tracker → status `DONE`
+9. Do NOT edit or delete other agents' reports
+10. Do NOT attempt consolidation — that is Phase 2
 
 **Phase 2 — Consolidation (designated agent)**
 1. Captain assigns a consolidator agent (typically a high-capability model)
@@ -603,10 +607,49 @@ flowchart TB
 4. Set document status to `APPROVED` → implementer proceeds using Standard Feature Workflow (§3.1) or Quick Fix Workflow (§3.2)
 
 **Rules:**
+- Participants, their roles, and their number vary per task — the Captain decides who participates
 - Each agent writes independently — no reading other agents' reports during Phase 1 (to avoid anchoring bias)
 - The consolidator must not discard minority findings — disagreements are valuable signal
 - If an agent discovers something outside the investigation scope, it flags it in a `**Out of Scope**` note but does not investigate further
 - The consolidated document is the single source of truth for the downstream reviewer/implementer
+- Agents MUST update their row in the **Participant Tracker** (§4.5) when changing state
+
+#### Captain Commands
+
+The Captain uses these standardized prompts to direct agents. Copy, fill in the blanks, and paste to the agent.
+
+**INVESTIGATE** — Assign an agent to investigate (Phase 1):
+```
+As {Role}, investigate the task described in Docs/WIP/{filename}.md
+Read the Investigation Brief, then append your findings under ## Investigation Reports.
+Follow the Write Lock Protocol (§4.3) and update your row in the Participant Tracker.
+Focus on: {optional specific focus area or questions for this agent}
+```
+
+**CONSOLIDATE** — Assign the consolidator (Phase 2):
+```
+As {Role}, consolidate the investigation in Docs/WIP/{filename}.md
+Read ALL reports under ## Investigation Reports, then write:
+- ## Consolidated Analysis (summary, agreement matrix, strongest contributions)
+- ## Consolidated Plan (phased, with files and risks)
+- ## Open Questions (unresolved disagreements needing Captain decision)
+Set document status to READY_FOR_REVIEW when done.
+```
+
+**REVIEW** — Assign a reviewer (Phase 3):
+```
+As {Role}, review the consolidated plan in Docs/WIP/{filename}.md
+Assess the plan for completeness, feasibility, and risks.
+Add your review under ## Review Log using the Review Comment Format (§4.4).
+```
+
+**STATUS** — Check investigation progress (any phase):
+```
+Read Docs/WIP/{filename}.md and report:
+- Document status
+- Participant Tracker state (who is done, who is still working)
+- Any pending temp files that need merging
+```
 
 ---
 
@@ -694,7 +737,7 @@ Every collaborative document MUST include:
 **Every agent MUST follow this sequence before writing to any shared `Docs/WIP/` document:**
 
 1. **Read** `WRITE_LOCK.md`
-2. **If LOCKED** → STOP. Report to user: "Lock held by {Holder} on {Target}. Waiting."
+2. **If LOCKED** → Use the **Temp File Protocol** below, or STOP and report to user: "Lock held by {Holder} on {Target}. Waiting."
 3. **If UNLOCKED** → Set status to `LOCKED` with your role, timestamp, and target file
 4. **Re-read** the target file (it may have changed since you last read it)
 5. **Write** your changes
@@ -706,6 +749,22 @@ Every collaborative document MUST include:
 - Stale locks (>10 min) may only be reset by the human user
 - Lock scope: one file per acquisition
 
+#### Temp File Protocol (when locked)
+
+When an agent needs to write but the shared document is locked, the agent MUST NOT wait indefinitely. Instead:
+
+1. **Write to a temp file**: `Docs/WIP/{OriginalFileName}_temp_{Role}.md`
+   - Use the same report format as if writing directly to the shared document
+   - Example: `Docs/WIP/Grounding_Investigation_2026-02-13_temp_SrDev_Opus.md`
+2. **Record the temp file** in the Participant Tracker (acquire lock briefly just to update your row's Temp File column)
+3. **Report to Captain**: "Lock held by {Holder}. Wrote findings to {temp file path}."
+
+**Merge responsibility:**
+- The **next agent who acquires the lock** checks the Participant Tracker for pending temp files
+- If temp files exist: read each temp file, append its content to the correct section of the shared document, then delete the temp file and clear the Temp File column
+- Alternatively, the **Captain** can instruct any agent to merge pending temp files
+- The **consolidator** (Phase 2) MUST merge all remaining temp files before starting consolidation
+
 ### 4.5 Investigation Document Template
 
 Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP/{Topic}_Investigation_{date}.md`
@@ -716,6 +775,19 @@ Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP
 **Status:** INVESTIGATING | CONSOLIDATING | READY_FOR_REVIEW | APPROVED | IMPLEMENTED
 **Created:** {date}
 **Captain:** {name or role}
+
+---
+
+## Participant Tracker
+<!-- Each agent updates their row when changing state. Captain fills initial assignments. -->
+
+| # | Role | Agent/Tool/Model | Status | Temp File | Updated |
+|---|------|-----------------|--------|-----------|---------|
+| 1 | {role} | {agent} | ASSIGNED | — | {date} |
+| 2 | {role} | {agent} | ASSIGNED | — | {date} |
+
+<!-- Status values: ASSIGNED → INVESTIGATING → WRITING → DONE | CONSOLIDATING → DONE | REVIEWING → DONE -->
+<!-- Temp File: path to temp file if document was locked during write, "—" otherwise -->
 
 ---
 
