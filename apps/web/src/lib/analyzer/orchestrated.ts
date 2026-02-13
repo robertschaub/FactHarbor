@@ -5737,7 +5737,10 @@ async function enrichContextsWithOutcomes(state: ResearchState, model: any): Pro
       if (!parsed) continue;
 
       if (parsed.action === "replace") {
-        const outcome = String(parsed.outcome || "").trim().slice(0, 100);
+        const rawOutcome = String(parsed.outcome || "").trim();
+        const outcome = rawOutcome.length > 250
+          ? rawOutcome.slice(0, 250).replace(/\s+\S*$/, "")
+          : rawOutcome;
         if (!outcome) continue;
         console.log(`[Analyzer] Enriched context "${proc.name}" outcome: "${proc.outcome}" -> "${outcome}"`);
         proc.outcome = outcome;
@@ -5897,8 +5900,15 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   );
   const inverseClaimSearchRequired = !!inverseClaimCandidate;
 
+  // Scale evidence minimum with context count: each context should have meaningful
+  // coverage, not just 6 items split across N contexts. The per-context floor (3)
+  // ensures at least basic evidence per analytical frame.
+  const scaledMinEvidence = Math.max(
+    config.minEvidenceItemsRequired,
+    contexts.length * 3,
+  );
   if (
-    state.evidenceItems.length >= config.minEvidenceItemsRequired &&
+    state.evidenceItems.length >= scaledMinEvidence &&
     categories.length >= CONFIG.minCategories &&
     state.contradictionSearchPerformed &&
     (!inverseClaimSearchRequired || state.inverseClaimSearchPerformed) &&
@@ -6018,10 +6028,21 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     return { complete: true };
   }
 
-  // Research each context
+  // Research each context — one pass through contexts, reserving at least 1 iteration
+  // for contradiction search. The old gate (contexts.length * 2) allowed Block 2 to retry
+  // the same context indefinitely when evidence extraction assigned items to a different
+  // context, consuming the entire iteration budget and starving contradiction search.
+  const mandatorySlots = 2; // contradiction + inverse claim
+  const localEffectiveMax = Math.max(
+    config.maxResearchIterations,
+    Math.min(contexts.length + mandatorySlots, config.maxResearchIterations * 2),
+  );
+  const reserveForContradiction = state.contradictionSearchPerformed ? 0 : 1;
+  const contextBudget = Math.min(contexts.length, localEffectiveMax - reserveForContradiction);
+
   if (
     contexts.length > 0 &&
-    state.iterations.length < contexts.length * 2
+    state.iterations.length < contextBudget
   ) {
     for (const context of contexts) {
       const contextEvidenceItems = state.evidenceItems.filter(
@@ -10715,9 +10736,18 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
   await emit(statusMsg, 10);
 
   // STEP 2-4: Research with search tracking
+  // Scale iteration budget for multi-context analyses: the base maxResearchIterations
+  // is a per-context floor, not a global ceiling. Multi-context jobs need enough
+  // iterations for context research + mandatory searches (contradiction, inverse claim).
+  // Cap at 2× base to prevent runaway cost.
+  const mandatorySearchSlots = 2; // contradiction + inverse claim
+  const effectiveMaxIterations = Math.max(
+    config.maxResearchIterations,
+    Math.min(contextCount + mandatorySearchSlots, config.maxResearchIterations * 2),
+  );
   let iteration = 0;
   while (
-    iteration < config.maxResearchIterations &&
+    iteration < effectiveMaxIterations &&
     state.sources.length < config.maxTotalSources
   ) {
     iteration++;
@@ -10732,7 +10762,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       markBudgetExceeded(state.budgetTracker, reason);
       await emit(
         `âš ï¸ Budget limit reached: ${reason}`,
-        Math.round(10 + (iteration / config.maxResearchIterations) * 50),
+        Math.round(10 + (iteration / effectiveMaxIterations) * 50),
       );
       break;
     }
@@ -10741,7 +10771,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Note: Per-context limits enforced separately when researching specific contexts
     recordIteration(state.budgetTracker, `ITER_${iteration}`);
 
-    const baseProgress = Math.round(10 + (iteration / config.maxResearchIterations) * 50);
+    const baseProgress = Math.round(10 + (iteration / effectiveMaxIterations) * 50);
 
     const decision = decideNextResearch(state);
     if (decision.complete) {
@@ -11065,14 +11095,15 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       decision.isContradictionSearch === true ||
       !!decision.targetContextId ||
       (decision.category === "evidence" && hasInstitutionalContext);
+    // Criticism/counter-evidence searches use MODERATE mode (not STRICT) to allow
+    // secondary commentary through. For legal/political topics, news analysis and
+    // commentary are often the primary counter-evidence sources. STRICT institution
+    // matching would reject them. Context relevance is still enforced via requireContextMatch.
     const strictInstitutionMatch =
       !!decision.targetContextId ||
-      decision.category === "criticism" ||
-      decision.category === "counter_evidence" ||
       (decision.category === "evidence" && hasInstitutionalContext);
     const allowInstitutionFallback = !(
       !!decision.targetContextId ||
-      decision.category === "criticism" ||
       (decision.category === "evidence" && hasInstitutionalContext)
     );
 
