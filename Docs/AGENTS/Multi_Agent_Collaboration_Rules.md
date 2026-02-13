@@ -532,6 +532,84 @@ For issues requiring deep analysis:
 4. **All roles** discuss trade-offs (async via document)
 5. Proceed to Standard Feature Workflow
 
+### 3.5 Multi-Agent Investigation Workflow
+
+For complex tasks where the Captain wants multiple agents to independently investigate, propose solutions, and produce a consolidated plan.
+
+**When to use:** The Captain assigns the same investigation task to 2+ agents (potentially different roles, tools, or models) and wants a single unified output document.
+
+**Workflow:**
+
+```mermaid
+flowchart TB
+    subgraph Init["Phase 0: Initiation"]
+        C1[Captain creates WIP document<br/>with investigation brief]
+    end
+
+    subgraph Investigate["Phase 1: Independent Investigation"]
+        A1[Agent 1<br/>Writes findings to §Investigation]
+        A2[Agent 2<br/>Writes findings to §Investigation]
+        AN[Agent N<br/>Writes findings to §Investigation]
+    end
+
+    subgraph Consolidate["Phase 2: Consolidation"]
+        CON[Consolidator Agent<br/>Synthesizes all findings into<br/>§Consolidated Analysis + §Plan]
+    end
+
+    subgraph Review["Phase 3: Review & Approval"]
+        REV[Reviewer / Implementer<br/>Reads consolidated document]
+        CAP[Captain approves plan]
+    end
+
+    C1 --> A1 & A2 & AN --> CON --> REV --> CAP
+```
+
+**Phase 0 — Initiation (Captain)**
+1. Create a WIP document using the Investigation Document Template (§4.5)
+2. Fill in the **Investigation Brief** section: what to investigate, which inputs/files to examine, what questions to answer
+3. Set document status to `INVESTIGATING`
+4. Assign agents and tell each one: the document path, their role, and that they must append findings to the document
+
+**Phase 1 — Independent Investigation (each agent)**
+1. Read the Investigation Brief from the shared document
+2. Perform investigation (read code, analyze data, research)
+3. Follow the Write Lock Protocol (§4.3) before writing
+4. Append a new subsection under `## Investigation Reports` using this format:
+   ```markdown
+   ### Report: {Role} ({Agent/Model}) — {Date}
+   **Files Analyzed:** {list}
+   **Findings:** {structured findings per investigation question}
+   **Proposals:** {proposed fixes or approaches}
+   **Risks/Concerns:** {anything the consolidator should weigh}
+   ```
+5. Do NOT edit or delete other agents' reports
+6. Do NOT attempt consolidation — that is Phase 2
+
+**Phase 2 — Consolidation (designated agent)**
+1. Captain assigns a consolidator agent (typically a high-capability model)
+2. Consolidator reads ALL investigation reports in the document
+3. Consolidator writes the following sections:
+   - **Consolidated Analysis**: Unified root-cause analysis, noting where investigators agree/disagree
+   - **Agreement Matrix**: Table showing which investigators confirmed each finding (see §4.5)
+   - **Consolidated Plan**: Phased implementation plan with files, risks, and effort indicators
+   - **Open Questions**: Unresolved disagreements or gaps requiring Captain decision
+4. Set document status to `READY_FOR_REVIEW`
+5. Raw investigation reports remain in the document (below the consolidated sections) for traceability
+
+**Phase 3 — Review & Implementation**
+1. Captain (or assigned reviewer) reads the consolidated document
+2. Captain approves, requests changes, or escalates open questions
+3. Once approved, the document serves as the implementation brief for the implementing agent
+4. Set document status to `APPROVED` → implementer proceeds using Standard Feature Workflow (§3.1) or Quick Fix Workflow (§3.2)
+
+**Rules:**
+- Each agent writes independently — no reading other agents' reports during Phase 1 (to avoid anchoring bias)
+- The consolidator must not discard minority findings — disagreements are valuable signal
+- If an agent discovers something outside the investigation scope, it flags it in a `**Out of Scope**` note but does not investigate further
+- The consolidated document is the single source of truth for the downstream reviewer/implementer
+
+---
+
 ### 3.4 Role Handoff Protocol
 
 When the user switches roles mid-conversation or continues work from a previous session:
@@ -565,6 +643,7 @@ Examples:
 - Docs/WIP/Shadow_Mode_Architecture_Review.md
 - Docs/WIP/Shadow_Mode_Code_Review.md
 - Docs/WIP/Report_Quality_Analysis.md
+- Docs/WIP/Grounding_Logic_Investigation_2026-02-13.md  (§3.5 multi-agent investigation)
 ```
 
 ### 4.2 Document Structure
@@ -626,6 +705,81 @@ Every collaborative document MUST include:
 - Release immediately after edit — do not hold across multiple tool calls
 - Stale locks (>10 min) may only be reset by the human user
 - Lock scope: one file per acquisition
+
+### 4.5 Investigation Document Template
+
+Used with the Multi-Agent Investigation Workflow (§3.5). File naming: `Docs/WIP/{Topic}_Investigation_{date}.md`
+
+```markdown
+# {Topic} — Multi-Agent Investigation
+
+**Status:** INVESTIGATING | CONSOLIDATING | READY_FOR_REVIEW | APPROVED | IMPLEMENTED
+**Created:** {date}
+**Captain:** {name or role}
+
+---
+
+## Investigation Brief
+
+**Task:** {What needs to be investigated — clear questions to answer}
+**Inputs:** {Files, data, reports, jobs, or artifacts agents should examine}
+**Scope boundaries:** {What is NOT in scope for this investigation}
+
+---
+
+## Consolidated Analysis
+<!-- Written by the consolidator in Phase 2. Empty during Phase 1. -->
+
+### Summary
+{Unified findings across all investigators}
+
+### Agreement Matrix
+
+| Finding | Agent 1 | Agent 2 | Agent N |
+|---------|---------|---------|---------|
+| {finding} | Full / Partial / — | ... | ... |
+
+### Strongest Contributions
+{What each investigator uniquely contributed}
+
+---
+
+## Consolidated Plan
+<!-- Written by the consolidator in Phase 2. Empty during Phase 1. -->
+
+### Phase 1: {title}
+| Change | File | Risk |
+|--------|------|------|
+| ... | ... | ... |
+
+### Phase N: {title}
+...
+
+### Open Questions
+{Unresolved disagreements or gaps requiring Captain decision}
+
+---
+
+## Investigation Reports
+<!-- Each agent appends their report here during Phase 1. Do not edit others' reports. -->
+
+### Report: {Role} ({Agent/Model}) — {Date}
+**Files Analyzed:** {list}
+**Findings:** ...
+**Proposals:** ...
+**Risks/Concerns:** ...
+
+---
+```
+
+**Status transitions:**
+- `INVESTIGATING` → Captain sets on creation; agents are writing reports
+- `CONSOLIDATING` → Captain sets when all investigators are done; consolidator is working
+- `READY_FOR_REVIEW` → Consolidator sets when synthesis is complete
+- `APPROVED` → Captain sets after review; implementation may begin
+- `IMPLEMENTED` → Move to `Docs/ARCHIVE/` or appropriate subfolder
+
+---
 
 ### 4.4 Review Comment Format
 
