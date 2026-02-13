@@ -540,7 +540,7 @@ For complex tasks where the Captain wants multiple agents to independently inves
 
 **When to use:** The Captain assigns the same investigation task to 2+ agents (potentially different roles, tools, or models) and wants a single unified output document.
 
-**Concurrency model: Hub-and-Spoke.** Each agent writes to their own spoke file (zero contention). Only the hub document requires brief lock acquisition for Participant Tracker updates. The consolidator is the only agent that reads all spoke files and merges them into the hub.
+**Concurrency model: Hub-and-Spoke.** Each agent writes to their own spoke file (zero contention). The consolidator is the only agent that reads all spoke files and merges them into the hub.
 
 **Workflow:**
 
@@ -585,10 +585,10 @@ This two-step dispatch eliminates the document-creation race condition. No other
    c. Add your row to the **Participant Tracker** with your spoke file path
 2. **If the hub document exists** (subsequent agents):
    a. Read the Investigation Brief
-   b. Acquire the Write Lock (§4.3) → add your row to the Participant Tracker (with spoke file path) → release lock
+   b. Add your row to the **Participant Tracker** with your spoke file path
 3. **Create your spoke file**: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md` using the Spoke File Format (§4.5)
-4. Perform investigation (read code, analyze data, research) — write everything to **your spoke file** (no lock needed)
-5. When done: acquire Write Lock → update your Participant Tracker row to `DONE` → release lock
+4. Perform investigation (read code, analyze data, research) — write everything to **your spoke file**
+5. When done: update your Participant Tracker row to `DONE`
 6. Do NOT read other agents' spoke files (anti-anchoring rule — reports are in separate files, making this naturally enforced)
 7. Do NOT attempt consolidation — that is Phase 2
 
@@ -801,44 +801,10 @@ Every collaborative document MUST include:
 {Final decisions made, with rationale}
 ```
 
-### 4.3 Write Lock Protocol
+### 4.3 Concurrent Editing
 
-**MANDATORY** when multiple agents edit shared documents concurrently.
-
-> **§3.4 investigations:** The hub-and-spoke model minimizes lock usage. Each agent writes to their own spoke file (no lock needed). The Write Lock is only required for brief Participant Tracker updates in the hub document. The Temp File Protocol below applies to non-investigation shared documents.
-
-**Lock file:** `Docs/WIP/WRITE_LOCK.md`
-
-**Every agent MUST follow this sequence before writing to any shared `Docs/WIP/` document:**
-
-1. **Read** `WRITE_LOCK.md`
-2. **If LOCKED** → Use the **Temp File Protocol** below, or STOP and report to user: "Lock held by {Holder} on {Target}. Waiting."
-3. **If UNLOCKED** → Set status to `LOCKED` with your role, timestamp, and target file
-4. **Re-read** the target file (it may have changed since you last read it)
-5. **Write** your changes
-6. **Release** → Set `WRITE_LOCK.md` back to `UNLOCKED`
-
-**Rules:**
-- One writer at a time per shared document
-- Release immediately after edit — do not hold across multiple tool calls
-- Stale locks (>10 min) may only be reset by the human user
-- Lock scope: one file per acquisition
-
-#### Temp File Protocol (when locked)
-
-> **Not needed for §3.4 investigations** — agents write to their own spoke files and never contend on the hub document's content sections. This protocol applies to non-investigation shared documents (e.g., shared plans, reviews).
-
-When an agent needs to write but the shared document is locked, the agent MUST NOT wait indefinitely. Instead:
-
-1. **Write to a temp file**: `Docs/WIP/{OriginalFileName}_temp_{Role}.md`
-   - Use the same format as if writing directly to the shared document
-   - Example: `Docs/WIP/Shadow_Mode_Plan_temp_SrDev_Opus.md`
-2. **Report to Captain**: "Lock held by {Holder}. Wrote findings to {temp file path}."
-
-**Merge responsibility:**
-- The **next agent who acquires the lock** checks for pending temp files (matching `{OriginalFileName}_temp_*.md`)
-- If temp files exist: read each, append its content to the correct section of the shared document, then delete the temp file
-- Alternatively, the **Captain** can instruct any agent to merge pending temp files
+- **§3.4 investigations:** No contention — each agent writes to their own spoke file. Only the Participant Tracker in the hub is shared, and updates are brief appends.
+- **Other shared documents:** One writer at a time. If two agents need to edit the same document, the Captain sequences them. Always re-read a shared file before editing it — another agent may have changed it since you last read it.
 
 ### 4.4 Review Comment Format
 
