@@ -127,27 +127,6 @@ export async function extractKeyTerms(reasoning: string): Promise<string[]> {
 // ============================================================================
 
 /**
- * Build a searchable text corpus from the cited evidence items.
- */
-function buildEvidenceCorpus(
-  evidenceIds: string[],
-  allEvidence: EvidenceItem[],
-): string {
-  const evidenceMap = new Map(allEvidence.map(e => [e.id, e]));
-  const parts: string[] = [];
-
-  for (const id of evidenceIds) {
-    const item = evidenceMap.get(id);
-    if (item) {
-      parts.push(item.statement);
-      if (item.sourceExcerpt) parts.push(item.sourceExcerpt);
-    }
-  }
-
-  return parts.join(" ").toLowerCase();
-}
-
-/**
  * Build formatted evidence text for LLM grounding adjudication.
  * Returns human-readable evidence listing per verdict.
  */

@@ -13,31 +13,6 @@ import { debugLog } from "./debug";
 import { getTextAnalysisService } from "./text-analysis-service";
 
 /**
- * Detect and correct inverted verdicts.
- * The LLM sometimes rates "how correct is my analysis" (high) instead of "is the claim true" (low).
- *
- * Note: Pattern-based inversion detection has been removed. Verdict direction validation
- * is now handled by validateVerdictDirections() in orchestrated.ts which uses evidence
- * direction counts for more accurate detection.
- *
- * @returns corrected truth percentage, or original if no inversion detected
- */
-export function detectAndCorrectVerdictInversion(
-  claimText: string,
-  reasoning: string,
-  verdictPct: number,
-): { correctedPct: number; wasInverted: boolean; inversionReason?: string } {
-  // Verdict inversion is now handled by validateVerdictDirections() in orchestrated.ts
-  // which uses evidence direction counts rather than pattern matching
-  debugLog("detectAndCorrectVerdictInversion: No-op (handled by validateVerdictDirections)", {
-    claimText: claimText?.slice(0, 80),
-    verdictPct,
-  });
-
-  return { correctedPct: verdictPct, wasInverted: false };
-}
-
-/**
  * Detect if a sub-claim is a counter-claim (evaluates the opposite of the user's thesis).
  * Counter-claims are generated when the LLM creates sub-claims that test opposing positions,
  * or when claims are derived from counter-evidence search results.

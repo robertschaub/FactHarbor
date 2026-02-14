@@ -88,7 +88,6 @@ import { canonicalizeContexts, canonicalizeContextsWithRemap, ensureAtLeastOneCo
 import { VERDICT_BANDS } from "./truth-scale";
 import { getModelForTask, getStructuredOutputProviderOptions, getPromptCachingOptions } from "./llm";
 import {
-  detectAndCorrectVerdictInversion,
   detectCounterClaim,
 } from "./verdict-corrections";
 import { loadAndRenderSection, loadPromptFile, type Pipeline } from "./prompt-loader";
@@ -8180,24 +8179,6 @@ async function generateMultiContextVerdicts(
     let answerTruthPct = normalizePercentage(pa.answer);
     let correctedConfidence = normalizePercentage(pa.confidence);
 
-    // v2.6.31: Apply inversion detection to context-level answers
-    // Check shortAnswer for negation patterns - the LLM often correctly identifies
-    // something is NOT fair/proportionate but still rates it high
-    const contextInversion = detectAndCorrectVerdictInversion(
-      contextVerdictClaimText,
-      pa.shortAnswer || "",
-      answerTruthPct
-    );
-    if (contextInversion.wasInverted) {
-      answerTruthPct = contextInversion.correctedPct;
-      debugLog("Context answer inversion detected", {
-        contextId: pa.contextId,
-        originalPct: normalizePercentage(pa.answer),
-        correctedPct: answerTruthPct,
-        shortAnswer: (pa.shortAnswer || "").slice(0, 100),
-      });
-    }
-
     // v2.5.1: Only evidenced negatives count at full weight
     // Negatives without established evidence (opinion/unknown) do NOT reduce verdict
     const effectiveNegatives = evidencedNegatives;
@@ -8374,19 +8355,7 @@ async function generateMultiContextVerdicts(
       }
     }
 
-    // v2.6.31: Detect and correct inverted verdicts (regex fallback)
-    // LLM sometimes rates "is my analysis correct" instead of "is the claim true"
-    // Only run regex detection if LLM ratingConfirmation didn't already detect inversion
-    const inversionCheck = !inversionDetected
-      ? detectAndCorrectVerdictInversion(
-          claim?.text || cv.claimId || "",
-          sanitizedReasoning,
-          truthPct
-        )
-      : { wasInverted: false, correctedPct: truthPct };
-    if (inversionCheck.wasInverted) {
-      truthPct = inversionCheck.correctedPct;
-    }
+
 
     // v2.8.4: Use LLM-provided isCounterClaim from understand phase, fall back to regex detection
     // NOTE: supporting evidence IDs may include refuting evidence; counter-claim detection uses truth% as a guard.
@@ -8405,9 +8374,8 @@ async function generateMultiContextVerdicts(
 
     // v2.5.2: If the context has positive factors and no evidenced negatives,
     // boost claims below 72% into the >=72 band
-    // v2.6.31: SKIP boost if verdict was inverted (reasoning contradicts claim)
     // v2.6.31: SKIP boost for counter-claims (they evaluate the opposite position)
-    if (!inversionCheck.wasInverted && !isCounterClaim && relatedContext && relatedContext.factorAnalysis) {
+    if (!isCounterClaim && relatedContext && relatedContext.factorAnalysis) {
       const fa = relatedContext.factorAnalysis;
       // Check if context has positive factors and no evidenced negatives
       const contextIsPositive = relatedContext?.answer >= VERDICT_BANDS.MOSTLY_TRUE;
@@ -8999,18 +8967,6 @@ async function generateSingleContextVerdicts(
           truthPct = 100 - truthPct;
           inversionDetected = true;
         }
-      }
-
-      // v2.6.31: Detect and correct inverted verdicts (regex fallback)
-      const inversionCheck = !inversionDetected
-        ? detectAndCorrectVerdictInversion(
-            claim.text || cv.claimId || "",
-            sanitizedReasoning,
-            truthPct
-          )
-        : { wasInverted: false, correctedPct: truthPct };
-      if (inversionCheck.wasInverted) {
-        truthPct = inversionCheck.correctedPct;
       }
 
       // v2.8.4: Use LLM-provided isCounterClaim, fall back to regex detection
@@ -9625,18 +9581,6 @@ ${providerPromptHint}`;
           truthPct = 100 - truthPct;
           inversionDetected = true;
         }
-      }
-
-      // v2.6.31: Detect and correct inverted verdicts (regex fallback)
-      const inversionCheck = !inversionDetected
-        ? detectAndCorrectVerdictInversion(
-            claim.text || cv.claimId || "",
-            sanitizedReasoning,
-            truthPct
-          )
-        : { wasInverted: false, correctedPct: truthPct };
-      if (inversionCheck.wasInverted) {
-        truthPct = inversionCheck.correctedPct;
       }
 
       // v2.8.4: Use LLM-provided isCounterClaim, fall back to regex detection
