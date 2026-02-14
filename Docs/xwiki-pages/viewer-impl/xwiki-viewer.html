@@ -261,6 +261,7 @@ body.view-preview .preview-pane{width:100%}
 /* ── RESPONSIVE ── */
 @media(max-width:900px){.tree-sidebar:not(.collapsed){width:200px;min-width:160px}}
 
+.toggle-label{font-size:.8em;font-weight:500}
 /* Overlay behind sidebar on mobile */
 .tree-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.3)}
 
@@ -281,6 +282,7 @@ body.view-preview .preview-pane{width:100%}
   .breadcrumb{font-size:.75em}
   .preview-wrap{padding:14px 16px 32px}
   #editControls .btn:not(#btnToggleTree){display:none}
+  #btnToggleTree{background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:6px 10px}
   .file-info{display:none}
   .tree-item{padding-top:4px;padding-bottom:4px;min-height:36px;display:flex;align-items:center}
   .toolbar .btn{min-width:36px;min-height:36px}
@@ -319,6 +321,7 @@ body.view-preview .preview-pane{width:100%}
     <span style="display:inline-flex;align-items:center;gap:6px;">
       <button class="btn ghost" id="btnToggleTree" onclick="toggleTree()" title="Toggle file tree">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h18"/></svg>
+        <span class="toggle-label">Pages</span>
       </button>
       <div class="view-toggle">
         <button onclick="setView('source')" id="vSource">Source</button>
