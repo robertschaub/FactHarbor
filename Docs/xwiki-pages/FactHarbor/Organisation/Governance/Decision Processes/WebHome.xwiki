@@ -71,7 +71,7 @@ This page describes the main types of decisions in FactHarbor and how they are e
 * Keep escalation paths clear and predictable.
 === 3.5 Decision Methods ===
 Different types of decisions use different methods:
-**Consent-Based Decision Making** (from Sociocracy 3.0):
+**Consent-Based Decision Making** (from [[Sociocracy 3.0>>https://sociocracy30.org/]]):
 * **Use for**: Algorithm changes, policy updates, process changes, role assignments
 * **Process**: Proposal → Questions → Reactions → Amend → Consent round
 * **Criteria**: No principled objections (not consensus)
