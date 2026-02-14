@@ -17,7 +17,7 @@
   - Set membership fee
   - Sign founding minutes (both founders)
 - [X] **Register domain** `factharbor.ch` (if not already done)
-- [X] **Set up org email** `admin@factharbor.ch` — needed for Goodstack agent verification
+- [X] **Set up org email** `info@factharbor.ch` — needed for Goodstack agent verification
 
 ### Phase 2: Official Registration (Target: Weeks 1–3)
 
@@ -45,7 +45,7 @@
 **Prerequisites before applying:**
 
 - [ ] Verein registered on zefix.ch (Handelsregister entry visible)
-- [X] Org email `admin@factharbor.ch` set up (for Goodstack agent verification)
+- [X] Org email `info@factharbor.ch` set up (for Goodstack agent verification)
 - [ ] Statutes PDF ready (signed, dated 30+ days before application)
 - [ ] Bank statement PDF ready (original electronic, dated 30+ days before application)
 
@@ -93,7 +93,7 @@
 | Swiss lawyer (statute review)                           | CHF 500–1,500                          |
 | Handelsregister registration                            | CHF ~150                                |
 | Domain registration (factharbor.ch)                     | CHF 15–30/year                         |
-| Email hosting for admin@factharbor.ch (ProtonMail etc.) | CHF 0–48/year                          |
+| Email hosting for info@factharbor.ch (ProtonMail etc.) | CHF 0–48/year                          |
 | Bank account                                            | CHF 0 (many banks free for Verein)      |
 | Claude for Nonprofits (5 seats)                         | ~$10/month ($2/seat after 75% discount) |
 | **Total one-time**                                      | **~CHF 700–1,700**                     |
