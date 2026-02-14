@@ -513,10 +513,11 @@ ${contextsList}
 
 **ANTI-FABRICATION (CRITICAL)**: Extract ONLY from the provided source text. Do NOT fabricate, infer, or add information not present in the source. If a source is vague or lacks specifics, extract fewer items rather than filling gaps. Do NOT use your training knowledge to supplement what the source actually says.
 
-Extract SPECIFIC evidence items. Track contested claims with isContestedClaim and claimSource.
-Only HIGH/MEDIUM specificity.
+Extract SPECIFIC evidence items. Only HIGH/MEDIUM specificity.
 If the source contains evidence items relevant to MULTIPLE known contexts, include them and set contextId accordingly.
 Do not omit key numeric outcomes (durations, amounts, counts) when present.
+
+**isContestedClaim**: Set true ONLY when the source provides DOCUMENTED counter-evidence (specific records, data, or verified findings that contradict the claim). Tangential reactions, political criticism, or ungrounded doubt do NOT qualify — those are opinions, not contestation.
 
 **CURRENT DATE**: Today is ${currentDateReadable} (${currentDate}).
 
@@ -524,11 +525,13 @@ Do not omit key numeric outcomes (durations, amounts, counts) when present.
 The user's original claim is: "${originalClaim}"
 
 For EVERY extracted evidence item, evaluate claimDirection:
-- **"supports"**: This evidence item provides evidence that SUPPORTS the user's claim being TRUE
-- **"contradicts"**: This evidence item provides evidence that CONTRADICTS the user's claim (supports the OPPOSITE being true)
-- **"neutral"**: This evidence item is contextual/background information
+- **"supports"**: This evidence item provides DOCUMENTED evidence that SUPPORTS the user's claim being TRUE
+- **"contradicts"**: This evidence item provides DOCUMENTED evidence that CONTRADICTS the user's claim (specific data, records, or findings supporting the OPPOSITE)
+- **"neutral"**: This evidence item is contextual/background information, OR is an ungrounded reaction/opinion about the claim
 
 CRITICAL: Be precise about direction! If the user claims "X is better than Y" and the source says "Y is better than X", that is CONTRADICTING evidence, not supporting evidence.
+
+CRITICAL: Tangential third-party reactions are NOT counter-evidence. A politician saying "this is unfair" or a commentator doubting a finding — without citing specific documented evidence — is "neutral" (opinion/reaction), not "contradicts". Only evidence grounded in documented facts qualifies as "supports" or "contradicts".
 
 ### EVIDENCE SCOPE EXTRACTION (per-evidence EvidenceScope)
 

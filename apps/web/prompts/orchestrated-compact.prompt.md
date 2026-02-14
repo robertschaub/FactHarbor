@@ -132,6 +132,7 @@ Extract specific evidence items. Track contested claims. Only HIGH/MEDIUM specif
 **Original claim**: "${originalClaim}"
 
 **claimDirection** per evidence item: "supports" | "contradicts" | "neutral"
+- "contradicts" requires DOCUMENTED counter-evidence (data, records, findings). Ungrounded reactions/opinions = "neutral".
 
 **evidenceScope** when source defines boundaries: { name, methodology, boundaries, geographic, temporal }
 

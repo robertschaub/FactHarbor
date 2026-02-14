@@ -335,6 +335,12 @@ export interface KeyFactor {
   factor: string;
   supports: "yes" | "no" | "neutral";
   explanation: string;
+  /**
+   * True ONLY when disputed with DOCUMENTED counter-evidence.
+   * Tangential reactions/opinions without grounded evidence = NOT contested.
+   * Invariant: factualBasis="opinion" implies isContested should be false
+   * (opinion-based doubt keeps full weight in aggregation).
+   */
   isContested: boolean;
   contestedBy: string;
   contestationReason: string;
@@ -491,6 +497,7 @@ export interface EvidenceItem {
   sourceTitle: string;
   sourceExcerpt: string;
   contextId?: string;
+  /** True ONLY when the claim is disputed with DOCUMENTED counter-evidence, not ungrounded reactions. */
   isContestedClaim?: boolean;
   claimSource?: string;
   // Claim direction - does this evidence support or contradict the ORIGINAL user claim?
@@ -568,6 +575,7 @@ export interface ClaimVerdict {
   highlightColor: "green" | "yellow" | "red";
   isPseudoscience?: boolean;
   escalationReason?: string;
+  /** True ONLY when disputed with DOCUMENTED counter-evidence. Opinion/doubt without evidence = not contested. */
   isContested?: boolean;
   contestedBy?: string;
   factualBasis?: "established" | "disputed" | "opinion" | "unknown";
