@@ -209,7 +209,6 @@ Examples — these are all MEDIUM, not HIGH:
 - "The economic impact was significant" → economic claim → MEDIUM
 - "Technology A has lower efficiency than Technology B" → performance comparison → MEDIUM
 - "The system achieved a measured output of N units" → technical metric → MEDIUM
-- "Entity X revoked or restricted privileges of Entity Y" → administrative action → MEDIUM
 
 Examples — these ARE HIGH:
 - "The drug caused 12 deaths in clinical trials" → directly alleges death → HIGH

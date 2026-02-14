@@ -489,10 +489,9 @@ Context outcomes are complete sentences (e.g., "Majority of Brazilians support c
 
 **harmPotential:** INFLATED — 5/10 HIGH. All are technical efficiency/performance claims ("70-90% conversion efficiency", "555 km range", "lower tank-to-wheel efficiency"). None allege death/injury/fraud. LLM generalizes from vehicle/energy topic to safety concern.
 
-**Prompt fix applied:** Added 3 more abstract MEDIUM contrastive examples to `orchestrated.prompt.md` (per AGENTS.md: no test-case terms):
+**Prompt fix applied:** Added 2 abstract MEDIUM contrastive examples to `orchestrated.prompt.md` (per AGENTS.md: no test-case terms):
 - "Technology A has lower efficiency than Technology B" → performance comparison → MEDIUM
 - "The system achieved a measured output of N units" → technical metric → MEDIUM
-- "Entity X revoked or restricted privileges of Entity Y" → administrative action → MEDIUM
 
 ---
 
