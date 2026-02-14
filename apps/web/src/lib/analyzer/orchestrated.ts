@@ -5903,9 +5903,10 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
   // Scale evidence minimum with context count: each context should have meaningful
   // coverage, not just 6 items split across N contexts. The per-context floor (3)
   // ensures at least basic evidence per analytical frame.
+  // Cap at 75% of maxTotalSources so the threshold is always reachable.
   const scaledMinEvidence = Math.max(
     config.minEvidenceItemsRequired,
-    contexts.length * 3,
+    Math.min(contexts.length * 3, Math.floor(config.maxTotalSources * 0.75)),
   );
   if (
     state.evidenceItems.length >= scaledMinEvidence &&
@@ -6038,7 +6039,7 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     Math.min(contexts.length + mandatorySlots, config.maxResearchIterations * 2),
   );
   const reserveForContradiction = state.contradictionSearchPerformed ? 0 : 1;
-  const contextBudget = Math.min(contexts.length, localEffectiveMax - reserveForContradiction);
+  const contextBudget = Math.max(0, Math.min(contexts.length, localEffectiveMax - reserveForContradiction));
 
   if (
     contexts.length > 0 &&
