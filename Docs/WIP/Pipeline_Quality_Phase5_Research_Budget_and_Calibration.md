@@ -492,7 +492,7 @@ Context outcomes are complete sentences (e.g., "Majority of Brazilians support c
 **Prompt fix applied:** Added 3 more abstract MEDIUM contrastive examples to `orchestrated.prompt.md` (per AGENTS.md: no test-case terms):
 - "Technology A has lower efficiency than Technology B" → performance comparison → MEDIUM
 - "The system achieved a measured output of N units" → technical metric → MEDIUM
-- "Entity X imposed diplomatic or administrative sanctions on Entity Y" → political/diplomatic action → MEDIUM
+- "Entity X revoked or restricted privileges of Entity Y" → administrative action → MEDIUM
 
 ---
 
