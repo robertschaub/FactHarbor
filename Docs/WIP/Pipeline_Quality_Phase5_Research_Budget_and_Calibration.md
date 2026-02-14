@@ -461,8 +461,50 @@ Context outcomes are complete sentences (e.g., "Majority of Brazilians support c
 #### Remaining Regression Tests Needed
 
 - mRNA vaccine claim
-- H2 vs electricity
 - Finland happiness
+
+---
+
+### SRG/SRF Trustworthiness (FH-MLLJSOAD) — 2026-02-13 23:58
+
+**Status: SUCCEEDED** | 7 contexts | 20 searches | German-language input
+
+**Verdict hedging:** EXCELLENT — 7 contexts range from 55% to 80%, all well-differentiated. Brand Trust context (80%, 72% conf) has strongest evidence (4+, 0-) and highest confidence. No clustering.
+
+**harmPotential:** CLEAN — no HIGH claims visible. Correct for media trustworthiness topic.
+
+**Multilingual:** German input correctly processed, contexts appropriately structured.
+
+**Confidence calibration:** Active — density_anchor 50→64, context_consistency 64→60 (spread=32pp).
+
+**Concern:** 7 contexts for a media trustworthiness claim is broad. Some tangential (AI Assistant Reliability, Misinformation Exposure). Context detection scope issue, not Phase 5.
+
+---
+
+### H2 vs Electricity (FH-MLLJNR93) — 2026-02-13 23:54
+
+**Status: SUCCEEDED** | 4 contexts | 24 searches | Regression test
+
+**Verdict hedging:** ZERO hedging. Claims range 20% to 86%. Core "hydrogen more efficient" claims correctly rated 20-21% (Mostly False). Factual sub-claims correctly 76-86% (Mostly True/True). Data gap pattern working (Heavy-Duty TCO: 48%, 25% conf).
+
+**harmPotential:** INFLATED — 5/10 HIGH. All are technical efficiency/performance claims ("70-90% conversion efficiency", "555 km range", "lower tank-to-wheel efficiency"). None allege death/injury/fraud. LLM generalizes from vehicle/energy topic to safety concern.
+
+**Prompt fix applied:** Added 3 more abstract MEDIUM contrastive examples to `orchestrated.prompt.md` (per AGENTS.md: no test-case terms):
+- "Technology A has lower efficiency than Technology B" → performance comparison → MEDIUM
+- "The system achieved a measured output of N units" → technical metric → MEDIUM
+- "Entity X imposed diplomatic or administrative sanctions on Entity Y" → political/diplomatic action → MEDIUM
+
+---
+
+### Cross-Report harmPotential Summary
+
+| Report | HIGH / Total | Pattern |
+|--------|-------------|---------|
+| Bolsonaro | 4/10 (40%) | Diplomatic + procedural timeline inflated |
+| SRG/SRF | 0/2 (0%) | Clean — no safety-adjacent topic |
+| H2 vs EV | 5/10 (50%) | Technical efficiency claims inflated |
+
+**Root cause confirmed:** LLM inflates harmPotential for claims in topics it associates with danger (vehicles/energy → safety, trials → liberty) even when specific claims are about efficiency metrics or procedural timelines. Three rounds of contrastive examples now cover: legal/procedural, technical/efficiency, and diplomatic claims.
 
 ---
 

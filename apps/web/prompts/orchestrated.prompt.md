@@ -207,13 +207,16 @@ Examples — these are all MEDIUM, not HIGH:
 - "The vaccine was developed faster than usual" → timeline claim → MEDIUM
 - "The court did not hear all witnesses" → procedural claim → MEDIUM
 - "The economic impact was significant" → economic claim → MEDIUM
+- "Technology A has lower efficiency than Technology B" → performance comparison → MEDIUM
+- "The system achieved a measured output of N units" → technical metric → MEDIUM
+- "Entity X imposed diplomatic or administrative sanctions on Entity Y" → political/diplomatic action → MEDIUM
 
 Examples — these ARE HIGH:
 - "The drug caused 12 deaths in clinical trials" → directly alleges death → HIGH
 - "The building's fire exits were blocked" → imminent safety hazard → HIGH
 - "The CEO embezzled $50M from pension funds" → major fraud allegation → HIGH
 
-The topic being about criminal trials, vaccines, or safety does NOT make every claim HIGH. Only the specific allegation matters.
+The topic being about any sensitive domain does NOT make every claim HIGH. Only the specific allegation matters.
 
 **3. centrality** - Is it pivotal to the author's argument?
 - HIGH: Core assertion the argument depends on; removing it collapses the narrative
