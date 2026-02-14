@@ -65,7 +65,7 @@ import * as path from "path";
 
 // Modular imports
 import { debugLog, clearDebugLog, agentLog } from "./debug";
-import { tryParseFirstJsonObject } from "./json";
+import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import {
   CONFIG,
   getActiveConfig,
@@ -7603,6 +7603,7 @@ async function generateMultiContextVerdicts(
 
   let parsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
   let llmProviderIssue: LlmProviderIssue | null = null;
+  let lastTruncatedText: string | null = null; // Captured from failed attempts for partial recovery
   const multiContextOutputSchema: z.ZodTypeAny = isAnthropicProvider(state.pipelineConfig?.llmProvider)
     ? VERDICTS_SCHEMA_MULTI_CONTEXT_ANTHROPIC
     : VERDICTS_SCHEMA_MULTI_CONTEXT;
@@ -7747,7 +7748,7 @@ async function generateMultiContextVerdicts(
           { role: "user", content: `${userPrompt}\n\n${renderedJsonOnlyAppend.content}` },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384,
       });
       state.llmCalls++;
       recordLLMCall(state.budgetTracker, (result as any).usage?.totalTokens || (result as any).totalUsage?.totalTokens || 0);
@@ -7805,8 +7806,10 @@ async function generateMultiContextVerdicts(
           { role: "user", content: userPrompt },
         ],
         temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
-        // Explicit maxOutputTokens avoids relying on SDK/provider defaults (which can be too low for multi-context verdicts).
-        maxOutputTokens: 8192,
+        // Explicit maxOutputTokens: 16384 covers analyses up to ~40 claims / ~10 contexts.
+        // Token estimate: claimCount * 350 + contextCount * 600 + 1500 overhead.
+        // For 25 claims + 8 contexts: ~14,300 tokens needed.
+        maxOutputTokens: 16384,
         output: Output.object({ schema: multiContextOutputSchema }),
         providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
       });
@@ -7866,6 +7869,11 @@ async function generateMultiContextVerdicts(
       }
       state.llmCalls++;
 
+      // Capture truncated text for partial recovery attempt later
+      if (isNoObj && typeof (err as any).text === "string" && (err as any).text.length > 100) {
+        lastTruncatedText = (err as any).text;
+      }
+
       // Attempt recovery from the SDK error payload (often contains the raw JSON/text).
       const recovered = recoverFromNoObjectGeneratedError(err, attempt.label);
       if (
@@ -7895,6 +7903,37 @@ async function generateMultiContextVerdicts(
         analysisContextAnswersCount: parsed.analysisContextAnswers?.length,
         claimVerdictsCount: parsed.claimVerdicts?.length,
       });
+    }
+  }
+
+  // Partial JSON recovery: if we have truncated text from a failed attempt,
+  // try to repair it and recover whatever claim verdicts parsed before truncation.
+  // This avoids blanket 50/50 fallback when most of the output was actually valid.
+  if (
+    (!parsed || !Array.isArray(parsed.analysisContextAnswers) || parsed.analysisContextAnswers.length === 0) &&
+    lastTruncatedText
+  ) {
+    const repairedObj = repairTruncatedJson(lastTruncatedText);
+    if (repairedObj) {
+      const normalized = normalizeMultiContextOutput(repairedObj, evidenceNormalizer);
+      const lenient = VERDICTS_SCHEMA_MULTI_CONTEXT_LENIENT.safeParse(normalized);
+      if (lenient.success && Array.isArray(lenient.data.analysisContextAnswers) && lenient.data.analysisContextAnswers.length > 0) {
+        parsed = lenient.data as any;
+        const recoveredClaimCount = parsed?.claimVerdicts?.length || 0;
+        const totalClaims = claimsForVerdicts.length;
+        debugLog("generateMultiContextVerdicts: PARTIAL RECOVERY from truncated JSON", {
+          recoveredClaims: recoveredClaimCount,
+          totalClaims,
+          recoveredContexts: parsed?.analysisContextAnswers?.length,
+          hasVerdictSummary: !!parsed?.verdictSummary,
+        });
+        state.analysisWarnings.push({
+          type: "verdict_partial_recovery",
+          severity: "warning",
+          message: `Recovered ${recoveredClaimCount}/${totalClaims} claim verdicts from truncated LLM output. Remaining claims received fallback verdicts.`,
+          details: { recoveredClaims: recoveredClaimCount, totalClaims },
+        });
+      }
     }
   }
 
