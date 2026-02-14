@@ -439,6 +439,7 @@ class XWikiParser {
     const lines=source.split('\n');
     let i=0,listStack=[],inList=false,inTable=false,tableRows=[],tableGroupDepth=0;
     let pendingParams = null; // Store (% ... %) parameters for next element
+    let tableAttrs = ''; // Store table-level (% ... %) attributes
 
     while(i<lines.length){
       let line=lines[i];
@@ -473,7 +474,7 @@ class XWikiParser {
       // Parse group start: ((( - can also be on same line as content
       if(trimmed === '(((' || trimmed.startsWith('(((')){
         if(inList){html+=this.cls(listStack);listStack=[];inList=false}
-        if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}
+        if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
         const groupAttrs = this.buildGroupAttrs(pendingParams);
         html += `<div${groupAttrs}>\n`;
         pendingParams = null;
@@ -490,16 +491,16 @@ class XWikiParser {
       // Parse group end: )))
       if(trimmed === ')))'){
         if(inList){html+=this.cls(listStack);listStack=[];inList=false}
-        if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}
+        if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
         html += '</div>\n';
         i++; continue;
       }
 
-      if(line.trim()===''){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}pendingParams=null;i++;continue}
-      if(/^----\s*$/.test(line)){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}html+='<hr>\n';pendingParams=null;i++;continue}
+      if(line.trim()===''){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}pendingParams=null;i++;continue}
+      if(/^----\s*$/.test(line)){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}html+='<hr>\n';pendingParams=null;i++;continue}
       const hm=line.match(/^(={1,6})\s+(.+?)\s+\1\s*$/)||line.match(/^(={1,6})\s+(.+?)\s*$/);
-      if(hm){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}const lv=hm[1].length,rt=hm[2],id=this.slug(rt);this.headings.push({level:lv,text:rt,id});const attrs=pendingParams?this.buildAttrs(pendingParams):'';html+=`<h${lv} id="${id}"${attrs}>${this.inl(rt)}</h${lv}>\n`;pendingParams=null;i++;continue}
-      if(line.trim().startsWith('|')){if(inList){html+=this.cls(listStack);listStack=[];inList=false}inTable=true;tableRows.push(line);tableGroupDepth+=(line.match(/\(\(\(/g)||[]).length;tableGroupDepth-=(line.match(/\)\)\)/g)||[]).length;i++;continue}else if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}
+      if(hm){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}const lv=hm[1].length,rt=hm[2],id=this.slug(rt);this.headings.push({level:lv,text:rt,id});const attrs=pendingParams?this.buildAttrs(pendingParams):'';html+=`<h${lv} id="${id}"${attrs}>${this.inl(rt)}</h${lv}>\n`;pendingParams=null;i++;continue}
+      if(line.trim().startsWith('|')){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(!inTable&&pendingParams){tableAttrs=this.buildAttrs(pendingParams);pendingParams=null}inTable=true;tableRows.push(line);tableGroupDepth+=(line.match(/\(\(\(/g)||[]).length;tableGroupDepth-=(line.match(/\)\)\)/g)||[]).length;i++;continue}else if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
       const ul=line.match(/^(\*+)\s+(.*)/);
       if(ul){
         const content = ul[2].trim();
@@ -558,7 +559,7 @@ class XWikiParser {
       pendingParams = null;
     }
     if(inList) html+=this.cls(listStack);
-    if(inTable) html+=this.renderTable(tableRows);
+    if(inTable) html+=this.renderTable(tableRows,tableAttrs);
     return html;
   }
 
@@ -738,7 +739,7 @@ class XWikiParser {
 
   li(stk,d,t,c){let h='';while(stk.length>d)h+=`</li></${stk.pop()}>`;if(stk.length<d){while(stk.length<d){h+=`<${t}>`;stk.push(t)}h+=`<li>${c}`}else h+=`</li><li>${c}`;return h}
   cls(stk){let h='';while(stk.length>0)h+=`</li></${stk.pop()}>`;return h+'\n'}
-  renderTable(rawLines){
+  renderTable(rawLines,tblAttrs){
     if(!rawLines.length)return'';
     // Merge multi-line rows: a logical row starts with | at depth 0
     const logicalRows=[];
@@ -756,7 +757,7 @@ class XWikiParser {
     }
     if(cur)logicalRows.push(cur);
 
-    let h='<table>';
+    let h=`<table${tblAttrs||''}>`;
     for(const row of logicalRows){
       const cells=this.splitTableCells(row);
       h+='<tr>';
