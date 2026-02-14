@@ -349,6 +349,67 @@ function normalizeClaimClassifications<T extends { text?: string; harmPotential?
 }
 
 /**
+ * Decontextualized harmPotential classification.
+ *
+ * Sends ONLY claim texts (no article, no topic, no context names) to a lightweight
+ * LLM call to classify harmPotential. This eliminates "frame contamination" where
+ * the topic domain (safety, health, legal) causes the LLM to over-classify claims
+ * as HIGH when the claims themselves don't allege death, injury, or major fraud.
+ *
+ * Called after the understand step but before research begins.
+ */
+async function classifyHarmPotentialDecontextualized(
+  claims: Array<{ text: string; harmPotential?: string }>,
+  model: any,
+  pipelineConfig: any,
+): Promise<Array<"high" | "medium" | "low">> {
+  if (!claims.length) return [];
+
+  try {
+    const renderedSystem = await loadAndRenderSection("orchestrated", "HARM_POTENTIAL_CLASSIFY", {});
+    const claimsList = claims.map((c, i) => `${i + 1}. ${c.text}`).join("\n");
+    const renderedUser = await loadAndRenderSection("orchestrated", "HARM_POTENTIAL_CLASSIFY_USER", {
+      CLAIMS_LIST: claimsList,
+    });
+
+    if (!renderedSystem?.content?.trim() || !renderedUser?.content?.trim()) {
+      console.warn("[HarmClassify] Missing prompt sections, skipping decontextualized classification");
+      return claims.map(c => (c.harmPotential as any) || "medium");
+    }
+
+    const result: any = await generateText({
+      model,
+      messages: [
+        { role: "system", content: renderedSystem.content },
+        { role: "user", content: renderedUser.content },
+      ],
+      temperature: getDeterministicTemperature(0.1, pipelineConfig),
+      maxOutputTokens: Math.max(512, claims.length * 30),
+    });
+
+    const txt = result?.text as string | undefined;
+    if (!txt) {
+      console.warn("[HarmClassify] No text in LLM response");
+      return claims.map(c => (c.harmPotential as any) || "medium");
+    }
+
+    // Parse the JSON array from the response
+    const parsed = tryParseFirstJsonObject(`{"arr":${txt.trim().startsWith("[") ? txt.trim() : `[${txt.trim()}]`}}`);
+    const arr: any[] = parsed?.arr || [];
+
+    const validValues = ["high", "medium", "low"];
+    return claims.map((_, i) => {
+      const entry = arr.find((e: any) => e?.index === i) || arr[i];
+      const val = entry?.harmPotential;
+      return validValues.includes(val) ? val : "medium";
+    });
+  } catch (err: any) {
+    console.warn(`[HarmClassify] Decontextualized classification failed: ${err?.message || err}. Using original values.`);
+    return claims.map(c => (c.harmPotential as any) || "medium");
+  }
+}
+
+/**
  * Normalize KeyFactor classifications with fallback tracking
  * Call this after verdict generation to ensure all classification fields are defined
  */
@@ -10768,6 +10829,28 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       state.fallbackTracker,
       "Claim"
     );
+  }
+
+  // Decontextualized harmPotential: re-classify using ONLY claim texts (no article/topic context).
+  // This prevents frame contamination where topic domain causes over-classification to HIGH.
+  if (state.understanding?.subClaims?.length > 0) {
+    const harmResults = await classifyHarmPotentialDecontextualized(
+      state.understanding.subClaims,
+      understandModelInfo.model,
+      state.pipelineConfig,
+    );
+    state.llmCalls++;
+    for (let i = 0; i < state.understanding.subClaims.length; i++) {
+      const original = state.understanding.subClaims[i].harmPotential;
+      const decontextualized = harmResults[i];
+      if (original !== decontextualized) {
+        debugLog(`[HarmClassify] Claim #${i + 1} harmPotential: ${original} → ${decontextualized}`, {
+          claimText: state.understanding.subClaims[i].text.substring(0, 100),
+        });
+      }
+      state.understanding.subClaims[i].harmPotential = decontextualized;
+      // Update isCentral if it was derived from harmPotential (it's from centrality, not harm, so no change needed)
+    }
   }
 
   const contextCount = state.understanding.analysisContexts.length;

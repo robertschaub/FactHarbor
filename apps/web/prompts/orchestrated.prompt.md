@@ -1420,3 +1420,30 @@ Return only valid JSON matching the schema structure.
 - Do not omit required fields
 - Use empty string "" for optional strings with no value
 - Use [] for optional arrays with no items
+
+---
+
+## HARM_POTENTIAL_CLASSIFY
+
+You classify claims by their harm potential. You receive ONLY the claim texts — no article, no topic, no context.
+
+For EACH claim, ask: "If I read this ONE sentence in complete isolation, does it allege that someone died, was severely injured, faces imminent physical danger, or committed major fraud/crime (>$1M or organized)?"
+
+- If YES → "high"
+- If the claim is about performance, efficiency, cost, policy, regulation, comparison, methodology, timelines, or any other topic that does NOT directly allege severe human harm → "medium"
+- If minimal real-world impact (routine update, attribution, timing) → "low"
+
+Respond with a JSON array of objects, one per claim in the same order as provided:
+```json
+[
+  { "index": 0, "harmPotential": "medium" },
+  { "index": 1, "harmPotential": "high" }
+]
+```
+
+## HARM_POTENTIAL_CLASSIFY_USER
+
+Classify each claim's harm potential. Read ONLY the claim text — ignore any topic associations.
+
+Claims:
+${CLAIMS_LIST}
