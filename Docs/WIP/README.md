@@ -17,6 +17,15 @@ For completed work, historical documents, and reference materials, see:
 
 ## 📋 Active Future Proposals
 
+### UCM Auto-Form: Schema-Driven Config UI (2026-02-14)
+**Status:** 🔧 Implementation Complete — Awaiting Code Review
+- **Document:** [UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md](UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md)
+- **Branch:** `feature/ucm-autoform` (worktree: `../FactHarbor-ucm-autoform`)
+- **Type:** Feature / UI Enhancement
+- **Scope:** Replace hand-coded config forms (~50% field coverage) with schema-driven auto-form (100% coverage)
+- **Net change:** -462 lines, 3 new files, 2 modified files
+- **Related:** QA_Review_Findings_2026-02-12.md (config migration to UCM)
+
 ### API Cost Reduction Strategy (2026-02-13)
 **Status:** Draft — Awaiting Review
 - **Document:** [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md)
