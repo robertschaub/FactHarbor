@@ -234,6 +234,11 @@ body.view-preview .preview-pane{width:100%}
 .xwiki-toc .toc-h1,.xwiki-toc .toc-h2{padding-left:0}
 .xwiki-toc .toc-h3{padding-left:14px}
 .xwiki-toc .toc-h4{padding-left:28px}
+.xwiki-children-list{margin:1em 0;font-family:'Outfit',sans-serif}
+.xwiki-children-list ul{list-style:none;margin:0;padding:0}
+.xwiki-children-list li{margin:.3em 0;padding:3px 0 3px 22px;position:relative;font-size:.95em}
+.xwiki-children-list li::before{content:'\1F4C4';position:absolute;left:0;top:3px;font-size:.8em}
+.xwiki-children-list .children-empty{color:var(--pv-muted);font-style:italic;font-size:.9em}
 .mermaid-container{margin:1em 0;background:#fff;border:1px solid var(--pv-border);border-radius:var(--radius);padding:18px;overflow-x:auto;text-align:center}
 .mermaid-container .mermaid-label{font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--pv-muted);text-align:right;margin-bottom:6px;opacity:.5}
 .mermaid-container svg{max-width:100%}
@@ -446,6 +451,17 @@ class XWikiParser {
         i++; continue;
       }
 
+      // Handle (% ... %) prefix followed by more content on the same line
+      // e.g. (% class="active" %)|(% colspan="1" %)(((
+      // Strip the prefix params and re-process the remainder as the line
+      if(trimmed.startsWith('(%')){
+        const prefixMatch = trimmed.match(/^\(%\s*.*?\s*%\)\s*(.+)/);
+        if(prefixMatch){
+          lines[i] = prefixMatch[1];
+          continue;
+        }
+      }
+
       // Inside a table with open ((( group — keep collecting lines
       if(inTable && tableGroupDepth > 0){
         tableRows.push(line);
@@ -619,6 +635,12 @@ class XWikiParser {
     if(params.title){
       attrs += ` title="${this.esc(params.title)}"`;
     }
+    if(params.colspan){
+      attrs += ` colspan="${this.esc(params.colspan)}"`;
+    }
+    if(params.rowspan){
+      attrs += ` rowspan="${this.esc(params.rowspan)}"`;
+    }
     return attrs;
   }
 
@@ -646,6 +668,8 @@ class XWikiParser {
     r=r.replace(/\{\{code(?:\s+language="([^"]*)")?\s*\}\}([\s\S]*?)\{\{\/code\}\}/gi,(m,l,c)=>{const k=`%%XWIKI_BLOCK_CODE_${x++}%%`;this._placeholders[k]={type:'code',lang:l||'',content:c.replace(/^\n/,'').replace(/\n$/,'')};return k});
     for(const bt of['info','warning','error','success']){const re=new RegExp(`\\{\\{${bt}(?:\\s+title="([^"]*)")?\\s*\\}\\}([\\s\\S]*?)\\{\\{\\/${bt}\\}\\}`,'gi');r=r.replace(re,(m,t,c)=>{const k=`%%XWIKI_BLOCK_BOX_${x++}%%`;this._placeholders[k]={type:'box',boxType:bt,title:t||'',content:c.trim()};return k})}
     r=r.replace(/\{\{toc\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_TOC_${x++}%%`;this._placeholders[k]={type:'toc'};return k});
+    // Handle {{children}} macro - list child pages
+    r=r.replace(/\{\{children\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_CHILDREN_${x++}%%`;this._placeholders[k]={type:'children'};return k});
     // Handle {{include}} macro - render as a navigable link
     r=r.replace(/\{\{include\s+reference="([^"]+)"[^}]*\/?\}\}/gi,(m,ref)=>{const k=`%%XWIKI_BLOCK_INCLUDE_${x++}%%`;this._placeholders[k]={type:'include',reference:ref};return k});
     return r;
@@ -663,6 +687,7 @@ class XWikiParser {
           break;
         }
         case'toc':r=this.renderTOC();break;
+        case'children':{r='<div class="xwiki-children-list"></div>';break}
         case'include':{
           const ref = d.reference;
           // Output a marker that will be resolved async with actual content
@@ -910,6 +935,34 @@ async function resolveIncludes(html, includedRefs, depth = 0) {
   return html;
 }
 
+function getChildPages(ref){
+  if(!ref) return [];
+  const page = pageIndex[ref];
+  if(!page) return [];
+  const segs = page.segments;
+  if(segs[segs.length-1] !== 'WebHome') return [];
+  const spaceSegs = segs.slice(0,-1);
+  const children = [];
+  for(const[r,p] of Object.entries(pageIndex)){
+    if(r === ref) continue;
+    const ps = p.segments;
+    // Child space WebHome: spaceSegs + childName + WebHome
+    if(ps.length === spaceSegs.length+2 && ps[ps.length-1]==='WebHome'){
+      let match = true;
+      for(let j=0;j<spaceSegs.length;j++){if(ps[j]!==spaceSegs[j]){match=false;break}}
+      if(match) children.push({ref:r, name:ps[spaceSegs.length]});
+    }
+    // Terminal page directly in space: spaceSegs + pageName (non-WebHome)
+    else if(ps.length === spaceSegs.length+1 && ps[ps.length-1]!=='WebHome'){
+      let match = true;
+      for(let j=0;j<spaceSegs.length;j++){if(ps[j]!==spaceSegs[j]){match=false;break}}
+      if(match) children.push({ref:r, name:ps[spaceSegs.length]});
+    }
+  }
+  children.sort((a,b)=>a.name.localeCompare(b.name));
+  return children;
+}
+
 async function renderPreview(){
   const src = editorEl.value;
   let html = parser.parse(src);
@@ -917,6 +970,20 @@ async function renderPreview(){
   // Resolve includes (async - fetches and parses included pages)
   html = await resolveIncludes(html, new Set([currentPageRef]));
   previewEl.innerHTML = html;
+
+  // Resolve {{children/}} placeholders
+  previewEl.querySelectorAll('.xwiki-children-list').forEach(el => {
+    const children = getChildPages(currentPageRef);
+    if(children.length === 0){
+      el.innerHTML = '<span class="children-empty">No child pages.</span>';
+    } else {
+      let h = '<ul>';
+      for(const c of children){
+        h += `<li><a class="wiki-link resolved" data-wiki-ref="${parser.esc(c.ref)}" href="javascript:void(0)" onclick="navigateToRef('${parser.escAttr(c.ref)}')">${parser.esc(c.name)}</a></li>`;
+      }
+      el.innerHTML = h + '</ul>';
+    }
+  });
 
   // Mark resolved/unresolved wiki links
   previewEl.querySelectorAll('.wiki-link').forEach(el => {
