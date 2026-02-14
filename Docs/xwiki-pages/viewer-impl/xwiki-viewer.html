@@ -259,7 +259,32 @@ body.view-preview .preview-pane{width:100%}
 .tree-item.tree-page[data-ref="WebHome"]{display:none}
 
 /* ── RESPONSIVE ── */
-@media(max-width:900px){.tree-sidebar{width:200px;min-width:160px}}
+@media(max-width:900px){.tree-sidebar:not(.collapsed){width:200px;min-width:160px}}
+
+/* Overlay behind sidebar on mobile */
+.tree-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.3)}
+
+@media(max-width:768px){
+  .tree-sidebar:not(.collapsed){width:220px;min-width:160px}
+  .preview-wrap{padding:20px 24px 40px}
+  .preview-content{max-width:100%}
+  body.view-split .editor-pane{display:none}
+  body.view-split .preview-pane{width:100%}
+  .view-toggle{display:none}
+}
+@media(max-width:480px){
+  .tree-sidebar:not(.collapsed){width:85vw;max-width:300px;position:fixed;top:0;left:0;bottom:0;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  .tree-overlay.active{display:block}
+  .toolbar{padding:6px 8px;gap:4px}
+  .toolbar .sep{display:none}
+  .toolbar .btn span:not(.ti){display:none}
+  .breadcrumb{font-size:.75em}
+  .preview-wrap{padding:14px 16px 32px}
+  #editControls .btn:not(#btnToggleTree){display:none}
+  .file-info{display:none}
+  .tree-item{padding-top:4px;padding-bottom:4px;min-height:36px;display:flex;align-items:center}
+  .toolbar .btn{min-width:36px;min-height:36px}
+}
 </style>
 </head>
 <body class="view-preview">
@@ -354,6 +379,7 @@ body.view-preview .preview-pane{width:100%}
 
 <!-- MAIN AREA -->
 <div class="main-area hidden" id="mainArea">
+  <div class="tree-overlay" id="treeOverlay" onclick="toggleTree()"></div>
   <!-- File tree sidebar -->
   <div class="tree-sidebar" id="treeSidebar">
     <div class="tree-header">
@@ -1098,6 +1124,7 @@ async function loadPage(ref, addHistory=true){
     updateNavButtons();
     updateBreadcrumb(page);
     highlightTreeItem(ref);
+    checkMobileLayout();
     document.querySelector('.preview-wrap').scrollTop = 0;
     editorEl.scrollTop = 0;
     renderPreview();
@@ -1392,8 +1419,22 @@ function filterTree(query){
 }
 
 function toggleTree(){
-  document.getElementById('treeSidebar').classList.toggle('collapsed');
+  const sidebar = document.getElementById('treeSidebar');
+  sidebar.classList.toggle('collapsed');
+  const overlay = document.getElementById('treeOverlay');
+  if(sidebar.classList.contains('collapsed')) overlay.classList.remove('active');
+  else overlay.classList.add('active');
 }
+function checkMobileLayout(){
+  if(window.innerWidth <= 480){
+    const sidebar = document.getElementById('treeSidebar');
+    if(!sidebar.classList.contains('collapsed')){
+      sidebar.classList.add('collapsed');
+      document.getElementById('treeOverlay').classList.remove('active');
+    }
+  }
+}
+window.addEventListener('resize', checkMobileLayout);
 
 // =================================================================
 // Open Folder
