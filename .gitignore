@@ -38,6 +38,10 @@ Docs/xwiki-export/temp*/
 apps/web/devserver.out
 apps/web/devserver.err
 
+# Test output artifacts (ephemeral, should not be tracked)
+apps/web/test-output.txt
+apps/web/vitest-results.json
+
 # Node / Next.js
 node_modules/
 next-env.d.ts
