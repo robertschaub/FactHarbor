@@ -66,10 +66,8 @@ if (-not (Test-Path $viewerPath)) {
     exit 1
 }
 
-$viewerContent = [System.IO.File]::ReadAllBytes($viewerPath)
-
-# FactHarbor wiki directory for auto-loading
-$wikiRoot = Join-Path (Split-Path $scriptDir) 'FactHarbor'
+# The Best Workplace wiki directory for auto-loading
+$wikiRoot = Join-Path (Split-Path $scriptDir) 'The Best Workplace'
 $wikiExists = Test-Path $wikiRoot
 
 # Build manifest dynamically (called on each request to pick up new/changed files)
@@ -95,7 +93,7 @@ function Build-WikiManifest {
         $sortData[$key] = $lines
     }
 
-    $manifest = @{ root = 'FactHarbor'; files = $fileList; sorts = $sortData }
+    $manifest = @{ root = 'The Best Workplace'; files = $fileList; sorts = $sortData }
     $manifestJson = $manifest | ConvertTo-Json -Depth 4 -Compress
     return [System.Text.Encoding]::UTF8.GetBytes($manifestJson)
 }
@@ -215,8 +213,9 @@ try {
 
         $requestPath = $request.Url.LocalPath.TrimStart('/')
 
-        # Serve the viewer HTML for root or viewer path
+        # Serve the viewer HTML for root or viewer path (re-read each request for dev)
         if ($requestPath -eq '' -or $requestPath -eq 'xwiki-viewer.html') {
+            $viewerContent = [System.IO.File]::ReadAllBytes($viewerPath)
             $response.ContentType = 'text/html; charset=utf-8'
             $response.ContentLength64 = $viewerContent.Length
             $response.Headers.Add('Access-Control-Allow-Origin', '*')
@@ -238,7 +237,7 @@ try {
                 $response.OutputStream.Write($msg, 0, $msg.Length)
             }
         }
-        # Serve wiki files from FactHarbor directory
+        # Serve wiki files from content directory
         elseif ($requestPath.StartsWith('wiki/') -and $wikiRoot -and (Test-Path $wikiRoot)) {
             $wikiRelPath = [Uri]::UnescapeDataString($requestPath.Substring(5))
             $wikiFilePath = [System.IO.Path]::GetFullPath((Join-Path $wikiRoot $wikiRelPath))

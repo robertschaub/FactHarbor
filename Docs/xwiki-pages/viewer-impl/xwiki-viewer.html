@@ -260,8 +260,9 @@ body.view-preview .preview-pane{width:100%}
 .toast.show{transform:translateY(0);opacity:1}
 .toast svg{width:14px;height:14px;color:#6aaa6a;flex-shrink:0}
 
-/* Hide WebHome entries inside folders — folders already load their WebHome on click */
-.tree-item.tree-page[data-ref$=".WebHome"]{display:none}
+/* Hide WebHome entries from tree — folders already load their WebHome on click */
+.tree-item.tree-page[data-ref$=".WebHome"],
+.tree-item.tree-page[data-ref="WebHome"]{display:none}
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){.tree-sidebar:not(.collapsed){width:200px;min-width:160px}}
@@ -1538,9 +1539,6 @@ async function openFolderPicker(){
     try {
       dirHandle = await window.showDirectoryPicker({mode:'read'});
       const tree = await scanDirectory(dirHandle);
-      // Give root WebHome the wiki name as display label
-      const rootEntry = tree.find(e=>e.type==='file'&&e.ref==='WebHome');
-      if(rootEntry) rootEntry.baseName = dirHandle.name;
       pageTree = tree;
       pageIndex = buildPageIndex(tree);
       const count = Object.keys(pageIndex).length;
@@ -1601,12 +1599,10 @@ function buildTreeFromFileList(files, rootName){
     const parts = file.webkitRelativePath.split('/');
     parts.shift(); // remove root folder name
     const fileName = parts.pop();
-    let baseName = fileName.replace(/\.[^.]+$/,'');
+    const baseName = fileName.replace(/\.[^.]+$/,'');
     const segments = [...parts, baseName];
     const ref = segments.join('.');
     const relPath = parts.length ? parts.join('/') + '/' + fileName : fileName;
-    // Root WebHome gets the wiki name as display name
-    if(ref === 'WebHome') baseName = rootName;
 
     const entry = {
       type: 'file',
@@ -1812,8 +1808,6 @@ async function handleDrop(dt){
         if(handle.kind === 'directory'){
           dirHandle = handle;
           const tree = await scanDirectory(dirHandle);
-          const rootE = tree.find(e=>e.type==='file'&&e.ref==='WebHome');
-          if(rootE) rootE.baseName = dirHandle.name;
           pageTree = tree; pageIndex = buildPageIndex(tree);
           const count = Object.keys(pageIndex).length;
           document.getElementById('treeBody').innerHTML = renderTree(tree);
@@ -2012,6 +2006,11 @@ async function loadFromServer(){
     const tree = buildTreeFromManifest(manifest);
     pageTree = tree;
     pageIndex = buildPageIndex(tree);
+    // Alias root WebHome under wrapper folder so folder click works
+    const wikiName = manifest.root || 'Wiki';
+    if(pageIndex['WebHome'] && !pageIndex[wikiName+'.WebHome']){
+      pageIndex[wikiName+'.WebHome'] = pageIndex['WebHome'];
+    }
     dirHandle = null;
     const count = Object.keys(pageIndex).length;
     document.getElementById('treeBody').innerHTML = renderTree(tree);
@@ -2033,11 +2032,9 @@ function buildTreeFromManifest(manifest){
   for(const relPath of manifest.files){
     const parts = relPath.split('/');
     const fileName = parts.pop();
-    let baseName = fileName.replace(/\.[^.]+$/,'');
+    const baseName = fileName.replace(/\.[^.]+$/,'');
     const segments = [...parts, baseName];
     const ref = segments.join('.');
-    // Root WebHome gets the wiki name as display name
-    if(ref === 'WebHome') baseName = wikiName;
     const entry = {
       type:'file', name:fileName, baseName, ref, segments,
       relPath, handle:null, fileObj:null,
@@ -2057,7 +2054,8 @@ function buildTreeFromManifest(manifest){
     currentChildren.push(entry);
   }
   applySortToTree(root, '', sorts);
-  return root;
+  // Wrap in root folder so project name appears in sidebar (matches gh-pages structure)
+  return [{type:'folder', name:wikiName, segments:[wikiName], children:root}];
 }
 
 function applySortToTree(items, path, sorts){
