@@ -17,6 +17,7 @@ Output structure:
 """
 
 import argparse
+import base64
 import json
 import subprocess
 import sys
@@ -149,7 +150,25 @@ def main():
             xwiki_file.write_text(content_body, encoding='utf-8')
             created_count += 1
 
-            print(f"  [{created_count:3d}/{len(nodes)}] {page_id}")
+            # Extract attachments to _attachments/ directory
+            attachments = node.get("attachments", [])
+            att_count = 0
+            for att in attachments:
+                filename = att.get("filename", "")
+                content_b64 = att.get("content_base64", "")
+                if not filename or not content_b64:
+                    continue
+                att_dir = xwiki_file.parent / "_attachments"
+                att_dir.mkdir(parents=True, exist_ok=True)
+                att_path = att_dir / sanitize_path_component(filename)
+                try:
+                    att_path.write_bytes(base64.b64decode(content_b64))
+                    att_count += 1
+                except Exception as e:
+                    print(f"  Warning: Could not write attachment {filename}: {e}", file=sys.stderr)
+
+            att_info = f" (+{att_count} attachments)" if att_count > 0 else ""
+            print(f"  [{created_count:3d}/{len(nodes)}] {page_id}{att_info}")
 
         print(f"\n[SUCCESS] Created {created_count} .xwiki files")
         if skipped_count > 0:

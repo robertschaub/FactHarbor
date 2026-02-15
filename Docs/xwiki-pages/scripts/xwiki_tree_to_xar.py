@@ -17,7 +17,9 @@ Output:
 """
 
 import argparse
+import base64
 import json
+import mimetypes
 import re
 import subprocess
 import sys
@@ -109,6 +111,22 @@ def scan_xwiki_tree(base_dir: Path) -> List[Dict]:
         else:
             title = extract_title_from_content(content_body, filename.replace('\\.', '.'))
 
+        # Collect attachments from _attachments/ directory alongside the .xwiki file
+        attachments = []
+        attachments_dir = xwiki_file.parent / "_attachments"
+        if attachments_dir.is_dir():
+            for att_file in sorted(attachments_dir.iterdir()):
+                if att_file.is_file():
+                    try:
+                        raw = att_file.read_bytes()
+                        attachments.append({
+                            "filename": att_file.name,
+                            "content_base64": base64.b64encode(raw).decode("ascii"),
+                            "filesize": len(raw),
+                        })
+                    except Exception as e:
+                        print(f"  Warning: Could not read attachment {att_file}: {e}", file=sys.stderr)
+
         # Create node structure (matching fulltree format)
         node = {
             "pageId": page_id,
@@ -121,9 +139,12 @@ def scan_xwiki_tree(base_dir: Path) -> List[Dict]:
             },
             "xobjects": []
         }
+        if attachments:
+            node["attachments"] = attachments
 
         nodes.append(node)
-        print(f"  [{idx:3d}/{len(xwiki_files)}] {page_id}")
+        att_info = f" (+{len(attachments)} attachments)" if attachments else ""
+        print(f"  [{idx:3d}/{len(xwiki_files)}] {page_id}{att_info}")
 
     return nodes
 

@@ -168,6 +168,31 @@ def _parse_xwikidoc(xml_bytes: bytes, file_path_in_xar: str, include_objects: bo
         if xobjects:
             node["xobjects"] = xobjects
 
+    # --- Attachments ---
+    attachments: List[Dict[str, Any]] = []
+    for att in root.findall("attachment"):
+        filename = att.findtext("filename", default="") or ""
+        if not filename:
+            continue
+        content_text = att.findtext("content", default="") or ""
+        filesize_text = att.findtext("filesize", default="0") or "0"
+        try:
+            filesize = int(filesize_text)
+        except Exception:
+            filesize = 0
+        # Only include attachments that have actual content
+        if content_text.strip() and filesize > 0:
+            attachments.append({
+                "filename": filename,
+                "content_base64": content_text.strip(),
+                "filesize": filesize,
+                "author": att.findtext("author", default="") or "",
+                "date": att.findtext("date", default="") or "",
+                "version": att.findtext("version", default="") or "1.1",
+            })
+    if attachments:
+        node["attachments"] = attachments
+
     return node
 
 

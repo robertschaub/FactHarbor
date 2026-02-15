@@ -73,11 +73,23 @@ def make_xwikidoc(node: dict, wiki_name: str, now_ms: int) -> bytes:
         SubElement(obj_elem, "number").text = str(obj.get("number", 0))
         SubElement(obj_elem, "className").text = obj.get("className", "")
         SubElement(obj_elem, "guid").text = obj.get("guid", "")
-        
+
         # Properties
         for prop_key, prop_val in obj.get("properties", {}).items():
             prop_elem = SubElement(obj_elem, "property")
             SubElement(prop_elem, prop_key).text = prop_val
+
+    # --- Attachments Support ---
+    for att in node.get("attachments", []):
+        att_elem = SubElement(xdoc, "attachment")
+        SubElement(att_elem, "filename").text = att.get("filename", "")
+        SubElement(att_elem, "author").text = att.get("author", "xwiki:XWiki.Admin")
+        SubElement(att_elem, "date").text = str(att.get("date", now_ms))
+        SubElement(att_elem, "version").text = att.get("version", "1.1")
+        SubElement(att_elem, "comment")
+        content_b64 = att.get("content_base64", "")
+        SubElement(att_elem, "content").text = content_b64
+        SubElement(att_elem, "filesize").text = str(att.get("filesize", 0))
 
     # Return valid XML bytes
     return tostring(xdoc, encoding="utf-8", xml_declaration=True)
