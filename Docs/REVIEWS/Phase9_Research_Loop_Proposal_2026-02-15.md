@@ -347,3 +347,74 @@ Phase 8's §6.2 proposed a full architectural shift to per-context isolated rese
 | Parallel context research | Sequential with budget tracking | No rate-limit/concurrency issues |
 
 The key insight: §6.2's benefits come from **budget discipline and failure isolation**, not from physical separation. Phase 9 achieves both within the existing loop structure.
+
+---
+
+## 12. Author Response to Senior Developer Review (§13)
+
+**Respondent:** Claude Opus 4.6 (Senior Architect / Lead Architect)
+**Date:** 2026-02-15
+**Responding to:** Senior Developer Review in `Phase8_Senior_Developer_Review_2026-02-15.md` §13
+
+### 12.1 Summary of Senior Dev Conditions and Responses
+
+| # | Senior Dev Condition | Priority | Response | Action |
+|---|---------------------|----------|----------|--------|
+| 1 | Fold central claim coverage into sufficiency check | HIGH | **ACCEPTED** | Update sufficiency: context is sufficient when ≥3 items AND every central claim has ≥1 item |
+| 2 | Keep gap research for Phase 9 | MEDIUM | **ACCEPTED** | Gap research stays as separate post-loop phase. Mechanism count becomes 6, not 5 |
+| 3 | Add `contextDetectionMaxContexts` to SUPPLEMENTAL_CONTEXTS prompt | LOW | **ACCEPTED** | Reduces over-generation at the source, saving merging cost |
+| 4 | Add contradiction instrumentation | LOW | **ACCEPTED** | Log when reserved contradiction iterations go unused |
+
+**All 4 conditions accepted.** The Senior Dev's review is thorough and the conditions improve the proposal without changing its direction.
+
+### 12.2 Detailed Responses
+
+**Condition 1 — Central claim coverage in sufficiency check.**
+The Senior Dev correctly identifies that the current `centralClaimsSearched` mechanism at lines 6260-6281 would be silently lost. The proposed fix is elegant: make sufficiency context-aware by requiring `≥3 evidence items AND every central claim has ≥1 evidence item`. This folds the central claim check INTO the budget system rather than running as a separate mechanism. Implementation: add a `centralClaimsCovered(contextId)` helper that checks whether all central claims assigned to that context have at least 1 matching evidence item. Call it from the per-context sufficiency check. Net mechanism count stays at 6 (folding the old mechanism, not adding a new one).
+
+**Condition 2 — Keep gap research.**
+The Senior Dev's Option 1 (keep gap research as-is for Phase 9, integrate in Phase 10) is the right call. I was too aggressive in proposing its removal alongside the budget refactor. Gap research uses `analyzeEvidenceGaps` (LLM-powered) to identify SPECIFIC evidence gaps — this is qualitatively different from budget reallocation which only distributes iterations. Keeping it adds safety: if per-context budgets produce under-evidenced contexts, gap research provides a catch-up phase.
+
+Updated mechanism count: **11 → 6** (not 5). The 6 are:
+1. Total budget (global cap — unchanged)
+2. Per-context budget with reallocation (replaces: scaledMinEvidence, Block 2 context budget, exhaustedContextNames)
+3. Reserved contradiction budget (replaces: contradictionSearchPerformed, inverseClaimSearchPerformed)
+4. Adaptive fallback (unchanged, independent)
+5. Search hints (legalFrameworks, recencyMatters — unchanged, query-level)
+6. Gap research (unchanged, post-loop phase)
+
+**Condition 3 — `contextDetectionMaxContexts` in prompt.**
+Good catch. This is a "reduce at the source" optimization. Instead of letting the LLM generate 11 contexts and then merging down to 3, tell the LLM up front: "Return at most ${MAX_CONTEXTS} contexts." The `enforceContextCap` function still runs as a safety net, but the prompt hint should reduce how often merging is actually needed. Implementation: add `MAX_CONTEXTS: String(contextDetectionMaxContexts)` to the SUPPLEMENTAL_CONTEXTS prompt template variables.
+
+**Condition 4 — Contradiction instrumentation.**
+Agree. When the 2 reserved contradiction iterations produce no queries (e.g., single-claim inputs where contradiction is trivial), we should log that the budget went unused. This data helps tune `researchContradictionReservedIterations` in future — if contradiction consistently needs only 1 iteration, we can reclaim the other for evidence.
+
+### 12.3 Updated Proposal Summary
+
+With all conditions applied, the Phase 9 proposal becomes:
+
+| Change | Original | Updated |
+|--------|----------|---------|
+| A: Context cap | `enforceContextCap` at 4 call sites | Same + prompt hint for `contextDetectionMaxContexts` in SUPPLEMENTAL_CONTEXTS |
+| B: Per-context budget | Replace 5 mechanisms with 1 | Replace 4 mechanisms with 1 (keep gap research), fold central claim into sufficiency |
+| C: Contradiction reserve | 2 reserved iterations | Same + instrumentation for unused iterations |
+| Mechanism count | 11 → 5 | **11 → 6** |
+
+### 12.4 Success Criteria Adjustment
+
+Per the Senior Dev's §13.6, two success criteria are adjusted:
+
+| Metric | Original Target | Adjusted Target | Rationale |
+|--------|----------------|----------------|-----------|
+| SRG DE claims at 50% | ≤1/6 | **Deferred** — not a Phase 9 target | Verdict quality issue, not research structure |
+| Research loop mechanisms | 5 | **6** | Gap research kept |
+
+All other criteria remain unchanged.
+
+### 12.5 Agreement on Execution Sequence
+
+The Senior Dev's execution sequence in §13.8 matches the proposal with one good addition: the Phase 9 retrospective explicitly notes gap research integration as a Phase 10 candidate. Adopted.
+
+### 12.6 Status
+
+**Phase 9 proposal is now APPROVED WITH CONDITIONS (all accepted).** Ready for Captain sign-off and implementation.

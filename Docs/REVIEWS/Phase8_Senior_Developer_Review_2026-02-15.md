@@ -530,3 +530,151 @@ The one-line fix at `061bb23` (`mode !== "strict"` instead of `mode === "relaxed
 5. SRG DE 50% verdicts — may resolve with focused research from fewer contexts
 
 **Recommendation:** Proceed to Phase 9 proposal review. See `Phase9_Research_Loop_Proposal_2026-02-15.md`.
+
+---
+
+## 13. Phase 9 Proposal — Senior Developer Review
+
+**Date:** 2026-02-15
+**Document reviewed:** `Phase9_Research_Loop_Proposal_2026-02-15.md`
+**Method:** Code-verified against codebase as of `c509978`.
+
+### 13.1 Overall Assessment
+
+**Verdict: Approve with conditions.**
+
+The proposal correctly identifies the two structural problems that Phase 8 exposed (context explosion via `requestSupplementalContexts`, research budget waste from context fragmentation) and proposes targeted fixes. The "balanced compromise" framing (§11) is the right call — capturing budget discipline without a full architectural rewrite of the research loop.
+
+The 11→5 mechanism reduction is the most valuable aspect. The current loop has mechanisms that interact in unpredictable ways (e.g., `exhaustedContextNames` + Block 2 context budget + `scaledMinEvidence` all influencing iteration decisions). Replacing these with a single per-context budget with reallocation is a genuine simplification.
+
+### 13.2 Change A (Global Context Cap) — APPROVE
+
+**Code verification:** The bypass paths are confirmed:
+
+| Path | Code Location | Current Behavior | Verified |
+|------|-------------|-----------------|----------|
+| `requestSupplementalContexts` (understandClaim) | [orchestrated.ts:5427](apps/web/src/lib/analyzer/orchestrated.ts#L5427) | Replaces `analysisContexts` array wholesale | YES |
+| `requestSupplementalContexts` (recovery) | [orchestrated.ts:1552](apps/web/src/lib/analyzer/orchestrated.ts#L1552) | Same — replaces `analysisContexts` for under-split recovery | YES |
+| `reconcileContextsWithClaimAssignments` | [orchestrated.ts:5052](apps/web/src/lib/analyzer/orchestrated.ts#L5052) | Fixed by `c509978` but only for orphan-driven creation | YES |
+| Initial UNDERSTAND parse | understandClaim output | LLM can return any number of contexts | YES |
+
+The proposal says 4 call sites. I count 4 actual creation/replacement points. Correct.
+
+The `enforceContextCap` design (LLM similarity merge via `assessTextSimilarityBatch`) is AGENTS-compliant — uses LLM intelligence, not heuristic merging. The approach of merging most-similar context pairs iteratively until at/below cap is clean and preserves all claims and evidence.
+
+**One addition needed:** The SUPPLEMENTAL_CONTEXTS prompt at [orchestrated.prompt.md:502-522](apps/web/prompts/orchestrated.prompt.md#L502-L522) says "when in doubt, use fewer contexts" but has no hard limit. Add `contextDetectionMaxContexts` to the prompt template as a hard instruction: "Return at most ${MAX_CONTEXTS} contexts." This reduces the need for post-hoc merging and saves the LLM similarity call in most cases.
+
+### 13.3 Change B (Per-Context Budget) — APPROVE WITH CONDITIONS
+
+The core design is sound: allocate per-context budgets proportional to claim count, skip exhausted contexts, reallocate budget from sufficient to starved. This replaces 5 mechanisms with 1.
+
+**Code-verified mechanism replacement:**
+
+| Current Mechanism | Lines | Proposal Replacement | Assessment |
+|-------------------|-------|---------------------|------------|
+| `scaledMinEvidence` | [6246-6248](apps/web/src/lib/analyzer/orchestrated.ts#L6246-L6248) | Per-context sufficiency threshold (≥3) | Clean replacement — `scaledMinEvidence` scales with context count, but with capped contexts the scaling becomes trivial |
+| Context budget (Block 2) | [6371-6401](apps/web/src/lib/analyzer/orchestrated.ts#L6371-L6401) | Per-context budget counter | Clean replacement |
+| `exhaustedContextNames` | [6390-6394](apps/web/src/lib/analyzer/orchestrated.ts#L6390-L6394) | Per-context counter, skip when budget=0 | Clean replacement |
+| `centralClaimsSearched` | [6260-6281](apps/web/src/lib/analyzer/orchestrated.ts#L6260-L6281) | Not explicitly addressed | **GAP** — see Condition 1 |
+| `gapResearch` | [12284-12350](apps/web/src/lib/analyzer/orchestrated.ts#L12284-L12350) | Per-context reallocation | **PARTIAL** — see Condition 2 |
+
+**CONDITION 1: Central claim evidence coverage must not be silently lost.**
+
+The current system has a targeted search at [orchestrated.ts:6260-6281](apps/web/src/lib/analyzer/orchestrated.ts#L6260-L6281) that fires AFTER evidence sufficiency is met: for each CENTRAL claim without evidence, it does one focused search. This is quality-critical — it ensures the highest-importance claims in each context have at least some evidence before verdict generation.
+
+The per-context budget treats all claims equally. A context with 5 evidence items could be marked "sufficient" even if all 5 relate to non-central claims while the central claim has zero evidence. The budget reallocation will move iterations to *other contexts*, not to the underserved central claim.
+
+**Fix:** Keep the central claim coverage check inside the sufficiency test. A context is only "sufficient" when it has ≥3 evidence items AND every central claim in that context has ≥1 evidence item. This is a 2-line addition to the sufficiency check, not a new mechanism.
+
+**CONDITION 2: Gap research removal needs explicit decision.**
+
+The proposal lists `gapResearch` as replaced by per-context budget reallocation. But gap research at [orchestrated.ts:12284-12350](apps/web/src/lib/analyzer/orchestrated.ts#L12284-L12350) is architecturally different from the other mechanisms:
+
+- It runs AFTER the main research loop completes (separate phase, not interleaved)
+- It uses `analyzeEvidenceGaps` at [orchestrated.ts:1927](apps/web/src/lib/analyzer/orchestrated.ts#L1927), which is **LLM-powered** (`assessTextSimilarityBatch` for evidence-to-claim relevance)
+- It identifies SPECIFIC claims missing evidence and generates TARGETED queries
+- It has its own budget (`gapResearchMaxQueries`, `gapResearchMaxIterations`) separate from the main loop
+
+Per-context budget reallocation doesn't replicate this intelligence. Reallocation says "give more iterations to an under-evidenced context" — but it doesn't know WHICH claims within that context are missing evidence, and it generates regular queries, not gap-targeted queries.
+
+**Options (ask Captain):**
+1. **Keep gap research as-is** — it runs after the main loop and doesn't interact with per-context budgets. Net mechanism count becomes 6 instead of 5. Pragmatic.
+2. **Integrate gap analysis into sufficiency check** — when a context reaches budget 0, run `analyzeEvidenceGaps` for that context's claims. If critical gaps remain, borrow 1 iteration from the largest remaining budget. This is more complex but captures the intelligence.
+3. **Remove gap research** — accept that per-context budgets provide "good enough" coverage. Risk: some central claims end up without evidence, weakening verdict quality.
+
+My recommendation: **Option 1** for Phase 9 (keep gap research, don't touch it). Phase 10 can integrate it once per-context budgets are proven. Removing a working LLM-powered quality mechanism simultaneously with a budget refactor adds unnecessary risk.
+
+### 13.4 Change C (Reserved Contradiction Budget) — APPROVE
+
+The current system reserves 1 iteration for contradiction at [orchestrated.ts:6380](apps/web/src/lib/analyzer/orchestrated.ts#L6380): `const reserveForContradiction = state.contradictionSearchPerformed ? 0 : 1`. The proposal upgrades this to 2 reserved iterations (configurable via UCM) that fire after all evidence budgets are exhausted.
+
+This is strictly better:
+- 2 iterations covers both contradiction AND inverse claim search (currently separate boolean flags)
+- Explicit reservation replaces implicit flag-checking
+- Firing after evidence phase matches the current execution order (contradiction already fires after context budget block at line 6487)
+- UCM-configurable via `researchContradictionReservedIterations`
+
+**Minor note:** The proposal says contradiction evidence won't roll back to evidence if unused. Good — contradiction is a quality guarantee, not a budget optimization. But add instrumentation: log when contradiction iterations go unused (i.e., no contradiction/inverse queries needed). This data helps tune the reservation in future.
+
+### 13.5 Mechanism Count Assessment
+
+The proposal claims 11→5. Code-verified count:
+
+| # | Current Mechanism | Code Confirmed | Phase 9 Status |
+|---|-------------------|---------------|----------------|
+| 1 | `maxResearchIterations` | [6377](apps/web/src/lib/analyzer/orchestrated.ts#L6377) | KEPT (total budget cap) |
+| 2 | `scaledMinEvidence` | [6246](apps/web/src/lib/analyzer/orchestrated.ts#L6246) | REPLACED by per-context sufficiency |
+| 3 | `contradictionSearchPerformed` | [6487](apps/web/src/lib/analyzer/orchestrated.ts#L6487) | REPLACED by reserved iterations |
+| 4 | `inverseClaimSearchPerformed` | [6513](apps/web/src/lib/analyzer/orchestrated.ts#L6513) | REPLACED by reserved iterations |
+| 5 | Context budget (Block 2) | [6371-6401](apps/web/src/lib/analyzer/orchestrated.ts#L6371-L6401) | REPLACED by per-context budget |
+| 6 | `exhaustedContextNames` | [6390](apps/web/src/lib/analyzer/orchestrated.ts#L6390) | REPLACED by per-context counter |
+| 7 | `gapResearch` | [12284-12350](apps/web/src/lib/analyzer/orchestrated.ts#L12284-L12350) | **KEEP** (per condition 2) |
+| 8 | `adaptiveFallback` | Confirmed earlier | KEPT (independent) |
+| 9 | `centralClaimsSearched` | [6260-6281](apps/web/src/lib/analyzer/orchestrated.ts#L6260-L6281) | **FOLD** into sufficiency check (per condition 1) |
+| 10 | `legalFrameworks` | [6444-6454](apps/web/src/lib/analyzer/orchestrated.ts#L6444-L6454) | KEPT as search hint |
+| 11 | `recencyMatters` | [6216-6225](apps/web/src/lib/analyzer/orchestrated.ts#L6216-L6225) | KEPT as search hint |
+
+**Adjusted count: 11 → 6** (keeping gap research, folding central claim check). Still a substantial improvement from 11 interacting mechanisms, and more honest than claiming 5.
+
+### 13.6 Success Criteria Assessment
+
+| Metric | Target | Achievable? | Notes |
+|--------|--------|-------------|-------|
+| H2 vs EV contexts ≤3 | ≤3 | **YES** if Change A caps `requestSupplementalContexts` output | This is the primary fix |
+| SRG EN contexts ≤3 | ≤3 | **YES** (same) | |
+| Ev/Search ≥1.5 | No regression | **LIKELY** — fewer contexts = more focused research | Could improve |
+| Bolsonaro ±8pp | ±8pp across 3 runs | **UNCERTAIN** — depends on claim-to-context assignment stability | Context cap helps but doesn't eliminate LLM non-determinism |
+| SRG DE claims at 50% ≤1/6 | ≤1/6 | **UNLIKELY from 9a-9c alone** — this is a verdict quality issue, not a research structure issue | May need German-specific verdict prompt tuning |
+| Contradiction fires 100% | 100% | **YES** — reserved budget guarantees this | |
+| 10+ → 5 mechanisms | 5 | **6** per my adjusted count (keeping gap research) | Still a major simplification |
+
+### 13.7 Conditions for Approval
+
+| # | Condition | Priority | Applies To |
+|---|-----------|----------|------------|
+| 1 | **Fold central claim coverage into sufficiency check** — a context is sufficient only when ≥3 items AND every central claim has ≥1 item | HIGH | Change B |
+| 2 | **Keep gap research for Phase 9** — don't remove it simultaneously with the budget refactor. Mechanism count becomes 6 not 5. | MEDIUM | Change B |
+| 3 | **Add `contextDetectionMaxContexts` to SUPPLEMENTAL_CONTEXTS prompt** — reduce LLM over-generation before post-hoc merging | LOW | Change A |
+| 4 | **Add contradiction instrumentation** — log when reserved contradiction iterations go unused | LOW | Change C |
+
+### 13.8 Execution Sequence — Confirmed
+
+The proposed 9a → 9b → 9c sequence is correct. Each change is independently valuable and independently testable. I'd add:
+
+```
+Phase 9a: Global context cap  →  Re-run 4 jobs  →  Validate context counts ≤3
+    ↓
+Phase 9b: Per-context budget   →  Re-run 4 jobs  →  Compare evidence distribution across contexts
+    ↓
+Phase 9c: Contradiction reserve →  Re-run 4 jobs + 3x Bolsonaro stability  →  Confirm 100% contradiction firing
+    ↓
+Phase 9 retrospective  →  Decide gap research integration (Phase 10?)
+```
+
+### 13.9 Phase 9 Bottom Line
+
+Phase 9 is well-targeted. The proposal correctly identifies budget discipline and context cap enforcement as the two structural problems. The compromise approach (budget accounting within the existing loop, not a full rewrite) is the right risk/reward tradeoff.
+
+The main gap is gap research removal — an LLM-powered quality mechanism shouldn't be removed in the same PR that refactors the budget system. Keep it for now, integrate later.
+
+**Recommendation to Captain:** Approve with the 4 conditions above. Start with 9a (context cap) — it's the lowest-risk, highest-impact change and will immediately validate whether the context merging approach works for H2 vs EV and SRG EN.
