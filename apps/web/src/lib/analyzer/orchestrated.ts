@@ -729,7 +729,7 @@ async function assessSearchRelevanceBatch(
           const idx = parseInt(item.id.replace("r", ""), 10);
           if (idx >= 0 && idx < results.length) {
             const isRelevant = item.classification === "primary_source" ||
-              (mode === "relaxed" && item.classification === "secondary_commentary");
+              (mode !== "strict" && item.classification === "secondary_commentary");
             out.set(item.id, {
               isRelevant,
               reason: isRelevant ? undefined : item.reason,
