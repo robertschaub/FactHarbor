@@ -6105,7 +6105,20 @@ function decideNextResearch(state: ResearchState): ResearchDecision {
     contexts.length > 0 &&
     state.iterations.length < contextBudget
   ) {
+    // Track which contexts were already targeted with no new sources found.
+    // Without this, the same under-evidenced context gets retried with identical
+    // queries, wasting search API calls (observed: 6 retries, 25+ wasted calls).
+    const exhaustedContextNames = new Set(
+      state.iterations
+        .filter((it: any) => it.sourcesFound === 0)
+        .map((it: any) => String(it.focus || "").split(" - ")[0].trim())
+        .filter(Boolean),
+    );
+
     for (const context of contexts) {
+      // Skip contexts that were already searched with zero new sources
+      if (exhaustedContextNames.has(context.name)) continue;
+
       const contextEvidenceItems = state.evidenceItems.filter(
         (f) => f.contextId === context.id,
       );
