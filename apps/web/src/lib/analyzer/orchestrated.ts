@@ -8010,7 +8010,108 @@ async function generateMultiContextVerdicts(
     }
   }
 
-  // Fallback if structured output failed
+  // Phase 8b: Batch retry — when the full call fails and there are many claims,
+  // split claims into smaller batches and retry. This prevents blanket 50/50
+  // fallback for jobs with many claims (e.g., 18 claims in SRG URL case).
+  const verdictBatchSize = state.pipelineConfig.verdictBatchSize ?? 5;
+  if (
+    (!parsed || !Array.isArray(parsed.analysisContextAnswers) || parsed.analysisContextAnswers.length === 0) &&
+    claimsForVerdicts.length > verdictBatchSize
+  ) {
+    debugLog("generateMultiContextVerdicts: Full call failed, attempting BATCH RETRY", {
+      claimCount: claimsForVerdicts.length,
+      batchSize: verdictBatchSize,
+    });
+
+    const batches: Array<typeof claimsForVerdicts> = [];
+    for (let i = 0; i < claimsForVerdicts.length; i += verdictBatchSize) {
+      batches.push(claimsForVerdicts.slice(i, i + verdictBatchSize));
+    }
+
+    const allBatchClaimVerdicts: any[] = [];
+    let firstSuccessResult: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
+    let batchSuccessCount = 0;
+
+    for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+      const batch = batches[batchIdx];
+      const batchClaimsFormatted = batch
+        .map((c: any) =>
+          `${c.id}${c.contextId ? ` (${c.contextId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
+        )
+        .join("\n");
+
+      const batchUserSection = await loadAndRenderSection("orchestrated", "VERDICT_USER", {
+        inputLabel,
+        analysisInput,
+        contextsFormatted,
+        claimsFormatted: batchClaimsFormatted,
+        evidenceItemsFormatted,
+      });
+      if (!batchUserSection?.content?.trim()) continue;
+
+      let batchParsed: z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT> | null = null;
+
+      try {
+        const batchResult = await generateText({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
+            { role: "user", content: batchUserSection.content },
+          ],
+          temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
+          maxOutputTokens: 8192,
+          output: Output.object({ schema: multiContextOutputSchema }),
+          providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
+        });
+        state.llmCalls++;
+        recordLLMCall(state.budgetTracker, (batchResult as any).usage?.totalTokens || (batchResult as any).totalUsage?.totalTokens || 0);
+
+        const rawOutput = extractStructuredOutput(batchResult);
+        if (rawOutput) {
+          batchParsed = normalizeMultiContextOutput(rawOutput, evidenceNormalizer) as z.infer<typeof VERDICTS_SCHEMA_MULTI_CONTEXT>;
+        }
+      } catch (err) {
+        state.llmCalls++;
+        const recovered = recoverFromNoObjectGeneratedError(err, `batch-${batchIdx}`);
+        if (recovered && Array.isArray(recovered.analysisContextAnswers) && recovered.analysisContextAnswers.length > 0) {
+          batchParsed = recovered;
+        }
+        debugLog("generateMultiContextVerdicts: Batch retry error", {
+          batch: batchIdx,
+          claimCount: batch.length,
+          error: err instanceof Error ? err.message : String(err),
+          recovered: !!batchParsed,
+        });
+      }
+
+      if (batchParsed?.claimVerdicts) {
+        allBatchClaimVerdicts.push(...batchParsed.claimVerdicts);
+        batchSuccessCount++;
+        if (!firstSuccessResult) firstSuccessResult = batchParsed;
+      }
+    }
+
+    if (firstSuccessResult && allBatchClaimVerdicts.length > 0) {
+      parsed = {
+        ...firstSuccessResult,
+        claimVerdicts: allBatchClaimVerdicts,
+      };
+      debugLog("generateMultiContextVerdicts: BATCH RETRY SUCCESS", {
+        batchCount: batches.length,
+        batchesSucceeded: batchSuccessCount,
+        claimVerdictsRecovered: allBatchClaimVerdicts.length,
+        totalClaims: claimsForVerdicts.length,
+      });
+      state.analysisWarnings.push({
+        type: "verdict_batch_retry",
+        severity: "info",
+        message: `Verdict generation recovered via batch retry: ${allBatchClaimVerdicts.length}/${claimsForVerdicts.length} claims from ${batchSuccessCount}/${batches.length} batches.`,
+        details: { batchCount: batches.length, batchesSucceeded: batchSuccessCount, claimsRecovered: allBatchClaimVerdicts.length },
+      });
+    }
+  }
+
+  // Fallback if structured output failed (and batch retry didn't recover)
   if (
     !parsed ||
     !Array.isArray(parsed.analysisContextAnswers) ||
@@ -8821,8 +8922,103 @@ async function generateSingleContextVerdicts(
     typeof parsed.verdictSummary.answer === 'number' &&
     Number.isFinite(parsed.verdictSummary.answer);
 
-  if (!parsed || !parsed.claimVerdicts || !hasValidVerdictSummary) {
-    console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ", hasValidAnswer:", hasValidVerdictSummary, ")");
+  // Phase 8b: Batch retry for single-context verdicts
+  const verdictBatchSizeSC = state.pipelineConfig.verdictBatchSize ?? 5;
+  if (
+    (!parsed || !parsed.claimVerdicts || !hasValidVerdictSummary) &&
+    claimsForVerdicts.length > verdictBatchSizeSC
+  ) {
+    debugLog("generateSingleContextVerdicts: Full call failed, attempting BATCH RETRY", {
+      claimCount: claimsForVerdicts.length,
+      batchSize: verdictBatchSizeSC,
+    });
+
+    const batches: Array<typeof claimsForVerdicts> = [];
+    for (let i = 0; i < claimsForVerdicts.length; i += verdictBatchSizeSC) {
+      batches.push(claimsForVerdicts.slice(i, i + verdictBatchSizeSC));
+    }
+
+    const allBatchClaimVerdicts: any[] = [];
+    let firstSuccessResult: z.infer<typeof VERDICTS_SCHEMA_SIMPLE> | null = null;
+    let batchSuccessCount = 0;
+
+    for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+      const batch = batches[batchIdx];
+      const batchClaimsFormatted = batch
+        .map((c: any) =>
+          `${c.id}${c.contextId ? ` (${c.contextId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
+        )
+        .join("\n");
+
+      const batchUserSection = await loadAndRenderSection("orchestrated", "ANSWER_USER", {
+        inputLabel,
+        analysisInput,
+        claimsFormatted: batchClaimsFormatted,
+        evidenceItemsFormatted,
+      });
+      if (!batchUserSection?.content?.trim()) continue;
+
+      try {
+        const batchResult = await generateText({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
+            { role: "user", content: batchUserSection.content },
+          ],
+          temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
+          maxOutputTokens: 8192,
+          output: Output.object({ schema: singleContextOutputSchema }),
+          providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
+        });
+        state.llmCalls++;
+        recordLLMCall(state.budgetTracker, (batchResult as any).usage?.totalTokens || (batchResult as any).totalUsage?.totalTokens || 0);
+
+        const rawOutput = extractStructuredOutput(batchResult);
+        if (rawOutput?.claimVerdicts) {
+          const batchParsed = VERDICTS_SCHEMA_SIMPLE.safeParse(rawOutput);
+          if (batchParsed.success) {
+            allBatchClaimVerdicts.push(...batchParsed.data.claimVerdicts);
+            batchSuccessCount++;
+            if (!firstSuccessResult) firstSuccessResult = batchParsed.data;
+          }
+        }
+      } catch (err) {
+        state.llmCalls++;
+        debugLog("generateSingleContextVerdicts: Batch retry error", {
+          batch: batchIdx,
+          claimCount: batch.length,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    if (firstSuccessResult && allBatchClaimVerdicts.length > 0) {
+      parsed = {
+        ...firstSuccessResult,
+        claimVerdicts: allBatchClaimVerdicts,
+      };
+      debugLog("generateSingleContextVerdicts: BATCH RETRY SUCCESS", {
+        batchCount: batches.length,
+        batchesSucceeded: batchSuccessCount,
+        claimVerdictsRecovered: allBatchClaimVerdicts.length,
+        totalClaims: claimsForVerdicts.length,
+      });
+      state.analysisWarnings.push({
+        type: "verdict_batch_retry",
+        severity: "info",
+        message: `Single-context verdict recovered via batch retry: ${allBatchClaimVerdicts.length}/${claimsForVerdicts.length} claims.`,
+        details: { batchCount: batches.length, batchesSucceeded: batchSuccessCount, claimsRecovered: allBatchClaimVerdicts.length },
+      });
+    }
+  }
+
+  // Re-check after batch retry
+  const hasValidVerdictSummaryAfterBatch = parsed?.verdictSummary &&
+    typeof parsed.verdictSummary.answer === 'number' &&
+    Number.isFinite(parsed.verdictSummary.answer);
+
+  if (!parsed || !parsed.claimVerdicts || !hasValidVerdictSummaryAfterBatch) {
+    console.log("[Analyzer] Using fallback verdict generation (parsed:", !!parsed, ", claimVerdicts:", !!parsed?.claimVerdicts, ", verdictSummary:", !!parsed?.verdictSummary, ", hasValidAnswer:", hasValidVerdictSummaryAfterBatch, ")");
 
     const fallbackVerdicts: ClaimVerdict[] = claimsForVerdicts.map(
       (claim: any) => ({
@@ -9438,7 +9634,96 @@ ${providerPromptHint}`;
     }
   }
 
-  // If structured output failed, create fallback verdicts
+  // Phase 8b: Batch retry for claim verdicts
+  const verdictBatchSizeCV = state.pipelineConfig.verdictBatchSize ?? 5;
+  if (
+    (!parsed || !parsed.claimVerdicts) &&
+    claimsForVerdicts.length > verdictBatchSizeCV
+  ) {
+    debugLog("generateClaimVerdicts: Full call failed, attempting BATCH RETRY", {
+      claimCount: claimsForVerdicts.length,
+      batchSize: verdictBatchSizeCV,
+    });
+
+    const batches: Array<typeof claimsForVerdicts> = [];
+    for (let i = 0; i < claimsForVerdicts.length; i += verdictBatchSizeCV) {
+      batches.push(claimsForVerdicts.slice(i, i + verdictBatchSizeCV));
+    }
+
+    const allBatchClaimVerdicts: any[] = [];
+    let firstSuccessResult: z.infer<typeof VERDICTS_SCHEMA_CLAIM> | null = null;
+    let batchSuccessCount = 0;
+
+    for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+      const batch = batches[batchIdx];
+      const batchClaimsFormatted = batch
+        .map((c: any) =>
+          `${c.id}${c.contextId ? ` (${c.contextId})` : ""}: "${c.text}" [${c.isCentral ? "CENTRAL" : "Supporting"}]`,
+        )
+        .join("\n");
+
+      const batchUserSection = await loadAndRenderSection("orchestrated", "CLAIM_VERDICTS_USER", {
+        THESIS_TEXT: understanding.articleThesis,
+        CLAIMS_TEXT: batchClaimsFormatted,
+        EVIDENCE_TEXT: evidenceItemsFormatted,
+      });
+      if (!batchUserSection?.content?.trim()) continue;
+
+      try {
+        const batchResult = await generateText({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt, providerOptions: getPromptCachingOptions(state.pipelineConfig?.llmProvider) },
+            { role: "user", content: batchUserSection.content },
+          ],
+          temperature: getDeterministicTemperature(0.3, state.pipelineConfig),
+          maxOutputTokens: 8192,
+          output: Output.object({ schema: claimOutputSchema }),
+          providerOptions: getStructuredOutputProviderOptions(state.pipelineConfig?.llmProvider ?? "anthropic"),
+        });
+        state.llmCalls++;
+        recordLLMCall(state.budgetTracker, (batchResult as any).usage?.totalTokens || (batchResult as any).totalUsage?.totalTokens || 0);
+
+        const rawOutput = extractStructuredOutput(batchResult);
+        if (rawOutput?.claimVerdicts) {
+          const batchParsed = VERDICTS_SCHEMA_CLAIM.safeParse(rawOutput);
+          if (batchParsed.success) {
+            allBatchClaimVerdicts.push(...batchParsed.data.claimVerdicts);
+            batchSuccessCount++;
+            if (!firstSuccessResult) firstSuccessResult = batchParsed.data;
+          }
+        }
+      } catch (err) {
+        state.llmCalls++;
+        debugLog("generateClaimVerdicts: Batch retry error", {
+          batch: batchIdx,
+          claimCount: batch.length,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    if (firstSuccessResult && allBatchClaimVerdicts.length > 0) {
+      parsed = {
+        ...firstSuccessResult,
+        claimVerdicts: allBatchClaimVerdicts,
+      };
+      debugLog("generateClaimVerdicts: BATCH RETRY SUCCESS", {
+        batchCount: batches.length,
+        batchesSucceeded: batchSuccessCount,
+        claimVerdictsRecovered: allBatchClaimVerdicts.length,
+        totalClaims: claimsForVerdicts.length,
+      });
+      state.analysisWarnings.push({
+        type: "verdict_batch_retry",
+        severity: "info",
+        message: `Claim verdict recovered via batch retry: ${allBatchClaimVerdicts.length}/${claimsForVerdicts.length} claims.`,
+        details: { batchCount: batches.length, batchesSucceeded: batchSuccessCount, claimsRecovered: allBatchClaimVerdicts.length },
+      });
+    }
+  }
+
+  // If structured output failed (and batch retry didn't recover), create fallback verdicts
   if (!parsed || !parsed.claimVerdicts) {
     console.log("[Analyzer] Using fallback verdict generation");
 

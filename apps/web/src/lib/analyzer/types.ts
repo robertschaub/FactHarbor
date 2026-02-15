@@ -734,7 +734,8 @@ export type AnalysisWarningType =
   | "grounding_check_degraded"      // LLM grounding adjudication failed; ratios are fallback values
   | "direction_validation_degraded" // LLM direction validation failed; verdicts kept unchanged
   | "verdict_fallback_partial"      // v2.9.1: Individual claim got 50/50 fallback (LLM didn't return verdict)
-  | "verdict_partial_recovery";     // Partial JSON recovery from truncated LLM output (some claims recovered, rest fallback)
+  | "verdict_partial_recovery"      // Partial JSON recovery from truncated LLM output (some claims recovered, rest fallback)
+  | "verdict_batch_retry";          // Verdict generation recovered via batch retry (claims split into smaller batches)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

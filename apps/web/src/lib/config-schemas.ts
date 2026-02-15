@@ -320,6 +320,8 @@ export const PipelineConfigSchema = z.object({
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
 
+  verdictBatchSize: z.number().int().min(1).max(20).optional()
+    .describe("Max claims per verdict LLM call batch when full call fails (default: 5)"),
   maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("Max research iterations per AnalysisContext"),
 
   maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all contexts"),
@@ -641,6 +643,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeDeduplicationThreshold: 0.75,
 
   // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
+  verdictBatchSize: 5,
   maxIterationsPerContext: 3, // v2.11.1: was 5 - balance cost vs research depth
   maxTotalIterations: 10, // v2.11.1: was 20 - cap deep research loops
   maxTotalTokens: 500000, // v2.11.1: was 750000 - ~$1.50 max cost at Claude rates
