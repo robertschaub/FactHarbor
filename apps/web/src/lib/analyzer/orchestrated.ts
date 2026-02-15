@@ -5048,8 +5048,10 @@ async function understandClaim(
 
   // Ensure no orphaned context assignments: if any subClaim uses contextId, that ID must
   // exist in analysisContexts. Some providers may emit claim assignments that reference IDs
-  // they didn't include in analysisContexts; we reconcile deterministically.
-  const reconcileContextsWithClaimAssignments = (u: ClaimUnderstanding) => {
+  // they didn't include in analysisContexts; we reconcile.
+  // Phase 8 fix: enforce contextDetectionMaxContexts cap. When creating new contexts would
+  // exceed the cap, reassign orphaned claims to the nearest existing context via LLM similarity.
+  const reconcileContextsWithClaimAssignments = async (u: ClaimUnderstanding): Promise<ClaimUnderstanding> => {
     const contexts = Array.isArray((u as any).analysisContexts) ? (u as any).analysisContexts : [];
     const contextIds = new Set(contexts.map((s: any) => String(s?.id || "")).filter(Boolean));
     const claims = Array.isArray((u as any).subClaims) ? (u as any).subClaims : [];
@@ -5065,24 +5067,102 @@ async function understandClaim(
     (u as any).requiresSeparateAnalysis = contexts.length > 1;
     if (missing.size === 0) return u;
 
-    for (const id of Array.from(missing)) {
-      const exemplar = (claims as any[]).find((c) => String(c?.contextId || "").trim() === id);
-      const rawName = String(exemplar?.text || "").trim();
-      const name = rawName ? rawName.slice(0, 120) : `${id} context`;
-      // Extract short name: remove CTX_ prefix if present, or use ID as-is
-      const withoutPrefix = id.replace(/^CTX_/, "").trim();
-      const shortName = (withoutPrefix || id).slice(0, 12) || "CONTEXT";
-      contexts.push({
-        id,
-        name,
-        shortName,
-        subject: rawName || "",
-        temporal: "",
-        status: "unknown",
-        outcome: "unknown",
-        metadata: {},
+    const maxContexts = pipelineConfig?.contextDetectionMaxContexts ?? 3;
+    const slotsAvailable = Math.max(0, maxContexts - contexts.length);
+
+    if (missing.size <= slotsAvailable) {
+      // Room to create all missing contexts — original behavior
+      for (const id of Array.from(missing)) {
+        const exemplar = (claims as any[]).find((c) => String(c?.contextId || "").trim() === id);
+        const rawName = String(exemplar?.text || "").trim();
+        const name = rawName ? rawName.slice(0, 120) : `${id} context`;
+        const withoutPrefix = id.replace(/^CTX_/, "").trim();
+        const shortName = (withoutPrefix || id).slice(0, 12) || "CONTEXT";
+        contexts.push({
+          id,
+          name,
+          shortName,
+          subject: rawName || "",
+          temporal: "",
+          status: "unknown",
+          outcome: "unknown",
+          metadata: {},
+        });
+        contextIds.add(id);
+      }
+    } else {
+      // Context cap would be exceeded — reassign orphaned claims to nearest existing context
+      debugLog("reconcileContexts: context cap hit, reassigning orphaned claims", {
+        existingContexts: contexts.length,
+        orphanedContextIds: missing.size,
+        maxContexts,
+        slotsAvailable,
       });
-      contextIds.add(id);
+
+      if (contexts.length === 0) {
+        // Edge case: no existing contexts at all — create one from the first orphan, reassign rest
+        const firstOrphan = Array.from(missing)[0];
+        const exemplar = (claims as any[]).find((c) => String(c?.contextId || "").trim() === firstOrphan);
+        const rawName = String(exemplar?.text || "").trim();
+        contexts.push({
+          id: firstOrphan,
+          name: rawName ? rawName.slice(0, 120) : `${firstOrphan} context`,
+          shortName: firstOrphan.replace(/^CTX_/, "").slice(0, 12) || "CONTEXT",
+          subject: rawName || "",
+          temporal: "",
+          status: "unknown",
+          outcome: "unknown",
+          metadata: {},
+        });
+        contextIds.add(firstOrphan);
+        missing.delete(firstOrphan);
+      }
+
+      // Build similarity pairs: each orphaned claim text vs each existing context name
+      const orphanedClaims = (claims as any[]).filter(
+        (c) => missing.has(String(c?.contextId || "").trim())
+      );
+      const simPairs: Array<{ id: string; textA: string; textB: string }> = [];
+      for (const claim of orphanedClaims) {
+        const claimText = String(claim?.text || "").trim();
+        if (!claimText) continue;
+        for (const ctx of contexts) {
+          const ctxName = String(ctx?.name || ctx?.subject || ctx?.id || "").trim();
+          simPairs.push({
+            id: `reassign_${claim.id}_to_${ctx.id}`,
+            textA: claimText.slice(0, 200),
+            textB: ctxName.slice(0, 200),
+          });
+        }
+      }
+
+      // Use LLM similarity to find nearest context for each orphaned claim
+      const simScores = simPairs.length > 0
+        ? await assessTextSimilarityBatch(simPairs)
+        : new Map<string, number>();
+
+      let reassigned = 0;
+      for (const claim of orphanedClaims) {
+        let bestCtxId = contexts[0]?.id || "";
+        let bestScore = -1;
+        for (const ctx of contexts) {
+          const pairId = `reassign_${claim.id}_to_${ctx.id}`;
+          const score = simScores.get(pairId) ?? 0;
+          if (score > bestScore) {
+            bestScore = score;
+            bestCtxId = ctx.id;
+          }
+        }
+        claim.contextId = bestCtxId;
+        reassigned++;
+      }
+
+      if (reassigned > 0) {
+        debugLog("reconcileContexts: reassigned orphaned claims to existing contexts", {
+          reassigned,
+          contextCount: contexts.length,
+        });
+      }
     }
 
     // If any claim still references a non-existent ID (shouldn't happen), clear it.
@@ -5096,7 +5176,7 @@ async function understandClaim(
     return u;
   };
 
-  parsed = reconcileContextsWithClaimAssignments(parsed);
+  parsed = await reconcileContextsWithClaimAssignments(parsed);
 
   // =========================================================================
   // PHASE 8c: ENRICHMENT PASS — if initial decomposition produced too few claims,
@@ -5214,7 +5294,7 @@ async function understandClaim(
           if (enrichedAdded > 0) {
             console.log(`[Analyzer] Phase 8c enrichment: added ${enrichedAdded} claims (${initialClaimCount} → ${parsed.subClaims.length})`);
             // Re-reconcile after adding enriched claims
-            parsed = reconcileContextsWithClaimAssignments(parsed);
+            parsed = await reconcileContextsWithClaimAssignments(parsed);
           }
         }
       }
@@ -5441,7 +5521,7 @@ async function understandClaim(
       console.log(`[Analyzer] Added ${supplementalClaims.length} supplemental claims to balance context coverage`);
       // Supplemental claims may introduce new contextId values. Ensure analysisContexts
       // covers all referenced context IDs, then re-canonicalize for stable IDs.
-      parsed = reconcileContextsWithClaimAssignments(parsed);
+      parsed = await reconcileContextsWithClaimAssignments(parsed);
       parsed = canonicalizeContexts(analysisInput, parsed);
       // Supplemental claims can reintroduce over-centrality and role drift; re-normalize deterministically.
       normalizeSubClaimsImportance(parsed.subClaims as any);
