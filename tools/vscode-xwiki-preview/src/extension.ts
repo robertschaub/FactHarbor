@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { XWikiPreviewPanel } from './preview-panel';
-import { XWikiTreeProvider } from './xwiki-tree';
+import { XWikiTreeProvider, XWikiTreeItem } from './xwiki-tree';
 
 // Page index: normalized ref → vscode.Uri
 let pageIndex: Map<string, { uri: vscode.Uri; ref: string; name: string; relPath: string; segments: string[] }> = new Map();
@@ -12,7 +12,30 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register XWiki Pages tree view in explorer sidebar
   const treeProvider = new XWikiTreeProvider();
-  vscode.window.createTreeView('xwikiPages', { treeDataProvider: treeProvider });
+  const treeView = vscode.window.createTreeView('xwikiPages', { treeDataProvider: treeProvider });
+
+  // Open page when tree selection changes (first click on any item)
+  const log = vscode.window.createOutputChannel('XWiki Tree');
+  treeView.onDidChangeSelection(async (e) => {
+    const item = e.selection[0] as XWikiTreeItem | undefined;
+    if (!item?.node) return;
+    const uri = item.node.uri;
+    if (!uri) {
+      log.appendLine(`[selection] No URI for: ${item.node.name}`);
+      vscode.window.showWarningMessage(`No page for: ${item.node.name}`);
+      return;
+    }
+    try {
+      // Construct fresh file URI from fsPath to normalize any encoding issues
+      const fileUri = vscode.Uri.file(uri.fsPath);
+      log.appendLine(`[selection] Opening: ${item.node.name} → ${fileUri.fsPath}`);
+      const doc = await vscode.workspace.openTextDocument(fileUri);
+      await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One, preview: false });
+    } catch (err: any) {
+      log.appendLine(`[selection] ERROR: ${err?.message || err}`);
+      vscode.window.showErrorMessage(`Failed to open ${item.node.name}: ${err?.message || err}`);
+    }
+  });
 
   // Rebuild index when xwiki files are created/deleted
   const watcher = vscode.workspace.createFileSystemWatcher('**/*.xwiki');
@@ -22,9 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register commands
   context.subscriptions.push(
-    vscode.commands.registerCommand('xwiki.openPage', async (uri: vscode.Uri) => {
+    vscode.commands.registerCommand('xwiki.openPage', async (uriOrPath: vscode.Uri | string) => {
+      const uri = typeof uriOrPath === 'string' ? vscode.Uri.file(uriOrPath) : uriOrPath;
       const doc = await vscode.workspace.openTextDocument(uri);
-      await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+      await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One, preview: false });
     }),
     vscode.commands.registerCommand('xwiki.refreshTree', () => {
       treeProvider.refresh();

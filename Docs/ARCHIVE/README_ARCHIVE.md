@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-13 (WIP Consolidation)
+**Last Updated**: 2026-02-15 (Phase 8/9 Consolidation)
 
 ---
 
@@ -68,6 +68,30 @@ The following documents had valuable content extracted and merged into active do
 6. `Reporting_Improvement_Exchange.md` - 30-session paired-programming exchange log (DONE — all sessions complete; outcomes reflected in code and status docs)
 7. `Generic_Evidence_Quality_Principles.md` - 5 evidence quality principles (DONE — all 5 principles implemented in evidence-filter.ts, types.ts, prompts, orchestrated.ts)
 
+### Phase 8/9 Pipeline Quality Consolidation (2026-02-15)
+
+**Description**: Documents archived after Phase 8 completion and Phase 9 approval. All Phase 8 work is implemented (6 commits). Phase 9 proposal is approved and Phase 9a is implemented. Forward-looking content consolidated into `Docs/REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md`.
+
+**From REVIEWS/** (Phase 8 review cycle — complete):
+1. `Phase8_Systematic_Analysis_2026-02-15.md` — Funnel data analysis, before/after comparisons (DONE — findings acted on)
+2. `Phase8_Pipeline_Redesign_Proposal_2026-02-15.md` — Phase 8 proposal with 3 changes + UCM params (DONE — all implemented)
+3. `Phase8_Senior_Developer_Review_2026-02-15.md` — §1-12: Phase 8 review + post-run analysis. §13: Phase 9 Senior Dev review (DONE — all conditions satisfied/accepted)
+4. `Code_Review_2026-02-14.md` — Pre-Phase 8 code review (SUPERSEDED by Phase 8 analysis)
+5. `Review_Packet_Summary_2026-02-15.md` — Review cycle summary (DONE — review complete)
+
+**From WIP/** (pipeline quality phases — superseded by Phase 8/9):
+1. `Pipeline_Quality_Investigation_2026-02-13.md` — Phase 1-4 hub document (SUPERSEDED)
+2. `Pipeline_Quality_Investigation_Report_SeniorDeveloper_ClaudeCode.md` — Implementation log (DONE)
+3. `Pipeline_Quality_Phase5_Research_Budget_and_Calibration.md` — Phase 5 work (DONE)
+4. `Pipeline_Quality_Phase6_Verdict_and_HarmPotential.md` — Phase 6 investigation (SUPERSEDED by Phase 8/9)
+5. `Pipeline_Quality_Phase7_Post_Fix_Validation.md` — Phase 7 validation (SUPERSEDED by Phase 8 comparison data)
+6. `Phase4_Context_ID_Stability_Handoff.md` — Context ID fix handoff (DONE — commit 61050da)
+7. `Quality_Issues_Consolidated_Implementation_Plan.md` — Quality plan (DONE)
+8. `Consolidated_Report_Quality_Execution_Plan.md` — Report quality plan (SUPERSEDED)
+9. `Jaccard_Similarity_AGENTS_Violations_v2.md` — AGENTS violations audit (DONE)
+
+---
+
 ### Source Reliability Service Reviews
 
 **Location**: `Source_Reliability_Service_Reviews/` (Note: Files are at root of ARCHIVE for now)
@@ -132,5 +156,5 @@ If you need to reference archived documents:
 ---
 
 **Archive Maintainer**: Plan Coordinator
-**Last Review**: 2026-02-13 (WIP Consolidation)
+**Last Review**: 2026-02-15 (Phase 8/9 Consolidation)
 **Next Review**: Quarterly (or when major features complete)

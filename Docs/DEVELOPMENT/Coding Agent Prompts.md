@@ -28,6 +28,40 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
+See all jobs submitted today, analyze them one by one, look into every single issue. Analyze systematically, find patterns and search for systematic problems and architecture and design problems. Analyze what changes tid work an what did not, draw according conclusions. We have tried for a long time to improve the analysis - but failed. 
+The report quality remains low, we cannot continue like this! 
+We need to re-think concepts and design and architecture of the analysis pipeline. 
+Find the weak parts, and describe exactly the issues and the root causes. 
+Then define a new improved comcept, architecture and design, make diagrams to explain everything! 
+Do not make things too complex, but also don't over simplify, specify a balanced well thought through solution.
+Make sure it will work this time.
+Report everything into .md files and make the ready for review.
+
+---
+
+Now provide promp according to Docs\AGENTS\Multi_Agent_Meta_Prompt.md the previous implementer, role "Senior Developer" with GPT-5.2-Codex High, so that he reviews your changes. 
+---
+Note that meanwile changes were implemented to remove hardcoded heuristics.
+Make really sure, that you don't confuse anything yourselve. Correct all current confusions an don't create new confusions!
+Include in the analysis and migration plan: 
+Also plan to fix at apps\web\prompts\text-analysis files and in the according database configurations, so that any next analysis will use the corrected terms and variables.
+Do not yet implement. Prepare for review wdite to md file at docs
+---
+As Code reviewer and Senior Developper,
+Review all source-code and UCM configuration that was changed throughout the last 2 days.
+Find issues, potential problems and propose fixes and document all in a .md file.
+To identify systematical potential issues, also look into .md and .xwiki files.
+If you need a second opinion don't hesitate to involve other AI agent (as sonnet or opus, what ever is best for the job).
+---
+As Senior Developer and UCM Expert,
+Investigate issues with UCM and fix them, so that UCM does not anymore contain unstructured nested items that cannot really be configured, like the configuration shown in the attachement. Make all UCM elements nicely editable for a human administrator. First investigate find potential issues (in  both pipelines ant in all UCM items), investigate potential solutions and make proposals, for things where a second opinion is desired, automatically ask an other AI Agent Expert as Claude Opus 4.6. To make final decisions Guide the human caption by promping him to select from alternatives.
+All implementation work shall be made on a new worktree.
+---
+As Senior Architect,
+Find, read and analyze all new reports done with the orchestrated pipeline. Identify and analyze all issues, do this by digging into the data and logs, the systematicall analyze each single problem, track it down, then step back and anylyze how this all orchestrates and find solutions at the systematical, design level, but also at specific detail levels. 
+For things where a second opinion is desired, automatically ask an other AI Agent Expert as Claude Opus 4.6. To make final decisions Guide the human caption by promping him to select from alternatives.
+Come up with carrefully drafted solutions to solve all issues. Aim for holistic solutions, but also fixes at specific detailled level. Then prioritize and mak a plan that can be executed with low risk but at the same time efficiently. The initiate a multi agent collaboration team to work on this and provide your consolidated report and plan in a document for the workgroup.
+---
 Cleanup all documentation (.md and .xWiki):
 
 Keep any content inside any page that either:

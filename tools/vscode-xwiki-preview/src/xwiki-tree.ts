@@ -16,12 +16,15 @@ export class XWikiTreeItem extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
 
+    // Unique ID avoids VS Code selection-tracking issues with special chars in labels
+    this.id = node.uri?.fsPath || `folder:${label}`;
+
     if (node.uri) {
-      // Clicking opens the file (WebHome.xwiki for folders, the file itself for leaves)
+      // Pass fsPath string (not Uri object) to avoid serialization issues with special chars
       this.command = {
         command: 'xwiki.openPage',
         title: 'Open Page',
-        arguments: [node.uri]
+        arguments: [node.uri.fsPath]
       };
     }
 
@@ -240,8 +243,9 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
     }
 
     for (const [, child] of childEntries) {
-      const hasChildren = child.children.size > 0;
-      const state = hasChildren
+      // Only folders with actual children are collapsible; leaf folders (no child pages)
+      // must be None so TreeItem.command fires on click to open the page
+      const state = child.isFolder && child.children.size > 0
         ? vscode.TreeItemCollapsibleState.Collapsed
         : vscode.TreeItemCollapsibleState.None;
       items.push(new XWikiTreeItem(child.name, state, child));

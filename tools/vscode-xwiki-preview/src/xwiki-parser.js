@@ -261,12 +261,22 @@ class XWikiParser {
       this.wikiLinks.push(ref);
       return `<a class="wiki-link" data-wiki-ref="${this.esc(ref)}" href="#">${label}</a>`;
     });
-    text=text.replace(/\[\[(?!https?:\/\/)([^\]]+?)\]\]/g,(m,ref)=>{
+    text=text.replace(/\[\[(?!https?:\/\/|image:)([^\]]+?)\]\]/g,(m,ref)=>{
       const clean=ref.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
       this.wikiLinks.push(clean);
       return `<a class="wiki-link" data-wiki-ref="${this.esc(clean)}" href="#">${ref}</a>`;
     });
-    text=text.replace(/\[\[image:([^\]|]+?)(?:\|[^\]]*)?\]\]/g,'<img src="$1" alt="image">');
+    text=text.replace(/\[\[image:([^\]|]+?)(?:\|\|([^\]]*))?]]/g,(m,src,params)=>{
+      let s=src.trim();
+      let a='';
+      if(params){
+        const wm=params.match(/width="(\d+)"/);
+        const hm=params.match(/height="(\d+)"/);
+        if(wm) a+=` width="${wm[1]}"`;
+        if(hm) a+=` height="${hm[1]}"`;
+      }
+      return `<img src="${s}"${a||' alt="image"'}>`;
+    });
     text=text.replace(/image:(https?:\/\/\S+)/g,'<img src="$1" alt="image">');
     text=text.replace(/\\\\/g,'<br>');
     return text;

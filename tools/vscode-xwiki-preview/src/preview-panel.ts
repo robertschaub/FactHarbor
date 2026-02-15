@@ -95,6 +95,8 @@ export class XWikiPreviewPanel {
     for (const [ref, info] of XWikiPreviewPanel.pageIndex) {
       pageIdx[ref] = { ref, segments: info.segments };
     }
+    // Build attachment map for image resolution
+    const attachments = this._buildAttachmentMap(document.uri);
     // Send content to webview for re-render
     this._panel.webview.postMessage({
       command: 'updateContent',
@@ -102,8 +104,36 @@ export class XWikiPreviewPanel {
       fileName: path.basename(document.uri.fsPath),
       scrollToTop: isNewFile,
       currentPageRef: this._derivePageRef(document.uri),
-      pageIndex: pageIdx
+      pageIndex: pageIdx,
+      attachments
     });
+  }
+
+  private _buildAttachmentMap(documentUri: vscode.Uri): Record<string, string> {
+    const map: Record<string, string> = {};
+    // Walk up from the document to find _attachments/ directories in the xwiki-pages tree
+    const docDir = path.dirname(documentUri.fsPath);
+    // Check sibling _attachments/ (same folder as the .xwiki file)
+    const localAtt = path.join(docDir, '_attachments');
+    if (fs.existsSync(localAtt) && fs.statSync(localAtt).isDirectory()) {
+      for (const file of fs.readdirSync(localAtt)) {
+        const filePath = path.join(localAtt, file);
+        if (fs.statSync(filePath).isFile()) {
+          const ext = path.extname(file).toLowerCase();
+          const mimeTypes: Record<string, string> = {
+            '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
+            '.bmp': 'image/bmp', '.ico': 'image/x-icon'
+          };
+          const mime = mimeTypes[ext] || 'application/octet-stream';
+          try {
+            const data = fs.readFileSync(filePath);
+            map[file] = `data:${mime};base64,${data.toString('base64')}`;
+          } catch { /* skip unreadable files */ }
+        }
+      }
+    }
+    return map;
   }
 
   private _derivePageRef(uri: vscode.Uri): string {
@@ -140,6 +170,9 @@ export class XWikiPreviewPanel {
 
     const fileName = path.basename(documentUri.fsPath);
 
+    // Build attachment map for image resolution
+    const attachments = this._buildAttachmentMap(documentUri);
+
     // Escape content for embedding in a script tag
     const escapedContent = JSON.stringify(content);
 
@@ -171,6 +204,7 @@ export class XWikiPreviewPanel {
   const pageRefs = ${JSON.stringify(pageRefs)};
   let currentPageRef = ${JSON.stringify(currentPageRef)};
   let vsPageIndex = ${JSON.stringify(pageIndex)};
+  let vsAttachments = ${JSON.stringify(attachments)};
 
   function getChildPages(ref) {
     if (!ref || !vsPageIndex[ref]) return [];
@@ -302,11 +336,39 @@ export class XWikiPreviewPanel {
     }
   }
 
+  function contentHasHeading(src) {
+    for (const line of src.split('\\n')) {
+      const s = line.trim();
+      if (!s) continue;
+      return /^={1,6}\\s/.test(s);
+    }
+    return false;
+  }
+  function derivePageTitle(ref) {
+    if (!ref) return '';
+    const segs = ref.split('.').filter(s => s.toLowerCase() !== 'webhome');
+    return segs.length ? segs[segs.length - 1] : '';
+  }
+
   async function renderContent(source) {
+    // Auto-inject title for pages that lack a heading
+    if (!contentHasHeading(source)) {
+      const title = derivePageTitle(currentPageRef);
+      if (title) source = '= ' + title + ' =\\n\\n' + source;
+    }
     const parser = new XWikiParser();
     let html = parser.parse(source);
     html = parser.resolvePlaceholders(html);
     previewEl.innerHTML = html;
+
+    // Resolve local image attachments
+    previewEl.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http')) {
+        const dataUri = vsAttachments[src];
+        if (dataUri) img.setAttribute('src', dataUri);
+      }
+    });
 
     // Mark wiki links as resolved/unresolved
     previewEl.querySelectorAll('.wiki-link').forEach(el => {
@@ -370,6 +432,7 @@ export class XWikiPreviewPanel {
       case 'updateContent':
         if (msg.currentPageRef !== undefined) currentPageRef = msg.currentPageRef;
         if (msg.pageIndex !== undefined) vsPageIndex = msg.pageIndex;
+        if (msg.attachments !== undefined) vsAttachments = msg.attachments;
         renderContent(msg.content);
         if (msg.scrollToTop) {
           window.scrollTo(0, 0);
