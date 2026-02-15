@@ -147,6 +147,10 @@ export const PipelineConfigSchema = z.object({
   analysisMode: z.enum(["quick", "deep"]).describe("Analysis depth: quick (faster) or deep (more thorough)"),
   allowModelKnowledge: z.boolean().describe("Allow LLM to use training knowledge (not just web sources)"),
   deterministic: z.boolean().describe("Use temperature=0 for reproducible outputs"),
+  understandTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for UNDERSTAND step decomposition (default: 0). Decoupled from global deterministic flag for stability."),
+  understandMinClaimThreshold: z.number().int().min(1).max(20).optional()
+    .describe("Minimum claims from initial decomposition before triggering enrichment pass (default: 4)"),
   keyFactorHints: z
     .array(
       z.object({
@@ -574,6 +578,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   analysisMode: "quick", // v2.9.0: Default to quick mode for backwards compatibility
   allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
+  understandTemperature: 0,
+  understandMinClaimThreshold: 4,
   keyFactorHints: undefined,
   contextDedupThreshold: 0.70, // v2.11.1: was 0.85 - lowered to merge similar contexts more aggressively (cost optimization)
 

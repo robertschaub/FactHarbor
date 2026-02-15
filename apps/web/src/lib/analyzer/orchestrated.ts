@@ -4882,7 +4882,7 @@ async function understandClaim(
         { role: "system", content: prompt, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: userPrompt },
       ],
-      temperature: getDeterministicTemperature(0.3, pipelineConfig),
+      temperature: pipelineConfig?.understandTemperature ?? getDeterministicTemperature(0.3, pipelineConfig),
       output: Output.object({ schema: understandingSchemaForProvider }),
       providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
       }),
@@ -4968,7 +4968,7 @@ async function understandClaim(
         { role: "system", content: renderedSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
         { role: "user", content: `${userPrompt}\n\n${renderedJsonOnlyAppend.content}` },
       ],
-      temperature: getDeterministicTemperature(0.2, pipelineConfig),
+      temperature: pipelineConfig?.understandTemperature ?? getDeterministicTemperature(0.2, pipelineConfig),
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`understandClaim JSON fallback timeout after ${llmTimeoutMs}ms`)), llmTimeoutMs),
@@ -5097,6 +5097,131 @@ async function understandClaim(
   };
 
   parsed = reconcileContextsWithClaimAssignments(parsed);
+
+  // =========================================================================
+  // PHASE 8c: ENRICHMENT PASS — if initial decomposition produced too few claims,
+  // trigger a second LLM call to identify missing analytical dimensions.
+  // =========================================================================
+  const minClaimThreshold = pipelineConfig?.understandMinClaimThreshold ?? 4;
+  const initialClaimCount = (parsed.subClaims || []).length;
+  if (initialClaimCount > 0 && initialClaimCount < minClaimThreshold) {
+    debugLog("understandClaim: enrichment pass triggered", {
+      initialClaimCount,
+      minClaimThreshold,
+    });
+    try {
+      const existingContextsSummary = (parsed.analysisContexts || [])
+        .map((ctx: any) => `- ${ctx.id}: ${ctx.name}`)
+        .join("\n") || "(no contexts)";
+      const existingClaimsSummary = (parsed.subClaims || [])
+        .map((c: any) => `- ${c.id}: ${c.text}`)
+        .join("\n") || "(no claims)";
+      const minNewClaims = Math.max(1, minClaimThreshold - initialClaimCount);
+
+      const renderedEnrichSystem = await loadAndRenderSection("orchestrated", "UNDERSTAND_ENRICHMENT", {});
+      const renderedEnrichUser = await loadAndRenderSection("orchestrated", "UNDERSTAND_ENRICHMENT_USER", {
+        INPUT_TEXT: analysisInput,
+        EXISTING_CONTEXTS: existingContextsSummary,
+        EXISTING_CLAIMS: existingClaimsSummary,
+        CLAIM_COUNT: String(initialClaimCount),
+        MIN_NEW_CLAIMS: String(minNewClaims),
+      });
+
+      if (renderedEnrichSystem?.content?.trim() && renderedEnrichUser?.content?.trim()) {
+        const enrichResult = await generateText({
+          model,
+          messages: [
+            { role: "system", content: renderedEnrichSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
+            { role: "user", content: renderedEnrichUser.content },
+          ],
+          temperature: pipelineConfig?.understandTemperature ?? 0,
+          output: Output.object({ schema: SUPPLEMENTAL_SUBCLAIMS_SCHEMA_LITE }),
+          providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
+        });
+
+        const enriched = extractStructuredOutput(enrichResult);
+        if (enriched?.subClaims && Array.isArray(enriched.subClaims) && enriched.subClaims.length > 0) {
+          // Deduplicate enriched claims against existing using LLM similarity
+          const existingTexts = (parsed.subClaims || []).map((c: any) => String(c.text || ""));
+          const dedupPairs: Array<{ id: string; textA: string; textB: string }> = [];
+          for (const newClaim of enriched.subClaims) {
+            const newText = String(newClaim?.text || "").trim();
+            if (!newText) continue;
+            for (let i = 0; i < existingTexts.length; i++) {
+              dedupPairs.push({
+                id: `enrich_${newClaim.id || "?"}_vs_${i}`,
+                textA: newText,
+                textB: existingTexts[i],
+              });
+            }
+          }
+
+          const simScores = dedupPairs.length > 0 ? await assessTextSimilarityBatch(dedupPairs) : new Map();
+          const dedupThreshold = pipelineConfig?.contextDedupThreshold ?? 0.70;
+
+          // Filter out near-duplicates and assign valid IDs
+          const existingIds = new Set((parsed.subClaims || []).map((c: any) => c.id));
+          let maxId = 0;
+          for (const claim of parsed.subClaims || []) {
+            const match = /^SC(\d+)$/i.exec(claim.id || "");
+            if (match) maxId = Math.max(maxId, Number(match[1]) || 0);
+          }
+
+          const validContextIds = new Set((parsed.analysisContexts || []).map((ctx: any) => ctx.id));
+          const defaultContextId = (parsed.analysisContexts || [])[0]?.id || "";
+          let enrichedAdded = 0;
+
+          for (const newClaim of enriched.subClaims) {
+            const newText = String(newClaim?.text || "").trim();
+            if (!newText) continue;
+
+            // Check if any existing claim is too similar
+            let isDuplicate = false;
+            for (let i = 0; i < existingTexts.length; i++) {
+              const pairId = `enrich_${newClaim.id || "?"}_vs_${i}`;
+              const score = simScores.get(pairId) ?? 0;
+              if (score >= dedupThreshold) {
+                isDuplicate = true;
+                debugLog("understandClaim: enrichment claim deduplicated", {
+                  text: newText.slice(0, 80),
+                  similarTo: existingTexts[i].slice(0, 80),
+                  score,
+                });
+                break;
+              }
+            }
+            if (isDuplicate) continue;
+
+            // Per C3: enriched claims inherit nearest existing context, don't create new
+            let contextId = String(newClaim.contextId || "").trim();
+            if (!contextId || !validContextIds.has(contextId)) {
+              contextId = defaultContextId;
+            }
+
+            // Assign unique ID
+            const newId = `SC${++maxId}`;
+            existingIds.add(newId);
+
+            (parsed.subClaims as any[]).push({
+              ...newClaim,
+              id: newId,
+              contextId,
+              text: newText,
+            });
+            enrichedAdded++;
+          }
+
+          if (enrichedAdded > 0) {
+            console.log(`[Analyzer] Phase 8c enrichment: added ${enrichedAdded} claims (${initialClaimCount} → ${parsed.subClaims.length})`);
+            // Re-reconcile after adding enriched claims
+            parsed = reconcileContextsWithClaimAssignments(parsed);
+          }
+        }
+      }
+    } catch (err: any) {
+      debugLog("understandClaim: enrichment pass failed (non-fatal)", err?.message || String(err));
+    }
+  }
 
   // =========================================================================
   // POST-PROCESSING: preserve user phrasing and only apply structural defaults.
@@ -5325,6 +5450,80 @@ async function understandClaim(
   }
 
   // Deterministic text-derived subclaim fallback removed.
+
+  // =========================================================================
+  // PHASE 8c: DECOMPOSITION VALIDATION — lightweight LLM check for structural
+  // completeness. Removes near-duplicates and flags missing dimensions.
+  // =========================================================================
+  if ((parsed.subClaims || []).length >= 2) {
+    try {
+      const claimsList = (parsed.subClaims || [])
+        .map((c: any) => `- ${c.id} [${c.claimRole || "core"}]: ${c.text}`)
+        .join("\n");
+
+      const renderedValSystem = await loadAndRenderSection("orchestrated", "UNDERSTAND_VALIDATION", {});
+      const renderedValUser = await loadAndRenderSection("orchestrated", "UNDERSTAND_VALIDATION_USER", {
+        INPUT_TEXT: analysisInput,
+        CLAIMS_LIST: claimsList,
+      });
+
+      if (renderedValSystem?.content?.trim() && renderedValUser?.content?.trim()) {
+        const validationSchema = z.object({
+          passesValidation: z.boolean(),
+          hasDirectAssertion: z.boolean(),
+          hasCounterPerspective: z.boolean(),
+          hasClearCriteria: z.boolean(),
+          nearDuplicatePairs: z.array(z.array(z.string())).default([]),
+          suggestedAdditions: z.array(z.string()).default([]),
+        });
+
+        const { model: haikuModel } = getModelForTask("extract_evidence");
+        const valResult = await generateText({
+          model: haikuModel,
+          messages: [
+            { role: "system", content: renderedValSystem.content, providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider) },
+            { role: "user", content: renderedValUser.content },
+          ],
+          temperature: 0,
+          output: Output.object({ schema: validationSchema }),
+          providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
+        });
+
+        const validation = extractStructuredOutput(valResult);
+        if (validation) {
+          debugLog("understandClaim: decomposition validation", {
+            passesValidation: validation.passesValidation,
+            hasDirectAssertion: validation.hasDirectAssertion,
+            hasCounterPerspective: validation.hasCounterPerspective,
+            hasClearCriteria: validation.hasClearCriteria,
+            nearDuplicates: validation.nearDuplicatePairs?.length ?? 0,
+            suggestedAdditions: validation.suggestedAdditions?.length ?? 0,
+          });
+
+          // Remove near-duplicates (keep the first claim in each pair)
+          if (Array.isArray(validation.nearDuplicatePairs) && validation.nearDuplicatePairs.length > 0) {
+            const idsToRemove = new Set<string>();
+            for (const pair of validation.nearDuplicatePairs) {
+              if (Array.isArray(pair) && pair.length >= 2) {
+                // Remove the second claim in each pair (keep the first)
+                idsToRemove.add(String(pair[1]));
+              }
+            }
+            if (idsToRemove.size > 0) {
+              const beforeCount = parsed.subClaims.length;
+              parsed.subClaims = (parsed.subClaims as any[]).filter((c: any) => !idsToRemove.has(c.id));
+              const removed = beforeCount - parsed.subClaims.length;
+              if (removed > 0) {
+                console.log(`[Analyzer] Phase 8c validation: removed ${removed} near-duplicate claims`);
+              }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      debugLog("understandClaim: validation pass failed (non-fatal)", err?.message || String(err));
+    }
+  }
 
   // Note: Full Gate 1 validation exists (apps/web/src/lib/analyzer/quality-gates.ts) but the orchestrated
   // pipeline currently treats Gate 1 as characterization/telemetry rather than a hard filter.

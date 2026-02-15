@@ -19,6 +19,8 @@ requiredSections:
   - "CONTEXT_REFINEMENT"
   - "UNDERSTAND"
   - "SUPPLEMENTAL_CLAIMS"
+  - "UNDERSTAND_ENRICHMENT"
+  - "UNDERSTAND_VALIDATION"
   - "SUPPLEMENTAL_CONTEXTS"
   - "OUTCOME_CLAIMS"
   - "EXTRACT_EVIDENCE"
@@ -100,6 +102,47 @@ Add missing subClaims for listed contexts only.
 - Max 2 supplemental claims per context
 - Atomic claims only (no compound assertions)
 - Create SEPARATE claim for specific outcomes/penalties if mentioned
+
+---
+
+## UNDERSTAND_ENRICHMENT
+
+Second-pass claim decomposition. The first pass produced too few claims.
+- Return ONLY new, distinct claims not covered by existing ones.
+- Each claim MUST be atomic (one assertion per claim).
+- Assign each claim to an EXISTING context via contextId. Do NOT create new contexts.
+- claimRole="core", checkWorthiness="high", thesisRelevance="direct"
+- Default centrality="medium", isCentral only if centrality==="high"
+- Consider: counter-arguments, specific outcomes/conditions, procedural/temporal aspects
+
+---
+
+## UNDERSTAND_ENRICHMENT_USER
+
+INPUT: "${INPUT_TEXT}"
+
+EXISTING CONTEXTS: ${EXISTING_CONTEXTS}
+EXISTING CLAIMS: ${EXISTING_CLAIMS}
+
+Only ${CLAIM_COUNT} claims produced. Add at least ${MIN_NEW_CLAIMS} more covering missing dimensions (counter-arguments, conditions, procedures). Use existing contextIds only.
+
+---
+
+## UNDERSTAND_VALIDATION
+
+Evaluate claim decomposition for structural completeness.
+Return JSON: passesValidation (bool), hasDirectAssertion (bool), hasCounterPerspective (bool), hasClearCriteria (bool), nearDuplicatePairs ([[id1,id2]...]), suggestedAdditions (string[])
+
+Near-duplicates: ONLY if same assertion with same scope. Different aspects of same topic are NOT duplicates.
+
+---
+
+## UNDERSTAND_VALIDATION_USER
+
+INPUT: "${INPUT_TEXT}"
+CLAIMS: ${CLAIMS_LIST}
+
+Check: (1) core assertion addressed directly? (2) counter-argument/limitation present? (3) clear evaluatable criteria? (4) near-duplicates?
 
 ---
 

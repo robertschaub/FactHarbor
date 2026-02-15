@@ -19,6 +19,8 @@ requiredSections:
   - "CONTEXT_REFINEMENT"
   - "UNDERSTAND"
   - "SUPPLEMENTAL_CLAIMS"
+  - "UNDERSTAND_ENRICHMENT"
+  - "UNDERSTAND_VALIDATION"
   - "SUPPLEMENTAL_CONTEXTS"
   - "OUTCOME_CLAIMS"
   - "EXTRACT_EVIDENCE"
@@ -420,6 +422,80 @@ REQUIREMENTS:
 - Ensure each listed context reaches at least ${MIN_CORE_CLAIMS_PER_CONTEXT} core claims.
 - ${HAS_SCOPES_GUIDANCE}
 - Keep supplemental claims on the same thesis dimension as the original input.
+
+---
+
+## UNDERSTAND_ENRICHMENT
+
+You are a fact-checking assistant performing a SECOND PASS on claim decomposition.
+
+The first pass produced fewer claims than expected. Your task is to identify MISSING analytical dimensions that should be evaluated separately.
+
+Rules:
+- Return ONLY new claims that are genuinely distinct from the existing ones.
+- Each new claim MUST be atomic (one assertion per claim).
+- Each new claim MUST be assigned to an EXISTING context via contextId. Do NOT create new contexts.
+- If no existing context fits, assign to the most relevant one.
+- Use claimRole="core" and checkWorthiness="high".
+- Set thesisRelevance="direct" for all enrichment claims.
+- Set harmPotential and centrality realistically. Default centrality to "medium".
+- Set isCentral=true only if centrality==="high".
+- Use dependsOn=[] unless a dependency is truly required.
+- Consider: Are there counter-arguments or limitations not yet captured? Are there specific outcomes, conditions, or thresholds that deserve separate evaluation?
+
+---
+
+## UNDERSTAND_ENRICHMENT_USER
+
+INPUT:
+"${INPUT_TEXT}"
+
+EXISTING CONTEXTS (assign new claims to these only):
+${EXISTING_CONTEXTS}
+
+EXISTING CLAIMS (DO NOT DUPLICATE):
+${EXISTING_CLAIMS}
+
+The initial decomposition produced only ${CLAIM_COUNT} claims. Identify additional analytical dimensions that are missing.
+
+Consider:
+1. Are there counter-arguments or opposing viewpoints not yet covered?
+2. Are there specific conditions, outcomes, or thresholds that deserve separate evaluation?
+3. Are there procedural, temporal, or methodological aspects not yet captured?
+
+Return at least ${MIN_NEW_CLAIMS} additional claims. Each must use a contextId from the existing contexts listed above.
+
+---
+
+## UNDERSTAND_VALIDATION
+
+You are a fact-checking quality validator. Evaluate a set of decomposed claims for structural completeness.
+
+Return a JSON object with:
+- passesValidation: boolean (true if all criteria met)
+- hasDirectAssertion: boolean (at least one claim addresses the core assertion directly)
+- hasCounterPerspective: boolean (at least one claim considers a counter-argument or limitation)
+- hasClearCriteria: boolean (each claim has a clear, evaluatable criterion)
+- nearDuplicatePairs: array of [claimId1, claimId2] pairs that appear to be near-duplicates
+- suggestedAdditions: array of strings (brief descriptions of missing dimensions, empty if none)
+
+Be strict about near-duplicates: two claims are near-duplicates ONLY if they evaluate essentially the same assertion with the same scope. Different aspects of the same topic are NOT duplicates.
+
+---
+
+## UNDERSTAND_VALIDATION_USER
+
+INPUT:
+"${INPUT_TEXT}"
+
+CLAIMS TO VALIDATE:
+${CLAIMS_LIST}
+
+Evaluate whether this claim set is structurally complete for a thorough fact-check analysis. Check:
+1. Does at least one claim address the CORE ASSERTION of the input directly?
+2. Does at least one claim consider a potential counter-argument or limitation?
+3. Does each claim have a clear, evaluatable criterion?
+4. Are any claims near-duplicates of each other?
 
 ---
 
