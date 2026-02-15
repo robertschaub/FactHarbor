@@ -970,15 +970,16 @@ function getChildPages(ref){
 function derivePageTitle(ref){
   if(!ref) return '';
   const segs = ref.split('.').filter(s=>s.toLowerCase()!=='webhome');
-  return segs.length ? segs[segs.length-1] : '';
+  if(segs.length) return segs[segs.length-1];
+  // Root WebHome — use wiki/folder name
+  if(pageTree && pageTree[0] && pageTree[0].type==='folder') return pageTree[0].name;
+  return '';
 }
 function contentHasHeading(src){
   for(const line of src.split('\n')){
     const s=line.trim();
     if(!s) continue;
-    if(/^={1,6}\s/.test(s)) return true;
-    if(/^\(%/.test(s)) continue; // skip parameter lines
-    return false;
+    return /^={1,6}\s/.test(s);
   }
   return false;
 }
