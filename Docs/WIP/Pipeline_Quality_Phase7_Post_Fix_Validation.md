@@ -358,13 +358,13 @@ Context objects in the result don't have `answer`/`confidence` fields — they u
 
 | Priority | Issue | Effort | Impact | Status |
 |----------|-------|--------|--------|--------|
-| **P0** | ISSUE-1: Outcome claims hardcoded harmPotential | Low (15 min) | Critical | **CONFIRMED** — decontextualization works for initial claims, outcome claims bypass it |
-| **P1** | ISSUE-3: Search loop on saturated contexts | Low (30 min) | High | **CONFIRMED** — 71 searches for 4 evidence items |
-| **P1** | ISSUE-2: Statement catastrophic failure | Medium (1-2h) | High | CONFIRMED |
+| **P0** | ISSUE-1: Outcome claims hardcoded harmPotential | Low (15 min) | Critical | ✅ **FIXED** `0c4983b` — second `classifyHarmPotentialDecontextualized()` call after outcome claims |
+| **P1** | ISSUE-3: Search loop on saturated contexts | Low (30 min) | High | ✅ **FIXED** `b7ac2cd` — exhausted context tracking in `decideNextResearch()` |
+| **P1** | ISSUE-2: Statement catastrophic failure | Medium (1-2h) | High | CONFIRMED — pending |
 | **P2** | ISSUE-7: Outcome claims dilute quality metrics | Low (30 min) | Medium | **NEW** — 10/14 outcome claims INSUFFICIENT in H2 |
-| **P2** | ISSUE-4: Neutrality violation | Medium (1h) | Medium | CONFIRMED |
-| **P2** | ISSUE-5: Evidence drought / grounding | Medium (2h) | Medium | CONFIRMED |
-| **P3** | ISSUE-6: Queue timeout | Low (5 min) | Low | CONFIRMED |
+| **P2** | ISSUE-4: Neutrality violation | Medium (1h) | Medium | CONFIRMED — pending |
+| **P2** | ISSUE-5: Evidence drought / grounding | Medium (2h) | Medium | CONFIRMED — pending |
+| **P3** | ISSUE-6: Queue timeout | Low (5 min) | Low | CONFIRMED — pending |
 | **OK** | SRG URL 50% verdicts | — | — | NOT A BUG — legitimate UNVERIFIED assessments |
 | **OK** | Evidence linking | — | — | NOT A BUG — correct field is `supportingEvidenceIds` |
 | **OK** | Context answer fields | — | — | NOT A BUG — by design (`outcome`/`status` fields) |
@@ -380,3 +380,131 @@ Context objects in the result don't have `answer`/`confidence` fields — they u
 | ISSUE-3 fix causes under-researched contexts | Low | Medium | Keep contextBudget logic, just skip saturated ones |
 | ISSUE-2 re-decomposition produces redundant claims | Medium | Low | Deduplicate after re-decomposition |
 | Dual-language search increases search API costs | High | Low — 2x queries per context | Only for non-English inputs |
+
+---
+
+## 11. Continuation Plan — Phase 8
+
+**Date:** 2026-02-14
+**Status:** Proposal — awaiting Captain approval
+
+### 11.1 What's Done (Phases 6-7)
+
+| Commit | Fix | Impact |
+|--------|-----|--------|
+| `d2cc8d7` | Verdict maxOutputTokens 16384 + partial JSON recovery | Eliminated blanket 50/50 fallback for large analyses |
+| `9418a9d` | Decontextualized harmPotential for initial claims | Initial claims now classified by content, not topic frame |
+| `e02e2b9` | Removed dead code (detectAndCorrectVerdictInversion + buildEvidenceCorpus) | Cleanup |
+| `fc9b932` | Removed test artifacts from git + .gitignore | Cleanup |
+| `b7ac2cd` | Search loop circuit breaker (exhausted context tracking) | Prevents 25+ wasted API calls per analysis |
+| `0c4983b` | Decontextualized harmPotential for outcome claims | Outcome claims no longer all hardcoded HIGH |
+
+### 11.2 Remaining Issues — Merged from Phase 7 + Consolidated Plan
+
+The Phase 7 findings overlap significantly with the earlier Consolidated Plan (soft-humming-hearth). Below merges both into a single prioritized backlog with clear dependencies.
+
+#### TIER 1: Research Infrastructure (P0-P1) — Enables everything else
+
+These are from the Consolidated Plan and remain the highest-impact structural fixes. Phase 7's circuit breaker (ISSUE-3) was a **targeted patch** for the retry problem but does NOT address the root causes: the iteration cap doesn't scale, evidence minimum is global, and Block 2 still allows retries of the same context within its budget.
+
+| # | Issue | Source | Proposed Fix | Effort | Files |
+|---|-------|--------|-------------|--------|-------|
+| T1.1 | Iteration budget doesn't scale with context count | Consolidated Plan Step 1 | `effectiveMaxIterations = max(config, min(contexts + 2, config * 2))` | Low | `orchestrated.ts` ~10718 |
+| T1.2 | Block 2 retries same context within budget | Consolidated Plan Step 2 | Cap to one pass through contexts, reserve contradiction slot | Low | `orchestrated.ts` ~6021 |
+| T1.3 | Evidence minimum is global (6), not per-context | Consolidated Plan Step 3 | `scaledMinEvidence = max(config, contexts * 3)` | Low | `orchestrated.ts` ~5900 |
+
+**Dependencies:** T1.1 must be done before T1.2 (T1.2 uses `effectiveMaxIterations`). T1.3 is independent.
+
+**Expected impact:** Contradiction search fires for all multi-context jobs. Evidence distributed across contexts. Phase 7's Bolsonaro and SRG URL jobs should see dramatic improvement.
+
+**Note on T1.2 vs ISSUE-3 circuit breaker:** T1.2 prevents the SAME context from being retried via Block 2's `contextBudget` gate. The Phase 7 circuit breaker prevents retrying contexts with `sourcesFound === 0`. These are complementary — T1.2 handles the budget structure, the circuit breaker handles the "no results found" case. Both should coexist.
+
+#### TIER 2: Search Quality (P1) — Better evidence per search
+
+| # | Issue | Source | Proposed Fix | Effort | Files |
+|---|-------|--------|-------------|--------|-------|
+| T2.1 | Criticism search too strict (rejects commentary) | Consolidated Plan Step 4 | Remove `criticism`/`counter_evidence` from `strictInstitutionMatch` | Low | `orchestrated.ts` ~11063 |
+| T2.2 | Outcome truncation at 100 chars | Consolidated Plan Step 7 | Increase to 250 chars, word boundary | Low | `orchestrated.ts` ~5740 |
+
+**Dependencies:** None. Independent of Tier 1.
+
+#### TIER 3: Prompt Quality (P1) — Better LLM reasoning
+
+| # | Issue | Source | Proposed Fix | Effort | Files |
+|---|-------|--------|-------------|--------|-------|
+| T3.1 | harmPotential inflation (prompt examples) | Consolidated Plan Step 5 | Add contrastive MEDIUM/HIGH examples | Low | `orchestrated.prompt.md` ~197 |
+| T3.2 | Verdict hedging at 50% | Consolidated Plan Step 6 | Two-step assessment, anti-hedging, confidence = evidence strength | Medium | `orchestrated.prompt.md` ~603, ~610, ~722 |
+
+**Dependencies:** Should be done AFTER Tier 1, so integration tests can distinguish infrastructure improvement from prompt improvement.
+
+**Note on T3.1 vs decontextualized classifier:** The decontextualized classifier (`9418a9d`, `0c4983b`) addresses harmPotential for the code path. T3.1 addresses it for the prompt path (the UNDERSTAND step that generates initial claims). Both are complementary — the classifier is a safety net, the prompt examples improve first-pass accuracy.
+
+#### TIER 4: Resilience & Neutrality (P2) — Edge case robustness
+
+| # | Issue | Source | Proposed Fix | Effort | Files |
+|---|-------|--------|-------------|--------|-------|
+| T4.1 | Statement catastrophic failure (SRG) | Phase 7 ISSUE-2 | Minimum claim threshold (≥4) with re-decomposition prompt | Medium | `orchestrated.ts` (understand step) |
+| T4.2 | Input neutrality violation (question vs statement) | Phase 7 ISSUE-4 | Normalize input in UNDERSTAND prompt + min claim threshold | Medium | `orchestrated.prompt.md` |
+| T4.3 | Evidence drought for non-English topics | Phase 7 ISSUE-5 | Dual-language search queries (source language + English) | Medium | `orchestrated.ts` (search query generation) |
+| T4.4 | Outcome claims dilute quality metrics | Phase 7 ISSUE-7 | Add `claimOrigin: "outcome"` field; UI/metrics distinguish researched vs outcome claims | Low | `orchestrated.ts`, `types.ts` |
+
+**Dependencies:** T4.1 and T4.2 share the same root cause (min claim threshold). T4.3 is independent. T4.4 is independent.
+
+#### TIER 5: Operational (P3) — Low impact
+
+| # | Issue | Source | Proposed Fix | Effort | Files |
+|---|-------|--------|-------------|--------|-------|
+| T5.1 | Queue timeout 5 min too short | Phase 7 ISSUE-6 | Increase to 30 min | Low | Config/env |
+| T5.2 | Per-context budget tracking dead code | Consolidated Plan | Remove or activate `checkContextIterationBudget()` | Low | `orchestrated.ts`, `budgets.ts` |
+
+### 11.3 Recommended Execution Order
+
+**Phase 8a — Research infrastructure (Tier 1 + Tier 2):**
+1. T1.1: Scale iteration cap → T1.2: Fix Block 2 budget → T1.3: Scale evidence minimum
+2. T2.1: Relax criticism search + T2.2: Fix outcome truncation
+3. Build + test
+4. **Integration test:** Re-run Bolsonaro, H2 vs EV, SRG URL. Verify: contradiction search fires, evidence count increases, search API calls decrease.
+
+**Phase 8b — Prompt quality (Tier 3):**
+5. T3.1: harmPotential examples + T3.2: Verdict hedging
+6. **Integration test:** Re-run Bolsonaro (harmPotential distribution), H2 vs EV (verdict spread). Compare against Phase 8a baseline.
+
+**Phase 8c — Resilience (Tier 4, selected):**
+7. T4.1 + T4.2: Min claim threshold + neutrality normalization
+8. T4.4: Outcome claim origin tagging
+9. **Integration test:** Re-run SRG Statement DE vs SRG Question DE. Verify neutrality ≤4%.
+
+**Deferred (Tier 4/5 remainder):**
+- T4.3: Dual-language search — wait for Phase 8a data; ISSUE-3 circuit breaker + Tier 1 fixes may reduce the evidence drought for SRG
+- T5.1: Queue timeout — operational, low urgency
+- T5.2: Dead code — cleanup, no quality impact
+
+### 11.4 Success Criteria
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Bolsonaro contradiction search | Not performed | Performed |
+| H2 vs EV HIGH harmPotential | 14/20 (70%) | ≤6/20 (30%) |
+| H2 vs EV Gate 4 publishable | 9/20 (45%) | ≥14/20 (70%) |
+| SRG URL evidence items | 4 | ≥12 |
+| SRG URL grounding ratio | 16% | ≥50% |
+| SRG Statement claims | 2 | ≥4 |
+| SRG Statement evidence | 0 | ≥3 |
+| Verdict 45-55% cluster (Bolsonaro) | 8/9 | ≤3/9 |
+
+### 11.5 Risk Assessment
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|------------|
+| Tier 1 changes increase cost per job | Medium | Low | 2× cap on iterations; proportional to complexity |
+| Prompt changes cause over-correction (verdicts too extreme) | Low | Medium | Direction correction system catches outliers; test on diverse topics |
+| Min claim threshold produces redundant/trivial claims | Medium | Low | LLM deduplication after re-decomposition |
+| Stacking 6+ changes makes regression attribution hard | Medium | Medium | 3-phase commit strategy; integration test after each phase |
+
+### 11.6 What NOT to Touch
+
+- Verdict direction correction (working: `9148960`)
+- Context ID stability / remap logic (working: `61050da` + `ab28b01`)
+- Confidence calibration system in `confidence-calibration.ts` (4-layer system is sound)
+- Aggregation weights in `aggregation.ts` (1.5× for HIGH is correct — fix is fewer HIGHs)
+- Phase 7 circuit breaker (keep as complementary to T1.2)
