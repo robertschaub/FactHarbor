@@ -979,6 +979,144 @@ function verifyFinalClassifications(
 
 // ============================================================================
 
+/**
+ * Phase 9a: Enforce global context cap across ALL context creation/replacement points.
+ *
+ * When the number of analysisContexts exceeds `maxContexts`, iteratively merge
+ * the most semantically similar pair until at or below the cap.
+ *
+ * Merging preserves all claims and evidence — the context with more claims survives
+ * and retains its metadata; claims from the merged-away context are reassigned.
+ *
+ * Returns the updated understanding and a remap of merged context IDs → surviving IDs
+ * (callers with evidence items should apply the remap to evidence.contextId).
+ */
+async function enforceContextCap(
+  understanding: ClaimUnderstanding,
+  maxContexts: number,
+): Promise<{ understanding: ClaimUnderstanding; contextIdRemap: Map<string, string> }> {
+  const remap = new Map<string, string>();
+  let contexts = [...(understanding.analysisContexts || [])];
+  const claims = [...(understanding.subClaims || [])];
+
+  if (contexts.length <= maxContexts || maxContexts < 1) {
+    return { understanding, contextIdRemap: remap };
+  }
+
+  const toMerge = contexts.length - maxContexts;
+  debugLog("enforceContextCap: merging contexts", {
+    currentCount: contexts.length,
+    maxContexts,
+    toMerge,
+  });
+
+  // Build similarity pairs between all context pairs — one LLM batch call
+  const simPairs: Array<{ id: string; textA: string; textB: string }> = [];
+  for (let i = 0; i < contexts.length; i++) {
+    for (let j = i + 1; j < contexts.length; j++) {
+      const ctxA = contexts[i];
+      const ctxB = contexts[j];
+      const textA = [ctxA.name, ctxA.subject, ctxA.assessedStatement].filter(Boolean).join(" | ");
+      const textB = [ctxB.name, ctxB.subject, ctxB.assessedStatement].filter(Boolean).join(" | ");
+      simPairs.push({
+        id: `ctxcap_${ctxA.id}_${ctxB.id}`,
+        textA: textA.slice(0, 200),
+        textB: textB.slice(0, 200),
+      });
+    }
+  }
+
+  const scores = await assessTextSimilarityBatch(simPairs);
+
+  // Iteratively merge the most similar pair until at or below cap
+  while (contexts.length > maxContexts) {
+    let bestI = 0;
+    let bestJ = 1;
+    let bestScore = -1;
+
+    for (let i = 0; i < contexts.length; i++) {
+      for (let j = i + 1; j < contexts.length; j++) {
+        // Check both ID orderings since original pair order may differ from current array order
+        const pairId1 = `ctxcap_${contexts[i].id}_${contexts[j].id}`;
+        const pairId2 = `ctxcap_${contexts[j].id}_${contexts[i].id}`;
+        const score = scores.get(pairId1) ?? scores.get(pairId2) ?? 0;
+        if (score > bestScore) {
+          bestScore = score;
+          bestI = i;
+          bestJ = j;
+        }
+      }
+    }
+
+    // Survivor: context with more claims keeps its metadata
+    const ctxA = contexts[bestI];
+    const ctxB = contexts[bestJ];
+    const claimsA = claims.filter((c: any) => c.contextId === ctxA.id).length;
+    const claimsB = claims.filter((c: any) => c.contextId === ctxB.id).length;
+
+    const [survivor, merged] = claimsA >= claimsB ? [ctxA, ctxB] : [ctxB, ctxA];
+
+    // Reassign claims from merged context to survivor
+    for (const claim of claims) {
+      if ((claim as any).contextId === merged.id) {
+        (claim as any).contextId = survivor.id;
+      }
+    }
+
+    // Record remap (merged → survivor)
+    remap.set(merged.id, survivor.id);
+
+    // Remove merged context from array
+    contexts = contexts.filter((c) => c.id !== merged.id);
+
+    debugLog("enforceContextCap: merged context", {
+      merged: { id: merged.id, name: merged.name },
+      into: { id: survivor.id, name: survivor.name },
+      similarity: bestScore.toFixed(2),
+      remainingContexts: contexts.length,
+    });
+  }
+
+  // Handle transitive remaps: if A → B and B → C, make A → C
+  for (const [oldId, newId] of remap.entries()) {
+    let finalId = newId;
+    while (remap.has(finalId) && remap.get(finalId) !== finalId) {
+      finalId = remap.get(finalId)!;
+    }
+    if (finalId !== newId) {
+      remap.set(oldId, finalId);
+    }
+  }
+
+  return {
+    understanding: {
+      ...understanding,
+      analysisContexts: contexts,
+      subClaims: claims,
+      requiresSeparateAnalysis: contexts.length > 1,
+    },
+    contextIdRemap: remap,
+  };
+}
+
+/**
+ * Apply a context ID remap to evidence items (companion to enforceContextCap).
+ */
+function applyContextIdRemapToEvidence(
+  evidenceItems: EvidenceItem[],
+  remap: Map<string, string>,
+): void {
+  if (remap.size === 0) return;
+  for (const item of evidenceItems) {
+    const cid = String((item as any).contextId || "");
+    if (cid && remap.has(cid)) {
+      (item as any).contextId = remap.get(cid)!;
+    }
+  }
+}
+
+// ============================================================================
+
 async function refineContextsFromEvidence(
   state: ResearchState,
   model: any,
@@ -1555,6 +1693,22 @@ async function refineContextsFromEvidence(
 
       const canonSupplemental = canonicalizeContextsWithRemap(analysisInput, state.understanding!);
       state.understanding = canonSupplemental.understanding;
+
+      // Phase 9a: enforce global context cap after supplemental contexts in recovery path
+      const recoveryMaxCtx = state.pipelineConfig?.contextDetectionMaxContexts ?? 3;
+      if ((state.understanding!.analysisContexts?.length ?? 0) > recoveryMaxCtx) {
+        const capResult = await enforceContextCap(state.understanding!, recoveryMaxCtx);
+        state.understanding = capResult.understanding;
+        // Remap evidence items to surviving contexts
+        if (capResult.contextIdRemap.size > 0) {
+          applyContextIdRemapToEvidence(state.evidenceItems || [], capResult.contextIdRemap);
+        }
+        debugLog("refineContextsFromEvidence: supplemental contexts capped", {
+          before: supplemental.analysisContexts.length,
+          after: state.understanding!.analysisContexts?.length ?? 0,
+        });
+      }
+
       const existingIds = new Set((state.understanding!.analysisContexts || []).map((ctx) => String(ctx.id || "")));
       const defaultContextId = String((state.understanding!.analysisContexts || [])[0]?.id || "");
 
@@ -5178,6 +5332,14 @@ async function understandClaim(
 
   parsed = await reconcileContextsWithClaimAssignments(parsed);
 
+  // Phase 9a: enforce global context cap after UNDERSTAND parse + reconciliation
+  const contextCapMax = pipelineConfig?.contextDetectionMaxContexts ?? 3;
+  if ((parsed.analysisContexts?.length ?? 0) > contextCapMax) {
+    const capResult = await enforceContextCap(parsed, contextCapMax);
+    parsed = capResult.understanding;
+    // No evidence items to remap at this stage (UNDERSTAND phase)
+  }
+
   // =========================================================================
   // PHASE 8c: ENRICHMENT PASS — if initial decomposition produced too few claims,
   // trigger a second LLM call to identify missing analytical dimensions.
@@ -5428,6 +5590,17 @@ async function understandClaim(
       };
       // Reuse the same analysisInput string for context canonicalization.
       parsed = canonicalizeContexts(analysisInput, parsed);
+
+      // Phase 9a: enforce global context cap after supplemental contexts
+      if ((parsed.analysisContexts?.length ?? 0) > contextCapMax) {
+        const capResult = await enforceContextCap(parsed, contextCapMax);
+        parsed = capResult.understanding;
+        debugLog("understandClaim: supplemental contexts capped", {
+          before: supplemental.analysisContexts.length,
+          after: parsed.analysisContexts?.length ?? 0,
+        });
+      }
+
       debugLog("understandClaim: supplemental contexts applied", {
         detectedInputType: parsed.detectedInputType,
         requiresSeparateAnalysis: parsed.requiresSeparateAnalysis,
@@ -5865,7 +6038,10 @@ async function requestSupplementalContexts(
   });
 
   try {
-    const renderedSystem = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CONTEXTS", {});
+    const maxContexts = pipelineConfig?.contextDetectionMaxContexts ?? 3;
+    const renderedSystem = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CONTEXTS", {
+      MAX_CONTEXTS: String(maxContexts),
+    });
     const renderedUser = await loadAndRenderSection("orchestrated", "SUPPLEMENTAL_CONTEXTS_USER", {
       INPUT_TEXT: input,
       CURRENT_CONTEXT_COUNT: String(currentCount),

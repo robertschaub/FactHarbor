@@ -148,11 +148,11 @@ Check: (1) core assertion addressed directly? (2) counter-argument/limitation pr
 
 ## SUPPLEMENTAL_CONTEXTS
 
-Detect if input needs 2+ AnalysisContexts.
+Detect if input needs 2+ AnalysisContexts. Return at most ${MAX_CONTEXTS} contexts.
 
 Return JSON: { analysisContexts: [], requiresSeparateAnalysis: boolean }
 
-Split only for genuinely distinct frames (not viewpoints). Schema: id, name, shortName, subject, temporal, status, outcome, assessedStatement, typeLabel, metadata. typeLabel: category (e.g., "Electoral", "Scientific", "Regulatory", "General").
+Split only for genuinely distinct frames (not viewpoints). If more than ${MAX_CONTEXTS} are identified, merge the most similar ones. Schema: id, name, shortName, subject, temporal, status, outcome, assessedStatement, typeLabel, metadata. typeLabel: category (e.g., "Electoral", "Scientific", "Regulatory", "General").
 
 ---
 

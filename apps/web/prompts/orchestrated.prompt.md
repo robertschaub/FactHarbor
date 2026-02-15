@@ -520,6 +520,7 @@ CONTEXT RELEVANCE REQUIREMENT (CRITICAL):
 - Every context MUST be directly relevant to the SPECIFIC TOPIC of the input
 - Do NOT include contexts from unrelated domains
 - When in doubt, use fewer contexts
+- Return at most ${MAX_CONTEXTS} contexts. If you identify more, merge the most similar ones.
 
 SCHEMA:
 analysisContexts items must include:
