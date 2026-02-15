@@ -260,9 +260,8 @@ body.view-preview .preview-pane{width:100%}
 .toast.show{transform:translateY(0);opacity:1}
 .toast svg{width:14px;height:14px;color:#6aaa6a;flex-shrink:0}
 
-/* Hide WebHome entries from tree — folders already load their WebHome on click */
-.tree-item.tree-page[data-ref$=".WebHome"],
-.tree-item.tree-page[data-ref="WebHome"]{display:none}
+/* Hide WebHome entries inside folders — folders already load their WebHome on click */
+.tree-item.tree-page[data-ref$=".WebHome"]{display:none}
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){.tree-sidebar:not(.collapsed){width:200px;min-width:160px}}
@@ -967,8 +966,29 @@ function getChildPages(ref){
   return children;
 }
 
+function derivePageTitle(ref){
+  if(!ref) return '';
+  const segs = ref.split('.').filter(s=>s.toLowerCase()!=='webhome');
+  return segs.length ? segs[segs.length-1] : '';
+}
+function contentHasHeading(src){
+  for(const line of src.split('\n')){
+    const s=line.trim();
+    if(!s) continue;
+    if(/^={1,6}\s/.test(s)) return true;
+    if(/^\(%/.test(s)) continue; // skip parameter lines
+    return false;
+  }
+  return false;
+}
+
 async function renderPreview(){
-  const src = editorEl.value;
+  let src = editorEl.value;
+  // Auto-inject title for pages that lack a heading
+  if(!contentHasHeading(src)){
+    const title = derivePageTitle(currentPageRef);
+    if(title) src = `= ${title} =\n\n${src}`;
+  }
   let html = parser.parse(src);
   html = parser.resolvePlaceholders(html);
   // Resolve includes (async - fetches and parses included pages)
@@ -1518,6 +1538,9 @@ async function openFolderPicker(){
     try {
       dirHandle = await window.showDirectoryPicker({mode:'read'});
       const tree = await scanDirectory(dirHandle);
+      // Give root WebHome the wiki name as display label
+      const rootEntry = tree.find(e=>e.type==='file'&&e.ref==='WebHome');
+      if(rootEntry) rootEntry.baseName = dirHandle.name;
       pageTree = tree;
       pageIndex = buildPageIndex(tree);
       const count = Object.keys(pageIndex).length;
@@ -1578,10 +1601,12 @@ function buildTreeFromFileList(files, rootName){
     const parts = file.webkitRelativePath.split('/');
     parts.shift(); // remove root folder name
     const fileName = parts.pop();
-    const baseName = fileName.replace(/\.[^.]+$/,'');
+    let baseName = fileName.replace(/\.[^.]+$/,'');
     const segments = [...parts, baseName];
     const ref = segments.join('.');
     const relPath = parts.length ? parts.join('/') + '/' + fileName : fileName;
+    // Root WebHome gets the wiki name as display name
+    if(ref === 'WebHome') baseName = rootName;
 
     const entry = {
       type: 'file',
@@ -1787,6 +1812,8 @@ async function handleDrop(dt){
         if(handle.kind === 'directory'){
           dirHandle = handle;
           const tree = await scanDirectory(dirHandle);
+          const rootE = tree.find(e=>e.type==='file'&&e.ref==='WebHome');
+          if(rootE) rootE.baseName = dirHandle.name;
           pageTree = tree; pageIndex = buildPageIndex(tree);
           const count = Object.keys(pageIndex).length;
           document.getElementById('treeBody').innerHTML = renderTree(tree);
@@ -2002,12 +2029,15 @@ function buildTreeFromManifest(manifest){
   const root = [];
   const folderMap = {};
   const sorts = manifest.sorts || {};
+  const wikiName = manifest.root || 'Wiki';
   for(const relPath of manifest.files){
     const parts = relPath.split('/');
     const fileName = parts.pop();
-    const baseName = fileName.replace(/\.[^.]+$/,'');
+    let baseName = fileName.replace(/\.[^.]+$/,'');
     const segments = [...parts, baseName];
     const ref = segments.join('.');
+    // Root WebHome gets the wiki name as display name
+    if(ref === 'WebHome') baseName = wikiName;
     const entry = {
       type:'file', name:fileName, baseName, ref, segments,
       relPath, handle:null, fileObj:null,
