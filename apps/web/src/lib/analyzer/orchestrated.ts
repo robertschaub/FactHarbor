@@ -10825,6 +10825,28 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     config.maxResearchIterations,
     Math.min(contextCount + mandatorySearchSlots, config.maxResearchIterations * 2),
   );
+
+  // Source selection funnel counters — tracks how many results survive each pipeline stage
+  // (Instrumentation for Phase 8: per-stage visibility into the research funnel)
+  const funnelStats = {
+    searchResultsReturned: 0,
+    afterUrlDedup: 0,
+    afterDiversityCap: 0,
+    domainPreFilterRejected: 0,
+    afterDomainFilter: 0,
+    llmRelevanceRejected: 0,
+    llmRelevanceAccepted: 0,
+    retryAdded: 0,
+    fallbackStep1Added: 0,
+    fallbackStep2Added: 0,
+    fallbackStep3Added: 0,
+    fallbackCapRemoved: 0,
+    finalCandidates: 0,
+    fetchAttempted: 0,
+    fetchSuccessful: 0,
+    evidenceExtracted: 0,
+  };
+
   let iteration = 0;
   while (
     iteration < effectiveMaxIterations &&
@@ -11150,13 +11172,16 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     // Pipeline Phase 1: URL deduplication with normalization across iterations
     // First filter out results with empty URLs
     const validUrlResults = searchResults.filter((r) => r.url && r.url.trim().length > 0);
+    funnelStats.searchResultsReturned += validUrlResults.length;
     // Apply cross-iteration deduplication using normalized URLs
     const deduplicatedResults = evidenceDeduplicator.filterDuplicateUrls(validUrlResults, state);
+    funnelStats.afterUrlDedup += deduplicatedResults.length;
     // Preserve provider relevance ordering, limit to max sources per iteration
     const uniqueResults = selectDiverseSearchResultsByQuery(
       deduplicatedResults,
       searchConfig.maxSourcesPerIteration,
     );
+    funnelStats.afterDiversityCap += uniqueResults.length;
 
     // Task 2.2: Heuristic relevance pre-filter to remove obvious irrelevance before extraction
     const analysisContexts = state.understanding?.analysisContexts || [];
@@ -11189,10 +11214,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
 
     let relevantResults: typeof uniqueResults = [];
 
-    // Domain pre-filter (structural â€” no semantic decision)
+    // Domain pre-filter (structural â€" no semantic decision)
     const domainFilteredResults = uniqueResults.filter((result) => {
       const domain = extractDomain(result.url || "");
       if (domain && !isImportantSource(domain)) {
+        funnelStats.domainPreFilterRejected++;
         debugLog("Pre-filter rejected", {
           url: result.url,
           title: result.title,
@@ -11204,6 +11230,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       }
       return true;
     });
+    funnelStats.afterDomainFilter += domainFilteredResults.length;
 
     // LLM-powered batch relevance assessment (replaces heuristic + LLM escalation)
     if (domainFilteredResults.length > 0) {
@@ -11219,15 +11246,28 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       for (let i = 0; i < domainFilteredResults.length; i++) {
         const result = domainFilteredResults[i];
         const check = batchResults.get(`r${i}`);
+        // Language tag: extract TLD from URL domain for language-tagged logging
+        const urlDomain = extractDomain(result.url || "");
+        const domainTld = urlDomain?.split(".").pop() || "unknown";
         if (check?.isRelevant) {
+          funnelStats.llmRelevanceAccepted++;
           relevantResults.push(result);
+          debugLog("LLM relevance accepted", {
+            url: result.url,
+            title: result.title,
+            classification: check?.classification,
+            query: (result as any).query,
+            domainTld,
+          });
         } else {
-          debugLog("Pre-filter rejected", {
+          funnelStats.llmRelevanceRejected++;
+          debugLog("LLM relevance rejected", {
             url: result.url,
             title: result.title,
             reason: check?.reason || "llm_not_relevant",
             classification: check?.classification,
             query: (result as any).query,
+            domainTld,
           });
         }
       }
@@ -11313,6 +11353,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             state.llmCalls += 1;
             for (let ri = 0; ri < newRetryResults.length; ri++) {
               if (retryBatch.get(`r${ri}`)?.isRelevant) {
+                funnelStats.retryAdded++;
                 relevantResults.push(newRetryResults[ri]);
               }
             }
@@ -11366,11 +11407,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             }
           }
         }
+        const step1Added = relevantResults.length - initiallyKept;
+        funnelStats.fallbackStep1Added += step1Added;
         debugLog("adaptive_fallback_step1", {
           focus: decision.focus,
           before: initiallyKept,
           after: relevantResults.length,
-          added: relevantResults.length - initiallyKept,
+          added: step1Added,
         });
       }
 
@@ -11404,11 +11447,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             }
           }
         }
+        const step2Added = relevantResults.length - step2Before;
+        funnelStats.fallbackStep2Added += step2Added;
         debugLog("adaptive_fallback_step2", {
           focus: decision.focus,
           before: step2Before,
           after: relevantResults.length,
-          added: relevantResults.length - step2Before,
+          added: step2Added,
         });
       }
 
@@ -11525,11 +11570,13 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
             }
           }
         }
+        const step3Added = relevantResults.length - step3Before;
+        funnelStats.fallbackStep3Added += step3Added;
         debugLog("adaptive_fallback_step3", {
           focus: decision.focus,
           before: step3Before,
           after: relevantResults.length,
-          added: relevantResults.length - step3Before,
+          added: step3Added,
         });
       }
 
@@ -11540,6 +11587,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       if (fallbackResults.length > maxFallbackCount) {
         // Remove excess fallback results (keep earliest/most relevant, remove from end)
         const toRemove = fallbackResults.length - maxFallbackCount;
+        funnelStats.fallbackCapRemoved += toRemove;
         // Sort fallback by step (higher step = less relevant), remove highest-step first
         const sortedFallback = fallbackResults
           .map((r, idx) => ({ r, idx: relevantResults.indexOf(r), step: (r as any)._fallbackStep || 3 }))
@@ -11568,6 +11616,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
         fallbackQueriesUsed,
       });
     }
+
+    funnelStats.finalCandidates += relevantResults.length;
 
     if (relevantResults.length === 0) {
       state.iterations.push({
@@ -11612,9 +11662,11 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     const validSources = fetchedSources.filter(
       (s): s is FetchedSource => s !== null,
     );
+    funnelStats.fetchAttempted += relevantResults.length;
     state.sources.push(...validSources);
 
     const successfulSources = validSources.filter((s) => s.fetchSuccess);
+    funnelStats.fetchSuccessful += successfulSources.length;
     await emit(
       `  â†’ ${successfulSources.length}/${validSources.length} fetched successfully`,
       baseProgress + 5,
@@ -11648,6 +11700,7 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     );
     // Pipeline Phase 1: Track novel evidence count for gap research stop condition
     const novelEvidenceCount = parallelResult.evidenceItems.length;
+    funnelStats.evidenceExtracted += novelEvidenceCount;
     state.lastIterationNovelEvidenceCount = novelEvidenceCount;
     state.evidenceItems.push(...parallelResult.evidenceItems);
     state.evidenceFilterLlmFailures += parallelResult.llmFilterFailures;
@@ -12606,6 +12659,8 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       evidenceItemsExtracted: state.evidenceItems.length,
       contradictionSearchPerformed: state.contradictionSearchPerformed,
       llmCalls: state.llmCalls,
+      // Phase 8 instrumentation: per-stage source selection funnel counters
+      sourceSelectionFunnel: funnelStats,
     },
     // NEW v2.4.5: Pseudoscience analysis (pattern-based checks removed)
     pseudoscienceAnalysis: null,
