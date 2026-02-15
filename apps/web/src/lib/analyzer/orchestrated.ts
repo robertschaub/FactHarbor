@@ -11984,6 +11984,29 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
     ) as any;
     console.log(`[Analyzer] Added ${outcomeClaims.length} outcome-related claims from research`);
     await emit(`Added ${outcomeClaims.length} outcome-related claims`, 63);
+
+    // Decontextualized harmPotential for outcome claims: they are hardcoded to "high"
+    // in extractOutcomeClaimsFromEvidence(), which causes frame contamination.
+    // Re-classify using ONLY claim texts (no article/topic context).
+    const outcomeHarmResults = await classifyHarmPotentialDecontextualized(
+      outcomeClaims,
+      understandModelInfo.model,
+      state.pipelineConfig,
+    );
+    state.llmCalls++;
+    for (let i = 0; i < outcomeClaims.length; i++) {
+      const idx = state.understanding!.subClaims.findIndex((sc: any) => sc.id === outcomeClaims[i].id);
+      if (idx >= 0) {
+        const original = (state.understanding!.subClaims[idx] as any).harmPotential;
+        const decontextualized = outcomeHarmResults[i];
+        if (original !== decontextualized) {
+          debugLog(`[HarmClassify] Outcome claim ${outcomeClaims[i].id} harmPotential: ${original} → ${decontextualized}`, {
+            claimText: outcomeClaims[i].text.substring(0, 100),
+          });
+        }
+        (state.understanding!.subClaims[idx] as any).harmPotential = decontextualized;
+      }
+    }
   }
 
   // STEP 4.6: Enrich contexts with outcomes discovered in evidence (generic LLM-based)
