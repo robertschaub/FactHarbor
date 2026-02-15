@@ -42,7 +42,11 @@ _(No entries yet)_
 
 ## Technical Writer
 
-_(No entries yet)_
+### 2026-02-15 — External link syntax for the xWiki viewer
+**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** The xwiki-viewer.html detects external links by checking if the href starts with `https://`. Use `[[label>>https://url]]` syntax. Do NOT use xWiki's `url:` prefix (`[[label>>url:https://...]]`) or `||target="_blank"` parameter — the viewer doesn't parse those. The viewer automatically adds `target="_blank" rel="noopener"` to all https:// links. Bold wrapping works: `**[[label>>https://url]]**`.
+**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (line ~721, `inl()` method)
 
 ## LLM Expert
 
@@ -78,7 +82,23 @@ _(No entries yet)_
 
 ## DevOps Expert
 
-_(No entries yet)_
+### 2026-02-15 — Viewer is shared between FactHarbor and BestWorkplace
+**Role:** DevOps Expert / xWiki Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** `xwiki-viewer.html` is identical in both FactHarbor and BestWorkplace repos (`C:\DEV\BestWorkplace`). Any change to the viewer must be copied to both repos, then both must be pushed to trigger their respective GitHub Actions gh-pages deployments. The `build_ghpages.py` scripts differ between repos (BestWorkplace has extra image/attachment patches), so only the viewer HTML is shared — the build scripts are independent.
+**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (both repos)
+
+### 2026-02-15 — build_ghpages.py uses exact string patches on the viewer
+**Role:** DevOps Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** `build_ghpages.py` applies changes to the viewer HTML via Python `str.replace()` with exact string matching. If you modify lines in the viewer that are also patch targets, the patches will silently fail (no error, just no replacement). After modifying the viewer, always verify that all `html.replace(...)` calls in both repos' `build_ghpages.py` still find their target strings. BestWorkplace's build script has 2 additional patches (#12, #13 for image rendering) not in FactHarbor's.
+**Files:** `Docs/xwiki-pages/scripts/build_ghpages.py` (both repos), `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html`
+
+### 2026-02-15 — GitHub OAuth token needs `workflow` scope for pushing workflow files
+**Role:** DevOps Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** When creating a new repo and pushing `.github/workflows/` files, the `gh` CLI token may lack the `workflow` scope, causing a push rejection. Workaround: commit and push everything except the workflow file first, then add the workflow in a subsequent commit. Alternatively, re-authenticate with `gh auth login` and grant the `workflow` scope.
+**Files:** `.github/workflows/deploy-docs.yml`
 
 ---
 

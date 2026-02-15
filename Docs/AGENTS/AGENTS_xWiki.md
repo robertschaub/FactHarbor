@@ -115,4 +115,71 @@ See [Docs/xwiki-pages/README.md](../xwiki-pages/README.md) for full derivation t
 
 ---
 
-**Last Updated:** 2026-02-08
+## xWiki Viewer (`viewer-impl/xwiki-viewer.html`)
+
+The viewer is a ~2000-line standalone HTML file that renders xWiki 2.1 markup in the browser. It is **shared identically** with the BestWorkplace repository (`C:\DEV\BestWorkplace`). Any changes to the viewer must be copied to both repos.
+
+### Rendering Pipeline
+
+1. `extractBlockMacros(source)` — replaces block macros (`{{code}}`, `{{mermaid}}`, `{{info}}`, `{{children/}}`, etc.) with numbered placeholders
+2. `parse(source)` — line-by-line parsing: headings, lists, tables, `(((` groups, `(% ... %)` params, paragraphs
+3. `resolvePlaceholders(html)` — replaces placeholders with rendered HTML
+4. `resolveIncludes(html)` — async: fetches and inlines `{{include}}` content
+5. `resolveChildren` (in `renderPreview()`) — populates `{{children/}}` from the page tree
+
+### Supported Macros
+
+| Macro | Rendered as |
+|-------|-----------|
+| `{{code language="..."}}...{{/code}}` | `<pre><code>` with language label |
+| `{{mermaid}}...{{/mermaid}}` | Mermaid diagram (rendered via mermaid.js) |
+| `{{info}}`, `{{warning}}`, `{{error}}`, `{{success}}` | Colored message boxes |
+| `{{toc/}}` | Auto-generated table of contents |
+| `{{include reference="..."}}` | Transcluded page content |
+| `{{children/}}` | Clickable list of child pages |
+| `{{{verbatim}}}` | Pre-formatted code block |
+
+### Key Gotchas
+
+- **`(% ... %)` parameter lines**: A standalone line `(% class="x" %)` sets `pendingParams` for the NEXT element. A prefix `(% class="x" %)|(((` is stripped and the remainder (`|(((`) is re-processed. Table-level pendingParams are passed to `<table>` via `renderTable(rows, tblAttrs)`.
+- **External links**: Use `[[label>>https://url]]` — the viewer auto-adds `target="_blank" rel="noopener"` for all `https://` links. Do NOT use `url:` prefix or `||target="_blank"` parameter — the viewer doesn't parse those xWiki-specific prefixes.
+- **Image rendering in `inl()`**: The wiki-link regex has a negative lookahead for `image:` so `[[image:...]]` patterns aren't consumed as wiki links. Image regex runs after wiki-link regex.
+- **`colspan`/`rowspan`**: Supported via `(% colspan="2" %)` in table cells — parsed by `buildAttrs()`.
+
+---
+
+## GitHub Pages Pipeline (`build_ghpages.py`)
+
+The build script generates a static deployment from the xWiki content tree:
+
+1. `scan_tree()` → builds page hierarchy + reads content into `pages` dict
+2. `inject_titles()` → adds H1 headings for pages lacking them (derives title from directory name)
+3. Outputs `pages.json` (bundled content) + `index.html` (patched viewer) + `.nojekyll`
+4. `collect_attachments()` → copies `_attachments/` files to `attachments/` in build output
+
+### How `generate_viewer_html()` Works
+
+The build script applies **exact string replacements** to the viewer HTML. If you modify the viewer, verify that all patch target strings still exist. Current patches:
+
+| # | What it patches | Purpose |
+|---|----------------|---------|
+| 1 | `<title>` | Branding |
+| 2 | Logo text | Branding |
+| 4 | Welcome `<h1>` | Branding |
+| 5 | `loadPage()` | Adds hash-based deep linking |
+| 8 | Init block | Replaces `loadFromServer()` with `loadBundle()` |
+| 9 | `</style>` | Injects CSS to hide interactive controls |
+| 10 | Watch badge | Adds bundle metadata element |
+| 11 | Main area div | Removes `hidden` class |
+
+**BestWorkplace's build script** has additional patches:
+- **#12**: Adds `|image:` to wiki-link regex negative lookahead
+- **#13**: Replaces image regex to prefix `attachments/` for local files and preserve width/height params
+
+### Auto-Deploy
+
+GitHub Actions workflow (`.github/workflows/deploy-docs.yml`) triggers on push to `main` when content/scripts/viewer files change. Uses `peaceiris/actions-gh-pages@v4` with `force_orphan: true`.
+
+---
+
+**Last Updated:** 2026-02-15
