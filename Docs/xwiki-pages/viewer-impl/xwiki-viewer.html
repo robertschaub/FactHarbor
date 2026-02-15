@@ -29,8 +29,8 @@
   --pv-code-bg: #efeae2;
   --pv-code-border: #ddd7cc;
   --pv-border: #e0dbd2;
-  --pv-table-head: #f0ebe3;
-  --pv-table-stripe: #f6f3ee;
+  --pv-table-head: #e0e0e0;
+  --pv-table-stripe: #f5f5f0;
   --pv-info-bg: #eaf2fa; --pv-info-border: #8db8dc;
   --pv-warn-bg: #fdf5e0; --pv-warn-border: #d4b040;
   --pv-err-bg: #fce8e8; --pv-err-border: #c86060;
@@ -213,9 +213,10 @@ body.view-preview .preview-pane{width:100%}
 .preview-content blockquote{border-left:3px solid var(--pv-blockquote-border);padding:.3em 0 .3em 1.1em;margin:.7em 0;color:var(--pv-muted);font-style:italic}
 .preview-content img{max-width:100%;height:auto;border-radius:var(--radius);margin:.7em 0}
 .preview-content table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.9em;font-family:'Outfit',sans-serif}
-.preview-content th{background:var(--pv-table-head);font-weight:600;text-align:left;padding:7px 10px;border:1px solid var(--pv-border);font-size:.88em}
+.preview-content th{background:var(--pv-table-head);font-weight:600;text-align:left;padding:7px 10px;border:1px solid var(--pv-border);font-size:.88em;color:#333}
 .preview-content td{padding:7px 10px;border:1px solid var(--pv-border)}
-.preview-content tr:nth-child(even) td{background:var(--pv-table-stripe)}
+.preview-content tr:nth-child(even) td{background:rgba(0,0,0,0.03)}
+.preview-content .table-hover tr:hover td{background:rgba(0,0,0,0.06);transition:background .15s}
 .xwiki-cell-group{padding:4px 0}
 .xwiki-cell-group table{margin:.5em 0;font-size:1em}
 .xwiki-cell-group p{margin:.4em 0}
@@ -717,6 +718,8 @@ class XWikiParser {
     text=text.replace(/--(.+?)--/g,'<del>$1</del>');
     text=text.replace(/\^\^(.+?)\^\^/g,'<sup>$1</sup>');
     text=text.replace(/,,(.+?),,/g,'<sub>$1</sub>');
+    // Strip xWiki url: prefix so url:https://... becomes https://...
+    text=text.replace(/&gt;&gt;url:(https?:\/\/)/g,'&gt;&gt;$1');
     // External links
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(https?:\/\/[^\]]+?)\]\]/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
     text=text.replace(/\[\[(https?:\/\/[^\]]+?)\]\]/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
@@ -1023,6 +1026,8 @@ function normalizeRef(ref){
   // Strip doc: prefix, normalize dots and path separators
   let r = ref.replace(/^doc:/i,'').replace(/^xwiki:/i,'').trim();
   r = r.replace(/\//g,'.').replace(/\\+/g,'.');
+  // Strip leading dots (xWiki relative reference syntax)
+  r = r.replace(/^\.+/,'');
   // Remove .WebHome suffix (XWiki convention)
   r = r.replace(/\.WebHome$/i,'');
   return r;

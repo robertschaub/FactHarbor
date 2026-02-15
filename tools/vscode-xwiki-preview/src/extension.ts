@@ -147,6 +147,7 @@ async function buildPageIndex() {
 function normalizeRef(ref: string): string {
   let r = ref.replace(/^doc:/i, '').replace(/^xwiki:/i, '').trim();
   r = r.replace(/\//g, '.').replace(/\\+/g, '.');
+  r = r.replace(/^\.+/, '');
   r = r.replace(/\.WebHome$/i, '');
   return r;
 }

@@ -11,8 +11,8 @@
   --pv-code-bg: #efeae2;
   --pv-code-border: #ddd7cc;
   --pv-border: #e0dbd2;
-  --pv-table-head: #f0ebe3;
-  --pv-table-stripe: #f6f3ee;
+  --pv-table-head: #e0e0e0;
+  --pv-table-stripe: #f5f5f0;
   --pv-info-bg: #eaf2fa; --pv-info-border: #8db8dc;
   --pv-warn-bg: #fdf5e0; --pv-warn-border: #d4b040;
   --pv-err-bg: #fce8e8; --pv-err-border: #c86060;
@@ -101,9 +101,10 @@ body::-webkit-scrollbar-thumb { background: #d4cfc6; border-radius: 3px; }
 .preview-content blockquote { border-left: 3px solid var(--pv-blockquote-border); padding: .3em 0 .3em 1.1em; margin: .7em 0; color: var(--pv-muted); font-style: italic; }
 .preview-content img { max-width: 100%; height: auto; border-radius: var(--radius); margin: .7em 0; }
 .preview-content table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: .9em; font-family: 'Outfit', sans-serif; }
-.preview-content th { background: var(--pv-table-head); font-weight: 600; text-align: left; padding: 7px 10px; border: 1px solid var(--pv-border); font-size: .88em; }
+.preview-content th { background: var(--pv-table-head); font-weight: 600; text-align: left; padding: 7px 10px; border: 1px solid var(--pv-border); font-size: .88em; color: #333; }
 .preview-content td { padding: 7px 10px; border: 1px solid var(--pv-border); }
-.preview-content tr:nth-child(even) td { background: var(--pv-table-stripe); }
+.preview-content tr:nth-child(even) td { background: rgba(0,0,0,0.03); }
+.preview-content .table-hover tr:hover td { background: rgba(0,0,0,0.06); transition: background 0.15s; }
 .xwiki-cell-group { padding: 4px 0; }
 .xwiki-cell-group table { margin: .5em 0; font-size: 1em; }
 .xwiki-cell-group p { margin: .4em 0; }
@@ -125,6 +126,11 @@ body::-webkit-scrollbar-thumb { background: #d4cfc6; border-radius: 3px; }
 .mermaid-container { margin: 1em 0; background: #fff; border: 1px solid var(--pv-border); border-radius: var(--radius); padding: 18px; overflow-x: auto; text-align: center; }
 .mermaid-container .mermaid-label { font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .9px; color: var(--pv-muted); text-align: right; margin-bottom: 6px; opacity: .5; }
 .mermaid-container svg { max-width: 100%; }
+.xwiki-children-list { margin: 1em 0; font-family: 'Outfit', sans-serif; }
+.xwiki-children-list ul { list-style: none; margin: 0; padding: 0; }
+.xwiki-children-list li { margin: .3em 0; padding: 3px 0 3px 22px; position: relative; font-size: .95em; }
+.xwiki-children-list li::before { content: '\1F4C4'; position: absolute; left: 0; top: 3px; font-size: .8em; }
+.xwiki-children-list .children-empty { color: var(--pv-muted); font-style: italic; font-size: .9em; }
 .preview-content dl { margin: .5em 0; }
 .preview-content dt { font-weight: 600; margin-top: .4em; }
 .preview-content dd { margin-left: 1.4em; color: var(--pv-muted); }

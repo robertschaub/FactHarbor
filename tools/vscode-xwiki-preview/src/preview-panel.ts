@@ -90,13 +90,28 @@ export class XWikiPreviewPanel {
     const docUri = document.uri.toString();
     const isNewFile = this._lastDocumentUri !== docUri;
     this._lastDocumentUri = docUri;
+    // Build fresh page index for children resolution
+    const pageIdx: Record<string, { ref: string; segments: string[] }> = {};
+    for (const [ref, info] of XWikiPreviewPanel.pageIndex) {
+      pageIdx[ref] = { ref, segments: info.segments };
+    }
     // Send content to webview for re-render
     this._panel.webview.postMessage({
       command: 'updateContent',
       content: document.getText(),
       fileName: path.basename(document.uri.fsPath),
-      scrollToTop: isNewFile
+      scrollToTop: isNewFile,
+      currentPageRef: this._derivePageRef(document.uri),
+      pageIndex: pageIdx
     });
+  }
+
+  private _derivePageRef(uri: vscode.Uri): string {
+    const relPath = uri.fsPath.replace(/\\/g, '/');
+    const idx = relPath.toLowerCase().indexOf('/xwiki-pages/');
+    if (idx < 0) return '';
+    const afterRoot = relPath.substring(idx + '/xwiki-pages/'.length);
+    return afterRoot.replace(/\.xwiki$/i, '').replace(/\//g, '.');
   }
 
   public dispose() {
@@ -114,9 +129,14 @@ export class XWikiPreviewPanel {
 
     // Build page index as JSON for wiki link resolution in webview
     const pageRefs: string[] = [];
-    for (const [ref] of XWikiPreviewPanel.pageIndex) {
+    const pageIndex: Record<string, { ref: string; segments: string[] }> = {};
+    for (const [ref, info] of XWikiPreviewPanel.pageIndex) {
       pageRefs.push(ref);
+      pageIndex[ref] = { ref, segments: info.segments };
     }
+
+    // Derive current page ref from document URI
+    const currentPageRef = this._derivePageRef(documentUri);
 
     const fileName = path.basename(documentUri.fsPath);
 
@@ -149,10 +169,37 @@ export class XWikiPreviewPanel {
 
   // Page refs for link resolution (simple presence check)
   const pageRefs = ${JSON.stringify(pageRefs)};
+  let currentPageRef = ${JSON.stringify(currentPageRef)};
+  let vsPageIndex = ${JSON.stringify(pageIndex)};
+
+  function getChildPages(ref) {
+    if (!ref || !vsPageIndex[ref]) return [];
+    const page = vsPageIndex[ref];
+    const segs = page.segments;
+    if (segs[segs.length - 1] !== 'WebHome') return [];
+    const spaceSegs = segs.slice(0, -1);
+    const children = [];
+    for (const [r, p] of Object.entries(vsPageIndex)) {
+      if (r === ref) continue;
+      const ps = p.segments;
+      if (ps.length === spaceSegs.length + 2 && ps[ps.length - 1] === 'WebHome') {
+        let match = true;
+        for (let j = 0; j < spaceSegs.length; j++) { if (ps[j] !== spaceSegs[j]) { match = false; break; } }
+        if (match) children.push({ ref: r, name: ps[spaceSegs.length] });
+      } else if (ps.length === spaceSegs.length + 1 && ps[ps.length - 1] !== 'WebHome') {
+        let match = true;
+        for (let j = 0; j < spaceSegs.length; j++) { if (ps[j] !== spaceSegs[j]) { match = false; break; } }
+        if (match) children.push({ ref: r, name: ps[spaceSegs.length] });
+      }
+    }
+    children.sort((a, b) => a.name.localeCompare(b.name));
+    return children;
+  }
 
   function normalizeRef(ref) {
     let r = ref.replace(/^doc:/i, '').replace(/^xwiki:/i, '').trim();
     r = r.replace(/\\//g, '.').replace(/\\\\+/g, '.');
+    r = r.replace(/^\\.+/, '');
     r = r.replace(/\\.WebHome$/i, '');
     return r;
   }
@@ -278,6 +325,24 @@ export class XWikiPreviewPanel {
     // Resolve includes inline: request content from extension host, parse, render
     await resolveIncludes(previewEl, new Set());
 
+    // Resolve {{children/}} placeholders
+    previewEl.querySelectorAll('.xwiki-children-list').forEach(el => {
+      const children = getChildPages(currentPageRef);
+      if (children.length === 0) {
+        el.innerHTML = '<span class="children-empty">No child pages.</span>';
+      } else {
+        let h = '<ul>';
+        for (const c of children) {
+          h += '<li><a class="wiki-link resolved" data-wiki-ref="' + c.ref + '" href="#">' + c.name + '</a></li>';
+        }
+        el.innerHTML = h + '</ul>';
+        // Wire click handlers
+        el.querySelectorAll('.wiki-link').forEach(link => {
+          link.addEventListener('click', (e) => { e.preventDefault(); vscodeApi.postMessage({ command: 'navigate', ref: link.getAttribute('data-wiki-ref') }); });
+        });
+      }
+    });
+
     // Render mermaid diagrams (after includes are resolved, so included mermaid renders too)
     mermaidRenderCount++;
     const cur = mermaidRenderCount;
@@ -303,6 +368,8 @@ export class XWikiPreviewPanel {
     const msg = event.data;
     switch (msg.command) {
       case 'updateContent':
+        if (msg.currentPageRef !== undefined) currentPageRef = msg.currentPageRef;
+        if (msg.pageIndex !== undefined) vsPageIndex = msg.pageIndex;
         renderContent(msg.content);
         if (msg.scrollToTop) {
           window.scrollTo(0, 0);

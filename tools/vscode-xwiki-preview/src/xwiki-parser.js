@@ -12,6 +12,7 @@ class XWikiParser {
     const lines=source.split('\n');
     let i=0,listStack=[],inList=false,inTable=false,tableRows=[],tableGroupDepth=0;
     let pendingParams = null;
+    let tableAttrs = '';
 
     while(i<lines.length){
       let line=lines[i];
@@ -22,6 +23,17 @@ class XWikiParser {
       if(paramMatch){
         pendingParams = this.parseParams(paramMatch[1]);
         i++; continue;
+      }
+
+      // Handle (% ... %) prefix followed by more content on the same line
+      // e.g. (% class="active" %)|(% colspan="1" %)(((
+      // Strip the prefix params and re-process the remainder as the line
+      if(trimmed.startsWith('(%')){
+        const prefixMatch = trimmed.match(/^\(%\s*.*?\s*%\)\s*(.+)/);
+        if(prefixMatch){
+          lines[i] = prefixMatch[1];
+          continue;
+        }
       }
 
       // Inside a table with open ((( group — keep collecting lines
@@ -35,7 +47,7 @@ class XWikiParser {
       // Parse group start: (((
       if(trimmed === '(((' || trimmed.startsWith('(((')){
         if(inList){html+=this.cls(listStack);listStack=[];inList=false}
-        if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}
+        if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
         const groupAttrs = this.buildGroupAttrs(pendingParams);
         html += `<div${groupAttrs}>\n`;
         pendingParams = null;
@@ -50,16 +62,16 @@ class XWikiParser {
       // Parse group end: )))
       if(trimmed === ')))'){
         if(inList){html+=this.cls(listStack);listStack=[];inList=false}
-        if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}
+        if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
         html += '</div>\n';
         i++; continue;
       }
 
-      if(line.trim()===''){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}pendingParams=null;i++;continue}
-      if(/^----\s*$/.test(line)){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}html+='<hr>\n';pendingParams=null;i++;continue}
+      if(line.trim()===''){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}pendingParams=null;i++;continue}
+      if(/^----\s*$/.test(line)){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}html+='<hr>\n';pendingParams=null;i++;continue}
       const hm=line.match(/^(={1,6})\s+(.+?)\s+\1\s*$/)||line.match(/^(={1,6})\s+(.+?)\s*$/);
-      if(hm){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}const lv=hm[1].length,rt=hm[2],id=this.slug(rt);this.headings.push({level:lv,text:rt,id});const attrs=pendingParams?this.buildAttrs(pendingParams):'';html+=`<h${lv} id="${id}"${attrs}>${this.inl(rt)}</h${lv}>\n`;pendingParams=null;i++;continue}
-      if(line.trim().startsWith('|')){if(inList){html+=this.cls(listStack);listStack=[];inList=false}inTable=true;tableRows.push(line);tableGroupDepth+=(line.match(/\(\(\(/g)||[]).length;tableGroupDepth-=(line.match(/\)\)\)/g)||[]).length;i++;continue}else if(inTable){html+=this.renderTable(tableRows);tableRows=[];inTable=false;tableGroupDepth=0}
+      if(hm){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}const lv=hm[1].length,rt=hm[2],id=this.slug(rt);this.headings.push({level:lv,text:rt,id});const attrs=pendingParams?this.buildAttrs(pendingParams):'';html+=`<h${lv} id="${id}"${attrs}>${this.inl(rt)}</h${lv}>\n`;pendingParams=null;i++;continue}
+      if(line.trim().startsWith('|')){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(!inTable&&pendingParams){tableAttrs=this.buildAttrs(pendingParams);pendingParams=null}inTable=true;tableRows.push(line);tableGroupDepth+=(line.match(/\(\(\(/g)||[]).length;tableGroupDepth-=(line.match(/\)\)\)/g)||[]).length;i++;continue}else if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
       const ul=line.match(/^(\*+)\s+(.*)/);
       if(ul){
         const content = ul[2].trim();
@@ -115,7 +127,7 @@ class XWikiParser {
       pendingParams = null;
     }
     if(inList) html+=this.cls(listStack);
-    if(inTable) html+=this.renderTable(tableRows);
+    if(inTable) html+=this.renderTable(tableRows,tableAttrs);
     return html;
   }
 
@@ -163,6 +175,8 @@ class XWikiParser {
     if(params.style) attrs += ` style="${this.esc(params.style)}"`;
     if(params.id) attrs += ` id="${this.esc(params.id)}"`;
     if(params.title) attrs += ` title="${this.esc(params.title)}"`;
+    if(params.colspan) attrs += ` colspan="${this.esc(params.colspan)}"`;
+    if(params.rowspan) attrs += ` rowspan="${this.esc(params.rowspan)}"`;
     return attrs;
   }
 
@@ -188,6 +202,7 @@ class XWikiParser {
     r=r.replace(/\{\{code(?:\s+language="([^"]*)")?\s*\}\}([\s\S]*?)\{\{\/code\}\}/gi,(m,l,c)=>{const k=`%%XWIKI_BLOCK_CODE_${x++}%%`;this._placeholders[k]={type:'code',lang:l||'',content:c.replace(/^\n/,'').replace(/\n$/,'')};return k});
     for(const bt of['info','warning','error','success']){const re=new RegExp(`\\{\\{${bt}(?:\\s+title="([^"]*)")?\\s*\\}\\}([\\s\\S]*?)\\{\\{\\/${bt}\\}\\}`,'gi');r=r.replace(re,(m,t,c)=>{const k=`%%XWIKI_BLOCK_BOX_${x++}%%`;this._placeholders[k]={type:'box',boxType:bt,title:t||'',content:c.trim()};return k})}
     r=r.replace(/\{\{toc\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_TOC_${x++}%%`;this._placeholders[k]={type:'toc'};return k});
+    r=r.replace(/\{\{children\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_CHILDREN_${x++}%%`;this._placeholders[k]={type:'children'};return k});
     r=r.replace(/\{\{include\s+reference="([^"]+)"[^}]*\/?\}\}/gi,(m,ref)=>{const k=`%%XWIKI_BLOCK_INCLUDE_${x++}%%`;this._placeholders[k]={type:'include',reference:ref};return k});
     return r;
   }
@@ -204,6 +219,7 @@ class XWikiParser {
           break;
         }
         case'toc':r=this.renderTOC();break;
+        case'children':{r='<div class="xwiki-children-list"></div>';break}
         case'include':{
           const ref = d.reference;
           r=`<div class="xwiki-include" data-include-ref="${this.esc(ref)}"><span class="include-icon">📄</span><span class="include-label">Include:</span> <a class="wiki-link" data-wiki-ref="${this.esc(ref)}" href="#">${this.esc(ref)}</a></div>`;
@@ -231,6 +247,8 @@ class XWikiParser {
     text=text.replace(/--(.+?)--/g,'<del>$1</del>');
     text=text.replace(/\^\^(.+?)\^\^/g,'<sup>$1</sup>');
     text=text.replace(/,,(.+?),,/g,'<sub>$1</sub>');
+    // Strip xWiki url: prefix so url:https://... becomes https://...
+    text=text.replace(/&gt;&gt;url:(https?:\/\/)/g,'&gt;&gt;$1');
     // External links
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(https?:\/\/[^\]]+?)\]\]/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
     text=text.replace(/\[\[(https?:\/\/[^\]]+?)\]\]/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
@@ -256,7 +274,7 @@ class XWikiParser {
 
   li(stk,d,t,c){let h='';while(stk.length>d)h+=`</li></${stk.pop()}>`;if(stk.length<d){while(stk.length<d){h+=`<${t}>`;stk.push(t)}h+=`<li>${c}`}else h+=`</li><li>${c}`;return h}
   cls(stk){let h='';while(stk.length>0)h+=`</li></${stk.pop()}>`;return h+'\n'}
-  renderTable(rawLines){
+  renderTable(rawLines,tblAttrs){
     if(!rawLines.length)return'';
     const logicalRows=[];
     let cur='',depth=0;
@@ -272,7 +290,8 @@ class XWikiParser {
       if(depth<0)depth=0;
     }
     if(cur)logicalRows.push(cur);
-    let h='<table>';
+    let h=`<table${tblAttrs||''}>`;
+
     for(const row of logicalRows){
       const cells=this.splitTableCells(row);
       h+='<tr>';

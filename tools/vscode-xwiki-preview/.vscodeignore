@@ -2,6 +2,7 @@
 node_modules/**
 src/extension.ts
 src/preview-panel.ts
+src/xwiki-tree.ts
 tsconfig.json
 **/*.map
 .gitignore
