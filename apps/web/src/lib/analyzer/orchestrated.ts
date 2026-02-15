@@ -11200,17 +11200,12 @@ export async function runFactHarborAnalysis(input: AnalysisInput) {
       decision.isContradictionSearch === true ||
       !!decision.targetContextId ||
       (decision.category === "evidence" && hasInstitutionalContext);
-    // Criticism/counter-evidence searches use MODERATE mode (not STRICT) to allow
-    // secondary commentary through. For legal/political topics, news analysis and
-    // commentary are often the primary counter-evidence sources. STRICT institution
-    // matching would reject them. Context relevance is still enforced via requireContextMatch.
-    const strictInstitutionMatch =
-      !!decision.targetContextId ||
-      (decision.category === "evidence" && hasInstitutionalContext);
-    const allowInstitutionFallback = !(
-      !!decision.targetContextId ||
-      (decision.category === "evidence" && hasInstitutionalContext)
-    );
+    // Phase 8a: STRICT institution matching only for targeted context searches.
+    // MODERATE mode for all other categories (including evidence with institutional context)
+    // to accept secondary commentary as valid evidence. The evidence extraction LLM
+    // and probative value filter already handle quality.
+    const strictInstitutionMatch = !!decision.targetContextId;
+    const allowInstitutionFallback = !decision.targetContextId;
 
     let relevantResults: typeof uniqueResults = [];
 

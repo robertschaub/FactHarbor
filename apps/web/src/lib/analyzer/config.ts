@@ -49,15 +49,15 @@ export const CONFIG = {
 
   quick: {
     maxResearchIterations: 4, // v2.8.2: was 2 - increased for better quality
-    maxSourcesPerIteration: 4, // v2.8.2: was 3
-    maxTotalSources: 12, // v2.8.2: was 8
+    maxSourcesPerIteration: 8, // Phase 8a: was 4 - doubled to reduce evidence famine
+    maxTotalSources: 24, // Phase 8a: was 12 - scaled with maxSourcesPerIteration
     articleMaxChars: 4000,
     minEvidenceItemsRequired: 6,
   },
   deep: {
     maxResearchIterations: 5,
-    maxSourcesPerIteration: 4,
-    maxTotalSources: 20,
+    maxSourcesPerIteration: 8, // Phase 8a: was 4 - doubled to reduce evidence famine
+    maxTotalSources: 30, // Phase 8a: was 20 - scaled with maxSourcesPerIteration
     articleMaxChars: 8000,
     minEvidenceItemsRequired: 12,
   },
