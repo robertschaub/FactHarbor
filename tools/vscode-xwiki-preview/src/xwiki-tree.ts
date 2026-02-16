@@ -85,6 +85,7 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
     } catch { /* ignore permission errors */ }
   }
 
+
   // Recursively collect all .xwiki files under a directory
   private async _collectXWikiFiles(dir: vscode.Uri, files: vscode.Uri[]): Promise<void> {
     try {
@@ -159,6 +160,9 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
 
         if (baseName.toLowerCase() === 'webhome') {
           current.uri = uri;
+        } else if (/^WebHome\.[a-z]{2}$/i.test(baseName)) {
+          // Translation WebHome (e.g. WebHome.de) — hide from tree, accessible via language links
+          continue;
         } else {
           current.children.set(baseName, { name: baseName, uri, children: new Map(), isFolder: false });
         }
@@ -192,6 +196,9 @@ export class XWikiTreeProvider implements vscode.TreeDataProvider<XWikiTreeItem>
 
     if (baseName.toLowerCase() === 'webhome') {
       current.uri = uri;
+    } else if (/^WebHome\.[a-z]{2}$/i.test(baseName)) {
+      // Translation WebHome — hide from tree
+      return;
     } else {
       current.children.set(baseName, { name: baseName, uri, children: new Map(), isFolder: false });
     }

@@ -91,9 +91,9 @@ export class XWikiPreviewPanel {
     const isNewFile = this._lastDocumentUri !== docUri;
     this._lastDocumentUri = docUri;
     // Build fresh page index for children resolution
-    const pageIdx: Record<string, { ref: string; segments: string[] }> = {};
+    const pageIdx: Record<string, { ref: string; segments: string[]; displayTitle?: string }> = {};
     for (const [ref, info] of XWikiPreviewPanel.pageIndex) {
-      pageIdx[ref] = { ref, segments: info.segments };
+      pageIdx[ref] = { ref, segments: info.segments, displayTitle: info.displayTitle };
     }
     // Build attachment map for image resolution
     const attachments = this._buildAttachmentMap(document.uri);
@@ -159,10 +159,10 @@ export class XWikiPreviewPanel {
 
     // Build page index as JSON for wiki link resolution in webview
     const pageRefs: string[] = [];
-    const pageIndex: Record<string, { ref: string; segments: string[] }> = {};
+    const pageIndex: Record<string, { ref: string; segments: string[]; displayTitle?: string }> = {};
     for (const [ref, info] of XWikiPreviewPanel.pageIndex) {
       pageRefs.push(ref);
-      pageIndex[ref] = { ref, segments: info.segments };
+      pageIndex[ref] = { ref, segments: info.segments, displayTitle: info.displayTitle };
     }
 
     // Derive current page ref from document URI
@@ -337,6 +337,9 @@ export class XWikiPreviewPanel {
   }
 
   function contentHasHeading(src) {
+    // Only check the first non-empty line. Headings buried inside table
+    // cells are layout, not standalone page titles, so we still inject a
+    // title for those pages.
     for (const line of src.split('\\n')) {
       const s = line.trim();
       if (!s) continue;
@@ -346,14 +349,18 @@ export class XWikiPreviewPanel {
   }
   function derivePageTitle(ref) {
     if (!ref) return '';
-    const segs = ref.split('.').filter(s => s.toLowerCase() !== 'webhome');
+    // Treat WebHome.LANG (e.g. WebHome.de) as WebHome (translation file)
+    var cleaned = ref.replace(/\\.WebHome\\.[a-z]{2}$/i, '.WebHome').replace(/^WebHome\\.[a-z]{2}$/i, 'WebHome');
+    const segs = cleaned.split('.').filter(s => s.toLowerCase() !== 'webhome');
     return segs.length ? segs[segs.length - 1] : '';
   }
 
   async function renderContent(source) {
-    // Auto-inject title for pages that lack a heading
+    // Auto-inject title for pages that lack a heading at the top
     if (!contentHasHeading(source)) {
-      const title = derivePageTitle(currentPageRef);
+      // Use displayTitle from _meta.json if available, else derive from ref
+      const page = vsPageIndex[currentPageRef];
+      const title = (page && page.displayTitle) || derivePageTitle(currentPageRef);
       if (title) source = '= ' + title + ' =\\n\\n' + source;
     }
     const parser = new XWikiParser();

@@ -4,7 +4,7 @@ import { XWikiPreviewPanel } from './preview-panel';
 import { XWikiTreeProvider, XWikiTreeItem } from './xwiki-tree';
 
 // Page index: normalized ref → vscode.Uri
-let pageIndex: Map<string, { uri: vscode.Uri; ref: string; name: string; relPath: string; segments: string[] }> = new Map();
+let pageIndex: Map<string, { uri: vscode.Uri; ref: string; name: string; relPath: string; segments: string[]; displayTitle?: string }> = new Map();
 
 export function activate(context: vscode.ExtensionContext) {
   // Build page index on activation
@@ -160,6 +160,26 @@ async function buildPageIndex() {
     const name = refSegments[refSegments.length - 1];
 
     pageIndex.set(ref, { uri, ref, name, relPath, segments: refSegments });
+  }
+
+  // Read _meta.json files and apply translation titles
+  const metaFiles = await vscode.workspace.findFiles('**/_meta.json', '**/node_modules/**');
+  for (const metaUri of metaFiles) {
+    try {
+      const doc = await vscode.workspace.openTextDocument(metaUri);
+      const meta = JSON.parse(doc.getText());
+      if (!meta.translations) continue;
+      const metaDir = path.dirname(metaUri.fsPath).replace(/\\/g, '/');
+      for (const [lang, info] of Object.entries(meta.translations) as [string, any][]) {
+        // Find the corresponding WebHome.LANG page in this directory
+        for (const [ref, page] of pageIndex) {
+          const pageDir = path.dirname(page.uri.fsPath).replace(/\\/g, '/');
+          if (pageDir === metaDir && page.name === `WebHome.${lang}` && info.title) {
+            page.displayTitle = info.title;
+          }
+        }
+      }
+    } catch { /* ignore unreadable _meta.json */ }
   }
 
   // Update the preview panel's page index
