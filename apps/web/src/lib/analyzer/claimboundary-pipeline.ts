@@ -51,11 +51,11 @@ import { runVerdictStage, type LLMCallFn } from "./verdict-stage";
  * Each stage is an independently testable function.
  *
  * @param input - The analysis input (text or URL, with optional event callback)
- * @returns The final OverallAssessment
+ * @returns The result object with resultJson and reportMarkdown
  */
 export async function runClaimBoundaryAnalysis(
   input: AnalysisInput
-): Promise<OverallAssessment> {
+): Promise<{ resultJson: any; reportMarkdown: string }> {
   const onEvent = input.onEvent ?? (() => {});
 
   // Initialize research state
@@ -116,7 +116,57 @@ export async function runClaimBoundaryAnalysis(
   );
 
   onEvent("Analysis complete.", 100);
-  return assessment;
+
+  // Wrap assessment in resultJson structure (no AnalysisContext references)
+  const resultJson = {
+    _schemaVersion: "3.0.0-cb", // ClaimBoundary pipeline schema
+    meta: {
+      schemaVersion: "3.0.0-cb",
+      generatedUtc: new Date().toISOString(),
+      pipeline: "claimboundary",
+      inputType: input.inputType,
+      detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
+      hasMultipleBoundaries: assessment.hasMultipleBoundaries,
+      boundaryCount: boundaries.length,
+      claimCount: understanding.atomicClaims.length,
+      llmCalls: state.llmCalls,
+      mainIterationsUsed: state.mainIterationsUsed,
+      contradictionIterationsUsed: state.contradictionIterationsUsed,
+      contradictionSourcesFound: state.contradictionSourcesFound,
+    },
+    // Core assessment data
+    truthPercentage: assessment.truthPercentage,
+    verdict: assessment.verdict,
+    confidence: assessment.confidence,
+    verdictNarrative: assessment.verdictNarrative,
+
+    // ClaimBoundary-specific data (replaces analysisContexts)
+    claimBoundaries: assessment.claimBoundaries,
+    claimVerdicts: assessment.claimVerdicts,
+    coverageMatrix: assessment.coverageMatrix,
+
+    // Supporting data
+    understanding: state.understanding,
+    evidenceItems: state.evidenceItems,
+    sources: state.sources.map((s: FetchedSource) => ({
+      id: s.id,
+      url: s.url,
+      title: s.title,
+      trackRecordScore: s.trackRecordScore,
+      category: s.category,
+      fetchSuccess: s.fetchSuccess,
+      searchQuery: s.searchQuery,
+    })),
+    searchQueries: state.searchQueries,
+
+    // Quality gates
+    qualityGates: assessment.qualityGates,
+  };
+
+  // TODO: Generate markdown report (Phase 3 UI work)
+  const reportMarkdown = "# ClaimBoundary Analysis Report\n\n(Report generation not yet implemented)";
+
+  return { resultJson, reportMarkdown };
 }
 
 // ============================================================================

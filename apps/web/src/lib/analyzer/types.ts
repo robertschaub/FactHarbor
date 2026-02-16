@@ -693,6 +693,7 @@ export interface ResearchDecision {
 // ============================================================================
 
 export type AnalysisInput = {
+  jobId?: string;
   inputType: "text" | "url";
   inputValue: string;
   onEvent?: (message: string, progress: number) => void;

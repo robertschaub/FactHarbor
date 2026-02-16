@@ -1,5 +1,6 @@
 import { runFactHarborAnalysis } from "@/lib/analyzer";
 import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
+import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { debugLog } from "@/lib/analyzer/debug";
 import { classifyError } from "@/lib/error-classification";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 
-type PipelineVariant = "orchestrated" | "monolithic_dynamic";
+type PipelineVariant = "claimboundary" | "orchestrated" | "monolithic_dynamic";
 
 type RunnerQueueState = {
   runningCount: number;
@@ -104,7 +105,7 @@ async function runJobBackground(jobId: string) {
     const job = await apiGet(apiBase, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
-    const pipelineVariant = (job.pipelineVariant || "orchestrated") as PipelineVariant;
+    const pipelineVariant = (job.pipelineVariant || "claimboundary") as PipelineVariant;
 
     await emit("info", `Preparing input (pipeline: ${pipelineVariant})`, 5);
 
@@ -112,7 +113,14 @@ async function runJobBackground(jobId: string) {
     let usedFallback = false;
     let fallbackReason: string | undefined;
 
-    if (pipelineVariant === "orchestrated") {
+    if (pipelineVariant === "claimboundary") {
+      result = await runClaimBoundaryAnalysis({
+        jobId,
+        inputType,
+        inputValue,
+        onEvent: async (m, p) => emit("info", m, p),
+      });
+    } else if (pipelineVariant === "orchestrated") {
       result = await runFactHarborAnalysis({
         jobId,
         inputType,
@@ -128,10 +136,10 @@ async function runJobBackground(jobId: string) {
           onEvent: async (m, p) => emit("info", m, p),
         });
       } catch (monolithicError: any) {
-        await emit("warn", `Monolithic dynamic failed, falling back to orchestrated: ${monolithicError?.message}`, 10);
+        await emit("warn", `Monolithic dynamic failed, falling back to claimboundary: ${monolithicError?.message}`, 10);
         usedFallback = true;
         fallbackReason = monolithicError?.message || "Unknown error";
-        result = await runFactHarborAnalysis({
+        result = await runClaimBoundaryAnalysis({
           jobId,
           inputType,
           inputValue,
@@ -139,8 +147,8 @@ async function runJobBackground(jobId: string) {
         });
       }
     } else {
-      await emit("warn", `Unknown pipeline variant '${pipelineVariant}', using orchestrated`, 5);
-      result = await runFactHarborAnalysis({
+      await emit("warn", `Unknown pipeline variant '${pipelineVariant}', using claimboundary`, 5);
+      result = await runClaimBoundaryAnalysis({
         jobId,
         inputType,
         inputValue,
