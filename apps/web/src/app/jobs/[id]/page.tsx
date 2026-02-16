@@ -23,6 +23,7 @@ import {
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 import { ClaimsGroupedByContext } from "./components/ClaimsGroupedByContext";
+import { BoundaryFindings } from "./components/BoundaryFindings";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { BackgroundBanner } from "./components/BackgroundBanner";
@@ -341,6 +342,13 @@ export default function JobPage() {
   const searchQueries = result?.searchQueries || [];
   const researchStats = result?.researchStats;
   const evidenceItems = result?.evidenceItems || [];
+
+  // ClaimBoundary schema detection (Phase 3)
+  const isCBSchema = result?._schemaVersion === "3.0.0-cb" ||
+                     result?.meta?.schemaVersion === "3.0.0-cb" ||
+                     result?.meta?.pipeline === "claimboundary";
+  const claimBoundaries = result?.claimBoundaries || [];
+
   // Pipeline: preserve what the job requested, but prefer the pipeline that actually executed.
   // This avoids schema/UI mismatches when monolithic pipelines fall back to orchestrated.
   const requestedPipelineVariant =
@@ -544,7 +552,12 @@ export default function JobPage() {
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
-              {hasMultipleContexts && <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>}
+              {isCBSchema && claimBoundaries.length > 2 && (
+                <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
+              )}
+              {!isCBSchema && hasMultipleContexts && (
+                <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>
+              )}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -696,18 +709,32 @@ export default function JobPage() {
                 <div className={styles.claimsSection}>
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
                   <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
-                  {hasMultipleContexts ? (
+                  {hasMultipleContexts && !isCBSchema ? (
+                    // Legacy AC schema with context grouping
                     <ClaimsGroupedByContext
                       claimVerdicts={claimVerdicts}
                       contexts={contexts}
                       tangentialClaims={tangentialSubClaims}
                       renderClaim={(claim, showCrossContext) => (
-                        <ClaimCard claim={claim} showCrossContext={showCrossContext} />
+                        <ClaimCard
+                          claim={claim}
+                          claimBoundaries={claimBoundaries}
+                          totalBoundaryCount={claimBoundaries.length}
+                          showCrossContext={showCrossContext}
+                        />
                       )}
                     />
                   ) : (
+                    // CB schema OR single-context AC (flat list)
                     <>
-                      {claimVerdicts.map((cv: any) => <ClaimCard key={cv.claimId} claim={cv} />)}
+                      {claimVerdicts.map((cv: any) => (
+                        <ClaimCard
+                          key={cv.claimId}
+                          claim={cv}
+                          claimBoundaries={claimBoundaries}
+                          totalBoundaryCount={claimBoundaries.length}
+                        />
+                      ))}
                       {tangentialSubClaims.length > 0 && (
                         <details className={styles.tangentialDetails}>
                           <summary className={styles.tangentialSummary}>
@@ -1577,7 +1604,17 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummar
   );
 }
 
-function ClaimCard({ claim, showCrossContext = false }: { claim: any; showCrossContext?: boolean }) {
+function ClaimCard({
+  claim,
+  claimBoundaries = [],
+  totalBoundaryCount = 0,
+  showCrossContext = false
+}: {
+  claim: any;
+  claimBoundaries?: any[];
+  totalBoundaryCount?: number;
+  showCrossContext?: boolean;
+}) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
   const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
@@ -1625,6 +1662,15 @@ function ClaimCard({ claim, showCrossContext = false }: { claim: any; showCrossC
         <div className={styles.claimEscalation}>
           ⚠️ {claim.escalationReason}
         </div>
+      )}
+
+      {/* ClaimBoundary pipeline: show boundary findings (Phase 3) */}
+      {claim.boundaryFindings && (
+        <BoundaryFindings
+          boundaryFindings={claim.boundaryFindings}
+          claimBoundaries={claimBoundaries}
+          totalBoundaryCount={totalBoundaryCount}
+        />
       )}
     </div>
   );
