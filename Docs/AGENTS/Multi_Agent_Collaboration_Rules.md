@@ -38,7 +38,7 @@ When a task specifies an **Area**, read the corresponding documents:
 | **Configuration** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Subsystems and Components/Unified Config Management/WebHome.xwiki`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
 | **Context-Detection** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Scope Definition Guidelines/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Context Detection/WebHome.xwiki` |
 | **Source-Reliability** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/WebHome.xwiki` |
-| **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki` |
+| **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`, `/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` **(ClaimBoundary — new pipeline replacing Orchestrated)** |
 | **UI** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/KeyFactors Design/WebHome.xwiki` |
 | **Testing** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/Promptfoo Testing/WebHome.xwiki` |
 | **Schema** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Schema Migration/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki` |
@@ -100,6 +100,7 @@ When activated in a role, use this table to identify which areas are within your
 | `/AGENTS.md` | Fundamental rules, architecture overview |
 | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System Design/WebHome.xwiki` | Current system architecture |
 | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki` | Pipeline architecture |
+| `/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture (replacing Orchestrated) |
 | `/Docs/STATUS/Current_Status.md` | Current state and known issues |
 
 **Key Source Files:**
@@ -141,6 +142,7 @@ When activated in a role, use this table to identify which areas are within your
 | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
 | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki` | Testing requirements |
 | `/Docs/STATUS/Current_Status.md` | Current state and known issues |
+| `/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture (replacing Orchestrated) |
 
 **Key Source Files:**
 - `apps/web/src/lib/analyzer/orchestrated.ts` — Main pipeline
@@ -179,6 +181,7 @@ When activated in a role, use this table to identify which areas are within your
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, key files, commands |
 | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
+| `/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture (replacing Orchestrated) |
 | Area-specific docs from §1.2 | Based on the task's area |
 
 **Key Source Files:**
@@ -266,8 +269,9 @@ When activated in a role, use this table to identify which areas are within your
 | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Prompt Engineering/Provider-Specific Formatting/WebHome.xwiki` | Provider-specific formatting |
 | `/Docs/ARCHITECTURE/Calculations.md` | Verdict calculations |
 | `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` | Evidence quality filtering |
-| `/Docs/WIP/Anti_Hallucination_Strategies.md` | Anti-hallucination risk matrix |
-| `/Docs/WIP/LLM_Prompt_Improvement_Plan.md` | Recent prompt improvements |
+| `/Docs/ARCHIVE/Anti_Hallucination_Strategies.md` | Anti-hallucination risk matrix |
+| `/Docs/ARCHIVE/LLM_Prompt_Improvement_Plan.md` | Recent prompt improvements |
+| `/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture — prompts (§8, §22.2), verdict stage (§8.4) |
 
 **Key Source Files:**
 - `apps/web/src/lib/analyzer/prompts/` — All prompt templates

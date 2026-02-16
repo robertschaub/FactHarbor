@@ -6,18 +6,22 @@ Project rules, terminology, and architecture: @AGENTS.md
 
 Two apps + one tool:
 - `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/orchestrated.ts`.
+- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts` [NEW], `src/lib/analyzer/verdict-stage.ts` [NEW], `src/lib/analyzer/orchestrated.ts` [BEING REPLACED].
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
 
 ## Primary data flow
 
 1. Client/UI -> API creates a job via `JobService` (`apps/api/Services/JobService.cs`).
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
-3. Runner fetches the job, calls `runFactHarborAnalysis`, writes progress/results back to API.
+3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimBoundary pipeline), writes progress/results back to API.
+
+> **Migration in progress:** The ClaimBoundary pipeline (`claimboundary-pipeline.ts`) replaces the Orchestrated pipeline (`orchestrated.ts`). New code should target ClaimBoundary. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 
-- **AnalysisContext** = Top-level analytical frame. NEVER call this "scope".
+- **AnalysisContext** = Top-level analytical frame. NEVER call this "scope". **Being replaced by ClaimBoundary — do not use in new code.**
+- **ClaimBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. Replaces AnalysisContext.
+- **AtomicClaim** = Single verifiable assertion extracted from user input. The new analytical unit.
 - **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
 - **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.
 - **No hardcoded keywords**: Code, prompts, and logic must be generic for ANY topic.

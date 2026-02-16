@@ -11,6 +11,14 @@
 
 This document provides the **authoritative glossary** for FactHarbor's terminology across all layers: TypeScript code, JSON schema, database storage, and LLM prompts. Use this as the single source of truth when encountering ambiguous terms.
 
+{{warning}}
+**Migration Notice (2026-02-16):** AnalysisContext is being replaced by the **ClaimBoundary** pipeline. See [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]].
+
+* **New code** must use ClaimBoundary, AtomicClaim, claimBoundaryId — not AnalysisContext, contextId, analysisContexts.
+* **Existing code** still uses AnalysisContext until the migration is complete (see CB_Execution_State.md for current phase).
+* This terminology page will be fully rewritten for ClaimBoundary in Phase 2 of the migration.
+{{/warning}}
+
 ----
 
 == Field Mapping Table (v3.1) ==
@@ -86,7 +94,11 @@ FactHarbor uses multiple "framing" concepts that work together hierarchically:
 
 == Core Concepts ==
 
-=== 1. AnalysisContext (Top-Level Analytical Frame) ===
+=== 1. AnalysisContext (Top-Level Analytical Frame) — CURRENT PIPELINE, BEING REPLACED ===
+
+{{info}}
+**DO NOT USE AnalysisContext in new code.** This concept is being replaced by **ClaimBoundary** (evidence-emergent grouping of compatible EvidenceScopes). See section 1b below for ClaimBoundary terminology. The AnalysisContext documentation below remains accurate for the //existing// pipeline until migration is complete.
+{{/info}}
 
 **What it is**: A bounded analytical frame that requires separate, independent analysis and verdict.
 
@@ -129,6 +141,33 @@ export interface AnalysisContext {
 **Common confusion**:
 * AnalysisContext is NOT the same as EvidenceScope (per-evidence metadata)
 * AnalysisContext is NOT the same as backgroundDetails (narrative background)
+
+----
+
+=== 1b. ClaimBoundary (Replaces AnalysisContext) — NEW PIPELINE ===
+
+{{info}}
+**Use this in all new code.** ClaimBoundary replaces AnalysisContext as the top-level grouping concept. Full architecture: [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]].
+{{/info}}
+
+**What it is**: An evidence-emergent grouping of compatible EvidenceScopes, created //after// research (not before). Claims are the analytical unit; boundaries organize evidence for per-claim verdict generation.
+
+**Key difference from AnalysisContext**: AnalysisContext was created //before// research (from user input). ClaimBoundary is created //after// research by clustering evidence with compatible EvidenceScopes. This eliminates the circular dependency that caused instability in Phases 1-9.
+
+**Related types**:
+* **AtomicClaim**: A single verifiable assertion extracted from user input. The analytical unit in the ClaimBoundary pipeline.
+* **ClaimBoundary**: A group of evidence items with compatible EvidenceScopes.
+* **BoundaryFinding**: Per-boundary evidence assessment for a specific claim.
+* **ClaimVerdict**: Verdict for a single AtomicClaim, including boundaryFindings[].
+
+**Variable names**: ##claimBoundary##, ##claimBoundaries##, ##claimBoundaryId##, ##atomicClaim##, ##atomicClaims##
+
+**NEVER use in new code**: ##contextId##, ##analysisContexts##, ##AnalysisContext##
+
+**Code files** (created in Phase 1):
+* ##claimboundary-pipeline.ts## — Main pipeline entry point
+* ##verdict-stage.ts## — 5-step verdict debate pattern
+* ##types.ts## — ClaimBoundary, AtomicClaim, BoundaryFinding, ClaimVerdict types
 
 ----
 
