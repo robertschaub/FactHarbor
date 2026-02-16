@@ -744,24 +744,390 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 ---
 
+---
+
+## Phase 5g: Comprehensive Documentation Updates
+
+**Role:** As Technical Writer or As Lead Architect
+**Prerequisite Reading:**
+- `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5g checklist
+- `Docs/WIP/CB_Execution_State.md` (final verification V-03 through V-08)
+- `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/STATUS/KNOWN_ISSUES.md`
+
+**Your Task:**
+
+Update all status, governance, and xWiki documentation to reflect ClaimBoundary pipeline v1.0 implementation completion.
+
+**Implementation Requirements:**
+
+1. **Status Documents (Docs/STATUS/):**
+   - Update `Current_Status.md`:
+     - Add "ClaimBoundary Pipeline v1.0" to "Recent Changes" section
+     - Update pipeline status from "in development" to "production-ready"
+     - Update version to v2.11.0
+   - Update `KNOWN_ISSUES.md`:
+     - Document any new issues discovered during Stage 1-5 implementation
+     - Close any issues that were resolved
+   - Update `Backlog.md`:
+     - Move "Implement ClaimBoundary pipeline" to "Recently Completed"
+     - Add deferred items: Gate 1 retry loop (§8.1.5), CLAIM_GROUPING (§18 Q1), advanced triangulation (§8.5.2), derivative detection (§8.5.3)
+
+2. **xWiki Pages:**
+   - Update `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`:
+     - Add implementation status section at top: "**Status:** IMPLEMENTED (v2.11.0, 2026-02-17)"
+     - Note which items are deferred to v1.1 (refer to Phase 5 "Deferred Items")
+   - Check if these xWiki pages need updates (read them first):
+     - `Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki` — add CB test coverage section if needed
+     - `Product Development/Diagrams/Pipeline Variant Dispatch/WebHome.xwiki` — ensure CB is shown as default
+     - `Product Development/Diagrams/System Architecture/WebHome.xwiki` — ensure orchestrated is removed
+
+3. **Governance Docs (AGENTS.md, CLAUDE.md):**
+   - **AGENTS.md** updates:
+     - Line ~109 (architecture diagram): Remove `orchestrated.ts` or change to `orchestrated.ts [REMOVED]`
+     - Line ~121 (Key Files table): Remove `orchestrated.ts [BEING REPLACED]` row
+     - Lines with `[NEW]` tags: Remove tags from `claimboundary-pipeline.ts` and `verdict-stage.ts` (they're production now)
+     - Lines 149-150, 161-162: Remove references to `test:contexts` and `test:adversarial` scripts/files
+     - Line 63: Fix parenthetical mention of AnalysisContexts in "Analysis Prompt Rules" section
+   - **CLAUDE.md** updates:
+     - Line ~9: Remove `orchestrated.ts [BEING REPLACED]` or change to `[REMOVED]`
+     - Line ~41: Remove references to deleted test scripts (`test:contexts`, `test:adversarial`)
+     - Update migration note to "Migration complete (2026-02-16), implementation complete (2026-02-17)"
+
+4. **Configuration (package.json):**
+   - Lines 18-19: Remove or update `test:contexts` and `test:adversarial` scripts
+   - If Phase 5h creates new neutrality/adversarial tests, point scripts to those
+   - If Phase 5h NOT done, remove scripts with comment: "// Removed: tests deleted in Phase 2a, CB neutrality tests TBD"
+
+**Verification Steps:**
+
+1. Read each file before editing to understand current content
+2. Make targeted edits (don't rewrite entire files)
+3. Run `npm run build` — must PASS
+4. Check all modified files for correctness (no broken links, correct line numbers)
+
+**Commit Message Format:**
+```
+docs(claimboundary): update all documentation for v1.0 completion
+
+Phase 5g: Comprehensive documentation updates post-implementation.
+- Status docs: Current_Status, Backlog, KNOWN_ISSUES updated
+- Governance: AGENTS.md and CLAUDE.md updated (removed [NEW] tags, fixed orchestrated refs)
+- xWiki: ClaimBoundary arch doc marked IMPLEMENTED
+- Config: package.json test scripts updated/removed
+
+Addresses V-03, V-04, V-05, V-06, V-07, V-08 from final verification.
+
+Co-Authored-By: Claude <model> <noreply@anthropic.com>
+```
+
+**Handover:** Update `CB_Execution_State.md` with Phase 5g entry.
+
+---
+
+## Phase 5h: Test Coverage Expansion (Optional but Recommended)
+
+**Role:** As Code Reviewer or As Senior Developer
+**Prerequisite Reading:**
+- `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5h checklist
+- `test/unit/lib/input-neutrality.test.ts` (deleted, but can reference from git history)
+- `test/unit/lib/analyzer/adversarial-context-leak.test.ts` (deleted, reference from history)
+
+**Your Task:**
+
+Create comprehensive test suite for ClaimBoundary pipeline: neutrality, performance, adversarial.
+
+**Implementation Requirements:**
+
+1. **Neutrality Tests (High Priority):**
+
+   Create `apps/web/test/unit/lib/analyzer/claimboundary-neutrality.test.ts`:
+
+   ```typescript
+   import { describe, test, expect } from "vitest";
+   import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+
+   describe("ClaimBoundary Pipeline - Input Neutrality Tests", () => {
+     const neutralityPairs = [
+       {
+         name: "fairness statement vs question",
+         statement: "The trial was conducted fairly",
+         question: "Was the trial conducted fairly?",
+         tolerance: 4, // ±4 percentage points
+       },
+       {
+         name: "event statement vs question",
+         statement: "The company announced layoffs",
+         question: "Did the company announce layoffs?",
+         tolerance: 4,
+       },
+       {
+         name: "existence statement vs question",
+         statement: "Climate change is real",
+         question: "Is climate change real?",
+         tolerance: 4,
+       },
+     ];
+
+     for (const pair of neutralityPairs) {
+       test.skip(`neutrality: ${pair.name}`, async () => {
+         const [resultStatement, resultQuestion] = await Promise.all([
+           runClaimBoundaryAnalysis({ inputType: "text", inputValue: pair.statement }),
+           runClaimBoundaryAnalysis({ inputType: "text", inputValue: pair.question }),
+         ]);
+
+         const truthDiff = Math.abs(
+           resultStatement.resultJson.truthPercentage - resultQuestion.resultJson.truthPercentage
+         );
+         const claimCountDiff = Math.abs(
+           resultStatement.resultJson.meta.claimCount - resultQuestion.resultJson.meta.claimCount
+         );
+         const boundaryCountDiff = Math.abs(
+           resultStatement.resultJson.claimBoundaries.length - resultQuestion.resultJson.claimBoundaries.length
+         );
+
+         expect(truthDiff).toBeLessThanOrEqual(pair.tolerance);
+         expect(claimCountDiff).toBeLessThanOrEqual(1);
+         expect(boundaryCountDiff).toBeLessThanOrEqual(1);
+       }, 120000); // 2min timeout per test
+     }
+   });
+   ```
+
+   Document estimated cost: $2-4 per pair, $8-16 total for 4 pairs.
+
+2. **Performance Benchmarks:**
+
+   Create `apps/web/test/unit/lib/analyzer/claimboundary-performance.test.ts`:
+
+   ```typescript
+   import { describe, test, expect } from "vitest";
+   import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+
+   describe("ClaimBoundary Pipeline - Performance Benchmarks", () => {
+     test.skip("simple input (1 claim): <60s, <$0.30", async () => {
+       const start = Date.now();
+       const result = await runClaimBoundaryAnalysis({
+         inputType: "text",
+         inputValue: "The Eiffel Tower is in Paris",
+       });
+       const elapsed = Date.now() - start;
+
+       expect(elapsed).toBeLessThan(60_000);
+       expect(result.resultJson.meta.claimCount).toBeLessThanOrEqual(2);
+       console.log(`Simple benchmark: ${elapsed}ms, ${result.resultJson.meta.claimCount} claims`);
+     }, 90000);
+
+     test.skip("medium input (3-5 claims): <120s, <$1.00", async () => {
+       const start = Date.now();
+       const result = await runClaimBoundaryAnalysis({
+         inputType: "text",
+         inputValue: "Brazil's economy grew 5% in 2020. The unemployment rate fell to 8%. Inflation remained under control at 3%.",
+       });
+       const elapsed = Date.now() - start;
+
+       expect(elapsed).toBeLessThan(120_000);
+       expect(result.resultJson.meta.claimCount).toBeGreaterThanOrEqual(3);
+       expect(result.resultJson.meta.claimCount).toBeLessThanOrEqual(5);
+       console.log(`Medium benchmark: ${elapsed}ms, ${result.resultJson.meta.claimCount} claims`);
+     }, 180000);
+   });
+   ```
+
+   Record baselines in `CB_Execution_State.md` or `KNOWN_ISSUES.md`.
+
+3. **Adversarial Tests:**
+
+   Create `apps/web/test/unit/lib/analyzer/claimboundary-adversarial.test.ts`:
+
+   ```typescript
+   import { describe, test, expect } from "vitest";
+   import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+
+   describe("ClaimBoundary Pipeline - Adversarial Tests", () => {
+     test.skip("opinion + fact mix: Gate 1 should filter opinion", async () => {
+       const result = await runClaimBoundaryAnalysis({
+         inputType: "text",
+         inputValue: "Electric cars are clearly the future. Tesla sold 500,000 vehicles in 2020.",
+       });
+
+       // Expect: opinion claim filtered at Gate 1, fact claim verified
+       const factClaims = result.resultJson.claimVerdicts.filter((v: any) =>
+         !v.atomicClaim.statement.includes("clearly") && !v.atomicClaim.statement.includes("future")
+       );
+       expect(factClaims.length).toBeGreaterThanOrEqual(1);
+     }, 120000);
+
+     test.skip("conflicting evidence: boundaries should separate", async () => {
+       const result = await runClaimBoundaryAnalysis({
+         inputType: "text",
+         inputValue: "Study A found X effective. Study B found X ineffective.",
+       });
+
+       // Expect: 2 boundaries (Study A vs Study B)
+       expect(result.resultJson.claimBoundaries.length).toBeGreaterThanOrEqual(2);
+     }, 120000);
+   });
+   ```
+
+4. **Test Coverage Report:**
+
+   Run coverage tool and document results:
+   ```bash
+   npx vitest run --coverage --include="**/claimboundary-pipeline.test.ts" --include="**/verdict-stage.test.ts"
+   ```
+
+   Document coverage percentage in `CB_Execution_State.md` or commit message.
+
+**Verification Steps:**
+
+1. Run `npm run build` — must PASS
+2. Run `npm test` — must PASS (new tests should be `.skip()`)
+3. Run one neutrality test manually to verify it works: `npx vitest run claimboundary-neutrality.test.ts --no-coverage`
+4. Document cost and results
+
+**Commit Message Format:**
+```
+test(claimboundary): add neutrality, performance, adversarial tests
+
+Phase 5h: Comprehensive test coverage expansion.
+- Neutrality tests: 3-4 pairs (statement vs question)
+- Performance benchmarks: simple, medium, complex inputs
+- Adversarial tests: opinion mix, conflicting evidence
+- All tests marked .skip() (expensive, use real LLM)
+
+Estimated cost per full run: $10-20
+
+Co-Authored-By: Claude <model> <noreply@anthropic.com>
+```
+
+**Handover:** Update `CB_Execution_State.md` with Phase 5h entry.
+
+---
+
+## Phase 5i: Final Cleanup (V-01 through V-09)
+
+**Role:** As Lead Architect or As Code Reviewer
+**Prerequisite Reading:**
+- `Docs/WIP/CB_Execution_State.md` lines 35-56 (Final Verification findings V-01 through V-09)
+- `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5i checklist
+
+**Your Task:**
+
+Resolve all 9 non-blocking items from final verification, ensuring zero AC references remain in active code.
+
+**Implementation Requirements:**
+
+1. **V-01: Remove vestigial contextId from AnalysisWarning**
+
+   In `apps/web/src/lib/analyzer/types.ts` line ~652:
+   ```typescript
+   export interface AnalysisWarning {
+     code: string;
+     severity: "warning" | "error";
+     message: string;
+     details?: {
+       contextId?: string;  // ← Remove this line
+       [key: string]: unknown;
+     };
+   }
+   ```
+
+2. **V-02: LEGACY page.tsx**
+
+   No action needed — backward compatibility for old job results is acceptable.
+
+3. **V-03 through V-08: Documentation updates**
+
+   These are covered in Phase 5g. Verify that Phase 5g was completed:
+   - AGENTS.md: orchestrated refs removed, [NEW] tags removed, deleted test refs removed
+   - CLAUDE.md: orchestrated refs removed, deleted test refs removed
+   - package.json: test:contexts/test:adversarial scripts removed or updated
+
+   If Phase 5g NOT done yet, do it now (refer to Phase 5g prompt above).
+
+4. **V-09: Fix or remove 8 skipped budget tests**
+
+   In `apps/web/test/unit/lib/analyzer/budgets.test.ts`:
+   - Read the file to see which 8 tests are skipped
+   - If they test deleted functions (e.g., `checkContextIterationBudget`, `recordIteration`), delete the tests
+   - If they test functions that still exist but have changed interfaces, update the tests
+   - Goal: 0 skipped tests in budgets.test.ts
+
+5. **Final Verification Commands:**
+
+   Run these commands and verify results:
+   ```bash
+   # Build verification
+   npm run build
+
+   # Test verification (should have 0 skipped tests, or document why)
+   npm test
+
+   # AC reference check (should return 0 active code hits)
+   grep -r "AnalysisContext" src/lib/analyzer/ | grep -v "\.test\." | grep -v "/\*" | grep -v "//"
+
+   # contextId reference check (should return 0 active code hits except LEGACY UI)
+   grep -r "contextId" src/lib/analyzer/ | grep -v "\.test\." | grep -v "/\*" | grep -v "//"
+   ```
+
+**Commit Message Format:**
+```
+refactor(claimboundary): final cleanup (V-01 through V-09)
+
+Phase 5i: Resolve all non-blocking verification items.
+- V-01: Remove contextId from AnalysisWarning.details
+- V-02: LEGACY page.tsx — no action (acceptable)
+- V-03-V-08: Documentation updates (completed in Phase 5g)
+- V-09: Fix/remove 8 skipped budget tests
+
+Build PASS | Tests PASS (0 skipped) | Zero AC refs in active code
+
+Co-Authored-By: Claude <model> <noreply@anthropic.com>
+```
+
+**Handover:** Update `CB_Execution_State.md`:
+- Change "Current Phase" to "PHASE 5 COMPLETE — CB Pipeline v1.0 Production-Ready"
+- Add entry to Handover Log for Phase 5i
+- Update "Last Updated" date to today
+
+---
+
 ## Final Checklist (Captain Review)
 
-After all phases 5a-5f complete, verify:
+After all phases 5a-5i complete, verify:
 
+**Core Implementation (Phases 5a-5e):**
 - [ ] All 5 stages implemented (no `throw new Error` stubs remain)
 - [ ] All unit tests PASS (100+ new tests)
 - [ ] Build PASS (`npm run build`)
 - [ ] Safe tests PASS (`npm test`)
-- [ ] At least 1 successful end-to-end analysis (manual or integration test)
+- [ ] At least 1 successful end-to-end analysis (manual or Phase 5f integration test)
 - [ ] `resultJson._schemaVersion === "3.0.0-cb"` validated
-- [ ] `CB_Execution_State.md` updated with all handover entries
-- [ ] Documentation updated: `Current_Status.md`, `KNOWN_ISSUES.md` (if applicable)
 
-**When all items checked:** ClaimBoundary pipeline v1.0 is **production-ready**.
+**Documentation (Phase 5g — REQUIRED):**
+- [ ] `Current_Status.md`, `KNOWN_ISSUES.md`, `Backlog.md` updated
+- [ ] xWiki pages updated (architecture status, diagrams)
+- [ ] AGENTS.md and CLAUDE.md updated (no [NEW] tags, no orchestrated refs)
+- [ ] package.json test scripts updated or removed
+
+**Testing (Phase 5h — optional but recommended):**
+- [ ] Neutrality tests created (or documented as deferred)
+- [ ] Performance benchmarks recorded (or documented as deferred)
+- [ ] Adversarial tests created (or documented as deferred)
+- [ ] Coverage report generated (or documented as deferred)
+
+**Cleanup (Phase 5i — REQUIRED):**
+- [ ] V-01 through V-09 resolved
+- [ ] Build PASS with 0 skipped tests (or skips documented)
+- [ ] `grep AnalysisContext/contextId` returns 0 active code hits
+- [ ] `CB_Execution_State.md` updated with Phase 5 COMPLETE
+
+**When all REQUIRED items checked:** ClaimBoundary pipeline v1.0 is **production-ready**.
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Created:** 2026-02-17
+**Updated:** 2026-02-17 (added Phases 5g-5i)
 **Author:** Lead Architect (Claude Opus 4.6)
 **Status:** Ready for execution

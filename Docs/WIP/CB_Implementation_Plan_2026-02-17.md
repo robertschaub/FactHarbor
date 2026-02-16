@@ -366,12 +366,176 @@ Attempting parallel implementation would require extensive mocking of data struc
 
 **Milestone:** Full pipeline functional, can run end-to-end analysis.
 
-### Week 2-3: Testing + Polish
+### Week 2-3: Testing, Documentation, Cleanup
 6. **Phase 5f** (Integration test) — Code Reviewer — 1 session (optional)
-7. **Documentation update** — Technical Writer — update Current_Status.md, KNOWN_ISSUES.md
-8. **Performance baseline** — Run on 5-10 real inputs, measure time/cost/quality
+7. **Phase 5g** (Documentation updates) — Technical Writer — 1-2 sessions (REQUIRED)
+8. **Phase 5h** (Test coverage expansion) — Code Reviewer — 1 session (optional but recommended)
+9. **Phase 5i** (Final cleanup V-01 through V-09) — Lead Architect — 1 session (REQUIRED)
+10. **Phase 5j** (MD status verification) — Lead Architect — 0 sessions (documentation only)
 
 **Final Milestone:** ClaimBoundary pipeline v1.0 production-ready.
+
+**Total Estimated Effort:** 10-15 agent sessions for core implementation (Phases 5a-5f), plus 2-4 sessions for polish (Phases 5g-5i). Total: 12-19 sessions (25-40 hours) over 2-3 weeks.
+
+---
+
+### Phase 5g: Comprehensive Documentation Updates
+
+**Owner:** Technical Writer or Lead Architect
+
+**Deliverables:**
+1. Update all status/tracking documents
+2. Update xWiki pages to reflect implementation status
+3. Update governance docs (AGENTS.md, CLAUDE.md)
+4. Address V-03 through V-08 non-blocking items from final verification
+
+**Documentation checklist:**
+
+**Status Documents (Docs/STATUS/):**
+- [ ] **Current_Status.md**: Add ClaimBoundary pipeline v1.0 to "Recent Changes", update pipeline status from "in development" to "production-ready", update version to v2.11.0
+- [ ] **KNOWN_ISSUES.md**: Document any new issues discovered during Stage 1-5 implementation
+- [ ] **Backlog.md**: Move "Implement ClaimBoundary pipeline" to "Recently Completed", add any deferred items from Phase 5 (e.g., Gate 1 retry loop, CLAIM_GROUPING, derivative detection)
+
+**xWiki Pages (Docs/xwiki-pages/FactHarbor/):**
+- [ ] **ClaimBoundary_Pipeline_Architecture** (Docs/WIP/): Add implementation status section at top: "Status: IMPLEMENTED (v2.11.0, 2026-02-17)", note which items are deferred to v1.1
+- [ ] **Testing Strategy** (Product Development/DevOps/Guidelines/): Add CB pipeline test coverage section (unit tests, integration tests, neutrality tests)
+- [ ] **Pipeline Variant Dispatch** (Product Development/Diagrams/): Update diagram to show CB as default (if not already done)
+- [ ] **System Architecture** (Product Development/Diagrams/): Update to remove orchestrated, show CB as primary
+
+**Governance Docs:**
+- [ ] **AGENTS.md**:
+  - Remove orchestrated.ts from architecture diagram (line 109) and Key Files table (line 121)
+  - Remove `[NEW]` tags from claimboundary-pipeline.ts and verdict-stage.ts (they're no longer new)
+  - Update orchestrated.ts line to "orchestrated.ts [REMOVED — replaced by ClaimBoundary]"
+  - Remove references to deleted test files (test:contexts, test:adversarial) — lines 149-150, 161-162
+  - Fix line 63 parenthetical mention of AnalysisContexts in Analysis Prompt Rules section
+- [ ] **CLAUDE.md**:
+  - Remove orchestrated.ts reference (line 9) or update to "[REMOVED]"
+  - Remove references to deleted test scripts (line 41)
+  - Update "Migration complete" note to include implementation completion date
+
+**Configuration:**
+- [ ] **package.json**: Remove or update test:contexts and test:adversarial scripts (lines 18-19, V-08) to point to new CB neutrality/adversarial tests (if implemented in Phase 5h)
+
+**Estimated effort:** 1-2 sessions (3-5 hours)
+
+---
+
+### Phase 5h: Test Coverage Expansion (Optional but Recommended)
+
+**Owner:** Code Reviewer or Senior Developer
+
+**Deliverables:**
+1. Neutrality tests for CB pipeline
+2. Performance benchmarks
+3. Adversarial input tests
+4. Test coverage report
+
+**Test expansion checklist:**
+
+**Neutrality Tests (High Priority):**
+- [ ] Create `claimboundary-neutrality.test.ts` (similar to deleted input-neutrality.test.ts)
+- [ ] Test pairs:
+  - "Was X fair?" vs "X was fair"
+  - "Did Y happen?" vs "Y happened"
+  - "Is Z true?" vs "Z is true"
+- [ ] Acceptance criteria: ≤4% variance in truthPercentage, same claim count (±1), same boundary count (±1)
+- [ ] Mark as `.skip()` (expensive, uses real LLM calls)
+- [ ] Document cost per run (estimate: $2-4 per pair)
+
+**Performance Benchmarks:**
+- [ ] Create `claimboundary-performance.test.ts`
+- [ ] Test scenarios:
+  - Simple (1 claim): <60s, <$0.30
+  - Medium (3-5 claims): <120s, <$1.00
+  - Complex (8+ claims): <180s, <$2.00
+- [ ] Record baselines for future regression testing
+- [ ] Mark as `.skip()` (expensive)
+
+**Adversarial Tests:**
+- [ ] Create `claimboundary-adversarial.test.ts` (similar to deleted adversarial-context-leak.test.ts)
+- [ ] Test scenarios:
+  - Opinion + fact mix: "X is clearly the best. Y sold 500k units."
+  - Conflicting evidence: "Study A says X. Study B contradicts X."
+  - Vague claims: "Some experts believe X."
+- [ ] Verify: Gate 1 filters opinion, boundaries separate conflicting evidence, vague claims flagged with low confidence
+- [ ] Mark as `.skip()` (expensive)
+
+**Test Coverage Report:**
+- [ ] Run coverage tool on claimboundary-pipeline.ts, verdict-stage.ts, and Stage 1-5 code
+- [ ] Target: ≥80% line coverage for Stage 1-5 functions
+- [ ] Document gaps and create follow-up tasks if coverage <80%
+
+**Estimated effort:** 1 session (3-4 hours) — neutrality tests are highest priority, others optional
+
+---
+
+### Phase 5i: Final Cleanup (Address V-01 through V-09)
+
+**Owner:** Lead Architect or Code Reviewer
+
+**Deliverables:**
+1. Resolve all 9 non-blocking items from final verification
+2. Final build + test verification
+3. Update CB_Execution_State.md to mark Phase 5 COMPLETE
+
+**Cleanup checklist:**
+
+**Code Cleanup:**
+- [ ] **V-01**: Remove `contextId?` field from `AnalysisWarning.details` (types.ts:652) — vestigial debug field
+- [ ] **V-02**: Keep LEGACY page.tsx code (acceptable backward compatibility for old job results)
+- [ ] **V-09**: Fix or remove 8 skipped budget tests (budgets.test.ts) — either update tests to use new budget tracking or delete if testing deleted functions
+
+**Documentation Cleanup (overlap with Phase 5g):**
+- [ ] **V-03**: Already covered in Phase 5g AGENTS.md updates
+- [ ] **V-04**: Already covered in Phase 5g CLAUDE.md updates
+- [ ] **V-05**: Already covered in Phase 5g AGENTS.md updates
+- [ ] **V-06**: Already covered in Phase 5g CLAUDE.md updates
+- [ ] **V-07**: Already covered in Phase 5g AGENTS.md updates
+- [ ] **V-08**: Already covered in Phase 5g package.json updates
+
+**Final Verification:**
+- [ ] Run `npm run build` — must PASS
+- [ ] Run `npm test` — must PASS with 0 skipped tests (or document why tests are intentionally skipped)
+- [ ] Run `grep -r "AnalysisContext" src/lib/analyzer/` — must return 0 active code hits
+- [ ] Run `grep -r "contextId" src/lib/analyzer/` — must return 0 active code hits (except LEGACY UI)
+
+**Estimated effort:** 1 session (2-3 hours)
+
+---
+
+### Phase 5j: Monolithic Dynamic Status Verification
+
+**Owner:** Lead Architect
+
+**Deliverables:**
+1. Explicit documentation that MD is complete and needs no changes
+
+**Status:**
+
+Monolithic Dynamic pipeline is **COMPLETE** — no changes needed beyond Phase 3b cleanup (already done).
+
+**Evidence:**
+- ✅ Phase 3b completed 2026-02-16 (see CB_Execution_State.md line 54)
+- ✅ MD prompt updated for CB terminology (AnalysisContext→ClaimBoundary, CTX_XXX→CB_XXX)
+- ✅ MD uses prompt-loader pattern (not prompt-builder) — no dead base prompt dependencies
+- ✅ Schema version "2.7.0" is MD's own schema (not CB "3.0.0-cb") — no schema changes needed
+- ✅ Source reliability integrated (v2.6.35)
+- ✅ No stubs or "not yet implemented" errors
+- ✅ All tests passing
+
+**Verification command:**
+```bash
+grep -n "throw new Error" apps/web/src/lib/analyzer/monolithic-dynamic.ts
+# Expected: Only standard error throws (fetch failures, validation errors)
+# Actual (confirmed): Lines 296, 504 — standard "Failed to fetch/generate" errors, NOT stubs
+```
+
+**Conclusion:** Monolithic Dynamic is production-ready. No implementation work required in Phase 5.
+
+**Documentation Note:** When updating architecture docs in Phase 5g, explicitly note that MD was updated in Phase 3b and requires no further changes for CB migration.
+
+**Estimated effort:** 0 sessions (verification only, no implementation)
 
 ---
 
@@ -396,14 +560,31 @@ Attempting parallel implementation would require extensive mocking of data struc
 
 ## Success Criteria
 
-### Phase 5 Complete When:
+### Phase 5 Core Implementation Complete When (Phases 5a-5e):
 1. ✅ All 5 stages implemented (no `throw new Error` stubs)
 2. ✅ All unit tests PASS (100+ new tests across 5 stages)
 3. ✅ Build PASS (`npm run build`)
 4. ✅ Safe tests PASS (`npm test`, no expensive LLM tests)
-5. ✅ At least 1 successful end-to-end analysis run (manual or integration test)
+5. ✅ At least 1 successful end-to-end analysis run (manual or integration test in Phase 5f)
 6. ✅ `resultJson._schemaVersion === "3.0.0-cb"` validated
-7. ✅ Documentation updated (CB_Execution_State.md, Current_Status.md)
+
+### Phase 5 Documentation Complete When (Phase 5g):
+1. ✅ Current_Status.md, KNOWN_ISSUES.md, Backlog.md updated
+2. ✅ xWiki pages updated (architecture status, diagrams)
+3. ✅ AGENTS.md and CLAUDE.md updated (remove [NEW] tags, fix orchestrated refs)
+4. ✅ package.json test scripts updated or removed
+
+### Phase 5 Testing Complete When (Phase 5h, optional):
+1. ✅ Neutrality tests created and passing (or documented cost/skipped)
+2. ✅ Performance benchmarks recorded
+3. ✅ Adversarial tests created (or deferred with justification)
+4. ✅ Coverage report generated (target: ≥80% for Stage 1-5 code)
+
+### Phase 5 Cleanup Complete When (Phase 5i):
+1. ✅ V-01 through V-09 resolved (contextId removed, skipped tests fixed, docs updated)
+2. ✅ Build PASS with 0 skipped tests (or skips documented)
+3. ✅ `grep AnalysisContext/contextId` returns 0 active code hits
+4. ✅ CB_Execution_State.md updated with Phase 5 COMPLETE
 
 ### Ready for Production When:
 1. ✅ All Phase 5 success criteria met
