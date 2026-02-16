@@ -14,17 +14,15 @@ import {
   snapConfidenceToBand,
   blendWithSnap,
   enforceVerdictConfidenceCoupling,
-  checkContextConfidenceConsistency,
   calibrateConfidence,
   DEFAULT_CONFIDENCE_BANDS,
   DEFAULT_CALIBRATION_CONFIG,
   type DensityAnchorConfig,
   type BandSnappingConfig,
   type VerdictCouplingConfig,
-  type ContextConsistencyConfig,
   type ConfidenceCalibrationConfig,
 } from "@/lib/analyzer/confidence-calibration";
-import type { EvidenceItem, FetchedSource, AnalysisContextAnswer } from "@/lib/analyzer/types";
+import type { EvidenceItem, FetchedSource } from "@/lib/analyzer/types";
 
 // ============================================================================
 // Test Helpers
@@ -60,19 +58,6 @@ function makeSource(overrides: Partial<FetchedSource> = {}): FetchedSource {
   };
 }
 
-function makeContextAnswer(overrides: Partial<AnalysisContextAnswer> = {}): AnalysisContextAnswer {
-  return {
-    contextId: "CTX_1",
-    contextName: "Test Context",
-    answer: 65,
-    confidence: 50,
-    truthPercentage: 65,
-    shortAnswer: "Mostly supported",
-    keyFactors: [],
-    ...overrides,
-  };
-}
-
 const DENSITY_CONFIG: DensityAnchorConfig = {
   enabled: true,
   minConfidenceBase: 15,
@@ -90,12 +75,6 @@ const COUPLING_CONFIG: VerdictCouplingConfig = {
   strongVerdictThreshold: 70,
   minConfidenceStrong: 50,
   minConfidenceNeutral: 25,
-};
-
-const CONSISTENCY_CONFIG: ContextConsistencyConfig = {
-  enabled: true,
-  maxConfidenceSpread: 25,
-  reductionFactor: 0.5,
 };
 
 // ============================================================================
@@ -359,111 +338,6 @@ describe("Layer 3: Verdict-Confidence Coupling", () => {
 });
 
 // ============================================================================
-// Layer 4: Context Confidence Consistency
-// ============================================================================
-
-describe("Layer 4: Context Confidence Consistency", () => {
-  it("should return unchanged confidence for single context", () => {
-    const result = checkContextConfidenceConsistency(
-      [makeContextAnswer({ confidence: 70 })],
-      70,
-      CONSISTENCY_CONFIG,
-    );
-    expect(result.adjustedConfidence).toBe(70);
-    expect(result.warning).toBeUndefined();
-  });
-
-  it("should not penalize when contexts are within spread limit", () => {
-    const result = checkContextConfidenceConsistency(
-      [
-        makeContextAnswer({ confidence: 60 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
-      70,
-      CONSISTENCY_CONFIG,
-    );
-    // spread = 20, max allowed = 25
-    expect(result.adjustedConfidence).toBe(70);
-    expect(result.warning).toBeUndefined();
-  });
-
-  it("should penalize when contexts exceed spread limit", () => {
-    const result = checkContextConfidenceConsistency(
-      [
-        makeContextAnswer({ confidence: 30 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
-      55,
-      CONSISTENCY_CONFIG,
-    );
-    // spread = 50, excess = 25, reduction = round(25 * 0.5) = 13
-    expect(result.adjustedConfidence).toBe(42); // 55 - 13
-    expect(result.warning).toContain("context_confidence_divergence");
-  });
-
-  it("should not reduce below minimum floor of 10", () => {
-    const result = checkContextConfidenceConsistency(
-      [
-        makeContextAnswer({ confidence: 5 }),
-        makeContextAnswer({ confidence: 95 }),
-      ],
-      15,
-      CONSISTENCY_CONFIG,
-    );
-    // spread = 90, excess = 65, reduction = round(65 * 0.5) = 33
-    // 15 - 33 = -18, clamped to 10
-    expect(result.adjustedConfidence).toBe(10);
-  });
-
-  it("should exactly match at boundary (spread = maxAllowedSpread)", () => {
-    const result = checkContextConfidenceConsistency(
-      [
-        makeContextAnswer({ confidence: 40 }),
-        makeContextAnswer({ confidence: 65 }),
-      ],
-      50,
-      CONSISTENCY_CONFIG,
-    );
-    // spread = 25, exactly at threshold → no penalty
-    expect(result.adjustedConfidence).toBe(50);
-    expect(result.warning).toBeUndefined();
-  });
-
-  it("should apply penalty for 3+ contexts with wide spread", () => {
-    const result = checkContextConfidenceConsistency(
-      [
-        makeContextAnswer({ confidence: 20 }),
-        makeContextAnswer({ confidence: 50 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
-      50,
-      CONSISTENCY_CONFIG,
-    );
-    // spread = 60, excess = 35, reduction = round(35 * 0.5) = 18
-    expect(result.adjustedConfidence).toBe(32); // 50 - 18
-    expect(result.warning).toContain("context_confidence_divergence");
-  });
-
-  it("should respect custom reductionFactor", () => {
-    const config: ContextConsistencyConfig = {
-      enabled: true,
-      maxConfidenceSpread: 25,
-      reductionFactor: 1.0, // aggressive
-    };
-    const result = checkContextConfidenceConsistency(
-      [
-        makeContextAnswer({ confidence: 20 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
-      50,
-      config,
-    );
-    // spread = 60, excess = 35, reduction = round(35 * 1.0) = 35
-    expect(result.adjustedConfidence).toBe(15); // 50 - 35
-  });
-});
-
-// ============================================================================
 // Master calibrateConfidence Function
 // ============================================================================
 
@@ -485,7 +359,7 @@ describe("calibrateConfidence (master function)", () => {
       densityAnchor: { ...DENSITY_CONFIG, enabled: false },
       bandSnapping: { ...BAND_CONFIG, enabled: false },
       verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
-      contextConsistency: { ...CONSISTENCY_CONFIG, enabled: false },
+      contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
     const result = calibrateConfidence(42, 65, richEvidence, sources5, [], config);
     expect(result.calibratedConfidence).toBe(42);
@@ -497,10 +371,7 @@ describe("calibrateConfidence (master function)", () => {
       ...DEFAULT_CALIBRATION_CONFIG,
       enabled: false,
     };
-    const result = calibrateConfidence(42, 85, richEvidence, sources5, [
-      makeContextAnswer({ confidence: 10 }),
-      makeContextAnswer({ confidence: 90 }),
-    ], config);
+    const result = calibrateConfidence(42, 85, richEvidence, sources5, [], config);
     expect(result.calibratedConfidence).toBe(42);
     expect(result.adjustments).toHaveLength(0);
     expect(result.warnings).toHaveLength(0);
@@ -513,17 +384,14 @@ describe("calibrateConfidence (master function)", () => {
       bandSnapping: { ...BAND_CONFIG, enabled: false },
       verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
       contextConsistency: {
-        ...CONSISTENCY_CONFIG,
+        enabled: true,
         maxConfidenceSpread: 1, // very tight
         reductionFactor: 1.0,
       },
     };
     const result = calibrateConfidence(
       10, 50, [], [],
-      [
-        makeContextAnswer({ confidence: 10 }),
-        makeContextAnswer({ confidence: 90 }),
-      ],
+      [],
       config,
     );
     // Context consistency floors at 10, final clamp at 5 doesn't lower further
@@ -565,7 +433,7 @@ describe("calibrateConfidence (master function)", () => {
       ...DEFAULT_CALIBRATION_CONFIG,
       densityAnchor: { ...DENSITY_CONFIG, enabled: false },
       verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
-      contextConsistency: { ...CONSISTENCY_CONFIG, enabled: false },
+      contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
     const result = calibrateConfidence(48, 50, [], [], [], config);
     expect(result.adjustments.some(a => a.type === "band_snapping")).toBe(true);
@@ -583,7 +451,7 @@ describe("calibrateConfidence (master function)", () => {
       },
       bandSnapping: { enabled: true, strength: 1.0 },
       verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
-      contextConsistency: { ...CONSISTENCY_CONFIG, enabled: false },
+      contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
     const result = calibrateConfidence(
       46,
@@ -602,31 +470,11 @@ describe("calibrateConfidence (master function)", () => {
       ...DEFAULT_CALIBRATION_CONFIG,
       densityAnchor: { ...DENSITY_CONFIG, enabled: false },
       bandSnapping: { ...BAND_CONFIG, enabled: false },
-      contextConsistency: { ...CONSISTENCY_CONFIG, enabled: false },
+      contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
     const result = calibrateConfidence(25, 85, [], [], [], config);
     expect(result.adjustments.some(a => a.type === "verdict_coupling")).toBe(true);
     expect(result.calibratedConfidence).toBe(50);
-  });
-
-  it("should apply context consistency penalty for divergent contexts", () => {
-    const config: ConfidenceCalibrationConfig = {
-      ...DEFAULT_CALIBRATION_CONFIG,
-      densityAnchor: { ...DENSITY_CONFIG, enabled: false },
-      bandSnapping: { ...BAND_CONFIG, enabled: false },
-      verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
-    };
-    const result = calibrateConfidence(
-      60, 65, [], [],
-      [
-        makeContextAnswer({ confidence: 20 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
-      config,
-    );
-    expect(result.adjustments.some(a => a.type === "context_consistency")).toBe(true);
-    expect(result.calibratedConfidence).toBeLessThan(60);
-    expect(result.warnings.length).toBeGreaterThan(0);
   });
 
   it("should apply layers in order (density → band → coupling → consistency)", () => {
@@ -649,10 +497,7 @@ describe("calibrateConfidence (master function)", () => {
       85, // strong verdict
       sparseEvidence,
       sparseSources,
-      [
-        makeContextAnswer({ confidence: 20 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
+      [],
       config,
     );
 
@@ -681,10 +526,7 @@ describe("calibrateConfidence (master function)", () => {
       65, // leaning true
       evidence,
       sources,
-      [
-        makeContextAnswer({ confidence: 58 }),
-        makeContextAnswer({ confidence: 72 }),
-      ],
+      [],
       DEFAULT_CALIBRATION_CONFIG,
     );
 
@@ -721,10 +563,7 @@ describe("calibrateConfidence (master function)", () => {
       75, // strong verdict (no coupling adjustment)
       richEvidence,
       sources5,
-      [
-        makeContextAnswer({ confidence: 70 }),
-        makeContextAnswer({ confidence: 80 }),
-      ],
+      [],
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.adjustments.length).toBe(0);

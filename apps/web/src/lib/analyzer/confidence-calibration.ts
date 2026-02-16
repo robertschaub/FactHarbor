@@ -309,7 +309,7 @@ export function checkContextConfidenceConsistency(
  * @param verdict - Truth percentage (0-100)
  * @param evidenceItems - All evidence items for this analysis
  * @param sources - All fetched sources
- * @param contextAnswers - Per-context verdict answers (for consistency check)
+ * @param contextAnswers - Per-context verdict answers (for consistency check). Optional - Layer 4 is skipped if not provided or if < 2 contexts.
  * @param config - Calibration configuration
  * @returns CalibrationResult with calibrated confidence, adjustments log, and warnings
  */
@@ -318,7 +318,7 @@ export function calibrateConfidence(
   verdict: number,
   evidenceItems: EvidenceItem[],
   sources: FetchedSource[],
-  contextAnswers: AnalysisContextAnswer[],
+  contextAnswers: AnalysisContextAnswer[] = [],
   config: ConfidenceCalibrationConfig,
 ): CalibrationResult {
   const normalizedRawConfidence = Number.isFinite(rawConfidence)
