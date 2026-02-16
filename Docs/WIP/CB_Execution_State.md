@@ -7,19 +7,21 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Step 0 COMPLETE — ready for Captain to tag and start Phase 1 |
-| **Last Completed Tag** | `pre-claimboundary-redesign` (awaiting `cb-step0-rules-audit` tag from Captain) |
-| **Next Action** | Captain: review changes, tag `cb-step0-rules-audit`, then launch Phase 1a |
+| **Current Phase** | Phase 1a COMPLETE — CB types + pipeline skeleton |
+| **Last Completed Tag** | `cb-step0-rules-audit` |
+| **Next Action** | Captain: review Phase 1a, then launch Phase 1b (verdict-stage module) |
 | **Blocking Issues** | None |
 | **Last Updated** | 2026-02-16 |
-| **Last Updated By** | Lead Architect (Step 0 execution) |
+| **Last Updated By** | Senior Developer (Phase 1a execution) |
 
 ## Phase Checklist
 
 | Phase | Status | Tag | Notes |
 |-------|--------|-----|-------|
 | Step 0: Rules Audit | ✅ Complete | `cb-step0-rules-audit` | All governance docs updated. Awaiting Captain tag. |
-| Phase 1: Pipeline + Types | ⬜ Not started | `cb-phase1-pipeline` | |
+| Phase 1a: Types + Skeleton | ✅ Complete | `cb-phase1-pipeline` | CB types + pipeline skeleton + coverage matrix + tests |
+| Phase 1b: Verdict Stage | ⬜ Not started | `cb-phase1-pipeline` | |
+| Phase 1c: Prompts | ⬜ Not started | `cb-phase1-pipeline` | |
 | Phase 2: Cutover | ⬜ Not started | `cb-phase2-cutover` | |
 | Phase 2a: Delete orchestrated | ⬜ Not started | `cb-phase2a-orchestrated-deleted` | |
 | Phase 2b: Delete prompts | ⬜ Not started | `cb-phase2b-prompts-cleaned` | |
@@ -36,6 +38,7 @@ Each agent writes a short entry here when completing a session.
 |------|-----------|-------|---------|---------------|-------------|
 | 2026-02-16 | Lead Architect | Planning | Architecture doc complete. All 10 open questions resolved. Migration strategy with incremental cleanup, commit/tag plan, agent team plan, confusion prevention rules. | `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` | None |
 | 2026-02-16 | Lead Architect | Step 0 | Governance docs updated for CB pipeline. AGENTS.md: added ClaimBoundary/AtomicClaim to terminology, added new pipeline files to Key Files, marked orchestrated.ts as BEING REPLACED. CLAUDE.md: updated data flow + key files. Multi_Agent_Collaboration_Rules.md: added CB arch doc to Pipeline area mapping + reading lists for Lead Architect, Lead Developer, Senior Developer, LLM Expert. xWiki Terminology: added migration warning, annotated AC section as "being replaced", added section 1b for ClaimBoundary terminology. | `AGENTS.md`, `CLAUDE.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `Docs/xwiki-pages/.../Terminology/WebHome.xwiki`, `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-16 | Senior Developer | Phase 1a | CB types added to types.ts (AtomicClaim, ClaimBoundary, BoundaryFinding, CBClaimVerdict, CoverageMatrix, VerdictNarrative, + supporting types). Pipeline skeleton created with 5 stage functions + main entry point. Coverage matrix fully implemented (deterministic). Test file with 24+ tests (type validity, coverage matrix, stage existence). Build + tests pass (48 files, 873 tests). | `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/CB_Execution_State.md` | None |
 
 ## Quick Reference for Agents
 
