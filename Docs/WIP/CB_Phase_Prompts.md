@@ -603,7 +603,7 @@ Commit: docs(claimboundary): final governance doc update — migration complete
 Run: npm run build && npm test — MUST PASS
 
 Update CB_Execution_State.md: mark Phase 4 complete. Set Current Phase to
-"MIGRATION COMPLETE — ClaimBoundary pipeline is the sole active pipeline."
+"AC MIGRATION COMPLETE — All AnalysisContext code removed. ClaimBoundary is the default pipeline; Monolithic Dynamic remains as alternative variant."
 
 ## ACCEPTANCE CRITERIA
 - npm run build passes after EVERY step

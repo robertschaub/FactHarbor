@@ -7,7 +7,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | **MIGRATION COMPLETE** — Phase 4 done (final AC sweep). All AnalysisContext code removed. ClaimBoundary is the only analysis pipeline. |
+| **Current Phase** | **AC MIGRATION COMPLETE** — Phase 4 done (final AC sweep). All AnalysisContext code removed. ClaimBoundary is the default pipeline; Monolithic Dynamic remains as alternative variant. |
 | **Last Completed Tag** | `cb-phase2-cutover` (tags cb-phase2a/2b/2c/phase3/phase3b/phase4 pending from Captain) |
 | **Next Action** | Captain: tag all pending phases, close ClaimBoundary migration milestone |
 | **Blocking Issues** | None. |
