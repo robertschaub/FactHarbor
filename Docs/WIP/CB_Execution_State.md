@@ -7,12 +7,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 2a COMPLETE — Orchestrated pipeline deleted, AC config removed, AC tests removed. Ready for Captain to tag `cb-phase2a-orchestrated-deleted`. |
-| **Last Completed Tag** | `cb-phase2-cutover` |
-| **Next Action** | Phase 2a cleanup steps complete. Captain can proceed with remaining Phase 2 cleanup (2b: prompts dedup if needed, 2c: docs update) or move to Phase 3 (UI). |
+| **Current Phase** | Phase 2 COMPLETE (all sub-phases + docs). Ready for Phase 3 (UI) and Phase 3b (MD prompt cleanup). |
+| **Last Completed Tag** | `cb-phase2-cutover` (tags cb-phase2a/2b/2c pending from Captain) |
+| **Next Action** | Captain: tag Phase 2a-2c, merge Phase 2 docs from worktree (commit d2d4463), then launch Phase 3 and/or Phase 3b |
 | **Blocking Issues** | None. |
 | **Last Updated** | 2026-02-16 |
-| **Last Updated By** | Senior Developer (Phase 2a orchestrated deletion) |
+| **Last Updated By** | Technical Writer (Phase 2 docs complete) |
 
 ## Phase Checklist
 
@@ -25,8 +25,9 @@
 | Phase 1 Review | ✅ Fixes Applied | — | F-01, F-02, F-03, F-04 fixed. F-05 (aggregation gaps) deferred to Stage 5 implementation. |
 | Phase 2: Cutover | ✅ Complete | `cb-phase2-cutover` | ClaimBoundary wired as default, new resultJson schema (3.0.0-cb) |
 | Phase 2a: Delete orchestrated | ✅ Complete | `cb-phase2a-orchestrated-deleted` | ~18,400 lines deleted across 4 commits: orchestrated.ts, AC config, AC prompts, AC tests |
-| Phase 2b: Delete prompts | ⬜ Not started | `cb-phase2b-prompts-cleaned` | |
-| Phase 2c: Clean config + docs | ⬜ Not started | `cb-phase2c-config-cleaned` | |
+| Phase 2b: Delete prompts | ✅ Complete (folded into 2a) | `cb-phase2b-prompts-cleaned` | Orchestrated prompt files deleted in Phase 2a Step 2 |
+| Phase 2c: Clean config + docs | ✅ Complete (folded into 2a) | `cb-phase2c-config-cleaned` | AC config fields removed in Phase 2a Step 3. Docs running on worktree. |
+| Phase 2 Docs: xWiki Rewrites | ✅ Complete (on worktree) | — | 5 xWiki pages rewritten (183 AC refs → 44, 76% reduction). Worktree commit d2d4463, ready to merge. |
 | Phase 3: UI | ⬜ Not started | `cb-phase3-ui` | |
 | Phase 3b: Monolithic Dynamic | ⬜ Not started | `cb-phase3b-monolithic` | |
 | Phase 4: Final sweep | ⬜ Not started | `cb-phase4-ac-removed` | |
@@ -46,6 +47,8 @@ Each agent writes a short entry here when completing a session.
 | 2026-02-16 | Code Reviewer | Phase 1 Review | **APPROVE WITH CONDITIONS.** 50 tests reviewed (21 pipeline + 29 verdict-stage). Types match §9.1. Terminology clean (no AC/contextId). No forbidden imports. 8 prompts AGENTS.md-compliant (no hardcoded keywords, multilingual, generic examples). Spread multiplier matches §8.5.5. **3 blocking issues:** F-01: VERDICT_GROUNDING_VALIDATION and VERDICT_DIRECTION_VALIDATION prompt sections missing from claimboundary.prompt.md (verdict-stage.ts lines 424, 435 reference them). F-03: `stable` field in selfConsistencyCheck uses `moderateThreshold` (12pp) instead of `stableThreshold` (5pp) — line 305. F-04: `mixedConfidenceThreshold` from VerdictStageConfig (40) never passed to `percentageToClaimVerdict()` — 3 call sites fall back to truth-scale.ts default of 60, mismatching §8.5.5 spec (40). **2 non-blocking:** F-02: `PromptFrontmatterSchema` z.enum missing "claimboundary" (config-schemas.ts line 1122). F-05: aggregation.ts missing triangulationFactor/derivativeFactor and harm multipliers don't match §8.5.4 4-level spec — to be fixed when Stage 5 is implemented. | (read-only review) | F-01, F-02, F-03, F-04, F-05 |
 | 2026-02-16 | Senior Developer | Phase 2: Route Wiring | **ClaimBoundary pipeline wired as default route.** Added "claimboundary" to PipelineVariant type, updated internal-runner-queue to call `runClaimBoundaryAnalysis` as default (orchestrated becomes fallback). Added `jobId?` to AnalysisInput type (used by all pipelines for debug logging). Updated CB pipeline return type to `{resultJson, reportMarkdown}` structure matching orchestrated schema. Defined new resultJson schema (version 3.0.0-cb) with claimBoundaries/claimVerdicts/coverageMatrix, no AnalysisContext references. Fallback changed: Monolithic Dynamic now falls back to ClaimBoundary (not orchestrated). Build PASS. ClaimBoundary tests PASS (24), Aggregation tests PASS (13). (Note: `npm test` runner fails with "No test suite found" for all files when run together — pre-existing vitest/Windows path issue confirmed on previous commit; individual test files pass successfully.) | `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `Docs/WIP/CB_Execution_State.md` | None |
 | 2026-02-16 | Senior Developer | Phase 2a: Delete orchestrated | **Orchestrated pipeline completely removed in 4 commits (~18,400 lines deleted).** Step 1: Deleted orchestrated.ts (13600 lines), analysis-contexts.ts (564 lines), evidence-context-utils.ts (86 lines), + 4 AC test files. Fixed imports in analyzer.ts, index.ts, internal-runner-queue.ts. Step 2: Deleted orchestrated prompt files (orchestrated.prompt.md 62KB, orchestrated-compact.prompt.md 9KB, + 3 base prompt files 33KB). Removed orchestrated task types from prompt-builder.ts, removed "orchestrated" from VALID_PROMPT_PROFILES. Step 3: Removed 14 AC config fields from config-schemas.ts (contextDedupThreshold, contextDetection*, contextPrompt*, evidenceScope*, contextNameAlignment*), removed contextDedupThreshold accessor from analyzer/config.ts, removed AC validation warning, removed UI form group. Step 4: Deleted context-preservation.test.ts (19KB) and adversarial-context-leak.test.ts (17KB). Made confidence-calibration contextAnswers parameter optional, removed 7 AC tests from confidence-calibration.test.ts (52 tests remain). All builds + individual tests PASS at each commit. | 11 files deleted, 8 files modified, ~18,400 lines removed | None |
+| 2026-02-16 | Lead Architect | Phase 3-4 Planning | Full codebase audit of remaining AC references: 20 files, ~159 refs. Key finding: monolithic-dynamic.ts has ZERO AC refs — it uses prompt-loader (not prompt-builder base prompts). The 5 base prompt files (53 AC refs) and 3 provider adapters (51 AC refs) are likely dead code after orchestrated.ts deletion. Wrote detailed prompts for Phase 3 (UI), Phase 3b (MD prompt cleanup — Approach A: delete dead prompt code), Phase 4 (final sweep + verification). Updated CB_Execution_State to mark 2b/2c as complete (folded into 2a). Updated CB_Phase_Prompts.md with full prompts for all remaining phases. | `Docs/WIP/CB_Phase_Prompts.md`, `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-16 | Technical Writer | Phase 2 Docs | **Phase 2 documentation complete on worktree.** Rewrote 5 xWiki pages from AnalysisContext to ClaimBoundary: Terminology (v4.0.0-cb), Scope Definition Guidelines (v3.0.0-cb), Context Detection → Boundary Clustering, Decision Tree → Boundary Clustering Decision Flow, Phases → ClaimBoundary Pipeline Stages. Metrics: 183 AC refs → 44 (76% reduction), 1,931 lines total. Updated Current_Status.md (marked Phase 1/2/2a/2 docs complete) and Backlog.md (moved 5 items to Recently Completed). All changes comply with AGENTS.md generic examples policy. Committed to worktree (d2d4463). Ready for Captain to merge worktree to main. | Worktree: 5 xWiki pages, `Current_Status.md`, `Backlog.md`; Main: `CB_Execution_State.md` | None |
 
 ## Quick Reference for Agents
 
