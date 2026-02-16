@@ -66,8 +66,7 @@ These rules apply specifically to the LLM prompts used in the analysis pipeline 
 
 | Term | Meaning | Variable names | NEVER call it |
 |------|---------|---------------|---------------|
-| **AnalysisContext** | Top-level analytical frame requiring separate analysis. **Being replaced by ClaimBoundary pipeline — do not use in new code.** | `context`, `analysisContext` | "scope" |
-| **ClaimBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. Replaces AnalysisContext. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
+| **ClaimBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
 | **AtomicClaim** | Single verifiable assertion extracted from user input. The analytical unit in the ClaimBoundary pipeline. | `atomicClaim`, `atomicClaims` | "context", "fact" |
 | **EvidenceScope** | Per-evidence source metadata (methodology, temporal bounds) | `evidenceScope` | "context" |
 | **EvidenceItem** | Extracted evidence from a source (NOT a verified fact) | — | "fact" (in new code) |
