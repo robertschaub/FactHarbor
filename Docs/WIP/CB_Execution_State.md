@@ -7,12 +7,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 2 COMPLETE — ClaimBoundary pipeline wired as default route. Ready for Captain to tag `cb-phase2-cutover`. |
-| **Last Completed Tag** | `cb-phase1-pipeline` |
-| **Next Action** | Captain: tag `cb-phase2-cutover`, then launch Phase 2a (delete orchestrated.ts). |
+| **Current Phase** | Phase 2a COMPLETE — Orchestrated pipeline deleted, AC config removed, AC tests removed. Ready for Captain to tag `cb-phase2a-orchestrated-deleted`. |
+| **Last Completed Tag** | `cb-phase2-cutover` |
+| **Next Action** | Phase 2a cleanup steps complete. Captain can proceed with remaining Phase 2 cleanup (2b: prompts dedup if needed, 2c: docs update) or move to Phase 3 (UI). |
 | **Blocking Issues** | None. |
 | **Last Updated** | 2026-02-16 |
-| **Last Updated By** | Senior Developer (Phase 2 route wiring) |
+| **Last Updated By** | Senior Developer (Phase 2a orchestrated deletion) |
 
 ## Phase Checklist
 
@@ -24,7 +24,7 @@
 | Phase 1c: Prompts | ✅ Complete | `cb-phase1-pipeline` | 8 UCM-managed prompts in claimboundary.prompt.md, registered in config-storage + config-schemas |
 | Phase 1 Review | ✅ Fixes Applied | — | F-01, F-02, F-03, F-04 fixed. F-05 (aggregation gaps) deferred to Stage 5 implementation. |
 | Phase 2: Cutover | ✅ Complete | `cb-phase2-cutover` | ClaimBoundary wired as default, new resultJson schema (3.0.0-cb) |
-| Phase 2a: Delete orchestrated | ⬜ Not started | `cb-phase2a-orchestrated-deleted` | |
+| Phase 2a: Delete orchestrated | ✅ Complete | `cb-phase2a-orchestrated-deleted` | ~18,400 lines deleted across 4 commits: orchestrated.ts, AC config, AC prompts, AC tests |
 | Phase 2b: Delete prompts | ⬜ Not started | `cb-phase2b-prompts-cleaned` | |
 | Phase 2c: Clean config + docs | ⬜ Not started | `cb-phase2c-config-cleaned` | |
 | Phase 3: UI | ⬜ Not started | `cb-phase3-ui` | |
@@ -45,6 +45,7 @@ Each agent writes a short entry here when completing a session.
 | 2026-02-16 | Senior Developer | Phase 1 Review Fixes | Fixed all 3 blocking + 1 non-blocking review issues. **F-03:** `stable` in selfConsistencyCheck now uses `stableThreshold` (5pp) instead of `moderateThreshold` (12pp). **F-04:** `mixedConfidenceThreshold` from VerdictStageConfig (default 40) now threaded through to all 3 `percentageToClaimVerdict()` call sites via config parameter on `advocateVerdict`, `reconcileVerdicts`, and `runStructuralConsistencyCheck`. **F-01:** Added VERDICT_GROUNDING_VALIDATION and VERDICT_DIRECTION_VALIDATION prompt sections to claimboundary.prompt.md + requiredSections. **F-02:** Added "claimboundary" to `PromptFrontmatterSchema` z.enum in config-schemas.ts. Build + tests pass (49 files, 902 tests). | `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/config-schemas.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/WIP/CB_Execution_State.md` | F-05 deferred (aggregation gaps for Stage 5) |
 | 2026-02-16 | Code Reviewer | Phase 1 Review | **APPROVE WITH CONDITIONS.** 50 tests reviewed (21 pipeline + 29 verdict-stage). Types match §9.1. Terminology clean (no AC/contextId). No forbidden imports. 8 prompts AGENTS.md-compliant (no hardcoded keywords, multilingual, generic examples). Spread multiplier matches §8.5.5. **3 blocking issues:** F-01: VERDICT_GROUNDING_VALIDATION and VERDICT_DIRECTION_VALIDATION prompt sections missing from claimboundary.prompt.md (verdict-stage.ts lines 424, 435 reference them). F-03: `stable` field in selfConsistencyCheck uses `moderateThreshold` (12pp) instead of `stableThreshold` (5pp) — line 305. F-04: `mixedConfidenceThreshold` from VerdictStageConfig (40) never passed to `percentageToClaimVerdict()` — 3 call sites fall back to truth-scale.ts default of 60, mismatching §8.5.5 spec (40). **2 non-blocking:** F-02: `PromptFrontmatterSchema` z.enum missing "claimboundary" (config-schemas.ts line 1122). F-05: aggregation.ts missing triangulationFactor/derivativeFactor and harm multipliers don't match §8.5.4 4-level spec — to be fixed when Stage 5 is implemented. | (read-only review) | F-01, F-02, F-03, F-04, F-05 |
 | 2026-02-16 | Senior Developer | Phase 2: Route Wiring | **ClaimBoundary pipeline wired as default route.** Added "claimboundary" to PipelineVariant type, updated internal-runner-queue to call `runClaimBoundaryAnalysis` as default (orchestrated becomes fallback). Added `jobId?` to AnalysisInput type (used by all pipelines for debug logging). Updated CB pipeline return type to `{resultJson, reportMarkdown}` structure matching orchestrated schema. Defined new resultJson schema (version 3.0.0-cb) with claimBoundaries/claimVerdicts/coverageMatrix, no AnalysisContext references. Fallback changed: Monolithic Dynamic now falls back to ClaimBoundary (not orchestrated). Build PASS. ClaimBoundary tests PASS (24), Aggregation tests PASS (13). (Note: `npm test` runner fails with "No test suite found" for all files when run together — pre-existing vitest/Windows path issue confirmed on previous commit; individual test files pass successfully.) | `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-16 | Senior Developer | Phase 2a: Delete orchestrated | **Orchestrated pipeline completely removed in 4 commits (~18,400 lines deleted).** Step 1: Deleted orchestrated.ts (13600 lines), analysis-contexts.ts (564 lines), evidence-context-utils.ts (86 lines), + 4 AC test files. Fixed imports in analyzer.ts, index.ts, internal-runner-queue.ts. Step 2: Deleted orchestrated prompt files (orchestrated.prompt.md 62KB, orchestrated-compact.prompt.md 9KB, + 3 base prompt files 33KB). Removed orchestrated task types from prompt-builder.ts, removed "orchestrated" from VALID_PROMPT_PROFILES. Step 3: Removed 14 AC config fields from config-schemas.ts (contextDedupThreshold, contextDetection*, contextPrompt*, evidenceScope*, contextNameAlignment*), removed contextDedupThreshold accessor from analyzer/config.ts, removed AC validation warning, removed UI form group. Step 4: Deleted context-preservation.test.ts (19KB) and adversarial-context-leak.test.ts (17KB). Made confidence-calibration contextAnswers parameter optional, removed 7 AC tests from confidence-calibration.test.ts (52 tests remain). All builds + individual tests PASS at each commit. | 11 files deleted, 8 files modified, ~18,400 lines removed | None |
 
 ## Quick Reference for Agents
 
