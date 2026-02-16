@@ -17,7 +17,7 @@ export type RawEvidenceItem = {
   category?: string;
   specificity?: "high" | "medium" | "low";
   sourceExcerpt?: string;
-  contextId?: string;
+  // DELETED: contextId field (Phase 4 cleanup - orchestrated pipeline only)
   isContestedClaim?: boolean;
   claimSource?: string;
   claimDirection?: "supports" | "contradicts" | "neutral";
@@ -79,7 +79,7 @@ export class EvidenceNormalizer {
       category: item.category ?? "evidence",
       specificity: item.specificity ?? "medium",
       sourceExcerpt: item.sourceExcerpt ?? "",
-      contextId: item.contextId ?? "",
+      // DELETED: contextId field (Phase 4 cleanup - orchestrated pipeline only)
       isContestedClaim: item.isContestedClaim ?? false,
       claimSource: item.claimSource ?? "",
       claimDirection: item.claimDirection ?? "neutral",

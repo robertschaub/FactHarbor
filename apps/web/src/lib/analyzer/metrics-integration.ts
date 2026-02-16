@@ -159,7 +159,7 @@ export function recordOutputQuality(result: any): void {
   if (!currentMetrics) return;
 
   const claims = result.claims || [];
-  const contexts = result.analysisContexts || [];
+  // DELETED: analysisContexts handling (Phase 4 cleanup - orchestrated pipeline only)
   const sources = result.sources || [];
 
   const claimsWithVerdicts = claims.filter((c: any) => c.verdict && c.verdict !== 'UNVERIFIED').length;
@@ -171,7 +171,7 @@ export function recordOutputQuality(result: any): void {
   currentMetrics.setOutputQuality({
     claimsExtracted: claims.length,
     claimsWithVerdicts,
-    scopesDetected: contexts.length,
+    scopesDetected: 0, // DELETED: was contexts.length - orchestrated pipeline only
     sourcesFound: sources.length,
     evidenceItemsExtracted: totalEvidenceItems,
     averageConfidence: avgConfidence,

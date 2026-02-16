@@ -60,19 +60,13 @@ export function normalizeSubClaimsImportance<T extends SubClaimImportance>(claim
 
   // Second pass: cap "high" centrality to reduce over-centrality drift.
   // The prompt expects few central claims; we enforce a deterministic cap:
-  // - Per contextId (if present): keep at most 2 high-central core claims
-  // - If contextId is missing/empty: treat as one global group
+  // - Keep at most 2 high-central core claims globally
+  // DELETED: Per-contextId grouping (Phase 4 cleanup - orchestrated pipeline only)
   const harmScore = (lvl: ImportanceLevel) => (lvl === "high" ? 3 : lvl === "medium" ? 2 : 1);
 
-  const groups = new Map<string, { idx: number; claim: T }[]>();
-  for (let i = 0; i < claims.length; i++) {
-    const c = claims[i];
-    const ctxRaw = (c as any)?.contextId;
-    const ctxId = typeof ctxRaw === "string" && ctxRaw.trim() ? ctxRaw.trim() : "__global__";
-    const arr = groups.get(ctxId) ?? [];
-    arr.push({ idx: i, claim: c });
-    groups.set(ctxId, arr);
-  }
+  // Treat all claims as single global group
+  const entries = claims.map((claim, idx) => ({ idx, claim }));
+  const groups = new Map<string, { idx: number; claim: T }[]>([["__global__", entries]]);
 
   for (const [, entries] of groups) {
     const highs = entries.filter((e) => e.claim.claimRole === "core" && e.claim.centrality === "high");

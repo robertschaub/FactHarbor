@@ -10,13 +10,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_BUDGET,
-  checkContextIterationBudget,
+  // DELETED: checkContextIterationBudget, recordIteration (Phase 4 cleanup - orchestrated pipeline only)
   checkTokenBudget,
   createBudgetTracker,
   getBudgetConfig,
   getBudgetStats,
   markBudgetExceeded,
-  recordIteration,
   recordLLMCall,
   recordTokens,
 } from "@/lib/analyzer/budgets";
@@ -43,7 +42,7 @@ describe("Budget Configuration", () => {
     expect(tracker.totalIterations).toBe(0);
     expect(tracker.llmCalls).toBe(0);
     expect(tracker.budgetExceeded).toBe(false);
-    expect(tracker.iterationsByContext.size).toBe(0);
+    // DELETED: iterationsByContext check (Phase 4 cleanup - orchestrated pipeline only)
   });
 });
 
@@ -51,7 +50,8 @@ describe("Budget Configuration", () => {
 // ITERATION BUDGET TESTS
 // ============================================================================
 
-describe("Context Iteration Budget", () => {
+// DELETED: Context Iteration Budget tests (Phase 4 cleanup - orchestrated pipeline only)
+describe.skip("Context Iteration Budget", () => {
   it("allows iterations within per-context budget", () => {
     const budget = DEFAULT_BUDGET;
     const tracker = createBudgetTracker();
@@ -222,9 +222,9 @@ describe("Budget Stats", () => {
     const tracker = createBudgetTracker();
 
     recordTokens(tracker, 5000);
-    recordIteration(tracker, "CTX_A");
-    recordIteration(tracker, "CTX_A");
-    recordIteration(tracker, "CTX_B");
+    // DELETED: recordIteration calls (Phase 4 cleanup - orchestrated pipeline only)
+    // Manually increment totalIterations instead
+    tracker.totalIterations = 3;
 
     const stats = getBudgetStats(tracker, budget);
 
@@ -241,11 +241,9 @@ describe("Budget Stats", () => {
     const tracker = createBudgetTracker();
 
     recordTokens(tracker, 10000);
-    recordIteration(tracker, "CTX_A");
-    recordIteration(tracker, "CTX_A");
-    recordIteration(tracker, "CTX_B");
-    recordIteration(tracker, "CTX_B");
-    recordIteration(tracker, "CTX_C");
+    // DELETED: recordIteration calls (Phase 4 cleanup - orchestrated pipeline only)
+    // Manually increment totalIterations instead
+    tracker.totalIterations = 5;
 
     const stats = getBudgetStats(tracker, budget);
 
@@ -277,7 +275,8 @@ describe("Budget Stats", () => {
 // INTEGRATION SCENARIO TESTS
 // ============================================================================
 
-describe("Budget Integration Scenarios", () => {
+// DELETED: Budget Integration Scenarios tests (Phase 4 cleanup - orchestrated pipeline only)
+describe.skip("Budget Integration Scenarios", () => {
   it("realistic multi-context research scenario", () => {
     // Use explicit budget with per-context limit of 3 to test boundary behavior
     const budget = {

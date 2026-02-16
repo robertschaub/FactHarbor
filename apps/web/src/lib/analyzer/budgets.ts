@@ -37,8 +37,7 @@ export interface BudgetTracker {
   /** Tokens used so far */
   tokensUsed: number;
 
-  /** Iterations per context */
-  iterationsByContext: Map<string, number>;
+  // DELETED: iterationsByContext field (Phase 4 cleanup - orchestrated pipeline only)
 
   /** Total iterations across all contexts */
   totalIterations: number;
@@ -112,7 +111,7 @@ export function getBudgetConfig(config?: PipelineConfig): ResearchBudget {
 export function createBudgetTracker(): BudgetTracker {
   return {
     tokensUsed: 0,
-    iterationsByContext: new Map(),
+    // DELETED: iterationsByContext Map (Phase 4 cleanup - orchestrated pipeline only)
     totalIterations: 0,
     llmCalls: 0,
     budgetExceeded: false,
@@ -150,45 +149,13 @@ export function checkTokenBudget(
   return { allowed: true };
 }
 
-/**
- * Check if a context can perform another iteration.
- */
-export function checkContextIterationBudget(
-  tracker: BudgetTracker,
-  budget: ResearchBudget,
-  contextId: string
-): { allowed: boolean; reason?: string } {
-  const contextIterations = tracker.iterationsByContext.get(contextId) || 0;
-
-  if (contextIterations >= budget.maxIterationsPerContext) {
-    return {
-      allowed: false,
-      reason: `Context ${contextId} reached max iterations: ${contextIterations} >= ${budget.maxIterationsPerContext}`,
-    };
-  }
-
-  if (tracker.totalIterations >= budget.maxTotalIterations) {
-    return {
-      allowed: false,
-      reason: `Total iterations reached max: ${tracker.totalIterations} >= ${budget.maxTotalIterations}`,
-    };
-  }
-
-  return { allowed: true };
-}
+// DELETED: checkContextIterationBudget function (Phase 4 cleanup - orchestrated pipeline only)
 
 // ============================================================================
 // RECORDING FUNCTIONS
 // ============================================================================
 
-/**
- * Record an iteration for a context
- */
-export function recordIteration(tracker: BudgetTracker, contextId: string): void {
-  const current = tracker.iterationsByContext.get(contextId) || 0;
-  tracker.iterationsByContext.set(contextId, current + 1);
-  tracker.totalIterations++;
-}
+// DELETED: recordIteration function (Phase 4 cleanup - orchestrated pipeline only)
 
 /**
  * Record token usage
