@@ -238,7 +238,7 @@ export class PromptMetricsCollector {
    */
   private getAllMetrics(): PromptQualityMetrics[] {
     const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
-    const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict', 'context_refinement'];
+    const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict'];
 
     const metrics: PromptQualityMetrics[] = [];
     for (const provider of providers) {

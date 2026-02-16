@@ -10,46 +10,31 @@
 import { getUnderstandBasePrompt } from './base/understand-base';
 import { getExtractEvidenceBasePrompt } from './base/extract-evidence-base';
 import { getVerdictBasePrompt } from './base/verdict-base';
-import { getContextRefinementBasePrompt } from './base/context-refinement-base';
 import { getDynamicPlanBasePrompt } from './base/dynamic-plan-base';
 import { getDynamicAnalysisBasePrompt } from './base/dynamic-analysis-base';
-import {
-  getOrchestratedUnderstandPrompt,
-  type OrchestratedUnderstandVariables,
-} from './base/orchestrated-understand';
-import {
-  getSupplementalClaimsPromptForProvider,
-  getSupplementalContextsPromptForProvider,
-  getOutcomeClaimsExtractionPrompt,
-  type SupplementalClaimsVariables,
-} from './base/orchestrated-supplemental';
 
 import {
   getAnthropicUnderstandVariant,
   getAnthropicExtractEvidenceVariant,
   getAnthropicVerdictVariant,
-  getAnthropicContextRefinementVariant,
 } from './providers/anthropic';
 
 import {
   getOpenAIUnderstandVariant,
   getOpenAIExtractEvidenceVariant,
   getOpenAIVerdictVariant,
-  getOpenAIContextRefinementVariant,
 } from './providers/openai';
 
 import {
   getGeminiUnderstandVariant,
   getGeminiExtractEvidenceVariant,
   getGeminiVerdictVariant,
-  getGeminiContextRefinementVariant,
 } from './providers/google';
 
 import {
   getMistralUnderstandVariant,
   getMistralExtractEvidenceVariant,
   getMistralVerdictVariant,
-  getMistralContextRefinementVariant,
 } from './providers/mistral';
 
 import {
@@ -74,12 +59,8 @@ export type TaskType =
   | 'understand'
   | 'extract_evidence'
   | 'verdict'
-  | 'context_refinement'
   | 'dynamic_plan'
-  | 'dynamic_analysis'
-  | 'orchestrated_understand'
-  | 'supplemental_claims'
-  | 'supplemental_contexts';
+  | 'dynamic_analysis';
 export type ProviderType = 'anthropic' | 'openai' | 'google' | 'mistral';
 
 export interface PromptContext {
@@ -99,10 +80,6 @@ export interface PromptContext {
     isRecent?: boolean;
     textToAnalyze?: string;
     sourceSummary?: string;
-    // Orchestrated pipeline variables
-    keyFactorHints?: Array<{ factor: string; category: string; evaluationCriteria: string }>;
-    minCoreClaimsPerContext?: number;
-    hasScopes?: boolean;
   };
 }
 
@@ -218,38 +195,11 @@ function getBaseTemplate(context: PromptContext): string {
         allowModelKnowledge: context.config.allowModelKnowledge,
       });
 
-    case 'context_refinement':
-      return getContextRefinementBasePrompt();
-
     case 'dynamic_plan':
       return getDynamicPlanBasePrompt({ currentDate });
 
     case 'dynamic_analysis':
       return getDynamicAnalysisBasePrompt({ currentDate });
-
-    // Orchestrated pipeline tasks - these return provider-optimized prompts directly
-    case 'orchestrated_understand':
-      return getOrchestratedUnderstandPrompt(
-        {
-          currentDate,
-          currentDateReadable: variables.currentDateReadable || currentDate,
-          isRecent: variables.isRecent || false,
-          keyFactorHints: variables.keyFactorHints,
-        },
-        provider
-      );
-
-    case 'supplemental_claims':
-      return getSupplementalClaimsPromptForProvider(
-        {
-          minCoreClaimsPerContext: variables.minCoreClaimsPerContext || 2,
-          hasScopes: variables.hasScopes || false,
-        },
-        provider
-      );
-
-    case 'supplemental_contexts':
-      return getSupplementalContextsPromptForProvider(provider);
 
     default:
       throw new Error(`Unknown task type: ${task}`);
@@ -262,18 +212,12 @@ function getBaseTemplate(context: PromptContext): string {
 function getProviderVariant(context: PromptContext): string {
   const { task, provider } = context;
 
-  // Orchestrated tasks already include provider optimization in base template
-  if (task === 'orchestrated_understand' || task === 'supplemental_claims' || task === 'supplemental_contexts') {
-    return '';
-  }
-
   // Map provider to variant functions
   const variantMap: Record<ProviderType, Record<string, () => string>> = {
     anthropic: {
       understand: getAnthropicUnderstandVariant,
       extract_evidence: getAnthropicExtractEvidenceVariant,
       verdict: getAnthropicVerdictVariant,
-      context_refinement: getAnthropicContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -281,7 +225,6 @@ function getProviderVariant(context: PromptContext): string {
       understand: getOpenAIUnderstandVariant,
       extract_evidence: getOpenAIExtractEvidenceVariant,
       verdict: getOpenAIVerdictVariant,
-      context_refinement: getOpenAIContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -289,7 +232,6 @@ function getProviderVariant(context: PromptContext): string {
       understand: getGeminiUnderstandVariant,
       extract_evidence: getGeminiExtractEvidenceVariant,
       verdict: getGeminiVerdictVariant,
-      context_refinement: getGeminiContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -297,7 +239,6 @@ function getProviderVariant(context: PromptContext): string {
       understand: getMistralUnderstandVariant,
       extract_evidence: getMistralExtractEvidenceVariant,
       verdict: getMistralVerdictVariant,
-      context_refinement: getMistralContextRefinementVariant,
       dynamic_plan: () => '',
       dynamic_analysis: () => '',
     },
@@ -338,10 +279,8 @@ function getConfigAdaptations(context: PromptContext): string {
     }
   }
 
-  // Add structured output guidance for all tasks (except orchestrated tasks which have it built-in)
-  if (!task.startsWith('orchestrated') && !task.startsWith('supplemental')) {
-    adaptations += getStructuredOutputGuidance(provider);
-  }
+  // Add structured output guidance for all tasks
+  adaptations += getStructuredOutputGuidance(provider);
 
   return adaptations;
 }
@@ -378,16 +317,3 @@ export function detectProvider(modelName: string): ProviderType {
   // Default fallback
   return 'anthropic';
 }
-
-// Re-export orchestrated prompt functions for direct access by analyzer.ts
-export {
-  getOrchestratedUnderstandPrompt,
-  type OrchestratedUnderstandVariables,
-} from './base/orchestrated-understand';
-
-export {
-  getSupplementalClaimsPromptForProvider,
-  getSupplementalContextsPromptForProvider,
-  getOutcomeClaimsExtractionPrompt,
-  type SupplementalClaimsVariables,
-} from './base/orchestrated-supplemental';
