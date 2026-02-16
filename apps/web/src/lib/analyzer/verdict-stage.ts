@@ -131,7 +131,7 @@ export async function runVerdictStage(
 ): Promise<CBClaimVerdict[]> {
   // Step 1: Advocate Verdict
   const advocateVerdicts = await advocateVerdict(
-    claims, evidence, boundaries, coverageMatrix, llmCall
+    claims, evidence, boundaries, coverageMatrix, llmCall, config
   );
 
   // Steps 2 & 3: Run in parallel
@@ -142,7 +142,7 @@ export async function runVerdictStage(
 
   // Step 4: Reconciliation
   const reconciledVerdicts = await reconcileVerdicts(
-    advocateVerdicts, challengeDoc, consistencyResults, llmCall
+    advocateVerdicts, challengeDoc, consistencyResults, llmCall, config
   );
 
   // Step 5: Verdict Validation
@@ -150,7 +150,7 @@ export async function runVerdictStage(
 
   // Structural Consistency Check (deterministic)
   const structuralWarnings = runStructuralConsistencyCheck(
-    validatedVerdicts, evidence, boundaries, coverageMatrix
+    validatedVerdicts, evidence, boundaries, coverageMatrix, config
   );
   if (structuralWarnings.length > 0) {
     console.warn("[VerdictStage] Structural consistency warnings:", structuralWarnings);
@@ -183,6 +183,7 @@ export async function advocateVerdict(
   boundaries: ClaimBoundary[],
   coverageMatrix: CoverageMatrix,
   llmCall: LLMCallFn,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<CBClaimVerdict[]> {
   const result = await llmCall("VERDICT_ADVOCATE", {
     atomicClaims: claims,
@@ -197,7 +198,7 @@ export async function advocateVerdict(
 
   // Parse LLM result into CBClaimVerdict[]
   const rawVerdicts = result as Array<Record<string, unknown>>;
-  return rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims));
+  return rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims, config));
 }
 
 /**
@@ -207,6 +208,7 @@ export async function advocateVerdict(
 function parseAdvocateVerdict(
   raw: Record<string, unknown>,
   claims: AtomicClaim[],
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): CBClaimVerdict {
   const claimId = String(raw.claimId ?? "");
   const claim = claims.find((c) => c.id === claimId);
@@ -217,7 +219,7 @@ function parseAdvocateVerdict(
     id: String(raw.id ?? `CV_${claimId}`),
     claimId,
     truthPercentage,
-    verdict: percentageToClaimVerdict(truthPercentage, confidence),
+    verdict: percentageToClaimVerdict(truthPercentage, confidence, undefined, config.mixedConfidenceThreshold),
     confidence,
     reasoning: String(raw.reasoning ?? ""),
     harmPotential: claim?.harmPotential ?? "medium",
@@ -302,7 +304,7 @@ export async function selfConsistencyCheck(
       percentages,
       average,
       spread,
-      stable: spread <= config.moderateThreshold,
+      stable: spread <= config.stableThreshold,
       assessed: true,
     };
   });
@@ -356,6 +358,7 @@ export async function reconcileVerdicts(
   challengeDoc: ChallengeDocument,
   consistencyResults: ConsistencyResult[],
   llmCall: LLMCallFn,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<CBClaimVerdict[]> {
   const result = await llmCall("VERDICT_RECONCILIATION", {
     advocateVerdicts: advocateVerdicts.map((v) => ({
@@ -384,7 +387,7 @@ export async function reconcileVerdicts(
     return {
       ...original,
       truthPercentage,
-      verdict: percentageToClaimVerdict(truthPercentage, confidence),
+      verdict: percentageToClaimVerdict(truthPercentage, confidence, undefined, config.mixedConfidenceThreshold),
       confidence,
       reasoning: String(reconciled.reasoning ?? original.reasoning),
       isContested: Boolean(reconciled.isContested ?? original.isContested),
@@ -488,6 +491,7 @@ export function runStructuralConsistencyCheck(
   evidence: EvidenceItem[],
   boundaries: ClaimBoundary[],
   coverageMatrix: CoverageMatrix,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): string[] {
   const warnings: string[] = [];
   const evidenceIds = new Set(evidence.map((e) => e.id));
@@ -519,7 +523,7 @@ export function runStructuralConsistencyCheck(
     }
 
     // Check: Verdict label matches truth percentage band
-    const expectedVerdict = percentageToClaimVerdict(verdict.truthPercentage, verdict.confidence);
+    const expectedVerdict = percentageToClaimVerdict(verdict.truthPercentage, verdict.confidence, undefined, config.mixedConfidenceThreshold);
     if (verdict.verdict !== expectedVerdict) {
       warnings.push(
         `Verdict ${verdict.claimId}: label "${verdict.verdict}" doesn't match expected "${expectedVerdict}" for truth=${verdict.truthPercentage}%, confidence=${verdict.confidence}%`

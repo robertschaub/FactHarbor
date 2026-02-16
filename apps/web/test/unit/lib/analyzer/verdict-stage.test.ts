@@ -290,7 +290,7 @@ describe("selfConsistencyCheck (Step 2)", () => {
     expect(result[0].percentages[1]).toBe(72); // run 2
     expect(result[0].percentages[2]).toBe(72); // run 3
     expect(result[0].spread).toBe(3);          // 75 - 72
-    expect(result[0].stable).toBe(true);       // 3 ≤ 12 (moderateThreshold)
+    expect(result[0].stable).toBe(true);       // 3 ≤ 5 (stableThreshold)
   });
 
   it("should clamp temperature to [0.1, 0.7]", async () => {

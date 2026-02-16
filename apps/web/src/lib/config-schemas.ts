@@ -1124,6 +1124,7 @@ const PromptFrontmatterSchema = z.object({
     "monolithic-dynamic",
     "source-reliability",
     "text-analysis",  // LLM text analysis prompts (input, evidence, context, verdict)
+    "claimboundary",  // ClaimBoundary pipeline prompts (extraction, clustering, verdict, narrative)
   ]),
   description: z.string().optional(),
   lastModified: z.string().optional(),

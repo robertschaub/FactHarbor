@@ -7,12 +7,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 1c COMPLETE — all pipeline prompts (UCM-managed) |
+| **Current Phase** | Phase 1 COMPLETE — All blocking fixes resolved. Ready for Captain to tag + launch Phase 2. |
 | **Last Completed Tag** | `cb-step0-rules-audit` |
-| **Next Action** | Captain: review Phase 1c, then launch Phase 2 (cutover) |
-| **Blocking Issues** | None |
+| **Next Action** | Captain: tag `cb-phase1-pipeline`, then launch Phase 2. |
+| **Blocking Issues** | None (F-01, F-03, F-04 fixed). F-05 deferred to Stage 5 implementation. |
 | **Last Updated** | 2026-02-16 |
-| **Last Updated By** | LLM Expert (Phase 1c execution) |
+| **Last Updated By** | Senior Developer (Phase 1 review fixes) |
 
 ## Phase Checklist
 
@@ -22,6 +22,7 @@
 | Phase 1a: Types + Skeleton | ✅ Complete | `cb-phase1-pipeline` | CB types + pipeline skeleton + coverage matrix + tests |
 | Phase 1b: Verdict Stage | ✅ Complete | `cb-phase1-pipeline` | 5-step debate pattern + structural check + spread multipliers + 29 tests |
 | Phase 1c: Prompts | ✅ Complete | `cb-phase1-pipeline` | 8 UCM-managed prompts in claimboundary.prompt.md, registered in config-storage + config-schemas |
+| Phase 1 Review | ✅ Fixes Applied | — | F-01, F-02, F-03, F-04 fixed. F-05 (aggregation gaps) deferred to Stage 5 implementation. |
 | Phase 2: Cutover | ⬜ Not started | `cb-phase2-cutover` | |
 | Phase 2a: Delete orchestrated | ⬜ Not started | `cb-phase2a-orchestrated-deleted` | |
 | Phase 2b: Delete prompts | ⬜ Not started | `cb-phase2b-prompts-cleaned` | |
@@ -41,6 +42,8 @@ Each agent writes a short entry here when completing a session.
 | 2026-02-16 | Senior Developer | Phase 1a | CB types added to types.ts (AtomicClaim, ClaimBoundary, BoundaryFinding, CBClaimVerdict, CoverageMatrix, VerdictNarrative, + supporting types). Pipeline skeleton created with 5 stage functions + main entry point. Coverage matrix fully implemented (deterministic). Test file with 24+ tests (type validity, coverage matrix, stage existence). Build + tests pass (48 files, 873 tests). | `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/CB_Execution_State.md` | None |
 | 2026-02-16 | Senior Developer | Phase 1b | Verdict-stage module created with all 5 steps as independently testable functions. Injectable LLM call abstraction for testability. Spread multiplier calculations per §8.5.5 with UCM-configurable thresholds. Structural consistency check (deterministic invariants). Wired into pipeline Stage 4 via `runVerdictStage()`. 29 new tests with mocked LLM calls covering all steps + spread multipliers + full orchestration. Build + tests pass (49 files, 902 tests). | `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/WIP/CB_Execution_State.md` | None |
 | 2026-02-16 | LLM Expert | Phase 1c | All 8 pipeline prompts created in `prompts/claimboundary.prompt.md`: CLAIM_EXTRACTION_PASS1 (Haiku), CLAIM_EXTRACTION_PASS2 (Sonnet), BOUNDARY_CLUSTERING (Sonnet), VERDICT_ADVOCATE (Sonnet), VERDICT_CHALLENGER (Sonnet), VERDICT_RECONCILIATION (Sonnet), VERDICT_NARRATIVE (Sonnet), CLAIM_GROUPING (Haiku). UCM-managed from day one: registered "claimboundary" profile in VALID_PROMPT_PROFILES (config-storage.ts) and valid pipelines list (config-schemas.ts). All prompts follow AGENTS.md rules: no English assumptions, no hardcoded keywords, generic examples, no test-case terms. Congruence examples from §11.5 included in BOUNDARY_CLUSTERING (genericized). Build + tests pass (49 files, 902 tests). Prompt seeded on build. | `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/config-storage.ts`, `apps/web/src/lib/config-schemas.ts`, `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-16 | Senior Developer | Phase 1 Review Fixes | Fixed all 3 blocking + 1 non-blocking review issues. **F-03:** `stable` in selfConsistencyCheck now uses `stableThreshold` (5pp) instead of `moderateThreshold` (12pp). **F-04:** `mixedConfidenceThreshold` from VerdictStageConfig (default 40) now threaded through to all 3 `percentageToClaimVerdict()` call sites via config parameter on `advocateVerdict`, `reconcileVerdicts`, and `runStructuralConsistencyCheck`. **F-01:** Added VERDICT_GROUNDING_VALIDATION and VERDICT_DIRECTION_VALIDATION prompt sections to claimboundary.prompt.md + requiredSections. **F-02:** Added "claimboundary" to `PromptFrontmatterSchema` z.enum in config-schemas.ts. Build + tests pass (49 files, 902 tests). | `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/config-schemas.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/WIP/CB_Execution_State.md` | F-05 deferred (aggregation gaps for Stage 5) |
+| 2026-02-16 | Code Reviewer | Phase 1 Review | **APPROVE WITH CONDITIONS.** 50 tests reviewed (21 pipeline + 29 verdict-stage). Types match §9.1. Terminology clean (no AC/contextId). No forbidden imports. 8 prompts AGENTS.md-compliant (no hardcoded keywords, multilingual, generic examples). Spread multiplier matches §8.5.5. **3 blocking issues:** F-01: VERDICT_GROUNDING_VALIDATION and VERDICT_DIRECTION_VALIDATION prompt sections missing from claimboundary.prompt.md (verdict-stage.ts lines 424, 435 reference them). F-03: `stable` field in selfConsistencyCheck uses `moderateThreshold` (12pp) instead of `stableThreshold` (5pp) — line 305. F-04: `mixedConfidenceThreshold` from VerdictStageConfig (40) never passed to `percentageToClaimVerdict()` — 3 call sites fall back to truth-scale.ts default of 60, mismatching §8.5.5 spec (40). **2 non-blocking:** F-02: `PromptFrontmatterSchema` z.enum missing "claimboundary" (config-schemas.ts line 1122). F-05: aggregation.ts missing triangulationFactor/derivativeFactor and harm multipliers don't match §8.5.4 4-level spec — to be fixed when Stage 5 is implemented. | (read-only review) | F-01, F-02, F-03, F-04, F-05 |
 
 ## Quick Reference for Agents
 

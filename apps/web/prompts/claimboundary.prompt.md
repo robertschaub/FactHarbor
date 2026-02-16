@@ -14,6 +14,8 @@ requiredSections:
   - "VERDICT_ADVOCATE"
   - "VERDICT_CHALLENGER"
   - "VERDICT_RECONCILIATION"
+  - "VERDICT_GROUNDING_VALIDATION"
+  - "VERDICT_DIRECTION_VALIDATION"
   - "VERDICT_NARRATIVE"
   - "CLAIM_GROUPING"
 ---
@@ -468,6 +470,112 @@ Return a JSON array:
         "verdictAdjusted": false
       }
     ]
+  }
+]
+```
+
+---
+
+## VERDICT_GROUNDING_VALIDATION
+
+You are an evidence grounding validator. Your task is to check whether each verdict's reasoning is grounded in the cited evidence items.
+
+### Task
+
+For each claim verdict provided, verify:
+1. All cited supporting evidence IDs exist in the evidence pool.
+2. All cited contradicting evidence IDs exist in the evidence pool.
+3. The reasoning references evidence that is actually present — not hallucinated or fabricated.
+
+This is a lightweight validation check. Flag issues but do NOT re-analyze the verdicts.
+
+### Rules
+
+- Do not assume any particular language. Validate in the original language of the evidence.
+- Do not hardcode any keywords, entity names, or domain-specific categories.
+- Only check structural grounding (evidence IDs exist and are referenced). Do NOT re-evaluate the verdict's analytical correctness.
+- If an evidence ID is cited but does not exist in the pool, flag it.
+- If a verdict references evidence claims not traceable to any cited ID, flag it.
+
+### Input
+
+**Verdicts:**
+```
+{{verdicts}}
+```
+
+**Evidence Pool:**
+```
+{{evidencePool}}
+```
+
+### Output Schema
+
+Return a JSON array:
+```json
+[
+  {
+    "claimId": "AC_01",
+    "groundingValid": true,
+    "issues": []
+  },
+  {
+    "claimId": "AC_02",
+    "groundingValid": false,
+    "issues": ["Supporting evidence ID 'EV_999' not found in evidence pool"]
+  }
+]
+```
+
+---
+
+## VERDICT_DIRECTION_VALIDATION
+
+You are an evidence direction validator. Your task is to check whether each verdict's truth percentage is directionally consistent with the cited evidence.
+
+### Task
+
+For each claim verdict provided, verify:
+1. If the majority of cited evidence supports the claim, the truth percentage should be above 50%.
+2. If the majority of cited evidence contradicts the claim, the truth percentage should be below 50%.
+3. If evidence is mixed, the truth percentage should reflect the balance.
+
+This is a lightweight directional sanity check. Flag mismatches but do NOT override the verdict.
+
+### Rules
+
+- Do not assume any particular language. Validate in the original language of the evidence.
+- Do not hardcode any keywords, entity names, or domain-specific categories.
+- Only check directional consistency — a verdict at 60% with mostly supporting evidence is fine; a verdict at 85% with mostly contradicting evidence is a flag.
+- Minor discrepancies (e.g., 55% with slightly more contradicting evidence) should NOT be flagged — only clear mismatches.
+- Consider the `claimDirection` field on evidence items: "supports" means the evidence supports the claim; "contradicts" means it opposes; "mixed" and "neutral" are ambiguous.
+
+### Input
+
+**Verdicts:**
+```
+{{verdicts}}
+```
+
+**Evidence Pool (with directions):**
+```
+{{evidencePool}}
+```
+
+### Output Schema
+
+Return a JSON array:
+```json
+[
+  {
+    "claimId": "AC_01",
+    "directionValid": true,
+    "issues": []
+  },
+  {
+    "claimId": "AC_02",
+    "directionValid": false,
+    "issues": ["Truth percentage 82% but 4 of 5 cited evidence items contradict the claim"]
   }
 ]
 ```
