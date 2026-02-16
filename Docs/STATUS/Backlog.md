@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 13, 2026
+**Last Updated**: February 16, 2026
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -12,7 +12,38 @@
 
 ---
 
-## Recently Completed (February 13, 2026)
+## ClaimBoundary Pipeline Implementation (TOP PRIORITY)
+
+The ClaimBoundary pipeline replaces AnalysisContext. Architecture is complete (9/9 decisions closed, 2 review rounds). This is the #1 priority for the project.
+
+**Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
+
+| Step | Description | Domain | Urgency | Status | Notes |
+|------|-------------|--------|---------|--------|-------|
+| **Step 0** | **Rules Audit**: Lead Architect audits AGENTS.md + Multi_Agent_Collaboration_Rules.md for AnalysisContext-specific rules. Deliverable: diff of rule changes needed. | Architecture / Governance | high | NOT STARTED | Must complete before implementation begins (D8) |
+| **Step 1** | **Dead code cleanup**: Remove 879 lines unused code (7 files). Clean slate for CB implementation. | Architecture / Cleanup | high | NOT STARTED | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) |
+| **Step 2** | **UCM AutoForm merge**: Code review + merge `feature/ucm-autoform` branch. Better admin tooling for CB config. | Web UI / Config | high | AWAITING REVIEW | [UCM AutoForm](../WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
+| **Step 3** | **Stage 1 implementation**: Two-pass evidence-grounded claim extraction + Gate 1 grounding quality. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.1 |
+| **Step 4** | **Stage 2 implementation**: Evidence collection with mandatory EvidenceScope + additionalDimensions. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.2 |
+| **Step 5** | **Stage 3 implementation**: Congruence-focused ClaimBoundary clustering. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.3, §11 |
+| **Step 6** | **Stage 4 implementation**: LLM debate pattern (advocate/challenger/reconciliation) + self-consistency. `verdict-stage.ts` module. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.4 |
+| **Step 7** | **Aggregation + Report**: Weighted aggregation, triangulation, VerdictNarrative generation, report assembly. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.5 |
+| **Step 8** | **Post-CB documentation refresh**: Update all xWiki pages + .md docs for new pipeline. | Docs | med | NOT STARTED | Supersedes old Documentation_Cleanup_Plan |
+| **Step 9** | **Anti-hallucination principles in CB prompts**: Apply negative prompting, grounding validation, confidence calibration when writing Stage 1-4 prompts. | Analyzer / Quality | med | NOT STARTED | Extracted from archived LLM_Prompt_Improvement_Plan |
+| **Step 10** | **Define LLM call optimization targets for CB**: New cost/latency/quality targets based on CB's different call pattern (~18-37 calls, ~$0.65/run). | Cost / Analyzer | med | NOT STARTED | Extracted from archived LLM_Call_Optimization_Goals_Proposal |
+
+---
+
+## Recently Completed (February 16, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **ClaimBoundary Architecture Design**: Complete pipeline redesign with 9/9 decisions closed, 2 review rounds (3 reviewers), 13 v1 features, all diagrams tagged, I/O contracts for all LLM calls. | Architecture | 2026-02-16 | [Architecture Doc](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) |
+| ✅ **Phase 8 Pipeline Quality**: 6 commits — opened source selection funnel, batch verdict retry, stabilized claim decomposition, enforced context cap. Evidence 2-8.5x increase. | Analyzer / Quality | 2026-02-15 | [Phase 9 Status](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md) |
+| ✅ **Phase 9a Context Cap**: `enforceContextCap()` at 3 call sites + MAX_CONTEXTS prompt hint. Partially effective (some jobs still exceed cap). | Analyzer / Quality | 2026-02-15 | [Phase 9 Status](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md) |
+| ✅ **WIP Consolidation**: Archived 11 files (4 CB process docs + 6 superseded pipeline plans + 2 reference docs). WIP reduced from 19 to 7 active files. | Docs / Cleanup | 2026-02-16 | [WIP README](../WIP/README.md) |
+
+### Previously Completed (February 13, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
@@ -42,20 +73,20 @@
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
 | **Dead Code Removal**: Remove 879 lines of unused code (7 files: `parallel-verdicts.ts`, `ab-testing.ts`, `pseudoscience.ts`, `normalization-heuristics.ts`, `classification-fallbacks.ts`, `format-fallback-report.ts`, `loadSourceBundle()`). Cleanup: remove from exports, remove npm scripts (`test:ab`, `test:ab:quick`), verify `p-limit` dependency. ~2-4h. | Architecture / Cleanup | high | med | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) Priority 1 |
-| **Fix stale "Triple-Path" doc references**: 8 references to "Triple-Path" or Monolithic Canonical in code/xWiki docs need updating to reflect Twin-Path architecture (Orchestrated + Dynamic). ~1h. | Docs / Cleanup | med | low | [WIP Documentation Audit](../ARCHIVE/WIP_Documentation_Audit_2026-02-12.md) |
-| **Config Migration to UCM**: Move magic numbers to UCM-configurable parameters. Create `QueryGenerationConfig` (maxEntitiesPerClaim, maxWordLength, maxSearchTerms, maxFallbackTerms, similarityBatchSize, maxEvidenceSelection, maxContextsPerClaim). Move stopwords to `constants/stopwords.ts`. ~4-6h. | Analyzer / Config | med | high | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) Priority 2 |
+| ~~**Fix stale "Triple-Path" doc references**~~: SUPERSEDED — CB requires full doc rewrite. | Docs / Cleanup | ~~med~~ n/a | low | Superseded by CB Step 8 |
+| **Config Migration to UCM**: Move magic numbers to UCM-configurable parameters. ~4-6h. **Note:** Some config items may change with CB pipeline — reassess after CB implementation. | Analyzer / Config | med | high | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) Priority 2 |
 | **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | [Promptfoo Testing](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Tooling/Promptfoo%20Testing/WebHome.xwiki) |
 | **Edge case test coverage**: 15+ tests for ambiguous harm, circular contestation, opinion vs evidence, mixed quality, missing fields. Create `llm-classification-edge-cases.test.ts`. ~4-6h. | Analyzer / Testing | med | high | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #2 |
 | Inverse-input symmetry hardening: keep `scripts/inverse-scope-regression.ps1` green; add 2–3 more inverse pairs; define "strict context symmetry" vs "best-effort" per test. | Analyzer | med | high | Existing |
 | Evidence-driven context refinement guardrails: add lightweight instrumentation (how often refine is applied/rejected + reason) to prevent over-splitting into non-context "dimensions". | Analyzer | med | high | Existing |
 | Central-claim evidence coverage pass: bounded "missing-evidence" retrieval pass for central claims with zero supporting/counter facts (best-effort; no loops; respect search budgets). | Analyzer / Search | med | high | Existing |
-| **Parallel verdict generation**: Process claim verdicts in parallel (with concurrency limit) instead of sequentially. 50-80% speed improvement for multi-claim analyses. | Analyzer / Performance | med | high | Improvements #5 |
+| **Parallel verdict generation**: Process claim verdicts in parallel (with concurrency limit). **Note:** CB pipeline will implement this from the start in `verdict-stage.ts`. | Analyzer / Performance | med | high | Improvements #5; CB architecture §8.4 |
 | **Tiered LLM model routing**: Use cheaper models (Haiku) for extraction tasks, premium models (Sonnet) for reasoning. 50-70% cost savings on LLM calls. ✅ **Enabled** (v2.9.0: Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement). | Analyzer / Cost | ~~med~~ done | high | Improvements #3 |
 | **Claim-level caching**: Cache normalized claim verdicts to reuse across analyses. 30-50% cost savings on repeat claims. Requires normalized DB schema. | Analyzer / Cost | med | high | Improvements #4 |
 | **Quality Gate UI display**: Show Gate 1 and Gate 4 statistics and per-item failure reasons in the results UI. Core transparency requirement. | Web UI | med | high | Improvements #6 |
 | Context guidelines note: short dev note defining what qualifies as a distinct "Context" vs a dimension; keep aligned with `AGENTS.md`. | Analyzer / Docs | med | med | Existing |
 | **Classification confidence scoring**: Add `factualBasisConfidence`, `harmPotentialConfidence`, `classificationConfidence` (0-100) to types. Reduce weights for low-confidence; flag high-harm + low-confidence for review. ~3-4h. | Analyzer / Quality | low | med | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #4 |
-| **Anti-hallucination strategy review**: Evaluate external anti-hallucination strategies for FactHarbor applicability — particularly multi-model cross-verification (run verdict through 2 models, flag discrepancies), structured "I don't know" prompting, and negative prompting techniques. Assess ROI vs. cost/latency impact. | Analyzer / Quality | low | med | [Anti-Hallucination Strategies](../WIP/Anti_Hallucination_Strategies.md) |
+| ~~**Anti-hallucination strategy review**~~: SUPERSEDED — Principles absorbed into ClaimBoundary design (LLM debate, self-consistency, grounding quality). Apply during CB prompt writing (Step 9). | Analyzer / Quality | ~~low~~ n/a | med | [Anti-Hallucination Strategies](../ARCHIVE/Anti_Hallucination_Strategies.md) |
 | **Doc Audit Phase 2: `opposingEvidenceIds` + `biasIndicator`**: Add `opposingEvidenceIds` to ClaimVerdict (split from misleading `supportingEvidenceIds`). Surface `biasIndicator` from SR cache to FetchedSource + report UI. Update Core Data Model ERD after code changes. | Analyzer / Types | med | med | [Implementation Plan](../WIP/Documentation_Diagram_Audit_Implementation_Plan.md) Phase 2 |
 | **Doc Audit Phase 3: Target data model alignment**: Replace "Scenario" with AnalysisContext, replace `likelihood_range` with 7-point scale, update source scoring architecture to match LLM+Cache (docs only, no code). | Docs | low | low | [Implementation Plan](../WIP/Documentation_Diagram_Audit_Implementation_Plan.md) Phase 3 |
 
@@ -112,7 +143,7 @@
 | **Remove dead API prompt tracking columns**: `PromptContentHash` and `PromptLoadedUtc` in `Jobs` table are never populated (web uses `config_usage` instead). Remove columns and migration 002, or decide to populate them. | Architecture / Cleanup | low | low | UCM Review |
 | **Normalized database schema**: Create proper tables for Claims, Verdicts, Sources, Facts, ClaimFactSupport. Enables cross-analysis queries, trend analysis, citation networks. | Architecture / Data | low | med | Improvements #15 |
 | **Comprehensive testing**: Unit tests (80% coverage), integration tests, E2E tests (Playwright), API tests (xUnit). | Testing / Quality | low | high | Improvements #16 |
-| Analyzer modularization plan: `apps/web/src/lib/analyzer.ts` is monolithic (8234 lines); do incremental extraction only with safety rails. Split into understanding, research, verdict-generation, aggregation, report-generation modules. | Architecture | low | low | Improvements #14 |
+| ~~Analyzer modularization plan~~: SUPERSEDED — CB pipeline built as separate modules from the start (`verdict-stage.ts`, per-stage files). | Architecture | ~~low~~ n/a | low | Superseded by CB architecture |
 | **LLM classification system docs**: Update Analyzer_Pipeline.md (remove pattern-based refs), create LLM_Classification_System.md, update Testing_Guide.md with edge case test examples. ~2-3h. | Docs / Architecture | low | low | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #5 |
 
 ---

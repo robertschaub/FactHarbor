@@ -1,12 +1,39 @@
 # FactHarbor Current Status
 
 **Version**: Pre-release (targeting v1.0)
-**Last Updated**: 2026-02-13
-**Status**: POC Complete — Alpha Transition (UCM Integration + Prompt Externalization v2.8.2 + LLM Tiering Enabled + Phase 2a Refactoring + Report Quality Hardening + Cost Optimization)
+**Last Updated**: 2026-02-16
+**Status**: POC Complete — Architecture Redesign In Progress (ClaimBoundary pipeline replaces AnalysisContext)
 
 ---
 
-## Quick Status
+## Architecture Redesign: ClaimBoundary Pipeline (2026-02-15)
+
+**Status:** Architecture designed, all decisions closed. Implementation not yet started.
+
+The AnalysisContext pipeline is being replaced by the **ClaimBoundary pipeline** — a fundamental redesign where analytical boundaries emerge from evidence rather than being pre-created.
+
+**Key changes:**
+- **AnalysisContext replaced by ClaimBoundary**: Boundaries are derived from EvidenceScope clustering after evidence is gathered, not created before research
+- **Two-pass evidence-grounded claim extraction**: Quick scan → preliminary search → evidence-grounded re-extraction
+- **LLM debate pattern**: Advocate → challenger → reconciliation for each claim verdict
+- **Source triangulation scoring**: Deterministic independence scoring in aggregation
+- **Mandatory EvidenceScope**: `methodology` + `temporal` required on all evidence; `additionalDimensions` for domain-specific data
+- **VerdictNarrative**: Structured narrative replacing free-form `narrative: string`
+- **Clean break**: New databases, new types, new prompts. Old pipeline runs unchanged until replaced.
+
+**Design document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
+**Phase 8/9 context:** [Phase9_Pipeline_Status_and_Plan_2026-02-15.md](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md)
+
+**Next steps:**
+1. Step 0: Rules Audit — Lead Architect audits AGENTS.md for AnalysisContext-specific rules
+2. Implementation planning and task breakdown
+3. Phased implementation per architecture doc
+
+---
+
+## Quick Status (Current AnalysisContext Pipeline)
+
+> **Note:** The current pipeline remains operational and unchanged. The sections below describe the existing system that will be replaced by ClaimBoundary.
 
 ### ✅ What Works
 
@@ -834,59 +861,34 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 
 ## What's Next
 
-**Immediate Actions** (User decisions required):
-1. **Implement Batch API** — 50% flat discount on all LLM calls (no pipeline logic changes)
-2. **Implement prompt caching** — 90% off repeated system prompts (AI SDK code change)
-3. **Apply for NPO/OSS credit programs** — Up to $20K Anthropic, $10K/year Google, $1K/year AWS
-4. Run baseline test to establish quality metrics ($20-50)
-5. Integrate metrics collection into analyzer.ts (15-30 min)
-6. Deploy performance optimizations (parallel verdicts + tiered routing)
+**#1 Priority: ClaimBoundary Pipeline Implementation**
 
-**See**: 
+The architecture redesign is complete (9/9 decisions closed). Implementation proceeds in this order:
+
+1. **Step 0: Rules Audit** — Lead Architect audits AGENTS.md + governance docs for AnalysisContext-specific rules. Deliverable: diff of rule changes needed.
+2. **Dead code cleanup** — Remove 879 lines of unused code (QA findings). Cleaner codebase for implementation.
+3. **UCM AutoForm code review** — Merge `feature/ucm-autoform` branch (independent of pipeline, but improves admin tooling).
+4. **ClaimBoundary implementation** — Phased per architecture doc (Stage 1 → Stage 2 → Stage 3 → Stage 4 → Aggregation → Report).
+
+**Parallel: Cost Reduction** (applies to both old and new pipeline):
+- Batch API integration (50% discount — no code changes to pipeline logic)
+- Prompt caching (90% off repeated system prompts)
+- NPO/OSS credit applications ($11K+/year potential)
+- See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
+
+**After ClaimBoundary is operational:**
+- Post-CB documentation refresh (all xWiki + .md)
+- Define LLM call optimization targets for new pipeline
+- Apply anti-hallucination principles to CB prompts
+- Security hardening (SSRF, auth, rate limiting) — *before any public deployment*
+
+**See**:
+- [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
 - [Known Issues](KNOWN_ISSUES.md) for complete bug list
-- [Development History](HISTORY.md) for architectural decisions
 - [Backlog](Backlog.md) for prioritized task list
-- [Improvement Recommendations](Improvement_Recommendations.md) for detailed enhancement analysis
-
-**Comprehensive Improvement Analysis**: `Docs/STATUS/Improvement_Recommendations.md` includes:
-- Cost optimization (70-85% potential savings)
-- Performance improvements (50-80% speed gains)
-- Security hardening (SSRF, auth, rate limiting) - *LOW urgency for POC*
-- User experience enhancements
-- Technical debt reduction
-
-**Priority Order:**
-1. **Cost Optimization** (in progress):
-   - ✅ Budget defaults reduced (25-40% savings)
-   - ✅ Expensive tests excluded from `npm test`
-   - Batch API integration (50% discount — next priority)
-   - Prompt caching (90% off repeated inputs)
-   - NPO/OSS credit applications ($11K+/year potential)
-   - See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
-
-2. **Quick Wins**:
-   - Parallel verdict generation (50-80% faster)
-   - Quality Gate UI display (transparency)
-   - Cost quotas (financial safety) - *LOW urgency for POC*
-   - Admin authentication - *LOW urgency for POC*
-
-3. **High-Value Performance**:
-   - Claim-level caching (30-50% savings on repeats)
-   - Observability dashboard
-
-3. **Security Hardening** (before production):
-   - SSRF protections
-   - Rate limiting
-   - Admin endpoint security
-   - *Note: LOW urgency while local POC, HIGH urgency before public deployment*
-
-4. **Feature Enhancements** (ongoing):
-   - Analysis templates
-   - Interactive refinement
-   - Comparative analysis mode
 
 ---
 
-**Last Updated**: February 13, 2026
+**Last Updated**: February 16, 2026
 **Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects UCM Integration + Prompt Externalization v2.8.2 + Report Quality Hardening (Phase 1/2) + Cost Optimization
+**Document Status**: Reflects ClaimBoundary architecture redesign + Phase 8/9 pipeline quality work + all prior changes

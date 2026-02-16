@@ -2,9 +2,10 @@
 
 **Date:** 2026-02-15
 **Author:** Claude Opus 4.6 (Senior Architect)
-**Status:** ACTIVE — Phase 9a partially effective, 9a-fix identified, 9b/9c pending
+**Status:** ON HOLD — Awaiting Lead Architect redesign: replace AnalysisContext with ClaimBoundary (derived from EvidenceScope)
 **Supersedes:** All archived Phase 8 review/proposal documents and WIP pipeline quality investigations
-**For Review:** Senior Developer
+**Previous status:** Phase 9a partially effective, 9a-fix identified, 9b/9c pending
+**For Review:** Senior Developer (review of 9a results complete; further execution halted)
 
 ---
 
@@ -390,7 +391,8 @@ Phase 9c: Reserved contradiction budget                         → Re-run 4 tes
 
 | Document | Location | Status |
 |----------|----------|--------|
-| Phase 9 Proposal (full, with §12 author response) | `Docs/REVIEWS/Phase9_Research_Loop_Proposal_2026-02-15.md` | Active |
+| **ClaimBoundary Pipeline Architecture** | `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` | **Reviewed — awaiting Lead Architect revision** |
+| Phase 9 Proposal (full, with §12 author response) | `Docs/REVIEWS/Phase9_Research_Loop_Proposal_2026-02-15.md` | On hold (superseded by ClaimBoundary redesign) |
 | Phase 8 Review + Phase 9 Senior Dev Review (§13) | `Docs/ARCHIVE/REVIEWS/Phase8_Senior_Developer_Review_2026-02-15.md` | Archived |
 | Phase 8 Proposal | `Docs/ARCHIVE/REVIEWS/Phase8_Pipeline_Redesign_Proposal_2026-02-15.md` | Archived |
 | Phase 8 Comparison Data | `Docs/ARCHIVE/REVIEWS/Phase8_Systematic_Analysis_2026-02-15.md` | Archived |

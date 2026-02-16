@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-15 (Phase 8/9 Consolidation)
+**Last Updated**: 2026-02-16 (ClaimBoundary Consolidation)
 
 ---
 
@@ -90,6 +90,28 @@ The following documents had valuable content extracted and merged into active do
 8. `Consolidated_Report_Quality_Execution_Plan.md` — Report quality plan (SUPERSEDED)
 9. `Jaccard_Similarity_AGENTS_Violations_v2.md` — AGENTS violations audit (DONE)
 
+### ClaimBoundary Architecture Consolidation (2026-02-16)
+
+**Description**: Documents archived during ClaimBoundary consolidation. The ClaimBoundary pipeline redesign (replacing AnalysisContext with evidence-emergent ClaimBoundary) supersedes all old pipeline improvement plans. The single definitive implementation reference is `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+
+**ClaimBoundary design process** (DONE — all decisions closed, integrated into architecture doc):
+1. `ClaimBoundary_Brainstorming_Ideas_2026-02-16.md` — 8 brainstorming ideas assessed by 3 reviewers (DONE — decisions D1-D9 made)
+2. `Decision_Memo_ClaimBoundary_2026-02-16.md` — 9 architectural decisions with rationale (DONE — all integrated into architecture doc header)
+3. `ClaimBoundary_LeadArchitect_Handoff_2026-02-16.md` — Captain-to-Lead-Architect handoff with implementation details (DONE — Round 1 + Round 2 updates executed)
+4. `Captain_Comments_Consolidated_2026-02-16.md` — 10 Captain comments with analysis and options (DONE — all 10 addressed in architecture doc Round 2)
+
+**Old pipeline improvement plans** (SUPERSEDED by ClaimBoundary clean break):
+5. `Pipeline_Phase2_Plan.md` — Phase 2 advanced orchestration for AnalysisContext pipeline (SUPERSEDED — features absorbed into ClaimBoundary design)
+6. `Efficient_LLM_Intelligence_Migration_Plan.md` — 19 deterministic function migrations (SUPERSEDED — ClaimBoundary code is LLM-first from scratch; Phase 0 was done)
+7. `LLM_Prompt_Improvement_Plan.md` — Anti-hallucination prompt gaps F1-F9 (SUPERSEDED — all CB prompts designed from scratch per architecture doc)
+8. `Report_Evidence_Calculation_Review_2026-02-05.md` — Evidence calculation design decisions (SUPERSEDED — pending decisions addressed in CB §8.5 aggregation + triangulation scoring)
+9. `Generic Evidence Quality Enhancement Plan.md` — Evidence quality phases 1-3 (SUPERSEDED — solved principles carried forward in CB; remaining phases target old pipeline)
+10. `Documentation_Cleanup_Plan.md` — .md + xWiki cleanup for old pipeline docs (SUPERSEDED — CB requires complete doc rewrite; 16 xWiki pages were updated before supersession)
+
+**Captain-decided archives:**
+11. `Anti_Hallucination_Strategies.md` — Risk matrix R1-R10 + mitigations M1-M10 (principles absorbed into CB design; generic principles in AGENTS.md)
+12. `LLM_Call_Optimization_Goals_Proposal.md` — Goal framework + guardrails (SUPERSEDED — guardrails in AGENTS.md; specific targets for old pipeline)
+
 ---
 
 ### Source Reliability Service Reviews
@@ -156,5 +178,5 @@ If you need to reference archived documents:
 ---
 
 **Archive Maintainer**: Plan Coordinator
-**Last Review**: 2026-02-15 (Phase 8/9 Consolidation)
+**Last Review**: 2026-02-16 (ClaimBoundary Consolidation)
 **Next Review**: Quarterly (or when major features complete)
