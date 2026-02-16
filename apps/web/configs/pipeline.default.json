@@ -46,7 +46,7 @@
   "maxTotalTokens": 750000,
   "maxTokensPerCall": 100000,
   "enforceBudgets": false,
-  "defaultPipelineVariant": "orchestrated",
+  "defaultPipelineVariant": "claimboundary",
   "evidenceSimilarityThreshold": 0.4,
   "temporalConfidenceThreshold": 0.6,
   "recencyWindowMonths": 6,
