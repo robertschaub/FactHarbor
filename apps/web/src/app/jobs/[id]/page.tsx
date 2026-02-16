@@ -22,7 +22,6 @@ import {
   percentageToClaimVerdict,
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
-import { ClaimsGroupedByContext } from "./components/ClaimsGroupedByContext";
 import { BoundaryFindings } from "./components/BoundaryFindings";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
@@ -709,47 +708,28 @@ export default function JobPage() {
                 <div className={styles.claimsSection}>
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
                   <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
-                  {hasMultipleContexts && !isCBSchema ? (
-                    // Legacy AC schema with context grouping
-                    <ClaimsGroupedByContext
-                      claimVerdicts={claimVerdicts}
-                      contexts={contexts}
-                      tangentialClaims={tangentialSubClaims}
-                      renderClaim={(claim, showCrossContext) => (
-                        <ClaimCard
-                          claim={claim}
-                          claimBoundaries={claimBoundaries}
-                          totalBoundaryCount={claimBoundaries.length}
-                          showCrossContext={showCrossContext}
-                        />
-                      )}
+                  {/* CB pipeline: flat list with inline BoundaryFindings */}
+                  {claimVerdicts.map((cv: any) => (
+                    <ClaimCard
+                      key={cv.claimId}
+                      claim={cv}
+                      claimBoundaries={claimBoundaries}
+                      totalBoundaryCount={claimBoundaries.length}
                     />
-                  ) : (
-                    // CB schema OR single-context AC (flat list)
-                    <>
-                      {claimVerdicts.map((cv: any) => (
-                        <ClaimCard
-                          key={cv.claimId}
-                          claim={cv}
-                          claimBoundaries={claimBoundaries}
-                          totalBoundaryCount={claimBoundaries.length}
-                        />
-                      ))}
-                      {tangentialSubClaims.length > 0 && (
-                        <details className={styles.tangentialDetails}>
-                          <summary className={styles.tangentialSummary}>
-                            📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
-                          </summary>
-                          <ul className={styles.tangentialList}>
-                            {tangentialSubClaims.map((c: any) => (
-                              <li key={c.id} className={styles.tangentialItem}>
-                                <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-                    </>
+                  ))}
+                  {tangentialSubClaims.length > 0 && (
+                    <details className={styles.tangentialDetails}>
+                      <summary className={styles.tangentialSummary}>
+                        📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
+                      </summary>
+                      <ul className={styles.tangentialList}>
+                        {tangentialSubClaims.map((c: any) => (
+                          <li key={c.id} className={styles.tangentialItem}>
+                            <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
                   )}
                 </div>
               )}
@@ -1608,12 +1588,10 @@ function ClaimCard({
   claim,
   claimBoundaries = [],
   totalBoundaryCount = 0,
-  showCrossContext = false
 }: {
   claim: any;
   claimBoundaries?: any[];
   totalBoundaryCount?: number;
-  showCrossContext?: boolean;
 }) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
@@ -1642,9 +1620,6 @@ function ClaimCard({
         )}
         {hasEvidenceBasedContestation && (
           <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
-        )}
-        {showCrossContext && (
-          <Badge bg="#eef2ff" color="#1e3a8a">Cross-context</Badge>
         )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
