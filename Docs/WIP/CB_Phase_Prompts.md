@@ -294,26 +294,355 @@ Update CB_Execution_State.md.
 
 ---
 
-## Phases 3, 3b, 4
+## Phase 3: UI Adaptation + AC UI Cleanup
 
-(Same pattern — prompts follow the architecture doc §15 phases.
-Each prompt references: CB_Execution_State.md, architecture doc section, confusion prevention rules.
-Full prompts omitted for brevity — the pattern is established above.)
+**Tool:** Claude Code (VS Code)
+**Model:** Sonnet
+**Time estimate:** 2-3 hours
+**Captain action after:** Review UI changes, then: `git tag cb-phase3-ui`
 
-### Phase 3: UI
+```
+As Senior Developer, execute Phase 3 of the ClaimBoundary Pipeline implementation.
 
-**Tool:** Claude Code (Sonnet) for BoundaryFindings component. Codex for ClaimsGroupedByContext replacement.
-**Captain action:** `git tag cb-phase3-ui`
+Read these files first:
+- Docs/WIP/CB_Execution_State.md (current state — verify Phase 2 complete)
+- Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §15 Phase 3, §18 Q9/Q10, §22.1
+- Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §22.3.2 (confusion prevention)
+- apps/web/src/app/jobs/[id]/page.tsx (current UI — read AC display logic)
+- apps/web/src/app/jobs/[id]/components/ClaimsGroupedByContext.tsx (to be replaced)
+- apps/web/src/lib/analyzer/claimboundary-pipeline.ts (new resultJson schema)
 
-### Phase 3b: Monolithic Dynamic
+## CONTEXT
+The ClaimBoundary pipeline is now the default. The UI still displays results using
+the old AnalysisContext schema (analysisContexts, contextId, ClaimsGroupedByContext).
+The new resultJson uses claimBoundaries, claimVerdicts with boundaryFindings[], and
+coverageMatrix. The UI must be updated to consume the new schema.
+
+## TASK
+
+### Step 1: Build new BoundaryFindings display (commit separately)
+
+1. Create apps/web/src/app/jobs/[id]/components/BoundaryFindings.tsx:
+   - Inline boundary findings within each claim verdict card (NOT separate tabs)
+   - Each BoundaryFinding shows: boundary name, direction icon (✓/✗/⚖),
+     truthPercentage, evidenceCount, confidence
+   - Direction icons: ✓ for supporting, ✗ for refutes, ⚖ for mixed/contextual
+   - Compact layout: one row per boundary within the claim card
+
+2. Boundary suppression logic (§18 Q10):
+   - If result has ≤ 2 boundaries: do NOT show boundary breakdown
+   - Only show BoundaryFindings when boundaries.length > 2
+   - Always show EvidenceScope tooltips regardless of boundary count
+
+3. Hybrid tooltip (§18 Q10):
+   - In boundary rows: show compact inline metadata (evidence count + temporal range)
+   - On hover: full EvidenceScope details (methodology, boundaries, geographic, temporal)
+
+4. Optional claim grouping (§18 Q1):
+   - If UCM `ui.enableClaimGrouping` is true AND claims.length >= 4:
+     show accordion grouping for claims (group labels from CLAIM_GROUPING prompt)
+   - Default: off (flat list of claim verdicts)
+
+Commit: feat(claimboundary): BoundaryFindings UI component
+Run: npm run build && npm test — MUST PASS
+
+### Step 2: Update page.tsx for CB resultJson (commit separately)
+
+1. Update apps/web/src/app/jobs/[id]/page.tsx:
+   - Read `result?.claimBoundaries` instead of `result?.analysisContexts`
+   - Read `result?.claimVerdicts` (CB format with boundaryFindings[])
+   - Remove `hasMultipleContexts` logic → replace with boundary count check
+   - Remove `contextAnswers` display → replace with per-claim verdict display
+   - Use new BoundaryFindings component for each claim verdict card
+   - Update tooltip text: replace "AnalysisContext" explanations with "ClaimBoundary"
+   - Keep backward compatibility: if old-format result (has analysisContexts),
+     fall back to legacy display (some jobs may have old results in DB)
+
+Commit: feat(claimboundary): update job results page for CB schema
+Run: npm run build && npm test — MUST PASS
+
+### Step 3: Cleanup 3a — delete AC UI code (commit separately)
+
+1. Delete apps/web/src/app/jobs/[id]/components/ClaimsGroupedByContext.tsx (154 lines)
+2. Remove its import from page.tsx (if not already removed in Step 2)
+3. Verify no other files import ClaimsGroupedByContext
+
+Commit: refactor(claimboundary): delete ClaimsGroupedByContext component
+Run: npm run build && npm test — MUST PASS
+
+Update CB_Execution_State.md after each step.
+
+## ACCEPTANCE CRITERIA
+- npm run build passes after EVERY step
+- npm test passes after EVERY step
+- New BoundaryFindings component renders claim verdicts with boundary details
+- Boundary display suppressed for ≤ 2 boundaries
+- ClaimsGroupedByContext.tsx deleted
+- page.tsx has no analysisContexts references (except backward-compat fallback)
+```
+
+---
+
+## Phase 3b: Monolithic Dynamic — Prompt Layer Cleanup
+
+**Tool:** Claude Code (VS Code)
+**Model:** Sonnet
+**Time estimate:** 1-2 hours
+**Captain action after:** Review changes, then: `git tag cb-phase3b-monolithic`
+
+```
+As Senior Developer, execute Phase 3b of the ClaimBoundary Pipeline implementation.
+
+Read these files first:
+- Docs/WIP/CB_Execution_State.md (current state)
+- Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §15 Phase 3b
+- Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §22.3.2 (confusion prevention)
+- apps/web/src/lib/analyzer/monolithic-dynamic.ts (the MD pipeline — 780 lines)
+- apps/web/src/lib/analyzer/prompts/prompt-builder.ts (check who consumes base prompts)
+
+## CONTEXT
+After Phase 2a deleted orchestrated.ts, several prompt infrastructure files may be
+dead code. Monolithic Dynamic uses its OWN prompt file (monolithic-dynamic.prompt.md)
+loaded via prompt-loader, NOT the base prompt files in prompts/base/. The base prompt
+files were consumed by orchestrated.ts through prompt-builder.ts.
+
+The ClaimBoundary pipeline uses its own prompts from claimboundary.prompt.md.
+
+## TASK
+
+### Step 1: Verify dead code — base prompt files (DO NOT DELETE YET)
+
+Run a consumer analysis to confirm these files are only imported by prompt-builder.ts
+and that prompt-builder's base prompt functions are NOT called by any active code:
+
+Files to check:
+  - apps/web/src/lib/analyzer/prompts/base/understand-base.ts (22 AC refs)
+  - apps/web/src/lib/analyzer/prompts/base/verdict-base.ts (17 AC refs)
+  - apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts (10 AC refs)
+  - apps/web/src/lib/analyzer/prompts/base/dynamic-analysis-base.ts (3 AC refs)
+  - apps/web/src/lib/analyzer/prompts/base/dynamic-plan-base.ts (1 AC ref)
+
+Verify: grep for all exported function names from these files across the codebase.
+If they are ONLY imported by prompt-builder.ts, and prompt-builder's consuming
+functions (buildSystemPrompt, buildBasePrompt, etc.) are NOT called by any active
+code → they are dead code.
+
+Also verify the provider adapter files:
+  - apps/web/src/lib/analyzer/prompts/providers/openai.ts (18 AC refs)
+  - apps/web/src/lib/analyzer/prompts/providers/mistral.ts (17 AC refs)
+  - apps/web/src/lib/analyzer/prompts/providers/google.ts (16 AC refs)
+
+Check if provider adapter functions with AC refs are called by any active code.
+
+Report findings before proceeding.
+
+### Step 2: Delete dead base prompt files (commit separately)
+
+If Step 1 confirms they are dead code:
+1. Delete the 5 base prompt files listed above
+2. Remove their imports from prompt-builder.ts
+3. Remove the dead functions from prompt-builder.ts that used them
+   (keep detectProvider and any other functions still used by active code)
+4. Fix any cascading import issues
+
+Commit: refactor(claimboundary): delete orphaned base prompt files (53 AC refs removed)
+Run: npm run build && npm test — MUST PASS
+
+### Step 3: Clean provider adapter AC references (commit separately)
+
+If Step 1 found dead AC code in provider adapters:
+1. Remove AC-specific structured output schemas from provider files
+2. Remove AC-specific prompt adaptation functions no longer called
+3. Keep any functions still used by monolithic-dynamic or claimboundary pipeline
+
+If the AC code in providers is still actively used by MD:
+1. Update the AC terminology to CB terminology
+2. Replace contextId → claimBoundaryId, analysisContexts → claimBoundaries in schemas
+
+Commit: refactor(claimboundary): clean AC refs from provider adapters
+Run: npm run build && npm test — MUST PASS
+
+### Step 4: Update monolithic-dynamic.prompt.md (commit separately)
+
+Read apps/web/prompts/monolithic-dynamic.prompt.md and check for AC terminology.
+If found: update AnalysisContext references to ClaimBoundary terminology.
+
+Also check prompt infra files for remaining AC refs:
+  - apps/web/src/lib/analyzer/prompts/config-adaptations/tiering.ts
+  - apps/web/src/lib/analyzer/prompts/config-adaptations/structured-output.ts
+  - apps/web/src/lib/analyzer/prompts/prompt-testing.ts
+
+Clean any AC refs in these files.
+
+Commit: refactor(claimboundary): update MD prompts and prompt infra for CB terminology
+Run: npm run build && npm test — MUST PASS
+
+### Step 5: Update monolithic-dynamic.prompt.test.ts (commit with Step 4 or separately)
+
+Update test/unit/lib/analyzer/monolithic-dynamic-prompt.test.ts:
+- Remove any AC schema assertions
+- Update test expectations for CB terminology if prompt text changed
+
+Commit: test(claimboundary): update MD prompt tests for CB terminology
+Run: npm run build && npm test — MUST PASS
+
+Update CB_Execution_State.md after each step.
+
+## ACCEPTANCE CRITERIA
+- npm run build passes after EVERY step
+- npm test passes after EVERY step
+- All orphaned prompt files deleted (if confirmed dead)
+- grep "AnalysisContext" apps/web/src/lib/analyzer/prompts/ returns ZERO hits
+- monolithic-dynamic.prompt.md has no AC terminology
+```
+
+---
+
+## Phase 4: Final Sweep
 
 **Tool:** Claude Code (Sonnet)
-**Captain action:** `git tag cb-phase3b-monolithic`
+**Model:** Sonnet
+**Time estimate:** 1-2 hours
+**Captain action after:** Review changes, run verification grep, then: `git tag cb-phase4-ac-removed`
 
-### Phase 4: Final Sweep
+```
+As Senior Developer, execute Phase 4 (final sweep) of the ClaimBoundary Pipeline.
 
-**Tool:** Cline/GLM-5 for type cleanup + batch xWiki updates. Code Reviewer (Sonnet) for final review.
-**Captain action:** `git tag cb-phase4-ac-removed`
+Read these files first:
+- Docs/WIP/CB_Execution_State.md (current state — verify Phase 3 + 3b complete)
+- Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §15 Phase 4
+- Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §22.3.2 (confusion prevention)
+
+## CONTEXT
+Phases 3 and 3b have been completed. The remaining AnalysisContext references should
+be limited to: type definitions in types.ts, a few utility modules, exports in index.ts,
+and scattered comments. This phase removes them all.
+
+## TASK
+
+### Step 0: Audit remaining AC references
+
+Run these greps and report the FULL picture before making any changes:
+  grep -r "AnalysisContext" apps/web/src/ --include="*.ts" --include="*.tsx"
+  grep -r "contextId" apps/web/src/ --include="*.ts" --include="*.tsx"
+  grep -r "analysisContexts" apps/web/src/ --include="*.ts" --include="*.tsx"
+
+Categorize each hit as: type definition | active code | comment | export | test fixture.
+This audit drives the remaining steps.
+
+### Step 1: Cleanup 4a — remove AC from shared types (commit separately)
+
+1. Delete from apps/web/src/lib/analyzer/types.ts:
+   - AnalysisContext interface (~35 lines)
+   - ContextVerdict interface
+   - EnrichedAnalysisContext interface
+   - AnalysisContextAnswer interface
+   - Remove analysisContexts field from ClaimUnderstanding (if still present)
+   - Remove analysisContexts field from ArticleAnalysis (if still present)
+2. Remove AC type exports from apps/web/src/lib/analyzer/index.ts
+3. Fix any compilation errors from removed types
+
+Commit: refactor(claimboundary): delete AnalysisContext type definitions
+Run: npm run build && npm test — MUST PASS
+
+### Step 2: Cleanup 4b — remove AC from utility modules (commit separately)
+
+Clean remaining AC references in utility files:
+1. apps/web/src/lib/analyzer/confidence-calibration.ts:
+   - Remove AnalysisContextAnswer import
+   - Remove contextAnswers parameter (already made optional in Phase 2a — now delete it)
+   - Update any callers
+2. apps/web/src/lib/analyzer/evidence-recency.ts:
+   - Remove AnalysisContext import
+   - Remove/replace context type cast
+3. apps/web/src/lib/analyzer/claim-importance.ts:
+   - Remove contextId grouping if present
+4. apps/web/src/lib/analyzer/metrics-integration.ts:
+   - Remove AC metrics if present
+5. apps/web/src/lib/analyzer/text-analysis-types.ts:
+   - Update comment referencing AnalysisContext
+6. apps/web/src/lib/config-schemas.ts:
+   - Update description strings mentioning AC
+7. apps/web/src/lib/analyzer/config.ts:
+   - Update comment references
+
+Commit: refactor(claimboundary): remove AC from utility modules and config
+Run: npm run build && npm test — MUST PASS
+
+### Step 3: Cleanup 4c — remaining files (commit separately)
+
+1. Clean any remaining files found in Step 0 audit
+2. Update apps/web/src/lib/analyzer/prompts/OUTPUT_SCHEMAS.md (10 AC refs)
+3. Clean budgets.ts if it has contextId references
+4. Clean quality-gates.ts if it has contextId references
+5. Clean evidence-normalization.ts if it has contextId references
+6. Update test fixtures in any remaining test files
+
+Commit: refactor(claimboundary): final AC reference cleanup
+Run: npm run build && npm test — MUST PASS
+
+### Step 4: Verification
+
+Run the final verification:
+  grep -r "AnalysisContext" apps/web/src/ --include="*.ts" --include="*.tsx"
+  grep -r "contextId" apps/web/src/ --include="*.ts" --include="*.tsx" | grep -v claimBoundaryId
+  grep -r "analysisContexts" apps/web/src/ --include="*.ts" --include="*.tsx"
+
+GOAL: Zero hits (except comments that say "formerly AnalysisContext" or similar
+historical notes, and backward-compat fallback in page.tsx if it exists).
+
+If any hits remain, clean them. Do NOT leave AC references in active code.
+
+Also update governance docs:
+- AGENTS.md: remove orchestrated.ts from Key Files, remove [BEING REPLACED] tags,
+  update architecture diagram to remove orchestrated.ts line
+- CLAUDE.md: remove orchestrated.ts references, remove [BEING REPLACED] tag,
+  remove migration-in-progress note (migration is done)
+
+Commit: docs(claimboundary): final governance doc update — migration complete
+Run: npm run build && npm test — MUST PASS
+
+Update CB_Execution_State.md: mark Phase 4 complete. Set Current Phase to
+"MIGRATION COMPLETE — ClaimBoundary pipeline is the sole active pipeline."
+
+## ACCEPTANCE CRITERIA
+- npm run build passes after EVERY step
+- npm test passes after EVERY step
+- grep "AnalysisContext" across apps/web/src/ returns ZERO active code hits
+- grep "contextId" across apps/web/src/ returns only claimBoundaryId-related hits
+- AGENTS.md and CLAUDE.md updated to reflect completed migration
+- CB_Execution_State.md shows all phases complete
+```
+
+### Phase 4 Review (Optional)
+
+**Tool:** Claude Code (VS Code)
+**Model:** Sonnet
+**Role:** Code Reviewer
+
+```
+As Code Reviewer, perform the final ClaimBoundary migration verification.
+
+Read: Docs/WIP/CB_Execution_State.md (verify Phase 4 complete)
+Read: AGENTS.md (verify updated)
+
+Review checklist:
+1. Run: grep -r "AnalysisContext" apps/web/src/ --include="*.ts" --include="*.tsx"
+   → ZERO active code hits (comments with "formerly" OK)
+2. Run: grep -r "contextId" apps/web/src/ --include="*.ts" --include="*.tsx"
+   → Only claimBoundaryId-related hits
+3. Run: npm run build → PASS
+4. Run: npm test → PASS
+5. Verify AGENTS.md has no orchestrated.ts in Key Files
+6. Verify CLAUDE.md has no "BEING REPLACED" or migration notes
+7. Verify ClaimBoundary pipeline builds and tests pass
+8. Verify monolithic-dynamic pipeline builds and tests pass
+
+Report: PASS or FAIL with details. Do NOT fix issues — flag them.
+Update CB_Execution_State.md with review outcome.
+```
+
+**Captain action:** If review passes → `git tag cb-phase4-ac-removed`
 
 ---
 
