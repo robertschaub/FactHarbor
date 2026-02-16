@@ -332,18 +332,18 @@ describe("Monolithic-Dynamic Prompt File (UCM)", () => {
       expect(section.content.toLowerCase()).toMatch(/rating direction/i);
     });
 
-    it("DYNAMIC_PLAN mentions AnalysisContext terminology", () => {
+    it("DYNAMIC_PLAN mentions ClaimBoundary terminology", () => {
       const section = parsed.sections.find(
         (s) => s.name === "DYNAMIC_PLAN",
       )!;
-      expect(section.content).toContain("AnalysisContext");
+      expect(section.content).toContain("ClaimBoundary");
     });
 
-    it("DYNAMIC_ANALYSIS mentions multi-context awareness", () => {
+    it("DYNAMIC_ANALYSIS mentions multi-boundary awareness", () => {
       const section = parsed.sections.find(
         (s) => s.name === "DYNAMIC_ANALYSIS",
       )!;
-      expect(section.content).toMatch(/Multi-Context/i);
+      expect(section.content).toMatch(/Multi-Boundary/i);
     });
   });
 });
