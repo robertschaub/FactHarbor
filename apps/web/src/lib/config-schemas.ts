@@ -162,62 +162,6 @@ export const PipelineConfigSchema = z.object({
     .optional()
     .describe("Optional KeyFactor hints (evaluationCriteria, factor, category)"),
 
-  // NEW: Correctly-named key (PRIMARY)
-  contextDedupThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext deduplication (0-1, lower = more contexts)"),
-
-  // === Context Detection Settings ===
-  // Correctly-named keys
-  contextDetectionMethod: z
-    .enum(["heuristic", "llm", "hybrid"])
-    .optional()
-    .describe("AnalysisContext detection method: heuristic (patterns only), llm (AI only), hybrid (patterns + AI)"),
-  contextDetectionEnabled: z.boolean().optional().describe("Enable AnalysisContext detection (if false, use single general context)"),
-  contextDetectionMinConfidence: z
-    .number()
-    .min(0)
-    .max(1)
-    .optional()
-    .describe("Minimum confidence threshold for LLM-detected AnalysisContexts (0-1)"),
-  contextDetectionMaxContexts: z
-    .number()
-    .int()
-    .min(1)
-    .max(10)
-    .optional()
-    .describe("Maximum number of AnalysisContexts to keep after detection"),
-  contextDetectionCustomPatterns: z
-    .array(
-      z.object({
-        id: z.string().regex(CONTEXT_PATTERN_ID_REGEX),
-        name: z.string(),
-        type: z.enum(["methodological", "legal", "scientific", "general", "regulatory", "temporal", "geographic"]),
-        triggerPattern: z.string(),
-        keywords: z.array(z.string()),
-        metadata: z.record(z.any()).optional(),
-      }),
-    )
-    .optional()
-    .describe("Custom AnalysisContext detection patterns (extends built-in)"),
-  contextFactorHints: z
-    .array(
-      z.object({
-        contextType: z.string(),
-        evaluationCriteria: z.string(),
-        factor: z.string(),
-        category: z.string(),
-      }),
-    )
-    .optional()
-    .describe("Hints for LLM AnalysisContext-specific factor generation"),
-
-  // === Context Prompt & Alignment Controls ===
-  contextPromptSelectionEnabled: z.boolean().optional().describe("Enable targeted evidence selection for context refinement prompts"),
-  contextPromptMaxEvidenceItems: z.number().int().min(8).max(80).optional().describe("Max evidence items included in context refinement prompts"),
-  contextDedupEnabled: z.boolean().optional().describe("Enable AnalysisContext deduplication"),
-  contextNameAlignmentEnabled: z.boolean().optional().describe("Enable AnalysisContext name alignment"),
-  contextNameAlignmentThreshold: z.number().min(0).max(1).optional().describe("Threshold for AnalysisContext name alignment (0-1)"),
-  evidenceScopeAlmostEqualThreshold: z.number().min(0).max(1).optional().describe("Threshold for EvidenceScope similarity (0-1)"),
-
   // === LLM Limits & Gates ===
   understandMaxChars: z.number().int().min(1000).max(50000).optional().describe("Max characters sent to UNDERSTAND prompt"),
   understandLlmTimeoutMs: z.number().int().min(10000).max(1200000).optional().describe("Timeout for UNDERSTAND LLM calls (ms)"),
@@ -381,25 +325,6 @@ export const PipelineConfigSchema = z.object({
 
   if (data.maxTokensPerCall === undefined) {
     data.maxTokensPerCall = 100000;
-  }
-
-  if (data.contextPromptSelectionEnabled === undefined) {
-    data.contextPromptSelectionEnabled = true;
-  }
-  if (data.contextPromptMaxEvidenceItems === undefined) {
-    data.contextPromptMaxEvidenceItems = 40;
-  }
-  if (data.contextDedupEnabled === undefined) {
-    data.contextDedupEnabled = true;
-  }
-  if (data.contextNameAlignmentEnabled === undefined) {
-    data.contextNameAlignmentEnabled = true;
-  }
-  if (data.contextNameAlignmentThreshold === undefined) {
-    data.contextNameAlignmentThreshold = 0.3;
-  }
-  if (data.evidenceScopeAlmostEqualThreshold === undefined) {
-    data.evidenceScopeAlmostEqualThreshold = 0.7;
   }
   if (data.understandMaxChars === undefined) {
     data.understandMaxChars = 12000;
@@ -581,21 +506,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   understandTemperature: 0,
   understandMinClaimThreshold: 4,
   keyFactorHints: undefined,
-  contextDedupThreshold: 0.70, // v2.11.1: was 0.85 - lowered to merge similar contexts more aggressively (cost optimization)
-
-  // Context detection settings (NEW: Use new key names)
-  contextDetectionMethod: "hybrid",
-  contextDetectionEnabled: true,
-  contextDetectionMinConfidence: 0.7,
-  contextDetectionMaxContexts: 3, // v2.11.1: was 5 - reduced to limit context multiplication (cost optimization)
-  contextDetectionCustomPatterns: undefined,
-  contextFactorHints: undefined,
-  contextPromptSelectionEnabled: true,
-  contextPromptMaxEvidenceItems: 40,
-  contextDedupEnabled: true,
-  contextNameAlignmentEnabled: true,
-  contextNameAlignmentThreshold: 0.3,
-  evidenceScopeAlmostEqualThreshold: 0.7,
   understandMaxChars: 12000,
   understandLlmTimeoutMs: 600000,
   extractEvidenceLlmTimeoutMs: 300000,

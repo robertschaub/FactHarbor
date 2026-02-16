@@ -64,19 +64,7 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
     });
   }
 
-  // Warning 4: Aggressive context deduplication
-  const dedupThreshold = config.contextDedupThreshold ?? 0.85;
-  if (dedupThreshold < 0.75) {
-    warnings.push({
-      level: "warning",
-      title: "Aggressive Context Deduplication",
-      message: `Context dedup threshold is ${dedupThreshold} (recommended: ≥0.85). This may incorrectly merge distinct contexts.`,
-      suggestion: "Increase contextDedupThreshold to 0.85 or higher to avoid context loss",
-      affectedFields: ["contextDedupThreshold"],
-    });
-  }
-
-  // Warning 5: Very high iteration limits (cost risk)
+  // Warning 4: Very high iteration limits (cost risk)
   if (config.maxTotalIterations > 30) {
     warnings.push({
       level: "danger",

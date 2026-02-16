@@ -1307,25 +1307,6 @@ function PipelineConfigForm({
           <div className={styles.formHelp}>Deep mode costs ~2-3x more but yields higher quality</div>
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Context Dedup Threshold</label>
-          <input
-            type="number"
-            className={styles.formInput}
-            value={config.contextDedupThreshold ?? 0.85}
-            min={0.5}
-            max={1.0}
-            step={0.05}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              onChange({
-                ...config,
-                contextDedupThreshold: isNaN(v) ? 0.7 : v,
-              });
-            }}
-          />
-          <div className={styles.formHelp}>Lower = more contexts (0.5-1.0)</div>
-        </div>
-        <div className={styles.formGroup}>
           <label className={styles.formLabel}>
             <input
               type="checkbox"
