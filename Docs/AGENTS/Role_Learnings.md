@@ -100,7 +100,17 @@ _(No entries yet)_
 
 ## Code Reviewer
 
-_(No entries yet)_
+### 2026-02-16 — Cross-check UCM prompt keys against prompt file sections
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** When reviewing code that uses UCM prompt keys (string-based LLM call routing like `llmCall("VERDICT_ADVOCATE", ...)`), always verify that every key referenced in the code has a corresponding section defined in the prompt file. In the CB pipeline review, `VERDICT_GROUNDING_VALIDATION` and `VERDICT_DIRECTION_VALIDATION` were called in verdict-stage.ts Step 5 but had no prompt definitions in claimboundary.prompt.md. This would have been a runtime crash. The prompt file's `requiredSections` frontmatter is the authoritative list — cross-check code call sites against it.
+**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts` (lines 424, 435), `apps/web/prompts/claimboundary.prompt.md`
+
+### 2026-02-16 — Verify default values match the spec at every layer
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** Configuration defaults can diverge across layers. The `mixedConfidenceThreshold` had three different defaults: truth-scale.ts (60), config-schemas.ts CalcConfig (60), and verdict-stage.ts VerdictStageConfig (40, matching the spec). But verdict-stage.ts never passed its value through to `percentageToClaimVerdict()`, so the effective default was 60 — mismatching the spec's 40. When a configurable parameter appears in multiple places, trace the actual call chain to confirm which default actually takes effect at runtime.
+**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/truth-scale.ts`, `apps/web/src/lib/config-schemas.ts`
 
 ## Security Expert
 

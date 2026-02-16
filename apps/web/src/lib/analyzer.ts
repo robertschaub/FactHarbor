@@ -2,19 +2,11 @@
  * FactHarbor Analyzer - Entry Point
  *
  * This file serves as the main entry point for the analyzer module.
- * The actual implementation is in ./analyzer/orchestrated.ts
+ * The orchestrated pipeline has been replaced by the ClaimBoundary pipeline.
  *
- * This facade maintains backward compatibility for existing imports.
- *
- * @version 2.7.0
- * @date January 2026
+ * @version 3.0.0
+ * @date February 2026
  */
-
-// Re-export everything from orchestrated pipeline
-export {
-  runFactHarborAnalysis,
-  normalizeTrackRecordScore,
-} from "./analyzer/orchestrated";
 
 // Re-export validation utilities and types
 export { assertValidTruthPercentage } from "./analyzer/types";
@@ -28,3 +20,6 @@ export type {
   ArticleAnalysis,
   TwoPanelSummary,
 } from "./analyzer/types";
+
+// Re-export normalizeTrackRecordScore from source-reliability (was also exported from orchestrated)
+export { normalizeTrackRecordScore } from "./analyzer/source-reliability";

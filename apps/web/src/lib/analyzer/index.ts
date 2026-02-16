@@ -163,4 +163,3 @@ export type { RawEvidenceItem } from "./evidence-normalization";
 export { RecencyAssessor } from "./evidence-recency";
 export type { RecencyValidationResult, RecencyPenaltyResult } from "./evidence-recency";
 
-export { mergeContextMetadata, buildContextDescription, buildRelevanceContextSummary } from "./evidence-context-utils";

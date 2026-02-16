@@ -1,4 +1,3 @@
-import { runFactHarborAnalysis } from "@/lib/analyzer";
 import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { debugLog } from "@/lib/analyzer/debug";
@@ -12,7 +11,7 @@ import {
 } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 
-type PipelineVariant = "claimboundary" | "orchestrated" | "monolithic_dynamic";
+type PipelineVariant = "claimboundary" | "monolithic_dynamic";
 
 type RunnerQueueState = {
   runningCount: number;
@@ -120,13 +119,6 @@ async function runJobBackground(jobId: string) {
         inputValue,
         onEvent: async (m, p) => emit("info", m, p),
       });
-    } else if (pipelineVariant === "orchestrated") {
-      result = await runFactHarborAnalysis({
-        jobId,
-        inputType,
-        inputValue,
-        onEvent: async (m, p) => emit("info", m, p),
-      });
     } else if (pipelineVariant === "monolithic_dynamic") {
       try {
         result = await runMonolithicDynamic({
@@ -158,7 +150,7 @@ async function runJobBackground(jobId: string) {
 
     if (result?.resultJson?.meta) {
       result.resultJson.meta.pipelineVariantRequested = pipelineVariant;
-      result.resultJson.meta.pipelineVariant = usedFallback ? "orchestrated" : pipelineVariant;
+      result.resultJson.meta.pipelineVariant = usedFallback ? "claimboundary" : pipelineVariant;
       result.resultJson.meta.pipelineFallback = usedFallback;
       if (fallbackReason) {
         result.resultJson.meta.fallbackReason = fallbackReason;
