@@ -1086,8 +1086,318 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 ```
 
 **Handover:** Update `CB_Execution_State.md`:
-- Change "Current Phase" to "PHASE 5 COMPLETE — CB Pipeline v1.0 Production-Ready"
+- Change "Current Phase" to "PHASE 5 COMPLETE (core) — UI work pending Phase 5k"
 - Add entry to Handover Log for Phase 5i
+- Update "Last Updated" date to today
+
+---
+
+## Phase 5k: UI Adaptations for CB Display and UCM Config
+
+**Role:** As Senior Developer (UI/Frontend focus)
+**Prerequisite Reading:**
+- `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5k checklist
+- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §16 (UI considerations)
+- `apps/web/src/app/jobs/[id]/page.tsx` (current results page)
+- `apps/web/src/app/jobs/[id]/components/BoundaryFindings.tsx` (Phase 3 component)
+- `apps/web/src/app/admin/page.tsx` (admin UI entry point)
+
+**Your Task:**
+
+Create comprehensive UI support for ClaimBoundary pipeline: admin config panel, enhanced results display, report visualizations, and updated diagrams.
+
+**Implementation Requirements:**
+
+### Part 1: Admin UI — ClaimBoundary Configuration Panel (High Priority)
+
+**Goal:** All 24 CB parameters editable in Admin UI, organized by pipeline stage.
+
+**Approach:**
+1. Check if UCM config editing UI already exists (search for existing config pages under `apps/web/src/app/admin/`)
+2. If exists, extend it with CB section. If not, create `apps/web/src/app/admin/config/claimboundary/page.tsx`
+
+**Form Structure:**
+
+```tsx
+// Pseudo-code structure (adapt to existing patterns)
+<form onSubmit={handleSave}>
+  <h2>Stage 1: Extract Claims</h2>
+  <FormField label="Centrality Threshold" tooltip="Minimum centrality level for claims">
+    <select name="centralityThreshold" value={config.centralityThreshold}>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+    </select>
+  </FormField>
+  <FormField label="Claim Specificity Minimum" tooltip="Minimum specificity score (0-1)">
+    <input type="number" name="claimSpecificityMinimum"
+           value={config.claimSpecificityMinimum} min="0" max="1" step="0.1" />
+  </FormField>
+  // ... repeat for all Stage 1 params
+
+  <h2>Stage 2: Research Evidence</h2>
+  // ... Stage 2 params
+
+  <h2>Stage 3: Cluster Boundaries</h2>
+  // ... Stage 3 params
+
+  <h2>Stage 4: Verdict</h2>
+  // ... Stage 4 params
+
+  <h2>Aggregation (Stage 5)</h2>
+  <h3>Self-Consistency Spread Thresholds</h3>
+  // ... spread thresholds
+  <h3>Harm Potential Multipliers</h3>
+  // ... 4-level multipliers
+  <h3>Triangulation</h3>
+  // ... triangulation params
+
+  <button type="submit">Save Configuration</button>
+  <button type="button" onClick={resetToDefaults}>Reset to Defaults</button>
+</form>
+```
+
+**API Integration:**
+- Use existing UCM config API endpoints (likely `/api/fh/config` or similar)
+- Load config on mount: `GET /api/fh/config?type=pipeline&profile=default`
+- Save config on submit: `POST /api/fh/config` with updated values
+- Show toast on success/error
+
+**Validation:**
+- Client-side: HTML5 input validation (min/max, step, required)
+- Server-side: UCM schemas already validate (config-schemas.ts)
+
+**Testing:**
+- Manual test: open admin page, change values, save, reload page, verify values persisted
+- Test reset to defaults button
+- Test validation (e.g., enter invalid number, should show error)
+
+### Part 2: Results Display — Enhanced CB Report Components
+
+**Goal:** Display all CB-specific data structures on job results page.
+
+**Components to Create:**
+
+**2a. Coverage Matrix Visualization**
+
+Create `apps/web/src/app/jobs/[id]/components/CoverageMatrix.tsx`:
+
+```tsx
+import { CoverageMatrix } from "@/lib/analyzer/types";
+
+interface Props {
+  matrix: CoverageMatrix;
+  claimLabels: string[]; // claim IDs or shortened statements
+  boundaryLabels: string[]; // boundary IDs or names
+}
+
+export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels }: Props) {
+  // Render grid: rows = claims, cols = boundaries
+  // Cell color: 0 evidence = gray, 1-2 = yellow, 3+ = green
+  // Tooltip on hover: "3 supporting, 1 contradicting, 0 neutral"
+  return (
+    <div className={styles.coverageMatrix}>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            {boundaryLabels.map((b) => <th key={b}>{b}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {matrix.matrix.map((row, i) => (
+            <tr key={claimLabels[i]}>
+              <th>{claimLabels[i]}</th>
+              {row.map((cell, j) => (
+                <td key={j} className={getCellClass(cell)} title={getCellTooltip(cell)}>
+                  {cell.total}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+
+**2b. VerdictNarrative Display**
+
+Create `apps/web/src/app/jobs/[id]/components/VerdictNarrative.tsx`:
+
+```tsx
+import { VerdictNarrative } from "@/lib/analyzer/types";
+
+interface Props {
+  narrative: VerdictNarrative;
+}
+
+export function VerdictNarrativeDisplay({ narrative }: Props) {
+  return (
+    <section className={styles.narrative}>
+      <div className={styles.summary}>
+        <strong>Summary:</strong> {narrative.summary}
+      </div>
+      <details>
+        <summary>Key Evidence</summary>
+        <ul>
+          {narrative.keyEvidence.map((e, i) => <li key={i}>{e}</li>)}
+        </ul>
+      </details>
+      <details>
+        <summary>Limitations</summary>
+        <ul>
+          {narrative.limitations.map((l, i) => <li key={i}>{l}</li>)}
+        </ul>
+      </details>
+      <footer className={styles.methodology}>
+        <em>Methodology: {narrative.methodology}</em>
+      </footer>
+    </section>
+  );
+}
+```
+
+**2c. Quality Gates Display**
+
+Create `apps/web/src/app/jobs/[id]/components/QualityGates.tsx`:
+
+```tsx
+import { QualityGates } from "@/lib/analyzer/types";
+
+interface Props {
+  gates: QualityGates;
+}
+
+export function QualityGatesDisplay({ gates }: Props) {
+  return (
+    <div className={styles.qualityGates}>
+      <div className={styles.gate}>
+        <h4>Gate 1: Claim Validation</h4>
+        <p>
+          {gates.gate1Stats.passedOpinion} / {gates.gate1Stats.totalClaims} passed opinion check
+        </p>
+        <p>
+          {gates.gate1Stats.passedSpecificity} / {gates.gate1Stats.totalClaims} passed specificity check
+        </p>
+        <span className={gates.gate1Stats.overallPass ? styles.pass : styles.fail}>
+          {gates.gate1Stats.overallPass ? "✓ PASS" : "✗ FAIL"}
+        </span>
+      </div>
+      <div className={styles.gate}>
+        <h4>Gate 4: Confidence Quality</h4>
+        <p>High: {gates.gate4Stats.highConfidenceCount}</p>
+        <p>Medium: {gates.gate4Stats.mediumConfidenceCount}</p>
+        <p>Low: {gates.gate4Stats.lowConfidenceCount}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+**2d. Integrate into page.tsx**
+
+Update `apps/web/src/app/jobs/[id]/page.tsx`:
+
+```tsx
+// Add imports
+import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
+import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
+import { QualityGatesDisplay } from "./components/QualityGates";
+
+// In render, after existing content:
+{isCBSchema && resultJson.coverageMatrix && (
+  <section>
+    <h3>Coverage Matrix</h3>
+    <CoverageMatrixDisplay
+      matrix={resultJson.coverageMatrix}
+      claimLabels={resultJson.claimVerdicts.map(v => v.atomicClaim.statement.slice(0, 30) + "...")}
+      boundaryLabels={resultJson.claimBoundaries.map(b => b.name)}
+    />
+  </section>
+)}
+
+{isCBSchema && resultJson.verdictNarrative && (
+  <section>
+    <h3>Analysis Narrative</h3>
+    <VerdictNarrativeDisplay narrative={resultJson.verdictNarrative} />
+  </section>
+)}
+
+{isCBSchema && resultJson.qualityGates && (
+  <section>
+    <h3>Quality Gates</h3>
+    <QualityGatesDisplay gates={resultJson.qualityGates} />
+  </section>
+)}
+```
+
+**2e. Triangulation Score Badge**
+
+Update `ClaimCard.tsx` (or wherever claims are displayed):
+
+```tsx
+// Add triangulation badge to claim card
+{isCBSchema && claim.triangulationScore && (
+  <span className={styles.triangulationBadge} title={getTriangulationTooltip(claim.triangulationScore)}>
+    {claim.triangulationScore.level.toUpperCase()}
+  </span>
+)}
+```
+
+### Part 3: Documentation — xWiki Diagrams
+
+**Goal:** Update diagrams to reflect CB pipeline, mark obsolete docs.
+
+**Diagram Updates:**
+
+1. **Create new diagram:** "ClaimBoundary Pipeline Detail"
+   - Location: `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/ClaimBoundary Pipeline Detail/WebHome.xwiki`
+   - Content: Mermaid flowchart showing 5 stages:
+     ```
+     Stage 1: Extract Claims
+       ↓
+     Stage 2: Research Evidence
+       ↓
+     Stage 3: Cluster Boundaries
+       ↓
+     Stage 4: Generate Verdicts (5-step debate)
+       ↓
+     Stage 5: Aggregate Assessment
+     ```
+   - Include key functions called at each stage
+
+2. **Update existing diagram:** "Pipeline Variant Dispatch"
+   - Show CB as default (green box)
+   - Show MD as alternative (yellow box)
+   - Remove orchestrated or mark as "Removed"
+
+3. **Update existing diagram:** "System Architecture"
+   - Replace orchestrated references with CB
+   - Update claimboundary-pipeline.ts box (remove [NEW] tag)
+
+4. **Mark obsolete:** "Orchestrated Pipeline Detail"
+   - Add warning box at top: "⚠️ **OBSOLETE:** This pipeline was removed in v2.10.x. See ClaimBoundary Pipeline Detail for current architecture."
+
+**Commit Message Format:**
+```
+feat(ui): ClaimBoundary admin config + enhanced results display
+
+Phase 5k: Comprehensive UI support for CB pipeline.
+- Admin UI: All 24 CB parameters editable, organized by stage
+- Results page: Coverage matrix, verdictNarrative, qualityGates components
+- Triangulation scores displayed in ClaimCard
+- xWiki diagrams updated (CB pipeline detail, system architecture)
+- Obsolete docs marked (orchestrated pipeline detail)
+
+Build PASS | Manual UI testing complete
+
+Co-Authored-By: Claude <model> <noreply@anthropic.com>
+```
+
+**Handover:** Update `CB_Execution_State.md`:
+- Change "Current Phase" to "PHASE 5 COMPLETE — CB Pipeline v1.0 Production-Ready (with full UI support)"
+- Add entry to Handover Log for Phase 5k
 - Update "Last Updated" date to today
 
 ---
@@ -1122,7 +1432,16 @@ After all phases 5a-5i complete, verify:
 - [ ] `grep AnalysisContext/contextId` returns 0 active code hits
 - [ ] `CB_Execution_State.md` updated with Phase 5 COMPLETE
 
-**When all REQUIRED items checked:** ClaimBoundary pipeline v1.0 is **production-ready**.
+**UI Adaptations (Phase 5k — REQUIRED):**
+- [ ] Admin UI shows all 24 CB parameters, organized by stage, fully editable
+- [ ] Results page displays coverage matrix component
+- [ ] Results page displays verdictNarrative component
+- [ ] Results page displays qualityGates component
+- [ ] ClaimCard shows triangulation scores
+- [ ] xWiki diagrams updated (CB pipeline detail created, system architecture updated, obsolete docs marked)
+- [ ] Manual UI testing complete (save config, view CB results, all components render correctly)
+
+**When all REQUIRED items checked:** ClaimBoundary pipeline v1.0 is **production-ready with full UI support**.
 
 ---
 

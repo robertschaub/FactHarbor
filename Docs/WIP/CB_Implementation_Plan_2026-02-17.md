@@ -372,10 +372,11 @@ Attempting parallel implementation would require extensive mocking of data struc
 8. **Phase 5h** (Test coverage expansion) — Code Reviewer — 1 session (optional but recommended)
 9. **Phase 5i** (Final cleanup V-01 through V-09) — Lead Architect — 1 session (REQUIRED)
 10. **Phase 5j** (MD status verification) — Lead Architect — 0 sessions (documentation only)
+11. **Phase 5k** (UI adaptations + UCM config + diagrams) — Senior Developer (UI focus) — 2-3 sessions (REQUIRED)
 
-**Final Milestone:** ClaimBoundary pipeline v1.0 production-ready.
+**Final Milestone:** ClaimBoundary pipeline v1.0 production-ready with full UI support.
 
-**Total Estimated Effort:** 10-15 agent sessions for core implementation (Phases 5a-5f), plus 2-4 sessions for polish (Phases 5g-5i). Total: 12-19 sessions (25-40 hours) over 2-3 weeks.
+**Total Estimated Effort:** 10-15 agent sessions for core implementation (Phases 5a-5f), plus 4-7 sessions for polish/UI (Phases 5g-5k). Total: 14-22 sessions (30-50 hours) over 3-4 weeks.
 
 ---
 
@@ -539,6 +540,139 @@ grep -n "throw new Error" apps/web/src/lib/analyzer/monolithic-dynamic.ts
 
 ---
 
+### Phase 5k: UI Adaptations for ClaimBoundary Display and UCM Config
+
+**Owner:** Senior Developer (UI/Frontend focus)
+
+**Deliverables:**
+1. Complete report structure display (coverage matrix, verdictNarrative, qualityGates)
+2. UCM Admin UI for all 24 CB parameters (organized by stage, fully editable)
+3. Enhanced results page with all CB-specific visualizations
+4. Any other UI updates needed for CB pipeline
+
+**Implementation Requirements:**
+
+**1. Admin UI: ClaimBoundary Configuration Panel**
+
+Current state: `apps/web/src/app/admin/page.tsx` has basic admin links. UCM config editing exists in separate pages (TBD which).
+
+**Task:** Create comprehensive CB config UI organized by pipeline stage.
+
+- [ ] Create `apps/web/src/app/admin/config/claimboundary/page.tsx` (or integrate into existing config page)
+- [ ] **Stage 1 section:** Form fields for:
+  - `centralityThreshold` (dropdown: "high"/"medium")
+  - `claimSpecificityMinimum` (number input 0-1)
+  - `maxAtomicClaims` (number input 5-30)
+  - `preliminarySearchQueriesPerClaim` (number input 1-5)
+  - `preliminaryMaxSources` (number input 1-10)
+  - `gate1GroundingRetryThreshold` (number input 0-1)
+- [ ] **Stage 2 section:** Form fields for:
+  - `claimSufficiencyThreshold` (number input 1-10)
+  - `contradictionReservedIterations` (number input 0-5)
+- [ ] **Stage 3 section:** Form fields for:
+  - `maxClaimBoundaries` (number input 2-10)
+  - `boundaryCoherenceMinimum` (number input 0-1)
+- [ ] **Stage 4 section:** Form fields for:
+  - `selfConsistencyMode` (dropdown: "full"/"disabled")
+  - `selfConsistencyTemperature` (number input 0.1-0.7)
+- [ ] **Aggregation section (CalcConfig):** Form fields for:
+  - `selfConsistencySpreadThresholds.stable` (number input 0-20)
+  - `selfConsistencySpreadThresholds.moderate` (number input 0-30)
+  - `selfConsistencySpreadThresholds.unstable` (number input 0-50)
+  - `harmPotentialMultipliers.critical` (number input 1-2)
+  - `harmPotentialMultipliers.high` (number input 1-2)
+  - `harmPotentialMultipliers.medium` (number input 0.8-1.2)
+  - `harmPotentialMultipliers.low` (number input 0.8-1.2)
+  - `triangulation.strongAgreementBoost` (number input 0-0.5)
+  - `triangulation.moderateAgreementBoost` (number input 0-0.2)
+  - `triangulation.singleBoundaryPenalty` (number input -0.3-0)
+  - `triangulation.conflictedFlag` (checkbox)
+  - `derivativeMultiplier` (number input 0-1)
+- [ ] Each field should have:
+  - Label with tooltip explaining what it controls
+  - Current value display
+  - Reset to default button
+  - Validation (min/max, type checking)
+- [ ] Save button at bottom of each section (async save to UCM)
+- [ ] Toast notifications on save success/failure
+
+**2. Results Display: Enhanced CB Report Page**
+
+Current state: `apps/web/src/app/jobs/[id]/page.tsx` already updated in Phase 3 with BoundaryFindings component.
+
+**Task:** Add comprehensive CB report visualizations.
+
+- [ ] **Coverage Matrix Visualization:**
+  - Create `apps/web/src/app/jobs/[id]/components/CoverageMatrix.tsx`
+  - Display claims × boundaries grid
+  - Color-code cells by evidence count (heatmap: 0=gray, 1-2=yellow, 3+=green)
+  - Hover tooltip: show evidence count + direction breakdown
+  - Only show if `hasMultipleBoundaries === true`
+- [ ] **VerdictNarrative Display:**
+  - Create `apps/web/src/app/jobs/[id]/components/VerdictNarrative.tsx`
+  - Display `verdictNarrative.summary` as prominent callout
+  - Display `verdictNarrative.keyEvidence` as bulleted list with citations
+  - Display `verdictNarrative.limitations` as expandable "Limitations" section
+  - Display `verdictNarrative.methodology` in footer/metadata area
+- [ ] **Quality Gates Display:**
+  - Create `apps/web/src/app/jobs/[id]/components/QualityGates.tsx`
+  - Display Gate 1 stats: claims passed/failed opinion + specificity checks
+  - Display Gate 4 stats: claims classified as high/medium/low confidence
+  - Visual indicators (✓/✗) for each gate
+- [ ] **Triangulation Scores:**
+  - Add triangulation score to ClaimCard (if not already there)
+  - Show "Strong Agreement", "Moderate Agreement", "Weak", or "Conflicted" badge
+  - Tooltip: explain what triangulation means (e.g., "3+ boundaries agree")
+- [ ] **Claim Grouping (if implemented in Stage 5):**
+  - If `claimGroups` exists in resultJson, display claims grouped by theme
+  - Collapsible sections per group
+  - Otherwise, display flat claim list (current behavior)
+- [ ] **Schema version badge:**
+  - Show "3.0.0-cb" badge near title to indicate CB pipeline was used
+  - Link to CB architecture doc (or tooltip explaining CB)
+
+**3. Report Pages: Full Report View**
+
+Current state: Job page shows summary + claims. Markdown report is downloadable but not rendered inline.
+
+**Task:** Add inline markdown report rendering or enhance existing view.
+
+- [ ] Option A: Add "Full Report" tab to job page
+  - Tab 1: "Summary" (current view)
+  - Tab 2: "Full Report" (markdown rendered with syntax highlighting)
+  - Tab 3: "Raw JSON" (current JSON view)
+- [ ] Option B: Enhance existing summary view to show all report sections
+  - Already has verdictSummary, claims, boundaries
+  - Add coverage matrix, verdictNarrative, qualityGates (from step 2 above)
+  - This may be simpler than tabs
+- [ ] Choose Option B unless Captain prefers tabs
+
+**4. Documentation: Diagrams and Obsolete Doc Replacement**
+
+**Task:** Update xWiki diagrams and replace obsolete docs.
+
+- [ ] **Update xWiki diagrams** (in `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/`):
+  - `ClaimBoundary Pipeline Detail` (may need to create new diagram showing Stages 1-5)
+  - `Pipeline Variant Dispatch` (ensure CB is default)
+  - `System Architecture` (remove orchestrated, show CB)
+  - `Quality Gates Flow` (update if CB quality gates differ from orchestrated)
+  - `Coverage Matrix` (may need new diagram showing claims × boundaries)
+- [ ] **Replace obsolete docs:**
+  - `Orchestrated Pipeline Detail` diagram → mark as "Obsolete (removed 2026-02-16)" or replace with CB diagram
+  - Any other AC-related diagrams → mark obsolete or update
+- [ ] **Create new diagrams (optional):**
+  - ClaimBoundary Pipeline Flow (5 stages: Extract → Research → Cluster → Verdict → Aggregate)
+  - Coverage Matrix visualization example
+  - Verdict Stage 5-step debate flow (may already exist)
+
+**Estimated effort:** 2-3 sessions (6-10 hours)
+
+**Dependencies:**
+- Phases 5a-5e complete (CB pipeline functional, data available)
+- Phase 5g complete (xWiki pages updated with status)
+
+---
+
 ## Risk Mitigation
 
 ### Risk 1: LLM Prompt Quality Issues
@@ -585,6 +719,13 @@ grep -n "throw new Error" apps/web/src/lib/analyzer/monolithic-dynamic.ts
 2. ✅ Build PASS with 0 skipped tests (or skips documented)
 3. ✅ `grep AnalysisContext/contextId` returns 0 active code hits
 4. ✅ CB_Execution_State.md updated with Phase 5 COMPLETE
+
+### Phase 5 UI Complete When (Phase 5k):
+1. ✅ Admin UI shows all 24 CB parameters organized by stage, fully editable
+2. ✅ Results page displays coverage matrix, verdictNarrative, qualityGates
+3. ✅ ClaimCard shows triangulation scores
+4. ✅ xWiki diagrams updated (CB pipeline flow, system architecture, obsolete docs marked)
+5. ✅ Build PASS, UI manually tested with CB resultJson
 
 ### Ready for Production When:
 1. ✅ All Phase 5 success criteria met
