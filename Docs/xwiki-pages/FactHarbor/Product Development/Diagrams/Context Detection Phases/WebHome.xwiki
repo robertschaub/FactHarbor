@@ -1,33 +1,60 @@
-= Context Detection Phases =
+= ClaimBoundary Pipeline Stages =
 
 {{mermaid}}
 flowchart TB
-    subgraph UNDERSTAND["Phase 1: UNDERSTAND"]
-        Input[User Input] --> InitialDetection["Initial Context Detection<br/>From input text alone<br/>No evidence yet"]
-        InitialDetection --> Claims["Claim Extraction<br/>Claims tagged with contextId"]
+    subgraph EXTRACT["Stage 1: EXTRACT CLAIMS"]
+        Input[User Input] --> Pass1["Pass 1: Quick Claim Scan<br/>(Haiku)"]
+        Pass1 --> PrelimSearch["Preliminary Search<br/>(2-3 queries)"]
+        PrelimSearch --> PrelimEvidence["Prelim Evidence Extract<br/>with EvidenceScopes"]
+        PrelimEvidence --> Pass2["Pass 2: Evidence-Grounded<br/>Claim Extraction (Sonnet)"]
+        Pass2 --> CentralFilter["Centrality Filter<br/>(keep only central claims)"]
+        CentralFilter --> Gate1["Gate 1: Claim Validation<br/>(factual + specificity)"]
+        Gate1 --> Claims["AtomicClaim[]"]
     end
 
-    subgraph RESEARCH["Phase 2: RESEARCH"]
-        Claims --> Search[Web Search]
-        Search --> Sources[Source Documents]
+    subgraph RESEARCH["Stage 2: RESEARCH"]
+        Claims --> QueryGen["Generate Search Queries<br/>(per claim, Haiku)"]
+        QueryGen --> WebSearch["Web Search<br/>(Tavily/Brave)"]
+        WebSearch --> Relevance["Relevance Classification<br/>(Haiku)"]
+        Relevance --> FetchSources["Fetch Sources"]
+        FetchSources --> ExtractEv["Extract Evidence +<br/>EvidenceScope (MANDATORY)<br/>(Haiku)"]
+        ExtractEv --> EvidenceFilter["Evidence Quality Filter<br/>(Haiku)"]
+        EvidenceFilter --> Evidence["EvidenceItem[]<br/>(each with EvidenceScope)"]
     end
 
-    subgraph EXTRACT["Phase 3: EXTRACT_EVIDENCE"]
-        Sources --> EV[Evidence Extraction]
-        EV --> ES["EvidenceScope Metadata<br/>Per-evidence boundaries captured"]
+    subgraph CLUSTER["Stage 3: CLUSTER BOUNDARIES"]
+        Evidence --> CollectScopes["Collect Unique<br/>EvidenceScopes"]
+        CollectScopes --> CongruenceAssessment["Congruence Assessment<br/>(LLM clustering, Sonnet)"]
+        CongruenceAssessment --> AssignBoundaries["Assign claimBoundaryId<br/>to each EvidenceItem"]
+        AssignBoundaries --> Boundaries["ClaimBoundary[]<br/>(1-5 boundaries)"]
     end
 
-    subgraph REFINE["Phase 4: CONTEXT_REFINEMENT"]
-        InitialDetection --> Merge["Merge/Refine Contexts<br/>Evidence-based discovery<br/>Overlap detection<br/>LLM-driven merge"]
-        EV --> Merge
-        ES -.->|"Informs context<br/>discovery"| Merge
-        Merge --> FinalContexts["Final Contexts<br/>Max 5 contexts<br/>Warnings if 4-5"]
+    subgraph VERDICT["Stage 4: VERDICT"]
+        Boundaries --> Advocate["Step 1: Advocate Verdict<br/>(Sonnet)"]
+        Advocate --> SelfConsistency["Step 2: Self-Consistency<br/>(Sonnet × 2, parallel)"]
+        Advocate --> Challenge["Step 3: Adversarial Challenge<br/>(Sonnet, parallel)"]
+        SelfConsistency --> Reconcile["Step 4: Reconciliation<br/>(Sonnet)"]
+        Challenge --> Reconcile
+        Reconcile --> Validation["Step 5: Verdict Validation<br/>(Haiku × 2)"]
+        Validation --> Gate4["Gate 4: Confidence Check"]
+        Gate4 --> Verdicts["ClaimVerdict[]<br/>(with boundaryFindings[])"]
     end
 
-    style InitialDetection fill:#fff3e0,color:#000
-    style ES fill:#fff9c4,color:#000
-    style Merge fill:#c8e6c9,color:#000
-    style FinalContexts fill:#e3f2fd,color:#000
+    subgraph AGGREGATE["Stage 5: AGGREGATE"]
+        Verdicts --> CoverageMatrix["Compute Coverage Matrix<br/>(claims × boundaries)"]
+        CoverageMatrix --> Triangulation["Triangulation Scoring<br/>(boundary agreement)"]
+        Triangulation --> WeightedAgg["Weighted Aggregation<br/>(centrality × harm × confidence<br/>× triangulation × derivative)"]
+        WeightedAgg --> Narrative["Generate VerdictNarrative<br/>(Sonnet)"]
+        Narrative --> Report["Assemble Final Report"]
+    end
+
+    style Pass1 fill:#fff3e0,color:#000
+    style Pass2 fill:#fff3e0,color:#000
+    style ExtractEv fill:#fff9c4,color:#000
+    style CongruenceAssessment fill:#c8e6c9,color:#000
+    style Boundaries fill:#e3f2fd,color:#000
+    style Verdicts fill:#e3f2fd,color:#000
+    style Report fill:#e1bee7,color:#000
 {{/mermaid}}
 
-//Orange = initial detection from input. Yellow = EvidenceScope metadata. Green = context refinement. Blue = final contexts.//
+//Orange = claim extraction (two-pass). Yellow = EvidenceScope extraction (mandatory). Green = boundary clustering (congruence). Blue = boundaries + verdicts. Purple = final report.//

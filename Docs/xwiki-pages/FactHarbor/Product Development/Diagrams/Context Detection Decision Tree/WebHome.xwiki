@@ -1,22 +1,41 @@
-= Context Detection Decision Tree =
+= Boundary Clustering Decision Flow =
 
 {{mermaid}}
 flowchart TD
-    START{"What am I describing?"}
+    START{"Processing Evidence Item"}
 
-    START -->|"Top-level<br/>question/thesis"| Q1{"Does it require<br/>separate analysis?"}
-    START -->|"Evidence source<br/>metadata"| SCOPE["Use EvidenceScope"]
+    START -->|"Stage 2: RESEARCH"| ES["Extract EvidenceScope<br/>(MANDATORY)"]
 
-    Q1 -->|"Yes — different questions"| CTX["Use AnalysisContext"]
-    Q1 -->|"No — same question,<br/>different perspectives"| NOCTX["Single AnalysisContext"]
+    ES --> ESF["EvidenceScope Fields:<br/>- methodology (REQUIRED)<br/>- temporal (REQUIRED)<br/>- boundaries (optional)<br/>- geographic (optional)"]
 
-    CTX --> EX1["Example:<br/>'Proceeding A fairness' vs<br/>'Proceeding B fairness'<br/>= 2 AnalysisContexts"]
+    ESF --> STORE["Store on EvidenceItem.<br/>evidenceScope"]
 
-    NOCTX --> EX2["Example:<br/>'Is claim X true?' with<br/>sources from different orgs<br/>= 1 AnalysisContext"]
+    STORE --> NEXT{"All evidence<br/>extracted?"}
 
-    SCOPE --> EX3["Example:<br/>evidenceScope: methodology<br/>= 'Framework A',<br/>boundaries = 'Full system'"]
+    NEXT -->|"No"| START
+    NEXT -->|"Yes"| STAGE3["Stage 3:<br/>CLUSTER BOUNDARIES"]
 
-    style CTX fill:#c8e6c9,color:#000
-    style SCOPE fill:#fff9c4,color:#000
-    style NOCTX fill:#e3f2fd,color:#000
+    STAGE3 --> COLLECT["Collect all unique<br/>EvidenceScopes"]
+
+    COLLECT --> LLM["LLM Congruence Assessment:<br/>Are scopes COMPATIBLE?"]
+
+    LLM -->|"Compatible<br/>(same/similar methodology,<br/>temporal, boundaries)"| MERGE["Cluster into<br/>SINGLE ClaimBoundary"]
+
+    LLM -->|"Incompatible<br/>(different methodology,<br/>boundaries, jurisdiction)"| SPLIT["Create<br/>SEPARATE ClaimBoundaries"]
+
+    MERGE --> EX1["Example:<br/>All evidence uses<br/>'Standard S, Period P'<br/>→ 1 boundary (CB_01)"]
+
+    SPLIT --> EX2["Example:<br/>'Method A (full)' vs<br/>'Method B (subsystem)'<br/>→ 2 boundaries (CB_01, CB_02)"]
+
+    EX1 --> ASSIGN["Assign claimBoundaryId<br/>to each EvidenceItem"]
+    EX2 --> ASSIGN
+
+    ASSIGN --> VERDICT["Stage 4: VERDICT<br/>(use boundaries for<br/>per-boundary findings)"]
+
+    style ES fill:#fff9c4,color:#000
+    style MERGE fill:#c8e6c9,color:#000
+    style SPLIT fill:#ffccbc,color:#000
+    style VERDICT fill:#e3f2fd,color:#000
 {{/mermaid}}
+
+//Yellow = EvidenceScope extraction. Green = single boundary (compatible). Orange = multiple boundaries (incompatible). Blue = verdict stage.//

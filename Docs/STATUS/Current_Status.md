@@ -6,11 +6,11 @@
 
 ---
 
-## Architecture Redesign: ClaimBoundary Pipeline (2026-02-15)
+## Architecture Redesign: ClaimBoundary Pipeline (2026-02-16)
 
-**Status:** Architecture designed, all decisions closed. Implementation not yet started.
+**Status:** Architecture complete. Phase 1 (implementation) COMPLETE. Phase 2a (orchestrated deletion) COMPLETE. Phase 2 docs (xWiki rewrites) COMPLETE. Ready for Phase 3 (UI).
 
-The AnalysisContext pipeline is being replaced by the **ClaimBoundary pipeline** — a fundamental redesign where analytical boundaries emerge from evidence rather than being pre-created.
+The AnalysisContext pipeline has been replaced by the **ClaimBoundary pipeline** — a fundamental redesign where analytical boundaries emerge from evidence rather than being pre-created.
 
 **Key changes:**
 - **AnalysisContext replaced by ClaimBoundary**: Boundaries are derived from EvidenceScope clustering after evidence is gathered, not created before research
@@ -23,11 +23,19 @@ The AnalysisContext pipeline is being replaced by the **ClaimBoundary pipeline**
 
 **Design document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Phase 8/9 context:** [Phase9_Pipeline_Status_and_Plan_2026-02-15.md](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md)
+**Execution tracking:** [CB_Execution_State.md](../WIP/CB_Execution_State.md)
+
+**Completed phases:**
+1. ✅ **Step 0: Rules Audit** — Governance docs updated (AGENTS.md, CLAUDE.md, Multi_Agent_Collaboration_Rules.md, xWiki Terminology)
+2. ✅ **Phase 1: Implementation** — 5-stage pipeline + verdict-stage module + 8 UCM prompts (50 tests, all passing)
+3. ✅ **Phase 2: Cutover** — ClaimBoundary wired as default route, new resultJson schema (3.0.0-cb)
+4. ✅ **Phase 2a: Delete orchestrated** — ~18,400 lines deleted (orchestrated.ts, AC config, AC prompts, AC tests)
+5. ✅ **Phase 2 docs** — 5 xWiki pages rewritten (183 AC refs → 44, 76% reduction)
 
 **Next steps:**
-1. Step 0: Rules Audit — Lead Architect audits AGENTS.md for AnalysisContext-specific rules
-2. Implementation planning and task breakdown
-3. Phased implementation per architecture doc
+1. Phase 3: UI updates for ClaimBoundary result display
+2. Phase 3b: Monolithic Dynamic prompt cleanup (remove hardcoded MD prompts)
+3. Phase 4: Final AC sweep (remove remaining AC references)
 
 ---
 

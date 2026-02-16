@@ -1,7 +1,7 @@
-= Scope Definition Guidelines: EvidenceScope vs AnalysisContext =
+= Boundary Definition Guidelines: EvidenceScope vs ClaimBoundary =
 
-**Version**: 2.6.41
-**Date**: 2026-01-29
+**Version**: 3.0.0-cb
+**Date**: 2026-02-16
 **Audience**: Developers, Prompt Engineers
 **Related**: [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]], AGENTS.md
 
@@ -11,7 +11,7 @@
 
 1. [[Quick Reference>>||anchor="H1.QuickReference"]]
 1. [[EvidenceScope>>||anchor="H2.EvidenceScope"]]
-1. [[AnalysisContext>>||anchor="H3.AnalysisContext"]]
+1. [[ClaimBoundary>>||anchor="H3.ClaimBoundary"]]
 1. [[Decision Tree>>||anchor="H4.DecisionTree"]]
 1. [[Common Mistakes>>||anchor="H5.CommonMistakes"]]
 1. [[Code Examples>>||anchor="H6.CodeExamples"]]
@@ -23,24 +23,24 @@
 === TL;DR ===
 
 |= Concept |= Purpose |= Scope |= Cardinality
-| **EvidenceScope** | Source methodology metadata | Per-evidence-item | Optional (0-1 per item)
-| **AnalysisContext** | Bounded analytical frame | Per-analysis | Required (1+ per analysis)
+| **EvidenceScope** | Source methodology metadata | Per-evidence-item | Required (1 per item)
+| **ClaimBoundary** | Evidence-emergent grouping | Per-analysis | 1-5 per analysis
 
 **Rule of Thumb**:
 * **EvidenceScope** = "What methodology/boundaries does THIS source use?"
-* **AnalysisContext** = "What DISTINCT FRAMES should we analyze SEPARATELY?"
+* **ClaimBoundary** = "Which evidence items can be clustered together by compatible EvidenceScopes?"
 
 === When in Doubt ===
 
-**Use AnalysisContext** if:
-* Different analytical frames that need separate verdicts
-* Comparing across institutional/regulatory/methodological boundaries
-* Input explicitly requests comparison ("X vs Y")
+**Use EvidenceScope** (always):
+* EVERY evidence item MUST have an EvidenceScope
+* Describes source's methodology, temporal period, boundaries, geography
+* Mandatory fields: ##methodology##, ##temporal##
 
-**Use EvidenceScope** if:
-* Metadata about a source's methodology
-* Information to help calibrate source reliability
-* Details that DON'T require splitting the analysis
+**Use ClaimBoundary** (determined by pipeline):
+* ClaimBoundaries emerge from clustering compatible EvidenceScopes (Stage 3)
+* NOT pre-created from user input
+* Grouping is based on congruence assessment (methodology + temporal + boundaries + geographic compatibility)
 
 ----
 
@@ -48,419 +48,451 @@
 
 === 2.1 Definition ===
 
-**EvidenceScope** = Per-evidence-item metadata describing the source's **methodology, boundaries, geography, or temporal frame**.
+**EvidenceScope** = Per-evidence-item metadata describing the source's **methodology, temporal period, boundaries, and geography**.
 
-**Location**: Attached to individual ##EvidenceItem## objects
+**Location**: Attached to every ##EvidenceItem## object (MANDATORY, not optional)
 
 {{code language="typescript"}}
 interface EvidenceItem {
-  id: string;
-  statement: string;  // The evidence statement
+  id: string;                               // EV_001, EV_002, ...
+  statement: string;                        // The evidence statement
   category: string;
   sourceId: string;
   sourceUrl: string;
   sourceExcerpt: string;
 
-  // Optional: Source methodology metadata
-  evidenceScope?: {
-    name: string;           // E.g., "Well-to-Wheel Analysis"
-    boundaries?: string;    // E.g., "Cradle-to-grave"
-    geography?: string;     // E.g., "EU regulations"
-    temporal?: string;      // E.g., "2020-2023 data"
-    sourceType?: SourceType; // E.g., "peer_reviewed_study"
+  // REQUIRED: Source methodology metadata
+  evidenceScope: {
+    name: string;                           // E.g., "Methodology A Analysis"
+    methodology: string;                    // REQUIRED - The analytical approach
+    temporal: string;                       // REQUIRED - Time period of source data
+    boundaries?: string;                    // Optional - What is included/excluded
+    geographic?: string;                    // Optional - Geographic scope
+    sourceType?: SourceType;                // Optional - peer_reviewed_study, etc.
+    additionalDimensions?: Record<string, string>; // Optional - domain-specific data
   };
+
+  scopeQuality: "complete" | "partial" | "incomplete"; // LLM-assessed
+  claimBoundaryId?: string;                 // Assigned during CLUSTER stage
+  relevantClaimIds: string[];               // Which claims this evidence relates to
+  isDerivative: boolean;                    // Derives from another source's study
+  derivedFromSourceUrl?: string;            // URL of original source (optional)
 }
 {{/code}}
 
 === 2.2 Purpose ===
 
-**Primary Use**: Source reliability calibration
+**Primary Use**: Congruence assessment for ClaimBoundary clustering
 
-When a source uses a specific methodology or measurement boundary, EvidenceScope captures that metadata so the system can:
-1. **Calibrate reliability** based on methodology rigor
-1. **Explain verdicts** by showing which methodologies contributed
-1. **Detect conflicting methodologies** (same claim, different measurement boundaries)
+When evidence is extracted during Stage 2: RESEARCH, each EvidenceItem carries its source's EvidenceScope. During Stage 3: CLUSTER BOUNDARIES, compatible EvidenceScopes are grouped into ClaimBoundaries.
 
-**Secondary Use**: Context for verdict explanation
+**Secondary Use**: Source reliability calibration and verdict explanation
 
-EvidenceScope helps users understand WHY a particular piece of evidence was weighted a certain way.
+EvidenceScope helps users understand WHY evidence was weighted a certain way and which methodological frame it belongs to.
 
 === 2.3 When to Use EvidenceScope ===
 
-**DO use EvidenceScope when**:
+**ALWAYS use EvidenceScope** (it's mandatory):
 
-|= Scenario |= Example
-| **Source uses specific methodology** | "Well-to-Wheel analysis" (vs Tank-to-Wheel)
-| **Source has geographic boundaries** | "EU regulations" (vs US standards)
-| **Source has temporal boundaries** | "2020-2023 data" (vs historical averages)
-| **Source type affects reliability** | Peer-reviewed study vs blog post
-| **Methodology impacts interpretation** | Life-cycle assessment boundaries matter
+|= Scenario |= Example (Generic)
+| **Source uses specific methodology** | "Standard S analysis" (vs "Framework F analysis")
+| **Source has temporal boundaries** | "Period P data" (vs "Period Q historical data")
+| **Source has system boundaries** | "Full system boundary" (vs "Subsystem only")
+| **Source has geographic boundaries** | "Jurisdiction J regulations" (vs "Region R standards")
+| **Source type affects reliability** | Peer-reviewed study vs organization report
 
-**DON'T use EvidenceScope when**:
-
-|= Scenario |= What to Use Instead
-| **Different claims need separate verdicts** | Use AnalysisContext
-| **Comparing institutional perspectives** | Use AnalysisContext
-| **Multiple distinct questions in input** | Use AnalysisContext
-| **Source is just general information** | No scope needed
+**Every evidence source has**:
+* A methodology (even an opinion uses "editorial commentary")
+* A temporal anchor (at minimum the publication date)
+* Optional boundaries and geographic scope
 
 === 2.4 EvidenceScope Examples ===
 
-==== Example 1: Energy Efficiency Methodologies ====
+==== Example 1: Methodological Scope ====
 
-**Input**: "Hydrogen cars are more energy-efficient than electric cars"
+**Input**: "Process X is more effective than Process Y"
 
 **Evidence with EvidenceScope**:
 {{code language="typescript"}}
 {
-  id: "S1-E1",
-  statement: "Well-to-Wheel analysis shows hydrogen vehicles require 2.5x more energy than EVs",
+  id: "EV_001",
+  statement: "Study using Methodology A found Process X efficiency at Value V1",
   category: "statistic",
-  sourceUrl: "https://nature.com/articles/12345",
-  sourceExcerpt: "Using Well-to-Wheel methodology including production, transport, and usage...",
+  sourceUrl: "https://source.example/study-1",
+  sourceExcerpt: "Using Methodology A including phases 1-3...",
   evidenceScope: {
-    name: "Well-to-Wheel Energy Analysis",
-    boundaries: "Production + Transport + Usage phases",
+    name: "Methodology A Analysis",
+    methodology: "Standard S with Approach A",
+    temporal: "Period P data (Year-Year)",
+    boundaries: "Phases 1-3 included",
     sourceType: "peer_reviewed_study"
-  }
+  },
+  scopeQuality: "complete",
+  claimBoundaryId: "CB_01",  // Assigned during clustering
+  relevantClaimIds: ["AC_01"],
+  isDerivative: false
 }
 {{/code}}
 
 **Why EvidenceScope?**:
-* Methodology (Well-to-Wheel) is metadata about the source
-* Doesn't require splitting into separate AnalysisContexts
-* Helps calibrate reliability (peer-reviewed, comprehensive methodology)
+* Methodology (Standard S) is metadata about the source
+* Helps cluster with other evidence using same/compatible methodology
+* Mandatory — cannot skip
 
 ==== Example 2: Geographic Regulatory Boundaries ====
 
-**Input**: "Company X violated environmental regulations"
+**Input**: "Entity A violated regulations"
 
 **Evidence with EvidenceScope**:
 {{code language="typescript"}}
 {
-  id: "S2-E1",
-  statement: "Company X's emissions exceeded the permitted limit by 15%",
+  id: "EV_002",
+  statement: "Entity A's metric exceeded permitted limit by N%",
   category: "statistic",
-  sourceUrl: "https://epa.gov/reports/2023",
-  sourceExcerpt: "EPA audit found Company X's facility emitted 15% above the US federal limit...",
+  sourceUrl: "https://regulatory-body.example/report",
+  sourceExcerpt: "Agency audit found Entity A exceeded the Jurisdiction J limit...",
   evidenceScope: {
-    name: "US EPA Regulations",
-    geography: "United States",
-    temporal: "2023 audit"
-  }
+    name: "Jurisdiction J Regulations",
+    methodology: "Regulatory audit, Framework F",
+    temporal: "Audit conducted Period P",
+    boundaries: "Jurisdiction J only",
+    geographic: "Region R",
+    sourceType: "government_report"
+  },
+  scopeQuality: "complete"
 }
 {{/code}}
 
 **Why EvidenceScope?**:
-* Geography (US EPA) is context for interpreting the violation
-* Not comparing across jurisdictions (just stating a violation occurred)
-* Helps explain which regulatory framework applies
+* Geography (Jurisdiction J) affects interpretation
+* Clusters with other Jurisdiction J evidence
+* Separates from Jurisdiction K evidence (different regulatory framework)
 
 ==== Example 3: Temporal Data Boundaries ====
 
-**Input**: "Climate change is accelerating"
+**Input**: "Trend T is accelerating"
 
 **Evidence with EvidenceScope**:
 {{code language="typescript"}}
 {
-  id: "S3-E1",
-  statement: "Global temperature anomaly increased by 0.8°C from 2000 to 2020",
+  id: "EV_003",
+  statement: "Metric M increased by N units from Period P to Period Q",
   category: "statistic",
-  sourceUrl: "https://nasa.gov/giss/data",
-  sourceExcerpt: "NASA GISS temperature records show a 0.8°C increase over the 2000-2020 period...",
+  sourceUrl: "https://data.example/records",
+  sourceExcerpt: "Data records show N-unit increase over Period P-Q...",
   evidenceScope: {
-    name: "NASA GISS Temperature Records",
-    temporal: "2000-2020 timeframe",
-    boundaries: "Global mean surface temperature",
+    name: "Period P-Q Data Records",
+    methodology: "Measurement Standard S",
+    temporal: "Period P to Period Q timeframe",
+    boundaries: "Metric M measurement boundary",
     sourceType: "government_report"
-  }
+  },
+  scopeQuality: "complete"
 }
 {{/code}}
 
 **Why EvidenceScope?**:
-* Temporal boundary (2000-2020) is metadata about the measurement
-* Not comparing different time periods (just documenting one period)
-* Helps calibrate reliability (government report, recent data)
+* Temporal boundary (Period P-Q) is metadata about the measurement
+* Helps assess temporal consistency across evidence
+* Mandatory field
 
 ----
 
-== 3. AnalysisContext ==
+== 3. ClaimBoundary ==
 
 === 3.1 Definition ===
 
-**AnalysisContext** = A **bounded analytical frame** that requires SEPARATE analysis and its own verdict.
+**ClaimBoundary** = An **evidence-emergent grouping** of compatible EvidenceScopes created AFTER research by clustering evidence with congruent methodology, temporal, boundaries, and geographic dimensions.
 
-**Location**: Top-level in analysis result, contains multiple evidence items
+**Location**: Top-level in analysis result, created during Stage 3: CLUSTER BOUNDARIES
 
 {{code language="typescript"}}
-interface AnalysisContext {
-  id: string;                    // E.g., "CTX_WTW", "CTX_TTW"
-  name: string;                  // E.g., "Well-to-Wheel Analysis"
-  type: "methodological" | "geographical" | "temporal" | "institutional" | "outcome" | "legal";
-  subject: string;               // What's being analyzed in this frame
-  relevance: "high" | "medium" | "low";
-  metadata?: {
-    phase?: string;              // E.g., "production", "usage"
-    boundaries?: string;         // E.g., "cradle-to-grave"
-    geography?: string;          // E.g., "EU regulations"
-  };
+interface ClaimBoundary {
+  id: string;                    // E.g., "CB_01", "CB_02"
+  name: string;                  // E.g., "Methodology A Studies"
+  shortName: string;             // E.g., "Method A"
+  description: string;           // What this boundary represents
+  methodology?: string;          // Dominant methodology (if applicable)
+  boundaries?: string;           // Scope boundaries
+  geographic?: string;           // Geographic scope
+  temporal?: string;             // Temporal scope
+  internalCoherence: number;     // 0-1: consistency of evidence within
+  evidenceCount: number;         // Number of evidence items
 }
 {{/code}}
 
 === 3.2 Purpose ===
 
-**Primary Use**: Separate verdict generation
+**Primary Use**: Organize evidence for verdict generation
 
-When an input involves MULTIPLE DISTINCT QUESTIONS that need separate answers, create AnalysisContexts for each question.
+ClaimBoundaries provide analytical structure for Stage 4: VERDICT. Each ClaimVerdict includes per-boundary findings (##BoundaryFinding[]##) showing how evidence within each boundary supports or contradicts each claim.
 
-**Example**: "Hydrogen cars are more energy-efficient than electric cars"
-* Context 1: Production phase efficiency (upstream)
-* Context 2: Usage phase efficiency (downstream)
-* → Need TWO verdicts (may differ: production=worse, usage=better)
+**Key principle**: Evidence tells us what boundaries exist. We don't guess.
 
-=== 3.3 When to Use AnalysisContext ===
+=== 3.3 When ClaimBoundaries Are Created ===
 
-**DO use AnalysisContext when**:
+**Boundaries emerge from evidence** (NOT from user input):
 
-|= Scenario |= Example
-| **Explicit comparison** | "X vs Y" → Context for X, Context for Y
-| **Multiple distinct questions** | "Is X safe AND effective?" → Safety context, Efficacy context
-| **Institutional perspective matters** | "EU says X, US says Y" → EU context, US context
-| **Methodology changes answer** | "WTW shows X, TTW shows Y" → WTW context, TTW context
-| **Different legal jurisdictions** | "Legal in CA, illegal in TX" → CA context, TX context
-| **Temporal comparison** | "Was true in 2020, false in 2023" → 2020 context, 2023 context
+|= Scenario |= Result
+| **Compatible EvidenceScopes** | Cluster into single ClaimBoundary
+| **Incompatible methodologies** | Separate ClaimBoundaries (e.g., "Method A" vs "Method B")
+| **Different jurisdictions** | Separate ClaimBoundaries (e.g., "Jurisdiction J" vs "Jurisdiction K")
+| **Different temporal periods** | May separate if temporal is primary subject
+| **Low internal coherence** | May split if evidence contradicts due to scope differences
 
-**DON'T use AnalysisContext when**:
+**Clustering criteria** (LLM-evaluated during Stage 3):
 
-|= Scenario |= What to Use Instead
-| **Source just has methodology metadata** | Use EvidenceScope
-| **Single question, multiple sources** | Single AnalysisContext + multiple EvidenceScope
-| **Perspectives on SAME claim** | Single AnalysisContext (perspectives = evidence)
-| **General research (no distinct frames)** | Single default AnalysisContext
+| Factor | Merge if... | Separate if... |
+|--------|------------|---------------|
+| Methodology | Same or compatible methodology | Fundamentally different approach |
+| Boundaries | Overlapping scope boundaries | Non-overlapping system boundaries |
+| Geographic | Same or overlapping regions | Distinct jurisdictions with different rules |
+| Temporal | Overlapping time periods | Non-overlapping periods with policy changes |
+| Contradiction | Low contradiction between items | High contradiction driven by scope differences |
 
-=== 3.4 AnalysisContext Examples ===
+=== 3.4 ClaimBoundary Examples ===
 
-==== Example 1: Methodological Comparison ====
+==== Example 1: Methodological Split ====
 
-**Input**: "Hydrogen cars are more energy-efficient than electric cars"
+**Input**: "Process X is more effective than Process Y"
 
-**AnalysisContexts** (2 required):
+**EvidenceScopes** (after research):
+* 5 evidence items using "Methodology A, Full system"
+* 3 evidence items using "Methodology B, Subsystem only"
+
+**ClaimBoundaries** (after clustering):
 {{code language="typescript"}}
 [
   {
-    id: "CTX_PRODUCTION",
-    name: "Production Phase Efficiency",
-    type: "methodological",
-    subject: "Energy efficiency during vehicle and fuel production (upstream)",
-    metadata: {
-      phase: "production",
-      boundaries: "upstream (cradle-to-gate)"
-    }
+    id: "CB_01",
+    name: "Methodology A Studies (Full System)",
+    shortName: "Method A",
+    description: "Evidence using Methodology A with full system boundary",
+    methodology: "Methodology A",
+    boundaries: "Full system boundary",
+    internalCoherence: 0.92,
+    evidenceCount: 5
   },
   {
-    id: "CTX_USAGE",
-    name: "Usage Phase Efficiency",
-    type: "methodological",
-    subject: "Energy efficiency during actual vehicle operation (downstream)",
-    metadata: {
-      phase: "usage",
-      boundaries: "downstream (tank-to-wheel)"
-    }
+    id: "CB_02",
+    name: "Methodology B Studies (Subsystem)",
+    shortName: "Method B",
+    description: "Evidence using Methodology B with subsystem boundary",
+    methodology: "Methodology B",
+    boundaries: "Subsystem boundary",
+    internalCoherence: 0.88,
+    evidenceCount: 3
   }
 ]
 {{/code}}
 
-**Why AnalysisContext?**:
-* **Different questions**: "Is production efficient?" vs "Is usage efficient?"
-* **May have different answers**: Production (hydrogen worse), Usage (hydrogen better)
-* **Need separate verdicts**: Can't combine into single verdict without losing information
+**Why separate ClaimBoundaries?**:
+* **Different methodologies** (A vs B)
+* **Different system boundaries** (full vs subsystem)
+* **Cannot meaningfully combine** into single verdict without losing information
+* **Each boundary gets its own finding** in ClaimVerdict.boundaryFindings[]
 
-==== Example 2: Institutional Perspectives (Safety Claim) ====
+==== Example 2: Geographic Split ====
 
-**Input**: "Drug X is safe for treating condition Y"
+**Input**: "Entity A violated regulations"
 
-**AnalysisContexts** (2+ depending on evidence):
+**EvidenceScopes** (after research):
+* 4 evidence items from "Jurisdiction J, Framework F"
+* 2 evidence items from "Jurisdiction K, Framework G"
+
+**ClaimBoundaries** (after clustering):
 {{code language="typescript"}}
 [
   {
-    id: "CTX_FDA",
-    name: "FDA Safety Assessment",
-    type: "institutional",
-    subject: "US FDA evaluation and approval status",
-    metadata: {
-      institution: "US FDA",
-      geography: "United States"
-    }
+    id: "CB_01",
+    name: "Jurisdiction J Proceedings",
+    shortName: "Jurisdiction J",
+    description: "Evidence from Jurisdiction J regulatory framework",
+    methodology: "Framework F",
+    geographic: "Jurisdiction J",
+    internalCoherence: 0.95,
+    evidenceCount: 4
   },
   {
-    id: "CTX_EMA",
-    name: "EMA Safety Assessment",
-    type: "institutional",
-    subject: "European Medicines Agency evaluation",
-    metadata: {
-      institution: "EMA",
-      geography: "European Union"
-    }
+    id: "CB_02",
+    name: "Jurisdiction K Proceedings",
+    shortName: "Jurisdiction K",
+    description: "Evidence from Jurisdiction K regulatory framework",
+    methodology: "Framework G",
+    geographic: "Jurisdiction K",
+    internalCoherence: 0.90,
+    evidenceCount: 2
   }
 ]
 {{/code}}
 
-**Why AnalysisContext?**:
-* **Different regulatory bodies** may reach different conclusions
-* **Need separate verdicts** for each jurisdiction
-* **User cares about the split**: "Is it safe in the US?" vs "Is it safe in EU?"
+**Why separate ClaimBoundaries?**:
+* **Different jurisdictions** (J vs K)
+* **Different regulatory frameworks** (F vs G)
+* **May have different outcomes** (violation in J, not in K)
+* **Need separate per-boundary findings**
 
-==== Example 3: Temporal Comparison ====
+==== Example 3: Single Boundary (Compatible Evidence) ====
 
-**Input**: "Company X's stock is a good investment"
+**Input**: "Trend T is accelerating"
 
-**AnalysisContexts** (2 if temporal split evident):
+**EvidenceScopes** (after research):
+* All 8 evidence items use "Standard S, Period P-Q data, Measurement Boundary B"
+
+**ClaimBoundaries** (after clustering):
 {{code language="typescript"}}
 [
   {
-    id: "CTX_HISTORICAL",
-    name: "Historical Performance",
-    type: "temporal",
-    subject: "Stock performance 2020-2023 (past data)",
-    metadata: {
-      temporal: "2020-2023",
-      boundaries: "historical data"
-    }
-  },
-  {
-    id: "CTX_FUTURE",
-    name: "Future Outlook",
-    type: "temporal",
-    subject: "Projected performance 2024-2026 (forecasts)",
-    metadata: {
-      temporal: "2024-2026",
-      boundaries: "analyst forecasts"
-    }
+    id: "CB_01",
+    name: "General Evidence (Standard S)",
+    shortName: "General",
+    description: "All evidence uses compatible Standard S methodology with Period P-Q data",
+    methodology: "Standard S",
+    temporal: "Period P-Q",
+    boundaries: "Measurement Boundary B",
+    internalCoherence: 0.93,
+    evidenceCount: 8
   }
 ]
 {{/code}}
 
-**Why AnalysisContext?**:
-* **Different timeframes** = different questions
-* **Past vs Future** may have opposite verdicts (was good, won't be good)
-* **Investment decisions require both perspectives**
+**Why single ClaimBoundary?**:
+* **All evidence compatible** (same standard, same period, same boundaries)
+* **No meaningful split needed**
+* **Default case for most analyses**
 
 ----
 
 == 4. Decision Tree ==
 
 {{code}}
-Input Claim
+Evidence Item Extracted
 │
-├─ Does the input involve MULTIPLE DISTINCT QUESTIONS?
-│  ├─ YES → Use AnalysisContext (one per question)
-│  │   Examples:
-│  │   - "X vs Y" (comparison)
-│  │   - "Is X safe AND effective?" (multiple questions)
-│  │   - "EU says X, US says Y" (institutional perspectives)
-│  │
-│  └─ NO → Single AnalysisContext (default)
-│      │
-│      └─ Do sources use SPECIFIC METHODOLOGIES/BOUNDARIES?
-│         ├─ YES → Use EvidenceScope (per-evidence-item)
-│         │   Examples:
-│         │   - Well-to-Wheel methodology (metadata)
-│         │   - EU regulations (geographic context)
-│         │   - 2020-2023 data (temporal boundary)
-│         │
-│         └─ NO → No scope needed (plain evidence)
+├─ ALWAYS assign EvidenceScope (MANDATORY)
+│  ├─ methodology: "Standard S with Approach A" (REQUIRED)
+│  ├─ temporal: "Period P data" (REQUIRED)
+│  ├─ boundaries: "Full system" (optional)
+│  └─ geographic: "Region R" (optional)
+│
+└─ After ALL evidence extracted → Stage 3: CLUSTER BOUNDARIES
+   │
+   ├─ Are EvidenceScopes COMPATIBLE?
+   │  ├─ YES (same/compatible methodology + temporal + boundaries)
+   │  │   → Cluster into SINGLE ClaimBoundary
+   │  │   Examples:
+   │  │   - All sources use Standard S, Period P
+   │  │   - Compatible methodologies with overlapping boundaries
+   │  │
+   │  └─ NO (incompatible methodology OR boundaries OR temporal OR geographic)
+   │      → Create SEPARATE ClaimBoundaries
+   │      Examples:
+   │      - Standard S (full system) vs Standard T (subsystem)
+   │      - Jurisdiction J vs Jurisdiction K
+   │      - Period P vs Period Q (if temporal is primary subject)
 {{/code}}
 
 === Decision Checklist ===
 
-Before creating AnalysisContext:
+**For EvidenceScope (every evidence item)**:
+* Did I assign methodology? (REQUIRED)
+* Did I assign temporal? (REQUIRED)
+* Are boundaries/geographic relevant for this source? (optional but recommended)
+* Is scopeQuality "complete", "partial", or "incomplete"?
 
-* Does this represent a DISTINCT QUESTION that needs its own verdict?
-* Would the answer be different across these frames?
-* Would combining them into one verdict LOSE important information?
-* Is the user asking for a comparison or multi-part question?
-
-If all YES → Create AnalysisContext
-
-If any NO → Consider EvidenceScope or no scope
+**For ClaimBoundary (pipeline-determined)**:
+* Let the LLM cluster compatible EvidenceScopes (don't pre-create boundaries from input)
+* Trust the congruence assessment (methodology + temporal + boundaries + geographic)
+* Expect 1-3 boundaries (typical), max 5 (rare)
 
 ----
 
 == 5. Common Mistakes ==
 
-=== Mistake 1: Using AnalysisContext for Source Metadata ===
+=== Mistake 1: Skipping EvidenceScope ===
 
 **Wrong**:
 {{code language="typescript"}}
-// Input: "Hydrogen efficiency is better than electricity"
-// Creating AnalysisContext for EVERY source's methodology
-analysisContexts: [
-  { name: "Nature Study (Well-to-Wheel)" },
-  { name: "MIT Report (Tank-to-Wheel)" },
-  { name: "EPA Analysis (Life-Cycle)" },
+// Evidence without EvidenceScope
+evidenceItems: [
+  {
+    id: "EV_001",
+    statement: "Source found Value V",
+    // evidenceScope: undefined  ❌ MISSING - will fail validation
+  }
 ]
 {{/code}}
 
-**Problem**: These are NOT distinct questions, they're just different sources with different methodologies.
+**Problem**: EvidenceScope is MANDATORY in ClaimBoundary pipeline. Cannot skip.
 
 **Correct**:
 {{code language="typescript"}}
-// Single AnalysisContext for the question
-analysisContexts: [
-  { name: "Energy Efficiency Comparison" }
-]
-
-// Evidence items with EvidenceScope for methodology
-evidence: [
+evidenceItems: [
   {
-    statement: "Nature study found X using WTW methodology",
-    evidenceScope: { name: "Well-to-Wheel Analysis", sourceType: "peer_reviewed_study" }
-  },
-  {
-    statement: "MIT report found Y using TTW methodology",
-    evidenceScope: { name: "Tank-to-Wheel Analysis", sourceType: "organization_report" }
-  },
+    id: "EV_001",
+    statement: "Source found Value V",
+    evidenceScope: {
+      name: "Source Methodology",
+      methodology: "Standard S",
+      temporal: "Period P data",
+    },
+    scopeQuality: "complete"
+  }
 ]
 {{/code}}
 
-=== Mistake 2: Creating AnalysisContext for Every Perspective ===
+=== Mistake 2: Pre-Creating ClaimBoundaries from Input ===
 
 **Wrong**:
 {{code language="typescript"}}
-// Input: "The trial was fair"
-// Creating AnalysisContext for every critic/supporter
-analysisContexts: [
-  { name: "Defense Attorney Perspective" },
-  { name: "Prosecution Perspective" },
-  { name: "Human Rights Groups Perspective" },
-  { name: "Government Spokesperson Perspective" },
+// Input: "Process X vs Process Y"
+// Manually creating ClaimBoundaries BEFORE research
+claimBoundaries: [
+  { name: "Process X Analysis" },  ❌ DON'T pre-create
+  { name: "Process Y Analysis" },  ❌ DON'T pre-create
 ]
 {{/code}}
 
-**Problem**: These are perspectives on the SAME question ("Was the trial fair?"), not distinct questions.
+**Problem**: ClaimBoundaries are NOT pre-created. They emerge from evidence EvidenceScopes during Stage 3.
 
 **Correct**:
 {{code language="typescript"}}
-// Single AnalysisContext for the question
-analysisContexts: [
-  { name: "Trial Fairness Assessment" }
+// Input: "Process X vs Process Y"
+// Extract AtomicClaims during Stage 1
+atomicClaims: [
+  { statement: "Process X achieves Metric M at Value V1" },
+  { statement: "Process Y achieves Metric M at Value V2" }
 ]
 
-// Evidence from different perspectives (just evidence, not contexts)
-evidence: [
-  { statement: "Defense attorney claimed procedural violations", claimDirection: "contradicts" },
-  { statement: "Court records show procedures followed Article 47", claimDirection: "supports" },
-  { statement: "Human Rights Watch documented irregularities", claimDirection: "contradicts" },
+// Research during Stage 2 (gather evidence with EvidenceScopes)
+evidenceItems: [
+  {
+    statement: "Study using Method A found Process X at V1",
+    evidenceScope: { methodology: "Method A", temporal: "Period P" },
+    relevantClaimIds: ["AC_01"]
+  },
+  {
+    statement: "Study using Method B found Process Y at V2",
+    evidenceScope: { methodology: "Method B", temporal: "Period P" },
+    relevantClaimIds: ["AC_02"]
+  }
 ]
+
+// Cluster boundaries during Stage 3 (IF methodologies are incompatible)
+claimBoundaries: [
+  { id: "CB_01", name: "Method A Studies", evidenceCount: ...},
+  { id: "CB_02", name: "Method B Studies", evidenceCount: ...}
+]
+// OR cluster into single boundary if methodologies are compatible
 {{/code}}
 
-=== Mistake 3: Confusing EvidenceScope with Source Attribution ===
+=== Mistake 3: Using Source Name as EvidenceScope ===
 
 **Wrong**:
 {{code language="typescript"}}
 // Putting source name in EvidenceScope
 evidenceScope: {
-  name: "According to Nature Journal"  // This is just attribution, not scope
+  name: "According to Source Entity",  ❌ This is just attribution
+  methodology: "Source Entity study"  ❌ Source name is not methodology
 }
 {{/code}}
 
@@ -468,281 +500,226 @@ evidenceScope: {
 {{code language="typescript"}}
 // EvidenceScope is for METHODOLOGY, not source name
 evidenceScope: {
-  name: "Peer-Reviewed Life-Cycle Assessment",  // The methodology used
-  boundaries: "Cradle-to-grave",
+  name: "Peer-Reviewed Assessment using Standard S",  ✅ Methodology-focused
+  methodology: "Standard S with Approach A",  ✅ The analytical approach
+  temporal: "Period P data",
   sourceType: "peer_reviewed_study"
 }
 
 // Source name goes in sourceTitle
-sourceTitle: "Nature Journal Article"
+sourceTitle: "Source Entity Publication"
 {{/code}}
 
-=== Mistake 4: Over-Splitting AnalysisContexts ===
+=== Mistake 4: Conflating EvidenceScope with ClaimBoundary ===
 
-**Wrong**:
-{{code language="typescript"}}
-// Input: "Climate change is accelerating"
-// Creating context for every data source
-analysisContexts: [
-  { name: "NASA GISS Data" },
-  { name: "NOAA Records" },
-  { name: "IPCC Reports" },
-]
-{{/code}}
+**Wrong thinking**:
+"Each EvidenceScope becomes a ClaimBoundary"
 
-**Problem**: All sources answer the SAME question ("Is climate change accelerating?"), just from different data sources.
+**Problem**: Multiple evidence items share the same EvidenceScope, and compatible EvidenceScopes cluster into a SINGLE ClaimBoundary.
 
-**Correct**:
-{{code language="typescript"}}
-// Single AnalysisContext for the question
-analysisContexts: [
-  { name: "Climate Change Acceleration Assessment" }
-]
+**Correct thinking**:
+"Compatible EvidenceScopes cluster into ClaimBoundaries"
 
-// Evidence from multiple sources (with EvidenceScope for data boundaries)
-evidence: [
-  {
-    statement: "NASA data shows 0.8°C increase 2000-2020",
-    evidenceScope: { name: "NASA GISS Temperature Records", temporal: "2000-2020" }
-  },
-  {
-    statement: "NOAA records confirm accelerating trend",
-    evidenceScope: { name: "NOAA Climate Data", temporal: "1980-2023" }
-  },
-]
-{{/code}}
+**Example**:
+* 10 evidence items all have EvidenceScope: ##{ methodology: "Standard S", temporal: "Period P" }##
+* These 10 items cluster into **1 ClaimBoundary** (not 10)
+* ClaimBoundary name: "Standard S Studies (Period P)"
 
 ----
 
 == 6. Code Examples ==
 
-=== 6.1 Creating EvidenceScope ===
+=== 6.1 Creating EvidenceScope (Stage 2: RESEARCH) ===
 
 {{code language="typescript"}}
-import type { EvidenceItem } from "@/lib/analyzer/types";
+import type { EvidenceItem, EvidenceScope } from "@/lib/analyzer/types";
 
-function extractEvidenceWithScope(source: Source): EvidenceItem[] {
+function extractEvidenceWithScope(source: Source, relevantClaims: AtomicClaim[]): EvidenceItem[] {
   const items: EvidenceItem[] = [];
 
   // Extract evidence statement
   const statement = extractStatementFromSource(source);
 
-  // Detect if source uses specific methodology
-  const hasMethodology = detectMethodology(source);
+  // REQUIRED: Extract EvidenceScope metadata from source
+  const scope: EvidenceScope = {
+    name: detectScopeName(source),           // E.g., "Methodology A Analysis"
+    methodology: detectMethodology(source),  // REQUIRED - never empty
+    temporal: detectTemporal(source),        // REQUIRED - at minimum publication date
+    boundaries: detectBoundaries(source),    // Optional - what's included/excluded
+    geographic: detectGeographic(source),    // Optional - geographic scope
+    sourceType: classifySourceType(source),  // Optional - peer_reviewed_study, etc.
+  };
 
-  if (hasMethodology) {
-    // Add EvidenceScope for methodology metadata
-    items.push({
-      id: generateId(source.id),
-      statement: statement,
-      category: categorizeEvidence(statement),
-      sourceId: source.id,
-      sourceUrl: source.url,
-      sourceExcerpt: source.excerpt,
-      evidenceScope: {
-        name: hasMethodology.name,           // E.g., "Well-to-Wheel Analysis"
-        boundaries: hasMethodology.boundaries, // E.g., "Cradle-to-grave"
-        sourceType: classifySourceType(source), // E.g., "peer_reviewed_study"
-      },
-    });
-  } else {
-    // No scope needed (plain evidence)
-    items.push({
-      id: generateId(source.id),
-      statement: statement,
-      category: categorizeEvidence(statement),
-      sourceId: source.id,
-      sourceUrl: source.url,
-      sourceExcerpt: source.excerpt,
-      // evidenceScope: undefined (omit if not needed)
-    });
-  }
+  // Assess scope quality
+  const scopeQuality = assessScopeQuality(scope);
+
+  items.push({
+    id: generateId(source.id),
+    statement: statement,
+    category: categorizeEvidence(statement),
+    sourceId: source.id,
+    sourceUrl: source.url,
+    sourceExcerpt: source.excerpt,
+    evidenceScope: scope,  // MANDATORY
+    scopeQuality: scopeQuality,
+    relevantClaimIds: relevantClaims.map(c => c.id),
+    isDerivative: detectDerivative(source),
+  });
 
   return items;
 }
 {{/code}}
 
-=== 6.2 Creating AnalysisContext ===
+=== 6.2 Clustering ClaimBoundaries (Stage 3: CLUSTER BOUNDARIES) ===
 
 {{code language="typescript"}}
-import type { AnalysisContext } from "@/lib/analyzer/types";
+import type { ClaimBoundary, EvidenceItem, EvidenceScope } from "@/lib/analyzer/types";
 
-function detectAnalysisContexts(input: string): AnalysisContext[] {
-  const contexts: AnalysisContext[] = [];
+async function clusterBoundaries(
+  evidenceItems: EvidenceItem[],
+  atomicClaims: AtomicClaim[]
+): Promise<ClaimBoundary[]> {
+  // Collect all unique EvidenceScopes
+  const scopes: EvidenceScope[] = collectUniqueScopes(evidenceItems);
 
-  // Check for explicit comparison ("X vs Y")
-  if (isComparisonInput(input)) {
-    // Extract terms being compared
-    const { termA, termB } = extractComparisonTerms(input);
-
-    contexts.push({
-      id: "CTX_A",
-      name: `${termA} Analysis`,
-      type: "methodological",
-      subject: `Assessment of ${termA}`,
-      relevance: "high",
-    });
-
-    contexts.push({
-      id: "CTX_B",
-      name: `${termB} Analysis`,
-      type: "methodological",
-      subject: `Assessment of ${termB}`,
-      relevance: "high",
-    });
-
-    return contexts;
-  }
-
-  // Check for multi-part question ("Is X safe AND effective?")
-  if (isMultiPartQuestion(input)) {
-    const parts = extractQuestionParts(input);
-
-    for (const part of parts) {
-      contexts.push({
-        id: generateContextId(part),
-        name: `${part.aspect} Assessment`,
-        type: "outcome",
-        subject: `Evaluation of ${part.aspect}`,
-        relevance: part.importance,
-      });
-    }
-
-    return contexts;
-  }
-
-  // Default: Single context
-  contexts.push({
-    id: "CTX_DEFAULT",
-    name: "Primary Analysis",
-    type: "methodological",
-    subject: "Main analytical frame for this input",
-    relevance: "high",
+  // LLM call: Cluster compatible EvidenceScopes into ClaimBoundaries
+  const clusteringResult = await llm.clusterEvidenceScopes({
+    scopes: scopes,
+    evidenceItems: evidenceItems,
+    atomicClaims: atomicClaims,
+    congruenceGuidance: getCongruenceGuidance(),  // From architecture doc §11.5
   });
 
-  return contexts;
+  // Assign evidence items to ClaimBoundaries
+  for (const item of evidenceItems) {
+    const boundaryId = clusteringResult.scopeToBoundaryMapping[item.evidenceScope.name];
+    item.claimBoundaryId = boundaryId;
+  }
+
+  return clusteringResult.claimBoundaries;
+}
+
+function collectUniqueScopes(items: EvidenceItem[]): EvidenceScope[] {
+  const uniqueScopes = new Map<string, EvidenceScope>();
+  for (const item of items) {
+    const scopeKey = `${item.evidenceScope.methodology}|${item.evidenceScope.temporal}|${item.evidenceScope.boundaries || ''}`;
+    if (!uniqueScopes.has(scopeKey)) {
+      uniqueScopes.set(scopeKey, item.evidenceScope);
+    }
+  }
+  return Array.from(uniqueScopes.values());
 }
 {{/code}}
 
-=== 6.3 Deciding Between EvidenceScope and AnalysisContext ===
+=== 6.3 Using ClaimBoundaries in Verdicts (Stage 4: VERDICT) ===
 
 {{code language="typescript"}}
-function shouldUseAnalysisContext(input: string, sources: Source[]): boolean {
-  // Rule 1: Explicit comparison → AnalysisContext
-  if (input.match(/\b(vs|versus|compared to|versus)\b/i)) {
-    return true;
+import type { ClaimVerdict, BoundaryFinding } from "@/lib/analyzer/types";
+
+async function generateVerdicts(
+  claims: AtomicClaim[],
+  evidenceItems: EvidenceItem[],
+  boundaries: ClaimBoundary[]
+): Promise<ClaimVerdict[]> {
+  const verdicts: ClaimVerdict[] = [];
+
+  for (const claim of claims) {
+    // Group evidence by ClaimBoundary for this claim
+    const evidenceByBoundary = groupEvidenceByBoundary(
+      evidenceItems.filter(e => e.relevantClaimIds.includes(claim.id)),
+      boundaries
+    );
+
+    // LLM call: Generate verdict with per-boundary findings
+    const verdictResult = await llm.advocateVerdict({
+      claim: claim,
+      evidenceByBoundary: evidenceByBoundary,
+      boundaries: boundaries,
+    });
+
+    verdicts.push({
+      id: generateVerdictId(claim.id),
+      claimId: claim.id,
+      truthPercentage: verdictResult.truthPercentage,
+      verdict: verdictResult.verdict,
+      confidence: verdictResult.confidence,
+      reasoning: verdictResult.reasoning,
+      boundaryFindings: verdictResult.boundaryFindings,  // Per-boundary assessments
+      // ...
+    });
   }
 
-  // Rule 2: Multiple distinct questions → AnalysisContext
-  if (input.match(/\b(and|also|moreover)\b/i) && hasMultipleQuestions(input)) {
-    return true;
-  }
-
-  // Rule 3: Institutional split evident → AnalysisContext
-  const institutions = extractInstitutions(sources);
-  if (institutions.length > 1 && institutionsDisagree(sources)) {
-    return true;
-  }
-
-  // Rule 4: Temporal split evident → AnalysisContext
-  const timeframes = extractTimeframes(sources);
-  if (timeframes.length > 1 && timeframesRelevant(input)) {
-    return true;
-  }
-
-  // Default: Single context (use EvidenceScope for methodology)
-  return false;
-}
-
-function shouldUseEvidenceScope(source: Source): boolean {
-  // Check for methodology indicators
-  if (source.text.match(/\b(methodology|method|approach|framework)\b/i)) {
-    return true;
-  }
-
-  // Check for boundary keywords
-  if (source.text.match(/\b(well-to-wheel|tank-to-wheel|life-cycle|cradle-to-grave)\b/i)) {
-    return true;
-  }
-
-  // Check for geographic boundaries
-  if (source.text.match(/\b(EU regulations|US standards|California law)\b/i)) {
-    return true;
-  }
-
-  // Check for temporal boundaries
-  if (source.text.match(/\b(\d{4}-\d{4} data|historical|recent|current)\b/i)) {
-    return true;
-  }
-
-  return false;
+  return verdicts;
 }
 {{/code}}
 
 ----
 
-== Appendix: Real-World Examples ==
+== Appendix: Real-World Examples (Genericized) ==
 
-=== Example A: Hydrogen vs Electric Cars (Correct Split) ===
+=== Example A: Methodology Split ===
 
-**Input**: "Hydrogen cars are more energy-efficient than electric cars"
+**Input**: "Process X is more effective than Process Y"
 
 **Correct Approach**:
 {{code language="typescript"}}
-// TWO AnalysisContexts (different questions)
-analysisContexts: [
-  { id: "CTX_PRODUCTION", name: "Production Phase Efficiency" },
-  { id: "CTX_USAGE", name: "Usage Phase Efficiency" },
+// TWO ClaimBoundaries (incompatible methodologies)
+claimBoundaries: [
+  { id: "CB_01", name: "Method A Studies (Full System)", methodology: "Method A" },
+  { id: "CB_02", name: "Method B Studies (Subsystem)", methodology: "Method B" },
 ]
 
-// Evidence with EvidenceScope (methodology metadata)
-evidence: [
+// Evidence with EvidenceScope (drives clustering)
+evidenceItems: [
   {
-    id: "S1-E1",
-    statement: "Hydrogen production requires 2.5x more energy than EV battery production",
-    contextId: "CTX_PRODUCTION",
-    evidenceScope: { name: "Well-to-Wheel Production Analysis", boundaries: "Upstream" }
+    id: "EV_001",
+    statement: "Study using Method A found Process X effectiveness at Value V1",
+    evidenceScope: { methodology: "Method A", temporal: "Period P", boundaries: "Full system" },
+    claimBoundaryId: "CB_01",  // Assigned during clustering
+    relevantClaimIds: ["AC_01"]
   },
   {
-    id: "S2-E1",
-    statement: "Hydrogen fuel cells are 60% efficient vs 90% for EV motors",
-    contextId: "CTX_USAGE",
-    evidenceScope: { name: "Tank-to-Wheel Usage Analysis", boundaries: "Downstream" }
+    id: "EV_002",
+    statement: "Study using Method B found Process Y effectiveness at Value V2",
+    evidenceScope: { methodology: "Method B", temporal: "Period P", boundaries: "Subsystem" },
+    claimBoundaryId: "CB_02",  // Assigned during clustering
+    relevantClaimIds: ["AC_02"]
   },
 ]
 {{/code}}
 
-=== Example B: Trial Fairness (No Split Needed) ===
+=== Example B: No Split Needed (Compatible Evidence) ===
 
-**Input**: "The Bolsonaro trial was fair"
+**Input**: "Entity A's action was appropriate"
 
 **Correct Approach**:
 {{code language="typescript"}}
-// ONE AnalysisContext (single question)
-analysisContexts: [
-  { id: "CTX_FAIRNESS", name: "Trial Fairness Assessment" },
+// ONE ClaimBoundary (all evidence compatible)
+claimBoundaries: [
+  { id: "CB_01", name: "General Evidence", methodology: "Standard S", evidenceCount: 5 },
 ]
 
-// Evidence from multiple perspectives (just evidence, NO separate contexts)
-evidence: [
+// Evidence with compatible EvidenceScopes (cluster into single boundary)
+evidenceItems: [
   {
-    id: "S1-E1",
-    statement: "Defense claimed procedural violations",
-    claimDirection: "contradicts",
-    // NO evidenceScope (just a perspective, not methodology)
+    id: "EV_001",
+    statement: "Source A assessed action as appropriate using Standard S",
+    evidenceScope: { methodology: "Standard S", temporal: "Period P" },
+    claimBoundaryId: "CB_01"
   },
   {
-    id: "S2-E1",
-    statement: "Court records show Article 47 procedures followed",
-    claimDirection: "supports",
-    // NO evidenceScope (plain evidence)
+    id: "EV_002",
+    statement: "Source B confirmed appropriateness using Standard S",
+    evidenceScope: { methodology: "Standard S", temporal: "Period P" },
+    claimBoundaryId: "CB_01"
   },
+  // All 5 items cluster into CB_01
 ]
 {{/code}}
 
 ----
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-29
-**Next Review**: When scope detection logic changes
-**Maintained by**: Plan Coordinator
+**Document Version**: 3.0.0-cb
+**Last Updated**: 2026-02-16
+**Next Review**: After ClaimBoundary pipeline UI implementation
+**Maintained by**: Technical Writer

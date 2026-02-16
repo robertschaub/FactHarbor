@@ -1,9 +1,9 @@
-= Context and EvidenceScope Detection =
+= Boundary Clustering and EvidenceScope Detection =
 
 {{info}}
-**Developer Reference** — How FactHarbor detects, refines, and merges analytical contexts and evidence scope metadata across the pipeline.
+**Developer Reference** — How FactHarbor clusters evidence into ClaimBoundaries and detects EvidenceScope metadata across the pipeline.
 
-**Key File**: ##apps/web/src/lib/analyzer/analysis-contexts.ts##
+**Key File**: ##apps/web/src/lib/analyzer/claimboundary-pipeline.ts## (Stage 3: CLUSTER BOUNDARIES)
 {{/info}}
 
 ----
@@ -12,10 +12,10 @@
 
 This guide explains:
 
-* **What** contexts and evidence scopes are (definitions)
-* **When** to use AnalysisContext vs EvidenceScope (decision tree)
-* **How** contexts are detected across pipeline phases (flow)
-* **Why** the system uses principle-based detection (approach)
+* **What** ClaimBoundaries and EvidenceScopes are (definitions)
+* **When** to extract EvidenceScope vs create ClaimBoundary (stage timing)
+* **How** boundaries are clustered from evidence (congruence-based flow)
+* **Why** the system uses evidence-emergent boundaries (approach)
 * **Where** the implementation lives (code references)
 
 ----
@@ -24,178 +24,246 @@ This guide explains:
 
 === 2.1 Core Definitions ===
 
-**AnalysisContext** (Top-Level Bounded Analytical Frame):
-* A distinct analytical frame requiring separate analysis
-* **Scope**: Top-level question or thesis being analyzed
-* **Example**: "Legal proceeding A fairness" vs "Legal proceeding B fairness" are distinct contexts
-* **Storage**: ##article.analysisContexts## array, ##claim.contextId##, ##verdict.contextId##
+**ClaimBoundary** (Evidence-Emergent Grouping):
+* An evidence-emergent grouping of compatible EvidenceScopes
+* **Created**: AFTER research (Stage 3: CLUSTER BOUNDARIES)
+* **Example**: "Methodology A Studies" (evidence using compatible Framework A scopes)
+* **Storage**: ##claimBoundaries## array, ##evidenceItem.claimBoundaryId##
+* **Purpose**: Organize evidence for per-claim verdict generation with per-boundary findings
 
-**EvidenceScope** (Per-Evidence Source Methodology):
-* Metadata about a single evidence item's boundaries and methodology
-* **Scope**: Per-evidence source constraints (methodology, boundaries, temporal, geographic)
-* **Example**: "Study used Framework A with full system boundary"
-* **Storage**: ##evidenceItem.evidenceScope## object
+**EvidenceScope** (Per-Evidence Source Metadata):
+* Metadata about a single evidence item's methodology, boundaries, temporal, and geographic constraints
+* **Created**: DURING research (Stage 2: RESEARCH, per evidence item)
+* **Example**: "Standard S, Period P data, Full system boundary"
+* **Storage**: ##evidenceItem.evidenceScope## object (MANDATORY)
+* **Purpose**: Capture source's analytical frame so compatible evidence can be clustered
 
-**Key Distinction**: AnalysisContext = "What question am I answering?" vs EvidenceScope = "What boundaries did this evidence source use?"
+**Key Distinction**:
+* **EvidenceScope** = "What methodology/boundaries did THIS source use?" (per-evidence metadata)
+* **ClaimBoundary** = "Which evidence items can be grouped together?" (cluster of compatible EvidenceScopes)
 
 === 2.2 Terminology Usage Rules ===
 
-**FactHarbor Entities** (use in prompts and code):
-* **Evidence**: Information extracted from sources
-* **Verdict**: Conclusions/assessments produced by analysis
-* **AnalysisContext**: Top-level bounded analytical frame
-* **EvidenceScope**: Per-Evidence source methodology metadata
+**FactHarbor ClaimBoundary Pipeline Entities** (use in prompts and code):
+* **AtomicClaim**: Single verifiable assertion extracted from user input
+* **EvidenceItem**: Information extracted from sources (with mandatory EvidenceScope)
+* **EvidenceScope**: Per-evidence source methodology metadata
+* **ClaimBoundary**: Evidence-emergent grouping of compatible EvidenceScopes
+* **ClaimVerdict**: Per-claim verdict with boundaryFindings[]
+* **BoundaryFinding**: Per-boundary quantitative assessment for a specific claim
 
-**Avoid in prompts**:
-* ~~fact/facts~~ -> Use "Evidence" / "Evidence items"
-* ~~scope~~ (ambiguous) -> Use "AnalysisContext" or "EvidenceScope" explicitly
+**NEVER use in new code**:
+* ~~AnalysisContext~~ → Use **ClaimBoundary**
+* ~~contextId~~ → Use **claimBoundaryId**
+* ~~analysisContexts~~ → Use **claimBoundaries**
+* ~~scope~~ (ambiguous) → Use **EvidenceScope** or **ClaimBoundary** explicitly
 
 ----
 
-== 3. AnalysisContext vs EvidenceScope Decision Tree ==
+== 3. EvidenceScope vs ClaimBoundary Decision Tree ==
 
 {{include reference="FactHarbor.Product Development.Diagrams.Context Detection Decision Tree.WebHome"/}}
 
-=== 3.1 When to Create Multiple AnalysisContexts ===
+=== 3.1 When to Extract EvidenceScope (Always) ===
 
-Create separate AnalysisContexts when:
-1. **Different Questions**: Evidence answers fundamentally different questions
-1*. "Was Proceeding A fair?" vs "Was Proceeding B fair?"
+Extract EvidenceScope metadata for EVERY evidence item during Stage 2: RESEARCH:
 
-1. **Incompatible Methodologies**: Combining conclusions would be misleading
-1*. "Efficiency using Framework A boundary" vs "Efficiency using Framework B boundary"
+1. **Source states methodology**: "This study uses Standard S"
+1. **Source has temporal boundaries**: "Data from Period P to Period Q"
+1. **Source has system boundaries**: "Full system boundary" vs "Subsystem only"
+1. **Source has geographic scope**: "Jurisdiction J" vs "Region R"
 
-1. **Distinct Temporal Subjects**: Time periods are the primary subject (not incidental)
-1*. "Policy effectiveness in Period 1" vs "Policy effectiveness in Period 2"
+**MANDATORY fields**:
+* ##methodology## (REQUIRED) — The analytical approach used by the source
+* ##temporal## (REQUIRED) — When the source data was collected or applies
 
-=== 3.2 When to Use EvidenceScope (Not AnalysisContext) ===
+**Optional fields**:
+* ##boundaries## — What was included/excluded in the analysis
+* ##geographic## — Geographic scope of the source data
+* ##additionalDimensions## — Domain-specific scope data (e.g., sample size, blinding)
 
-Use EvidenceScope metadata when:
-1. **Source Methodology Markers**: Evidence states its analytical boundaries
-1*. "This study uses ISO 14040 methodology"
+=== 3.2 When ClaimBoundaries Are Created (Stage 3) ===
 
-1. **Provenance Tracking**: Distinguishing evidence source constraints
+ClaimBoundaries are created AFTER research by clustering compatible EvidenceScopes:
 
-1. **Verdict Enrichment**: Noting source boundaries without splitting contexts
+1. **Compatible EvidenceScopes**: Cluster into single ClaimBoundary
+1*. All evidence uses "Standard S, Period P" → 1 boundary
+1. **Incompatible methodologies**: Create separate ClaimBoundaries
+1*. "Methodology A (full system)" vs "Methodology B (subsystem)" → 2 boundaries
+1. **Different jurisdictions**: Create separate ClaimBoundaries
+1*. "Jurisdiction J" vs "Jurisdiction K" → 2 boundaries
+1. **Different temporal periods**: May create separate boundaries if temporal is primary subject
+1*. "Period P" vs "Period Q" → potentially 2 boundaries
 
 ----
 
-== 4. Detection Pipeline Flow ==
+== 4. Pipeline Flow ==
 
-=== 4.1 Multi-Phase Context Detection ===
+=== 4.1 Five-Stage ClaimBoundary Pipeline ===
 
 {{include reference="FactHarbor.Product Development.Diagrams.Context Detection Phases.WebHome"/}}
 
-=== 4.2 Context Detection Points ===
+=== 4.2 Stage Breakdown ===
 
-|= Phase |= Context Detection |= Uses Evidence? |= Source
-| **UNDERSTAND** | Initial detection from input text | No | Input analysis
-| **EXTRACT_EVIDENCE** | EvidenceScope metadata capture | Yes | Source documents
-| **CONTEXT_REFINEMENT** | Evidence-based discovery and merge | Yes | EvidenceScope patterns
+|= Stage |= EvidenceScope Action |= ClaimBoundary Action |= Output
+| **Stage 1: EXTRACT CLAIMS** | None | None | AtomicClaim[] (central claims only)
+| **Stage 2: RESEARCH** | **Extract per-item** | None | EvidenceItem[] (each with EvidenceScope)
+| **Stage 3: CLUSTER BOUNDARIES** | None | **Cluster compatible scopes** | ClaimBoundary[] + assignments
+| **Stage 4: VERDICT** | None | Use for per-boundary findings | ClaimVerdict[] (with boundaryFindings[])
+| **Stage 5: AGGREGATE** | None | Use in coverage matrix | OverallAssessment + VerdictNarrative
 
 === 4.3 Data Flow ===
 
-**Phase 1: Initial Context Detection** — produces AnalysisContext entities. **Phase 3: EvidenceScope Capture** — attaches EvidenceScope metadata to evidence items.
+**Stage 2: EvidenceScope Extraction** — attaches EvidenceScope metadata to each evidence item.
 
-For full field definitions see [[Entity Views (Understanding Phase + Research Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]]. Key fields for context detection:
+**Stage 3: Boundary Clustering** — groups compatible EvidenceScopes into ClaimBoundaries.
 
-|= Entity |= Field |= Role in Detection
-| AnalysisContext | ##id## | Unique identifier (CTX_xxx)
-| AnalysisContext | ##name## / ##shortName## | Human-readable labels
-| AnalysisContext | ##subject## | What is being analysed — the core distinguishing field
-| AnalysisContext | ##temporal## | Time period (creates context if primary subject)
-| AnalysisContext | ##status## | concluded / ongoing / pending / unknown
-| AnalysisContext | ##metadata## (JSONB) | Domain-specific details (institution, methodology, boundaries)
-| EvidenceScope | ##methodology## | Standard referenced by the source
-| EvidenceScope | ##boundaries## | What the source includes/excludes
-| EvidenceScope | ##geographic## / ##temporal## | Source data region and period
+For full field definitions see [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]]. Key fields for boundary clustering:
+
+|= Entity |= Field |= Role in Clustering
+| EvidenceScope | ##methodology## | Primary congruence signal (REQUIRED)
+| EvidenceScope | ##temporal## | Primary congruence signal (REQUIRED)
+| EvidenceScope | ##boundaries## | Secondary congruence signal (optional)
+| EvidenceScope | ##geographic## | Secondary congruence signal (optional)
+| EvidenceScope | ##additionalDimensions## | Supplementary congruence context (optional)
+| ClaimBoundary | ##id## | Unique identifier (CB_01, CB_02, ...)
+| ClaimBoundary | ##name## / ##shortName## | Human-readable labels
+| ClaimBoundary | ##description## | What this boundary represents
+| ClaimBoundary | ##methodology## | Dominant methodology (if applicable)
+| ClaimBoundary | ##internalCoherence## | 0-1: consistency of evidence within boundary
+| ClaimBoundary | ##evidenceCount## | Number of evidence items in this boundary
 
 ----
 
-== 5. Principle-Based Detection Rules ==
+== 5. Congruence-Based Clustering Rules ==
 
-=== 5.1 The Single Incompatibility Test ===
+=== 5.1 The Congruence Assessment Test ===
 
-Instead of hardcoding specific terms or categories, FactHarbor uses **ONE universal test**:
+Instead of pre-creating boundaries from input, FactHarbor uses **congruence assessment**:
 
-> **"Would combining findings from this source with other sources be MISLEADING because they measure or analyze fundamentally different things?"**
+> **"Are these EvidenceScopes compatible enough to cluster into a single ClaimBoundary, or should they be separated?"**
 
-* **YES** -> Extract EvidenceScope (document what makes it incompatible)
-* **NO** -> Don't extract (boundaries are compatible enough)
+* **Compatible** → Merge into single ClaimBoundary
+* **Incompatible** → Create separate ClaimBoundaries
 
 === 5.2 Key Principles ===
 
-1. **Selective extraction**: Most analyses have 0-1 significant EvidenceScope patterns, max 2-3
-1. **Explicit statements only**: Don't invent boundaries the source didn't state
-1. **Incompatibility focus**: Only flag boundaries that would cause apples-to-oranges comparisons
-1. **Synonym recognition**: Sources use various terms (scope, delimitations, limitations, inclusion criteria)
+1. **Evidence-emergent**: Boundaries emerge from gathered evidence, not from input analysis
+1. **LLM-driven clustering**: Sonnet-tier LLM assesses congruence across 5 factors
+1. **Selective clustering**: Most analyses have 1-3 boundaries (default 1), max 5 (rare)
+1. **Explicit statements only**: Don't invent boundaries the evidence doesn't support
+1. **Congruence focus**: Only separate when evidence scopes are genuinely incompatible
 
-=== 5.3 Pattern-Based Heuristics ===
+=== 5.3 Congruence Factors (LLM-Evaluated) ===
 
-**Comparative claims** (input asks "A vs B"):
-* Evidence likely has data for A and data for B
-* Check if A's scope differs from B's scope
-* If yes, separate contexts
+|= Factor |= Merge If... |= Separate If...
+| **Methodology** | Same or compatible methodology | Fundamentally different approach (e.g., Method A vs Method B)
+| **Boundaries** | Overlapping scope boundaries | Non-overlapping system boundaries (e.g., full system vs subsystem)
+| **Geographic** | Same or overlapping regions | Distinct jurisdictions with different rules (e.g., Jurisdiction J vs K)
+| **Temporal** | Overlapping time periods | Non-overlapping periods (if temporal is primary subject)
+| **Contradiction** | Low contradiction between items | High contradiction driven by scope differences
 
-**Multi-process subjects** (input mentions institutions/proceedings):
-* Evidence may reference multiple formal processes
-* Different processes = different analytical frames
-* Check if institutional references cluster
+=== 5.4 Clustering Heuristics (LLM Guidance) ===
 
-**Historical comparisons** (input asks about change over time):
-* Evidence may cover different time periods
-* Distinct events (not just dates) = distinct contexts
+**Compatible EvidenceScopes** (merge into single boundary):
+* All evidence uses "Standard S" with "Period P data"
+* Methodologies are variants of same framework (e.g., "Framework A v1" and "Framework A v2")
+* Geographic scopes overlap (e.g., "Region R" and "Sub-region within R")
+* Temporal periods overlap and not primary subject
 
-----
-
-== 6. Overlap Detection and Merge Heuristics ==
-
-=== 6.1 Context Overlap Problem ===
-
-**Problem**: Over-splitting contexts leads to high context counts, redundant analyses, and confusing verdicts.
-
-**Solution**: LLM-driven merge heuristics with explicit guidance.
-
-=== 6.2 Merge Criteria ===
-
-**Merge contexts when**:
-1. **Subject Overlap**: Both contexts address the same core question
-1*. "Institution A handling of Issue X" + "Institution A process for Issue X" -> Merge
-
-1. **Temporal Continuity**: Time periods are parts of a continuous event
-1*. "Policy Phase 1 (2020)" + "Policy Phase 2 (2021)" -> Merge if phases are related
-
-1. **Methodological Compatibility**: Boundaries/standards are compatible
-1*. "Study using Framework A, full boundary" + "Study using Framework A, subsystem" -> Keep separate
-
-=== 6.3 Temporal Guidance ===
-
-**Temporal markers create contexts when**:
-* Time period is the PRIMARY SUBJECT (e.g., "Compare 2000s vs 1970s")
-* NOT when it's incidental (e.g., "Study conducted in 2023")
+**Incompatible EvidenceScopes** (separate boundaries):
+* "Methodology A (full system)" vs "Methodology B (subsystem)" — different methodological approaches
+* "Jurisdiction J (Framework F)" vs "Jurisdiction K (Framework G)" — different regulatory frameworks
+* "Period P" vs "Period Q" — if temporal period is primary subject (e.g., "compare effectiveness in Period P vs Period Q")
 
 ----
 
-== 7. Context Count and Reliability ==
+== 6. Stage 3: CLUSTER BOUNDARIES Implementation ==
+
+=== 6.1 Clustering Process ===
+
+**Input**: EvidenceItem[] (each with EvidenceScope), AtomicClaim[]
+
+**Output**: ClaimBoundary[] + evidence assignments (claimBoundaryId per item)
+
+**Process**:
+
+1. **Collect unique EvidenceScopes** — extract all distinct scopes from gathered evidence
+1. **LLM clustering call** — single Sonnet-tier call that:
+1*. Groups EvidenceScopes with compatible methodology, boundaries, geography, and temporal period
+1*. Separates scopes where evidence is contradictory due to different methodological assumptions
+1*. Names each cluster as a ClaimBoundary with human-readable label
+1*. Provides scopeToBoundaryMapping
+1. **Assign evidence to boundaries** — set claimBoundaryId on each EvidenceItem
+1. **Coherence assessment** — for each boundary, compute internalCoherence (0-1)
+1. **Post-clustering validation** — deterministic checks:
+1*. Every boundary has non-empty id, name, at least 1 evidence item
+1*. Every evidence item assigned to exactly one boundary
+1*. No duplicate boundary IDs
+1*. If validation fails → fallback to single "General" boundary
+
+**Default boundary**: If evidence doesn't have meaningful scope distinctions (all sources use similar methodology/temporal/boundaries), all evidence clusters into a single "General" boundary.
+
+=== 6.2 Clustering Criteria Examples (Generic) ===
+
+==== Example 1: Methodological Split ====
+
+**EvidenceScopes**:
+* 5 items: ##{ methodology: "Methodology A", temporal: "Period P", boundaries: "Full system" }##
+* 3 items: ##{ methodology: "Methodology B", temporal: "Period P", boundaries: "Subsystem" }##
+
+**Result**: 2 ClaimBoundaries
+* CB_01: "Methodology A Studies (Full System)"
+* CB_02: "Methodology B Studies (Subsystem)"
+
+**Rationale**: Different methodologies + different boundaries → incompatible
+
+==== Example 2: Geographic Split ====
+
+**EvidenceScopes**:
+* 4 items: ##{ methodology: "Framework F", temporal: "Period P", geographic: "Jurisdiction J" }##
+* 2 items: ##{ methodology: "Framework G", temporal: "Period P", geographic: "Jurisdiction K" }##
+
+**Result**: 2 ClaimBoundaries
+* CB_01: "Jurisdiction J Proceedings"
+* CB_02: "Jurisdiction K Proceedings"
+
+**Rationale**: Different jurisdictions + different frameworks → incompatible
+
+==== Example 3: Compatible Evidence (Single Boundary) ====
+
+**EvidenceScopes**:
+* All 8 items: ##{ methodology: "Standard S", temporal: "Period P-Q", boundaries: "Measurement Boundary B" }##
+
+**Result**: 1 ClaimBoundary
+* CB_01: "General Evidence (Standard S)"
+
+**Rationale**: All scopes compatible → merge into single boundary
+
+----
+
+== 7. Boundary Count and Reliability ==
 
 === 7.1 Thresholds and Limits ===
 
-|= Context Count |= Status |= Meaning
-| **1-3** | Healthy | Typical for most analyses
+|= Boundary Count |= Status |= Meaning
+| **1** | Default | Most common — all evidence uses compatible scopes
+| **2-3** | Healthy | Typical for analyses with distinct methodological or jurisdictional frames
 | **4-5** | High | Complex analytical frame with multiple incompatible boundaries
-| **5+** | Limit | System enforces max via ##contextDetectionMaxContexts## config
+| **5+** | Limit | System enforces soft cap via prompt guidance (merge most similar)
 
-=== 7.2 Multi-Context Average Reliability ===
+=== 7.2 Multi-Boundary Verdict Structure ===
 
-**Single Context (Most Common)**: Average = context verdict (identical). Overall verdict fully represents the analysis.
+**Single Boundary (Most Common)**: ClaimVerdict has 1 BoundaryFinding. Per-boundary assessment = overall assessment.
 
-**Multiple Contexts (Distinct Frames)**: Average may not be meaningful if contexts answer different questions. Example: "Legal trial fairness (85%)" + "Scientific validity (30%)" = 57.5% average — which doesn't represent either question well.
+**Multiple Boundaries (Distinct Frames)**: ClaimVerdict has multiple BoundaryFindings. Each shows how evidence within that boundary supports/contradicts the claim.
 
-**Architecture Decision (v2.6.38)**:
-* Simple averaging chosen over complex weighting schemes
-* Transparency via ##articleVerdictReliability## flag (##"high"## or ##"low"##) and explicit messaging
-* Individual context verdicts always preserved and displayed
-* When reliability is low, de-emphasize overall average and highlight individual context verdicts
+**Example** (generic):
+* Claim: "Process X is effective"
+* Boundary CB_01 (Methodology A): 85% support
+* Boundary CB_02 (Methodology B): 40% support
+* Overall: Weighted average with triangulation factor
+* Narrative: "Evidence diverges across methodologies — Methodology A shows strong support, Methodology B shows weak support"
 
 ----
 
@@ -204,33 +272,44 @@ Instead of hardcoding specific terms or categories, FactHarbor uses **ONE univer
 === 8.1 Core Files ===
 
 |= File |= Purpose
-| ##apps/web/src/lib/analyzer/analysis-contexts.ts## | Heuristic pre-detection, ##detectContexts()##
-| ##apps/web/src/lib/analyzer/orchestrated.ts## | Orchestrated pipeline (primary)
-| ##apps/web/src/lib/analyzer/monolithic-dynamic.ts## | Dynamic monolithic pipeline
+| ##apps/web/src/lib/analyzer/claimboundary-pipeline.ts## | Main pipeline entry point (5 stages)
+| ##apps/web/src/lib/analyzer/verdict-stage.ts## | Verdict stage module (5-step debate pattern)
+| ##apps/web/src/lib/analyzer/types.ts## | TypeScript types (ClaimBoundary, EvidenceScope, AtomicClaim, etc.)
+| ##apps/web/prompts/claimboundary.prompt.md## | UCM-managed prompts (BOUNDARY_CLUSTERING section)
 
 **Prompt Templates**:
-* ##apps/web/src/lib/analyzer/prompts/base/extract-evidence-base.ts## — EvidenceScope detection guidance
-* ##apps/web/src/lib/analyzer/prompts/base/context-refinement-base.ts## — Context discovery and merge guidance
+* ##BOUNDARY_CLUSTERING## — Congruence-based scope clustering guidance
+* ##CLAIM_EXTRACTION_PASS1## / ##PASS2## — Evidence-grounded claim extraction
+* ##VERDICT_ADVOCATE## / ##CHALLENGER## / ##RECONCILIATION## — 5-step debate pattern
 
 === 8.2 Key Functions ===
 
 {{code language="typescript"}}
-// Heuristic pre-detection (optional)
-detectContexts(inputText: string): DetectedContext[]
+// Stage 3: CLUSTER BOUNDARIES
+async function clusterBoundaries(
+  evidenceItems: EvidenceItem[],
+  atomicClaims: AtomicClaim[]
+): Promise<ClaimBoundary[]>
 
-// Format detected contexts for LLM hint
-formatDetectedContextsHint(contexts: DetectedContext[]): string
+// Collect unique scopes
+function collectUniqueScopes(items: EvidenceItem[]): EvidenceScope[]
 
-// Aggregation
-calculateWeightedVerdictAverage(verdicts: ClaimVerdict[]): number
+// LLM call for clustering
+async function llm.clusterEvidenceScopes(params): Promise<ClusteringResult>
+
+// Post-clustering validation
+function validateBoundaries(boundaries: ClaimBoundary[], evidence: EvidenceItem[]): boolean
 {{/code}}
 
 === 8.3 Configuration ===
 
 {{code language="json"}}
 {
-  "contextDetectionMaxContexts": 5,
-  "contextDetectionMergeThreshold": 0.7
+  "pipeline": {
+    "maxClaimBoundaries": 5,  // Soft cap (prompt guidance)
+    "boundaryClusteringModel": "sonnet",  // LLM tier for clustering
+    "congruenceGuidance": "from_architecture_doc_11_5"  // Genericized examples
+  }
 }
 {{/code}}
 
@@ -238,38 +317,62 @@ calculateWeightedVerdictAverage(verdicts: ClaimVerdict[]): number
 
 == 9. Examples ==
 
-=== 9.1 Institutional Boundary -> Distinct Contexts ===
+=== 9.1 Methodological Boundary → Distinct ClaimBoundaries ===
 
-**Input**: "Is Decision X justified?"
-**EvidenceScope**: Source A: Institution A / Standard A; Source B: Institution B / Standard B
-**Result**: 2 AnalysisContexts (different formal bodies/standards)
+**Input**: "Process X is more effective than Process Y"
 
-=== 9.2 Methodology Boundary -> Distinct Contexts ===
+**EvidenceScopes**:
+* Source A: Methodology A / Full system boundary
+* Source B: Methodology B / Subsystem boundary
 
-**Input**: "Is Method X more effective than Method Y?"
-**EvidenceScope**: Source A: Framework A / Full system; Source B: Framework B / Subsystem
-**Result**: 2 AnalysisContexts (incompatible methodological boundaries)
+**Result**: 2 ClaimBoundaries
+* CB_01: "Methodology A Studies (Full System)"
+* CB_02: "Methodology B Studies (Subsystem)"
 
-=== 9.3 Temporal Mention vs Temporal Subject ===
+=== 9.2 Geographic Boundary → Distinct ClaimBoundaries ===
 
-**Input**: "Did Policy Z have the intended outcome?"
-**Result**: Split only if temporal is primary subject, not incidental date mention.
+**Input**: "Entity A violated regulations"
 
-=== 9.4 Overlap -> Merge ===
+**EvidenceScopes**:
+* Source A: Jurisdiction J / Framework F
+* Source B: Jurisdiction K / Framework G
 
-**Input**: "Is Claim Q supported?"
-**EvidenceScope**: Both sources declare same boundary, methodology, and time window
-**Result**: 1 AnalysisContext (strong overlap -> merge)
+**Result**: 2 ClaimBoundaries
+* CB_01: "Jurisdiction J Proceedings"
+* CB_02: "Jurisdiction K Proceedings"
+
+=== 9.3 Compatible Evidence → Single ClaimBoundary ===
+
+**Input**: "Trend T is accelerating"
+
+**EvidenceScopes**:
+* All sources: Standard S / Period P-Q / Measurement Boundary B
+
+**Result**: 1 ClaimBoundary
+* CB_01: "General Evidence (Standard S)"
+
+=== 9.4 Temporal Subject → Distinct ClaimBoundaries ===
+
+**Input**: "Policy effectiveness changed from Period P to Period Q"
+
+**EvidenceScopes**:
+* Source A: Standard S / Period P data
+* Source B: Standard S / Period Q data
+
+**Result**: 2 ClaimBoundaries (temporal is primary subject)
+* CB_01: "Period P Evidence"
+* CB_02: "Period Q Evidence"
 
 ----
 
 == 10. Related Documentation ==
 
-* [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation methodology, AnalysisContext aggregation
-* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — Quality gates reference (Gate 1, Gate 4)
-* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Pipeline architecture and context routing
-* [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]] — AnalysisContext vs EvidenceScope definitions
+* [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation, boundary aggregation
+* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — Gate 1 (claim validation), Gate 4 (confidence)
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Pipeline architecture (ClaimBoundary is now default)
+* [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]] — ClaimBoundary vs EvidenceScope definitions
 * [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] — Evidence filtering and classification
+* [[Boundary Definition Guidelines>>FactHarbor.Product Development.DevOps.Guidelines.Scope Definition Guidelines.WebHome]] — When to use EvidenceScope vs ClaimBoundary
 
 ----
 

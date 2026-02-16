@@ -14,21 +14,23 @@
 
 ## ClaimBoundary Pipeline Implementation (TOP PRIORITY)
 
-The ClaimBoundary pipeline replaces AnalysisContext. Architecture is complete (9/9 decisions closed, 2 review rounds). This is the #1 priority for the project.
+The ClaimBoundary pipeline replaces AnalysisContext. Architecture is complete (9/9 decisions closed, 2 review rounds). Phase 1 (implementation) and Phase 2a (orchestrated deletion) are COMPLETE. Phase 2 docs (xWiki rewrites) are COMPLETE.
 
 **Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
+**Execution tracking:** [CB_Execution_State.md](../WIP/CB_Execution_State.md)
 
 | Step | Description | Domain | Urgency | Status | Notes |
 |------|-------------|--------|---------|--------|-------|
-| **Step 0** | **Rules Audit**: Lead Architect audits AGENTS.md + Multi_Agent_Collaboration_Rules.md for AnalysisContext-specific rules. Deliverable: diff of rule changes needed. | Architecture / Governance | high | NOT STARTED | Must complete before implementation begins (D8) |
-| **Step 1** | **Dead code cleanup**: Remove 879 lines unused code (7 files). Clean slate for CB implementation. | Architecture / Cleanup | high | NOT STARTED | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) |
-| **Step 2** | **UCM AutoForm merge**: Code review + merge `feature/ucm-autoform` branch. Better admin tooling for CB config. | Web UI / Config | high | AWAITING REVIEW | [UCM AutoForm](../WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
-| **Step 3** | **Stage 1 implementation**: Two-pass evidence-grounded claim extraction + Gate 1 grounding quality. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.1 |
-| **Step 4** | **Stage 2 implementation**: Evidence collection with mandatory EvidenceScope + additionalDimensions. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.2 |
-| **Step 5** | **Stage 3 implementation**: Congruence-focused ClaimBoundary clustering. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.3, §11 |
-| **Step 6** | **Stage 4 implementation**: LLM debate pattern (advocate/challenger/reconciliation) + self-consistency. `verdict-stage.ts` module. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.4 |
-| **Step 7** | **Aggregation + Report**: Weighted aggregation, triangulation, VerdictNarrative generation, report assembly. | Analyzer / Pipeline | high | NOT STARTED | Architecture §8.5 |
-| **Step 8** | **Post-CB documentation refresh**: Update all xWiki pages + .md docs for new pipeline. | Docs | med | NOT STARTED | Supersedes old Documentation_Cleanup_Plan |
+| ~~**Step 0**~~ | ~~**Rules Audit**: Lead Architect audits AGENTS.md + Multi_Agent_Collaboration_Rules.md for AnalysisContext-specific rules.~~ | ~~Architecture~~ | ~~high~~ | ✅ **COMPLETE** | See Recently Completed |
+| ~~**Step 1**~~ | ~~**Dead code cleanup**: Remove 879 lines unused code (7 files).~~ | ~~Architecture~~ | ~~high~~ | **DEFERRED** | Deferred to Phase 4 (after CB wiring complete) |
+| ~~**Step 2**~~ | ~~**UCM AutoForm merge**: Code review + merge `feature/ucm-autoform` branch.~~ | ~~Web UI~~ | ~~high~~ | **DEFERRED** | Deferred to after Phase 3 |
+| ~~**Phase 1**~~ | ~~**CB Pipeline Implementation**: 5-stage pipeline + verdict-stage module + 8 UCM prompts + tests~~ | ~~Analyzer~~ | ~~high~~ | ✅ **COMPLETE** | See Recently Completed |
+| ~~**Phase 2**~~ | ~~**Cutover**: Wire ClaimBoundary as default route, new resultJson schema~~ | ~~Analyzer~~ | ~~high~~ | ✅ **COMPLETE** | See Recently Completed |
+| ~~**Phase 2a**~~ | ~~**Delete orchestrated**: Remove orchestrated.ts, AC config, AC prompts, AC tests~~ | ~~Analyzer~~ | ~~high~~ | ✅ **COMPLETE** | See Recently Completed |
+| ~~**Phase 2 docs**~~ | ~~**xWiki Rewrites**: Rewrite 5 pure-AC xWiki pages for ClaimBoundary~~ | ~~Docs~~ | ~~high~~ | ✅ **COMPLETE** | See Recently Completed |
+| **Phase 3** | **UI Updates**: Update result display for ClaimBoundary schema (claimBoundaries, boundaryFindings, coverageMatrix) | Web UI | high | NOT STARTED | Architecture §10 |
+| **Phase 3b** | **MD Prompt Cleanup**: Remove hardcoded Monolithic Dynamic prompts, migrate to UCM | Analyzer / Prompts | high | NOT STARTED | String Usage Boundary compliance |
+| **Phase 4** | **Final AC Sweep**: Remove remaining AC references, delete dead code (879 lines) | Cleanup | med | NOT STARTED | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) |
 | **Step 9** | **Anti-hallucination principles in CB prompts**: Apply negative prompting, grounding validation, confidence calibration when writing Stage 1-4 prompts. | Analyzer / Quality | med | NOT STARTED | Extracted from archived LLM_Prompt_Improvement_Plan |
 | **Step 10** | **Define LLM call optimization targets for CB**: New cost/latency/quality targets based on CB's different call pattern (~18-37 calls, ~$0.65/run). | Cost / Analyzer | med | NOT STARTED | Extracted from archived LLM_Call_Optimization_Goals_Proposal |
 
@@ -38,6 +40,11 @@ The ClaimBoundary pipeline replaces AnalysisContext. Architecture is complete (9
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **CB Step 0: Rules Audit**: Updated all governance docs (AGENTS.md, CLAUDE.md, Multi_Agent_Collaboration_Rules.md, xWiki Terminology) for ClaimBoundary terminology. | Architecture / Governance | 2026-02-16 | [CB_Execution_State.md](../WIP/CB_Execution_State.md) |
+| ✅ **CB Phase 1: Pipeline Implementation**: 5-stage pipeline (claimboundary-pipeline.ts) + verdict-stage module + 8 UCM-managed prompts. 50 tests (24 pipeline + 29 verdict-stage), all passing. Build clean. | Analyzer / Pipeline | 2026-02-16 | [CB_Execution_State.md](../WIP/CB_Execution_State.md) |
+| ✅ **CB Phase 2: Cutover**: ClaimBoundary wired as default route in internal-runner-queue. New resultJson schema (3.0.0-cb) with claimBoundaries/claimVerdicts/coverageMatrix. Monolithic Dynamic fallback changed to ClaimBoundary. | Analyzer / Pipeline | 2026-02-16 | [CB_Execution_State.md](../WIP/CB_Execution_State.md) |
+| ✅ **CB Phase 2a: Delete Orchestrated**: Removed orchestrated.ts (~13,600 lines), analysis-contexts.ts (564 lines), evidence-context-utils.ts (86 lines), AC prompt files (~2,627 lines), AC config fields (126 lines), AC tests (~1,151 lines). Total: ~18,400 lines deleted across 4 commits. | Analyzer / Cleanup | 2026-02-16 | [CB_Execution_State.md](../WIP/CB_Execution_State.md) |
+| ✅ **CB Phase 2 Docs**: Rewrote 5 pure-AC xWiki pages for ClaimBoundary (Terminology, Scope Definition Guidelines, Context Detection, Decision Tree, Phases). 183 AC refs → 44 (76% reduction). Generic examples only. | Docs / Cleanup | 2026-02-16 | [CB_Execution_State.md](../WIP/CB_Execution_State.md) |
 | ✅ **ClaimBoundary Architecture Design**: Complete pipeline redesign with 9/9 decisions closed, 2 review rounds (3 reviewers), 13 v1 features, all diagrams tagged, I/O contracts for all LLM calls. | Architecture | 2026-02-16 | [Architecture Doc](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) |
 | ✅ **Phase 8 Pipeline Quality**: 6 commits — opened source selection funnel, batch verdict retry, stabilized claim decomposition, enforced context cap. Evidence 2-8.5x increase. | Analyzer / Quality | 2026-02-15 | [Phase 9 Status](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md) |
 | ✅ **Phase 9a Context Cap**: `enforceContextCap()` at 3 call sites + MAX_CONTEXTS prompt hint. Partially effective (some jobs still exceed cap). | Analyzer / Quality | 2026-02-15 | [Phase 9 Status](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md) |

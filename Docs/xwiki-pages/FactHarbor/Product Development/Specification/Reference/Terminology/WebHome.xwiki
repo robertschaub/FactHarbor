@@ -1,204 +1,328 @@
 = FactHarbor Terminology Reference =
 
-**Version**: 3.1.0
-**Date**: 2026-02-04
+**Version**: 4.0.0-cb
+**Date**: 2026-02-16
 **Audience**: Developers, Prompt Engineers, LLM Systems
-**Status**: v3.1 Complete - All terminology migrations finished, legacy aliases removed
+**Status**: ClaimBoundary pipeline (default) - Orchestrated pipeline removed
 
 ----
 
 == Purpose ==
 
-This document provides the **authoritative glossary** for FactHarbor's terminology across all layers: TypeScript code, JSON schema, database storage, and LLM prompts. Use this as the single source of truth when encountering ambiguous terms.
+This document provides the **authoritative glossary** for FactHarbor's ClaimBoundary pipeline terminology across all layers: TypeScript code, JSON schema, database storage, and LLM prompts. Use this as the single source of truth when encountering ambiguous terms.
 
-{{warning}}
-**Migration Notice (2026-02-16):** AnalysisContext is being replaced by the **ClaimBoundary** pipeline. See [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]].
+{{info}}
+**ClaimBoundary is now the default pipeline** (as of Phase 2: Cutover, February 2026). The Orchestrated pipeline (which used AnalysisContext) has been completely removed.
 
-* **New code** must use ClaimBoundary, AtomicClaim, claimBoundaryId — not AnalysisContext, contextId, analysisContexts.
-* **Existing code** still uses AnalysisContext until the migration is complete (see CB_Execution_State.md for current phase).
-* This terminology page will be fully rewritten for ClaimBoundary in Phase 2 of the migration.
-{{/warning}}
-
-----
-
-== Field Mapping Table (v3.1) ==
-
-**v3.0 Breaking Changes Applied**: Legacy JSON field names are NO longer accepted. All code uses new terminology.
-
-|= Concept |= TypeScript Type |= JSON Field (v3.1) |= JSON Field (Legacy - removed) |= Prompt Term
-| Top-level context | ##AnalysisContext## | ##analysisContexts## | ~~##distinctProceedings##~~ | AnalysisContext
-| Per-evidence metadata | ##EvidenceScope## | ##evidenceScope## | ##evidenceScope## | EvidenceScope
-| Context answer | ##AnalysisContextAnswer## | ##analysisContextAnswers## | ~~##contextAnswers##~~ | (internal)
-| Narrative background | (string) | ##backgroundDetails## | ~~##analysisContext##~~ | Background
-| Evidence item | ##EvidenceItem## | ##evidenceItems## | ~~##facts##~~ | EvidenceItem
-| Evidence statement | ##statement## | ##statement## | ~~##fact##~~ | statement
-| Evidence ID prefix | ##E1, E2, E3...## | ##E1, E2, E3...## | ~~##F1, F2, F3...##~~ | E-prefix
-
-**Schema Version**: 3.0.0 (all config schemas)
+* **All code** uses ClaimBoundary, AtomicClaim, claimBoundaryId.
+* **NEVER use** in new code: AnalysisContext, contextId, analysisContexts.
+* Full architecture: [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]]
+* Migration state: See [[CB Execution State>>path:/Docs/WIP/CB_Execution_State.md]]
+{{/info}}
 
 ----
 
-== Field Hierarchy: Understanding the Layers ==
+== Field Mapping Table (v4.0.0-cb) ==
 
-FactHarbor uses multiple "framing" concepts that work together hierarchically:
+**ClaimBoundary Pipeline**: All code uses ClaimBoundary terminology. AnalysisContext fields removed.
 
-=== Level 1: Background Details (Optional Context) ===
+|= Concept |= TypeScript Type |= JSON Field (v4.0.0-cb) |= JSON Field (Legacy - removed) |= Prompt Term
+| Atomic claim | ##AtomicClaim## | ##atomicClaims## | ~~##claims##~~ | AtomicClaim
+| Claim boundary | ##ClaimBoundary## | ##claimBoundaries## | ~~##analysisContexts##~~ | ClaimBoundary
+| Per-evidence metadata | ##EvidenceScope## | ##evidenceScope## | ##evidenceScope## (unchanged) | EvidenceScope
+| Boundary finding | ##BoundaryFinding## | ##boundaryFindings## | (new field) | BoundaryFinding
+| Claim verdict | ##ClaimVerdict## | ##claimVerdicts## | ~~##claimAssessments##~~ | ClaimVerdict
+| Evidence item | ##EvidenceItem## | ##evidenceItems## | ##evidenceItems## (unchanged) | EvidenceItem
+| Evidence statement | ##statement## | ##statement## | ##statement## (unchanged) | statement
+| Evidence ID prefix | ##EV_001, EV_002...## | ##EV_001, EV_002...## | ~~##E1, E2, E3...##~~ | EV-prefix
+| Coverage matrix | ##CoverageMatrix## | ##coverageMatrix## | (new field) | CoverageMatrix
+| Verdict narrative | ##VerdictNarrative## | ##verdictNarrative## | (new field) | VerdictNarrative
 
-* **What:** Broader topic or narrative setting of the article
-* **When:** Only for articles with clear thematic frame (can be empty)
-* **Display:** Optional banner in UI labeled "Background"
-* **Example:** "Climate policy and decarbonization", "Brazilian democratic crisis 2023-2024"
-* **JSON field:** ##backgroundDetails##
-* **UI Component:** ##BackgroundBanner.tsx##
+**Schema Version**: 3.0.0-cb (resultJson schema)
 
-=== Level 2: ArticleThesis (Main Claim) ===
+----
 
-* **What:** What the article/input specifically asserts
-* **When:** Always present (the claim being fact-checked)
-* **Display:** Prominent display in summary section
-* **Example:** "Hydrogen is more efficient than electric", "Bolsonaro trials were politically motivated"
-* **JSON field:** ##articleThesis##
+== Pipeline Hierarchy: Understanding the Flow ==
 
-=== Level 3: AnalysisContexts (Verdict Spaces) ===
+FactHarbor's ClaimBoundary pipeline follows a sequential 5-stage flow:
 
-* **What:** Distinct analytical frames requiring separate, independent verdicts
-* **When:** 1+ contexts detected (typically 1-3 per input)
-* **Display:** Primary grouping in UI - each context gets its own verdict section
-* **Example:** [TSE electoral case, STF criminal case], [WTW methodology, TTW methodology]
-* **JSON field:** ##analysisContexts## (plural array)
+=== Stage 1: EXTRACT CLAIMS (Two-Pass, Evidence-Grounded) ===
 
-=== Level 4: Evidence Items (Supporting Evidence) ===
+* **What:** Parse input and extract central, verifiable AtomicClaims
+* **When:** First stage of pipeline (before research)
+* **Output:** ##AtomicClaim[]## — only claims with ##isCentral: true##
+* **Key fields:** ##statement##, ##centrality##, ##harmPotential##, ##specificityScore##, ##groundingQuality##, ##expectedEvidenceProfile##
+* **JSON field:** ##atomicClaims##
 
-* **What:** Individual evidence items extracted from sources
-* **When:** Found during research phase
-* **Display:** Listed under each AnalysisContext with supporting/opposing indicators
-* **Assigned to:** One AnalysisContext via ##contextId##
-* **JSON field:** ##evidenceItems## (array of ##EvidenceItem##)
-* **ID format:** ##E1, E2, E3...## (E-prefix for Evidence)
+=== Stage 2: RESEARCH ===
 
-=== Level 5: EvidenceScope (Source Methodology - NOT Currently Displayed) ===
+* **What:** Gather evidence for each claim via web search and extraction
+* **When:** After claims extracted, before boundary clustering
+* **Output:** ##EvidenceItem[]## — each with mandatory ##EvidenceScope##
+* **Key principle:** Claims drive all research (no context-driven queries)
+* **ID format:** ##EV_001, EV_002, ...## (EV-prefix for Evidence)
+* **JSON field:** ##evidenceItems##
 
-* **What:** The analytical frame/methodology used BY THE SOURCE when producing evidence
-* **When:** Optional per-evidence metadata (not all evidence items have this)
-* **Display:** //Should be shown via tooltips or sub-grouping (currently hidden)//
-* **Example:** "ISO 14040 LCA", "GREET Model", "Brazilian Electoral Law", "Journalistic reporting"
-* **JSON field:** ##evidenceItem.evidenceScope## (optional object)
+=== Stage 3: CLUSTER BOUNDARIES ===
 
-**Key Distinction:**
-* **AnalysisContext** = "WHAT we're analyzing" (user's question: "Was TSE fair?")
-* **EvidenceScope** = "HOW sources analyzed it" (source metadata: "Using electoral law framework")
+* **What:** Organize evidence into ClaimBoundaries by clustering compatible EvidenceScopes
+* **When:** After research complete, before verdict generation
+* **Output:** ##ClaimBoundary[]## + evidence assignments
+* **Key principle:** Boundaries emerge from evidence (not predetermined)
+* **Clustering factors:** Methodology, boundaries, geographic, temporal congruence
+* **JSON field:** ##claimBoundaries##
 
-**UI Grouping Rule:** Always group by AnalysisContext (uncomparable verdict spaces), then show EvidenceScope as metadata within each context.
+=== Stage 4: VERDICT (LLM Debate Pattern) ===
+
+* **What:** Generate per-claim verdicts using 5-step debate (advocate → self-consistency → challenge → reconciliation → validation)
+* **When:** After boundary clustering complete
+* **Output:** ##ClaimVerdict[]## — one per AtomicClaim, with ##boundaryFindings[]##
+* **Module:** ##verdict-stage.ts## (separate module)
+* **JSON field:** ##claimVerdicts##
+
+=== Stage 5: AGGREGATE ===
+
+* **What:** Compute coverage matrix, triangulation, and overall assessment with narrative
+* **When:** Final stage
+* **Output:** ##OverallAssessment## with ##VerdictNarrative##
+* **Key artifacts:** ##CoverageMatrix## (claims × boundaries), triangulation scores
+* **JSON field:** ##overallAssessment##
+
+----
+
+**Key Distinctions:**
+
+* **AtomicClaim** = "What verifiable assertion am I checking?" (extracted from user input)
+* **EvidenceScope** = "What methodology/boundaries did THIS source use?" (per-evidence metadata)
+* **ClaimBoundary** = "Which evidence items can be grouped together?" (compatible EvidenceScopes)
+* **BoundaryFinding** = "What does evidence in THIS boundary say about THIS claim?" (per-boundary verdict component)
 
 ----
 
 == Core Concepts ==
 
-=== 1. AnalysisContext (Top-Level Analytical Frame) — CURRENT PIPELINE, BEING REPLACED ===
+=== 1. ClaimBoundary Pipeline Terminology — NEW PIPELINE (DEFAULT) ===
 
 {{info}}
-**DO NOT USE AnalysisContext in new code.** This concept is being replaced by **ClaimBoundary** (evidence-emergent grouping of compatible EvidenceScopes). See section 1b below for ClaimBoundary terminology. The AnalysisContext documentation below remains accurate for the //existing// pipeline until migration is complete.
+**ClaimBoundary is now the default pipeline.** The Orchestrated pipeline (which used AnalysisContext) has been removed as of Phase 2a. All new code must use ClaimBoundary terminology.
+
+Full architecture: [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]]
 {{/info}}
 
-**What it is**: A bounded analytical frame that requires separate, independent analysis and verdict.
+==== 1.1 AtomicClaim ====
 
-**Why it matters**: When a user's input involves multiple distinct analytical frames (e.g., different legal jurisdictions, different scientific methodologies), each must be analyzed separately to avoid conflating evidence.
+**What it is**: A single verifiable assertion extracted from user input. The atomic unit of analysis in the ClaimBoundary pipeline.
 
-**Examples**:
-* Different legal proceedings: "TSE Electoral Case" vs "STF Criminal Case"
-* Different methodologies: "Well-to-Wheel Analysis" vs "Tank-to-Wheel Analysis"
-* Different regulatory frameworks: "EU REACH Standards" vs "US EPA Standards"
+**Why it matters**: Each claim drives independent research. Claims must be specific enough to generate targeted search queries without additional framing.
+
+**Examples (generic)**:
+* "Entity A performed Action X during Period Y"
+* "Metric M for Process P exceeds Value V"
+* "Framework F applies to Situation S"
 
 **Code representation**:
 
 {{code language="typescript"}}
-// TypeScript interface name
-export interface AnalysisContext {
+export interface AtomicClaim {
+  id: string;                     // AC_01, AC_02, ...
+  statement: string;              // The verifiable assertion
+  category: "factual" | "evaluative" | "procedural";
+  centrality: "high" | "medium";
+  harmPotential: "critical" | "high" | "medium" | "low";
+  isCentral: boolean;             // true (only central claims survive)
+  claimDirection: "supports_thesis" | "contradicts_thesis" | "contextual";
+  keyEntities: string[];
+  specificityScore: number;       // 0-1 (≥0.6 required)
+  groundingQuality: "strong" | "moderate" | "weak" | "none";
+  expectedEvidenceProfile: {
+    methodologies: string[];
+    expectedMetrics: string[];
+    expectedSourceTypes: SourceType[];
+  };
+}
+{{/code}}
+
+**Variable names**: ##atomicClaim##, ##atomicClaims##
+
+**NEVER call it**: "context", "fact"
+
+----
+
+==== 1.2 ClaimBoundary ====
+
+**What it is**: An evidence-emergent grouping of compatible EvidenceScopes, created //after// research by clustering evidence with congruent methodology, temporal, boundaries, and geographic dimensions.
+
+**Why it matters**: ClaimBoundaries organize evidence for verdict generation. Instead of pre-creating analytical frames (which caused instability), boundaries emerge from the evidence itself.
+
+**Key principle**: Evidence tells us what boundaries exist. We don't guess.
+
+**Examples (generic)**:
+* "Methodology A studies" (evidence using Framework A)
+* "Jurisdiction J proceedings" (evidence from legal domain J)
+* "Period P data" (evidence from temporal range P)
+
+**Code representation**:
+
+{{code language="typescript"}}
+export interface ClaimBoundary {
+  id: string;                     // CB_01, CB_02, ...
+  name: string;                   // Human-readable label
+  shortName: string;              // Short label for UI tabs
+  description: string;            // What this boundary represents
+  methodology?: string;           // Dominant methodology (if applicable)
+  boundaries?: string;            // Scope boundaries
+  geographic?: string;            // Geographic scope
+  temporal?: string;              // Temporal scope
+  internalCoherence: number;      // 0-1: consistency of evidence within
+  evidenceCount: number;          // Number of evidence items
+}
+{{/code}}
+
+**Variable names**: ##claimBoundary##, ##claimBoundaries##, ##claimBoundaryId##
+
+**NEVER call it**: "context", "scope", "analysisContext"
+
+----
+
+==== 1.3 BoundaryFinding ====
+
+**What it is**: Per-boundary quantitative evidence assessment for a specific claim. Each ClaimVerdict contains boundaryFindings[] showing how evidence within each boundary supports or contradicts the claim.
+
+**Why it matters**: Enables multi-perspective verdicts — the same claim may have different support levels across different ClaimBoundaries.
+
+**Code representation**:
+
+{{code language="typescript"}}
+export interface BoundaryFinding {
+  boundaryId: string;                           // Which ClaimBoundary
+  truthPercentage: number;                      // 0-100 per-boundary assessment
+  confidence: number;                           // 0-100 per-boundary confidence
+  evidenceDirection: "supports" | "contradicts" | "mixed" | "neutral";
+  evidenceCount: number;                        // Evidence items in this boundary for this claim
+}
+{{/code}}
+
+**Used in**: ##ClaimVerdict.boundaryFindings[]##
+
+----
+
+==== 1.4 ClaimVerdict ====
+
+**What it is**: Final verdict for a single AtomicClaim, produced by the 5-step LLM debate pattern (advocate → self-consistency → challenge → reconciliation → validation).
+
+**Code representation**:
+
+{{code language="typescript"}}
+export interface ClaimVerdict {
   id: string;
-  name: string;
-  shortName: string;
-  subject: string;
-  // ...
+  claimId: string;                              // Which AtomicClaim
+  truthPercentage: number;                      // 0-100 overall
+  verdict: string;                              // 7-point scale label
+  confidence: number;                           // 0-100 overall
+  reasoning: string;                            // LLM-generated explanation
+  harmPotential: "critical" | "high" | "medium" | "low";
+  isContested: boolean;                         // Documented counter-evidence exists
+  supportingEvidenceIds: string[];
+  contradictingEvidenceIds: string[];
+  boundaryFindings: BoundaryFinding[];          // Per-boundary assessments
+  challengeResponses?: string[];                // From reconciliation step
 }
 {{/code}}
 
-**JSON field name** (v3.1):
+**Variable names**: ##claimVerdict##, ##claimVerdicts##
 
-{{code language="json"}}
-{
-  "analysisContexts": [
-    { "id": "CTX_TSE", "name": "TSE Electoral Ruling" },
-    { "id": "CTX_SCOTUS", "name": "SCOTUS Colorado Case" }
-  ]
+----
+
+==== 1.5 CoverageMatrix ====
+
+**What it is**: A deterministic claims × boundaries matrix showing which claims have been evaluated in which boundaries.
+
+**Why it matters**: Ensures analytical completeness — every claim must have evidence across relevant boundaries. Logged to job events for transparency.
+
+**Code representation**:
+
+{{code language="typescript"}}
+export interface CoverageMatrix {
+  claims: string[];                            // AtomicClaim IDs
+  boundaries: string[];                        // ClaimBoundary IDs
+  coverage: boolean[][];                       // claims[i] × boundaries[j] → has evidence?
+  missingCoverage: Array<{
+    claimId: string;
+    boundaryId: string;
+    reason: string;
+  }>;
 }
 {{/code}}
 
-**Prompt terminology**:
-* Preferred: "AnalysisContext" or "Context"
-* Avoid: "Scope" (reserved for EvidenceScope)
-* Removed: ~~"Proceeding"~~ (legacy term removed in v3.0)
+----
 
-**Common confusion**:
-* AnalysisContext is NOT the same as EvidenceScope (per-evidence metadata)
-* AnalysisContext is NOT the same as backgroundDetails (narrative background)
+==== 1.6 VerdictNarrative ====
+
+**What it is**: Structured summary of the overall assessment, including boundary disagreements and limitations. LLM-generated (Sonnet, 1 call) during Stage 5: AGGREGATE.
+
+**Code representation**:
+
+{{code language="typescript"}}
+export interface VerdictNarrative {
+  headline: string;                           // 1-sentence summary
+  evidenceBaseSummary: string;                // What evidence was found
+  keyFinding: string;                         // Most important conclusion
+  boundaryDisagreements: Array<{
+    boundaryIds: string[];
+    disagreementSummary: string;
+  }>;
+  limitations: string[];                      // Gaps, uncertainties, caveats
+}
+{{/code}}
+
+**Used in**: ##OverallAssessment.verdictNarrative##
 
 ----
 
-=== 1b. ClaimBoundary (Replaces AnalysisContext) — NEW PIPELINE ===
-
-{{info}}
-**Use this in all new code.** ClaimBoundary replaces AnalysisContext as the top-level grouping concept. Full architecture: [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]].
-{{/info}}
-
-**What it is**: An evidence-emergent grouping of compatible EvidenceScopes, created //after// research (not before). Claims are the analytical unit; boundaries organize evidence for per-claim verdict generation.
-
-**Key difference from AnalysisContext**: AnalysisContext was created //before// research (from user input). ClaimBoundary is created //after// research by clustering evidence with compatible EvidenceScopes. This eliminates the circular dependency that caused instability in Phases 1-9.
-
-**Related types**:
-* **AtomicClaim**: A single verifiable assertion extracted from user input. The analytical unit in the ClaimBoundary pipeline.
-* **ClaimBoundary**: A group of evidence items with compatible EvidenceScopes.
-* **BoundaryFinding**: Per-boundary evidence assessment for a specific claim.
-* **ClaimVerdict**: Verdict for a single AtomicClaim, including boundaryFindings[].
-
-**Variable names**: ##claimBoundary##, ##claimBoundaries##, ##claimBoundaryId##, ##atomicClaim##, ##atomicClaims##
-
-**NEVER use in new code**: ##contextId##, ##analysisContexts##, ##AnalysisContext##
-
-**Code files** (created in Phase 1):
-* ##claimboundary-pipeline.ts## — Main pipeline entry point
-* ##verdict-stage.ts## — 5-step verdict debate pattern
-* ##types.ts## — ClaimBoundary, AtomicClaim, BoundaryFinding, ClaimVerdict types
-
-----
-
-=== 2. EvidenceScope (Per-Evidence Source Metadata) ===
+=== 2. EvidenceScope (Per-Evidence Source Metadata) — SHARED CONCEPT ===
 
 **What it is**: Metadata attached to individual evidence items describing the methodology, boundaries, geography, and time period that **the source document** used when producing that evidence.
 
-**Why it matters**: A fact saying "40% efficiency" from a Well-to-Wheel study (includes full energy chain) cannot be directly compared to a Tank-to-Wheel study (only vehicle operation). EvidenceScope captures these methodological differences.
+**Why it matters**: Evidence stating "Metric X = Value Y" from a study using Methodology A with Boundary Set B cannot be directly compared to a study using Methodology C with Boundary Set D. EvidenceScope captures these methodological differences so the pipeline can cluster compatible evidence into ClaimBoundaries.
 
-**Examples**:
-* Methodology: "ISO 14040 LCA", "EU RED II", "GREET Model"
-* Boundaries: "Primary energy to wheel", "Tank to wheel only"
-* Geographic: "European Union", "California", "China"
-* Temporal: "2020-2025 data", "FY2024 projections"
+**Examples (generic)**:
+* Methodology: "Standard S", "Framework F", "Protocol P"
+* Boundaries: "Full system", "Subsystem only", "Phases 1-3"
+* Geographic: "Jurisdiction J", "Region R", "Multi-national"
+* Temporal: "Period P data", "Year Y baseline", "Historical range"
+
+**Core fields (REQUIRED)**:
+* ##methodology##: REQUIRED — The analytical approach used by the source (e.g., "Standard ISO-X", "Regulatory Framework Y")
+* ##temporal##: REQUIRED — When the source data was collected or applies (e.g., "Data from Period P", "Baseline Year Y")
+
+**Optional fields**:
+* ##boundaries##: What was included/excluded in the analysis (e.g., "Full lifecycle", "Operation phase only")
+* ##geographic##: Geographic scope of the source data (e.g., "Region R", "Country C")
+* ##additionalDimensions##: Domain-specific scope data (e.g., `{ "sample_size": "N=12000", "blinding": "double-blind" }`)
 
 **Code representation**:
 
 {{code language="typescript"}}
 export interface EvidenceScope {
-  name: string;
-  methodology?: string;
-  boundaries?: string;
-  geographic?: string;
-  temporal?: string;
+  name: string;                             // Short label (e.g., "Methodology A", "Framework B")
+  methodology: string;                      // REQUIRED
+  temporal: string;                         // REQUIRED
+  boundaries?: string;                      // Optional
+  geographic?: string;                      // Optional
+  sourceType?: SourceType;                  // Optional classification
+  additionalDimensions?: Record<string, string>; // Optional domain-specific data
 }
 
 // Attached to evidence items
 export interface EvidenceItem {
-  id: string;           // E1, E2, E3... (E-prefix)
-  statement: string;    // The evidence statement
-  evidenceScope?: EvidenceScope;
+  id: string;                               // EV_001, EV_002, ... (EV-prefix)
+  statement: string;                        // The evidence statement
+  evidenceScope: EvidenceScope;             // MANDATORY (not optional)
+  claimBoundaryId?: string;                 // Assigned during CLUSTER stage
+  relevantClaimIds: string[];               // Which claims this evidence relates to
+  isDerivative: boolean;                    // Derives from another source's study
+  derivedFromSourceUrl?: string;            // URL of original source (optional)
+  scopeQuality: "complete" | "partial" | "incomplete"; // Scope metadata quality
   // ...
 }
 {{/code}}
@@ -209,28 +333,36 @@ export interface EvidenceItem {
 {
   "evidenceItems": [
     {
-      "id": "E1",
-      "statement": "Hydrogen achieves 40% WTW efficiency",
+      "id": "EV_001",
+      "statement": "Entity A achieved Metric X using Method M",
       "evidenceScope": {
-        "name": "WTW",
-        "methodology": "Well-to-Wheel",
-        "boundaries": "Primary energy to vehicle motion",
-        "geographic": "EU",
-        "temporal": "2024"
-      }
+        "name": "Method M Analysis",
+        "methodology": "Standard S with Approach A",
+        "temporal": "Period P data (Year-Year)",
+        "boundaries": "Full system boundary",
+        "geographic": "Region R",
+        "additionalDimensions": {
+          "sample_size": "N=12000",
+          "confidence_level": "95%"
+        }
+      },
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_01",
+      "relevantClaimIds": ["AC_01", "AC_03"]
     }
   ]
 }
 {{/code}}
 
 **Prompt terminology**:
-* Always: "evidenceScope" (lowercase, as field name)
-* In explanations: "Per-evidence EvidenceScope" (to distinguish from AnalysisContext)
+* Always: "EvidenceScope"
+* NEVER: "scope" (ambiguous), "context"
 
-**Common confusion**:
-* EvidenceScope is NOT a top-level scope requiring separate verdicts
-* Multiple evidence items can have the same EvidenceScope (many sources use WTW methodology)
-* EvidenceScope IS metadata about **how the source computed** the data
+**Key differences from ClaimBoundary**:
+* **EvidenceScope** = Per-evidence metadata ("What methodology did THIS source use?")
+* **ClaimBoundary** = Cluster of compatible EvidenceScopes ("Which evidence can be grouped together?")
+* Multiple evidence items share the same EvidenceScope → they cluster into the same ClaimBoundary
+* EvidenceScopes with incompatible methodology/boundaries/temporal/geographic → separate ClaimBoundaries
 
 ----
 
