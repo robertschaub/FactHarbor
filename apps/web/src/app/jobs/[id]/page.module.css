@@ -1741,3 +1741,110 @@
 .showMoreBtn:hover {
   text-decoration: underline;
 }
+
+/* ============================================================================
+   BoundaryFindings Component Styles (ClaimBoundary Pipeline)
+   ============================================================================ */
+
+.boundaryFindingsSection {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #6c757d;
+}
+
+.boundaryFindingsHeader {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.boundaryFindingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boundaryFindingRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  position: relative;
+}
+
+.boundaryFindingRow:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.boundaryFindingName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.boundaryFindingIcon {
+  font-size: 1.1rem;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+}
+
+.boundaryNameText {
+  font-weight: 500;
+  color: #212529;
+}
+
+.boundaryFindingMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.boundaryMetaItem {
+  white-space: nowrap;
+}
+
+.boundaryMetaSeparator {
+  color: #adb5bd;
+}
+
+.boundaryFindingVerdict {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.boundaryFindingPercentage {
+  font-weight: 600;
+  color: #495057;
+  min-width: 40px;
+  text-align: right;
+}
+
+.boundaryFindingTooltip {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.boundaryFindingRow:hover .boundaryFindingTooltip {
+  opacity: 1;
+}
