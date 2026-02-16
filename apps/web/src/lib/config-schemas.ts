@@ -126,7 +126,7 @@ export const PipelineConfigSchema = z.object({
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
   llmEvidenceQuality: z.boolean().describe("Use LLM for evidence quality assessment"),
 
-  llmContextSimilarity: z.boolean().optional().describe("Use LLM for AnalysisContext similarity analysis"),
+  llmContextSimilarity: z.boolean().optional().describe("DEPRECATED: Use LLM for context similarity analysis (orchestrated pipeline only)"),
 
   llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
 
@@ -270,7 +270,7 @@ export const PipelineConfigSchema = z.object({
 
   verdictBatchSize: z.number().int().min(1).max(20).optional()
     .describe("Max claims per verdict LLM call batch when full call fails (default: 5)"),
-  maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("Max research iterations per AnalysisContext"),
+  maxIterationsPerContext: z.number().int().min(1).max(20).optional().describe("DEPRECATED: Max research iterations per context (not enforced in ClaimBoundary pipeline)"),
 
   maxTotalIterations: z.number().int().min(1).max(50).describe("Max total iterations across all contexts"),
   maxTotalTokens: z.number().int().min(10000).max(2000000).describe("Max tokens per analysis"),

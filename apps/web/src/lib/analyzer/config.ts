@@ -2,7 +2,7 @@
  * Configuration and constants for FactHarbor Analyzer
  *
  * Contains environment-based configuration, helper functions for parsing
- * config values, and utility functions for AnalysisContext handling.
+ * config values, and utility functions.
  *
  * @module analyzer/config
  */
@@ -211,7 +211,7 @@ export function contextTypeRank(label: string): number {
 }
 
 /**
- * Detect institution code from AnalysisContext data
+ * Detect institution code from context metadata
  */
 export function detectInstitutionCode(p: any): string {
   const fromCourt = extractAllCapsToken(String(p?.metadata?.court || ""));

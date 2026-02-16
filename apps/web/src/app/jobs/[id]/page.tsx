@@ -335,6 +335,7 @@ export default function JobPage() {
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
+  // LEGACY: analysisContexts fallback for old orchestrated pipeline schemas (backward compatibility)
   const contexts = result?.analysisContexts || [];
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const hasContestedFactors = result?.meta?.hasContestedFactors;
@@ -1074,7 +1075,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
         <span className={styles.contextIcon}>🔀</span>
         <span
           className={styles.contextText}
-          title='A "context" is a bounded analytical frame (AnalysisContext) that should be analyzed separately.'
+          title='A "context" is a bounded analytical frame that should be analyzed separately.'
         >
           {contexts.length} distinct contexts analyzed separately
         </span>
