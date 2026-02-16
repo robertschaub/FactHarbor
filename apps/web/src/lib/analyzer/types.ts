@@ -207,82 +207,8 @@ export interface QualityGates {
  * ============================================================================
  */
 
-/**
- * AnalysisContext: A bounded analytical frame requiring separate analysis.
- *
- * Formerly called "Proceeding".
- * This is a GENERIC interface that works across ALL domains (legal, scientific, regulatory, etc.)
- * Domain-specific details are stored in the flexible `metadata` object.
- *
- * Examples:
- * - Legal: Different cases (TSE Electoral vs STF Criminal)
- * - Scientific: Different methodologies (WTW vs TTW analysis)
- * - Regulatory: Different jurisdictions (US EPA vs EU REACH)
- * - Temporal: Different time periods (2020 study vs 2024 study)
- * - Geographic: Different regions (California vs Texas laws)
- *
- * Note: Shown in UI as "Contexts".
- * @see EvidenceScope for per-evidence source-defined scope metadata (different concept!)
- */
-export interface AnalysisContext {
-  id: string;                    // Stable ID (e.g., "CTX_TSE", "CTX_WTW", "CTX_US")
-  name: string;                  // Full name (e.g., "Electoral proceeding (TSE)", "WTW Analysis")
-  shortName: string;             // Short label (e.g., "TSE Electoral", "WTW")
-
-  // Generic fields (applicable to ALL domains)
-  subject: string;               // What's being analyzed
-  temporal: string;              // Time period or date
-  status: "concluded" | "ongoing" | "pending" | "unknown";
-  outcome: string;               // Result/conclusion/finding
-  assessedStatement?: string;    // v2.6.39: What is being assessed in this context (Assessment must summarize this)
-  typeLabel?: string;            // LLM-provided category label (e.g., "Electoral", "Scientific", "Regulatory", "General")
-
-  // Flexible metadata (domain-specific details stored as key-value)
-  metadata: {
-    // Legal domain examples:
-    institution?: string;        // e.g., "Superior Electoral Court"
-    court?: string;              // Legacy field, use institution instead
-    jurisdiction?: string;       // e.g., "Federal", "State"
-    charges?: string[];          // e.g., ["Electoral fraud", "Coup attempt"]
-    decisionMakers?: Array<{ name: string; role: string; }>;
-
-    // Scientific domain examples:
-    methodology?: string;        // e.g., "Well-to-Wheel", "ISO 14040"
-    boundaries?: string;         // e.g., "Primary energy to vehicle motion"
-    geographic?: string;         // e.g., "European Union", "California"
-    dataSource?: string;         // e.g., "GREET model 2024"
-
-    // Regulatory domain examples:
-    regulatoryBody?: string;     // e.g., "EPA", "European Commission"
-    standardApplied?: string;    // e.g., "EU RED II", "California LCFS"
-
-    // Any other domain-specific fields
-    [key: string]: any;
-  };
-}
-
-/**
- * ContextVerdict: The verdict/answer for a single AnalysisContext, enriched into the report.
- * v2.9.1: Added for report assembly enrichment.
- */
-export interface ContextVerdict {
-  rating: ClaimVerdict7Point;
-  truthPercentage: number;
-  confidence: number;
-  shortAnswer?: string;
-  keyFactors?: KeyFactor[];
-}
-
-/**
- * EnrichedAnalysisContext: AnalysisContext with verdict and evidence data joined in.
- * v2.9.1: Added so the report contains self-contained context objects
- * with their verdicts, evidence items, and claim verdicts inline.
- */
-export interface EnrichedAnalysisContext extends AnalysisContext {
-  verdict?: ContextVerdict;
-  evidenceItems?: EvidenceItem[];
-  claimVerdicts?: ClaimVerdict[];
-}
+// DELETED: AnalysisContext, ContextVerdict, EnrichedAnalysisContext (Phase 4 cleanup)
+// These types were part of the orchestrated pipeline, removed in ClaimBoundary migration.
 
 /**
  * EvidenceScope: Per-evidence source methodology metadata defined BY a source document
@@ -355,22 +281,7 @@ export interface FactorAnalysis {
   verdictExplanation: string;
 }
 
-/**
- * The verdict/answer for a single AnalysisContext (top-level bounded analytical frame)
- *
- */
-export interface AnalysisContextAnswer {
-  contextId: string;      // AnalysisContext ID
-  contextName: string;    // AnalysisContext name
-  // Answer truth percentage (0-100)
-  answer: number;
-  confidence: number;
-  // Truth percentage for display (0-100%)
-  truthPercentage: number;
-  shortAnswer: string;
-  keyFactors: KeyFactor[];
-  factorAnalysis?: FactorAnalysis;
-}
+// DELETED: AnalysisContextAnswer (Phase 4 cleanup - orchestrated pipeline only)
 
 // ============================================================================
 // SEARCH & RESEARCH TYPES
@@ -405,14 +316,7 @@ export interface ClaimUnderstanding {
   detectedInputType: InputType;
   impliedClaim: string;
 
-  /**
-   * AnalysisContexts: Bounded analytical frames detected from input.
-   * Each context is analyzed separately.
-   *
-   * JSON field name "analysisContexts".
-   * @see AnalysisContext
-   */
-  analysisContexts: AnalysisContext[];
+  // DELETED: analysisContexts field (Phase 4 cleanup - orchestrated pipeline only)
   requiresSeparateAnalysis: boolean;
 
   /**
@@ -432,7 +336,7 @@ export interface ClaimUnderstanding {
     harmPotential: "high" | "medium" | "low";
     centrality: "high" | "medium" | "low";
     isCentral: boolean;
-    contextId: string;
+    // DELETED: contextId field (Phase 4 cleanup - orchestrated pipeline only)
     approximatePosition: string;
     keyFactorId: string; // empty string if not mapped to any factor
   }>;
@@ -496,7 +400,7 @@ export interface EvidenceItem {
   sourceUrl: string;
   sourceTitle: string;
   sourceExcerpt: string;
-  contextId?: string;
+  // DELETED: contextId field (Phase 4 cleanup - orchestrated pipeline only)
   /** True ONLY when the claim is disputed with DOCUMENTED counter-evidence, not ungrounded reactions. */
   isContestedClaim?: boolean;
   claimSource?: string;
@@ -569,7 +473,7 @@ export interface ClaimVerdict {
    */
   supportingEvidenceIds: string[];
   keyFactorId?: string;
-  contextId?: string;
+  // DELETED: contextId field (Phase 4 cleanup - orchestrated pipeline only)
   startOffset?: number;
   endOffset?: number;
   highlightColor: "green" | "yellow" | "red";
@@ -603,7 +507,7 @@ export interface ArticleAnalysis {
    * Multi-context indicator and per-context metadata array.
    */
   hasMultipleContexts: boolean; // true when contexts answer different questions
-  analysisContexts?: AnalysisContext[];
+  // DELETED: analysisContexts field (Phase 4 cleanup - orchestrated pipeline only)
   verdictSummary?: any; // v2.6.38: Added for orchestrated pipeline verdict summary
 
   articleThesis: string;
@@ -682,10 +586,7 @@ export interface ResearchDecision {
   queries?: string[];
   category?: string;
   isContradictionSearch?: boolean;
-  /**
-   * Target context ID for focused research.
-   */
-  targetContextId?: string;
+  // DELETED: targetContextId field (Phase 4 cleanup - orchestrated pipeline only)
 }
 
 // ============================================================================

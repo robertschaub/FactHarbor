@@ -27,12 +27,11 @@ export type {
   VerdictValidationResult,
 
   // Data types
-  AnalysisContext,
+  // DELETED: AnalysisContext, AnalysisContextAnswer (Phase 4 cleanup - orchestrated pipeline only)
   EvidenceScope,       // NEW v2.8: Evidence source methodology metadata
   SourceType,          // NEW v2.8: Source type classification for EvidenceScope
   KeyFactor,
   FactorAnalysis,
-  AnalysisContextAnswer,
   SearchQuery,
   ResearchState,
   ClaimUnderstanding,
@@ -137,7 +136,7 @@ export {
   calculateEvidenceDensityScore,
   snapConfidenceToBand,
   enforceVerdictConfidenceCoupling,
-  checkContextConfidenceConsistency,
+  // DELETED: checkContextConfidenceConsistency (Phase 4 cleanup - orchestrated pipeline only)
   calibrateConfidence,
   DEFAULT_CALIBRATION_CONFIG,
   DEFAULT_CONFIDENCE_BANDS,

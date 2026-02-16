@@ -361,7 +361,7 @@ describe("calibrateConfidence (master function)", () => {
       verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
       contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
-    const result = calibrateConfidence(42, 65, richEvidence, sources5, [], config);
+    const result = calibrateConfidence(42, 65, richEvidence, sources5, config);
     expect(result.calibratedConfidence).toBe(42);
     expect(result.adjustments).toHaveLength(0);
   });
@@ -371,7 +371,7 @@ describe("calibrateConfidence (master function)", () => {
       ...DEFAULT_CALIBRATION_CONFIG,
       enabled: false,
     };
-    const result = calibrateConfidence(42, 85, richEvidence, sources5, [], config);
+    const result = calibrateConfidence(42, 85, richEvidence, sources5, config);
     expect(result.calibratedConfidence).toBe(42);
     expect(result.adjustments).toHaveLength(0);
     expect(result.warnings).toHaveLength(0);
@@ -391,7 +391,6 @@ describe("calibrateConfidence (master function)", () => {
     };
     const result = calibrateConfidence(
       10, 50, [], [],
-      [],
       config,
     );
     // Context consistency floors at 10, final clamp at 5 doesn't lower further
@@ -404,13 +403,13 @@ describe("calibrateConfidence (master function)", () => {
       ...DEFAULT_CALIBRATION_CONFIG,
       densityAnchor: { ...DENSITY_CONFIG, minConfidenceBase: 95, minConfidenceMax: 100 },
     };
-    const result = calibrateConfidence(99, 85, richEvidence, sources5, [], config);
+    const result = calibrateConfidence(99, 85, richEvidence, sources5, config);
     expect(result.calibratedConfidence).toBeLessThanOrEqual(100);
   });
 
   it("should apply density anchor when raw confidence is below floor", () => {
     const result = calibrateConfidence(
-      10, 65, richEvidence, sources5, [],
+      10, 65, richEvidence, sources5,
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.calibratedConfidence).toBeGreaterThan(10);
@@ -421,7 +420,7 @@ describe("calibrateConfidence (master function)", () => {
     // With new defaults (minConfidenceMax=75, sourceCountThreshold=3),
     // 5 sources → density 1.0 → floor = 75. Raw must exceed 75.
     const result = calibrateConfidence(
-      80, 65, richEvidence, sources5, [],
+      80, 65, richEvidence, sources5,
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.adjustments.some(a => a.type === "density_anchor")).toBe(false);
@@ -435,7 +434,7 @@ describe("calibrateConfidence (master function)", () => {
       verdictCoupling: { ...COUPLING_CONFIG, enabled: false },
       contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
-    const result = calibrateConfidence(48, 50, [], [], [], config);
+    const result = calibrateConfidence(48, 50, [], [], config);
     expect(result.adjustments.some(a => a.type === "band_snapping")).toBe(true);
     expect(result.calibratedConfidence).toBe(49);
   });
@@ -458,7 +457,6 @@ describe("calibrateConfidence (master function)", () => {
       55,
       [makeEvidence({ sourceId: "src-0", probativeValue: "high", claimDirection: "supports" })],
       [makeSource({ id: "src-0" })],
-      [],
       config,
     );
     expect(result.calibratedConfidence).toBe(50);
@@ -472,7 +470,7 @@ describe("calibrateConfidence (master function)", () => {
       bandSnapping: { ...BAND_CONFIG, enabled: false },
       contextConsistency: { enabled: false, maxConfidenceSpread: 25, reductionFactor: 0.5 },
     };
-    const result = calibrateConfidence(25, 85, [], [], [], config);
+    const result = calibrateConfidence(25, 85, [], [], config);
     expect(result.adjustments.some(a => a.type === "verdict_coupling")).toBe(true);
     expect(result.calibratedConfidence).toBe(50);
   });
@@ -497,7 +495,6 @@ describe("calibrateConfidence (master function)", () => {
       85, // strong verdict
       sparseEvidence,
       sparseSources,
-      [],
       config,
     );
 
@@ -526,7 +523,6 @@ describe("calibrateConfidence (master function)", () => {
       65, // leaning true
       evidence,
       sources,
-      [],
       DEFAULT_CALIBRATION_CONFIG,
     );
 
@@ -543,7 +539,6 @@ describe("calibrateConfidence (master function)", () => {
       85,  // strong TRUE verdict
       [makeEvidence({ sourceId: "src-0", probativeValue: "medium" })],
       [makeSource({ id: "src-0" })],
-      [],
       DEFAULT_CALIBRATION_CONFIG,
     );
 
@@ -563,7 +558,6 @@ describe("calibrateConfidence (master function)", () => {
       75, // strong verdict (no coupling adjustment)
       richEvidence,
       sources5,
-      [],
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.adjustments.length).toBe(0);
@@ -577,7 +571,7 @@ describe("calibrateConfidence (master function)", () => {
 describe("Edge Cases", () => {
   it("should handle 0 raw confidence", () => {
     const result = calibrateConfidence(
-      0, 50, [], [], [],
+      0, 50, [], [],
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.calibratedConfidence).toBeGreaterThanOrEqual(5);
@@ -588,7 +582,6 @@ describe("Edge Cases", () => {
       100, 95,
       [makeEvidence({ sourceId: "src-0", probativeValue: "high", claimDirection: "supports" })],
       [makeSource({ id: "src-0" })],
-      [],
       DEFAULT_CALIBRATION_CONFIG,
     );
     expect(result.calibratedConfidence).toBeLessThanOrEqual(100);

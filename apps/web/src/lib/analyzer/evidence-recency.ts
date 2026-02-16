@@ -9,7 +9,8 @@
  * @module analyzer/evidence-recency
  */
 
-import type { EvidenceItem, ClaimUnderstanding, AnalysisContext } from "./types";
+// DELETED: AnalysisContext import (Phase 4 cleanup - orchestrated pipeline only)
+import type { EvidenceItem, ClaimUnderstanding } from "./types";
 
 /**
  * Helper to push unique date candidates
@@ -77,15 +78,7 @@ export class RecencyAssessor {
       }
     }
 
-    // Check understanding for recent dates in contexts
-    if (understanding?.analysisContexts) {
-      for (const context of understanding.analysisContexts) {
-        const dateStr = (context as AnalysisContext).temporal || "";
-        if (dateStr && recentYears.some(year => dateStr.includes(String(year)))) {
-          return true;
-        }
-      }
-    }
+    // DELETED: analysisContexts check (Phase 4 cleanup - orchestrated pipeline only)
 
     return false;
   }

@@ -15,7 +15,8 @@
  * @module analyzer/confidence-calibration
  */
 
-import type { EvidenceItem, FetchedSource, AnalysisContextAnswer } from "./types";
+// DELETED: AnalysisContextAnswer import (Phase 4 cleanup - orchestrated pipeline only)
+import type { EvidenceItem, FetchedSource } from "./types";
 
 // ============================================================================
 // TYPES
@@ -259,44 +260,8 @@ export function enforceVerdictConfidenceCoupling(
 }
 
 // ============================================================================
-// LAYER 4: CONTEXT CONFIDENCE CONSISTENCY
-// ============================================================================
-
-export interface ContextConsistencyResult {
-  adjustedConfidence: number;
-  warning?: string;
-}
-
-/**
- * Check if multiple context verdicts have wildly different confidences.
- * When spread exceeds threshold, reduce overall confidence proportionally.
- */
-export function checkContextConfidenceConsistency(
-  contextAnswers: AnalysisContextAnswer[],
-  overallConfidence: number,
-  config: ContextConsistencyConfig,
-): ContextConsistencyResult {
-  if (contextAnswers.length < 2) {
-    return { adjustedConfidence: overallConfidence };
-  }
-
-  const confidences = contextAnswers.map(v => v.confidence);
-  const maxConf = Math.max(...confidences);
-  const minConf = Math.min(...confidences);
-  const spread = maxConf - minConf;
-
-  if (spread > config.maxConfidenceSpread) {
-    const excess = spread - config.maxConfidenceSpread;
-    const reduction = Math.round(excess * config.reductionFactor);
-    return {
-      adjustedConfidence: Math.max(10, overallConfidence - reduction),
-      warning: `context_confidence_divergence: spread=${spread}pp (max allowed ${config.maxConfidenceSpread}pp)`,
-    };
-  }
-
-  return { adjustedConfidence: overallConfidence };
-}
-
+// DELETED: LAYER 4: CONTEXT CONFIDENCE CONSISTENCY (Phase 4 cleanup)
+// checkContextConfidenceConsistency function removed - orchestrated pipeline only
 // ============================================================================
 // MASTER CALIBRATION FUNCTION
 // ============================================================================
@@ -309,7 +274,6 @@ export function checkContextConfidenceConsistency(
  * @param verdict - Truth percentage (0-100)
  * @param evidenceItems - All evidence items for this analysis
  * @param sources - All fetched sources
- * @param contextAnswers - Per-context verdict answers (for consistency check). Optional - Layer 4 is skipped if not provided or if < 2 contexts.
  * @param config - Calibration configuration
  * @returns CalibrationResult with calibrated confidence, adjustments log, and warnings
  */
@@ -318,7 +282,6 @@ export function calibrateConfidence(
   verdict: number,
   evidenceItems: EvidenceItem[],
   sources: FetchedSource[],
-  contextAnswers: AnalysisContextAnswer[] = [],
   config: ConfidenceCalibrationConfig,
 ): CalibrationResult {
   const normalizedRawConfidence = Number.isFinite(rawConfidence)
@@ -394,26 +357,7 @@ export function calibrateConfidence(
     }
   }
 
-  // Layer 4: Context consistency check
-  if (config.contextConsistency.enabled && contextAnswers.length > 1) {
-    const consistency = checkContextConfidenceConsistency(
-      contextAnswers,
-      workingConfidence,
-      config.contextConsistency,
-    );
-    if (consistency.warning) {
-      warnings.push(consistency.warning);
-    }
-    if (consistency.adjustedConfidence < workingConfidence) {
-      adjustments.push({
-        type: "context_consistency",
-        before: workingConfidence,
-        after: consistency.adjustedConfidence,
-        reason: "Context confidence divergence detected",
-      });
-      workingConfidence = consistency.adjustedConfidence;
-    }
-  }
+  // DELETED: Layer 4: Context consistency check (Phase 4 cleanup - orchestrated pipeline only)
 
   // Final clamp to valid range
   workingConfidence = Math.max(5, Math.min(100, workingConfidence));

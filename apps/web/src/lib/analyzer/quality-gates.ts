@@ -345,12 +345,8 @@ export function applyGate4ToVerdicts(
       if (!isContradicting) return false;
       // Must not be a supporting evidence item for this verdict
       if (supportingEvidenceIds.includes(item.id)) return false;
-      // Must be related to the same context as the verdict (if both have context IDs)
-      // If verdict has no context ID, only count contradiction from same sources
-      if (verdict.contextId && item.contextId) {
-        return item.contextId === verdict.contextId;
-      }
-      // If no context, only count contradiction from sources that also support this verdict
+      // DELETED: contextId matching (Phase 4 cleanup - orchestrated pipeline only)
+      // Count contradiction from sources that also support this verdict
       // This indicates internal contradiction within the same source
       const supportingSourceIds = supportingSources.map(s => s.id);
       return supportingSourceIds.includes(item.sourceId);
