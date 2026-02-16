@@ -156,18 +156,10 @@ describe("PipelineConfigSchema", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerContext: 21 }).success).toBe(false);
   });
 
-  it("validates contextDedupThreshold range (0-1)", () => {
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 0 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 1 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 0.7 }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: -0.1 }).success).toBe(false);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, contextDedupThreshold: 1.1 }).success).toBe(false);
-  });
-
   it("validates defaultPipelineVariant enum", () => {
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "orchestrated" }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary" }).success).toBe(true);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_dynamic" }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_canonical" }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "orchestrated" }).success).toBe(false);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "invalid" }).success).toBe(false);
   });
 
@@ -363,7 +355,7 @@ describe("validateConfig function", () => {
   it("validates prompt content (non-JSON)", () => {
     // Prompts require: YAML frontmatter with version field and ## SECTION header
     const content = `---
-pipeline: orchestrated
+pipeline: claimboundary
 version: 1.0
 ---
 ## SYSTEM

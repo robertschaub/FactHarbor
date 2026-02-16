@@ -312,7 +312,7 @@ export const PipelineConfigSchema = z.object({
     .describe("Warn if opinion-based keyFactors exceed this percentage (default: 70)"),
 
   // === Pipeline Selection ===
-  defaultPipelineVariant: z.enum(["orchestrated", "monolithic_dynamic"])
+  defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
     .optional()
     .describe("Default pipeline variant for new jobs"),
 }).transform((data) => {
@@ -572,7 +572,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   gapResearchMaxQueries: 8,
 
   // Pipeline selection
-  defaultPipelineVariant: "orchestrated",
+  defaultPipelineVariant: "claimboundary",
 };
 
 // ============================================================================
