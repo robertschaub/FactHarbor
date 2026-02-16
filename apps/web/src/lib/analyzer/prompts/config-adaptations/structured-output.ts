@@ -28,7 +28,7 @@ export function getStructuredOutputGuidance(provider: ProviderType): string {
 - Ensure all required fields are present
 
 **Field Validation:**
-- id fields: Use exact format specified (SC1, E1, CTX_XXX)
+- id fields: Use exact format specified (e.g., SC1, E1, CB_XXX)
 - enum fields: Use exact string values (not variations)
 - boolean fields: Use true/false (not "true"/"false")
 - number fields: Use numeric values (not strings)`;
@@ -164,9 +164,7 @@ export function getClaudePrefill(taskType: string): string {
     case 'extract_evidence':
       return '{"evidenceItems":[';
     case 'verdict':
-      return '{"contextId":';
-    case 'context_refinement':
-      return '{"requiresSeparateAnalysis":';
+      return '{"claimId":';
     default:
       return '{';
   }
