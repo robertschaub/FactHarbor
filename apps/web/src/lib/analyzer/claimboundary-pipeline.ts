@@ -37,6 +37,9 @@ import { filterByProbativeValue } from "./evidence-filter";
 import { prefetchSourceReliability } from "./source-reliability";
 import { getClaimWeight, calculateWeightedVerdictAverage } from "./aggregation";
 
+// Verdict stage module (§8.4 — 5-step debate pattern)
+import { runVerdictStage, type LLMCallFn } from "./verdict-stage";
+
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
@@ -287,15 +290,15 @@ export async function generateVerdicts(
   claims: AtomicClaim[],
   evidence: EvidenceItem[],
   boundaries: ClaimBoundary[],
-  coverageMatrix: CoverageMatrix
+  coverageMatrix: CoverageMatrix,
+  llmCall?: LLMCallFn,
 ): Promise<CBClaimVerdict[]> {
-  // TODO (Phase 1b): Delegate to verdict-stage.ts module
-  // Step 1: advocateVerdict()
-  // Step 2 || Step 3: selfConsistencyCheck() parallel with adversarialChallenge()
-  // Step 4: reconcileVerdicts()
-  // Step 5: validateVerdicts() + structural consistency check
-  // Gate 4: confidence classification
-  throw new Error("Stage 4 (generateVerdicts) not yet implemented");
+  if (!llmCall) {
+    // TODO (Phase 1c): Wire production LLM call function from UCM prompts
+    throw new Error("Stage 4 (generateVerdicts): llmCall function required — production wiring not yet implemented");
+  }
+
+  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCall);
 }
 
 // ============================================================================

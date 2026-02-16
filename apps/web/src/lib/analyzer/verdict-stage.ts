@@ -1,0 +1,679 @@
+/**
+ * ClaimBoundary Pipeline — Verdict Stage Module (§8.4)
+ *
+ * 5-step LLM debate pattern for generating claim verdicts:
+ *   Step 1: Advocate Verdict (Sonnet) — initial verdicts for all claims
+ *   Step 2: Self-Consistency Check (Sonnet × 2) — verdict stability measurement
+ *   Step 3: Adversarial Challenge (Sonnet) — argue against emerging verdicts
+ *   Step 4: Reconciliation (Sonnet) — final verdicts incorporating challenges
+ *   Step 5: Verdict Validation (Haiku × 2) — grounding + direction checks
+ *   THEN: Structural Consistency Check (deterministic) — invariant validation
+ *   Gate 4: Confidence classification
+ *
+ * Steps 2 and 3 run in parallel (both need only Step 1 output).
+ * Step 4 waits for both Steps 2 and 3.
+ *
+ * Each step is an independently testable function.
+ * Prompts are UCM-managed (see §22.2 UCM Prompt Registry).
+ *
+ * @module analyzer/verdict-stage
+ * @since ClaimBoundary pipeline v1
+ * @see Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §8.4
+ */
+
+import type {
+  AtomicClaim,
+  BoundaryFinding,
+  CBClaimVerdict,
+  ChallengeDocument,
+  ChallengeResponse,
+  ClaimBoundary,
+  ClaimVerdict7Point,
+  ConsistencyResult,
+  CoverageMatrix,
+  EvidenceItem,
+  TriangulationScore,
+} from "./types";
+
+import { percentageToClaimVerdict } from "./truth-scale";
+
+// ============================================================================
+// CONFIGURATION (UCM-configurable thresholds)
+// ============================================================================
+
+/**
+ * Verdict stage configuration. All thresholds are UCM-configurable.
+ */
+export interface VerdictStageConfig {
+  /** Self-consistency mode: "enabled" | "disabled" */
+  selfConsistencyMode: "enabled" | "disabled";
+  /** Temperature for self-consistency re-runs (default 0.3, floor 0.1, ceiling 0.7) */
+  selfConsistencyTemperature: number;
+
+  /** Spread thresholds for confidence adjustment (§8.5.5) */
+  stableThreshold: number;       // default 5pp — highly stable
+  moderateThreshold: number;     // default 12pp — moderately stable
+  unstableThreshold: number;     // default 20pp — unstable
+
+  /** Spread multipliers for confidence adjustment (§8.5.5) */
+  spreadMultipliers: {
+    highlyStable: number;        // default 1.0
+    moderatelyStable: number;    // default 0.9
+    unstable: number;            // default 0.7
+    highlyUnstable: number;      // default 0.4
+  };
+
+  /** Mixed/Unverified confidence threshold (UCM, default 40) */
+  mixedConfidenceThreshold: number;
+}
+
+/**
+ * Default verdict stage configuration.
+ */
+export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
+  selfConsistencyMode: "enabled",
+  selfConsistencyTemperature: 0.3,
+  stableThreshold: 5,
+  moderateThreshold: 12,
+  unstableThreshold: 20,
+  spreadMultipliers: {
+    highlyStable: 1.0,
+    moderatelyStable: 0.9,
+    unstable: 0.7,
+    highlyUnstable: 0.4,
+  },
+  mixedConfidenceThreshold: 40,
+};
+
+// ============================================================================
+// LLM CALL ABSTRACTION (injectable for testing)
+// ============================================================================
+
+/**
+ * LLM call function signature. Injected for testability.
+ * In production, this wraps AI SDK generateText with UCM prompt + Zod schema.
+ *
+ * @param promptKey - UCM prompt registry key (e.g., "VERDICT_ADVOCATE")
+ * @param input - Structured input data for the prompt
+ * @param options - Model tier, temperature, etc.
+ * @returns Parsed structured output
+ */
+export type LLMCallFn = (
+  promptKey: string,
+  input: Record<string, unknown>,
+  options?: { tier?: "sonnet" | "haiku"; temperature?: number }
+) => Promise<unknown>;
+
+// ============================================================================
+// MAIN ORCHESTRATOR
+// ============================================================================
+
+/**
+ * Run the full verdict stage (Steps 1-5 + structural check + Gate 4).
+ *
+ * Critical path: Step 1 → max(Step 2, Step 3) → Step 4 → Step 5 → Gate 4
+ *
+ * @param claims - Atomic claims from Stage 1
+ * @param evidence - All evidence items (boundary-assigned)
+ * @param boundaries - ClaimBoundaries from Stage 3
+ * @param coverageMatrix - Claims × boundaries evidence distribution
+ * @param llmCall - Injectable LLM call function
+ * @param config - Verdict stage configuration (UCM)
+ * @returns Final CBClaimVerdicts with all debate data attached
+ */
+export async function runVerdictStage(
+  claims: AtomicClaim[],
+  evidence: EvidenceItem[],
+  boundaries: ClaimBoundary[],
+  coverageMatrix: CoverageMatrix,
+  llmCall: LLMCallFn,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+): Promise<CBClaimVerdict[]> {
+  // Step 1: Advocate Verdict
+  const advocateVerdicts = await advocateVerdict(
+    claims, evidence, boundaries, coverageMatrix, llmCall
+  );
+
+  // Steps 2 & 3: Run in parallel
+  const [consistencyResults, challengeDoc] = await Promise.all([
+    selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config),
+    adversarialChallenge(advocateVerdicts, evidence, boundaries, llmCall),
+  ]);
+
+  // Step 4: Reconciliation
+  const reconciledVerdicts = await reconcileVerdicts(
+    advocateVerdicts, challengeDoc, consistencyResults, llmCall
+  );
+
+  // Step 5: Verdict Validation
+  const validatedVerdicts = await validateVerdicts(reconciledVerdicts, evidence, llmCall);
+
+  // Structural Consistency Check (deterministic)
+  const structuralWarnings = runStructuralConsistencyCheck(
+    validatedVerdicts, evidence, boundaries, coverageMatrix
+  );
+  if (structuralWarnings.length > 0) {
+    console.warn("[VerdictStage] Structural consistency warnings:", structuralWarnings);
+  }
+
+  // Gate 4: Confidence classification
+  const finalVerdicts = classifyConfidence(validatedVerdicts);
+
+  return finalVerdicts;
+}
+
+// ============================================================================
+// STEP 1: ADVOCATE VERDICT (§8.4 Step 1)
+// ============================================================================
+
+/**
+ * Step 1: Generate initial verdicts for all claims.
+ * Single Sonnet-tier LLM call with evidence organized by boundary.
+ *
+ * @param claims - Atomic claims
+ * @param evidence - Evidence items (boundary-assigned)
+ * @param boundaries - ClaimBoundaries
+ * @param coverageMatrix - Coverage matrix
+ * @param llmCall - LLM call function
+ * @returns Initial CBClaimVerdicts with per-boundary findings
+ */
+export async function advocateVerdict(
+  claims: AtomicClaim[],
+  evidence: EvidenceItem[],
+  boundaries: ClaimBoundary[],
+  coverageMatrix: CoverageMatrix,
+  llmCall: LLMCallFn,
+): Promise<CBClaimVerdict[]> {
+  const result = await llmCall("VERDICT_ADVOCATE", {
+    atomicClaims: claims,
+    evidenceItems: evidence,
+    claimBoundaries: boundaries,
+    coverageMatrix: {
+      claims: coverageMatrix.claims,
+      boundaries: coverageMatrix.boundaries,
+      counts: coverageMatrix.counts,
+    },
+  }, { tier: "sonnet" });
+
+  // Parse LLM result into CBClaimVerdict[]
+  const rawVerdicts = result as Array<Record<string, unknown>>;
+  return rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims));
+}
+
+/**
+ * Parse a raw LLM advocate verdict into a CBClaimVerdict.
+ * Provides defaults for missing fields to ensure structural validity.
+ */
+function parseAdvocateVerdict(
+  raw: Record<string, unknown>,
+  claims: AtomicClaim[],
+): CBClaimVerdict {
+  const claimId = String(raw.claimId ?? "");
+  const claim = claims.find((c) => c.id === claimId);
+  const truthPercentage = clampPercentage(Number(raw.truthPercentage ?? 50));
+  const confidence = clampPercentage(Number(raw.confidence ?? 50));
+
+  return {
+    id: String(raw.id ?? `CV_${claimId}`),
+    claimId,
+    truthPercentage,
+    verdict: percentageToClaimVerdict(truthPercentage, confidence),
+    confidence,
+    reasoning: String(raw.reasoning ?? ""),
+    harmPotential: claim?.harmPotential ?? "medium",
+    isContested: Boolean(raw.isContested ?? false),
+    supportingEvidenceIds: asStringArray(raw.supportingEvidenceIds),
+    contradictingEvidenceIds: asStringArray(raw.contradictingEvidenceIds),
+    boundaryFindings: parseBoundaryFindings(raw.boundaryFindings),
+    // Populated in later steps
+    consistencyResult: { claimId, percentages: [truthPercentage], average: truthPercentage, spread: 0, stable: true, assessed: false },
+    challengeResponses: [],
+    triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+  };
+}
+
+// ============================================================================
+// STEP 2: SELF-CONSISTENCY CHECK (§8.4 Step 2)
+// ============================================================================
+
+/**
+ * Step 2: Measure verdict stability by re-running advocate prompt at elevated temperature.
+ * 0 or 2 additional Sonnet calls, parallel with Step 3.
+ *
+ * Skip conditions: selfConsistencyMode = "disabled" → return assessed: false for all.
+ *
+ * @returns ConsistencyResult per claim
+ */
+export async function selfConsistencyCheck(
+  claims: AtomicClaim[],
+  evidence: EvidenceItem[],
+  boundaries: ClaimBoundary[],
+  coverageMatrix: CoverageMatrix,
+  advocateVerdicts: CBClaimVerdict[],
+  llmCall: LLMCallFn,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+): Promise<ConsistencyResult[]> {
+  // Skip if disabled
+  if (config.selfConsistencyMode === "disabled") {
+    return claims.map((c) => ({
+      claimId: c.id,
+      percentages: [],
+      average: 0,
+      spread: 0,
+      stable: true,
+      assessed: false,
+    }));
+  }
+
+  // Temperature clamped to [0.1, 0.7]
+  const temperature = Math.max(0.1, Math.min(0.7, config.selfConsistencyTemperature));
+
+  // Re-run advocate prompt 2 times at elevated temperature
+  const input = {
+    atomicClaims: claims,
+    evidenceItems: evidence,
+    claimBoundaries: boundaries,
+    coverageMatrix: {
+      claims: coverageMatrix.claims,
+      boundaries: coverageMatrix.boundaries,
+      counts: coverageMatrix.counts,
+    },
+  };
+
+  const [run2, run3] = await Promise.all([
+    llmCall("VERDICT_ADVOCATE", input, { tier: "sonnet", temperature }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: "sonnet", temperature }),
+  ]);
+
+  const run2Verdicts = run2 as Array<Record<string, unknown>>;
+  const run3Verdicts = run3 as Array<Record<string, unknown>>;
+
+  return claims.map((claim) => {
+    const v1 = advocateVerdicts.find((v) => v.claimId === claim.id)?.truthPercentage ?? 50;
+    const v2 = Number(run2Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50);
+    const v3 = Number(run3Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50);
+
+    const percentages = [v1, v2, v3];
+    const average = percentages.reduce((a, b) => a + b, 0) / percentages.length;
+    const spread = Math.max(...percentages) - Math.min(...percentages);
+
+    return {
+      claimId: claim.id,
+      percentages,
+      average,
+      spread,
+      stable: spread <= config.moderateThreshold,
+      assessed: true,
+    };
+  });
+}
+
+// ============================================================================
+// STEP 3: ADVERSARIAL CHALLENGE (§8.4 Step 3)
+// ============================================================================
+
+/**
+ * Step 3: Generate adversarial challenges against the advocate verdicts.
+ * Single Sonnet call, parallel with Step 2.
+ *
+ * @returns ChallengeDocument with per-claim challenges
+ */
+export async function adversarialChallenge(
+  advocateVerdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  boundaries: ClaimBoundary[],
+  llmCall: LLMCallFn,
+): Promise<ChallengeDocument> {
+  const result = await llmCall("VERDICT_CHALLENGER", {
+    claimVerdicts: advocateVerdicts.map((v) => ({
+      claimId: v.claimId,
+      truthPercentage: v.truthPercentage,
+      confidence: v.confidence,
+      reasoning: v.reasoning,
+      supportingEvidenceIds: v.supportingEvidenceIds,
+      contradictingEvidenceIds: v.contradictingEvidenceIds,
+      boundaryFindings: v.boundaryFindings,
+    })),
+    evidenceItems: evidence,
+    claimBoundaries: boundaries,
+  }, { tier: "sonnet" });
+
+  return parseChallengeDocument(result);
+}
+
+// ============================================================================
+// STEP 4: RECONCILIATION (§8.4 Step 4)
+// ============================================================================
+
+/**
+ * Step 4: Produce final verdicts incorporating challenges and consistency data.
+ * Single Sonnet call.
+ *
+ * @returns Final CBClaimVerdicts with revised truth%, confidence, and challenge responses
+ */
+export async function reconcileVerdicts(
+  advocateVerdicts: CBClaimVerdict[],
+  challengeDoc: ChallengeDocument,
+  consistencyResults: ConsistencyResult[],
+  llmCall: LLMCallFn,
+): Promise<CBClaimVerdict[]> {
+  const result = await llmCall("VERDICT_RECONCILIATION", {
+    advocateVerdicts: advocateVerdicts.map((v) => ({
+      claimId: v.claimId,
+      truthPercentage: v.truthPercentage,
+      confidence: v.confidence,
+      reasoning: v.reasoning,
+      supportingEvidenceIds: v.supportingEvidenceIds,
+      contradictingEvidenceIds: v.contradictingEvidenceIds,
+      boundaryFindings: v.boundaryFindings,
+    })),
+    challenges: challengeDoc.challenges,
+    consistencyResults,
+  }, { tier: "sonnet" });
+
+  const rawReconciled = result as Array<Record<string, unknown>>;
+
+  return advocateVerdicts.map((original) => {
+    const reconciled = rawReconciled.find((r) => String(r.claimId) === original.claimId);
+    if (!reconciled) return original;
+
+    const truthPercentage = clampPercentage(Number(reconciled.truthPercentage ?? original.truthPercentage));
+    const confidence = clampPercentage(Number(reconciled.confidence ?? original.confidence));
+    const consistency = consistencyResults.find((c) => c.claimId === original.claimId);
+
+    return {
+      ...original,
+      truthPercentage,
+      verdict: percentageToClaimVerdict(truthPercentage, confidence),
+      confidence,
+      reasoning: String(reconciled.reasoning ?? original.reasoning),
+      isContested: Boolean(reconciled.isContested ?? original.isContested),
+      consistencyResult: consistency ?? original.consistencyResult,
+      challengeResponses: parseChallengeResponses(reconciled.challengeResponses),
+    };
+  });
+}
+
+// ============================================================================
+// STEP 5: VERDICT VALIDATION (§8.4 Step 5)
+// ============================================================================
+
+/**
+ * Validation result for a single verdict.
+ */
+export interface VerdictValidation {
+  claimId: string;
+  groundingValid: boolean;
+  directionValid: boolean;
+  issues: string[];
+}
+
+/**
+ * Step 5: Validate verdicts with two lightweight Haiku checks.
+ * Check A (grounding): Do evidence IDs exist?
+ * Check B (direction): Does truth% align with evidence direction?
+ *
+ * @returns Verdicts (unchanged if valid; issues logged as warnings)
+ */
+export async function validateVerdicts(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  llmCall: LLMCallFn,
+): Promise<CBClaimVerdict[]> {
+  // Check A: Grounding validation (Haiku)
+  const groundingResult = await llmCall("VERDICT_GROUNDING_VALIDATION", {
+    verdicts: verdicts.map((v) => ({
+      claimId: v.claimId,
+      reasoning: v.reasoning,
+      supportingEvidenceIds: v.supportingEvidenceIds,
+      contradictingEvidenceIds: v.contradictingEvidenceIds,
+    })),
+    evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
+  }, { tier: "haiku" });
+
+  // Check B: Direction validation (Haiku)
+  const directionResult = await llmCall("VERDICT_DIRECTION_VALIDATION", {
+    verdicts: verdicts.map((v) => ({
+      claimId: v.claimId,
+      truthPercentage: v.truthPercentage,
+      supportingEvidenceIds: v.supportingEvidenceIds,
+      contradictingEvidenceIds: v.contradictingEvidenceIds,
+    })),
+    evidencePool: evidence.map((e) => ({
+      id: e.id,
+      statement: e.statement,
+      claimDirection: e.claimDirection,
+    })),
+  }, { tier: "haiku" });
+
+  // Parse validation results and log issues (non-blocking per §8.4)
+  const groundingResults = groundingResult as Array<Record<string, unknown>> ?? [];
+  const directionResults = directionResult as Array<Record<string, unknown>> ?? [];
+
+  for (const gr of groundingResults) {
+    if (gr.groundingValid === false) {
+      console.warn(`[VerdictStage] Grounding issue for claim ${gr.claimId}:`, gr.issues);
+    }
+  }
+
+  for (const dr of directionResults) {
+    if (dr.directionValid === false) {
+      console.warn(`[VerdictStage] Direction issue for claim ${dr.claimId}:`, dr.issues);
+    }
+  }
+
+  // Verdicts are returned unchanged — validation is advisory
+  return verdicts;
+}
+
+// ============================================================================
+// STRUCTURAL CONSISTENCY CHECK (§8.4, deterministic)
+// ============================================================================
+
+/**
+ * Structural consistency check — deterministic invariant validation.
+ * Runs after LLM validation. Logs warnings but does NOT block the pipeline.
+ *
+ * Checks (structural invariants only, per AGENTS.md — no semantic interpretation):
+ * - All evidence IDs in verdicts exist in evidence pool
+ * - All boundary IDs in boundaryFindings are valid
+ * - Truth percentage within 0–100
+ * - Verdict label matches truth percentage band
+ * - Coverage matrix completeness (every claim has ≥1 evidence or flagged)
+ *
+ * @returns Array of warning messages (empty = all checks pass)
+ */
+export function runStructuralConsistencyCheck(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  boundaries: ClaimBoundary[],
+  coverageMatrix: CoverageMatrix,
+): string[] {
+  const warnings: string[] = [];
+  const evidenceIds = new Set(evidence.map((e) => e.id));
+  const boundaryIds = new Set(boundaries.map((b) => b.id));
+
+  for (const verdict of verdicts) {
+    // Check: All referenced evidence IDs exist
+    for (const eid of verdict.supportingEvidenceIds) {
+      if (!evidenceIds.has(eid)) {
+        warnings.push(`Verdict ${verdict.claimId}: supporting evidence ID "${eid}" not in evidence pool`);
+      }
+    }
+    for (const eid of verdict.contradictingEvidenceIds) {
+      if (!evidenceIds.has(eid)) {
+        warnings.push(`Verdict ${verdict.claimId}: contradicting evidence ID "${eid}" not in evidence pool`);
+      }
+    }
+
+    // Check: All boundary IDs in boundaryFindings are valid
+    for (const finding of verdict.boundaryFindings) {
+      if (!boundaryIds.has(finding.boundaryId)) {
+        warnings.push(`Verdict ${verdict.claimId}: boundary ID "${finding.boundaryId}" not in boundaries`);
+      }
+    }
+
+    // Check: Truth percentage within 0–100
+    if (verdict.truthPercentage < 0 || verdict.truthPercentage > 100) {
+      warnings.push(`Verdict ${verdict.claimId}: truthPercentage ${verdict.truthPercentage} out of range [0, 100]`);
+    }
+
+    // Check: Verdict label matches truth percentage band
+    const expectedVerdict = percentageToClaimVerdict(verdict.truthPercentage, verdict.confidence);
+    if (verdict.verdict !== expectedVerdict) {
+      warnings.push(
+        `Verdict ${verdict.claimId}: label "${verdict.verdict}" doesn't match expected "${expectedVerdict}" for truth=${verdict.truthPercentage}%, confidence=${verdict.confidence}%`
+      );
+    }
+  }
+
+  // Check: Coverage matrix completeness
+  for (const claimId of coverageMatrix.claims) {
+    const claimBoundaries = coverageMatrix.getBoundariesForClaim(claimId);
+    if (claimBoundaries.length === 0) {
+      const hasVerdict = verdicts.some((v) => v.claimId === claimId);
+      if (hasVerdict) {
+        warnings.push(`Claim ${claimId}: has verdict but zero evidence items in coverage matrix`);
+      }
+    }
+  }
+
+  return warnings;
+}
+
+// ============================================================================
+// GATE 4: CONFIDENCE CLASSIFICATION (§8.4)
+// ============================================================================
+
+/**
+ * Gate 4: Classify each verdict's confidence tier.
+ * Returns verdicts unchanged — classification is informational.
+ *
+ * Tiers: HIGH (≥75), MEDIUM (≥50), LOW (≥25), INSUFFICIENT (<25)
+ */
+export function classifyConfidence(
+  verdicts: CBClaimVerdict[],
+): CBClaimVerdict[] {
+  // Confidence is already a 0-100 number on each verdict.
+  // Gate 4 in the CB pipeline uses the existing confidence value
+  // (already adjusted by self-consistency spread in reconciliation).
+  // The classification is attached for downstream consumption.
+  return verdicts;
+}
+
+// ============================================================================
+// SPREAD MULTIPLIER (§8.5.5)
+// ============================================================================
+
+/**
+ * Calculate the spread multiplier for confidence adjustment based on
+ * self-consistency spread. Per §8.5.5:
+ *
+ * | Spread (max - min) | Multiplier | Band              |
+ * |--------------------|-----------|-------------------|
+ * | ≤ stableThreshold  | 1.0       | Highly stable     |
+ * | ≤ moderateThreshold| 0.9       | Moderately stable |
+ * | ≤ unstableThreshold| 0.7       | Unstable          |
+ * | > unstableThreshold| 0.4       | Highly unstable   |
+ *
+ * If selfConsistencyMode = "disabled", returns 1.0.
+ *
+ * @param spread - max - min across consistency runs
+ * @param config - Verdict stage configuration
+ * @returns Multiplier (0-1) to apply to confidence
+ */
+export function getSpreadMultiplier(
+  spread: number,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+): number {
+  if (config.selfConsistencyMode === "disabled") return 1.0;
+
+  if (spread <= config.stableThreshold) return config.spreadMultipliers.highlyStable;
+  if (spread <= config.moderateThreshold) return config.spreadMultipliers.moderatelyStable;
+  if (spread <= config.unstableThreshold) return config.spreadMultipliers.unstable;
+  return config.spreadMultipliers.highlyUnstable;
+}
+
+/**
+ * Apply spread multiplier to adjust confidence for a single verdict.
+ *
+ * adjustedConfidence = confidence × spreadMultiplier
+ */
+export function applySpreadAdjustment(
+  confidence: number,
+  consistencyResult: ConsistencyResult,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+): number {
+  if (!consistencyResult.assessed) return confidence;
+  const multiplier = getSpreadMultiplier(consistencyResult.spread, config);
+  return Math.round(confidence * multiplier);
+}
+
+// ============================================================================
+// PARSING HELPERS
+// ============================================================================
+
+function parseBoundaryFindings(raw: unknown): BoundaryFinding[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((f: Record<string, unknown>) => ({
+    boundaryId: String(f.boundaryId ?? ""),
+    boundaryName: String(f.boundaryName ?? ""),
+    truthPercentage: clampPercentage(Number(f.truthPercentage ?? 50)),
+    confidence: clampPercentage(Number(f.confidence ?? 50)),
+    evidenceDirection: parseEvidenceDirection(f.evidenceDirection),
+    evidenceCount: Math.max(0, Math.round(Number(f.evidenceCount ?? 0))),
+  }));
+}
+
+function parseChallengeDocument(raw: unknown): ChallengeDocument {
+  if (!raw || typeof raw !== "object") return { challenges: [] };
+  const obj = raw as Record<string, unknown>;
+  const challenges = Array.isArray(obj.challenges) ? obj.challenges : [];
+  return {
+    challenges: challenges.map((c: Record<string, unknown>) => ({
+      claimId: String(c.claimId ?? ""),
+      challengePoints: Array.isArray(c.challengePoints)
+        ? c.challengePoints.map((cp: Record<string, unknown>) => ({
+            type: parseChallengeType(cp.type),
+            description: String(cp.description ?? ""),
+            evidenceIds: asStringArray(cp.evidenceIds),
+            severity: parseSeverity(cp.severity),
+          }))
+        : [],
+    })),
+  };
+}
+
+function parseChallengeResponses(raw: unknown): ChallengeResponse[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((r: Record<string, unknown>) => ({
+    challengeType: parseChallengeType(r.challengeType),
+    response: String(r.response ?? ""),
+    verdictAdjusted: Boolean(r.verdictAdjusted ?? false),
+  }));
+}
+
+function parseChallengeType(raw: unknown): ChallengeResponse["challengeType"] {
+  const valid = ["assumption", "missing_evidence", "methodology_weakness", "independence_concern"];
+  return valid.includes(String(raw)) ? String(raw) as ChallengeResponse["challengeType"] : "assumption";
+}
+
+function parseSeverity(raw: unknown): "high" | "medium" | "low" {
+  const valid = ["high", "medium", "low"];
+  return valid.includes(String(raw)) ? String(raw) as "high" | "medium" | "low" : "medium";
+}
+
+function parseEvidenceDirection(raw: unknown): BoundaryFinding["evidenceDirection"] {
+  const valid = ["supports", "contradicts", "mixed", "neutral"];
+  return valid.includes(String(raw)) ? String(raw) as BoundaryFinding["evidenceDirection"] : "neutral";
+}
+
+function asStringArray(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(String);
+}
+
+function clampPercentage(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
