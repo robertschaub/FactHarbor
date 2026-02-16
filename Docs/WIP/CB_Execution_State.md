@@ -7,12 +7,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | Phase 3 COMPLETE (UI updated). Ready for Phase 3b (MD prompt cleanup) and Phase 4 (final sweep). |
-| **Last Completed Tag** | `cb-phase2-cutover` (tags cb-phase2a/2b/2c/phase3 pending from Captain) |
-| **Next Action** | Captain: tag `cb-phase3-ui`, then launch Phase 3b and/or Phase 4 |
+| **Current Phase** | Phase 3b COMPLETE (MD prompt cleanup, ~3300 lines deleted). Ready for Phase 4 (final sweep). |
+| **Last Completed Tag** | `cb-phase2-cutover` (tags cb-phase2a/2b/2c/phase3/phase3b pending from Captain) |
+| **Next Action** | Captain: tag `cb-phase3b-monolithic`, then launch Phase 4 (final AC sweep) |
 | **Blocking Issues** | None. |
 | **Last Updated** | 2026-02-16 |
-| **Last Updated By** | Senior Developer (Phase 3 UI complete) |
+| **Last Updated By** | Senior Developer (Phase 3b MD cleanup complete) |
 
 ## Phase Checklist
 
@@ -29,7 +29,7 @@
 | Phase 2c: Clean config + docs | ✅ Complete (folded into 2a) | `cb-phase2c-config-cleaned` | AC config fields removed in Phase 2a Step 3. Docs running on worktree. |
 | Phase 2 Docs: xWiki Rewrites | ✅ Complete (on worktree) | — | 5 xWiki pages rewritten (183 AC refs → 44, 76% reduction). Worktree commit d2d4463, ready to merge. |
 | Phase 3: UI | ✅ Complete | `cb-phase3-ui` | BoundaryFindings component + page.tsx updated + ClaimsGroupedByContext deleted (154 lines) |
-| Phase 3b: Monolithic Dynamic | ⬜ Not started | `cb-phase3b-monolithic` | |
+| Phase 3b: Monolithic Dynamic | ✅ Complete | `cb-phase3b-monolithic` | Dead prompt infrastructure removed (~3300 lines), MD prompt updated for CB terminology, all AC refs eliminated from prompts/ directory |
 | Phase 4: Final sweep | ⬜ Not started | `cb-phase4-ac-removed` | |
 
 ## Handover Log
@@ -50,6 +50,7 @@ Each agent writes a short entry here when completing a session.
 | 2026-02-16 | Lead Architect | Phase 3-4 Planning | Full codebase audit of remaining AC references: 20 files, ~159 refs. Key finding: monolithic-dynamic.ts has ZERO AC refs — it uses prompt-loader (not prompt-builder base prompts). The 5 base prompt files (53 AC refs) and 3 provider adapters (51 AC refs) are likely dead code after orchestrated.ts deletion. Wrote detailed prompts for Phase 3 (UI), Phase 3b (MD prompt cleanup — Approach A: delete dead prompt code), Phase 4 (final sweep + verification). Updated CB_Execution_State to mark 2b/2c as complete (folded into 2a). Updated CB_Phase_Prompts.md with full prompts for all remaining phases. | `Docs/WIP/CB_Phase_Prompts.md`, `Docs/WIP/CB_Execution_State.md` | None |
 | 2026-02-16 | Technical Writer | Phase 2 Docs | **Phase 2 documentation complete on worktree.** Rewrote 5 xWiki pages from AnalysisContext to ClaimBoundary: Terminology (v4.0.0-cb), Scope Definition Guidelines (v3.0.0-cb), Context Detection → Boundary Clustering, Decision Tree → Boundary Clustering Decision Flow, Phases → ClaimBoundary Pipeline Stages. Metrics: 183 AC refs → 44 (76% reduction), 1,931 lines total. Updated Current_Status.md (marked Phase 1/2/2a/2 docs complete) and Backlog.md (moved 5 items to Recently Completed). All changes comply with AGENTS.md generic examples policy. Committed to worktree (d2d4463). Ready for Captain to merge worktree to main. | Worktree: 5 xWiki pages, `Current_Status.md`, `Backlog.md`; Main: `CB_Execution_State.md` | None |
 | 2026-02-16 | Senior Developer | Phase 3: UI | **Phase 3 UI update complete in 3 steps.** Step 1: Created BoundaryFindings.tsx component (175 lines) with inline boundary display, direction icons (✓/✗/⚖), compact metadata (evidence count + temporal), hover tooltips, suppression when ≤2 boundaries per §18 Q10. Step 2: Updated page.tsx for CB schema — added isCBSchema detection, extracted claimBoundaries, updated ClaimCard to render boundaryFindings, updated badges (BOUNDARIES vs CONTEXTS), passed claimBoundaries to all ClaimCard instances. Step 3: Deleted ClaimsGroupedByContext.tsx (154 lines), removed import + context-grouping logic, simplified to flat claim list. Clean break per §15.1 — no backward compatibility. All builds PASS at each step. 3 commits: a3a6aae (BoundaryFindings), f139c39 (page.tsx), b7bc64a (cleanup). | `apps/web/src/app/jobs/[id]/components/BoundaryFindings.tsx`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, deleted `ClaimsGroupedByContext.tsx`, `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-16 | Senior Developer | Phase 3b: Monolithic Dynamic Cleanup | **Phase 3b complete in 5 steps (~3300 lines deleted).** Step 1: Dead code verification — confirmed 5 base prompt files (59 AC refs) + 4 provider adapters (52 AC refs + 4 context_refinement functions) + 3 config-adaptation files only used by deleted buildPrompt(). Step 2: Deleted 5 base prompt files, gutted prompt-builder.ts (kept detectProvider/isBudgetModel utilities), deleted prompt-testing.ts + 3 test files testing dead code (2016 lines removed). Step 3: Deleted 4 provider adapter files, 2 config-adaptation files, cleaned structured-output.ts AC refs (CTX_XXX→CB_XXX, contextId→claimId, removed context_refinement) (1021 lines removed). Step 4: Updated monolithic-dynamic.prompt.md — AnalysisContext→ClaimBoundary (4 refs), Multi-Context→Multi-Boundary, CTX_XXX→CB_XXX. Step 5: Updated monolithic-dynamic-prompt.test.ts for CB terminology. Deleted OUTPUT_SCHEMAS.md (264 lines, legacy orchestrated schemas). **Verification:** `grep "AnalysisContext" src/lib/analyzer/prompts/` returns ZERO hits. All builds PASS, 724/724 tests PASS (88 fewer tests — removed dead code tests). 6 commits: c7c0e16 (base prompts), ab397f4 (providers), 0f4088f (MD prompt), 059bcd2 (tests), a5aa9c1 (schemas). | Deleted: 5 base prompts, 4 providers, 3 config-adaptations, prompt-testing.ts, 3 test files, OUTPUT_SCHEMAS.md; Updated: prompt-builder.ts, structured-output.ts, monolithic-dynamic.prompt.md, monolithic-dynamic-prompt.test.ts, CB_Execution_State.md | None |
 
 ## Quick Reference for Agents
 
