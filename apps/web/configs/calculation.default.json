@@ -7,6 +7,19 @@
       "low": 1
     },
     "harmPotentialMultiplier": 1.5,
+    "harmPotentialMultipliers": {
+      "critical": 1.5,
+      "high": 1.2,
+      "medium": 1.0,
+      "low": 1.0
+    },
+    "triangulation": {
+      "strongAgreementBoost": 0.15,
+      "moderateAgreementBoost": 0.05,
+      "singleBoundaryPenalty": -0.10,
+      "conflictedFlag": true
+    },
+    "derivativeMultiplier": 0.5,
     "contestationWeights": {
       "established": 0.3,
       "disputed": 0.5,
@@ -39,6 +52,11 @@
     "contextMergeThreshold": 0.7
   },
   "mixedConfidenceThreshold": 60,
+  "selfConsistencySpreadThresholds": {
+    "stable": 5,
+    "moderate": 12,
+    "unstable": 20
+  },
   "contextSimilarity": {
     "nameWeight": 0.35,
     "primaryMetadataWeight": 0.3,

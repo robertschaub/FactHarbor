@@ -99,5 +99,17 @@
   "probativeDeduplicationThreshold": 0.75,
   "gapResearchEnabled": true,
   "gapResearchMaxIterations": 2,
-  "gapResearchMaxQueries": 8
+  "gapResearchMaxQueries": 8,
+  "centralityThreshold": "medium",
+  "claimSpecificityMinimum": 0.6,
+  "maxAtomicClaims": 15,
+  "preliminarySearchQueriesPerClaim": 2,
+  "preliminaryMaxSources": 5,
+  "gate1GroundingRetryThreshold": 0.5,
+  "claimSufficiencyThreshold": 3,
+  "contradictionReservedIterations": 2,
+  "maxClaimBoundaries": 6,
+  "boundaryCoherenceMinimum": 0.3,
+  "selfConsistencyMode": "full",
+  "selfConsistencyTemperature": 0.3
 }

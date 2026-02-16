@@ -51,8 +51,9 @@ export interface ValidationResult {
 
 export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
-  provider: z.enum(["auto", "google-cse", "serpapi"]),
+  provider: z.enum(["auto", "google-cse", "serpapi", "tavily", "brave"]),
   mode: z.enum(["standard", "grounded"]),
+  searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),
   maxSourcesPerIteration: z.number().int().min(1).max(20),
   timeoutMs: z.number().int().min(1000).max(60000),
@@ -311,6 +312,39 @@ export const PipelineConfigSchema = z.object({
   opinionAccumulationWarningThreshold: z.number().int().min(0).max(100).optional()
     .describe("Warn if opinion-based keyFactors exceed this percentage (default: 70)"),
 
+  // === ClaimBoundary Pipeline Parameters ===
+  // Stage 1: Claim Extraction
+  centralityThreshold: z.enum(["high", "medium"]).optional()
+    .describe("Minimum centrality to keep a claim in ClaimBoundary pipeline (default: medium)"),
+  claimSpecificityMinimum: z.number().min(0).max(1).optional()
+    .describe("Minimum specificity score for Gate 1 pass in ClaimBoundary pipeline (default: 0.6)"),
+  maxAtomicClaims: z.number().int().min(5).max(30).optional()
+    .describe("Maximum claims after centrality filter in ClaimBoundary pipeline (default: 15)"),
+  preliminarySearchQueriesPerClaim: z.number().int().min(1).max(5).optional()
+    .describe("Search queries per claim in Stage 1 preliminary search (default: 2)"),
+  preliminaryMaxSources: z.number().int().min(1).max(10).optional()
+    .describe("Max sources to fetch in Stage 1 preliminary search (default: 5)"),
+  gate1GroundingRetryThreshold: z.number().min(0).max(1).optional()
+    .describe("If >X% of claims fail Gate 1, trigger retry loop (default: 0.5)"),
+
+  // Stage 2: Research
+  claimSufficiencyThreshold: z.number().int().min(1).max(10).optional()
+    .describe("Min evidence items per claim before considering it sufficient (default: 3)"),
+  contradictionReservedIterations: z.number().int().min(0).max(5).optional()
+    .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
+
+  // Stage 3: Clustering
+  maxClaimBoundaries: z.number().int().min(2).max(10).optional()
+    .describe("Safety cap on boundary count (post-validation merge trigger, not prompt target) (default: 6)"),
+  boundaryCoherenceMinimum: z.number().min(0).max(1).optional()
+    .describe("Minimum internalCoherence; below this, boundary is flagged (default: 0.3)"),
+
+  // Stage 4: Verdict
+  selfConsistencyMode: z.enum(["full", "disabled"]).optional()
+    .describe("Self-consistency check mode for ClaimBoundary verdicts (default: full)"),
+  selfConsistencyTemperature: z.number().min(0.1).max(0.7).optional()
+    .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.3)"),
+
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
     .optional()
@@ -469,6 +503,50 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.gapResearchMaxQueries === undefined) {
     data.gapResearchMaxQueries = 8;
+  }
+
+  // ClaimBoundary Stage 1 defaults
+  if (data.centralityThreshold === undefined) {
+    data.centralityThreshold = "medium";
+  }
+  if (data.claimSpecificityMinimum === undefined) {
+    data.claimSpecificityMinimum = 0.6;
+  }
+  if (data.maxAtomicClaims === undefined) {
+    data.maxAtomicClaims = 15;
+  }
+  if (data.preliminarySearchQueriesPerClaim === undefined) {
+    data.preliminarySearchQueriesPerClaim = 2;
+  }
+  if (data.preliminaryMaxSources === undefined) {
+    data.preliminaryMaxSources = 5;
+  }
+  if (data.gate1GroundingRetryThreshold === undefined) {
+    data.gate1GroundingRetryThreshold = 0.5;
+  }
+
+  // ClaimBoundary Stage 2 defaults
+  if (data.claimSufficiencyThreshold === undefined) {
+    data.claimSufficiencyThreshold = 3;
+  }
+  if (data.contradictionReservedIterations === undefined) {
+    data.contradictionReservedIterations = 2;
+  }
+
+  // ClaimBoundary Stage 3 defaults
+  if (data.maxClaimBoundaries === undefined) {
+    data.maxClaimBoundaries = 6;
+  }
+  if (data.boundaryCoherenceMinimum === undefined) {
+    data.boundaryCoherenceMinimum = 0.3;
+  }
+
+  // ClaimBoundary Stage 4 defaults
+  if (data.selfConsistencyMode === undefined) {
+    data.selfConsistencyMode = "full";
+  }
+  if (data.selfConsistencyTemperature === undefined) {
+    data.selfConsistencyTemperature = 0.3;
   }
 
   if (warnings.length > 0) {
@@ -765,6 +843,22 @@ export const CalcConfigSchema = z.object({
         "Centrality weights must be monotonic: high >= medium >= low",
       ),
     harmPotentialMultiplier: z.number().min(1).max(5),
+    // ClaimBoundary Stage 5: 4-level harmPotentialMultipliers (replaces single scalar above for CB pipeline)
+    harmPotentialMultipliers: z.object({
+      critical: z.number().min(1).max(2),
+      high: z.number().min(1).max(2),
+      medium: z.number().min(0.8).max(1.2),
+      low: z.number().min(0.8).max(1.2),
+    }).optional(),
+    // ClaimBoundary Stage 5: Triangulation (cross-boundary evidence agreement)
+    triangulation: z.object({
+      strongAgreementBoost: z.number().min(0).max(0.5),
+      moderateAgreementBoost: z.number().min(0).max(0.2),
+      singleBoundaryPenalty: z.number().min(-0.3).max(0),
+      conflictedFlag: z.boolean(),
+    }).optional(),
+    // ClaimBoundary Stage 5: Derivative evidence weight reduction
+    derivativeMultiplier: z.number().min(0).max(1).optional(),
     contestationWeights: z.object({
       established: z.number().min(0).max(1),
       disputed: z.number().min(0).max(1),
@@ -812,6 +906,13 @@ export const CalcConfigSchema = z.object({
   }),
 
   mixedConfidenceThreshold: z.number().int().min(0).max(100),
+
+  // ClaimBoundary Stage 4: Self-consistency spread thresholds (percentage points)
+  selfConsistencySpreadThresholds: z.object({
+    stable: z.number().int().min(0).max(20),
+    moderate: z.number().int().min(0).max(30),
+    unstable: z.number().int().min(0).max(50),
+  }).optional(),
 
   evidenceFilter: z.object({
     minStatementLength: z.number().int().min(5).max(100),
@@ -915,6 +1016,22 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
       low: 1.0,
     },
     harmPotentialMultiplier: 1.5,
+    // ClaimBoundary Stage 5: 4-level harm multipliers
+    harmPotentialMultipliers: {
+      critical: 1.5,
+      high: 1.2,
+      medium: 1.0,
+      low: 1.0,
+    },
+    // ClaimBoundary Stage 5: Triangulation defaults
+    triangulation: {
+      strongAgreementBoost: 0.15,
+      moderateAgreementBoost: 0.05,
+      singleBoundaryPenalty: -0.10,
+      conflictedFlag: true,
+    },
+    // ClaimBoundary Stage 5: Derivative evidence weight reduction
+    derivativeMultiplier: 0.5,
     contestationWeights: {
       established: 0.5,
       disputed: 0.7,
@@ -947,6 +1064,12 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     contextMergeThreshold: 0.7,
   },
   mixedConfidenceThreshold: 60,
+  // ClaimBoundary Stage 4: Self-consistency spread thresholds (in percentage points)
+  selfConsistencySpreadThresholds: {
+    stable: 5,
+    moderate: 12,
+    unstable: 20,
+  },
   evidenceFilter: {
     minStatementLength: 20,
     maxVaguePhraseCount: 2,
