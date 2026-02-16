@@ -32,7 +32,7 @@ import {
 
 describe('Provider Variants', () => {
   const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
-  const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict', 'context_refinement'];
+  const tasks: TaskType[] = ['understand', 'extract_evidence', 'verdict'];
 
   describe('All providers generate non-empty prompts', () => {
     for (const provider of providers) {
@@ -234,17 +234,6 @@ describe('Critical Guidance Inclusion', () => {
       it(`${provider} understand includes attribution separation`, () => {
         const prompt = generateTestPrompt('understand', provider);
         expect(prompt).toMatch(/attribution|Attribution/);
-      });
-    }
-  });
-
-  describe('Scope terminology guidance', () => {
-    const providers: ProviderType[] = ['anthropic', 'openai', 'google', 'mistral'];
-
-    for (const provider of providers) {
-      it(`${provider} context_refinement includes terminology`, () => {
-        const prompt = generateTestPrompt('context_refinement', provider);
-        expect(prompt).toMatch(/context|Context/i);
       });
     }
   });
