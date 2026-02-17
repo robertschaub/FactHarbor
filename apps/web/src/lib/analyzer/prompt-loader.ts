@@ -29,13 +29,15 @@ export type Pipeline =
   | "orchestrated"
   | "monolithic-dynamic"
   | "source-reliability"
-  | "text-analysis";  // LLM text analysis prompts
+  | "text-analysis"    // LLM text analysis prompts
+  | "claimboundary";   // ClaimBoundary pipeline prompts
 
 const VALID_PIPELINES: Pipeline[] = [
   "orchestrated",
   "monolithic-dynamic",
   "source-reliability",
   "text-analysis",
+  "claimboundary",
 ];
 
 /** Parsed YAML frontmatter from prompt file */

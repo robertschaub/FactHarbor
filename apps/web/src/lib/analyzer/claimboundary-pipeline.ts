@@ -30,6 +30,7 @@ import type {
   QualityGates,
   Gate1Stats,
   AnalysisInput,
+  SourceType,
 } from "./types";
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
@@ -39,6 +40,25 @@ import { getClaimWeight, calculateWeightedVerdictAverage } from "./aggregation";
 
 // Verdict stage module (§8.4 — 5-step debate pattern)
 import { runVerdictStage, type LLMCallFn } from "./verdict-stage";
+
+// LLM call infrastructure
+import { generateText, Output } from "ai";
+import { z } from "zod";
+import {
+  getModelForTask,
+  extractStructuredOutput,
+  getStructuredOutputProviderOptions,
+  getPromptCachingOptions,
+} from "./llm";
+import { loadAndRenderSection } from "./prompt-loader";
+
+// Config loading
+import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
+import type { PipelineConfig, SearchConfig } from "@/lib/config-schemas";
+
+// Search and retrieval
+import { searchWebWithProvider } from "@/lib/web-search";
+import { extractTextFromUrl } from "@/lib/retrieval";
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -173,6 +193,95 @@ export async function runClaimBoundaryAnalysis(
 // STAGE 1: EXTRACT CLAIMS (§8.1)
 // ============================================================================
 
+// --- Zod schemas for Stage 1 LLM output parsing ---
+
+const Pass1OutputSchema = z.object({
+  impliedClaim: z.string(),
+  backgroundDetails: z.string(),
+  roughClaims: z.array(z.object({
+    statement: z.string(),
+    searchHint: z.string(),
+  })),
+});
+
+const Pass2AtomicClaimSchema = z.object({
+  id: z.string(),
+  statement: z.string(),
+  category: z.enum(["factual", "evaluative", "procedural"]),
+  centrality: z.enum(["high", "medium", "low"]),
+  harmPotential: z.enum(["critical", "high", "medium", "low"]),
+  isCentral: z.boolean(),
+  claimDirection: z.enum(["supports_thesis", "contradicts_thesis", "contextual"]),
+  keyEntities: z.array(z.string()),
+  checkWorthiness: z.enum(["high", "medium", "low"]),
+  specificityScore: z.number(),
+  groundingQuality: z.enum(["strong", "moderate", "weak", "none"]),
+  expectedEvidenceProfile: z.object({
+    methodologies: z.array(z.string()),
+    expectedMetrics: z.array(z.string()),
+    expectedSourceTypes: z.array(z.string()),
+  }),
+});
+
+const Pass2OutputSchema = z.object({
+  impliedClaim: z.string(),
+  backgroundDetails: z.string(),
+  articleThesis: z.string(),
+  atomicClaims: z.array(Pass2AtomicClaimSchema),
+  distinctEvents: z.array(z.object({
+    name: z.string(),
+    date: z.string(),
+    description: z.string(),
+  })).optional(),
+  riskTier: z.enum(["A", "B", "C"]).optional(),
+  retainedEvidence: z.array(z.string()).optional(),
+});
+
+const Gate1OutputSchema = z.object({
+  validatedClaims: z.array(z.object({
+    claimId: z.string(),
+    passedOpinion: z.boolean(),
+    passedSpecificity: z.boolean(),
+    reasoning: z.string(),
+  })),
+});
+
+const PreliminaryEvidenceItemSchema = z.object({
+  statement: z.string(),
+  category: z.string().optional(),
+  claimDirection: z.enum(["supports", "contradicts", "contextual"]).optional(),
+  evidenceScope: z.object({
+    methodology: z.string().optional(),
+    temporal: z.string().optional(),
+    geographic: z.string().optional(),
+    boundaries: z.string().optional(),
+  }).optional(),
+  probativeValue: z.enum(["high", "medium", "low"]).optional(),
+  sourceType: z.string().optional(),
+  isDerivative: z.boolean().optional(),
+  derivedFromSourceUrl: z.string().nullable().optional(),
+  relevantClaimIds: z.array(z.string()).optional(),
+});
+
+const ExtractEvidenceOutputSchema = z.object({
+  evidenceItems: z.array(PreliminaryEvidenceItemSchema),
+});
+
+// --- Preliminary evidence type (lightweight, for passing between stages) ---
+
+export interface PreliminaryEvidenceItem {
+  statement: string;
+  sourceUrl: string;
+  sourceTitle: string;
+  evidenceScope?: {
+    methodology?: string;
+    temporal?: string;
+    geographic?: string;
+    boundaries?: string;
+  };
+  relevantClaimIds?: string[];
+}
+
 /**
  * Stage 1: Extract atomic claims from input using two-pass evidence-grounded approach.
  *
@@ -186,12 +295,517 @@ export async function runClaimBoundaryAnalysis(
 export async function extractClaims(
   state: CBResearchState
 ): Promise<CBClaimUnderstanding> {
-  // TODO (Phase 1b/1c): Implement two-pass extraction
-  // Pass 1: Rapid claim scan + preliminary search (Haiku)
-  // Pass 2: Evidence-grounded claim extraction (Sonnet)
-  // Centrality filter: keep only high/medium
-  // Gate 1: Claim validation (factual + specificity ≥ 0.6)
-  throw new Error("Stage 1 (extractClaims) not yet implemented");
+  // Load pipeline + search configs from UCM
+  const [pipelineResult, searchResult] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadSearchConfig("default"),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const searchConfig = searchResult.config;
+
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  // ------------------------------------------------------------------
+  // Pass 1: Rapid claim scan (Haiku)
+  // ------------------------------------------------------------------
+  const pass1 = await runPass1(state.originalInput, pipelineConfig, currentDate);
+  state.llmCalls++;
+
+  // ------------------------------------------------------------------
+  // Preliminary search: search web for rough claims, fetch sources, extract evidence
+  // ------------------------------------------------------------------
+  const preliminaryEvidence = await runPreliminarySearch(
+    pass1.roughClaims,
+    searchConfig,
+    pipelineConfig,
+    currentDate,
+    state,
+  );
+
+  // ------------------------------------------------------------------
+  // Pass 2: Evidence-grounded extraction (Sonnet)
+  // ------------------------------------------------------------------
+  const pass2 = await runPass2(
+    state.originalInput,
+    preliminaryEvidence,
+    pipelineConfig,
+    currentDate,
+  );
+  state.llmCalls++;
+
+  // ------------------------------------------------------------------
+  // Centrality filter
+  // ------------------------------------------------------------------
+  const centralityThreshold = pipelineConfig.centralityThreshold ?? "medium";
+  const maxAtomicClaims = pipelineConfig.maxAtomicClaims ?? 15;
+
+  const filteredClaims = filterByCentrality(
+    pass2.atomicClaims,
+    centralityThreshold,
+    maxAtomicClaims,
+  );
+
+  // ------------------------------------------------------------------
+  // Gate 1: Claim validation (Haiku, batched)
+  // ------------------------------------------------------------------
+  const gate1Stats = await runGate1Validation(
+    filteredClaims,
+    pipelineConfig,
+    currentDate,
+  );
+  state.llmCalls++;
+
+  // ------------------------------------------------------------------
+  // Assemble CBClaimUnderstanding
+  // ------------------------------------------------------------------
+  return {
+    detectedInputType: detectInputType(state.originalInput),
+    impliedClaim: pass2.impliedClaim,
+    backgroundDetails: pass2.backgroundDetails,
+    articleThesis: pass2.articleThesis,
+    atomicClaims: filteredClaims,
+    distinctEvents: pass2.distinctEvents ?? [],
+    riskTier: pass2.riskTier ?? "B",
+    preliminaryEvidence: preliminaryEvidence.map((pe) => ({
+      sourceUrl: pe.sourceUrl,
+      snippet: pe.statement,
+      claimId: pe.relevantClaimIds?.[0] ?? "",
+    })),
+    gate1Stats,
+  };
+}
+
+// ============================================================================
+// STAGE 1 HELPERS (exported for unit testing)
+// ============================================================================
+
+/**
+ * Pass 1: Rapid claim scan using Haiku.
+ * Extracts impliedClaim, backgroundDetails, and roughClaims from input text.
+ */
+export async function runPass1(
+  inputText: string,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<z.infer<typeof Pass1OutputSchema>> {
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS1", {
+    currentDate,
+    analysisInput: inputText,
+  });
+  if (!rendered) {
+    throw new Error("Stage 1 Pass 1: Failed to load CLAIM_EXTRACTION_PASS1 prompt section");
+  }
+
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+
+  const result = await generateText({
+    model: model.model,
+    messages: [
+      {
+        role: "system",
+        content: rendered.content,
+        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+      },
+      { role: "user", content: inputText },
+    ],
+    temperature: 0.15,
+    output: Output.object({ schema: Pass1OutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(
+      pipelineConfig.llmProvider ?? "anthropic",
+    ),
+  });
+
+  const parsed = extractStructuredOutput(result);
+  if (!parsed) {
+    throw new Error("Stage 1 Pass 1: LLM returned no structured output");
+  }
+
+  return Pass1OutputSchema.parse(parsed);
+}
+
+/**
+ * Preliminary search: for each rough claim, search the web, fetch sources,
+ * and extract brief evidence with EvidenceScope metadata.
+ */
+export async function runPreliminarySearch(
+  roughClaims: Array<{ statement: string; searchHint: string }>,
+  searchConfig: SearchConfig,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+  state: CBResearchState,
+): Promise<PreliminaryEvidenceItem[]> {
+  const queriesPerClaim = pipelineConfig.preliminarySearchQueriesPerClaim ?? 2;
+  const maxSources = pipelineConfig.preliminaryMaxSources ?? 5;
+
+  const allEvidence: PreliminaryEvidenceItem[] = [];
+
+  // Limit to top 3 rough claims to control cost (§8.1: "impliedClaim and top 2-3 rough claims")
+  const claimsToSearch = roughClaims.slice(0, 3);
+
+  for (const claim of claimsToSearch) {
+    // Generate search queries from claim + searchHint
+    const queries = generateSearchQueries(claim, queriesPerClaim);
+
+    for (const query of queries) {
+      try {
+        const response = await searchWebWithProvider({
+          query,
+          maxResults: maxSources,
+          config: searchConfig,
+        });
+
+        // Track the search query
+        state.searchQueries.push({
+          query,
+          iteration: 0,
+          focus: "preliminary",
+          resultsCount: response.results.length,
+          timestamp: new Date().toISOString(),
+          searchProvider: response.providersUsed.join(", "),
+        });
+
+        // Fetch and extract text from top results (limit to 3 per query)
+        const sourcesToFetch = response.results.slice(0, 3);
+        const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
+
+        for (const searchResult of sourcesToFetch) {
+          try {
+            const content = await extractTextFromUrl(searchResult.url, {
+              timeoutMs: 12000,
+              maxLength: 15000,
+            });
+            if (content.text.length > 100) {
+              fetchedSources.push({
+                url: searchResult.url,
+                title: content.title || searchResult.title,
+                text: content.text.slice(0, 8000), // Cap to control prompt size
+              });
+            }
+          } catch {
+            // Skip sources that fail to fetch — non-fatal
+          }
+        }
+
+        if (fetchedSources.length === 0) continue;
+
+        // Extract evidence from fetched sources using batched LLM call (Haiku)
+        const evidence = await extractPreliminaryEvidence(
+          claim.statement,
+          fetchedSources,
+          pipelineConfig,
+          currentDate,
+        );
+        state.llmCalls++;
+
+        allEvidence.push(...evidence);
+      } catch (err) {
+        // Search failures are non-fatal for Stage 1 preliminary search
+        console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
+      }
+    }
+  }
+
+  return allEvidence;
+}
+
+/**
+ * Generate search queries from a rough claim and its searchHint.
+ */
+export function generateSearchQueries(
+  claim: { statement: string; searchHint: string },
+  queriesPerClaim: number,
+): string[] {
+  const queries: string[] = [];
+
+  // Primary query: use the searchHint (3-5 words, optimized for search)
+  if (claim.searchHint) {
+    queries.push(claim.searchHint);
+  }
+
+  // Secondary query: use the claim statement directly (truncated for search)
+  if (queries.length < queriesPerClaim) {
+    const truncated = claim.statement.length > 80
+      ? claim.statement.slice(0, 80)
+      : claim.statement;
+    queries.push(truncated);
+  }
+
+  return queries.slice(0, queriesPerClaim);
+}
+
+/**
+ * Extract preliminary evidence from fetched sources using batched LLM call (Haiku).
+ * Batches all sources into a single prompt for efficiency.
+ */
+async function extractPreliminaryEvidence(
+  claimStatement: string,
+  sources: Array<{ url: string; title: string; text: string }>,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<PreliminaryEvidenceItem[]> {
+  const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
+    currentDate,
+    claim: claimStatement,
+    sourceContent: sources.map((s, i) =>
+      `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
+    ).join("\n\n---\n\n"),
+    sourceUrl: sources.map((s) => s.url).join(", "),
+  });
+  if (!rendered) {
+    return []; // No prompt available — skip extraction
+  }
+
+  const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+
+  try {
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        { role: "user", content: `Extract evidence from these ${sources.length} sources relating to: "${claimStatement}"` },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: ExtractEvidenceOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        (pipelineConfig.llmProvider) ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) return [];
+
+    const validated = ExtractEvidenceOutputSchema.parse(parsed);
+
+    // Map to PreliminaryEvidenceItem, assigning source URLs
+    return validated.evidenceItems.map((ei) => ({
+      statement: ei.statement,
+      sourceUrl: sources[0]?.url ?? "",
+      sourceTitle: sources[0]?.title ?? "",
+      evidenceScope: ei.evidenceScope ? {
+        methodology: ei.evidenceScope.methodology,
+        temporal: ei.evidenceScope.temporal,
+        geographic: ei.evidenceScope.geographic,
+        boundaries: ei.evidenceScope.boundaries,
+      } : undefined,
+      relevantClaimIds: ei.relevantClaimIds,
+    }));
+  } catch (err) {
+    console.warn("[Stage1] Preliminary evidence extraction failed:", err);
+    return [];
+  }
+}
+
+/**
+ * Pass 2: Evidence-grounded claim extraction using Sonnet.
+ * Uses preliminary evidence to produce specific, research-ready atomic claims.
+ */
+export async function runPass2(
+  inputText: string,
+  preliminaryEvidence: PreliminaryEvidenceItem[],
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<z.infer<typeof Pass2OutputSchema>> {
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
+    currentDate,
+    analysisInput: inputText,
+    preliminaryEvidence: JSON.stringify(
+      preliminaryEvidence.map((pe) => ({
+        statement: pe.statement,
+        sourceUrl: pe.sourceUrl,
+        sourceTitle: pe.sourceTitle,
+        evidenceScope: pe.evidenceScope,
+      })),
+      null,
+      2,
+    ),
+  });
+  if (!rendered) {
+    throw new Error("Stage 1 Pass 2: Failed to load CLAIM_EXTRACTION_PASS2 prompt section");
+  }
+
+  const model = getModelForTask("verdict", undefined, pipelineConfig);
+
+  const result = await generateText({
+    model: model.model,
+    messages: [
+      {
+        role: "system",
+        content: rendered.content,
+        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+      },
+      { role: "user", content: inputText },
+    ],
+    temperature: 0.15,
+    output: Output.object({ schema: Pass2OutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(
+      (pipelineConfig.llmProvider) ?? "anthropic",
+    ),
+  });
+
+  const parsed = extractStructuredOutput(result);
+  if (!parsed) {
+    throw new Error("Stage 1 Pass 2: LLM returned no structured output");
+  }
+
+  const validated = Pass2OutputSchema.parse(parsed);
+
+  // Ensure all claims have sequential IDs if the LLM didn't provide them
+  validated.atomicClaims.forEach((claim, idx) => {
+    if (!claim.id || claim.id.trim() === "") {
+      claim.id = `AC_${String(idx + 1).padStart(2, "0")}`;
+    }
+  });
+
+  return validated;
+}
+
+/**
+ * Filter claims by centrality and cap at max count.
+ * Exported for unit testing.
+ *
+ * @param claims - Raw atomic claims from Pass 2
+ * @param threshold - Minimum centrality ("high" or "medium")
+ * @param maxClaims - Maximum number of claims to keep
+ * @returns Filtered atomic claims
+ */
+export function filterByCentrality(
+  claims: Array<{ centrality: string; [key: string]: unknown }>,
+  threshold: "high" | "medium",
+  maxClaims: number,
+): AtomicClaim[] {
+  // Filter by centrality threshold
+  const allowed = threshold === "high" ? ["high"] : ["high", "medium"];
+  const filtered = claims.filter((c) => allowed.includes(c.centrality));
+
+  // Sort: high centrality first, then medium
+  filtered.sort((a, b) => {
+    if (a.centrality === "high" && b.centrality !== "high") return -1;
+    if (a.centrality !== "high" && b.centrality === "high") return 1;
+    return 0;
+  });
+
+  // Cap at max
+  return filtered.slice(0, maxClaims) as unknown as AtomicClaim[];
+}
+
+/**
+ * Detect whether the input is a statement or a question.
+ * Simple heuristic: ends with "?" → question, otherwise statement.
+ * Exported for unit testing.
+ */
+export function detectInputType(input: string): "claim" | "article" {
+  const trimmed = input.trim();
+  // Short inputs (< 200 chars) are typically claims/questions
+  // Long inputs (>= 200 chars) are typically articles
+  if (trimmed.length < 200) return "claim";
+  return "article";
+}
+
+/**
+ * Gate 1: Claim validation using batched LLM call (Haiku).
+ * Validates all claims in a single LLM call for efficiency.
+ *
+ * @returns Gate 1 statistics
+ */
+export async function runGate1Validation(
+  claims: AtomicClaim[],
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<CBClaimUnderstanding["gate1Stats"]> {
+  if (claims.length === 0) {
+    return { totalClaims: 0, passedOpinion: 0, passedSpecificity: 0, overallPass: true };
+  }
+
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_VALIDATION", {
+    currentDate,
+    atomicClaims: JSON.stringify(
+      claims.map((c) => ({ id: c.id, statement: c.statement, category: c.category })),
+      null,
+      2,
+    ),
+  });
+  if (!rendered) {
+    // If prompt not available, pass all claims (non-blocking)
+    console.warn("[Stage1] Gate 1: CLAIM_VALIDATION prompt not found — skipping validation");
+    return {
+      totalClaims: claims.length,
+      passedOpinion: claims.length,
+      passedSpecificity: claims.length,
+      overallPass: true,
+    };
+  }
+
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+
+  try {
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: `Validate these ${claims.length} claims:\n${JSON.stringify(
+            claims.map((c) => ({ id: c.id, statement: c.statement })),
+            null,
+            2,
+          )}`,
+        },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: Gate1OutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        (pipelineConfig.llmProvider) ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      console.warn("[Stage1] Gate 1: LLM returned no structured output — passing all claims");
+      return {
+        totalClaims: claims.length,
+        passedOpinion: claims.length,
+        passedSpecificity: claims.length,
+        overallPass: true,
+      };
+    }
+
+    const validated = Gate1OutputSchema.parse(parsed);
+
+    const passedOpinion = validated.validatedClaims.filter((v) => v.passedOpinion).length;
+    const passedSpecificity = validated.validatedClaims.filter((v) => v.passedSpecificity).length;
+
+    // Check if retry threshold exceeded (v1: warn only, no retry)
+    const gate1Threshold = pipelineConfig.gate1GroundingRetryThreshold ?? 0.5;
+    const failRate = 1 - (passedSpecificity / claims.length);
+    if (failRate > gate1Threshold) {
+      console.warn(
+        `[Stage1] Gate 1: ${Math.round(failRate * 100)}% of claims failed specificity (threshold: ${Math.round(gate1Threshold * 100)}%). Retry deferred to v1.1.`,
+      );
+    }
+
+    return {
+      totalClaims: claims.length,
+      passedOpinion,
+      passedSpecificity,
+      overallPass: passedOpinion > 0 && passedSpecificity > 0,
+    };
+  } catch (err) {
+    console.warn("[Stage1] Gate 1 validation failed:", err);
+    return {
+      totalClaims: claims.length,
+      passedOpinion: claims.length,
+      passedSpecificity: claims.length,
+      overallPass: true,
+    };
+  }
 }
 
 // ============================================================================

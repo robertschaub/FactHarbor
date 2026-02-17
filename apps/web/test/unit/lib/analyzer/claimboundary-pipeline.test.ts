@@ -9,8 +9,17 @@
  * @see Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md
  */
 
-import { describe, it, expect } from "vitest";
-import { buildCoverageMatrix } from "@/lib/analyzer/claimboundary-pipeline";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  buildCoverageMatrix,
+  filterByCentrality,
+  detectInputType,
+  generateSearchQueries,
+  runPass1,
+  runPass2,
+  runGate1Validation,
+  runPreliminarySearch,
+} from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
   ClaimBoundary,
@@ -473,5 +482,450 @@ describe("ClaimBoundary Pipeline Stages (skeleton)", () => {
       const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
       expect(typeof runClaimBoundaryAnalysis).toBe("function");
     });
+  });
+});
+
+// ============================================================================
+// STAGE 1: EXTRACT CLAIMS — Unit Tests (§8.1)
+// ============================================================================
+
+// --- Pure function tests (no mocks needed) ---
+
+describe("detectInputType", () => {
+  it("should classify short text as 'claim'", () => {
+    expect(detectInputType("Entity A achieved metric X")).toBe("claim");
+  });
+
+  it("should classify long text (>= 200 chars) as 'article'", () => {
+    const longText = "A".repeat(200);
+    expect(detectInputType(longText)).toBe("article");
+  });
+
+  it("should handle whitespace-padded input", () => {
+    const padded = "  short input  ";
+    expect(detectInputType(padded)).toBe("claim");
+  });
+});
+
+describe("generateSearchQueries", () => {
+  it("should use searchHint as primary and statement as secondary", () => {
+    const claim = { statement: "Entity A achieved metric X in 2024", searchHint: "entity A metric X" };
+    const result = generateSearchQueries(claim, 2);
+    expect(result).toEqual(["entity A metric X", "Entity A achieved metric X in 2024"]);
+  });
+
+  it("should truncate statement to 80 chars when used as secondary query", () => {
+    const longStatement = "A".repeat(100);
+    const claim = { statement: longStatement, searchHint: "short hint" };
+    const result = generateSearchQueries(claim, 2);
+    expect(result[1]).toHaveLength(80);
+    expect(result[1]).toBe("A".repeat(80));
+  });
+
+  it("should cap results at queriesPerClaim", () => {
+    const claim = { statement: "test claim", searchHint: "hint" };
+    expect(generateSearchQueries(claim, 1)).toHaveLength(1);
+    expect(generateSearchQueries(claim, 1)[0]).toBe("hint");
+  });
+
+  it("should use statement directly if searchHint is empty", () => {
+    const claim = { statement: "entity metric test", searchHint: "" };
+    const result = generateSearchQueries(claim, 2);
+    // empty searchHint is falsy, so skipped; statement used as only query
+    expect(result).toEqual(["entity metric test"]);
+  });
+});
+
+describe("filterByCentrality", () => {
+  const makeClaims = (centralities: string[]) =>
+    centralities.map((c, i) => ({
+      id: `AC_${String(i + 1).padStart(2, "0")}`,
+      centrality: c,
+      statement: `Claim ${i + 1}`,
+    }));
+
+  it("should keep only 'high' claims when threshold is 'high'", () => {
+    const claims = makeClaims(["high", "medium", "low", "high"]);
+    const result = filterByCentrality(claims, "high", 10);
+    expect(result).toHaveLength(2);
+    expect(result.every((c) => c.centrality === "high")).toBe(true);
+  });
+
+  it("should keep 'high' and 'medium' claims when threshold is 'medium'", () => {
+    const claims = makeClaims(["high", "medium", "low", "medium"]);
+    const result = filterByCentrality(claims, "medium", 10);
+    expect(result).toHaveLength(3);
+    expect(result.every((c) => c.centrality !== "low")).toBe(true);
+  });
+
+  it("should sort high centrality before medium", () => {
+    const claims = makeClaims(["medium", "high", "medium", "high"]);
+    const result = filterByCentrality(claims, "medium", 10);
+    expect(result[0].centrality).toBe("high");
+    expect(result[1].centrality).toBe("high");
+    expect(result[2].centrality).toBe("medium");
+    expect(result[3].centrality).toBe("medium");
+  });
+
+  it("should cap at maxClaims", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+    const result = filterByCentrality(claims, "high", 3);
+    expect(result).toHaveLength(3);
+  });
+
+  it("should return empty array for empty input", () => {
+    const result = filterByCentrality([], "medium", 10);
+    expect(result).toHaveLength(0);
+  });
+});
+
+// --- LLM-dependent function tests (mocked) ---
+
+// Mock modules used by Stage 1 LLM functions
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+  Output: { object: vi.fn(() => ({})) },
+}));
+
+vi.mock("@/lib/analyzer/llm", () => ({
+  getModelForTask: vi.fn(() => ({ model: "mock-model", name: "mock" })),
+  extractStructuredOutput: vi.fn(),
+  getStructuredOutputProviderOptions: vi.fn(() => ({})),
+  getPromptCachingOptions: vi.fn(() => ({})),
+}));
+
+vi.mock("@/lib/analyzer/prompt-loader", () => ({
+  loadAndRenderSection: vi.fn(),
+}));
+
+vi.mock("@/lib/config-loader", () => ({
+  loadPipelineConfig: vi.fn(() => ({ config: {} })),
+  loadSearchConfig: vi.fn(() => ({ config: {} })),
+}));
+
+vi.mock("@/lib/web-search", () => ({
+  searchWebWithProvider: vi.fn(),
+}));
+
+vi.mock("@/lib/retrieval", () => ({
+  extractTextFromUrl: vi.fn(),
+}));
+
+// Import mocked modules for per-test setup
+import { generateText } from "ai";
+import { extractStructuredOutput } from "@/lib/analyzer/llm";
+import { loadAndRenderSection } from "@/lib/analyzer/prompt-loader";
+import { searchWebWithProvider } from "@/lib/web-search";
+import { extractTextFromUrl } from "@/lib/retrieval";
+
+const mockGenerateText = vi.mocked(generateText);
+const mockExtractOutput = vi.mocked(extractStructuredOutput);
+const mockLoadSection = vi.mocked(loadAndRenderSection);
+const mockSearch = vi.mocked(searchWebWithProvider);
+const mockFetchUrl = vi.mocked(extractTextFromUrl);
+
+describe("Stage 1: runPass1", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should parse Pass 1 output from LLM", async () => {
+    const pass1Fixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Context about entity A and metrics",
+      roughClaims: [
+        { statement: "Entity A increased metric X by 50%", searchHint: "entity A metric X increase" },
+        { statement: "Entity A metric was measured in 2024", searchHint: "entity A measurement 2024" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "system prompt content", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass1Fixture);
+
+    const result = await runPass1("test input", mockPipelineConfig, "2026-02-17");
+
+    expect(result.impliedClaim).toBe("Entity A achieved metric X");
+    expect(result.roughClaims).toHaveLength(2);
+    expect(result.roughClaims[0].searchHint).toBe("entity A metric X increase");
+    expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "CLAIM_EXTRACTION_PASS1", expect.any(Object));
+  });
+
+  it("should throw when prompt section is not found", async () => {
+    mockLoadSection.mockResolvedValue(null as any);
+
+    await expect(runPass1("test", mockPipelineConfig, "2026-02-17")).rejects.toThrow(
+      "Failed to load CLAIM_EXTRACTION_PASS1"
+    );
+  });
+
+  it("should throw when LLM returns no structured output", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(null);
+
+    await expect(runPass1("test", mockPipelineConfig, "2026-02-17")).rejects.toThrow(
+      "LLM returned no structured output"
+    );
+  });
+});
+
+describe("Stage 1: runPass2", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should parse Pass 2 output with atomic claims", async () => {
+    const pass2Fixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background info",
+      articleThesis: "Overall thesis",
+      atomicClaims: [
+        {
+          id: "AC_01",
+          statement: "Entity A increased metric X by 50% in 2024",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "medium",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.85,
+          groundingQuality: "strong",
+          expectedEvidenceProfile: {
+            methodologies: ["data analysis"],
+            expectedMetrics: ["metric X"],
+            expectedSourceTypes: ["peer_reviewed_study"],
+          },
+        },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass2Fixture);
+
+    const result = await runPass2("test input", [], mockPipelineConfig, "2026-02-17");
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.atomicClaims[0].id).toBe("AC_01");
+    expect(result.atomicClaims[0].specificityScore).toBe(0.85);
+    expect(result.articleThesis).toBe("Overall thesis");
+  });
+
+  it("should auto-assign sequential IDs when LLM omits them", async () => {
+    const pass2Fixture = {
+      impliedClaim: "Test",
+      backgroundDetails: "Test",
+      articleThesis: "Test",
+      atomicClaims: [
+        {
+          id: "",
+          statement: "Claim 1",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "low",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          keyEntities: [],
+          checkWorthiness: "medium",
+          specificityScore: 0.5,
+          groundingQuality: "moderate",
+          expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+        },
+        {
+          id: "  ",
+          statement: "Claim 2",
+          category: "evaluative",
+          centrality: "medium",
+          harmPotential: "low",
+          isCentral: false,
+          claimDirection: "contextual",
+          keyEntities: [],
+          checkWorthiness: "low",
+          specificityScore: 0.3,
+          groundingQuality: "weak",
+          expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+        },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass2Fixture);
+
+    const result = await runPass2("test", [], mockPipelineConfig, "2026-02-17");
+
+    expect(result.atomicClaims[0].id).toBe("AC_01");
+    expect(result.atomicClaims[1].id).toBe("AC_02");
+  });
+});
+
+describe("Stage 1: runGate1Validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should return all-pass stats for empty claims", async () => {
+    const result = await runGate1Validation([], mockPipelineConfig, "2026-02-17");
+    expect(result).toEqual({
+      totalClaims: 0,
+      passedOpinion: 0,
+      passedSpecificity: 0,
+      overallPass: true,
+    });
+  });
+
+  it("should populate gate1Stats from LLM validation output", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Second claim" }),
+      createAtomicClaim({ id: "AC_03", statement: "Third claim" }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: false, reasoning: "too vague" },
+        { claimId: "AC_03", passedOpinion: false, passedSpecificity: true, reasoning: "opinion" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
+
+    expect(result.totalClaims).toBe(3);
+    expect(result.passedOpinion).toBe(2);
+    expect(result.passedSpecificity).toBe(2);
+    expect(result.overallPass).toBe(true);
+  });
+
+  it("should return all-pass when prompt section is missing", async () => {
+    const claims = [createAtomicClaim()];
+    mockLoadSection.mockResolvedValue(null as any);
+
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
+
+    expect(result.totalClaims).toBe(1);
+    expect(result.passedOpinion).toBe(1);
+    expect(result.overallPass).toBe(true);
+  });
+
+  it("should set overallPass false when all claims fail both checks", async () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: false, passedSpecificity: false, reasoning: "invalid" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
+
+    expect(result.passedOpinion).toBe(0);
+    expect(result.passedSpecificity).toBe(0);
+    expect(result.overallPass).toBe(false);
+  });
+});
+
+describe("Stage 1: runPreliminarySearch", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockSearchConfig = {} as any;
+  const mockPipelineConfig = { preliminarySearchQueriesPerClaim: 1, preliminaryMaxSources: 3 } as any;
+
+  it("should return evidence from search + fetch + extraction pipeline", async () => {
+    const roughClaims = [{ statement: "Test claim", searchHint: "test hint" }];
+    const state = { searchQueries: [], llmCalls: 0 } as any;
+
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
+      providersUsed: ["google"],
+    } as any);
+
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(200), // > 100 chars to pass filter
+      title: "Source Title",
+      contentType: "text/html",
+    });
+
+    // Mock the evidence extraction LLM call
+    mockLoadSection.mockResolvedValue({ content: "extract prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Evidence found in source",
+          evidenceScope: { methodology: "data analysis", temporal: "2024" },
+          relevantClaimIds: ["AC_01"],
+        },
+      ],
+    });
+
+    const result = await runPreliminarySearch(
+      roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].statement).toBe("Evidence found in source");
+    expect(result[0].sourceUrl).toBe("https://example.com/1");
+    expect(result[0].evidenceScope?.methodology).toBe("data analysis");
+    expect(state.searchQueries).toHaveLength(1);
+    expect(state.llmCalls).toBe(1);
+  });
+
+  it("should limit to top 3 rough claims", async () => {
+    const roughClaims = [
+      { statement: "Claim 1", searchHint: "hint1" },
+      { statement: "Claim 2", searchHint: "hint2" },
+      { statement: "Claim 3", searchHint: "hint3" },
+      { statement: "Claim 4", searchHint: "hint4" },
+      { statement: "Claim 5", searchHint: "hint5" },
+    ];
+    const state = { searchQueries: [], llmCalls: 0 } as any;
+
+    // Make search return empty results so we don't need further mocks
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    await runPreliminarySearch(roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state);
+
+    // Should have searched 3 claims × 1 query each = 3 searches
+    expect(mockSearch).toHaveBeenCalledTimes(3);
+  });
+
+  it("should skip sources with too-short content", async () => {
+    const roughClaims = [{ statement: "Test", searchHint: "test" }];
+    const state = { searchQueries: [], llmCalls: 0 } as any;
+
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/short", title: "Short", snippet: "x" }],
+      providersUsed: ["google"],
+    } as any);
+
+    // Return very short text (< 100 chars)
+    mockFetchUrl.mockResolvedValue({ text: "short", title: "Short", contentType: "text/html" });
+
+    const result = await runPreliminarySearch(
+      roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state
+    );
+
+    expect(result).toHaveLength(0);
+    // extractPreliminaryEvidence should NOT have been called since no sources passed length filter
+    expect(state.llmCalls).toBe(0);
   });
 });
