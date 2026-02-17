@@ -817,12 +817,14 @@ describe("Stage 1: runGate1Validation", () => {
 
   it("should return all-pass stats for empty claims", async () => {
     const result = await runGate1Validation([], mockPipelineConfig, "2026-02-17");
-    expect(result).toEqual({
+    expect(result.stats).toEqual({
       totalClaims: 0,
       passedOpinion: 0,
       passedSpecificity: 0,
+      filteredCount: 0,
       overallPass: true,
     });
+    expect(result.filteredClaims).toHaveLength(0);
   });
 
   it("should populate gate1Stats from LLM validation output", async () => {
@@ -846,10 +848,12 @@ describe("Stage 1: runGate1Validation", () => {
 
     const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
 
-    expect(result.totalClaims).toBe(3);
-    expect(result.passedOpinion).toBe(2);
-    expect(result.passedSpecificity).toBe(2);
-    expect(result.overallPass).toBe(true);
+    expect(result.stats.totalClaims).toBe(3);
+    expect(result.stats.passedOpinion).toBe(2);
+    expect(result.stats.passedSpecificity).toBe(2);
+    expect(result.stats.overallPass).toBe(true);
+    // All 3 claims pass either opinion or specificity, so all are kept
+    expect(result.filteredClaims).toHaveLength(3);
   });
 
   it("should return all-pass when prompt section is missing", async () => {
@@ -858,12 +862,13 @@ describe("Stage 1: runGate1Validation", () => {
 
     const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
 
-    expect(result.totalClaims).toBe(1);
-    expect(result.passedOpinion).toBe(1);
-    expect(result.overallPass).toBe(true);
+    expect(result.stats.totalClaims).toBe(1);
+    expect(result.stats.passedOpinion).toBe(1);
+    expect(result.stats.overallPass).toBe(true);
+    expect(result.filteredClaims).toHaveLength(1);
   });
 
-  it("should set overallPass false when all claims fail both checks", async () => {
+  it("should set overallPass false and filter claims failing both checks", async () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const gate1Fixture = {
       validatedClaims: [
@@ -877,9 +882,66 @@ describe("Stage 1: runGate1Validation", () => {
 
     const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
 
-    expect(result.passedOpinion).toBe(0);
-    expect(result.passedSpecificity).toBe(0);
-    expect(result.overallPass).toBe(false);
+    expect(result.stats.passedOpinion).toBe(0);
+    expect(result.stats.passedSpecificity).toBe(0);
+    expect(result.stats.overallPass).toBe(false);
+    expect(result.stats.filteredCount).toBe(1);
+    expect(result.filteredClaims).toHaveLength(0);
+  });
+
+  it("should keep claims that pass either opinion or specificity", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Fails opinion only" }),
+      createAtomicClaim({ id: "AC_03", statement: "Fails specificity only" }),
+      createAtomicClaim({ id: "AC_04", statement: "Fails both" }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: false, passedSpecificity: true, reasoning: "opinion" },
+        { claimId: "AC_03", passedOpinion: true, passedSpecificity: false, reasoning: "vague" },
+        { claimId: "AC_04", passedOpinion: false, passedSpecificity: false, reasoning: "invalid" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
+
+    // AC_04 fails both → filtered. AC_01, AC_02, AC_03 pass at least one → kept.
+    expect(result.filteredClaims).toHaveLength(3);
+    expect(result.filteredClaims.map((c) => c.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+    expect(result.stats.filteredCount).toBe(1);
+  });
+
+  it("should filter claims with specificityScore below minimum", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01", specificityScore: 0.8 }),
+      createAtomicClaim({ id: "AC_02", specificityScore: 0.3, statement: "Vague claim" }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    // claimSpecificityMinimum defaults to 0.6
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
+
+    // AC_02 has specificityScore 0.3 < 0.6 → filtered even though LLM passed it
+    expect(result.filteredClaims).toHaveLength(1);
+    expect(result.filteredClaims[0].id).toBe("AC_01");
+    expect(result.stats.filteredCount).toBe(1);
   });
 });
 
@@ -2394,6 +2456,7 @@ describe("Stage 5: buildQualityGates", () => {
       totalClaims: 5,
       passedOpinion: 4,
       passedSpecificity: 3,
+      filteredCount: 2,
       overallPass: true,
     };
     const verdicts = [
@@ -2413,7 +2476,7 @@ describe("Stage 5: buildQualityGates", () => {
     expect(gates.gate1Stats!.total).toBe(5);
     expect(gates.gate1Stats!.passed).toBe(3);
     expect(gates.gate1Stats!.filtered).toBe(2);
-    expect(gates.gate1Stats!.centralKept).toBe(5);
+    expect(gates.gate1Stats!.centralKept).toBe(3);
   });
 
   it("should compute Gate4Stats confidence breakdown", () => {
@@ -2440,6 +2503,7 @@ describe("Stage 5: buildQualityGates", () => {
       totalClaims: 2,
       passedOpinion: 0,
       passedSpecificity: 0,
+      filteredCount: 2,
       overallPass: false,
     };
     const verdicts = [createCBClaimVerdict({ confidence: 80 })];
@@ -2527,7 +2591,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     const state: CBResearchState = {
       understanding: {
         atomicClaims: claims,
-        gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, overallPass: true },
+        gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, filteredCount: 0, overallPass: true },
       } as any,
       sources: [{ url: "https://example.com" }] as any,
       searchQueries: ["test query"],
@@ -2579,7 +2643,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
       }),
     ];
     const state: CBResearchState = {
-      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, overallPass: true } } as any,
+      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, filteredCount: 0, overallPass: true } } as any,
       sources: [{ url: "https://example.com" }] as any,
       searchQueries: ["q1"],
       contradictionIterationsUsed: 0,
@@ -2639,7 +2703,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
       }),
     ];
     const state: CBResearchState = {
-      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, overallPass: true } } as any,
+      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, filteredCount: 0, overallPass: true } } as any,
       sources: [{ url: "a" }] as any,
       searchQueries: ["q1"],
       contradictionIterationsUsed: 0,

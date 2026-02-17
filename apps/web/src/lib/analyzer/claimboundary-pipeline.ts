@@ -18,6 +18,7 @@
  */
 
 import type {
+  AnalysisWarning,
   AtomicClaim,
   ArticleVerdict7Point,
   CBClaimUnderstanding,
@@ -66,8 +67,19 @@ import { loadAndRenderSection } from "./prompt-loader";
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
 
+// Metrics integration
+import {
+  initializeMetrics,
+  startPhase,
+  endPhase,
+  recordGate1Stats,
+  recordGate4Stats,
+  recordOutputQuality,
+  finalizeMetrics,
+} from "./metrics-integration";
+
 // Search and retrieval
-import { searchWebWithProvider } from "@/lib/web-search";
+import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
 
 // ============================================================================
@@ -88,115 +100,156 @@ export async function runClaimBoundaryAnalysis(
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const onEvent = input.onEvent ?? (() => {});
 
-  // Initialize research state
-  const state: CBResearchState = {
-    originalInput: input.inputValue,
-    originalText: "",
-    inputType: input.inputType,
-    understanding: null,
-    evidenceItems: [],
-    sources: [],
-    searchQueries: [],
-    mainIterationsUsed: 0,
-    contradictionIterationsReserved: 2, // UCM default
-    contradictionIterationsUsed: 0,
-    contradictionSourcesFound: 0,
-    claimBoundaries: [],
-    llmCalls: 0,
-  };
+  // Initialize metrics collection for this job
+  if (input.jobId) {
+    initializeMetrics(input.jobId, "claimboundary");
+  }
 
-  // Stage 1: Extract Claims
-  onEvent("Extracting claims from input...", 10);
-  const understanding = await extractClaims(state);
-  state.understanding = understanding;
-
-  // Stage 2: Research
-  onEvent("Researching evidence for claims...", 30);
-  await researchEvidence(state);
-
-  // Stage 3: Cluster Boundaries
-  onEvent("Clustering evidence into boundaries...", 60);
-  const boundaries = await clusterBoundaries(state);
-  state.claimBoundaries = boundaries;
-
-  // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
-  const coverageMatrix = buildCoverageMatrix(
-    understanding.atomicClaims,
-    boundaries,
-    state.evidenceItems
-  );
-
-  // Stage 4: Verdict
-  onEvent("Generating verdicts...", 70);
-  const claimVerdicts = await generateVerdicts(
-    understanding.atomicClaims,
-    state.evidenceItems,
-    boundaries,
-    coverageMatrix
-  );
-
-  // Stage 5: Aggregate
-  onEvent("Aggregating final assessment...", 90);
-  const assessment = await aggregateAssessment(
-    claimVerdicts,
-    boundaries,
-    state.evidenceItems,
-    coverageMatrix,
-    state
-  );
-
-  onEvent("Analysis complete.", 100);
-
-  // Wrap assessment in resultJson structure (no AnalysisContext references)
-  const resultJson = {
-    _schemaVersion: "3.0.0-cb", // ClaimAssessmentBoundary pipeline schema
-    meta: {
-      schemaVersion: "3.0.0-cb",
-      generatedUtc: new Date().toISOString(),
-      pipeline: "claimboundary",
+  try {
+    // Initialize research state
+    const state: CBResearchState = {
+      originalInput: input.inputValue,
+      originalText: "",
       inputType: input.inputType,
-      detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
-      hasMultipleBoundaries: assessment.hasMultipleBoundaries,
-      boundaryCount: boundaries.length,
-      claimCount: understanding.atomicClaims.length,
-      llmCalls: state.llmCalls,
-      mainIterationsUsed: state.mainIterationsUsed,
-      contradictionIterationsUsed: state.contradictionIterationsUsed,
-      contradictionSourcesFound: state.contradictionSourcesFound,
-    },
-    // Core assessment data
-    truthPercentage: assessment.truthPercentage,
-    verdict: assessment.verdict,
-    confidence: assessment.confidence,
-    verdictNarrative: assessment.verdictNarrative,
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 2, // UCM default
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      onEvent: input.onEvent, // Thread progress callback through to research stage
+      warnings: [],
+    };
 
-    // ClaimBoundary-specific data (replaces analysisContexts)
-    claimBoundaries: assessment.claimBoundaries,
-    claimVerdicts: assessment.claimVerdicts,
-    coverageMatrix: assessment.coverageMatrix,
+    // Stage 1: Extract Claims
+    onEvent("Extracting claims from input...", 10);
+    startPhase("understand");
+    const understanding = await extractClaims(state);
+    state.understanding = understanding;
+    endPhase("understand");
 
-    // Supporting data
-    understanding: state.understanding,
-    evidenceItems: state.evidenceItems,
-    sources: state.sources.map((s: FetchedSource) => ({
-      id: s.id,
-      url: s.url,
-      title: s.title,
-      trackRecordScore: s.trackRecordScore,
-      category: s.category,
-      fetchSuccess: s.fetchSuccess,
-      searchQuery: s.searchQuery,
-    })),
-    searchQueries: state.searchQueries,
+    // Record Gate 1 stats after claim extraction
+    if (understanding.gate1Stats) {
+      recordGate1Stats({
+        totalClaims: understanding.gate1Stats.totalClaims,
+        passedClaims: understanding.gate1Stats.totalClaims - understanding.gate1Stats.filteredCount,
+        filteredReasons: {},
+        centralClaimsKept: understanding.atomicClaims.length,
+      });
+    }
 
-    // Quality gates
-    qualityGates: assessment.qualityGates,
-  };
+    // Stage 2: Research
+    onEvent("Researching evidence for claims...", 30);
+    startPhase("research");
+    await researchEvidence(state);
+    endPhase("research");
 
-  // TODO: Generate markdown report (Phase 3 UI work)
-  const reportMarkdown = "# ClaimBoundary Analysis Report\n\n(Report generation not yet implemented)";
+    // Stage 3: Cluster Boundaries
+    onEvent("Clustering evidence into boundaries...", 60);
+    startPhase("summary");
+    const boundaries = await clusterBoundaries(state);
+    state.claimBoundaries = boundaries;
+    endPhase("summary");
 
-  return { resultJson, reportMarkdown };
+    // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
+    const coverageMatrix = buildCoverageMatrix(
+      understanding.atomicClaims,
+      boundaries,
+      state.evidenceItems
+    );
+
+    // Stage 4: Verdict
+    onEvent("Generating verdicts...", 70);
+    startPhase("verdict");
+    const claimVerdicts = await generateVerdicts(
+      understanding.atomicClaims,
+      state.evidenceItems,
+      boundaries,
+      coverageMatrix
+    );
+    endPhase("verdict");
+
+    // Record Gate 4 stats after verdicts
+    recordGate4Stats(claimVerdicts);
+
+    // Stage 5: Aggregate
+    onEvent("Aggregating final assessment...", 90);
+    startPhase("report");
+    const assessment = await aggregateAssessment(
+      claimVerdicts,
+      boundaries,
+      state.evidenceItems,
+      coverageMatrix,
+      state
+    );
+    endPhase("report");
+
+    onEvent("Analysis complete.", 100);
+
+    // Wrap assessment in resultJson structure (no AnalysisContext references)
+    const resultJson = {
+      _schemaVersion: "3.0.0-cb", // ClaimAssessmentBoundary pipeline schema
+      meta: {
+        schemaVersion: "3.0.0-cb",
+        generatedUtc: new Date().toISOString(),
+        pipeline: "claimboundary",
+        inputType: input.inputType,
+        detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
+        hasMultipleBoundaries: assessment.hasMultipleBoundaries,
+        boundaryCount: boundaries.length,
+        claimCount: understanding.atomicClaims.length,
+        llmCalls: state.llmCalls,
+        mainIterationsUsed: state.mainIterationsUsed,
+        contradictionIterationsUsed: state.contradictionIterationsUsed,
+        contradictionSourcesFound: state.contradictionSourcesFound,
+      },
+      // Core assessment data
+      truthPercentage: assessment.truthPercentage,
+      verdict: assessment.verdict,
+      confidence: assessment.confidence,
+      verdictNarrative: assessment.verdictNarrative,
+
+      // ClaimBoundary-specific data (replaces analysisContexts)
+      claimBoundaries: assessment.claimBoundaries,
+      claimVerdicts: assessment.claimVerdicts,
+      coverageMatrix: assessment.coverageMatrix,
+
+      // Supporting data
+      understanding: state.understanding,
+      evidenceItems: state.evidenceItems,
+      sources: state.sources.map((s: FetchedSource) => ({
+        id: s.id,
+        url: s.url,
+        title: s.title,
+        trackRecordScore: s.trackRecordScore,
+        category: s.category,
+        fetchSuccess: s.fetchSuccess,
+        searchQuery: s.searchQuery,
+      })),
+      searchQueries: state.searchQueries,
+
+      // Quality gates
+      qualityGates: assessment.qualityGates,
+
+      // Analysis quality warnings (surfaced to UI via FallbackReport)
+      analysisWarnings: state.warnings,
+    };
+
+    // Record output quality metrics
+    recordOutputQuality(resultJson);
+
+    // TODO: Generate markdown report (Phase 3 UI work)
+    const reportMarkdown = "# ClaimBoundary Analysis Report\n\n(Report generation not yet implemented)";
+
+    return { resultJson, reportMarkdown };
+  } finally {
+    // Always finalize and persist metrics, even on failure
+    await finalizeMetrics();
+  }
 }
 
 // ============================================================================
@@ -318,12 +371,14 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   // Pass 1: Rapid claim scan (Haiku)
   // ------------------------------------------------------------------
+  state.onEvent?.("Extracting claims: Pass 1 (rapid scan)...", 12);
   const pass1 = await runPass1(state.originalInput, pipelineConfig, currentDate);
   state.llmCalls++;
 
   // ------------------------------------------------------------------
   // Preliminary search: search web for rough claims, fetch sources, extract evidence
   // ------------------------------------------------------------------
+  state.onEvent?.("Extracting claims: preliminary web search...", 15);
   const preliminaryEvidence = await runPreliminarySearch(
     pass1.roughClaims,
     searchConfig,
@@ -335,6 +390,7 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   // Pass 2: Evidence-grounded extraction (Sonnet)
   // ------------------------------------------------------------------
+  state.onEvent?.("Extracting claims: Pass 2 (evidence-grounded refinement)...", 22);
   const pass2 = await runPass2(
     state.originalInput,
     preliminaryEvidence,
@@ -344,21 +400,28 @@ export async function extractClaims(
   state.llmCalls++;
 
   // ------------------------------------------------------------------
-  // Centrality filter
+  // Centrality filter — effective max is f(input length)
   // ------------------------------------------------------------------
   const centralityThreshold = pipelineConfig.centralityThreshold ?? "medium";
-  const maxAtomicClaims = pipelineConfig.maxAtomicClaims ?? 15;
+  const maxCap = pipelineConfig.maxAtomicClaims ?? 5;
+  const base = pipelineConfig.maxAtomicClaimsBase ?? 3;
+  const charsPerClaim = pipelineConfig.atomicClaimsInputCharsPerClaim ?? 500;
+  const effectiveMax = Math.min(
+    maxCap,
+    base + Math.floor(state.originalInput.length / charsPerClaim),
+  );
 
   const filteredClaims = filterByCentrality(
     pass2.atomicClaims,
     centralityThreshold,
-    maxAtomicClaims,
+    effectiveMax,
   );
 
   // ------------------------------------------------------------------
-  // Gate 1: Claim validation (Haiku, batched)
+  // Gate 1: Claim validation (Haiku, batched) — actively filters claims
   // ------------------------------------------------------------------
-  const gate1Stats = await runGate1Validation(
+  state.onEvent?.("Extracting claims: Gate 1 validation...", 26);
+  const gate1Result = await runGate1Validation(
     filteredClaims,
     pipelineConfig,
     currentDate,
@@ -373,7 +436,7 @@ export async function extractClaims(
     impliedClaim: pass2.impliedClaim,
     backgroundDetails: pass2.backgroundDetails,
     articleThesis: pass2.articleThesis,
-    atomicClaims: filteredClaims,
+    atomicClaims: gate1Result.filteredClaims,
     distinctEvents: pass2.distinctEvents ?? [],
     riskTier: pass2.riskTier ?? "B",
     preliminaryEvidence: preliminaryEvidence.map((pe) => ({
@@ -381,13 +444,34 @@ export async function extractClaims(
       snippet: pe.statement,
       claimId: pe.relevantClaimIds?.[0] ?? "",
     })),
-    gate1Stats,
+    gate1Stats: gate1Result.stats,
   };
 }
 
 // ============================================================================
 // STAGE 1 HELPERS (exported for unit testing)
 // ============================================================================
+
+/**
+ * Map claimAtomicityLevel (1-5) to natural-language guidance for the LLM.
+ * Exported for unit testing.
+ */
+export function getAtomicityGuidance(level: number): string {
+  switch (level) {
+    case 1:
+      return "ATOMICITY: Very relaxed. Prefer broad, composite claims. Merge aggressively — combine related sub-assertions into single high-level claims. Aim for the fewest possible claims that still cover the input's core assertions.";
+    case 2:
+      return "ATOMICITY: Relaxed. Prefer broader claims when assertions are related. Merge claims that share the same evidence base or subject matter. Only split when assertions are truly independent.";
+    case 3:
+      return "ATOMICITY: Moderate. Balance granularity and breadth. Merge semantically overlapping assertions, but keep genuinely independent claims separate. Each claim should represent a distinct verifiable proposition.";
+    case 4:
+      return "ATOMICITY: Strict. Prefer granular claims. Split multi-part assertions into separate claims when each part can be independently verified. Only merge near-duplicates that would require identical evidence.";
+    case 5:
+      return "ATOMICITY: Very strict. Maximum granularity. Each distinct verifiable sub-assertion should be its own claim. Only merge true duplicates (same assertion, same scope). Compound claims must be decomposed.";
+    default:
+      return "ATOMICITY: Moderate. Balance granularity and breadth. Merge semantically overlapping assertions, but keep genuinely independent claims separate.";
+  }
+}
 
 /**
  * Pass 1: Rapid claim scan using Haiku.
@@ -632,6 +716,7 @@ export async function runPass2(
       null,
       2,
     ),
+    atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
   });
   if (!rendered) {
     throw new Error("Stage 1 Pass 2: Failed to load CLAIM_EXTRACTION_PASS2 prompt section");
@@ -725,10 +810,15 @@ export async function runGate1Validation(
   claims: AtomicClaim[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
-): Promise<CBClaimUnderstanding["gate1Stats"]> {
+): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[] }> {
   if (claims.length === 0) {
-    return { totalClaims: 0, passedOpinion: 0, passedSpecificity: 0, overallPass: true };
+    return {
+      stats: { totalClaims: 0, passedOpinion: 0, passedSpecificity: 0, filteredCount: 0, overallPass: true },
+      filteredClaims: [],
+    };
   }
+
+  const specificityMin = pipelineConfig.claimSpecificityMinimum ?? 0.6;
 
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_VALIDATION", {
     currentDate,
@@ -742,10 +832,14 @@ export async function runGate1Validation(
     // If prompt not available, pass all claims (non-blocking)
     console.warn("[Stage1] Gate 1: CLAIM_VALIDATION prompt not found — skipping validation");
     return {
-      totalClaims: claims.length,
-      passedOpinion: claims.length,
-      passedSpecificity: claims.length,
-      overallPass: true,
+      stats: {
+        totalClaims: claims.length,
+        passedOpinion: claims.length,
+        passedSpecificity: claims.length,
+        filteredCount: 0,
+        overallPass: true,
+      },
+      filteredClaims: claims,
     };
   }
 
@@ -780,10 +874,14 @@ export async function runGate1Validation(
     if (!parsed) {
       console.warn("[Stage1] Gate 1: LLM returned no structured output — passing all claims");
       return {
-        totalClaims: claims.length,
-        passedOpinion: claims.length,
-        passedSpecificity: claims.length,
-        overallPass: true,
+        stats: {
+          totalClaims: claims.length,
+          passedOpinion: claims.length,
+          passedSpecificity: claims.length,
+          filteredCount: 0,
+          overallPass: true,
+        },
+        filteredClaims: claims,
       };
     }
 
@@ -791,6 +889,33 @@ export async function runGate1Validation(
 
     const passedOpinion = validated.validatedClaims.filter((v) => v.passedOpinion).length;
     const passedSpecificity = validated.validatedClaims.filter((v) => v.passedSpecificity).length;
+
+    // Build set of claim IDs that fail BOTH opinion AND specificity
+    const failedBothIds = new Set(
+      validated.validatedClaims
+        .filter((v) => !v.passedOpinion && !v.passedSpecificity)
+        .map((v) => v.claimId),
+    );
+
+    // Filter claims: remove those that fail both LLM checks OR have specificityScore below minimum
+    const keptClaims = claims.filter((claim) => {
+      // Remove if LLM says both opinion and specificity fail
+      if (failedBothIds.has(claim.id)) return false;
+      // Remove if specificityScore is below UCM-configured minimum —
+      // but only when grounding was available (moderate/strong/weak).
+      // With groundingQuality "none" (no preliminary evidence), low specificity
+      // is expected and should not cause filtering — the claim may become
+      // specific once real evidence is found in Stage 2.
+      if (claim.groundingQuality !== "none" && claim.specificityScore < specificityMin) return false;
+      return true;
+    });
+
+    const filteredCount = claims.length - keptClaims.length;
+    if (filteredCount > 0) {
+      console.info(
+        `[Stage1] Gate 1: filtered ${filteredCount} of ${claims.length} claims (${failedBothIds.size} failed both checks, ${claims.length - keptClaims.length - failedBothIds.size} below specificity minimum ${specificityMin}; ungrounded claims exempt from specificity filter).`,
+      );
+    }
 
     // Check if retry threshold exceeded (v1: warn only, no retry)
     const gate1Threshold = pipelineConfig.gate1GroundingRetryThreshold ?? 0.5;
@@ -802,18 +927,26 @@ export async function runGate1Validation(
     }
 
     return {
-      totalClaims: claims.length,
-      passedOpinion,
-      passedSpecificity,
-      overallPass: passedOpinion > 0 && passedSpecificity > 0,
+      stats: {
+        totalClaims: claims.length,
+        passedOpinion,
+        passedSpecificity,
+        filteredCount,
+        overallPass: keptClaims.length > 0,
+      },
+      filteredClaims: keptClaims,
     };
   } catch (err) {
     console.warn("[Stage1] Gate 1 validation failed:", err);
     return {
-      totalClaims: claims.length,
-      passedOpinion: claims.length,
-      passedSpecificity: claims.length,
-      overallPass: true,
+      stats: {
+        totalClaims: claims.length,
+        passedOpinion: claims.length,
+        passedSpecificity: claims.length,
+        filteredCount: 0,
+        overallPass: true,
+      },
+      filteredClaims: claims,
     };
   }
 }
@@ -898,8 +1031,26 @@ export async function researchEvidence(
   const maxMainIterations = maxIterations - reservedContradiction;
   const sufficiencyThreshold = pipelineConfig.claimSufficiencyThreshold ?? 3;
   const maxSourcesPerIteration = searchConfig.maxSourcesPerIteration ?? 8;
+  const timeBudgetMs = pipelineConfig.researchTimeBudgetMs ?? 10 * 60 * 1000;
+  const zeroYieldBreakThreshold = pipelineConfig.researchZeroYieldBreakThreshold ?? 2;
+
+  const researchStartMs = Date.now();
+  let consecutiveZeroYield = 0;
 
   for (let iteration = 0; iteration < maxMainIterations; iteration++) {
+    // Time budget check
+    const elapsedMs = Date.now() - researchStartMs;
+    if (elapsedMs > timeBudgetMs) {
+      state.onEvent?.(`Research time budget reached (${Math.round(elapsedMs / 60000)} min), proceeding to analysis...`, 55);
+      state.warnings.push({
+        type: "budget_exceeded",
+        severity: "warning",
+        message: `Research time budget reached after ${Math.round(elapsedMs / 60000)} minutes — analysis may have incomplete evidence.`,
+        details: { elapsedMs, budgetMs: timeBudgetMs, iterationsCompleted: iteration },
+      });
+      break;
+    }
+
     // Find claim with fewest evidence items
     const targetClaim = findLeastResearchedClaim(claims, state.evidenceItems);
     if (!targetClaim) break;
@@ -907,7 +1058,14 @@ export async function researchEvidence(
     // Check if all claims are sufficient
     if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold)) break;
 
+    // Emit progress update for this iteration (30% → 55%)
+    if (state.onEvent) {
+      const progress = 30 + Math.round((iteration / maxMainIterations) * 25);
+      state.onEvent(`Researching evidence (iteration ${iteration + 1}/${maxMainIterations})...`, progress);
+    }
+
     // Run one research iteration for the target claim
+    const beforeCount = state.evidenceItems.length;
     await runResearchIteration(
       targetClaim,
       "main",
@@ -919,15 +1077,40 @@ export async function researchEvidence(
     );
 
     state.mainIterationsUsed++;
+
+    // Diminishing returns detection
+    const newItems = state.evidenceItems.length - beforeCount;
+    if (newItems === 0) {
+      consecutiveZeroYield++;
+      if (consecutiveZeroYield >= zeroYieldBreakThreshold) {
+        state.onEvent?.(`No new evidence found in ${consecutiveZeroYield} consecutive iterations, proceeding...`, 55);
+        break;
+      }
+    } else {
+      consecutiveZeroYield = 0;
+    }
   }
 
   // ------------------------------------------------------------------
   // Step 3: Contradiction search (reserved iterations)
   // ------------------------------------------------------------------
   for (let cIter = 0; cIter < reservedContradiction; cIter++) {
+    // Time budget check (shared with main loop)
+    const contradictionElapsedMs = Date.now() - researchStartMs;
+    if (contradictionElapsedMs > timeBudgetMs) {
+      state.onEvent?.(`Research time budget reached during contradiction search, proceeding...`, 58);
+      break;
+    }
+
     // Target: claim with fewest contradicting evidence items
     const targetClaim = findLeastContradictedClaim(claims, state.evidenceItems);
     if (!targetClaim) break;
+
+    // Emit progress update for contradiction search (55% → 58%)
+    if (state.onEvent) {
+      const progress = 55 + Math.round((cIter / reservedContradiction) * 3);
+      state.onEvent(`Searching for contradicting evidence (${cIter + 1}/${reservedContradiction})...`, progress);
+    }
 
     await runResearchIteration(
       targetClaim,
@@ -940,6 +1123,57 @@ export async function researchEvidence(
     );
 
     state.contradictionIterationsUsed++;
+  }
+
+  // ------------------------------------------------------------------
+  // Step 4: Batch SR-Eval for all collected sources (deferred from per-iteration)
+  // ------------------------------------------------------------------
+  const allSourceUrls = state.sources.map((s) => s.url);
+  if (allSourceUrls.length > 0) {
+    state.onEvent?.("Evaluating source reliability...", 58);
+    await prefetchSourceReliability(allSourceUrls);
+  }
+
+  // ------------------------------------------------------------------
+  // Step 5: Post-research quality warnings
+  // ------------------------------------------------------------------
+  const totalSearches = state.searchQueries.length;
+  const totalSources = state.sources.length;
+  const totalEvidence = state.evidenceItems.length;
+  const uniqueSourceUrls = new Set(state.sources.map((s) => s.url)).size;
+
+  if (totalSources === 0) {
+    state.warnings.push({
+      type: "no_successful_sources",
+      severity: "error",
+      message: "No sources were successfully fetched during research — verdict is based on zero evidence.",
+      details: { searchQueries: totalSearches },
+    });
+    if (totalSearches >= 3) {
+      state.warnings.push({
+        type: "source_acquisition_collapse",
+        severity: "error",
+        message: `${totalSearches} search queries were executed but yielded zero usable sources — search providers may be unavailable.`,
+        details: { searchQueries: totalSearches },
+      });
+    }
+  } else {
+    if (totalEvidence < 3) {
+      state.warnings.push({
+        type: "low_evidence_count",
+        severity: "warning",
+        message: `Only ${totalEvidence} evidence item(s) found from ${totalSources} source(s) — verdict reliability is reduced.`,
+        details: { evidenceCount: totalEvidence, sourceCount: totalSources },
+      });
+    }
+    if (uniqueSourceUrls < 2) {
+      state.warnings.push({
+        type: "low_source_count",
+        severity: "warning",
+        message: `Evidence comes from only ${uniqueSourceUrls} unique source(s) — limited triangulation possible.`,
+        details: { uniqueSources: uniqueSourceUrls },
+      });
+    }
   }
 }
 
@@ -1079,6 +1313,24 @@ export async function runResearchIteration(
         searchProvider: response.providersUsed.join(", "),
       });
 
+      // Capture search provider errors as warnings (429/quota exhaustion)
+      if (response.errors && response.errors.length > 0) {
+        for (const provErr of response.errors) {
+          // Deduplicate: only warn once per provider
+          const alreadyWarned = state.warnings.some(
+            (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
+          );
+          if (!alreadyWarned) {
+            state.warnings.push({
+              type: "search_provider_error",
+              severity: "error",
+              message: `Search provider "${provErr.provider}" failed: ${provErr.message}`,
+              details: { provider: provErr.provider, status: provErr.status },
+            });
+          }
+        }
+      }
+
       if (response.results.length === 0) continue;
 
       // 3. Relevance classification via LLM (Haiku, batched)
@@ -1101,9 +1353,9 @@ export async function runResearchIteration(
 
       if (fetchedSources.length === 0) continue;
 
-      // 5. Reliability prefetch (batch)
-      const urlsToCheck = fetchedSources.map((s) => s.url);
-      await prefetchSourceReliability(urlsToCheck);
+      // 5. Reliability prefetch — DEFERRED to batch after research loop (perf fix)
+      // SR data is only needed in Stage 4 (verdict) and Stage 5 (aggregation),
+      // not during research iteration decisions. Deferring saves 15-25s per new domain.
 
       // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
       const rawEvidence = await extractResearchEvidence(
@@ -1141,6 +1393,23 @@ export async function runResearchIteration(
       }
     } catch (err) {
       console.warn(`[Stage2] Research iteration failed for query "${queryObj.query}":`, err);
+
+      // Surface LLM provider errors as warnings (once per error type)
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isLlmError = errMsg.includes("429") || errMsg.includes("rate") ||
+        errMsg.includes("quota") || errMsg.includes("credit") ||
+        errMsg.includes("overloaded") || errMsg.includes("503");
+      if (isLlmError) {
+        const alreadyWarned = state.warnings.some((w) => w.type === "llm_provider_error");
+        if (!alreadyWarned) {
+          state.warnings.push({
+            type: "llm_provider_error",
+            severity: "error",
+            message: `LLM provider error during research: ${errMsg.slice(0, 200)}`,
+            details: { query: queryObj.query },
+          });
+        }
+      }
     }
   }
 }
@@ -1271,38 +1540,48 @@ export async function fetchSources(
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
 
-  for (const source of relevantSources) {
-    // Skip already-fetched URLs
-    if (state.sources.some((s) => s.url === source.url)) continue;
+  // Filter out already-fetched URLs
+  const toFetch = relevantSources.filter(
+    (source) => !state.sources.some((s) => s.url === source.url),
+  );
 
-    try {
-      const content = await extractTextFromUrl(source.url, {
-        timeoutMs: 12000,
-        maxLength: 15000,
-      });
+  // Parallel fetch with concurrency limit of 3
+  const FETCH_CONCURRENCY = 3;
+  for (let i = 0; i < toFetch.length; i += FETCH_CONCURRENCY) {
+    const batch = toFetch.slice(i, i + FETCH_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((source) =>
+        extractTextFromUrl(source.url, {
+          timeoutMs: 12000,
+          maxLength: 15000,
+        })
+          .then((content) => ({ source, content, ok: true as const }))
+          .catch(() => ({ source, content: null, ok: false as const })),
+      ),
+    );
 
-      if (content.text.length < 100) continue; // Too short to be useful
+    for (const result of results) {
+      if (!result.ok || !result.content) continue;
+      if (result.content.text.length < 100) continue; // Too short to be useful
 
       const fetchedSource: FetchedSource = {
         id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
-        url: source.url,
-        title: content.title || source.url,
-        trackRecordScore: getTrackRecordScore(source.url),
-        fullText: content.text,
+        url: result.source.url,
+        title: result.content.title || result.source.url,
+        trackRecordScore: getTrackRecordScore(result.source.url),
+        fullText: result.content.text,
         fetchedAt: new Date().toISOString(),
-        category: content.contentType || "text/html",
+        category: result.content.contentType || "text/html",
         fetchSuccess: true,
         searchQuery,
       };
       state.sources.push(fetchedSource);
 
       fetched.push({
-        url: source.url,
-        title: content.title || source.url,
-        text: content.text.slice(0, 8000), // Cap for prompt size
+        url: result.source.url,
+        title: result.content.title || result.source.url,
+        text: result.content.text.slice(0, 8000), // Cap for prompt size
       });
-    } catch {
-      // Non-fatal: skip sources that fail to fetch
     }
   }
 
@@ -2499,9 +2778,9 @@ export function buildQualityGates(
   const gate1Stats: Gate1Stats | undefined = cbGate1Stats
     ? {
         total: cbGate1Stats.totalClaims,
-        passed: cbGate1Stats.passedSpecificity,
-        filtered: cbGate1Stats.totalClaims - cbGate1Stats.passedSpecificity,
-        centralKept: cbGate1Stats.totalClaims, // CB pipeline keeps all central claims
+        passed: cbGate1Stats.totalClaims - cbGate1Stats.filteredCount,
+        filtered: cbGate1Stats.filteredCount,
+        centralKept: cbGate1Stats.totalClaims - cbGate1Stats.filteredCount,
       }
     : undefined;
 

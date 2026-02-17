@@ -7,6 +7,7 @@ variables:
   - currentDate
   - analysisInput
   - originalClaim
+  - atomicityGuidance
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_EXTRACTION_PASS2"
@@ -33,7 +34,7 @@ You are an analytical claim extraction engine. Your task is to perform a rapid s
 Given the input text below, extract:
 1. **impliedClaim**: The overall thesis or central assertion of the input (one sentence).
 2. **backgroundDetails**: Broader contextual framing (informational, not analytical).
-3. **roughClaims**: 3–8 rough verifiable claim candidates. These are deliberately imprecise — just enough to drive a preliminary evidence search. Each rough claim should be a factual assertion that could be verified or refuted.
+3. **roughClaims**: 3–5 rough verifiable claim candidates. These are deliberately imprecise — just enough to drive a preliminary evidence search. Each rough claim should be a factual assertion that could be verified or refuted.
 
 ### Rules
 
@@ -47,7 +48,7 @@ Given the input text below, extract:
 ### Input
 
 ```
-{{analysisInput}}
+${analysisInput}
 ```
 
 ### Output Schema
@@ -98,17 +99,24 @@ For each claim, assess how well the preliminary evidence informed its precision 
 - Assess `centrality` honestly: "high" = directly supports/contradicts the thesis; "medium" = important supporting evidence; "low" = peripheral.
 - Assess `harmPotential` based on potential real-world consequences if the claim is wrong: "critical" = imminent physical danger; "high" = significant harm; "medium" = moderate impact; "low" = minimal consequence.
 - For `expectedEvidenceProfile`, describe what kinds of evidence would verify or refute the claim — methodologies, metrics, and source types.
+- **Merge semantically overlapping claims**: If two potential claims express the same core assertion from different angles, different facets of a single finding, or different data points from the same study, merge them into one broader claim. Do not produce separate claims for the same phenomenon.
+- **Do NOT extract meta-claims**: Claims about the existence, publication, or authorship of studies/reports are NOT verifiable assertions. Extract the study's FINDINGS as the claim, not its existence. Bad: "Study X examines topic Y." Good: "Y was found to be Z according to study X."
+- **Target 3–6 atomic claims**: Only exceed 6 if the input genuinely contains more than 6 independently verifiable, non-overlapping factual assertions. Most inputs yield 3–5 distinct claims. Fewer precise claims are better than many overlapping ones.
+- **Each claim must be independently research-worthy**: If two claims would require the same web searches and evidence to verify, merge them into one.
+- **Cover ALL distinct aspects of the input**: If the input references or implies multiple distinct events, proceedings, rulings, or phenomena, ensure your claims collectively span ALL major distinct aspects — not just the most prominent or well-known one. Check your `distinctEvents` output: every major distinct event should be represented by at least one claim.
+
+**${atomicityGuidance}**
 
 ### Input
 
 **Original text:**
 ```
-{{analysisInput}}
+${analysisInput}
 ```
 
 **Preliminary evidence (from initial search):**
 ```
-{{preliminaryEvidence}}
+${preliminaryEvidence}
 ```
 
 ### Output Schema
@@ -181,7 +189,7 @@ For each claim, determine:
 
 **Atomic Claims:**
 ```
-{{atomicClaims}}
+${atomicClaims}
 ```
 
 ### Output Schema
@@ -223,17 +231,17 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
 
 **Claim:**
 ```
-{{claim}}
+${claim}
 ```
 
 **Expected Evidence Profile:**
 ```
-{{expectedEvidenceProfile}}
+${expectedEvidenceProfile}
 ```
 
 **Iteration Type:**
 ```
-{{iterationType}}
+${iterationType}
 ```
 (One of: "main", "contradiction")
 
@@ -282,12 +290,12 @@ A result is **not relevant** if:
 
 **Claim:**
 ```
-{{claim}}
+${claim}
 ```
 
 **Search Results:**
 ```
-{{searchResults}}
+${searchResults}
 ```
 
 ### Output Schema
@@ -341,17 +349,17 @@ Given a claim and source content, extract evidence items with full metadata incl
 
 **Claim:**
 ```
-{{claim}}
+${claim}
 ```
 
 **Source Content:**
 ```
-{{sourceContent}}
+${sourceContent}
 ```
 
 **Source URL:**
 ```
-{{sourceUrl}}
+${sourceUrl}
 ```
 
 ### Output Schema
@@ -450,17 +458,17 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 
 **EvidenceScopes (deduplicated):**
 ```
-{{evidenceScopes}}
+${evidenceScopes}
 ```
 
 **Evidence items with scope assignments and claim directions:**
 ```
-{{evidenceItems}}
+${evidenceItems}
 ```
 
 **Claim list (for context):**
 ```
-{{atomicClaims}}
+${atomicClaims}
 ```
 
 ### Output Schema
@@ -525,22 +533,22 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 
 **Atomic Claims:**
 ```
-{{atomicClaims}}
+${atomicClaims}
 ```
 
 **Evidence Items (grouped by ClaimBoundary):**
 ```
-{{evidenceByBoundary}}
+${evidenceByBoundary}
 ```
 
 **ClaimBoundaries:**
 ```
-{{claimBoundaries}}
+${claimBoundaries}
 ```
 
 **Coverage Matrix (claims x boundaries):**
 ```
-{{coverageMatrix}}
+${coverageMatrix}
 ```
 
 ### Output Schema
@@ -602,17 +610,17 @@ Be specific. Cite evidence items by ID where relevant. If evidence is absent, ex
 
 **Claim Verdicts (with per-boundary breakdown):**
 ```
-{{claimVerdicts}}
+${claimVerdicts}
 ```
 
 **Evidence Items:**
 ```
-{{evidenceItems}}
+${evidenceItems}
 ```
 
 **ClaimBoundaries:**
 ```
-{{claimBoundaries}}
+${claimBoundaries}
 ```
 
 ### Output Schema
@@ -668,17 +676,17 @@ Produce a final verdict that:
 
 **Advocate Verdicts:**
 ```
-{{advocateVerdicts}}
+${advocateVerdicts}
 ```
 
 **Challenges:**
 ```
-{{challenges}}
+${challenges}
 ```
 
 **Self-Consistency Results:**
 ```
-{{consistencyResults}}
+${consistencyResults}
 ```
 
 ### Output Schema
@@ -730,12 +738,12 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
 
 **Verdicts:**
 ```
-{{verdicts}}
+${verdicts}
 ```
 
 **Evidence Pool:**
 ```
-{{evidencePool}}
+${evidencePool}
 ```
 
 ### Output Schema
@@ -783,12 +791,12 @@ This is a lightweight directional sanity check. Flag mismatches but do NOT overr
 
 **Verdicts:**
 ```
-{{verdicts}}
+${verdicts}
 ```
 
 **Evidence Pool (with directions):**
 ```
-{{evidencePool}}
+${evidencePool}
 ```
 
 ### Output Schema
@@ -834,22 +842,22 @@ Given the final claim verdicts, weighted aggregation results, and boundary infor
 
 **Claim Verdicts (final):**
 ```
-{{claimVerdicts}}
+${claimVerdicts}
 ```
 
 **Overall Aggregation:**
 ```
-{{aggregation}}
+${aggregation}
 ```
 
 **ClaimBoundaries:**
 ```
-{{claimBoundaries}}
+${claimBoundaries}
 ```
 
 **Evidence Summary:**
 ```
-{{evidenceSummary}}
+${evidenceSummary}
 ```
 
 ### Output Schema
@@ -891,7 +899,7 @@ Given a list of 4 or more atomic claims with their verdicts, group them into log
 
 **Atomic Claims with Verdicts:**
 ```
-{{claimsWithVerdicts}}
+${claimsWithVerdicts}
 ```
 
 ### Output Schema

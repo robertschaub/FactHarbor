@@ -318,8 +318,14 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum centrality to keep a claim in ClaimBoundary pipeline (default: medium)"),
   claimSpecificityMinimum: z.number().min(0).max(1).optional()
     .describe("Minimum specificity score for Gate 1 pass in ClaimBoundary pipeline (default: 0.6)"),
-  maxAtomicClaims: z.number().int().min(5).max(30).optional()
-    .describe("Maximum claims after centrality filter in ClaimBoundary pipeline (default: 15)"),
+  maxAtomicClaims: z.number().int().min(2).max(30).optional()
+    .describe("Absolute maximum claims after centrality filter (default: 5). Effective max is f(input length) capped by this value."),
+  maxAtomicClaimsBase: z.number().int().min(1).max(10).optional()
+    .describe("Minimum atomic claims for any input length (default: 3). Formula: min(maxAtomicClaims, base + floor(inputChars / charsPerClaim))"),
+  atomicClaimsInputCharsPerClaim: z.number().int().min(100).max(5000).optional()
+    .describe("Input characters per additional atomic claim above base (default: 500)"),
+  claimAtomicityLevel: z.number().int().min(1).max(5).optional()
+    .describe("Claim granularity: 1=very relaxed (broad), 3=moderate (default), 5=very strict (granular)"),
   preliminarySearchQueriesPerClaim: z.number().int().min(1).max(5).optional()
     .describe("Search queries per claim in Stage 1 preliminary search (default: 2)"),
   preliminaryMaxSources: z.number().int().min(1).max(10).optional()
@@ -332,6 +338,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Min evidence items per claim before considering it sufficient (default: 3)"),
   contradictionReservedIterations: z.number().int().min(0).max(5).optional()
     .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
+  researchTimeBudgetMs: z.number().int().min(60000).max(3600000).optional()
+    .describe("Wall-clock time budget for Stage 2 research loop in ms (default: 600000 = 10 min)"),
+  researchZeroYieldBreakThreshold: z.number().int().min(1).max(5).optional()
+    .describe("Consecutive zero-yield iterations before breaking research loop (default: 2)"),
 
   // Stage 3: Clustering
   maxClaimBoundaries: z.number().int().min(2).max(10).optional()
@@ -513,7 +523,16 @@ export const PipelineConfigSchema = z.object({
     data.claimSpecificityMinimum = 0.6;
   }
   if (data.maxAtomicClaims === undefined) {
-    data.maxAtomicClaims = 15;
+    data.maxAtomicClaims = 5;
+  }
+  if (data.maxAtomicClaimsBase === undefined) {
+    data.maxAtomicClaimsBase = 3;
+  }
+  if (data.atomicClaimsInputCharsPerClaim === undefined) {
+    data.atomicClaimsInputCharsPerClaim = 500;
+  }
+  if (data.claimAtomicityLevel === undefined) {
+    data.claimAtomicityLevel = 3;
   }
   if (data.preliminarySearchQueriesPerClaim === undefined) {
     data.preliminarySearchQueriesPerClaim = 2;
@@ -530,7 +549,13 @@ export const PipelineConfigSchema = z.object({
     data.claimSufficiencyThreshold = 3;
   }
   if (data.contradictionReservedIterations === undefined) {
-    data.contradictionReservedIterations = 2;
+    data.contradictionReservedIterations = 1;
+  }
+  if (data.researchTimeBudgetMs === undefined) {
+    data.researchTimeBudgetMs = 10 * 60 * 1000; // 10 minutes
+  }
+  if (data.researchZeroYieldBreakThreshold === undefined) {
+    data.researchZeroYieldBreakThreshold = 2;
   }
 
   // ClaimBoundary Stage 3 defaults

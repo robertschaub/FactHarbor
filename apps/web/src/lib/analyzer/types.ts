@@ -906,6 +906,7 @@ export interface CBClaimUnderstanding {
     totalClaims: number;
     passedOpinion: number;
     passedSpecificity: number;
+    filteredCount: number;
     overallPass: boolean;
   };
 }
@@ -931,6 +932,10 @@ export interface CBResearchState {
   contradictionSourcesFound: number;
   claimBoundaries: ClaimAssessmentBoundary[]; // Populated in Stage 3
   llmCalls: number;
+  // Progress callback (for Stage 2 incremental updates)
+  onEvent?: (message: string, progress: number) => void;
+  // Quality warnings accumulated during pipeline execution
+  warnings: AnalysisWarning[];
 }
 
 /**
