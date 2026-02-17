@@ -30,6 +30,7 @@ import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
+import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
@@ -305,7 +306,7 @@ export default function JobPage() {
 
   const result = job?.resultJson;
   const schemaVersion = result?.meta?.schemaVersion || "";
-  const hasV22Data = schemaVersion.startsWith("2.");
+  const hasV22Data = schemaVersion.startsWith("2.") || schemaVersion.startsWith("3.");
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
@@ -352,20 +353,20 @@ export default function JobPage() {
   const claimBoundaries = result?.claimBoundaries || [];
 
   // Pipeline: preserve what the job requested, but prefer the pipeline that actually executed.
-  // This avoids schema/UI mismatches when monolithic pipelines fall back to orchestrated.
+  // This avoids schema/UI mismatches when monolithic pipelines fall back to claimboundary.
   const requestedPipelineVariant =
     job?.pipelineVariant ||
     result?.meta?.pipelineVariantRequested ||
     result?.meta?.pipelineVariant ||
-    "orchestrated";
+    "claimboundary";
   const pipelineFallback = !!result?.meta?.pipelineFallback;
   const fallbackReason: string | undefined = result?.meta?.fallbackReason || undefined;
   const executedPipelineVariant = pipelineFallback
-    ? "orchestrated"
+    ? "claimboundary"
     : (result?.meta?.pipelineVariant || requestedPipelineVariant);
   const pipelineVariant = executedPipelineVariant;
 
-  // v2.8.2: For dynamic pipeline, use citations array; for orchestrated, use sources array
+  // v2.8.2: For dynamic pipeline, use citations array; for claimboundary, use sources array
   // Dynamic pipeline stores fetched sources as citations with different structure
   const sources = pipelineVariant === "monolithic_dynamic"
     ? (result?.citations || []).map((c: any) => ({
@@ -524,6 +525,7 @@ export default function JobPage() {
 
   return (
     <div className={styles.pageContainer}>
+      <SystemHealthBanner />
       <h1 className={styles.pageTitle}>FactHarbor Analysis</h1>
 
       {err && (
@@ -539,9 +541,9 @@ export default function JobPage() {
             <Badge
               bg={pipelineVariant === "monolithic_dynamic" ? "#fce4ec" : "#e3f2fd"}
               color={pipelineVariant === "monolithic_dynamic" ? "#c2185b" : "#1565c0"}
-              title={`Pipeline: ${pipelineVariant || "orchestrated"}`}
+              title={`Pipeline: ${pipelineVariant || "claimboundary"}`}
             >
-              {pipelineVariant === "monolithic_dynamic" ? "⚗️ Dynamic" : "🎯 Orchestrated"}
+              {pipelineVariant === "monolithic_dynamic" ? "⚗️ Dynamic" : "🎯 ClaimBoundary"}
             </Badge>
           </div>
           <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
@@ -681,7 +683,36 @@ export default function JobPage() {
 
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
-              {hasMultipleContexts && contextAnswers.length > 0 ? (
+              {/* CB Pipeline: dedicated verdict banner using top-level fields */}
+              {isCBSchema && typeof result?.truthPercentage === "number" && (() => {
+                const cbVerdictLabel = percentageToArticleVerdict(result.truthPercentage, result.confidence ?? 0);
+                const cbColor = ARTICLE_VERDICT_COLORS[cbVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
+                return (
+                  <div className={styles.articleBanner} style={{ borderColor: cbColor.border }}>
+                    <div className={styles.articleBannerContent}>
+                      <div className={styles.articleVerdictHeader}>
+                        <span className={styles.articleVerdictLabel}>VERDICT</span>
+                      </div>
+                      <div className={styles.articleVerdictRow}>
+                        <span className={styles.articleVerdictBadge} style={{ backgroundColor: cbColor.bg, color: cbColor.text }}>
+                          {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
+                        </span>
+                        <span className={styles.articlePercentage}>
+                          {result.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({result.confidence ?? 0}% confidence)</span>
+                        </span>
+                      </div>
+                      {result.verdictNarrative?.headline && (
+                        <div style={{ marginTop: 8, fontSize: 14, color: "#555", lineHeight: 1.5 }}>
+                          {result.verdictNarrative.headline}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Legacy pipelines: use ArticleVerdictBanner */}
+              {!isCBSchema && (hasMultipleContexts && contextAnswers.length > 0 ? (
                 <MultiContextStatementBanner
                   verdictSummary={verdictSummary}
                   contexts={contexts}
@@ -701,7 +732,7 @@ export default function JobPage() {
                     fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
                   />
                 )
-              )}
+              ))}
 
               <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} />
 
@@ -724,7 +755,10 @@ export default function JobPage() {
                   <CoverageMatrixDisplay
                     matrix={result.coverageMatrix}
                     claimLabels={claimVerdicts.map((v: any) => {
-                      const text = v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
+                      // CB pipeline: verdict has claimId linking to understanding.atomicClaims
+                      const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
+                      const matched = atomicClaims.find((ac: any) => ac.id === v.claimId);
+                      const text = matched?.statement || v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
                       return text.length > 50 ? text.slice(0, 47) + "..." : text;
                     })}
                     boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
@@ -737,14 +771,22 @@ export default function JobPage() {
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
                   <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
                   {/* CB pipeline: flat list with inline BoundaryFindings */}
-                  {claimVerdicts.map((cv: any) => (
-                    <ClaimCard
-                      key={cv.claimId}
-                      claim={cv}
-                      claimBoundaries={claimBoundaries}
-                      totalBoundaryCount={claimBoundaries.length}
-                    />
-                  ))}
+                  {claimVerdicts.map((cv: any) => {
+                    // CB pipeline: inject claimText from understanding.atomicClaims
+                    const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
+                    const matched = atomicClaims.find((ac: any) => ac.id === cv.claimId);
+                    const enrichedCv = matched?.statement && !cv.claimText
+                      ? { ...cv, claimText: matched.statement }
+                      : cv;
+                    return (
+                      <ClaimCard
+                        key={cv.claimId}
+                        claim={enrichedCv}
+                        claimBoundaries={claimBoundaries}
+                        totalBoundaryCount={claimBoundaries.length}
+                      />
+                    );
+                  })}
                   {tangentialSubClaims.length > 0 && (
                     <details className={styles.tangentialDetails}>
                       <summary className={styles.tangentialSummary}>
