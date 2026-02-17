@@ -30,7 +30,6 @@ import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
-import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
@@ -525,7 +524,6 @@ export default function JobPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <SystemHealthBanner />
       <h1 className={styles.pageTitle}>FactHarbor Analysis</h1>
 
       {err && (

@@ -11,7 +11,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
-import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 type JobSummary = {
   jobId: string;
@@ -138,8 +137,6 @@ export default function JobsPage() {
 
   return (
     <div className={styles.container}>
-      <SystemHealthBanner />
-
       <div className={styles.header}>
         <h1 className={styles.headerTitle}>FactHarbor Jobs</h1>
         <Link href="/analyze" className={styles.newAnalysisLink}>

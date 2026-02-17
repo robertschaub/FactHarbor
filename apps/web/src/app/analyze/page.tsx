@@ -16,7 +16,6 @@ import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
 import { readDefaultPipelineVariant } from "@/lib/pipeline-variant";
-import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -139,8 +138,6 @@ export default function AnalyzePage() {
       <p className={styles.subtitle}>
         Enter a claim, question, article text, or URL to analyze
       </p>
-
-      <SystemHealthBanner />
 
       <form onSubmit={handleSubmit}>
         <div className={styles.inputContainer}>
