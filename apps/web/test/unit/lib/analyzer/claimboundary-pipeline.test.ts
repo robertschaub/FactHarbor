@@ -37,6 +37,9 @@ import {
   boundaryJaccardSimilarity,
   mergeClosestBoundaries,
   clusterBoundaries,
+  buildVerdictStageConfig,
+  createProductionLLMCall,
+  generateVerdicts,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -619,6 +622,7 @@ vi.mock("@/lib/analyzer/prompt-loader", () => ({
 vi.mock("@/lib/config-loader", () => ({
   loadPipelineConfig: vi.fn(() => ({ config: {} })),
   loadSearchConfig: vi.fn(() => ({ config: {} })),
+  loadCalcConfig: vi.fn(() => ({ config: { mixedConfidenceThreshold: 40 } })),
 }));
 
 vi.mock("@/lib/web-search", () => ({
@@ -1896,5 +1900,254 @@ describe("Stage 3: clusterBoundaries (integration)", () => {
     expect(result.length).toBeLessThanOrEqual(2);
     // All evidence should still be assigned
     expect(state.evidenceItems.every((e: any) => e.claimBoundaryId)).toBe(true);
+  });
+});
+
+// ============================================================================
+// Stage 4: Production LLM Wiring Tests
+// ============================================================================
+
+describe("Stage 4: buildVerdictStageConfig", () => {
+  it("should map UCM pipeline + calc configs to VerdictStageConfig", () => {
+    const pipelineConfig = {
+      selfConsistencyMode: "full",
+      selfConsistencyTemperature: 0.25,
+    } as any;
+    const calcConfig = {
+      selfConsistencySpreadThresholds: { stable: 4, moderate: 10, unstable: 18 },
+      mixedConfidenceThreshold: 35,
+    } as any;
+
+    const result = buildVerdictStageConfig(pipelineConfig, calcConfig);
+
+    expect(result.selfConsistencyMode).toBe("enabled");
+    expect(result.selfConsistencyTemperature).toBe(0.25);
+    expect(result.stableThreshold).toBe(4);
+    expect(result.moderateThreshold).toBe(10);
+    expect(result.unstableThreshold).toBe(18);
+    expect(result.mixedConfidenceThreshold).toBe(35);
+    expect(result.spreadMultipliers).toBeDefined();
+    expect(result.spreadMultipliers.highlyStable).toBe(1.0);
+  });
+
+  it("should use defaults when UCM fields are missing", () => {
+    const result = buildVerdictStageConfig({} as any, {} as any);
+
+    expect(result.selfConsistencyMode).toBe("disabled");
+    expect(result.selfConsistencyTemperature).toBe(0.3);
+    expect(result.stableThreshold).toBe(5);
+    expect(result.moderateThreshold).toBe(12);
+    expect(result.unstableThreshold).toBe(20);
+    expect(result.mixedConfidenceThreshold).toBe(40);
+  });
+
+  it("should set selfConsistencyMode to disabled when UCM says disabled", () => {
+    const pipelineConfig = { selfConsistencyMode: "disabled" } as any;
+    const result = buildVerdictStageConfig(pipelineConfig, {} as any);
+    expect(result.selfConsistencyMode).toBe("disabled");
+  });
+});
+
+describe("Stage 4: createProductionLLMCall", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should load prompt section and call AI SDK with correct parameters", async () => {
+    mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: '{"claimVerdicts": []}' } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall(
+      "VERDICT_ADVOCATE",
+      { claims: [], evidence: [] },
+      { tier: "sonnet", temperature: 0.0 },
+    );
+
+    expect(mockLoadSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "VERDICT_ADVOCATE",
+      expect.objectContaining({ claims: [], evidence: [], currentDate: expect.any(String) }),
+    );
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({ temperature: 0.0 }),
+    );
+    expect(result).toEqual({ claimVerdicts: [] });
+  });
+
+  it("should select haiku model when tier is haiku", async () => {
+    mockLoadSection.mockResolvedValue({ content: "validation prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: '{"valid": true}' } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    await llmCall("VERDICT_GROUNDING_VALIDATION", {}, { tier: "haiku" });
+
+    // getModelForTask should have been called with "understand" (Haiku tier mapping)
+    const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
+    expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("understand", undefined, expect.any(Object));
+  });
+
+  it("should throw when prompt section is not found", async () => {
+    mockLoadSection.mockResolvedValue(null as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(
+      llmCall("NONEXISTENT_PROMPT", {}),
+    ).rejects.toThrow('Failed to load prompt section "NONEXISTENT_PROMPT"');
+  });
+
+  it("should throw when LLM returns empty response", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(
+      llmCall("VERDICT_ADVOCATE", {}),
+    ).rejects.toThrow("LLM returned empty response");
+  });
+
+  it("should extract JSON from markdown code blocks", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({
+      text: 'Here is the result:\n```json\n{"verdicts": [1, 2, 3]}\n```',
+    } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {});
+    expect(result).toEqual({ verdicts: [1, 2, 3] });
+  });
+
+  it("should throw when response is not valid JSON", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "This is not JSON at all" } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(
+      llmCall("VERDICT_ADVOCATE", {}),
+    ).rejects.toThrow("Failed to parse LLM response as JSON");
+  });
+});
+
+describe("Stage 4: generateVerdicts (wiring)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Mock verdict data that the verdict-stage module expects (array of raw verdicts)
+  const rawVerdictArray = [{
+    claimId: "AC_01",
+    truthPercentage: 72,
+    verdict: "MOSTLY-TRUE",
+    confidence: 78,
+    reasoning: "Test verdict",
+    harmPotential: "medium",
+    isContested: false,
+    supportingEvidenceIds: ["EV_01"],
+    contradictingEvidenceIds: [],
+    boundaryFindings: [],
+  }];
+
+  // The challenge document format
+  const challengeDoc = {
+    challenges: [{
+      claimId: "AC_01",
+      challengePoints: [],
+    }],
+  };
+
+  it("should load UCM configs and build VerdictStageConfig", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { selfConsistencyMode: "disabled", selfConsistencyTemperature: 0.3 } as any,
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        selfConsistencySpreadThresholds: { stable: 5, moderate: 12, unstable: 20 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    // Mock LLM call that returns the expected format for each verdict-stage step
+    // Step 1 (advocate): array of raw verdicts
+    // Step 3 (challenge): challenge document
+    // Step 4 (reconciliation): array of raw verdicts (reconciled)
+    // Step 5 (validation): validation results (grounding + direction)
+    let callCount = 0;
+    const mockLLMCall = vi.fn().mockImplementation((promptKey: string) => {
+      callCount++;
+      if (promptKey === "VERDICT_ADVOCATE") return Promise.resolve(rawVerdictArray);
+      if (promptKey === "VERDICT_CHALLENGER") return Promise.resolve(challengeDoc);
+      if (promptKey === "VERDICT_RECONCILIATION") return Promise.resolve(rawVerdictArray);
+      if (promptKey === "VERDICT_GROUNDING_VALIDATION") return Promise.resolve([{ claimId: "AC_01", groundingValid: true, issues: [] }]);
+      if (promptKey === "VERDICT_DIRECTION_VALIDATION") return Promise.resolve([{ claimId: "AC_01", directionValid: true, issues: [] }]);
+      return Promise.resolve({});
+    });
+
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem()];
+    const boundaries: ClaimBoundary[] = [{
+      id: "CB_01", name: "Test", shortName: "T", description: "Test",
+      constituentScopes: [], internalCoherence: 0.9, evidenceCount: 1,
+    }];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const result = await generateVerdicts(claims, evidence, boundaries, coverageMatrix, mockLLMCall);
+
+    expect(loadPipelineConfig).toHaveBeenCalledWith("default");
+    expect(loadCalcConfig).toHaveBeenCalledWith("default");
+    expect(mockLLMCall).toHaveBeenCalled();
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("should create production LLM call when none injected", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { selfConsistencyMode: "disabled" } as any,
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+    } as any);
+
+    // Production path: mockLoadSection + mockGenerateText simulate LLM responses
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+
+    // Each generateText call in production returns JSON text parsed by the wrapper
+    let textCallCount = 0;
+    mockGenerateText.mockImplementation(() => {
+      textCallCount++;
+      // The production LLM wrapper returns text that gets JSON.parsed
+      // Step 1 + Step 4 (reconciliation): array of verdict objects
+      // Step 3 (challenge): challenge document
+      // Step 5 (validation): validation results
+      if (textCallCount <= 1) {
+        return Promise.resolve({ text: JSON.stringify(rawVerdictArray) } as any);
+      }
+      if (textCallCount === 2) {
+        return Promise.resolve({ text: JSON.stringify(challengeDoc) } as any);
+      }
+      if (textCallCount === 3) {
+        return Promise.resolve({ text: JSON.stringify(rawVerdictArray) } as any);
+      }
+      // Validation calls — verdict-stage expects arrays
+      return Promise.resolve({
+        text: JSON.stringify([{ claimId: "AC_01", groundingValid: true, directionValid: true, issues: [] }]),
+      } as any);
+    });
+
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem()];
+    const boundaries: ClaimBoundary[] = [{
+      id: "CB_01", name: "Test", shortName: "T", description: "Test",
+      constituentScopes: [], internalCoherence: 0.9, evidenceCount: 1,
+    }];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const result = await generateVerdicts(claims, evidence, boundaries, coverageMatrix);
+
+    expect(mockLoadSection).toHaveBeenCalled();
+    expect(mockGenerateText).toHaveBeenCalled();
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
   });
 });

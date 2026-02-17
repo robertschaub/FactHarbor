@@ -40,7 +40,12 @@ import { prefetchSourceReliability, getTrackRecordScore } from "./source-reliabi
 import { getClaimWeight, calculateWeightedVerdictAverage } from "./aggregation";
 
 // Verdict stage module (§8.4 — 5-step debate pattern)
-import { runVerdictStage, type LLMCallFn } from "./verdict-stage";
+import {
+  runVerdictStage,
+  type LLMCallFn,
+  type VerdictStageConfig,
+  DEFAULT_VERDICT_STAGE_CONFIG,
+} from "./verdict-stage";
 
 // LLM call infrastructure
 import { generateText, Output } from "ai";
@@ -54,8 +59,8 @@ import {
 import { loadAndRenderSection } from "./prompt-loader";
 
 // Config loading
-import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
-import type { PipelineConfig, SearchConfig } from "@/lib/config-schemas";
+import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
+import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
 
 // Search and retrieval
 import { searchWebWithProvider } from "@/lib/web-search";
@@ -1984,6 +1989,7 @@ export function buildCoverageMatrix(
  * @param evidence - All evidence items (boundary-assigned)
  * @param boundaries - ClaimBoundaries from Stage 3
  * @param coverageMatrix - Claims × boundaries evidence distribution
+ * @param llmCall - Optional injectable LLM call (for testing). Production creates one from UCM config.
  * @returns Array of CBClaimVerdicts
  */
 export async function generateVerdicts(
@@ -1993,12 +1999,119 @@ export async function generateVerdicts(
   coverageMatrix: CoverageMatrix,
   llmCall?: LLMCallFn,
 ): Promise<CBClaimVerdict[]> {
-  if (!llmCall) {
-    // TODO (Phase 1c): Wire production LLM call function from UCM prompts
-    throw new Error("Stage 4 (generateVerdicts): llmCall function required — production wiring not yet implemented");
-  }
+  // Load UCM configs for verdict stage
+  const [pipelineResult, calcResult] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadCalcConfig("default"),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const calcConfig = calcResult.config;
 
-  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCall);
+  // Build VerdictStageConfig from UCM parameters
+  const verdictConfig = buildVerdictStageConfig(pipelineConfig, calcConfig);
+
+  // Production LLM call wiring — use injected or create from UCM
+  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig);
+
+  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig);
+}
+
+// ============================================================================
+// STAGE 4 HELPERS (exported for unit testing)
+// ============================================================================
+
+/**
+ * Build VerdictStageConfig from UCM pipeline and calculation configs.
+ * Maps UCM config field names to VerdictStageConfig structure.
+ */
+export function buildVerdictStageConfig(
+  pipelineConfig: PipelineConfig,
+  calcConfig: CalcConfig,
+): VerdictStageConfig {
+  const spreadThresholds = calcConfig.selfConsistencySpreadThresholds ?? {
+    stable: 5,
+    moderate: 12,
+    unstable: 20,
+  };
+
+  return {
+    selfConsistencyMode:
+      pipelineConfig.selfConsistencyMode === "full" ? "enabled" : "disabled",
+    selfConsistencyTemperature:
+      pipelineConfig.selfConsistencyTemperature ?? 0.3,
+    stableThreshold: spreadThresholds.stable ?? 5,
+    moderateThreshold: spreadThresholds.moderate ?? 12,
+    unstableThreshold: spreadThresholds.unstable ?? 20,
+    spreadMultipliers: DEFAULT_VERDICT_STAGE_CONFIG.spreadMultipliers,
+    mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
+  };
+}
+
+/**
+ * Create a production LLM call function for verdict-stage.
+ * Loads prompts from UCM, uses AI SDK for structured output.
+ * Each call loads the prompt section, selects the model by tier, and parses the JSON result.
+ */
+export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCallFn {
+  return async (
+    promptKey: string,
+    input: Record<string, unknown>,
+    options?: { tier?: "sonnet" | "haiku"; temperature?: number },
+  ): Promise<unknown> => {
+    // 1. Load UCM prompt section
+    const currentDate = new Date().toISOString().split("T")[0];
+    const rendered = await loadAndRenderSection("claimboundary", promptKey, {
+      ...input,
+      currentDate,
+    });
+    if (!rendered) {
+      throw new Error(`Stage 4: Failed to load prompt section "${promptKey}"`);
+    }
+
+    // 2. Select model based on tier
+    const tier = options?.tier ?? "sonnet";
+    const taskKey = tier === "sonnet" ? "verdict" : "understand";
+    const model = getModelForTask(taskKey as any, undefined, pipelineConfig);
+
+    // 3. Call AI SDK
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: typeof input.userMessage === "string"
+            ? input.userMessage
+            : JSON.stringify(input),
+        },
+      ],
+      temperature: options?.temperature ?? 0.0,
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    // 4. Parse result as JSON
+    const text = result.text?.trim();
+    if (!text) {
+      throw new Error(`Stage 4: LLM returned empty response for prompt "${promptKey}"`);
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      // Try extracting JSON from markdown code blocks
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch?.[1]) {
+        return JSON.parse(jsonMatch[1].trim());
+      }
+      throw new Error(`Stage 4: Failed to parse LLM response as JSON for prompt "${promptKey}"`);
+    }
+  };
 }
 
 // ============================================================================
