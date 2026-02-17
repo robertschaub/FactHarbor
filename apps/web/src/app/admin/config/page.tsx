@@ -1612,16 +1612,235 @@ function PipelineConfigForm({
         <div className={styles.formHelp}>OFF (soft limits) = may exceed slightly for quality. ON = strict stop at limit.</div>
       </div>
 
+      {/* ClaimAssessmentBoundary Pipeline Parameters */}
+      <h3 className={styles.formSectionTitle}>ClaimAssessmentBoundary Pipeline Parameters</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Configuration for the ClaimAssessmentBoundary pipeline (5 stages: Extract → Research → Cluster → Verdict → Aggregate)
+      </p>
+
+      {/* Stage 1: Claim Extraction */}
+      <h4 style={{ fontSize: 14, fontWeight: 600, marginTop: 16, marginBottom: 12, color: "#374151" }}>
+        Stage 1: Extract Claims
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Centrality Threshold</label>
+          <select
+            className={styles.formInput}
+            value={config.centralityThreshold ?? "medium"}
+            onChange={(e) => updateField("centralityThreshold", e.target.value as "high" | "medium")}
+          >
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+          </select>
+          <div className={styles.formHelp}>Minimum centrality to keep a claim</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Claim Specificity Minimum</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.claimSpecificityMinimum ?? 0.6}
+            min={0}
+            max={1}
+            step={0.1}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("claimSpecificityMinimum", isNaN(v) ? 0.6 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Min specificity score (0-1) for Gate 1</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Atomic Claims</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.maxAtomicClaims ?? 15}
+            min={5}
+            max={30}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxAtomicClaims", isNaN(v) ? 15 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max claims after centrality filter</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Preliminary Search Queries/Claim</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.preliminarySearchQueriesPerClaim ?? 2}
+            min={1}
+            max={5}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("preliminarySearchQueriesPerClaim", isNaN(v) ? 2 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Search queries per claim in Stage 1</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Preliminary Max Sources</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.preliminaryMaxSources ?? 5}
+            min={1}
+            max={10}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("preliminaryMaxSources", isNaN(v) ? 5 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max sources to fetch in Stage 1</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Gate 1 Grounding Retry Threshold</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.gate1GroundingRetryThreshold ?? 0.5}
+            min={0}
+            max={1}
+            step={0.1}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("gate1GroundingRetryThreshold", isNaN(v) ? 0.5 : v);
+            }}
+          />
+          <div className={styles.formHelp}>If &gt;X% claims fail Gate 1, retry</div>
+        </div>
+      </div>
+
+      {/* Stage 2: Research */}
+      <h4 style={{ fontSize: 14, fontWeight: 600, marginTop: 16, marginBottom: 12, color: "#374151" }}>
+        Stage 2: Research Evidence
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Claim Sufficiency Threshold</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.claimSufficiencyThreshold ?? 3}
+            min={1}
+            max={10}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("claimSufficiencyThreshold", isNaN(v) ? 3 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Min evidence items per claim before sufficient</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Contradiction Reserved Iterations</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.contradictionReservedIterations ?? 2}
+            min={0}
+            max={5}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("contradictionReservedIterations", isNaN(v) ? 2 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Iterations reserved for contradiction search</div>
+        </div>
+      </div>
+
+      {/* Stage 3: Clustering */}
+      <h4 style={{ fontSize: 14, fontWeight: 600, marginTop: 16, marginBottom: 12, color: "#374151" }}>
+        Stage 3: Cluster Boundaries
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max ClaimAssessmentBoundaries</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.maxClaimBoundaries ?? 6}
+            min={2}
+            max={10}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("maxClaimBoundaries", isNaN(v) ? 6 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Safety cap on boundary count</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Boundary Coherence Minimum</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.boundaryCoherenceMinimum ?? 0.3}
+            min={0}
+            max={1}
+            step={0.1}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("boundaryCoherenceMinimum", isNaN(v) ? 0.3 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Min coherence; below triggers flag</div>
+        </div>
+      </div>
+
+      {/* Stage 4: Verdict */}
+      <h4 style={{ fontSize: 14, fontWeight: 600, marginTop: 16, marginBottom: 12, color: "#374151" }}>
+        Stage 4: Generate Verdicts
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Self-Consistency Mode</label>
+          <select
+            className={styles.formInput}
+            value={config.selfConsistencyMode ?? "full"}
+            onChange={(e) => updateField("selfConsistencyMode", e.target.value as "full" | "disabled")}
+          >
+            <option value="full">Full</option>
+            <option value="disabled">Disabled</option>
+          </select>
+          <div className={styles.formHelp}>Self-consistency check for verdicts</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Self-Consistency Temperature</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.selfConsistencyTemperature ?? 0.3}
+            min={0.1}
+            max={0.7}
+            step={0.1}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("selfConsistencyTemperature", isNaN(v) ? 0.3 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Temperature for self-consistency re-runs</div>
+        </div>
+      </div>
+
+      {/* Note: Self-Consistency Spread Thresholds and Stage 5 Aggregation params are in Calculation config, not Pipeline config */}
+      <div style={{ fontSize: 12, color: "#dc2626", marginTop: 12, padding: "8px 12px", background: "#fef2f2", borderRadius: 6, border: "1px solid #fee2e2" }}>
+        ⚠️ <strong>Stage 4 Self-Consistency Spread Thresholds</strong> and <strong>Stage 5 Aggregation parameters</strong> (harm multipliers, triangulation, derivative multiplier) are configured in the <strong>Calculation Config</strong> section, not Pipeline Config. Navigate to Calculation config type to edit these parameters.
+      </div>
+
       {/* Pipeline Selection */}
       <h3 className={styles.formSectionTitle}>Default Pipeline</h3>
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>Default Pipeline Variant</label>
         <select
           className={styles.formInput}
-          value={config.defaultPipelineVariant || "orchestrated"}
+          value={config.defaultPipelineVariant || "claimboundary"}
           onChange={(e) => updateField("defaultPipelineVariant", e.target.value as PipelineConfig["defaultPipelineVariant"])}
         >
-          <option value="orchestrated">Orchestrated (highest quality)</option>
+          <option value="claimboundary">ClaimAssessmentBoundary (production default)</option>
           <option value="monolithic_dynamic">Monolithic Dynamic (fast alternative)</option>
         </select>
         <div className={styles.formHelp}>User can override per-job in UI</div>

@@ -252,6 +252,8 @@ class XWikiParser {
     // External links
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(https?:\/\/[^\]]+?)\]\]/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
     text=text.replace(/\[\[(https?:\/\/[^\]]+?)\]\]/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // Mailto links
+    text=text.replace(/\[\[([^\]]+?)&gt;&gt;(mailto:[^\]]+?)\]\]/g,'<a href="$2">$1</a>');
     // Wiki links
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(?!https?:\/\/)([^\]]+?)\]\]/g,(m,label,ref)=>{
       ref=ref.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');

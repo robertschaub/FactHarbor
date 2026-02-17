@@ -1848,3 +1848,15 @@
 .boundaryFindingRow:hover .boundaryFindingTooltip {
   opacity: 1;
 }
+
+/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */
+.cbSection {
+  margin: 24px 0;
+}
+
+.sectionDescription {
+  margin: 8px 0 16px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}

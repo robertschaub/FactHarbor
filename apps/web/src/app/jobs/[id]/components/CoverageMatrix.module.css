@@ -1,0 +1,169 @@
+/* Coverage Matrix Styles */
+
+.container {
+  margin: 20px 0;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.legendTitle {
+  font-weight: 600;
+  color: #374151;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 24px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid #d1d5db;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 500px;
+}
+
+.matrix th,
+.matrix td {
+  padding: 10px 12px;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.cornerCell {
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.headerCell {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.rowHeader {
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 500;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.totalCell {
+  background: #fef3c7;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.totalRow {
+  background: #fef3c7;
+}
+
+.totalRow .rowHeader {
+  background: #fbbf24;
+  color: #78350f;
+  font-weight: 700;
+}
+
+.grandTotal {
+  background: #fbbf24;
+  font-weight: 700;
+  color: #78350f;
+  font-size: 15px;
+}
+
+/* Cell color coding by evidence count */
+.cellEmpty {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.cellLow {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cellMedium {
+  background: #d9f99d;
+  color: #365314;
+}
+
+.cellHigh {
+  background: #86efac;
+  color: #14532d;
+  font-weight: 600;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .matrix {
+    font-size: 12px;
+  }
+
+  .matrix th,
+  .matrix td {
+    padding: 8px;
+  }
+
+  .legend {
+    font-size: 12px;
+    gap: 12px;
+  }
+
+  .rowHeader {
+    max-width: 150px;
+  }
+}

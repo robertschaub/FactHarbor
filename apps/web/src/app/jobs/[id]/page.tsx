@@ -31,6 +31,8 @@ import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
+import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
+import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 
 type Job = {
   jobId: string;
@@ -705,6 +707,31 @@ export default function JobPage() {
 
               <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
 
+              {/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */}
+              {isCBSchema && result?.verdictNarrative && (
+                <section className={styles.cbSection}>
+                  <h3 className={styles.sectionTitle}>Analysis Narrative</h3>
+                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} />
+                </section>
+              )}
+
+              {isCBSchema && result?.coverageMatrix && claimVerdicts.length > 0 && claimBoundaries.length > 0 && (
+                <section className={styles.cbSection}>
+                  <h3 className={styles.sectionTitle}>Coverage Matrix</h3>
+                  <p className={styles.sectionDescription}>
+                    Evidence distribution across claims and boundaries. Shows which claims have evidence in which analytical boundaries.
+                  </p>
+                  <CoverageMatrixDisplay
+                    matrix={result.coverageMatrix}
+                    claimLabels={claimVerdicts.map((v: any) => {
+                      const text = v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
+                      return text.length > 50 ? text.slice(0, 47) + "..." : text;
+                    })}
+                    boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
+                  />
+                </section>
+              )}
+
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
                 <div className={styles.claimsSection}>
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
@@ -1032,6 +1059,54 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
       {children}
     </span>
   );
+}
+
+// ============================================================================
+// Triangulation Score Helpers (Phase 5k: CB Pipeline)
+// ============================================================================
+
+/**
+ * Get color scheme for triangulation level
+ */
+function getTriangulationColor(level: string): { bg: string; text: string } {
+  switch (level) {
+    case "strong":
+      return { bg: "#d4edda", text: "#155724" }; // Green
+    case "moderate":
+      return { bg: "#fff9c4", text: "#f57f17" }; // Yellow
+    case "weak":
+      return { bg: "#ffccbc", text: "#bf360c" }; // Orange
+    case "conflicted":
+      return { bg: "#ffcdd2", text: "#c62828" }; // Red
+    default:
+      return { bg: "#f5f5f5", text: "#666666" }; // Gray
+  }
+}
+
+/**
+ * Get icon for triangulation level
+ */
+function getTriangulationIcon(level: string): string {
+  switch (level) {
+    case "strong":
+      return "◆"; // Strong agreement
+    case "moderate":
+      return "◇"; // Moderate agreement
+    case "weak":
+      return "○"; // Weak/single boundary
+    case "conflicted":
+      return "⚠"; // Conflicted across boundaries
+    default:
+      return "?";
+  }
+}
+
+/**
+ * Get tooltip text for triangulation score
+ */
+function getTriangulationTooltip(score: any): string {
+  const { boundaryCount, supporting, contradicting, level, factor } = score;
+  return `Triangulation: ${level}\n${boundaryCount} boundaries | ${supporting} supporting, ${contradicting} contradicting\nAdjustment factor: ${factor.toFixed(2)}`;
 }
 
 // ============================================================================
@@ -1624,6 +1699,16 @@ function ClaimCard({
         )}
         {claim.isPseudoscience && (
           <Badge bg="#ffebee" color="#c62828">🔬 Pseudoscience</Badge>
+        )}
+        {/* CB Pipeline: Triangulation Score (Phase 5k) */}
+        {claim.triangulationScore && (
+          <Badge
+            bg={getTriangulationColor(claim.triangulationScore.level).bg}
+            color={getTriangulationColor(claim.triangulationScore.level).text}
+            title={getTriangulationTooltip(claim.triangulationScore)}
+          >
+            {getTriangulationIcon(claim.triangulationScore.level)} {claim.triangulationScore.level.toUpperCase()}
+          </Badge>
         )}
       </div>
       <div className={styles.claimLabel}>Claim Being Evaluated:</div>
