@@ -112,6 +112,18 @@ _(No entries yet)_
 **Learning:** Configuration defaults can diverge across layers. The `mixedConfidenceThreshold` had three different defaults: truth-scale.ts (60), config-schemas.ts CalcConfig (60), and verdict-stage.ts VerdictStageConfig (40, matching the spec). But verdict-stage.ts never passed its value through to `percentageToClaimVerdict()`, so the effective default was 60 — mismatching the spec's 40. When a configurable parameter appears in multiple places, trace the actual call chain to confirm which default actually takes effect at runtime.
 **Files:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/truth-scale.ts`, `apps/web/src/lib/config-schemas.ts`
 
+### 2026-02-17 — Vitest esbuild strips types without checking — ghost imports pass silently
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** After a type rename (ClaimBoundary → ClaimAssessmentBoundary), test files that import the old type name will still pass vitest because esbuild strips type annotations without validation. The project's `tsconfig.json` only includes `src/` — test files are never type-checked by `npm run build` either. This means stale type imports in test files go completely undetected. After any type rename, explicitly grep test files for the old name. Consider adding a `tsc --noEmit -p tsconfig.test.json` step.
+**Files:** `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts:51`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts:40`
+
+### 2026-02-17 — Check `as any` casts for missing CalcConfig fields
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** tip
+**Learning:** When new pipeline code accesses UCM config with `(calcConfig as any).fieldName`, it usually means the CalcConfig type definition hasn't been updated to include the new field. These casts bypass type safety for analysis-critical parameters (like harmPotentialMultipliers, triangulation config). Flag all `as any` config accesses as type-safety gaps. The fix is to update the CalcConfig Zod schema in config-schemas.ts to include the new fields with proper typing.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (lines 2173, 2187, 2191, 2312)
+
 ## Security Expert
 
 _(No entries yet)_
