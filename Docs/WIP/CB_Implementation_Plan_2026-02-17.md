@@ -136,10 +136,14 @@ Attempting parallel implementation would require extensive mocking of data struc
 - [ ] Evidence extraction with mandatory EvidenceScope
   - Load UCM prompt (evidence extraction section, TBD which prompt file)
   - Call LLM with claim + source content
-  - Parse `{evidenceItems[]: {statement, category, claimDirection, evidenceScope, probativeValue, sourceType}}`
+  - Parse `{evidenceItems[]: {statement, category, claimDirection, evidenceScope, probativeValue, sourceType, isDerivative, derivedFromSourceUrl?, relevantClaimIds[]}}`
+  - Include derivative fields per §8.5.3
 - [ ] EvidenceScope validation
   - **Deterministic structural check:** Ensure methodology, temporal fields are non-empty strings
   - If validation fails, retry extraction with more explicit prompt (not heuristic fallback)
+- [ ] Derivative validation (§8.2 step 9)
+  - For items with `isDerivative: true` + `derivedFromSourceUrl`, verify URL in fetched sources
+  - If not found, set `derivativeClaimUnverified: true`
 - [ ] Evidence filter
   - Call `filterByProbativeValue()` (existing deterministic filter)
   - Optional: LLM quality check (if UCM `llmEvidenceQuality` enabled)

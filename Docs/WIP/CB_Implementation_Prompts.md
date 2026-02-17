@@ -157,13 +157,15 @@ Implement the `researchEvidence()` function in `claimboundary-pipeline.ts` (curr
      g. **Evidence Extraction (LLM):** For each fetched source:
         - Load evidence extraction prompt (use monolithic-dynamic pattern or create new section in claimboundary.prompt.md)
         - Call LLM with claim + source content
-        - Parse: `{evidenceItems: Array<{statement, category, claimDirection, evidenceScope, probativeValue, sourceType}>}`
+        - Parse: `{evidenceItems: Array<{statement, category, claimDirection, evidenceScope, probativeValue, sourceType, isDerivative, derivedFromSourceUrl?, relevantClaimIds[]}>}`
         - **Critical:** Ensure `evidenceScope` is always populated (methodology, temporal, geographic, etc.)
+        - **Derivative fields (§8.5.3):** `isDerivative` (boolean), `derivedFromSourceUrl` (optional URL of original source if evidence cites another study)
      h. **EvidenceScope Validation:** Deterministic structural check - ensure methodology, temporal fields are non-empty strings. If validation fails, retry extraction with more explicit prompt instructions (not heuristic fallback)
-     i. **Evidence Filter:** Call `filterByProbativeValue()` from `evidence-filter.ts` (deterministic quality check)
-     j. **Add to State:** Append filtered evidence to `state.evidenceItems[]`, sources to `state.sources[]`
-     k. **Sufficiency Check:** If target claim now has ≥`claimSufficiencyThreshold` (UCM, default 3) items, mark sufficient
-     l. **Early Exit:** If all claims sufficient, break loop
+     i. **Derivative Validation (§8.2 step 9):** For items with `isDerivative: true` and `derivedFromSourceUrl`, verify URL exists in fetched sources pool. If not found, set `derivativeClaimUnverified: true` (prevents hallucinated derivative relationships)
+     j. **Evidence Filter:** Call `filterByProbativeValue()` from `evidence-filter.ts` (deterministic quality check)
+     k. **Add to State:** Append filtered evidence to `state.evidenceItems[]`, sources to `state.sources[]`
+     l. **Sufficiency Check:** If target claim now has ≥`claimSufficiencyThreshold` (UCM, default 3) items, mark sufficient
+     m. **Early Exit:** If all claims sufficient, break loop
 
 3. **Contradiction Search (Reserved Iterations)**
    - After main loop, run `contradictionReservedIterations` (default 2) additional iterations
