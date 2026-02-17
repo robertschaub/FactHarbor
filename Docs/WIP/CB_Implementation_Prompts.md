@@ -275,7 +275,7 @@ Implement the `clusterBoundaries()` function in `claimboundary-pipeline.ts` (cur
        }>
      }
      ```
-   - Parse LLM output into `ClaimBoundary[]` objects
+   - Parse LLM output into `ClaimAssessmentBoundary[]` objects
 
 3. **Coherence Assessment**
    - LLM returns `internalCoherence` per boundary
@@ -302,7 +302,7 @@ Implement the `clusterBoundaries()` function in `claimboundary-pipeline.ts` (cur
      - Create single boundary: `{id: "CB_GENERAL", name: "General Evidence", description: "All evidence analyzed together", scopeSummary: "All scopes", internalCoherence: 0.8, evidenceScopeIds: [all scope IDs]}`
      - Assign all evidence items to `CB_GENERAL`
 
-7. **Return ClaimBoundary[]**
+7. **Return ClaimAssessmentBoundary[]**
 
 **Testing:**
 
@@ -422,7 +422,7 @@ Create the production LLM call wrapper and wire it into `generateVerdicts()` in 
    export async function generateVerdicts(
      claims: AtomicClaim[],
      evidence: EvidenceItem[],
-     boundaries: ClaimBoundary[],
+     boundaries: ClaimAssessmentBoundary[],
      coverageMatrix: CoverageMatrix,
      llmCall?: LLMCallFn,
    ): Promise<CBClaimVerdict[]> {
@@ -606,7 +606,7 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
    - Input to LLM:
      - `overallVerdict: {truthPercentage, verdict, confidence}`
      - `claimVerdicts: CBClaimVerdict[]` (top 5-7 most important claims)
-     - `claimBoundaries: ClaimBoundary[]`
+     - `claimBoundaries: ClaimAssessmentBoundary[]`
      - `coverageMatrix` (summarized)
    - Expected output:
      ```typescript
@@ -647,7 +647,7 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
      hasMultipleBoundaries: boolean,
      verdictNarrative: VerdictNarrative,
      claimVerdicts: CBClaimVerdict[],
-     claimBoundaries: ClaimBoundary[],
+     claimBoundaries: ClaimAssessmentBoundary[],
      coverageMatrix: CoverageMatrix,
      qualityGates: QualityGates,
    }
@@ -794,7 +794,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Your Task:**
 
-Update all status, governance, and xWiki documentation to reflect ClaimBoundary pipeline v1.0 implementation completion.
+Update all status, governance, and xWiki documentation to reflect ClaimAssessmentBoundary pipeline v1.0 implementation completion.
 
 **Implementation Requirements:**
 
@@ -807,7 +807,7 @@ Update all status, governance, and xWiki documentation to reflect ClaimBoundary 
      - Document any new issues discovered during Stage 1-5 implementation
      - Close any issues that were resolved
    - Update `Backlog.md`:
-     - Move "Implement ClaimBoundary pipeline" to "Recently Completed"
+     - Move "Implement ClaimAssessmentBoundary pipeline" to "Recently Completed"
      - Add deferred items: Gate 1 retry loop (§8.1.5), CLAIM_GROUPING (§18 Q1), advanced triangulation (§8.5.2), derivative detection (§8.5.3)
 
 2. **xWiki Pages:**
@@ -850,7 +850,7 @@ docs(claimboundary): update all documentation for v1.0 completion
 Phase 5g: Comprehensive documentation updates post-implementation.
 - Status docs: Current_Status, Backlog, KNOWN_ISSUES updated
 - Governance: AGENTS.md and CLAUDE.md updated (removed [NEW] tags, fixed orchestrated refs)
-- xWiki: ClaimBoundary arch doc marked IMPLEMENTED
+- xWiki: ClaimAssessmentBoundary arch doc marked IMPLEMENTED
 - Config: package.json test scripts updated/removed
 
 Addresses V-03, V-04, V-05, V-06, V-07, V-08 from final verification.
@@ -872,7 +872,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Your Task:**
 
-Create comprehensive test suite for ClaimBoundary pipeline: neutrality, performance, adversarial.
+Create comprehensive test suite for ClaimAssessmentBoundary pipeline: neutrality, performance, adversarial.
 
 **Implementation Requirements:**
 
@@ -1132,7 +1132,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 ## Phase 5j: Monolithic Dynamic Status Verification
 
-**Note:** This phase (0 sessions) consists of verification only — no code changes needed. The Monolithic Dynamic pipeline is already ClaimBoundary-compatible and requires no updates. See `CB_Implementation_Plan_2026-02-17.md` Phase 5j for verification checklist.
+**Note:** This phase (0 sessions) consists of verification only — no code changes needed. The Monolithic Dynamic pipeline is already ClaimAssessmentBoundary-compatible and requires no updates. See `CB_Implementation_Plan_2026-02-17.md` Phase 5j for verification checklist.
 
 **Verification steps:**
 1. Confirm MD pipeline uses CB terminology (already done in Phase 3b)
@@ -1155,11 +1155,11 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Your Task:**
 
-Create comprehensive UI support for ClaimBoundary pipeline: admin config panel, enhanced results display, report visualizations, and updated diagrams.
+Create comprehensive UI support for ClaimAssessmentBoundary pipeline: admin config panel, enhanced results display, report visualizations, and updated diagrams.
 
 **Implementation Requirements:**
 
-### Part 1: Admin UI — ClaimBoundary Configuration Panel (High Priority)
+### Part 1: Admin UI — ClaimAssessmentBoundary Configuration Panel (High Priority)
 
 **Goal:** All 24 CB parameters editable in Admin UI, organized by pipeline stage.
 
@@ -1435,7 +1435,7 @@ Update `ClaimCard.tsx` (or wherever claims are displayed):
 
 **Commit Message Format:**
 ```
-feat(ui): ClaimBoundary admin config + enhanced results display
+feat(ui): ClaimAssessmentBoundary admin config + enhanced results display
 
 Phase 5k: Comprehensive UI support for CB pipeline.
 - Admin UI: All 24 CB parameters editable, organized by stage
@@ -1495,7 +1495,7 @@ After all phases 5a-5i complete, verify:
 - [ ] xWiki diagrams updated (CB pipeline detail created, system architecture updated, obsolete docs marked)
 - [ ] Manual UI testing complete (save config, view CB results, all components render correctly)
 
-**When all REQUIRED items checked:** ClaimBoundary pipeline v1.0 is **production-ready with full UI support**.
+**When all REQUIRED items checked:** ClaimAssessmentBoundary pipeline v1.0 is **production-ready with full UI support**.
 
 ---
 
