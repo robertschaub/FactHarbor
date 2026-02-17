@@ -61,6 +61,56 @@ Attempting parallel implementation would require extensive mocking of data struc
 
 ---
 
+## Database Handling — No Migration Required
+
+**TL;DR:** Keep all existing databases as-is. No recreation or archiving required.
+
+### Backward Compatibility
+
+The ClaimBoundary pipeline is **fully backward compatible** at the database level:
+
+1. **Main API Database** (`apps/api/factharbor.db`)
+   - **Structure unchanged:** Table schemas remain the same (Jobs, JobEvents, etc.)
+   - **JSON versioning:** Old jobs use orchestrated schema, new jobs use CB schema (`_schemaVersion: "3.0.0-cb"`)
+   - **Coexistence:** Both schema versions can exist in the same database
+   - **UI compatibility:** Results page already handles both schema types (see Phase 3 — `isCBSchema` detection)
+
+2. **UCM Config Database** (`apps/web/config.db`)
+   - **Already updated:** CB parameters added via schema evolution (see UCM Config phase)
+   - **No recreation needed:** Existing database structure supports new configs
+   - **Defaults applied:** CB defaults already seeded (harmPotentialMultipliers, triangulation, etc.)
+
+3. **Source Reliability Database** (`apps/web/source-reliability.db`)
+   - **Pipeline-agnostic:** SR evaluations are independent of pipeline type
+   - **KEEP AS-IS:** Contains valuable historical source evaluations
+   - **No changes:** Database structure and content remain unchanged
+
+### Optional: Clean Slate for Testing
+
+If you prefer a clean slate for CB pipeline testing (not required):
+
+```bash
+# Optional - archive old jobs
+cd apps/api
+mv factharbor.db factharbor.db.pre-cb-backup-$(date +%Y-%m-%d)
+# Database will auto-create on next API startup via EnsureCreated()
+
+# KEEP these databases (do not archive):
+# - apps/web/config.db (already CB-ready)
+# - apps/web/source-reliability.db (valuable historical data)
+```
+
+**Recommendation:** Keep existing databases unless you specifically need a clean slate for isolated testing.
+
+### Verification
+
+After first CB analysis completes:
+- Query database: `SELECT _schemaVersion FROM (SELECT json_extract(resultJson, '$._schemaVersion') as _schemaVersion FROM Jobs ORDER BY id DESC LIMIT 1);`
+- Expected: `"3.0.0-cb"`
+- Old jobs still readable: Previous analyses remain accessible with orchestrated schema
+
+---
+
 ## Phase 5: Stage-by-Stage Implementation
 
 ### Phase 5a: Stage 1 — Extract Claims (§8.1)
