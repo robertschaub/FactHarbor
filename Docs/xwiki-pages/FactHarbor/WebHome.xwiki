@@ -79,6 +79,16 @@ Data in FactHarbor flows through a structured, auditable process:
 (((
 (% class="box" %)
 (((
+== [[About FactHarbor>>FactHarbor.About FactHarbor.WebHome]] ==
+
+**//Who We Are.//**
+The story behind FactHarbor, our mission, and the people driving it.
+)))
+)))
+
+(((
+(% class="box" %)
+(((
 == [[Organisation>>FactHarbor.Organisation.WebHome]] ==
 
 **//How We Operate.//**
