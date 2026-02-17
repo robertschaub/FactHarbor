@@ -170,7 +170,7 @@ Implement the `researchEvidence()` function in `claimboundary-pipeline.ts` (curr
 3. **Contradiction Search (Reserved Iterations)**
    - After main loop, run `contradictionReservedIterations` (default 2) additional iterations
    - Target: claims with low contradiction coverage (fewest `claimDirection: "contradicts"` items)
-   - Query generation: Use "counterevidence" or "critique" phrasing (e.g., "evidence against [claim]")
+   - Query generation: Use UCM `GENERATE_QUERIES` prompt with `iterationType: "contradiction"` (no hardcoded templates)
    - Same search → fetch → extract → filter flow
 
 4. **Update State Metadata**
@@ -547,34 +547,54 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
      ```
    - Apply formula (architecture §8.5.3):
      ```typescript
-     const derivativeFactor = 1.0 - (derivativeRatio × (1.0 - calcConfig.aggregation.derivativeMultiplier));
+     const derivativeFactor = 1.0 - (derivativeRatio * (1.0 - calcConfig.aggregation.derivativeMultiplier));
      ```
    - Use `derivativeFactor` in final weight calculation (see step 3)
 
 3. **Weighted Average Computation (§8.5.4)**
 
-   Reuse existing `aggregation.ts` functions:
    ```typescript
-   import { getClaimWeight, calculateWeightedVerdictAverage } from "./aggregation";
+   import { calculateWeightedVerdictAverage } from "./aggregation";
    import { loadCalcConfig } from "@/lib/config-loader";
 
    const calcConfig = await loadCalcConfig();
 
-   // For each claim verdict:
-   const baseWeight = getClaimWeight(claim.centrality, calcConfig.aggregation.centralityWeights);
-   const harmMultiplier = calcConfig.aggregation.harmPotentialMultipliers[claim.harmPotential]; // 4-level
-   const confidenceFactor = verdict.confidence / 100;
-   const contestationFactor = verdict.isContested ? 0.85 : 1.0;
-   const triangulationFactor = verdict.triangulationScore.factor;
-   // derivativeFactor calculated per claim using formula from step 2 above
-   const derivativeFactor = 1.0 - (derivativeRatio × (1.0 - calcConfig.aggregation.derivativeMultiplier));
+   // For each claim verdict, compute weights using CalcConfig directly:
+   const weightsPerClaim = claimVerdicts.map((verdict, idx) => {
+     const claim = state.atomicClaims.find(c => c.id === verdict.claimId)!;
 
-   const finalWeight = baseWeight * harmMultiplier * confidenceFactor * contestationFactor * (1 + triangulationFactor) * derivativeFactor;
+     // Centrality weight (3-level: high/medium/low)
+     const centralityWeight = calcConfig.aggregation.centralityWeights[claim.centrality || "low"];
+
+     // Harm multiplier (4-level: critical/high/medium/low)
+     const harmMultiplier = calcConfig.aggregation.harmPotentialMultipliers[verdict.harmPotential];
+
+     // Confidence factor (0-100 -> 0-1)
+     const confidenceFactor = verdict.confidence / 100;
+
+     // Triangulation factor (already calculated in verdict.triangulationScore.factor)
+     const triangulationFactor = verdict.triangulationScore.factor;
+
+     // Derivative factor (calculated from supportingEvidenceIds)
+     const supportingEvidence = verdict.supportingEvidenceIds.map(id =>
+       state.evidenceItems.find(e => e.id === id)!
+     );
+     const derivativeCount = supportingEvidence.filter(e =>
+       e.isDerivative === true && e.derivativeClaimUnverified !== true
+     ).length;
+     const derivativeRatio = supportingEvidence.length > 0
+       ? derivativeCount / supportingEvidence.length
+       : 0;
+     const derivativeFactor = 1.0 - (derivativeRatio * (1.0 - calcConfig.aggregation.derivativeMultiplier));
+
+     // Final weight formula (§8.5.4)
+     const finalWeight = centralityWeight * harmMultiplier * confidenceFactor * (1 + triangulationFactor) * derivativeFactor;
+
+     return { truthPercentage: verdict.truthPercentage, weight: finalWeight };
+   });
 
    // Aggregate across all claims:
-   const weightedTruthPercentage = calculateWeightedVerdictAverage(
-     claimVerdicts.map(v => ({ truthPercentage: v.truthPercentage, weight: finalWeight }))
-   );
+   const weightedTruthPercentage = calculateWeightedVerdictAverage(weightsPerClaim);
    ```
 
 4. **Confidence Aggregation (§8.5.5)**

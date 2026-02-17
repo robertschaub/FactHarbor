@@ -283,7 +283,7 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Attach `triangulationScore` to each `CBClaimVerdict`
 - [ ] Derivative weight reduction (§8.5.3)
   - For each claim, calculate `derivativeRatio` = proportion of supporting evidence with `isDerivative: true` AND `derivativeClaimUnverified: false`
-  - Apply formula: `derivativeFactor = 1.0 - (derivativeRatio × (1.0 - derivativeMultiplier))`
+  - Apply formula: `derivativeFactor = 1.0 - (derivativeRatio * (1.0 - derivativeMultiplier))`
   - Use in final weight calculation
 - [ ] Weighted average computation (§8.5.4)
   - Reuse `getClaimWeight()` from aggregation.ts (centrality weights)
@@ -349,7 +349,7 @@ Attempting parallel implementation would require extensive mocking of data struc
 - `resultJson._schemaVersion === "3.0.0-cb"`
 - `claimBoundaries.length > 0`
 - `claimVerdicts.length === atomicClaims.length`
-- `coverageMatrix` dimensions match claims × boundaries
+- `coverageMatrix` dimensions match claims * boundaries
 - Build PASS, individual unit tests PASS
 
 **Estimated effort:** 1 session (2-3 hours)
@@ -609,7 +609,7 @@ Current state: `apps/web/src/app/jobs/[id]/page.tsx` already updated in Phase 3 
 
 - [ ] **Coverage Matrix Visualization:**
   - Create `apps/web/src/app/jobs/[id]/components/CoverageMatrix.tsx`
-  - Display claims × boundaries grid
+  - Display claims * boundaries grid
   - Color-code cells by evidence count (heatmap: 0=gray, 1-2=yellow, 3+=green)
   - Hover tooltip: show evidence count + direction breakdown
   - Only show if `hasMultipleBoundaries === true`
@@ -661,7 +661,7 @@ Current state: Job page shows summary + claims. Markdown report is downloadable 
   - `Pipeline Variant Dispatch` (ensure CB is default)
   - `System Architecture` (remove orchestrated, show CB)
   - `Quality Gates Flow` (update if CB quality gates differ from orchestrated)
-  - `Coverage Matrix` (may need new diagram showing claims × boundaries)
+  - `Coverage Matrix` (may need new diagram showing claims * boundaries)
 - [ ] **Replace obsolete docs:**
   - `Orchestrated Pipeline Detail` diagram → mark as "Obsolete (removed 2026-02-16)" or replace with CB diagram
   - Any other AC-related diagrams → mark obsolete or update
