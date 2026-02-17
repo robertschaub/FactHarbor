@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>XWiki Viewer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #16161a;
@@ -723,6 +723,8 @@ class XWikiParser {
     // External links
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(https?:\/\/[^\]]+?)\]\]/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
     text=text.replace(/\[\[(https?:\/\/[^\]]+?)\]\]/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // Mailto links
+    text=text.replace(/\[\[([^\]]+?)&gt;&gt;(mailto:[^\]]+?)\]\]/g,'<a href="$2">$1</a>');
     // Wiki links: [[label>>ref]] or [[ref]]
     text=text.replace(/\[\[([^\]]+?)&gt;&gt;(?!https?:\/\/)([^\]]+?)\]\]/g,(m,label,ref)=>{
       ref=ref.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');

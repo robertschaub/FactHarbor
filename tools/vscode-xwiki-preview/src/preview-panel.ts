@@ -56,6 +56,11 @@ export class XWikiPreviewPanel {
           case 'navigate':
             await XWikiPreviewPanel.onNavigate(message.ref);
             break;
+          case 'openExternal':
+            if (message.url) {
+              vscode.env.openExternal(vscode.Uri.parse(message.url));
+            }
+            break;
           case 'resolveInclude': {
             const content = await XWikiPreviewPanel.onResolveInclude(message.ref);
             this._panel.webview.postMessage({
@@ -182,7 +187,7 @@ export class XWikiPreviewPanel {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline' https://cdnjs.cloudflare.com; img-src data: https:;">
-  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
   <style>${cssContent}</style>
 </head>
@@ -375,6 +380,14 @@ export class XWikiPreviewPanel {
         const dataUri = vsAttachments[src];
         if (dataUri) img.setAttribute('src', dataUri);
       }
+    });
+
+    // Handle mailto links — webview sandbox blocks them, so open via extension host
+    previewEl.querySelectorAll('a[href^="mailto:"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        vscodeApi.postMessage({ command: 'openExternal', url: el.getAttribute('href') });
+      });
     });
 
     // Mark wiki links as resolved/unresolved

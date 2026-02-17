@@ -76,42 +76,27 @@ Data in FactHarbor flows through a structured, auditable process:
 
 == Explore FactHarbor ==
 
-(% class="box" %)
-(((
 === [[About FactHarbor>>FactHarbor.About FactHarbor.WebHome]] ===
 
 **//Who We Are.//**
 The story behind FactHarbor, our mission, and the people driving it.
-)))
 
-(% class="box" %)
-(((
 === [[Organisation>>FactHarbor.Organisation.WebHome]] ===
 
 **//How We Operate.//**
 Governance, decision-making, team structure, and how to get involved as a contributor.
-)))
 
-(% class="box" %)
-(((
 === [[Product Development>>FactHarbor.Product Development.WebHome]] ===
 
 **//The Full Picture.//**
 Requirements, specification, architecture, planning, and development tooling — from what the system does to how it's built and run.
-)))
 
-(% class="box" %)
-(((
 === [[License and Disclaimer>>FactHarbor.License and Disclaimer.WebHome]] ===
 
 **//Open Source, Open Data.//**
 Multi-license model (MIT, AGPL-3.0, CC BY-SA 4.0), usage terms, and attribution requirements.
-)))
 
-(% class="box" %)
-(((
 === [[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]] ===
 
 **//AI-Powered Source Credibility.//**
 An open, transparent credibility database for every media source on the internet — dual-AI cross-check, 19-language support, and a 7-band scale. Currently powering FactHarbor's analysis; planned as a standalone public service and API.
-)))
