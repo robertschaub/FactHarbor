@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-02-16 (ClaimBoundary Consolidation)
-**Status**: Consolidated — 11 files archived, 7 active files remain
+**Status**: Consolidated — 11 files archived, 8 active files remain
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (7 files)
+## Active Documents (8 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** **THE** single definitive implementation reference for the next pipeline version
@@ -42,6 +42,15 @@ For completed work, historical documents, and reference materials, see:
 - **Type:** Cost Optimization / Strategy
 - **Scope:** Batch API (50% off), prompt caching (90% off), NPO/OSS credit programs ($11K+/year)
 - **Note:** Strategies apply regardless of pipeline version. Per-analysis cost numbers will change with ClaimBoundary.
+
+### AtomicClaim Extraction Improvements (2026-02-17)
+**Status:** **IMPLEMENTED** — Awaiting manual validation (LLM calls required)
+- **Document:** [AtomicClaim_Extraction_Improvements_2026-02-17.md](AtomicClaim_Extraction_Improvements_2026-02-17.md)
+- **Type:** Performance / Cost Optimization
+- **Scope:** Reduce claim count explosion (6-8 → 3-5 claims) via prompt improvements, Gate 1 active filtering, dynamic max claims, and configurable atomicity level
+- **Impact:** ~40% reduction in LLM calls, evidence items, and cost per analysis
+- **New UCM params:** `maxAtomicClaimsBase`, `atomicClaimsInputCharsPerClaim`, `claimAtomicityLevel`
+- **Pending:** Manual validation with real LLM calls (Captain approval needed)
 
 ### QA Review Findings (2026-02-12)
 **Status:** 🧭 NOT ACTIONED — Findings ready for execution

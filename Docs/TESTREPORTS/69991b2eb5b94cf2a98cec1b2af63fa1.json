@@ -1,0 +1,3744 @@
+{
+  "_schemaVersion": "3.0.0-cb",
+  "meta": {
+    "schemaVersion": "3.0.0-cb",
+    "generatedUtc": "2026-02-17T17:34:00.718Z",
+    "pipeline": "claimboundary",
+    "inputType": "text",
+    "detectedInputType": "claim",
+    "hasMultipleBoundaries": true,
+    "boundaryCount": 6,
+    "claimCount": 6,
+    "llmCalls": 53,
+    "mainIterationsUsed": 6,
+    "contradictionIterationsUsed": 1,
+    "contradictionSourcesFound": 1,
+    "pipelineVariantRequested": "claimboundary",
+    "pipelineVariant": "claimboundary",
+    "pipelineFallback": false
+  },
+  "truthPercentage": 64.6,
+  "verdict": "LEANING-TRUE",
+  "confidence": 69.9,
+  "verdictNarrative": {
+    "headline": "Die Gesamtbewertung der SRG-bezogenen Behauptungen ergibt ein gemischtes Bild: Faktische Aussagen zur Medienqualitätsforschung sind weitgehend korrekt, während die Kernthese einer systematischen politischen Verzerrung überwiegend nicht belegt ist.",
+    "evidenceBaseSummary": "74 Evidenzstücke aus 6 analytischen Perspektiven (Boundaries), darunter wissenschaftliche Inhaltsanalysen, repräsentative Befragungen (BAKOM, Reuters DNR), Ombudsstelle-Bewertungen, internationale Literaturreviews, kritische Berichterstattungsanalysen und Primärquellendokumentation.",
+    "keyFinding": "Die Analyse zeigt eine klare Zweiteilung: Behauptungen zu institutionellen Fakten – etwa zur Existenz und Methodik des Jahrbuchs Qualität der Medien, zu Ombudsstelle-Bewertungen und zu Befunden der Vertiefungsstudie zur Marktverdrängung – sind durch die Evidenz gut gestützt (Verdicts: TRUE bis MOSTLY-TRUE). Die übergeordnete These einer systematischen politischen Linksausrichtung der SRG wird hingegen durch die wissenschaftliche Evidenzbasis überwiegend widerlegt (MOSTLY-FALSE, 28%), während einzelne Fälle redaktioneller Mängel – wie die verzögerte Darstellung der sgv-Position in der Kündigungsschutz-Berichterstattung – punktuell belegt sind (LEANING-TRUE, 65%). Insgesamt stützt die Evidenz die Qualität der SRG-Berichterstattung auf aggregierter Ebene, lässt aber Raum für berechtigte Kritik an einzelnen redaktionellen Entscheidungen.",
+    "boundaryDisagreements": [
+      "Bei der Kernbehauptung zur politischen Ausrichtung der SRG (AC_01) divergieren die Boundaries deutlich: Die SRG-Online Vergleichs-Inhaltsanalyse (CB_17, 6 Evidenzstücke) widerspricht der Behauptung, die BAKOM-Befragung (CB_03, 5 Evidenzstücke) liefert gemischte Signale, während die kritische SRG-Berichterstattungsanalyse (CB_07, 4 Evidenzstücke) die Behauptung stützt. Diese Divergenz spiegelt einen methodischen Grundkonflikt wider: Systematische wissenschaftliche Inhaltsanalysen finden keine Linksverzerrung, während advocacy-orientierte Einzelfallanalysen punktuelle Belege für redaktionelle Einseitigkeit liefern.",
+      "Bei der Berichterstattung zum Kündigungsschutz-Kompromiss (AC_02, AC_03) stützt sich die Evidenz ausschliesslich auf die kritische Berichterstattungsanalyse (CB_07), die selbst gemischte Ergebnisse liefert – eine unabhängige Gegenprüfung durch andere Boundaries fehlt hier."
+    ],
+    "limitations": "Die Analyse konnte mehrere Aspekte nicht abschliessend klären: (1) Die Frage der politischen Ausrichtung der SRG beruht auf Studien mit unterschiedlichen Methoden und Zeiträumen, sodass eine definitive Aussage über systematische Verzerrung nicht möglich ist. (2) Für die spezifischen Vorwürfe zur Kündigungsschutz-Berichterstattung (AC_02, AC_03) liegt nur eine analytische Perspektive vor (CB_07), was die Robustheit der Bewertung einschränkt. (3) Die Ombudsstelle-Bewertungen (CB_11) sind institutionell mit der SRG verbunden, was ihre Unabhängigkeit als Evidenzquelle begrenzt. (4) Die Evidenz zur Marktverdrängung bezieht sich primär auf Befragungsdaten und Korrelationsanalysen – kausale Schlüsse über Verdrängungseffekte lassen sich daraus nicht ziehen. (5) Aktualitätslücken bestehen, da einige Studien unterschiedliche Erhebungszeiträume abdecken und die Medienlandschaft sich dynamisch verändert."
+  },
+  "claimBoundaries": [
+    {
+      "id": "CB_11",
+      "name": "Ombudsstelle-Bewertungen von SRF-Sendungen + Jahrbuch Qualität der Medien – Systematische Medienqualitätsanalyse (fög, Langzeit)",
+      "shortName": "Ombudsstelle-Bewertungen",
+      "description": "Merged: Formal assessments by the SRG Ombudsstelle of complaints against various SRF broadcasts (Tagesschau, Echo der Zeit, News Instagram, Kassensturz). All share the identical methodology of formal complaint adjudication by the Ombudsstelle.; The annual Yearbook on Media Quality by fög (University of Zurich), encompassing systematic content analysis, media structure analysis, resource analysis, and media concentration studies. All scopes represent different editions, sub-studies, or regional applications of the same overarching research program.",
+      "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+      "boundaries": "Verschiedene SRF-Sendungen (Tagesschau, Echo der Zeit, News Instagram, Kassensturz)",
+      "geographic": "Schweiz",
+      "temporal": "2025",
+      "constituentScopes": [
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "2025",
+          "geographic": "Schweiz",
+          "boundaries": "SRF Tagesschau"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "2025",
+          "geographic": "Schweiz",
+          "boundaries": "SRF News Instagram"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "2025",
+          "geographic": "Schweiz, Lausanne",
+          "boundaries": "SRF News Instagram"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "30. August 2025",
+          "geographic": "Schweiz, Österreich",
+          "boundaries": "SRF Echo der Zeit"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "12. Oktober 2025",
+          "geographic": "Schweiz, Bern",
+          "boundaries": "SRF Tagesschau"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "15. November 2025",
+          "geographic": "Schweiz, Deutschland",
+          "boundaries": "SRF Tagesschau"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "2025",
+          "geographic": "Schweiz, Gaza",
+          "boundaries": "SRF Echo der Zeit"
+        },
+        {
+          "name": "Ombudsstelle-Bewertung von Bea",
+          "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+          "temporal": "2025",
+          "geographic": "Schweiz",
+          "boundaries": "SRF Kassensturz"
+        },
+        {
+          "name": "Jährliche Publikation mit syst",
+          "methodology": "Jährliche Publikation mit systematischer Datenerfassung zu Medienqualität, Mediennutzung und Medienkonzentration",
+          "temporal": "Jährlich publiziert",
+          "geographic": "Schweiz",
+          "boundaries": "Schweizer Mediensystem"
+        },
+        {
+          "name": "Systematische Untersuchung der",
+          "methodology": "Systematische Untersuchung der SRG SSR im Schweizer Medienmarkt mit Analyse der Mediennutzung",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "SRG SSR und privater Medienmarkt im Nachrichtenbereich"
+        },
+        {
+          "name": "Bewertung der SRG-Produkte dur",
+          "methodology": "Bewertung der SRG-Produkte durch das Jahrbuch Qualität der Medien",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "SRG-Produkte"
+        },
+        {
+          "name": "Systematische Analyse der Beri",
+          "methodology": "Systematische Analyse der Berichterstattungsqualität professioneller Informationsmedien, Ressourcenanalyse, Untersuchung der publizistischen Vielfalt und Medienkonzentration",
+          "temporal": "Seit 2010 jährlich publiziert; vorliegende Quelle bezieht sich auf 2019",
+          "geographic": "Schweiz",
+          "boundaries": "Professionelle Informationsmedien in der Schweiz; später erweitert auf digitale Plattformen und weitere Medienanbieter"
+        },
+        {
+          "name": "Systematische Analyse von Beri",
+          "methodology": "Systematische Analyse von Berichterstattungsqualität, Ressourcen, publizistischer Vielfalt, Medienkonzentration und Mediennutzung",
+          "temporal": "2010 bis 2019 (Jubiläumsausgabe 2019)",
+          "geographic": "Schweiz",
+          "boundaries": "Professionelle Informationsmedien; später erweitert auf digitale Plattformen und Tech-Plattformen"
+        },
+        {
+          "name": "Erweiterung des Forschungsdesi",
+          "methodology": "Erweiterung des Forschungsdesigns zur Erfassung des digitalen Strukturwandels der Medienöffentlichkeit",
+          "temporal": "Entwicklung über die Zeit von 2010 bis 2019",
+          "geographic": "Schweiz",
+          "boundaries": "Schweizer Medienöffentlichkeit; Medienanbieter und Plattformen"
+        },
+        {
+          "name": "Manuelle Inhaltsanalyse kombin",
+          "methodology": "Manuelle Inhaltsanalyse kombiniert mit Medienstrukturanalyse",
+          "temporal": "2015-2021",
+          "geographic": "Svizzera italiana (Tessin und italienischsprachige Regionen Graubündens)",
+          "boundaries": "Medientitel der italienischsprachigen Schweiz"
+        },
+        {
+          "name": "Systematische Analyse und Bewe",
+          "methodology": "Systematische Analyse und Bewertung von Medienqualität durch Inhaltsanalyse",
+          "temporal": "seit 2014, Ausgabe 2020",
+          "geographic": "Deutschschweiz und Suisse romande",
+          "boundaries": "Reichweitenstarke General-Interest-Medien mit breitem Themenspektrum"
+        },
+        {
+          "name": "Systematische Inhaltsanalyse v",
+          "methodology": "Systematische Inhaltsanalyse von Medienberichterstattung",
+          "temporal": "2022 (Jahrbuch 2022 dokumentiert)",
+          "geographic": "Schweiz",
+          "boundaries": "Medientitel verschiedener Sprachregionen der Schweiz"
+        },
+        {
+          "name": "Kombinierte Medienstrukturanal",
+          "methodology": "Kombinierte Medienstrukturanalyse und manuelle Inhaltsanalyse",
+          "temporal": "Langzeitanalyse seit 2015",
+          "geographic": "Svizzera italiana",
+          "boundaries": "Alle Mediensektoren (Print, Rundfunk, Online)"
+        }
+      ],
+      "internalCoherence": 0.865,
+      "evidenceCount": 33
+    },
+    {
+      "id": "CB_13",
+      "name": "Reuters Institute Digital News Report – Repräsentative Befragung (Schweiz 2024) + Vertiefungsstudie SRG im Medienmarkt (Jahrbuch 2024, repräsentative Befragung)",
+      "shortName": "Reuters DNR Befragung 2024",
+      "description": "Merged: Representative survey data from the Reuters Institute Digital News Report 2024 (University of Oxford), applied to Switzerland. All scopes use the same survey instrument with different analytical foci (media usage, willingness to pay, information market).; In-depth study within the Yearbook on Media Quality 2024, based on representative survey data, analyzing the role of SRG SSR in the Swiss media market. Closely related to Reuters DNR data but framed as a dedicated sub-study within the Jahrbuch.",
+      "methodology": "Repräsentative Befragung / Auswertung von Befragungsdaten aus dem Reuters Institute Digital News Report 2024",
+      "boundaries": "Informationsmediennutzung, Zahlungsbereitschaft, Online- und Offline-Nutzung",
+      "geographic": "Schweiz",
+      "temporal": "2024",
+      "constituentScopes": [
+        {
+          "name": "Auswertung von repräsentativen",
+          "methodology": "Auswertung von repräsentativen Befragungsdaten aus dem Reuters Institute Digital News Report 2024 der University of Oxford",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Informationsbereich, Online- und Offline-Nutzung"
+        },
+        {
+          "name": "Repräsentative Befragung aus d",
+          "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Online-Nutzung von Informationsmedien"
+        },
+        {
+          "name": "Repräsentative Befragung aus d",
+          "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Informationsmediennutzung"
+        },
+        {
+          "name": "Repräsentative Befragung aus d",
+          "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Zahlungsbereitschaft für Online-Nachrichten"
+        },
+        {
+          "name": "Repräsentative Befragung aus d",
+          "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Informationsmedienmarkt"
+        },
+        {
+          "name": "Repräsentative Befragung aus d",
+          "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Nachrichtenmediennutzung"
+        },
+        {
+          "name": "Repräsentative Befragung aus d",
+          "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Zahlungsbereitschaft für journalistische Inhalte"
+        },
+        {
+          "name": "Auswertung von repräsentativen",
+          "methodology": "Auswertung von repräsentativen Befragungsdaten aus dem Reuters Institute Digital News Report 2024 der University of Oxford",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Gesamtbevölkerung, Onlinebereich"
+        },
+        {
+          "name": "Vertiefungsstudie im Jahrbuch ",
+          "methodology": "Vertiefungsstudie im Jahrbuch Qualität der Medien 2024, basierend auf repräsentativer Befragung",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Nachrichtenbereich, Mediennutzung"
+        }
+      ],
+      "internalCoherence": 0.975,
+      "evidenceCount": 9
+    },
+    {
+      "id": "CB_15",
+      "name": "Systematische Überprüfung internationaler wissenschaftlicher Studien (Literaturreview) + Empirische Studien zu Nutzungsmustern und Zahlungsbereitschaft (Schweiz 2024)",
+      "shortName": "Internationaler Literaturreview",
+      "description": "Merged: Systematic review of international scientific studies on the relationship between public and private media. Fundamentally different methodology (literature review) and geographic scope (international) compared to Swiss-specific empirical studies.; Empirical studies analyzing usage patterns and their correlations with willingness to pay, using survey/empirical data. These are Swiss-specific empirical analyses that complement but are methodologically compatible with the Reuters DNR-based analyses.",
+      "methodology": "Systematische Überprüfung internationaler wissenschaftlicher Studien",
+      "boundaries": "Öffentlich zugängliche wissenschaftliche Studien",
+      "geographic": "International",
+      "temporal": "Bis 2025",
+      "constituentScopes": [
+        {
+          "name": "Systematische Überprüfung inte",
+          "methodology": "Systematische Überprüfung internationaler wissenschaftlicher Studien",
+          "temporal": "Bis zum Zeitpunkt der Berichterstellung 2025",
+          "geographic": "International",
+          "boundaries": "Öffentlich zugängliche wissenschaftliche Studien"
+        },
+        {
+          "name": "Empirische Studie zur Analyse ",
+          "methodology": "Empirische Studie zur Analyse von Nutzungsmustern und deren Zusammenhänge",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Online-Mediennutzung und Zahlungsbereitschaft"
+        },
+        {
+          "name": "Empirische Analyse von Befragu",
+          "methodology": "Empirische Analyse von Befragungsdaten",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Informationsmedien, Reichweite und Zahlungsbereitschaft"
+        }
+      ],
+      "internalCoherence": 0.95,
+      "evidenceCount": 3
+    },
+    {
+      "id": "CB_17",
+      "name": "Manuelle Inhaltsanalyse von SRG-Onlineportalen im Vergleich mit privaten Medien + Inhaltsanalyse der Berichterstattung zu Volksabstimmungen (fög, Links-rechts-Achse) + Wissenschaftliche Inhaltsanalyse und Qualitätswahrnehmung (Medienqualität)",
+      "shortName": "SRG-Online Vergleichs-Inhaltsanalyse",
+      "description": "Merged: Manual content analysis comparing SRG online news portals with private media online offerings across three language regions, using quality indicators. Both scopes share the same methodology (manual content analysis with quality comparison) and temporal/geographic scope.; Merged: Content analysis of Swiss media reporting on popular votes, using left-right axis classification and numerical scaling. All scopes share the same methodology family (Inhaltsanalyse) applied to political reporting in the context of Swiss referendums, with overlapping temporal and geographic scope.; Scientific content analysis combined with quality perception surveys, assessing media quality across Swiss media. Includes the fög annual systematic analysis and related quality assessments.",
+      "methodology": "Manuelle Inhaltsanalyse mit Vergleich von Qualitätsindikatoren",
+      "boundaries": "Online-Newsangebote, SRG vs. private Medien",
+      "geographic": "Schweiz (drei Sprachregionen)",
+      "temporal": "2024-2025",
+      "constituentScopes": [
+        {
+          "name": "Manuelle Inhaltsanalyse einer ",
+          "methodology": "Manuelle Inhaltsanalyse einer repräsentativen Auswahl der Gesamtberichterstattung von Online-Portalen der SRG aus drei Sprachregionen im Vergleich mit 20 Online-Medien privater Medien",
+          "temporal": "2024-2025",
+          "geographic": "Schweiz (drei Sprachregionen)",
+          "boundaries": "Online-Newsangebote; nur Textbeiträge und Informationsseiten der SRG-Onlineportale; 11 verschiedene Indikatoren"
+        },
+        {
+          "name": "Manuelle Inhaltsanalyse mit Ve",
+          "methodology": "Manuelle Inhaltsanalyse mit Vergleich von Qualitätsindikatoren",
+          "temporal": "2024-2025",
+          "geographic": "Schweiz",
+          "boundaries": "Online-Newsangebote; Vergleich zwischen SRG und privaten Medientypen"
+        },
+        {
+          "name": "Inhaltsanalyse von Berichterst",
+          "methodology": "Inhaltsanalyse von Berichterstattung zu Volksabstimmungen",
+          "temporal": "2018-2023",
+          "geographic": "Schweiz",
+          "boundaries": "23 Schweizer Medien, 44 Volksabstimmungen"
+        },
+        {
+          "name": "Inhaltsanalyse mit Links-recht",
+          "methodology": "Inhaltsanalyse mit Links-rechts-Achsen-Klassifizierung",
+          "temporal": "2018-2023",
+          "geographic": "Schweiz",
+          "boundaries": "Reichweitenstarke Medien (20 Minuten, SRF)"
+        },
+        {
+          "name": "Inhaltsanalyse von Berichterst",
+          "methodology": "Inhaltsanalyse von Berichterstattung im Vorfeld von Volksabstimmungen",
+          "temporal": "2018-2023",
+          "geographic": "Schweiz",
+          "boundaries": "Grosse Medien"
+        },
+        {
+          "name": "Inhaltsanalyse mit numerischer",
+          "methodology": "Inhaltsanalyse mit numerischer Skalierung auf Links-rechts-Achse",
+          "temporal": "2023",
+          "geographic": "Schweiz",
+          "boundaries": "Verschiedene Schweizer Medientitel"
+        },
+        {
+          "name": "Wissenschaftliche Inhaltsanaly",
+          "methodology": "Wissenschaftliche Inhaltsanalyse und Befragungen zur Qualitätswahrnehmung",
+          "temporal": "2020-2024",
+          "geographic": "Schweiz",
+          "boundaries": "Alle untersuchten Schweizer Medien"
+        },
+        {
+          "name": "Jährliche systematische Analys",
+          "methodology": "Jährliche systematische Analyse der Schweizer Medienlandschaft durch das fög-Forschungszentrum",
+          "temporal": "2010-2024",
+          "geographic": "Schweiz",
+          "boundaries": "Alle Mediengattungen"
+        }
+      ],
+      "internalCoherence": 0.9125,
+      "evidenceCount": 8
+    },
+    {
+      "id": "CB_03",
+      "name": "Repräsentative Befragung (BAKOM) + Periodische Übersicht politische Ausrichtung der Schweizer Presse (Blum 2011) + Empirische Analyse von Verdrängungseffekten (Crowding-out) und Mediennutzungsvergleich + Inhaltsanalyse von SRG-Social-Media-Angeboten",
+      "shortName": "BAKOM-Befragung",
+      "description": "Merged: Merged: Survey-based methodology (BAKOM, December 2024) with 3000 respondents assessing trust in Swiss media. Distinct from content analysis and from Reuters-based surveys.; Periodic overview of the political orientation of the Swiss press by media scholar Roger Blum. A distinct historical mapping methodology from 2011, different from systematic content analysis of referendum reporting.; Merged: Empirical analysis of crowding-out effects and comparative analysis of media usage between SRG users and non-users. Both scopes use empirical/comparative analysis of market dynamics between public and private media.; Content analysis of 23 SRG offerings on YouTube, Instagram, TikTok and Facebook, coded by information share and topic relevance. A specialized content analysis focused on social media for young audiences.",
+      "methodology": "Befragung",
+      "boundaries": "3000 Befragte",
+      "geographic": "Schweiz",
+      "temporal": "Dezember 2024",
+      "constituentScopes": [
+        {
+          "name": "Befragung",
+          "methodology": "Befragung",
+          "temporal": "Dezember 2024",
+          "geographic": "Schweiz",
+          "boundaries": "3000 Befragte"
+        },
+        {
+          "name": "Periodische Übersicht über die",
+          "methodology": "Periodische Übersicht über die politische Ausrichtung der Schweizer Presse",
+          "temporal": "2011",
+          "geographic": "Schweiz",
+          "boundaries": "Schweizer Presse und elektronische Medien"
+        },
+        {
+          "name": "Empirische Analyse von Verdrän",
+          "methodology": "Empirische Analyse von Verdrängungseffekten (crowding-out-These) auf Publikumsmarkt und Zahlungsbereitschaft",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Öffentlich-rechtliche vs. privatwirtschaftliche Medien"
+        },
+        {
+          "name": "Vergleichende Analyse der Medi",
+          "methodology": "Vergleichende Analyse der Mediennutzung zwischen SRG-Nutzer:innen und Nichtnutzer:innen",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Online und Offline Mediennutzung"
+        },
+        {
+          "name": "Inhaltsanalyse von 23 SRG-Ange",
+          "methodology": "Inhaltsanalyse von 23 SRG-Angeboten auf YouTube, Instagram, TikTok und Facebook; Codierung nach Informationsanteil und Themenrelevanz",
+          "temporal": "2024",
+          "geographic": "Schweiz",
+          "boundaries": "Social-Media-Angebote der SRG für junge Zielgruppen"
+        }
+      ],
+      "internalCoherence": 0.9625,
+      "evidenceCount": 5
+    },
+    {
+      "id": "CB_07",
+      "name": "Kritische Analyse von SRG-Berichterstattung (Beschwerden, Beobachtungen, UBI-Entscheide) + Dokumentation von SRF-Sendungsinhalten (Echo der Zeit, 11.2.2026) + Berichterstattung und Stellungnahmen zum Kündigungsschutz-Kompromiss (Primärquellen) + Öffentlicher Diskurs über SRF-Berichterstattung zum Kündigungsschutz (SGV-Kritik & SRF-Antwort)",
+      "shortName": "Kritische SRG-Berichterstattungsanalyse",
+      "description": "Merged: Merged: Advocacy-oriented and complaint-based analyses of SRG reporting, including legal complaints, daily observation of SRG website/content, analysis of guest selection, and UBI decisions. These share a common methodology family: critical/advocacy analysis of specific SRG editorial decisions, distinct from systematic scientific content analysis.; Direct documentation of broadcast content and details of the SRF Echo der Zeit episode of 11 February 2026. Both scopes document the same broadcast event.; Merged: Reporting on Federal Council statements, direct citations of stakeholder positions (SGV, SGB, Swissmem, Travailsuisse, SAV), and SRF reporting on the dismissal protection compromise. These are primary source documentation and stakeholder statements about the same policy event.; Public exchange between SGV (LinkedIn criticism) and SRF (official response) regarding the coverage of dismissal protection measures, plus direct citation of SGV position in SRF reporting. These scopes document the same public dispute about editorial decisions.",
+      "methodology": "Juristische Beschwerde, Beobachtungsanalyse und UBI-Entscheid-Analyse von SRG-Berichterstattung",
+      "boundaries": "SRG-Berichterstattung (Nahost, UNRWA, Website, Sendungen)",
+      "geographic": "Schweiz",
+      "temporal": "2024-2025",
+      "constituentScopes": [
+        {
+          "name": "Juristische Beschwerde und Ana",
+          "methodology": "Juristische Beschwerde und Analyse von SRG-Berichterstattung",
+          "temporal": "2024-2025",
+          "geographic": "Schweiz",
+          "boundaries": "SRG-Berichterstattung zu Nahost und UNRWA"
+        },
+        {
+          "name": "Analyse von SRG-Berichterstatt",
+          "methodology": "Analyse von SRG-Berichterstattung und Programmauswahl",
+          "temporal": "27. November 2024 - 27. Februar 2025",
+          "geographic": "Schweiz",
+          "boundaries": "UNRWA-Berichterstattung und Gästeauswahl in SRG-Sendungen"
+        },
+        {
+          "name": "Analyse von SRG-Website und jo",
+          "methodology": "Analyse von SRG-Website und journalistischen Beiträgen",
+          "temporal": "Mehrere Jahre, praktisch täglich beobachtet",
+          "geographic": "Schweiz",
+          "boundaries": "SRG-Berichterstattung auf Website und in Sendungen"
+        },
+        {
+          "name": "Analyse von UBI-Entscheid und ",
+          "methodology": "Analyse von UBI-Entscheid und SRG-Reaktion",
+          "temporal": "12. Dezember 2024 und danach",
+          "geographic": "Schweiz",
+          "boundaries": "SRG-Berichterstattung zu Nahost-Universitätsprotesten"
+        },
+        {
+          "name": "Dokumentation des Sendungsinha",
+          "methodology": "Dokumentation des Sendungsinhalts und der Ausstrahlung",
+          "temporal": "11. Februar 2026, 18:00 Uhr",
+          "geographic": "Schweiz",
+          "boundaries": "SRF Echo der Zeit Sendung"
+        },
+        {
+          "name": "Dokumentation der Sendungsdeta",
+          "methodology": "Dokumentation der Sendungsdetails",
+          "temporal": "11. Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "SRF Echo der Zeit"
+        },
+        {
+          "name": "Berichterstattung über Bundesr",
+          "methodology": "Berichterstattung über Bundesratsaussagen",
+          "temporal": "Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "Schweiz-EU Vertragsverhandlungen"
+        },
+        {
+          "name": "Offizielle Bundesratsmitteilun",
+          "methodology": "Offizielle Bundesratsmitteilung basierend auf Sozialpartner-Verhandlungen",
+          "temporal": "11. Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "Begleitmassnahme 14 zum EU-Vertragspaket"
+        },
+        {
+          "name": "Stellungnahme des Schweizerisc",
+          "methodology": "Stellungnahme des Schweizerischen Arbeitgeberverbands",
+          "temporal": "11. Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "Kündigungsschutz für Arbeitnehmervertretungen"
+        },
+        {
+          "name": "Stellungnahme des Verbands der",
+          "methodology": "Stellungnahme des Verbands der Schweizer Tech-Industrie Swissmem",
+          "temporal": "11. Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "Kündigungsschutz für Arbeitnehmervertretungen"
+        },
+        {
+          "name": "Stellungnahme des Schweizerisc",
+          "methodology": "Stellungnahme des Schweizerischen Gewerkschaftsbunds",
+          "temporal": "11. Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "Kündigungsschutz für Personalvertretungen"
+        },
+        {
+          "name": "Stellungnahme von Travailsuiss",
+          "methodology": "Stellungnahme von Travailsuisse",
+          "temporal": "11. Februar 2026",
+          "geographic": "Schweiz",
+          "boundaries": "Kündigungsschutz für Arbeitnehmervertretungen"
+        },
+        {
+          "name": "Direkte Zitierung der Stellung",
+          "methodology": "Direkte Zitierung der Stellungnahme des SGV in SRF-Berichterstattung",
+          "temporal": "21. März 2025",
+          "geographic": "Schweiz",
+          "boundaries": "Lohnschutz-Kompromiss und Kündigungsschutz für Arbeitnehmervertretungen"
+        },
+        {
+          "name": "Öffentliche Stellungnahme auf ",
+          "methodology": "Öffentliche Stellungnahme auf LinkedIn mit Verweis auf SRF-Berichterstattung",
+          "temporal": "5 Tage vor dem LinkedIn-Post (ca. 16. März 2025, bezogen auf Berichterstattung vom 11. Februar 2026)",
+          "geographic": "Schweiz",
+          "boundaries": "SRF-Berichterstattung (Tagesschau, Echo der Zeit) zur Massnahme 14 des EU-Pakets"
+        },
+        {
+          "name": "Offizielle Stellungnahme von S",
+          "methodology": "Offizielle Stellungnahme von SRF als Antwort auf LinkedIn-Kritik",
+          "temporal": "5 Tage nach dem ursprünglichen Vorwurf (ca. 21. März 2025)",
+          "geographic": "Schweiz",
+          "boundaries": "SRF-Berichterstattung zur Kündigungsschutz-Massnahme"
+        },
+        {
+          "name": "Berichterstattung über SGV-Ste",
+          "methodology": "Berichterstattung über SGV-Stellungnahme in SRF-Artikel",
+          "temporal": "21. März 2025",
+          "geographic": "Schweiz",
+          "boundaries": "Lohnschutz-Kompromiss und Kündigungsschutz-Massnahmen"
+        }
+      ],
+      "internalCoherence": 0.8,
+      "evidenceCount": 16
+    }
+  ],
+  "claimVerdicts": [
+    {
+      "id": "CV_AC_01",
+      "claimId": "AC_01",
+      "truthPercentage": 28,
+      "verdict": "MOSTLY-FALSE",
+      "confidence": 62,
+      "reasoning": "Die Behauptung einer systematischen politischen Linksausrichtung der SRG wird durch die verfügbare wissenschaftliche Evidenz überwiegend nicht gestützt, jedoch sind die Gegenargumente der Challenger substanziell und erfordern eine Anpassung. Die fög-Studie (CB_17) bleibt die methodisch stärkste Evidenz, attestiert SRF politische Neutralität auf der Links-rechts-Achse. Allerdings akzeptiere ich den Challenger-Einwand, dass diese Studie ausschliesslich Volksabstimmungsberichterstattung analysiert, die besonderen regulatorischen Anforderungen (RTVG Art. 4) unterliegt und daher nicht repräsentativ für die gesamte SRG-Berichterstattung ist. Es fehlt tatsächlich eine systematische Analyse von Agenda-Setting, Framing und Gästeauswahl in der Alltagsberichterstattung. Der Unabhängigkeitseinwand bezüglich der fög-Finanzierung durch die SRG ist relevant, wenn auch das fög als universitäres Forschungszentrum akademischen Standards unterliegt – dies schwächt die Evidenz leicht, entwertet sie aber nicht. Der Einwand zur Advocacy-Evidenz (Erken/SRG-Initiative) ist teilweise berechtigt: Die konkreten, überprüfbaren Vorwürfe (UBI-Rüge nicht berichtet, UN Watch systematisch nicht eingeladen) hätten empirisch geprüft werden müssen, statt pauschal als advocacy-basiert abgetan zu werden. Der fehlende exakte numerische Wert für SRF auf der Links-rechts-Skala ist eine reale Evidenzlücke. Insgesamt erhöhe ich den Wahrheitswert leicht (von 22% auf 28%), da die Evidenzbasis gegen die Behauptung schmaler ist als zunächst dargestellt, und senke die Konfidenz deutlich (von 72% auf 62%), da wesentliche Bereiche der SRG-Berichterstattung nicht systematisch untersucht wurden. Die Selbstkonsistenz war stabil (Spread 0).",
+      "harmPotential": "high",
+      "isContested": true,
+      "supportingEvidenceIds": [
+        "EV_1771348655092",
+        "EV_1771348702826",
+        "EV_1771348702827",
+        "EV_1771348702828",
+        "EV_1771348702829"
+      ],
+      "contradictingEvidenceIds": [
+        "EV_1771348655087",
+        "EV_1771348655088",
+        "EV_1771348655089",
+        "EV_1771348655090",
+        "EV_1771348655091",
+        "EV_1771348655093"
+      ],
+      "boundaryFindings": [
+        {
+          "boundaryId": "CB_17",
+          "boundaryName": "SRG-Online Vergleichs-Inhaltsanalyse",
+          "truthPercentage": 10,
+          "confidence": 88,
+          "evidenceDirection": "contradicts",
+          "evidenceCount": 6
+        },
+        {
+          "boundaryId": "CB_03",
+          "boundaryName": "BAKOM-Befragung",
+          "truthPercentage": 25,
+          "confidence": 65,
+          "evidenceDirection": "mixed",
+          "evidenceCount": 5
+        },
+        {
+          "boundaryId": "CB_07",
+          "boundaryName": "Kritische SRG-Berichterstattungsanalyse",
+          "truthPercentage": 55,
+          "confidence": 40,
+          "evidenceDirection": "supports",
+          "evidenceCount": 4
+        }
+      ],
+      "consistencyResult": {
+        "claimId": "AC_01",
+        "percentages": [
+          22,
+          22,
+          22
+        ],
+        "average": 22,
+        "spread": 0,
+        "stable": true,
+        "assessed": true
+      },
+      "challengeResponses": [
+        {
+          "challengeType": "methodology_weakness",
+          "response": "Akzeptiert. Die fög-Studie analysiert ausschliesslich Volksabstimmungsberichterstattung, die besonderen regulatorischen Anforderungen unterliegt. Dies ist nicht repräsentativ für die gesamte SRG-Berichterstattung. Eine systematische Linksausrichtung könnte sich in der Alltagsberichterstattung manifestieren, ohne in der Abstimmungsberichterstattung sichtbar zu sein. Dies schwächt die Beweiskraft der Hauptevidenz gegen die Behauptung erheblich.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Es fehlt tatsächlich jegliche systematische Analyse von Agenda-Setting, Framing und Gästeauswahl ausserhalb von Volksabstimmungen. Dies ist eine wesentliche Lücke, da sich politische Ausrichtung gerade in diesen Bereichen manifestieren kann. Die Konfidenz wird entsprechend gesenkt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "independence_concern",
+          "response": "Teilweise akzeptiert. Die fög-Mitfinanzierung durch die SRG ist ein relevanter Punkt, der die Evidenz leicht schwächt. Allerdings unterliegt das fög als universitäres Forschungszentrum akademischen Peer-Review-Standards, was einen vollständigen Interessenkonflikt unwahrscheinlich macht. Der Einwand zur BAKOM-Befragung ist valide: Vertrauen misst nicht objektive Ausgewogenheit.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "assumption",
+          "response": "Teilweise akzeptiert. Die pauschale Abwertung der Advocacy-Evidenz war methodisch nicht sauber. Konkrete, überprüfbare Vorwürfe (UBI-Rüge nicht berichtet, systematischer Ausschluss von UN Watch) hätten empirisch geprüft werden müssen. Die Herkunft einer Quelle entwertet nicht automatisch die Faktizität der Einzelbeobachtungen. Allerdings reichen Einzelbeobachtungen nicht aus, um eine 'systematische' Linksausrichtung zu belegen.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Der fehlende exakte numerische Wert für SRF auf der Links-rechts-Skala ist eine reale Evidenzlücke. Die Aussage 'politisch neutral' ohne konkreten Wert lässt Interpretationsspielraum.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "methodology_weakness",
+          "response": "Akzeptiert. Die Links-rechts-Einstufung basierend auf Positionierung zu Volksabstimmungsvorlagen erfasst nicht subtilere Formen von Bias wie Framing, Wortwahl und Quellenauswahl in der täglichen Berichterstattung. Dies verstärkt den ersten Methodikeinwand.",
+          "verdictAdjusted": true
+        }
+      ],
+      "triangulationScore": {
+        "boundaryCount": 3,
+        "supporting": 1,
+        "contradicting": 1,
+        "level": "conflicted",
+        "factor": 0
+      }
+    },
+    {
+      "id": "CV_AC_02",
+      "claimId": "AC_02",
+      "truthPercentage": 50,
+      "verdict": "MIXED",
+      "confidence": 50,
+      "reasoning": "Die Behauptung enthält zwei Teilaspekte: (1) SRF berichtete über eine 'angebliche Einigung' und (2) diese entsprach laut sgv nicht den Tatsachen. Die Challenger-Einwände sind substanziell und erfordern eine Neubewertung. Der wichtigste Einwand betrifft die semantische Unterscheidung: SRF sprach nachweislich von einem 'Ergebnis beim Kündigungsschutz' (EV_1771348732792), nicht von einer 'Einigung der Sozialpartner'. Der sgv-Vorwurf bezieht sich auf eine 'angebliche Einigung' – ohne Transkript der 5:38-minütigen Sendung ist nicht feststellbar, ob SRF im Sendungsverlauf tatsächlich das Wort 'Einigung' verwendete. Wenn SRF nur von 'Ergebnis' sprach, wäre der Vorwurf substanziell schwächer. Andererseits ist der Challenger-Einwand zur Travailsuisse-Interpretation valide: Wenn drei Arbeitgeberverbände (sgv, SAV, Swissmem) geschlossen von 'ohne Einigung der Sozialpartner' sprechen, ist die Tatsache, dass Travailsuisse von einer 'einvernehmlichen Lösung' spricht, kein gleichwertiges Gegengewicht – Travailsuisse könnte die Einigung zwischen Gewerkschaften und Bundesrat meinen. Es fehlen das Sendungstranskript und die offizielle Bundesratsmitteilung im Wortlaut. Ich senke den Wahrheitswert leicht (von 55% auf 50%) und die Konfidenz deutlich (von 62% auf 50%), da die zentrale Frage – was SRF genau sagte – nicht beantwortet werden kann. Die Selbstkonsistenz war stabil (Spread 0).",
+      "harmPotential": "medium",
+      "isContested": true,
+      "supportingEvidenceIds": [
+        "EV_001",
+        "EV_1771349029543",
+        "EV_1771349029544",
+        "EV_1771348732790",
+        "EV_1771348732792"
+      ],
+      "contradictingEvidenceIds": [
+        "EV_1771349029546",
+        "EV_1771348772965"
+      ],
+      "boundaryFindings": [
+        {
+          "boundaryId": "CB_07",
+          "boundaryName": "Kritische SRG-Berichterstattungsanalyse",
+          "truthPercentage": 55,
+          "confidence": 62,
+          "evidenceDirection": "mixed",
+          "evidenceCount": 8
+        }
+      ],
+      "consistencyResult": {
+        "claimId": "AC_02",
+        "percentages": [
+          55,
+          55,
+          55
+        ],
+        "average": 55,
+        "spread": 0,
+        "stable": true,
+        "assessed": true
+      },
+      "challengeResponses": [
+        {
+          "challengeType": "assumption",
+          "response": "Akzeptiert. Die Unterscheidung zwischen 'Ergebnis' und 'Einigung' ist zentral. SRF sprach nachweislich von 'Ergebnis', nicht von 'Einigung'. Ohne Transkript ist unklar, ob im Sendungsverlauf das Wort 'Einigung' fiel. Dies schwächt den sgv-Vorwurf potenziell erheblich, kann aber ohne Transkript nicht abschliessend beurteilt werden.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Das fehlende Transkript der 5:38-minütigen Sendung ist eine kritische Evidenzlücke. Die gesamte Bewertung basiert auf Titel und Kurzbeschreibung. Die Konfidenz wird deutlich gesenkt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "assumption",
+          "response": "Akzeptiert. Die Gleichsetzung von Travailsuisse als gleichwertiges Gegengewicht zur geschlossenen Arbeitgeberseite war nicht angemessen. Drei unabhängige Arbeitgeberverbände sprechen geschlossen von 'ohne Einigung der Sozialpartner'. Travailsuisses 'einvernehmliche Lösung' könnte sich auf die Einigung zwischen Gewerkschaften und Bundesrat beziehen. Die 'Grauzone'-Einschätzung war daher zu grosszügig gegenüber SRF.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Die offizielle Bundesratsmitteilung im Wortlaut fehlt. Die Formulierung des Bundesrats wäre entscheidend für die Bewertung, ob SRF korrekt berichtete.",
+          "verdictAdjusted": true
+        }
+      ],
+      "triangulationScore": {
+        "boundaryCount": 1,
+        "supporting": 0,
+        "contradicting": 0,
+        "level": "weak",
+        "factor": -0.1
+      }
+    },
+    {
+      "id": "CV_AC_03",
+      "claimId": "AC_03",
+      "truthPercentage": 65,
+      "verdict": "LEANING-TRUE",
+      "confidence": 55,
+      "reasoning": "Die Behauptung, SRF habe die ablehnende Haltung des sgv unterschlagen, wird für die Erstberichterstattung am 11.2.2026 durch die Evidenz gestützt. SRFs eigene Erklärung ('Platzgründe') ist ein implizites Eingeständnis, dass die sgv-Position fehlte. Die Challenger-Einwände erfordern jedoch Anpassungen. Der gravierendste Einwand betrifft die zeitliche Inkonsistenz: Die 'Folgeberichterstattung' vom 21. März 2025 liegt zeitlich VOR der beanstandeten Sendung vom 11. Februar 2026. Dies deutet darauf hin, dass es sich um verschiedene Berichterstattungsereignisse handelt (verschiedene Verhandlungsphasen), was die Relativierung des Vorwurfs durch die Folgeberichterstattung erheblich schwächt. Wenn die Folgeberichterstattung tatsächlich ein früheres Ereignis betrifft, fällt das Hauptargument zur Relativierung weg, und der Vorwurf steht stärker. Ich erhöhe daher den Wahrheitswert leicht (von 60% auf 65%). Die Einwände zur fehlenden unabhängigen Überprüfung des Sendungsinhalts und zur fehlenden Ombudsstelle-Bewertung dieses spezifischen Falls sind valide und senken die Konfidenz (von 68% auf 55%). SRFs 'Platzgründe'-Erklärung kann sowohl als Eingeständnis als auch als legitime redaktionelle Begründung interpretiert werden – ohne zu wissen, welche Stimmen im Beitrag vorkamen, ist eine abschliessende Bewertung nicht möglich. Die Selbstkonsistenz war stabil (Spread 0).",
+      "harmPotential": "medium",
+      "isContested": true,
+      "supportingEvidenceIds": [
+        "EV_001",
+        "EV_002",
+        "EV_1771348772964"
+      ],
+      "contradictingEvidenceIds": [
+        "EV_1771348772965",
+        "EV_1771348772963",
+        "EV_1771348772966"
+      ],
+      "boundaryFindings": [
+        {
+          "boundaryId": "CB_07",
+          "boundaryName": "Kritische SRG-Berichterstattungsanalyse",
+          "truthPercentage": 60,
+          "confidence": 68,
+          "evidenceDirection": "mixed",
+          "evidenceCount": 4
+        }
+      ],
+      "consistencyResult": {
+        "claimId": "AC_03",
+        "percentages": [
+          60,
+          60,
+          60
+        ],
+        "average": 60,
+        "spread": 0,
+        "stable": true,
+        "assessed": true
+      },
+      "challengeResponses": [
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Es fehlt eine unabhängige Überprüfung des Sendungsinhalts. Ohne Informationen über den Zeitpunkt der sgv-Medienmitteilung und die im Beitrag zitierten Stimmen ist die Bewertung unvollständig. Die Konfidenz wird gesenkt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "assumption",
+          "response": "Teilweise akzeptiert. SRFs 'Platzgründe'-Erklärung ist ambivalent interpretierbar. Ohne zu wissen, welche Stimmen im Beitrag vorkamen (nur Bundesrat? Gewerkschaften und Bundesrat? Auch andere Arbeitgeber?), kann nicht beurteilt werden, ob die Nichtberücksichtigung des sgv eine vertretbare Priorisierung oder eine einseitige Auslassung war.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "assumption",
+          "response": "Akzeptiert. Die zeitliche Inkonsistenz ist ein gravierender Einwand. Die 'Folgeberichterstattung' vom 21. März 2025 liegt VOR der beanstandeten Sendung vom 11. Februar 2026. Es handelt sich offenbar um verschiedene Berichterstattungsereignisse. Das Hauptargument zur Relativierung des Vorwurfs (sgv-Position wurde in Folgeberichterstattung dargestellt) fällt damit weitgehend weg. Der Wahrheitswert wird erhöht.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "independence_concern",
+          "response": "Akzeptiert. Die Evidenz stammt ausschliesslich von den beiden Parteien (sgv und SRF). Eine unabhängige Bewertung, insbesondere durch die Ombudsstelle, fehlt. Dies ist eine relevante Lücke.",
+          "verdictAdjusted": true
+        }
+      ],
+      "triangulationScore": {
+        "boundaryCount": 1,
+        "supporting": 0,
+        "contradicting": 0,
+        "level": "weak",
+        "factor": -0.1
+      }
+    },
+    {
+      "id": "CV_AC_04",
+      "claimId": "AC_04",
+      "truthPercentage": 82,
+      "verdict": "MOSTLY-TRUE",
+      "confidence": 80,
+      "reasoning": "Die Behauptung, dass die Ombudsstelle mehrere SRF-Sendungen als sachgerecht und regelkonform bewertet hat, ist faktisch korrekt und durch zahlreiche spezifische Beispiele belegt. Die Challenger-Einwände sind jedoch teilweise berechtigt und erfordern moderate Anpassungen. Der Einwand zur Unabhängigkeit der Ombudsstelle ist relevant: Als interne Kontrollinstanz der SRG prüft sie gegen den relativ hohen Schwellenwert des RTVG. 'Sachgerecht' im Sinne des RTVG bedeutet nicht zwingend 'qualitativ hochwertig' oder 'ausgewogen' im journalistischen Sinne. Der Einwand zur fehlenden Gesamtstatistik (Ablehnungsquote, UBI-Weiterzüge) ist valide – die Selektion der dargestellten Fälle könnte ein verzerrtes Bild erzeugen. Der Hinweis auf die UBI-Rüge wegen Nichtberichterstattung über Nahost-Universitätsproteste (EV_1771348702829) zeigt, dass es Fälle gibt, in denen eine höhere Instanz anders urteilte als die Ombudsstelle. Der Einwand zur Trivialität der Behauptung ist teilweise berechtigt: Jede Ombudsstelle lehnt die Mehrheit der Beanstandungen ab, daher ist 'mehrere als sachgerecht bewertet' eine erwartbare Aussage. Ich senke den Wahrheitswert leicht (von 85% auf 82%) und die Konfidenz (von 88% auf 80%), da die Behauptung zwar faktisch korrekt ist, aber ohne Kontextinformationen (Gesamtquote, UBI-Entscheide) ein potenziell unvollständiges Bild vermittelt. Die Selbstkonsistenz war stabil (Spread 0).",
+      "harmPotential": "low",
+      "isContested": false,
+      "supportingEvidenceIds": [
+        "EV_1771348845104",
+        "EV_1771348845105",
+        "EV_1771348845106",
+        "EV_1771348845107",
+        "EV_1771348845108",
+        "EV_1771348845110",
+        "EV_1771348845111",
+        "EV_010",
+        "EV_011",
+        "EV_012"
+      ],
+      "contradictingEvidenceIds": [
+        "EV_1771348845109"
+      ],
+      "boundaryFindings": [
+        {
+          "boundaryId": "CB_11",
+          "boundaryName": "Ombudsstelle-Bewertungen von SRF-Sendungen + Jahrbuch Qualität der Medien",
+          "truthPercentage": 85,
+          "confidence": 88,
+          "evidenceDirection": "supports",
+          "evidenceCount": 8
+        }
+      ],
+      "consistencyResult": {
+        "claimId": "AC_04",
+        "percentages": [
+          85,
+          85,
+          85
+        ],
+        "average": 85,
+        "spread": 0,
+        "stable": true,
+        "assessed": true
+      },
+      "challengeResponses": [
+        {
+          "challengeType": "methodology_weakness",
+          "response": "Akzeptiert. Die Ombudsstelle ist eine interne Kontrollinstanz mit dem relativ hohen Schwellenwert des RTVG. 'Sachgerecht' bedeutet nicht zwingend 'qualitativ hochwertig'. Dies relativiert die Aussagekraft der Bewertungen, ändert aber nichts an der faktischen Korrektheit der Behauptung.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Es fehlen Gesamtstatistiken (Ablehnungsquote, UBI-Weiterzüge). Der Hinweis auf die UBI-Rüge (EV_1771348702829) zeigt, dass es Fälle gibt, in denen höhere Instanzen anders urteilten. Die Selektion der dargestellten Fälle könnte ein verzerrtes Bild erzeugen. Die Konfidenz wird gesenkt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "assumption",
+          "response": "Teilweise akzeptiert. Die Behauptung ist in gewissem Masse trivial, da Ombudsstellen typischerweise die Mehrheit der Beanstandungen ablehnen. Ohne Kontextinformationen zur Quote ist die Aussagekraft begrenzt. Allerdings bleibt die Behauptung faktisch korrekt, weshalb der Wahrheitswert nur leicht gesenkt wird.",
+          "verdictAdjusted": true
+        }
+      ],
+      "triangulationScore": {
+        "boundaryCount": 1,
+        "supporting": 1,
+        "contradicting": 0,
+        "level": "weak",
+        "factor": -0.1
+      }
+    },
+    {
+      "id": "CV_AC_05",
+      "claimId": "AC_05",
+      "truthPercentage": 90,
+      "verdict": "TRUE",
+      "confidence": 90,
+      "reasoning": "Die Behauptung ist faktisch korrekt und wird durch zahlreiche unabhängige Quellen bestätigt. Das Jahrbuch Qualität der Medien existiert, wird vom fög der Universität Zürich herausgegeben, erscheint seit 2010, und untersucht systematisch die Medienqualität der Schweizer Medienlandschaft, einschliesslich der SRG SSR. Die Vertiefungsstudie zur SRG im Jahrbuch 2024 ist spezifisch belegt. Die Challenger-Einwände sind von geringer Schwere. Der Einwand, dass das Jahrbuch die gesamte Medienlandschaft untersucht und die SRG nur ein Teil davon ist, ist sachlich korrekt, ändert aber nichts daran, dass die SRG systematisch untersucht wird – sie ist ein zentraler Bestandteil der Analyse. Die Vertiefungsstudie 2024 ist eine Sonderstudie, aber die SRG wird auch in den regulären Ausgaben systematisch erfasst. Der Unabhängigkeitseinwand bezüglich der SRG-eigenen Website als Quelle ist berechtigt, wird aber durch unabhängige akademische Quellen (EV_1771348900012, EV_1771348927183-86) bestätigt. Die Formulierung 'gute Noten' ist eine SRG-eigene Interpretation, aber die Existenz und systematische Natur der Untersuchung ist unbestritten. Ich senke den Wahrheitswert minimal (von 92% auf 90%) und belasse die Konfidenz bei 90%. Die Selbstkonsistenz war stabil (Spread 2).",
+      "harmPotential": "low",
+      "isContested": false,
+      "supportingEvidenceIds": [
+        "EV_1771348879114",
+        "EV_1771348879115",
+        "EV_1771348879116",
+        "EV_1771348900012",
+        "EV_1771348900013",
+        "EV_1771348900014",
+        "EV_1771348927183",
+        "EV_1771348927184",
+        "EV_1771348927185",
+        "EV_1771348927186",
+        "EV_014",
+        "EV_1771348681025"
+      ],
+      "contradictingEvidenceIds": [],
+      "boundaryFindings": [
+        {
+          "boundaryId": "CB_11",
+          "boundaryName": "Ombudsstelle-Bewertungen von SRF-Sendungen + Jahrbuch Qualität der Medien",
+          "truthPercentage": 92,
+          "confidence": 93,
+          "evidenceDirection": "supports",
+          "evidenceCount": 10
+        },
+        {
+          "boundaryId": "CB_17",
+          "boundaryName": "SRG-Online Vergleichs-Inhaltsanalyse",
+          "truthPercentage": 90,
+          "confidence": 85,
+          "evidenceDirection": "supports",
+          "evidenceCount": 1
+        }
+      ],
+      "consistencyResult": {
+        "claimId": "AC_05",
+        "percentages": [
+          92,
+          90,
+          90
+        ],
+        "average": 90.66666666666667,
+        "spread": 2,
+        "stable": true,
+        "assessed": true
+      },
+      "challengeResponses": [
+        {
+          "challengeType": "assumption",
+          "response": "Teilweise akzeptiert. Das Jahrbuch untersucht die gesamte Schweizer Medienlandschaft, und die SRG ist ein Teil davon. Die Vertiefungsstudie 2024 ist eine Sonderstudie. Allerdings wird die SRG auch in den regulären Ausgaben systematisch erfasst, da sie zu den reichweitenstärksten Informationsmedien gehört. Die Behauptung bleibt im Kern korrekt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "independence_concern",
+          "response": "Teilweise akzeptiert. Die SRG-eigene Website als Quelle hat ein Darstellungsinteresse. Die Kernaussage wird jedoch durch unabhängige akademische Quellen bestätigt. Die Formulierung 'gute Noten' ist eine SRG-Interpretation, betrifft aber nicht die Kernbehauptung (Existenz und systematische Natur der Untersuchung).",
+          "verdictAdjusted": false
+        }
+      ],
+      "triangulationScore": {
+        "boundaryCount": 1,
+        "supporting": 1,
+        "contradicting": 0,
+        "level": "weak",
+        "factor": -0.1
+      }
+    },
+    {
+      "id": "CV_AC_06",
+      "claimId": "AC_06",
+      "truthPercentage": 82,
+      "verdict": "MOSTLY-TRUE",
+      "confidence": 72,
+      "reasoning": "Die Behauptung, dass die Vertiefungsstudie im Jahrbuch 2024 keine empirischen Belege für eine Verdrängung privatwirtschaftlicher Medien durch die SRG findet, wird durch die vorliegende Evidenz konsistent gestützt. Allerdings sind die Challenger-Einwände substanziell und erfordern eine deutliche Anpassung der Konfidenz und eine moderate Anpassung des Wahrheitswerts. Der gravierendste Einwand betrifft die Unabhängigkeit der Datenquellen: Die scheinbar fünf unabhängigen Boundaries reduzieren sich möglicherweise auf ein bis zwei unabhängige Datenquellen (Reuters-DNR-Daten und fög-Forschung). Die Konvergenz der Ergebnisse ist daher weniger beeindruckend als zunächst dargestellt. Der Einwand zum fehlenden Werbemarkt ist hochrelevant: Die Studie untersucht den Publikumsmarkt und die Zahlungsbereitschaft, aber Verdrängungseffekte könnten sich primär auf dem Werbemarkt manifestieren. Kostenlose SRG-Online-Angebote könnten Werbeeinnahmen von privaten Medien abziehen, auch wenn Nutzer beide Angebote parallel konsumieren. Dies ist eine wesentliche Lücke. Der Methodikeinwand zur Befragungsstudie (selbstberichtetes vs. tatsächliches Verhalten, Selektionseffekt bei medienaffinen Nutzern) ist valide. Der Einwand zur kontrafaktischen Frage ist berechtigt: Die Studie kann nicht beantworten, ob private Medien ohne SRG-Online-Konkurrenz höhere Reichweiten hätten. Das Fehlen von Stimmen der privaten Medienbranche (Verlegerverband, TX Group, Ringier, CH Media) ist eine relevante Lücke. Die Behauptung bezieht sich spezifisch auf die Befunde der Vertiefungsstudie, die tatsächlich keine Verdrängungsbelege findet – dies ist faktisch korrekt. Aber die Studie hat methodische Grenzen, die ihre Aussagekraft einschränken. Ich senke den Wahrheitswert (von 92% auf 82%) und die Konfidenz deutlich (von 90% auf 72%). Die Selbstkonsistenz war stabil (Spread 0).",
+      "harmPotential": "low",
+      "isContested": true,
+      "supportingEvidenceIds": [
+        "EV_1771348958378",
+        "EV_1771348958380",
+        "EV_1771348958381",
+        "EV_1771348958382",
+        "EV_1771348958383",
+        "EV_1771348958385",
+        "EV_1771348958386",
+        "EV_1771348958388",
+        "EV_1771348978468",
+        "EV_1771348978469",
+        "EV_1771348978470",
+        "EV_1771348681026",
+        "EV_1771348681027",
+        "EV_015",
+        "EV_1771348997471",
+        "EV_1771348997473"
+      ],
+      "contradictingEvidenceIds": [],
+      "boundaryFindings": [
+        {
+          "boundaryId": "CB_13",
+          "boundaryName": "Reuters DNR Befragung 2024",
+          "truthPercentage": 95,
+          "confidence": 92,
+          "evidenceDirection": "supports",
+          "evidenceCount": 9
+        },
+        {
+          "boundaryId": "CB_15",
+          "boundaryName": "Internationaler Literaturreview",
+          "truthPercentage": 92,
+          "confidence": 88,
+          "evidenceDirection": "supports",
+          "evidenceCount": 3
+        },
+        {
+          "boundaryId": "CB_17",
+          "boundaryName": "SRG-Online Vergleichs-Inhaltsanalyse",
+          "truthPercentage": 85,
+          "confidence": 78,
+          "evidenceDirection": "supports",
+          "evidenceCount": 2
+        },
+        {
+          "boundaryId": "CB_03",
+          "boundaryName": "BAKOM-Befragung",
+          "truthPercentage": 92,
+          "confidence": 85,
+          "evidenceDirection": "supports",
+          "evidenceCount": 2
+        },
+        {
+          "boundaryId": "CB_11",
+          "boundaryName": "Ombudsstelle-Bewertungen von SRF-Sendungen + Jahrbuch Qualität der Medien",
+          "truthPercentage": 90,
+          "confidence": 82,
+          "evidenceDirection": "supports",
+          "evidenceCount": 1
+        }
+      ],
+      "consistencyResult": {
+        "claimId": "AC_06",
+        "percentages": [
+          92,
+          92,
+          92
+        ],
+        "average": 92,
+        "spread": 0,
+        "stable": true,
+        "assessed": true
+      },
+      "challengeResponses": [
+        {
+          "challengeType": "methodology_weakness",
+          "response": "Akzeptiert. Die Reuters-DNR-Befragung misst selbstberichtetes Nutzungsverhalten, nicht tatsächliches Verhalten. Der Selektionseffekt (medienaffine SRG-Nutzer konsumieren generell mehr Medien) ist ein valider alternativer Erklärungsansatz. Dies schwächt die Beweiskraft der Kernanalyse.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Die fehlende Analyse des Werbemarkts ist eine wesentliche Lücke. Verdrängungseffekte könnten sich primär auf dem Werbemarkt manifestieren, auch wenn Nutzer beide Angebote parallel konsumieren. Die Studie adressiert nur den Publikumsmarkt und die Zahlungsbereitschaft. Der Wahrheitswert und die Konfidenz werden gesenkt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "assumption",
+          "response": "Teilweise akzeptiert. Der 3,5%-Wert ist ein Querschnittsbefund und beantwortet nicht die kontrafaktische Frage. Allerdings ist er als deskriptiver Befund korrekt und relevant. Die dynamische Perspektive (zukünftige Entwicklung) ist ein valider Einwand, betrifft aber nicht die aktuelle Befundlage.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "independence_concern",
+          "response": "Akzeptiert. Die scheinbar fünf unabhängigen Boundaries reduzieren sich auf ein bis zwei unabhängige Datenquellen (Reuters-DNR und fög-Forschung). Die Konvergenz ist daher weniger aussagekräftig als zunächst dargestellt. Dies ist ein wesentlicher Einwand, der die Konfidenz deutlich senkt.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "missing_evidence",
+          "response": "Akzeptiert. Das Fehlen von Perspektiven und Studien der privaten Medienbranche ist eine relevante Lücke. Verleger haben wiederholt Verdrängungseffekte beklagt. Ohne systematische Erfassung und Widerlegung dieser Gegenargumente ist die Evidenzbasis einseitig.",
+          "verdictAdjusted": true
+        },
+        {
+          "challengeType": "methodology_weakness",
+          "response": "Teilweise akzeptiert. Die Zusammenfassung 'in der Summe nicht gestützt' kann Heterogenität verbergen. Die Übertragbarkeit internationaler Befunde auf den spezifischen Schweizer Kontext (kleiner, mehrsprachiger Medienmarkt) ist nicht gesichert. Allerdings ist die Studie von Udris et al. (2024) spezifisch auf die Schweiz bezogen.",
+          "verdictAdjusted": true
+        }
+      ],
+      "triangulationScore": {
+        "boundaryCount": 3,
+        "supporting": 3,
+        "contradicting": 0,
+        "level": "strong",
+        "factor": 0.15
+      }
+    }
+  ],
+  "coverageMatrix": {
+    "claims": [
+      "AC_01",
+      "AC_02",
+      "AC_03",
+      "AC_04",
+      "AC_05",
+      "AC_06"
+    ],
+    "boundaries": [
+      "CB_11",
+      "CB_13",
+      "CB_15",
+      "CB_17",
+      "CB_03",
+      "CB_07"
+    ],
+    "counts": [
+      [
+        0,
+        0,
+        0,
+        6,
+        5,
+        4
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        8
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        4
+      ],
+      [
+        8,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        10,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        9,
+        3,
+        2,
+        0,
+        0
+      ]
+    ]
+  },
+  "understanding": {
+    "detectedInputType": "claim",
+    "impliedClaim": "Die SRG (Schweizerische Radio- und Fernsehgesellschaft) weist in ihrer Berichterstattung eine systematische politische Linksausrichtung auf, die sich in der Themenauswahl, Gästeauswahl und redaktionellen Gewichtung manifestiert.",
+    "backgroundDetails": "Die SRG SSR ist die öffentlich-rechtliche Medienorganisation der Schweiz, die über Gebühren finanziert wird und gesetzlich zur ausgewogenen Berichterstattung verpflichtet ist. Der Vorwurf einer politischen Linksausrichtung ist ein wiederkehrendes Thema in der Schweizer Mediendebatte, insbesondere von bürgerlicher und rechtskonservativer Seite (z.B. SVP, Schweizerischer Gewerbeverband). Die vorläufige Evidenz zeigt einerseits Kritik des Schweizerischen Gewerbeverbands (sgv) an spezifischer SRF-Berichterstattung (Echo der Zeit, Februar 2026), andererseits Ombudsstellen-Bewertungen, die mehrere SRF-Sendungen als sachgerecht und regelkonform einstuften. Das Jahrbuch Qualität der Medien 2024 des fög (Universität Zürich) untersucht systematisch die Medienqualität in der Schweiz, einschliesslich der Rolle der SRG SSR.",
+    "articleThesis": "Die SRG ist politisch linksgerichtet.",
+    "atomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "Die SRG weist in ihrer Berichterstattung eine systematische politische Linksausrichtung auf.",
+        "category": "evaluative",
+        "centrality": "high",
+        "harmPotential": "high",
+        "isCentral": true,
+        "claimDirection": "supports_thesis",
+        "keyEntities": [
+          "SRG",
+          "SRF"
+        ],
+        "checkWorthiness": "high",
+        "specificityScore": 0.3,
+        "groundingQuality": "weak",
+        "expectedEvidenceProfile": {
+          "methodologies": [
+            "Systematische Medieninhaltsanalyse",
+            "Quantitative Analyse der Themengewichtung und Gästeauswahl",
+            "Vergleichende Analyse mit anderen Schweizer Medien",
+            "Befragungen von Medienkonsumenten zur wahrgenommenen politischen Ausrichtung"
+          ],
+          "expectedMetrics": [
+            "Anteil linker vs. rechter Positionen in Sendungen",
+            "Verteilung der Parteienvertreter in Diskussionssendungen",
+            "Themengewichtung nach politischer Zuordnung",
+            "Tonalität der Berichterstattung gegenüber verschiedenen politischen Akteuren"
+          ],
+          "expectedSourceTypes": [
+            "Akademische Medieninhaltsanalysen (z.B. fög Jahrbuch Qualität der Medien)",
+            "Ombudsstellen-Berichte der SRG",
+            "UBI-Entscheide (Unabhängige Beschwerdeinstanz für Radio und Fernsehen)",
+            "Wissenschaftliche Studien zur Medienqualität in der Schweiz"
+          ]
+        }
+      },
+      {
+        "id": "AC_02",
+        "statement": "SRF hat in der Sendung Echo der Zeit vom 11. Februar 2026 über eine angebliche Einigung der Sozialpartner zur Verschärfung des Kündigungsschutzes für Gewerkschafter berichtet, die laut dem Schweizerischen Gewerbeverband sgv nicht den Tatsachen entsprach.",
+        "category": "factual",
+        "centrality": "medium",
+        "harmPotential": "medium",
+        "isCentral": false,
+        "claimDirection": "supports_thesis",
+        "keyEntities": [
+          "SRF",
+          "Echo der Zeit",
+          "Schweizerischer Gewerbeverband sgv",
+          "Kündigungsschutz"
+        ],
+        "checkWorthiness": "high",
+        "specificityScore": 0.85,
+        "groundingQuality": "strong",
+        "expectedEvidenceProfile": {
+          "methodologies": [
+            "Vergleich der SRF-Berichterstattung mit offiziellen Stellungnahmen der Sozialpartner",
+            "Analyse der Sendungsinhalte"
+          ],
+          "expectedMetrics": [
+            "Faktentreue der Berichterstattung",
+            "Vollständigkeit der dargestellten Positionen"
+          ],
+          "expectedSourceTypes": [
+            "SRF-Sendungsarchiv",
+            "Medienmitteilungen des sgv",
+            "Stellungnahmen der beteiligten Sozialpartner"
+          ]
+        }
+      },
+      {
+        "id": "AC_03",
+        "statement": "SRF hat in der Berichterstattung zum Kündigungsschutz für Gewerkschafter die ablehnende Haltung des Schweizerischen Gewerbeverbands sgv unterschlagen.",
+        "category": "factual",
+        "centrality": "medium",
+        "harmPotential": "medium",
+        "isCentral": false,
+        "claimDirection": "supports_thesis",
+        "keyEntities": [
+          "SRF",
+          "Schweizerischer Gewerbeverband sgv",
+          "Kündigungsschutz"
+        ],
+        "checkWorthiness": "high",
+        "specificityScore": 0.8,
+        "groundingQuality": "strong",
+        "expectedEvidenceProfile": {
+          "methodologies": [
+            "Inhaltsanalyse der SRF-Sendung",
+            "Vergleich mit Positionen aller Sozialpartner"
+          ],
+          "expectedMetrics": [
+            "Darstellung aller relevanten Positionen in der Sendung",
+            "Redezeit und Gewichtung der verschiedenen Standpunkte"
+          ],
+          "expectedSourceTypes": [
+            "SRF-Sendungsarchiv",
+            "Medienmitteilung des sgv vom 13. Februar 2026",
+            "Ombudsstellen-Berichte"
+          ]
+        }
+      },
+      {
+        "id": "AC_04",
+        "statement": "Die Ombudsstelle der SRG hat mehrere SRF-Sendungen (u.a. Echo der Zeit, SRF News) als sachgerecht und regelkonform bewertet.",
+        "category": "factual",
+        "centrality": "medium",
+        "harmPotential": "low",
+        "isCentral": false,
+        "claimDirection": "contradicts_thesis",
+        "keyEntities": [
+          "Ombudsstelle SRG",
+          "SRF",
+          "Echo der Zeit",
+          "SRF News"
+        ],
+        "checkWorthiness": "medium",
+        "specificityScore": 0.6,
+        "groundingQuality": "moderate",
+        "expectedEvidenceProfile": {
+          "methodologies": [
+            "Analyse der Ombudsstellen-Entscheide",
+            "Systematische Auswertung der Beanstandungen und deren Ergebnisse"
+          ],
+          "expectedMetrics": [
+            "Anteil gutgeheissener vs. abgewiesener Beanstandungen",
+            "Thematische Verteilung der Beanstandungen"
+          ],
+          "expectedSourceTypes": [
+            "Ombudsstellen-Berichte der SRG Deutschschweiz",
+            "UBI-Entscheide",
+            "Jahresberichte der Ombudsstelle"
+          ]
+        }
+      },
+      {
+        "id": "AC_05",
+        "statement": "Das Jahrbuch Qualität der Medien 2024 des fög (Universität Zürich) untersucht systematisch die Medienqualität der SRG SSR im Schweizer Medienmarkt.",
+        "category": "factual",
+        "centrality": "medium",
+        "harmPotential": "low",
+        "isCentral": false,
+        "claimDirection": "contextual",
+        "keyEntities": [
+          "fög",
+          "Universität Zürich",
+          "SRG SSR",
+          "Jahrbuch Qualität der Medien"
+        ],
+        "checkWorthiness": "medium",
+        "specificityScore": 0.75,
+        "groundingQuality": "strong",
+        "expectedEvidenceProfile": {
+          "methodologies": [
+            "Systematische Medieninhaltsanalyse",
+            "Qualitätsbewertung nach definierten Kriterien (Relevanz, Vielfalt, Einordnungsleistung, Professionalität)"
+          ],
+          "expectedMetrics": [
+            "Qualitätsscores der SRG-Medien im Vergleich zu privaten Medien",
+            "Vielfaltsindikatoren",
+            "Einordnungsleistung"
+          ],
+          "expectedSourceTypes": [
+            "fög Jahrbuch Qualität der Medien 2024",
+            "Akademische Publikationen des fög"
+          ]
+        }
+      },
+      {
+        "id": "AC_06",
+        "statement": "Es gibt keine empirischen Belege dafür, dass die SRG SSR privatwirtschaftliche Informationsmedien auf dem Publikumsmarkt verdrängt, laut der Vertiefungsstudie im Jahrbuch Qualität der Medien 2024.",
+        "category": "factual",
+        "centrality": "medium",
+        "harmPotential": "low",
+        "isCentral": false,
+        "claimDirection": "contradicts_thesis",
+        "keyEntities": [
+          "SRG SSR",
+          "fög",
+          "Jahrbuch Qualität der Medien 2024",
+          "Privatmedien"
+        ],
+        "checkWorthiness": "medium",
+        "specificityScore": 0.8,
+        "groundingQuality": "strong",
+        "expectedEvidenceProfile": {
+          "methodologies": [
+            "Empirische Analyse von Nutzungsmustern",
+            "Vergleich von Zahlungsbereitschaft zwischen SRG-Nutzern und Nichtnutzern"
+          ],
+          "expectedMetrics": [
+            "Nutzungsüberschneidungen SRG/Privatmedien",
+            "Zahlungsbereitschaft für privatwirtschaftliche Angebote",
+            "Marktanteile"
+          ],
+          "expectedSourceTypes": [
+            "fög Jahrbuch Qualität der Medien 2024",
+            "Vertiefungsstudie zur Rolle der SRG SSR"
+          ]
+        }
+      }
+    ],
+    "distinctEvents": [
+      {
+        "name": "SRF Echo der Zeit Bericht über Kündigungsschutz für Gewerkschafter",
+        "date": "2026-02-11",
+        "description": "SRF berichtete im Echo der Zeit über eine angebliche Einigung der Sozialpartner zur Verschärfung des Kündigungsschutzes für Gewerkschafter. Der Schweizerische Gewerbeverband sgv kritisierte die Berichterstattung als faktisch falsch und beanstandete, dass seine ablehnende Haltung unterschlagen wurde."
+      },
+      {
+        "name": "Medienmitteilung des sgv zur SRF-Berichterstattung",
+        "date": "2026-02-13",
+        "description": "Der Schweizerische Gewerbeverband sgv veröffentlichte eine Medienmitteilung, in der er die SRF-Berichterstattung zum Kündigungsschutz für Gewerkschafter kritisierte und eine Irreführung des Publikums beanstandete."
+      },
+      {
+        "name": "Veröffentlichung Jahrbuch Qualität der Medien 2024",
+        "date": "2024",
+        "description": "Das fög (Forschungszentrum Öffentlichkeit und Gesellschaft der Universität Zürich) veröffentlichte das Jahrbuch Qualität der Medien 2024 mit einer Vertiefungsstudie zur Rolle der SRG SSR im Schweizer Medienmarkt."
+      }
+    ],
+    "riskTier": "B",
+    "preliminaryEvidence": [
+      {
+        "sourceUrl": "https://www.sgv-usam.ch/",
+        "snippet": "SRF berichtete im Echo der Zeit vom 11. Februar 2026 über eine angebliche Einigung der Sozialpartner zur Verschärfung des Kündigungsschutzes für Gewerkschafter. Diese Berichterstattung entspricht nicht den Tatsachen. Zudem hat SRF die ablehnende Haltung des Schweizerischen Gewerbeverband sgv in der Berichterstattung unterschlagen.",
+        "claimId": "claim_srg_left_bias"
+      },
+      {
+        "sourceUrl": "https://www.sgv-usam.ch/",
+        "snippet": "Der Schweizerische Gewerbeverband sgv kritisiert, dass SRF in ihrer Berichterstattung die ablehnende Haltung des Verbandes zur Massnahme 14 (Kündigungsschutz für Gewerkschafter) unterschlagen hat und das Publikum damit über die tatsächliche Situation irregeführt wurde.",
+        "claimId": "claim_srg_left_bias"
+      },
+      {
+        "sourceUrl": "https://www.simon-bornschier.eu/wp-content/uploads/sites/14/2023/04/Buch_aufstieg_svpV.pdf",
+        "snippet": "Die ZHAW-Studie 'Gefährdungsmonitor Journalismus Schweiz' untersucht Bedrohungen, Belästigungen und Wohlbefinden von Journalisten in der Schweiz, einschliesslich Hasserfüllter Äusserungen, sexueller Belästigung, rechtlicher Androhungen und digitaler Bedrohungen.",
+        "claimId": ""
+      },
+      {
+        "sourceUrl": "https://www.simon-bornschier.eu/wp-content/uploads/sites/14/2023/04/Buch_aufstieg_svpV.pdf",
+        "snippet": "Das Buch 'Der Aufstieg der SVP. Acht Kantone im Vergleich' analysiert die Gründe für den Aufstieg der SVP von 1990 bis 2003 anhand von Umfragedaten (SELECTS-Wahlen 1995 und 2003) und Medieninhaltsdaten zu Wahlkampagnen.",
+        "claimId": ""
+      },
+      {
+        "sourceUrl": "https://ids-pub.bsz-bw.de/files/5031/derewo-v-100000t-2009-04-30-0.1",
+        "snippet": "Source 1 is a German word frequency list (DeReWo) from 2009 containing no substantive content about SRG programming, media bias, or political perspectives.",
+        "claimId": ""
+      },
+      {
+        "sourceUrl": "https://ids-pub.bsz-bw.de/files/5031/derewo-v-100000t-2009-04-30-0.1",
+        "snippet": "Source 2 discusses the future of public service media in the context of digital disruption, media monopolization by US tech giants, and the societal role of public broadcasting, but contains no specific analysis of SRG programming bias or political preferences.",
+        "claimId": ""
+      },
+      {
+        "sourceUrl": "https://ids-pub.bsz-bw.de/files/5031/derewo-v-100000t-2009-04-30-0.1",
+        "snippet": "Source 3 is a 2018 dissertation on media convergence at European public service broadcasters using Delphi methodology, examining technical, economic, content, and usage convergence dimensions across ARD/ZDF (Germany), ORF (Austria), RTVS (Slovenia), and MTVA (Hungary), but does not contain analysis of SRG programming bias or political perspective preferences.",
+        "claimId": ""
+      },
+      {
+        "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+        "snippet": "Die Ombudsstelle der SRG hat Kritik an der Moderation der SRF «Club»-Sendung zu Nahost bearbeitet und befasste sich mit der Gästeauswahl.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+        "snippet": "Die Ombudsstelle befasste sich mit einer Grafik zur Zuwanderung in der «Club»-Sendung.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+        "snippet": "«Echo der Zeit» über Österreichs Neutralität wurde als regelkonform bewertet.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+        "snippet": "SRF News berichtete sachgerecht über das Rassismusproblem bei der Lausanner Polizei.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+        "snippet": "SRF News berichtete sachgerecht über Einbürgerungen.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+        "snippet": "«DOK» produzierte einen relevanten Beitrag zum Diskurs über das moderne Körperbild zum Thema Schönheits-OPs.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+        "snippet": "Das Jahrbuch Qualität der Medien 2024 untersucht die Rolle der SRG SSR im Schweizer Medienmarkt und analysiert dabei auch Qualitätsstandards und Medienqualität, einschliesslich Aspekte der journalistischen Integrität und Berichterstattung.",
+        "claimId": "claim_srg_neutrality"
+      },
+      {
+        "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+        "snippet": "Die Vertiefungsstudie zur Rolle der SRG SSR im Schweizer Medienmarkt findet keine empirischen Belege dafür, dass öffentlich-rechtliche Medien privatwirtschaftliche Informationsmedien verdrängen, weder in Bezug auf Verdrängungseffekte auf dem Publikumsmarkt noch auf die Zahlungsbereitschaft für privatwirtschaftliche Angebote.",
+        "claimId": "claim_srg_neutrality"
+      }
+    ],
+    "gate1Stats": {
+      "totalClaims": 6,
+      "passedOpinion": 5,
+      "passedSpecificity": 4,
+      "overallPass": true
+    }
+  },
+  "evidenceItems": [
+    {
+      "id": "EV_001",
+      "statement": "SRF berichtete im Echo der Zeit vom 11. Februar 2026 über eine angebliche Einigung der Sozialpartner zur Verschärfung des Kündigungsschutzes für Gewerkschafter. Diese Berichterstattung entspricht nicht den Tatsachen. Zudem hat SRF die ablehnende Haltung des Schweizerischen Gewerbeverband sgv in der Berichterstattung unterschlagen.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.sgv-usam.ch/",
+      "sourceTitle": "",
+      "sourceExcerpt": "SRF berichtete im Echo der Zeit vom 11. Februar 2026 über eine angebliche Einigung der Sozialpartner zur Verschärfung des Kündigungsschutzes für Gewerkschafter. Diese Berichterstattung entspricht nicht den Tatsachen. Zudem hat SRF die ablehnende Haltung des Schweizerischen Gewerbeverband sgv in der Berichterstattung unterschlagen.",
+      "relevantClaimIds": [
+        "claim_srg_left_bias"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_002",
+      "statement": "Der Schweizerische Gewerbeverband sgv kritisiert, dass SRF in ihrer Berichterstattung die ablehnende Haltung des Verbandes zur Massnahme 14 (Kündigungsschutz für Gewerkschafter) unterschlagen hat und das Publikum damit über die tatsächliche Situation irregeführt wurde.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.sgv-usam.ch/",
+      "sourceTitle": "",
+      "sourceExcerpt": "Der Schweizerische Gewerbeverband sgv kritisiert, dass SRF in ihrer Berichterstattung die ablehnende Haltung des Verbandes zur Massnahme 14 (Kündigungsschutz für Gewerkschafter) unterschlagen hat und das Publikum damit über die tatsächliche Situation irregeführt wurde.",
+      "relevantClaimIds": [
+        "claim_srg_left_bias"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_003",
+      "statement": "Die ZHAW-Studie 'Gefährdungsmonitor Journalismus Schweiz' untersucht Bedrohungen, Belästigungen und Wohlbefinden von Journalisten in der Schweiz, einschliesslich Hasserfüllter Äusserungen, sexueller Belästigung, rechtlicher Androhungen und digitaler Bedrohungen.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.simon-bornschier.eu/wp-content/uploads/sites/14/2023/04/Buch_aufstieg_svpV.pdf",
+      "sourceTitle": "",
+      "sourceExcerpt": "Die ZHAW-Studie 'Gefährdungsmonitor Journalismus Schweiz' untersucht Bedrohungen, Belästigungen und Wohlbefinden von Journalisten in der Schweiz, einschliesslich Hasserfüllter Äusserungen, sexueller Belästigung, rechtlicher Androhungen und digitaler Bedrohungen.",
+      "relevantClaimIds": [],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_004",
+      "statement": "Das Buch 'Der Aufstieg der SVP. Acht Kantone im Vergleich' analysiert die Gründe für den Aufstieg der SVP von 1990 bis 2003 anhand von Umfragedaten (SELECTS-Wahlen 1995 und 2003) und Medieninhaltsdaten zu Wahlkampagnen.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.simon-bornschier.eu/wp-content/uploads/sites/14/2023/04/Buch_aufstieg_svpV.pdf",
+      "sourceTitle": "",
+      "sourceExcerpt": "Das Buch 'Der Aufstieg der SVP. Acht Kantone im Vergleich' analysiert die Gründe für den Aufstieg der SVP von 1990 bis 2003 anhand von Umfragedaten (SELECTS-Wahlen 1995 und 2003) und Medieninhaltsdaten zu Wahlkampagnen.",
+      "relevantClaimIds": [],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_005",
+      "statement": "Source 1 is a German word frequency list (DeReWo) from 2009 containing no substantive content about SRG programming, media bias, or political perspectives.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://ids-pub.bsz-bw.de/files/5031/derewo-v-100000t-2009-04-30-0.1",
+      "sourceTitle": "",
+      "sourceExcerpt": "Source 1 is a German word frequency list (DeReWo) from 2009 containing no substantive content about SRG programming, media bias, or political perspectives.",
+      "relevantClaimIds": [],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_006",
+      "statement": "Source 2 discusses the future of public service media in the context of digital disruption, media monopolization by US tech giants, and the societal role of public broadcasting, but contains no specific analysis of SRG programming bias or political preferences.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://ids-pub.bsz-bw.de/files/5031/derewo-v-100000t-2009-04-30-0.1",
+      "sourceTitle": "",
+      "sourceExcerpt": "Source 2 discusses the future of public service media in the context of digital disruption, media monopolization by US tech giants, and the societal role of public broadcasting, but contains no specific analysis of SRG programming bias or political preferences.",
+      "relevantClaimIds": [],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_007",
+      "statement": "Source 3 is a 2018 dissertation on media convergence at European public service broadcasters using Delphi methodology, examining technical, economic, content, and usage convergence dimensions across ARD/ZDF (Germany), ORF (Austria), RTVS (Slovenia), and MTVA (Hungary), but does not contain analysis of SRG programming bias or political perspective preferences.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://ids-pub.bsz-bw.de/files/5031/derewo-v-100000t-2009-04-30-0.1",
+      "sourceTitle": "",
+      "sourceExcerpt": "Source 3 is a 2018 dissertation on media convergence at European public service broadcasters using Delphi methodology, examining technical, economic, content, and usage convergence dimensions across ARD/ZDF (Germany), ORF (Austria), RTVS (Slovenia), and MTVA (Hungary), but does not contain analysis of SRG programming bias or political perspective preferences.",
+      "relevantClaimIds": [],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_008",
+      "statement": "Die Ombudsstelle der SRG hat Kritik an der Moderation der SRF «Club»-Sendung zu Nahost bearbeitet und befasste sich mit der Gästeauswahl.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+      "sourceTitle": "",
+      "sourceExcerpt": "Die Ombudsstelle der SRG hat Kritik an der Moderation der SRF «Club»-Sendung zu Nahost bearbeitet und befasste sich mit der Gästeauswahl.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_009",
+      "statement": "Die Ombudsstelle befasste sich mit einer Grafik zur Zuwanderung in der «Club»-Sendung.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+      "sourceTitle": "",
+      "sourceExcerpt": "Die Ombudsstelle befasste sich mit einer Grafik zur Zuwanderung in der «Club»-Sendung.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_010",
+      "statement": "«Echo der Zeit» über Österreichs Neutralität wurde als regelkonform bewertet.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+      "sourceTitle": "",
+      "sourceExcerpt": "«Echo der Zeit» über Österreichs Neutralität wurde als regelkonform bewertet.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_011",
+      "statement": "SRF News berichtete sachgerecht über das Rassismusproblem bei der Lausanner Polizei.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+      "sourceTitle": "",
+      "sourceExcerpt": "SRF News berichtete sachgerecht über das Rassismusproblem bei der Lausanner Polizei.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_012",
+      "statement": "SRF News berichtete sachgerecht über Einbürgerungen.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+      "sourceTitle": "",
+      "sourceExcerpt": "SRF News berichtete sachgerecht über Einbürgerungen.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_013",
+      "statement": "«DOK» produzierte einen relevanten Beitrag zum Diskurs über das moderne Körperbild zum Thema Schönheits-OPs.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/kritik-an-10vor10-uber-unterschiedliche-spitex-organisationen/",
+      "sourceTitle": "",
+      "sourceExcerpt": "«DOK» produzierte einen relevanten Beitrag zum Diskurs über das moderne Körperbild zum Thema Schönheits-OPs.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_014",
+      "statement": "Das Jahrbuch Qualität der Medien 2024 untersucht die Rolle der SRG SSR im Schweizer Medienmarkt und analysiert dabei auch Qualitätsstandards und Medienqualität, einschliesslich Aspekte der journalistischen Integrität und Berichterstattung.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "sourceTitle": "",
+      "sourceExcerpt": "Das Jahrbuch Qualität der Medien 2024 untersucht die Rolle der SRG SSR im Schweizer Medienmarkt und analysiert dabei auch Qualitätsstandards und Medienqualität, einschliesslich Aspekte der journalistischen Integrität und Berichterstattung.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_015",
+      "statement": "Die Vertiefungsstudie zur Rolle der SRG SSR im Schweizer Medienmarkt findet keine empirischen Belege dafür, dass öffentlich-rechtliche Medien privatwirtschaftliche Informationsmedien verdrängen, weder in Bezug auf Verdrängungseffekte auf dem Publikumsmarkt noch auf die Zahlungsbereitschaft für privatwirtschaftliche Angebote.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "sourceTitle": "",
+      "sourceExcerpt": "Die Vertiefungsstudie zur Rolle der SRG SSR im Schweizer Medienmarkt findet keine empirischen Belege dafür, dass öffentlich-rechtliche Medien privatwirtschaftliche Informationsmedien verdrängen, weder in Bezug auf Verdrängungseffekte auf dem Publikumsmarkt noch auf die Zahlungsbereitschaft für privatwirtschaftliche Angebote.",
+      "relevantClaimIds": [
+        "claim_srg_neutrality"
+      ],
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348655087",
+      "statement": "Schweizer Medien berichten ausgewogen und vielfältig über Volksabstimmungen. Das Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) hat die Berichterstattung über 44 Volksabstimmungen zwischen 2018 und 2023 in 23 Schweizer Medien analysiert und attestiert den grossen Medien, vielfältig und politisch ausgewogen zu berichten.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Schweizer Medien berichten ausgewogen und vielfältig über Volksabstimmungen. Das Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) hat die Berichterstattung über 44 Volksabstimmungen zwischen 2018 und 2023 in 23 Schweizer Medien analysiert und attestiert den grossen Medien, vielfältig und politisch ausgewogen zu berichten.",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Inhaltsanalyse von Berichterst",
+        "methodology": "Inhaltsanalyse von Berichterstattung zu Volksabstimmungen",
+        "temporal": "2018-2023",
+        "geographic": "Schweiz",
+        "boundaries": "23 Schweizer Medien, 44 Volksabstimmungen"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348655088",
+      "statement": "Reichweitenstarke Medien wie '20 Minuten' oder SRF berichten politisch neutral. Die neutrale Positionierung der besonders reichweitenstarken Medien zeigt sich auf der Einteilung auf einer Links-rechts-Achse.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Reichweitenstarke Medien wie '20 Minuten' oder SRF berichten politisch neutral. Die neutrale Positionierung der besonders reichweitenstarken Medien zeigt sich auf der Einteilung auf einer Links-rechts-Achse.",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Inhaltsanalyse mit Links-recht",
+        "methodology": "Inhaltsanalyse mit Links-rechts-Achsen-Klassifizierung",
+        "temporal": "2018-2023",
+        "geographic": "Schweiz",
+        "boundaries": "Reichweitenstarke Medien (20 Minuten, SRF)"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348655089",
+      "statement": "Laut einer Studie des Forschungszentrums Öffentlichkeit und Gesellschaft der Universität Zürich 2023 attestierte man den grossen Medien, 'vielfältig und politisch ausgewogen' zu berichten.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Laut einer Studie des Forschungszentrums Öffentlichkeit und Gesellschaft der Universität Zürich 2023 attestierte man den grossen Medien, 'vielfältig und politisch ausgewogen' zu berichten.",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Inhaltsanalyse von Berichterst",
+        "methodology": "Inhaltsanalyse von Berichterstattung im Vorfeld von Volksabstimmungen",
+        "temporal": "2018-2023",
+        "geographic": "Schweiz",
+        "boundaries": "Grosse Medien"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348655090",
+      "statement": "Von 2020 bis 2024 erzielte das Echo der Zeit von Radio SRF fünf Mal in Folge die besten Ergebnisse aller untersuchten Schweizer Medien sowohl in der Dimension der Berichterstattungsqualität (wissenschaftliche Inhaltsanalyse) als auch bei der Qualitätswahrnehmung (Befragungen).",
+      "category": "statistic",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Von 2020 bis 2024 erzielte das Echo der Zeit von Radio SRF fünf Mal in Folge die besten Ergebnisse aller untersuchten Schweizer Medien sowohl in der Dimension der Berichterstattungsqualität (wissenschaftliche Inhaltsanalyse) als auch bei der Qualitätswahrnehmung (Befragungen).",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Wissenschaftliche Inhaltsanaly",
+        "methodology": "Wissenschaftliche Inhaltsanalyse und Befragungen zur Qualitätswahrnehmung",
+        "temporal": "2020-2024",
+        "geographic": "Schweiz",
+        "boundaries": "Alle untersuchten Schweizer Medien"
+      },
+      "probativeValue": "medium",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": true,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348655091",
+      "statement": "Laut einer Studie des BAKOM vom Dezember 2024 hätten 90 Prozent der 3000 Befragten Vertrauen in die Berichterstattung zu politischen und gesellschaftlichen Themen.",
+      "category": "statistic",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Laut einer Studie des BAKOM vom Dezember 2024 hätten 90 Prozent der 3000 Befragten Vertrauen in die Berichterstattung zu politischen und gesellschaftlichen Themen.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Befragung",
+        "methodology": "Befragung",
+        "temporal": "Dezember 2024",
+        "geographic": "Schweiz",
+        "boundaries": "3000 Befragte"
+      },
+      "probativeValue": "medium",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_03"
+    },
+    {
+      "id": "EV_1771348655092",
+      "statement": "Der Medienwissenschaftler Roger Blum kam 2011 zum Schluss, dass mit einer Gesamtauflage von 1,26 Millionen Exemplare die grösste Macht bei den linksliberalen Zeitungen liege und die Mehrheit der grossen elektronischen Medien (Radio DRS, TSR/Radio Suisse Romande, RTSI) mit Einschaltquoten zur Hauptsendezeit von 1,4 Millionen im linksliberalen Bereich lag.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Der Medienwissenschaftler Roger Blum kam 2011 zum Schluss, dass mit einer Gesamtauflage von 1,26 Millionen Exemplare die grösste Macht bei den linksliberalen Zeitungen liege und die Mehrheit der grossen elektronischen Medien (Radio DRS, TSR/Radio Suisse Romande, RTSI) mit Einschaltquoten zur Hauptsendezeit von 1,4 Millionen im linksliberalen Bereich lag.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Periodische Übersicht über die",
+        "methodology": "Periodische Übersicht über die politische Ausrichtung der Schweizer Presse",
+        "temporal": "2011",
+        "geographic": "Schweiz",
+        "boundaries": "Schweizer Presse und elektronische Medien"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_03"
+    },
+    {
+      "id": "EV_1771348655093",
+      "statement": "Auf der vom Forschungszentrum Öffentlichkeit und Gesellschaft der Universität Zürich 2023 veröffentlichten Skala betreffend Positionen zu Volksabstimmungen stand die NZZ auf 17 von 100 Punkten 'rechts der Mitte', die Weltwoche 59 von 100 Punkten, Blick bis -14, le matin dimanche und die SonntagsZeitung nach links, mit den Spitzenreitern SonntagsBlick (-34) und WOZ (-79).",
+      "category": "statistic",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "sourceTitle": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "sourceExcerpt": "Auf der vom Forschungszentrum Öffentlichkeit und Gesellschaft der Universität Zürich 2023 veröffentlichten Skala betreffend Positionen zu Volksabstimmungen stand die NZZ auf 17 von 100 Punkten 'rechts der Mitte', die Weltwoche 59 von 100 Punkten, Blick bis -14, le matin dimanche und die SonntagsZeitung nach links, mit den Spitzenreitern SonntagsBlick (-34) und WOZ (-79).",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Inhaltsanalyse mit numerischer",
+        "methodology": "Inhaltsanalyse mit numerischer Skalierung auf Links-rechts-Achse",
+        "temporal": "2023",
+        "geographic": "Schweiz",
+        "boundaries": "Verschiedene Schweizer Medientitel"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348681025",
+      "statement": "Das fög-Forschungszentrum der Universität Zürich untersucht jährlich seit 2010 die Veränderungen in der Schweizer Medienlandschaft, einschliesslich Qualität, Nutzung, Konzentration und Finanzierung aller Mediengattungen (Presse, Radio, Fernsehen, Online, Social Media).",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "sourceTitle": "JB 2024 Gesamt fin",
+      "sourceExcerpt": "Das fög-Forschungszentrum der Universität Zürich untersucht jährlich seit 2010 die Veränderungen in der Schweizer Medienlandschaft, einschliesslich Qualität, Nutzung, Konzentration und Finanzierung aller Mediengattungen (Presse, Radio, Fernsehen, Online, Social Media).",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Jährliche systematische Analys",
+        "methodology": "Jährliche systematische Analyse der Schweizer Medienlandschaft durch das fög-Forschungszentrum",
+        "temporal": "2010-2024",
+        "geographic": "Schweiz",
+        "boundaries": "Alle Mediengattungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348681026",
+      "statement": "Eine Vertiefungsstudie zur Rolle der SRG SSR im Schweizer Medienmarkt findet keine empirischen Belege dafür, dass öffentlich-rechtliche Medien privatwirtschaftliche Informationsmedien verdrängen, weder in Bezug auf Verdrängungseffekte auf dem Publikumsmarkt noch auf die Zahlungsbereitschaft für privatwirtschaftliche Angebote.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "sourceTitle": "JB 2024 Gesamt fin",
+      "sourceExcerpt": "Eine Vertiefungsstudie zur Rolle der SRG SSR im Schweizer Medienmarkt findet keine empirischen Belege dafür, dass öffentlich-rechtliche Medien privatwirtschaftliche Informationsmedien verdrängen, weder in Bezug auf Verdrängungseffekte auf dem Publikumsmarkt noch auf die Zahlungsbereitschaft für privatwirtschaftliche Angebote.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Empirische Analyse von Verdrän",
+        "methodology": "Empirische Analyse von Verdrängungseffekten (crowding-out-These) auf Publikumsmarkt und Zahlungsbereitschaft",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Öffentlich-rechtliche vs. privatwirtschaftliche Medien"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_03"
+    },
+    {
+      "id": "EV_1771348681027",
+      "statement": "Nutzer:innen von SRG-Inhalten greifen tendenziell häufiger auf privatwirtschaftliche Medienangebote zu als Nichtnutzer:innen – sowohl online als auch offline.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "sourceTitle": "JB 2024 Gesamt fin",
+      "sourceExcerpt": "Nutzer:innen von SRG-Inhalten greifen tendenziell häufiger auf privatwirtschaftliche Medienangebote zu als Nichtnutzer:innen – sowohl online als auch offline.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Vergleichende Analyse der Medi",
+        "methodology": "Vergleichende Analyse der Mediennutzung zwischen SRG-Nutzer:innen und Nichtnutzer:innen",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Online und Offline Mediennutzung"
+      },
+      "probativeValue": "medium",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_03"
+    },
+    {
+      "id": "EV_1771348681028",
+      "statement": "Der Informationsanteil der SRG-Social-Media-Angebote für die junge Zielgruppe beträgt 38.9%, der Unterhaltungsanteil 44.0%. Im Informationsbereich fokussieren 78.6% der Informationsbeiträge auf die Themen Gesellschaft, Politik, Wirtschaft oder Kultur.",
+      "category": "statistic",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "sourceTitle": "JB 2024 Gesamt fin",
+      "sourceExcerpt": "Der Informationsanteil der SRG-Social-Media-Angebote für die junge Zielgruppe beträgt 38.9%, der Unterhaltungsanteil 44.0%. Im Informationsbereich fokussieren 78.6% der Informationsbeiträge auf die Themen Gesellschaft, Politik, Wirtschaft oder Kultur.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Inhaltsanalyse von 23 SRG-Ange",
+        "methodology": "Inhaltsanalyse von 23 SRG-Angeboten auf YouTube, Instagram, TikTok und Facebook; Codierung nach Informationsanteil und Themenrelevanz",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Social-Media-Angebote der SRG für junge Zielgruppen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_03"
+    },
+    {
+      "id": "EV_1771348702826",
+      "statement": "Emrah Erken wirft der SRG vor, dass sie systematisch und aus politischen sowie ideologischen Motiven relevante Informationen und Fakten verschweigt.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://srg-initiative.ch/initiative/argumentarium/",
+      "sourceTitle": "Argumentarium – SRG-Initiative",
+      "sourceExcerpt": "Emrah Erken wirft der SRG vor, dass sie systematisch und aus politischen sowie ideologischen Motiven relevante Informationen und Fakten verschweigt.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Juristische Beschwerde und Ana",
+        "methodology": "Juristische Beschwerde und Analyse von SRG-Berichterstattung",
+        "temporal": "2024-2025",
+        "geographic": "Schweiz",
+        "boundaries": "SRG-Berichterstattung zu Nahost und UNRWA"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348702827",
+      "statement": "Die SRG wird vorgeworfen, dass sie UN Watch und Hillel Neuer aus politischen Motiven systematisch cancelt und nicht über wesentliche Kritikpunkte gegenüber der UNRWA berichtet, sondern vielmehr Propaganda für diese Organisation betreibt.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://srg-initiative.ch/initiative/argumentarium/",
+      "sourceTitle": "Argumentarium – SRG-Initiative",
+      "sourceExcerpt": "Die SRG wird vorgeworfen, dass sie UN Watch und Hillel Neuer aus politischen Motiven systematisch cancelt und nicht über wesentliche Kritikpunkte gegenüber der UNRWA berichtet, sondern vielmehr Propaganda für diese Organisation betreibt.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Analyse von SRG-Berichterstatt",
+        "methodology": "Analyse von SRG-Berichterstattung und Programmauswahl",
+        "temporal": "27. November 2024 - 27. Februar 2025",
+        "geographic": "Schweiz",
+        "boundaries": "UNRWA-Berichterstattung und Gästeauswahl in SRG-Sendungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348702828",
+      "statement": "SRG-Journalistinnen und Journalisten deklarieren systematisch Meinungskommentare als 'Analysen', um das Transparenzgebot zu umgehen und eine erhöhte Objektivität und Neutralität zu suggerieren, die nicht gegeben sind.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://srg-initiative.ch/initiative/argumentarium/",
+      "sourceTitle": "Argumentarium – SRG-Initiative",
+      "sourceExcerpt": "SRG-Journalistinnen und Journalisten deklarieren systematisch Meinungskommentare als 'Analysen', um das Transparenzgebot zu umgehen und eine erhöhte Objektivität und Neutralität zu suggerieren, die nicht gegeben sind.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Analyse von SRG-Website und jo",
+        "methodology": "Analyse von SRG-Website und journalistischen Beiträgen",
+        "temporal": "Mehrere Jahre, praktisch täglich beobachtet",
+        "geographic": "Schweiz",
+        "boundaries": "SRG-Berichterstattung auf Website und in Sendungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348702829",
+      "statement": "Die SRG wurde massiv gerügt wegen Nichtberichterstattung über Nahost-Universitätsproteste und reagierte darauf mit erneuter Nichtberichterstattung über den UBI-Entscheid, weil dieser nach ihrer Ansicht der 'falschen Seite' nützen könnte.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://srg-initiative.ch/initiative/argumentarium/",
+      "sourceTitle": "Argumentarium – SRG-Initiative",
+      "sourceExcerpt": "Die SRG wurde massiv gerügt wegen Nichtberichterstattung über Nahost-Universitätsproteste und reagierte darauf mit erneuter Nichtberichterstattung über den UBI-Entscheid, weil dieser nach ihrer Ansicht der 'falschen Seite' nützen könnte.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Analyse von UBI-Entscheid und ",
+        "methodology": "Analyse von UBI-Entscheid und SRG-Reaktion",
+        "temporal": "12. Dezember 2024 und danach",
+        "geographic": "Schweiz",
+        "boundaries": "SRG-Berichterstattung zu Nahost-Universitätsprotesten"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_01"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348732790",
+      "statement": "SRF hat in der Sendung Echo der Zeit vom 11. Februar 2026 um 18:00 Uhr einen Beitrag mit dem Titel 'EU-Vertragspaket: Ergebnis beim Kündigungsschutz' ausgestrahlt, in dem über Verhandlungen zwischen Bundesrat und Gewerkschaften zum Kündigungsschutz für Gewerkschafterinnen und Gewerkschafter berichtet wurde.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/audio/echo-der-zeit/eu-vertragspaket-ergebnis-beim-kuendigungsschutz?partId=GdBxLIFx0Qu-838r10RYeBW-IsI",
+      "sourceTitle": "EU-Vertragspaket: Ergebnis beim Kündigungsschutz - Audio & Podcasts - SRF",
+      "sourceExcerpt": "SRF hat in der Sendung Echo der Zeit vom 11. Februar 2026 um 18:00 Uhr einen Beitrag mit dem Titel 'EU-Vertragspaket: Ergebnis beim Kündigungsschutz' ausgestrahlt, in dem über Verhandlungen zwischen Bundesrat und Gewerkschaften zum Kündigungsschutz für Gewerkschafterinnen und Gewerkschafter berichtet wurde.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Dokumentation des Sendungsinha",
+        "methodology": "Dokumentation des Sendungsinhalts und der Ausstrahlung",
+        "temporal": "11. Februar 2026, 18:00 Uhr",
+        "geographic": "Schweiz",
+        "boundaries": "SRF Echo der Zeit Sendung"
+      },
+      "probativeValue": "high",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348732791",
+      "statement": "Der Beitrag 'EU-Vertragspaket: Ergebnis beim Kündigungsschutz' hatte eine Laufzeit von 5 Minuten 38 Sekunden und wurde von Iwan Lieberherr und Matthias Strasser produziert.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/audio/echo-der-zeit/eu-vertragspaket-ergebnis-beim-kuendigungsschutz?partId=GdBxLIFx0Qu-838r10RYeBW-IsI",
+      "sourceTitle": "EU-Vertragspaket: Ergebnis beim Kündigungsschutz - Audio & Podcasts - SRF",
+      "sourceExcerpt": "Der Beitrag 'EU-Vertragspaket: Ergebnis beim Kündigungsschutz' hatte eine Laufzeit von 5 Minuten 38 Sekunden und wurde von Iwan Lieberherr und Matthias Strasser produziert.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Dokumentation der Sendungsdeta",
+        "methodology": "Dokumentation der Sendungsdetails",
+        "temporal": "11. Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "SRF Echo der Zeit"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348732792",
+      "statement": "Nach intensiven Gesprächen liegt laut Bundesrat ein Ergebnis beim Kündigungsschutz für Gewerkschafterinnen und Gewerkschafter vor, wobei die Gewerkschaften ihre Unterstützung für neue Verträge zwischen der Schweiz und der EU vom Kündigungsschutz abhängig gemacht haben.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/audio/echo-der-zeit/eu-vertragspaket-ergebnis-beim-kuendigungsschutz?partId=GdBxLIFx0Qu-838r10RYeBW-IsI",
+      "sourceTitle": "EU-Vertragspaket: Ergebnis beim Kündigungsschutz - Audio & Podcasts - SRF",
+      "sourceExcerpt": "Nach intensiven Gesprächen liegt laut Bundesrat ein Ergebnis beim Kündigungsschutz für Gewerkschafterinnen und Gewerkschafter vor, wobei die Gewerkschaften ihre Unterstützung für neue Verträge zwischen der Schweiz und der EU vom Kündigungsschutz abhängig gemacht haben.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Berichterstattung über Bundesr",
+        "methodology": "Berichterstattung über Bundesratsaussagen",
+        "temporal": "Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "Schweiz-EU Vertragsverhandlungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348772963",
+      "statement": "Der Schweizerische Gewerbeverband (SGV) lehnt den geplanten Kündigungsschutz für Arbeitnehmervertretende ab, da dieser die Position einzelner Arbeitnehmergruppen gegenüber dem Rest der Belegschaft unangemessen verstärke.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/news/schweiz/lohnschutz-kompromiss-spaltet-sozialpartner-unterstuetzen-lohnschutzpaket-mit-vorbehalten",
+      "sourceTitle": "Vorwiegend positive Reaktionen zum Lohnschutz-Kompromiss - News - SRF",
+      "sourceExcerpt": "Der Schweizerische Gewerbeverband (SGV) lehnt den geplanten Kündigungsschutz für Arbeitnehmervertretende ab, da dieser die Position einzelner Arbeitnehmergruppen gegenüber dem Rest der Belegschaft unangemessen verstärke.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Direkte Zitierung der Stellung",
+        "methodology": "Direkte Zitierung der Stellungnahme des SGV in SRF-Berichterstattung",
+        "temporal": "21. März 2025",
+        "geographic": "Schweiz",
+        "boundaries": "Lohnschutz-Kompromiss und Kündigungsschutz für Arbeitnehmervertretungen"
+      },
+      "probativeValue": "high",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_03"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348772964",
+      "statement": "Urs Furrer vom Schweizerischen Gewerbeverband sgv wirft SRF vor, in der Berichterstattung der Tagesschau und des Echo der Zeit die Medienmitteilung des sgv zur Ablehnung der Kündigungsschutz-Massnahme konsequent ignoriert zu haben.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/news/schweiz/lohnschutz-kompromiss-spaltet-sozialpartner-unterstuetzen-lohnschutzpaket-mit-vorbehalten",
+      "sourceTitle": "Vorwiegend positive Reaktionen zum Lohnschutz-Kompromiss - News - SRF",
+      "sourceExcerpt": "Urs Furrer vom Schweizerischen Gewerbeverband sgv wirft SRF vor, in der Berichterstattung der Tagesschau und des Echo der Zeit die Medienmitteilung des sgv zur Ablehnung der Kündigungsschutz-Massnahme konsequent ignoriert zu haben.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Öffentliche Stellungnahme auf ",
+        "methodology": "Öffentliche Stellungnahme auf LinkedIn mit Verweis auf SRF-Berichterstattung",
+        "temporal": "5 Tage vor dem LinkedIn-Post (ca. 16. März 2025, bezogen auf Berichterstattung vom 11. Februar 2026)",
+        "geographic": "Schweiz",
+        "boundaries": "SRF-Berichterstattung (Tagesschau, Echo der Zeit) zur Massnahme 14 des EU-Pakets"
+      },
+      "probativeValue": "high",
+      "sourceType": "news_secondary",
+      "relevantClaimIds": [
+        "AC_03"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348772965",
+      "statement": "SRF antwortet auf den Vorwurf, dass aus Platzgründen nicht die Stellungnahmen aller Sozialpartner berücksichtigt werden konnten, und weist den Fake-News-Vorwurf entschieden zurück.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/news/schweiz/lohnschutz-kompromiss-spaltet-sozialpartner-unterstuetzen-lohnschutzpaket-mit-vorbehalten",
+      "sourceTitle": "Vorwiegend positive Reaktionen zum Lohnschutz-Kompromiss - News - SRF",
+      "sourceExcerpt": "SRF antwortet auf den Vorwurf, dass aus Platzgründen nicht die Stellungnahmen aller Sozialpartner berücksichtigt werden konnten, und weist den Fake-News-Vorwurf entschieden zurück.",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Offizielle Stellungnahme von S",
+        "methodology": "Offizielle Stellungnahme von SRF als Antwort auf LinkedIn-Kritik",
+        "temporal": "5 Tage nach dem ursprünglichen Vorwurf (ca. 21. März 2025)",
+        "geographic": "Schweiz",
+        "boundaries": "SRF-Berichterstattung zur Kündigungsschutz-Massnahme"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_03"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348772966",
+      "statement": "Der Schweizerische Gewerbeverband sgv begrüsst besonders die vorgesehene Stärkung des Rechtsschutzes für inländische Firmen unter allgemeinverbindlich erklärten Gesamtarbeitsverträgen, lehnt aber den geplanten Kündigungsschutz für Arbeitnehmervertretende ab.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srf.ch/news/schweiz/lohnschutz-kompromiss-spaltet-sozialpartner-unterstuetzen-lohnschutzpaket-mit-vorbehalten",
+      "sourceTitle": "Vorwiegend positive Reaktionen zum Lohnschutz-Kompromiss - News - SRF",
+      "sourceExcerpt": "Der Schweizerische Gewerbeverband sgv begrüsst besonders die vorgesehene Stärkung des Rechtsschutzes für inländische Firmen unter allgemeinverbindlich erklärten Gesamtarbeitsverträgen, lehnt aber den geplanten Kündigungsschutz für Arbeitnehmervertretende ab.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Berichterstattung über SGV-Ste",
+        "methodology": "Berichterstattung über SGV-Stellungnahme in SRF-Artikel",
+        "temporal": "21. März 2025",
+        "geographic": "Schweiz",
+        "boundaries": "Lohnschutz-Kompromiss und Kündigungsschutz-Massnahmen"
+      },
+      "probativeValue": "high",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_03"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771348845104",
+      "statement": "Die Ombudsstelle beurteilte einen «Tagesschau»-Bericht über Anna Netrebkos Auftritt im Opernhaus Zürich als sachgerecht und unterstützte die Beanstandung nicht.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte einen «Tagesschau»-Bericht über Anna Netrebkos Auftritt im Opernhaus Zürich als sachgerecht und unterstützte die Beanstandung nicht.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "2025",
+        "geographic": "Schweiz",
+        "boundaries": "SRF Tagesschau"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845105",
+      "statement": "Die Ombudsstelle beurteilte ein Instagram-Reel von SRF News über das EU-Vertragspaket mit der Schweiz als sachgerecht.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte ein Instagram-Reel von SRF News über das EU-Vertragspaket mit der Schweiz als sachgerecht.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "2025",
+        "geographic": "Schweiz",
+        "boundaries": "SRF News Instagram"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845106",
+      "statement": "Die Ombudsstelle beurteilte einen Bericht von SRF News auf Instagram über die Demonstrationen in Lausanne und das strukturelle Rassismusproblem im Polizeikorps als sachgerecht.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte einen Bericht von SRF News auf Instagram über die Demonstrationen in Lausanne und das strukturelle Rassismusproblem im Polizeikorps als sachgerecht.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "2025",
+        "geographic": "Schweiz, Lausanne",
+        "boundaries": "SRF News Instagram"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845107",
+      "statement": "Die Ombudsstelle beurteilte das «Echo der Zeit» vom 30. August 2025 über die Neutralitätsdebatte in Österreich als regelkonform und sah das Radio- und Fernsehgesetz als nicht verletzt an.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte das «Echo der Zeit» vom 30. August 2025 über die Neutralitätsdebatte in Österreich als regelkonform und sah das Radio- und Fernsehgesetz als nicht verletzt an.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "30. August 2025",
+        "geographic": "Schweiz, Österreich",
+        "boundaries": "SRF Echo der Zeit"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845108",
+      "statement": "Die Ombudsstelle beurteilte die Verwendung des Begriffs ‹linksextrem› in einem «Tagesschau»-Bericht vom 12. Oktober 2025 über die Palästina-Demonstration in Bern als rechtens und sah keine Verletzung des Radio- und Fernsehgesetzes.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte die Verwendung des Begriffs ‹linksextrem› in einem «Tagesschau»-Bericht vom 12. Oktober 2025 über die Palästina-Demonstration in Bern als rechtens und sah keine Verletzung des Radio- und Fernsehgesetzes.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "12. Oktober 2025",
+        "geographic": "Schweiz, Bern",
+        "boundaries": "SRF Tagesschau"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845109",
+      "statement": "Die Ombudsstelle beurteilte einen «Tagesschau»-Bericht vom 15. November 2025 über gestiegene Sicherheitskosten bei deutschen Weihnachtsmärkten als sachlich fehlerhaft und gab dem Beanstander Recht.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte einen «Tagesschau»-Bericht vom 15. November 2025 über gestiegene Sicherheitskosten bei deutschen Weihnachtsmärkten als sachlich fehlerhaft und gab dem Beanstander Recht.",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "15. November 2025",
+        "geographic": "Schweiz, Deutschland",
+        "boundaries": "SRF Tagesschau"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845110",
+      "statement": "Die Ombudsstelle beurteilte einen «Echo der Zeit»-Bericht über Gaza als sachgerecht und ordnete ein, dass das «Echo» den Kontext zu einer Aussage über die von Israel angestrebte «Auswanderung» der Bevölkerung des Gaza-Streifens deutlich machte.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte einen «Echo der Zeit»-Bericht über Gaza als sachgerecht und ordnete ein, dass das «Echo» den Kontext zu einer Aussage über die von Israel angestrebte «Auswanderung» der Bevölkerung des Gaza-Streifens deutlich machte.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "2025",
+        "geographic": "Schweiz, Gaza",
+        "boundaries": "SRF Echo der Zeit"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348845111",
+      "statement": "Die Ombudsstelle beurteilte einen «Kassensturz»-Bericht über CO2-Regeln für Neuwagen als korrekt und stellte keine Verstösse gegen das Programmrecht fest.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "sourceTitle": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "sourceExcerpt": "Die Ombudsstelle beurteilte einen «Kassensturz»-Bericht über CO2-Regeln für Neuwagen als korrekt und stellte keine Verstösse gegen das Programmrecht fest.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Ombudsstelle-Bewertung von Bea",
+        "methodology": "Ombudsstelle-Bewertung von Beanstandungen gegen SRF-Sendungen",
+        "temporal": "2025",
+        "geographic": "Schweiz",
+        "boundaries": "SRF Kassensturz"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_04"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348879114",
+      "statement": "Das Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) der Universität Zürich publiziert jährlich das «Jahrbuch Qualität der Medien» mit aktuellen Kennzahlen zur Medienqualität, Mediennutzung, Medienkonzentration sowie zur Entwicklung des Schweizer Mediensystems.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://publicvalue.srgssr.ch/ueber-public-value/medienqualitaet/",
+      "sourceTitle": "So wird die SRG überprüft - SRG\n            So wird die SRG überprüft - SRG",
+      "sourceExcerpt": "Das Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) der Universität Zürich publiziert jährlich das «Jahrbuch Qualität der Medien» mit aktuellen Kennzahlen zur Medienqualität, Mediennutzung, Medienkonzentration sowie zur Entwicklung des Schweizer Mediensystems.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Jährliche Publikation mit syst",
+        "methodology": "Jährliche Publikation mit systematischer Datenerfassung zu Medienqualität, Mediennutzung und Medienkonzentration",
+        "temporal": "Jährlich publiziert",
+        "geographic": "Schweiz",
+        "boundaries": "Schweizer Mediensystem"
+      },
+      "probativeValue": "high",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348879115",
+      "statement": "Das Jahrbuch Qualität der Medien 2024 des Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) enthält eine Studie zur SRG SSR im Schweizer Medienmarkt, die zeigt, dass öffentliche Medien keine negativen Auswirkungen auf die Nutzung privater Medien im Nachrichtenbereich haben.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://publicvalue.srgssr.ch/ueber-public-value/medienqualitaet/",
+      "sourceTitle": "So wird die SRG überprüft - SRG\n            So wird die SRG überprüft - SRG",
+      "sourceExcerpt": "Das Jahrbuch Qualität der Medien 2024 des Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) enthält eine Studie zur SRG SSR im Schweizer Medienmarkt, die zeigt, dass öffentliche Medien keine negativen Auswirkungen auf die Nutzung privater Medien im Nachrichtenbereich haben.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Systematische Untersuchung der",
+        "methodology": "Systematische Untersuchung der SRG SSR im Schweizer Medienmarkt mit Analyse der Mediennutzung",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "SRG SSR und privater Medienmarkt im Nachrichtenbereich"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348879116",
+      "statement": "Erneut erhielt die SRG 2024 gute Noten für ihre Produkte gemäss dem Jahrbuch Qualität der Medien.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://publicvalue.srgssr.ch/ueber-public-value/medienqualitaet/",
+      "sourceTitle": "So wird die SRG überprüft - SRG\n            So wird die SRG überprüft - SRG",
+      "sourceExcerpt": "Erneut erhielt die SRG 2024 gute Noten für ihre Produkte gemäss dem Jahrbuch Qualität der Medien.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Bewertung der SRG-Produkte dur",
+        "methodology": "Bewertung der SRG-Produkte durch das Jahrbuch Qualität der Medien",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "SRG-Produkte"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348900012",
+      "statement": "Das Jahrbuch Qualität der Medien erscheint als Publikation des fög (Forschungsinstitut Öffentlichkeit und Gesellschaft) der Universität Zürich und analysiert systematisch die Berichterstattungsqualität professioneller Informationsmedien sowie deren Ressourcen, die publizistische Vielfalt und Medienkonzentration in der Schweizer Medienarena.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.inlibra.com/document/download/pdf/uuid/c65368f8-05cf-3d7d-ae2e-fb251e9f0449",
+      "sourceTitle": "UFITA Archiv für Medienrecht und Medienwissenschaft - Inlibra",
+      "sourceExcerpt": "Das Jahrbuch Qualität der Medien erscheint als Publikation des fög (Forschungsinstitut Öffentlichkeit und Gesellschaft) der Universität Zürich und analysiert systematisch die Berichterstattungsqualität professioneller Informationsmedien sowie deren Ressourcen, die publizistische Vielfalt und Medienkonzentration in der Schweizer Medienarena.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Systematische Analyse der Beri",
+        "methodology": "Systematische Analyse der Berichterstattungsqualität professioneller Informationsmedien, Ressourcenanalyse, Untersuchung der publizistischen Vielfalt und Medienkonzentration",
+        "temporal": "Seit 2010 jährlich publiziert; vorliegende Quelle bezieht sich auf 2019",
+        "geographic": "Schweiz",
+        "boundaries": "Professionelle Informationsmedien in der Schweiz; später erweitert auf digitale Plattformen und weitere Medienanbieter"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348900013",
+      "statement": "Das Jahrbuch Qualität der Medien untersucht seit seiner ersten Ausgabe im Jahr 2010 die Berichterstattungsqualität professioneller Informationsmedien, deren Ressourcen, die publizistische Vielfalt und Medienkonzentration in der Schweizer Medienarena sowie die Nutzungsgewohnheiten des Medienpublikums.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.inlibra.com/document/download/pdf/uuid/c65368f8-05cf-3d7d-ae2e-fb251e9f0449",
+      "sourceTitle": "UFITA Archiv für Medienrecht und Medienwissenschaft - Inlibra",
+      "sourceExcerpt": "Das Jahrbuch Qualität der Medien untersucht seit seiner ersten Ausgabe im Jahr 2010 die Berichterstattungsqualität professioneller Informationsmedien, deren Ressourcen, die publizistische Vielfalt und Medienkonzentration in der Schweizer Medienarena sowie die Nutzungsgewohnheiten des Medienpublikums.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Systematische Analyse von Beri",
+        "methodology": "Systematische Analyse von Berichterstattungsqualität, Ressourcen, publizistischer Vielfalt, Medienkonzentration und Mediennutzung",
+        "temporal": "2010 bis 2019 (Jubiläumsausgabe 2019)",
+        "geographic": "Schweiz",
+        "boundaries": "Professionelle Informationsmedien; später erweitert auf digitale Plattformen und Tech-Plattformen"
+      },
+      "probativeValue": "high",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348900014",
+      "statement": "Die Forschungsperspektive des Jahrbuchs wurde im Laufe der Zeit erweitert und umfasst nicht mehr nur professionelle Informationsmedien, sondern auch neue Anbieter wie Zivilgesellschaft, pseudojournalistische Quellen, Public Relations sowie globale Tech-Plattformen (Facebook, Google, YouTube etc.) in der Schweizer Medienöffentlichkeit.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.inlibra.com/document/download/pdf/uuid/c65368f8-05cf-3d7d-ae2e-fb251e9f0449",
+      "sourceTitle": "UFITA Archiv für Medienrecht und Medienwissenschaft - Inlibra",
+      "sourceExcerpt": "Die Forschungsperspektive des Jahrbuchs wurde im Laufe der Zeit erweitert und umfasst nicht mehr nur professionelle Informationsmedien, sondern auch neue Anbieter wie Zivilgesellschaft, pseudojournalistische Quellen, Public Relations sowie globale Tech-Plattformen (Facebook, Google, YouTube etc.) in der Schweizer Medienöffentlichkeit.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Erweiterung des Forschungsdesi",
+        "methodology": "Erweiterung des Forschungsdesigns zur Erfassung des digitalen Strukturwandels der Medienöffentlichkeit",
+        "temporal": "Entwicklung über die Zeit von 2010 bis 2019",
+        "geographic": "Schweiz",
+        "boundaries": "Schweizer Medienöffentlichkeit; Medienanbieter und Plattformen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348927183",
+      "statement": "Das Jahrbuch Qualität der Medien ist eine übergeordnete Qualitätsanalyse, die systematisch die Medienqualität auf Basis von manueller Inhaltsanalyse untersucht. Die Analyse fokussiert auf im Jahrbuch untersuchte Medientitel für Untersuchungsjahre 2015 bis 2021.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.zora.uzh.ch/server/api/core/bitstreams/55a9b6d4-9445-473a-9d7c-5ebd04de312e/content",
+      "sourceTitle": "content",
+      "sourceExcerpt": "Das Jahrbuch Qualität der Medien ist eine übergeordnete Qualitätsanalyse, die systematisch die Medienqualität auf Basis von manueller Inhaltsanalyse untersucht. Die Analyse fokussiert auf im Jahrbuch untersuchte Medientitel für Untersuchungsjahre 2015 bis 2021.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Manuelle Inhaltsanalyse kombin",
+        "methodology": "Manuelle Inhaltsanalyse kombiniert mit Medienstrukturanalyse",
+        "temporal": "2015-2021",
+        "geographic": "Svizzera italiana (Tessin und italienischsprachige Regionen Graubündens)",
+        "boundaries": "Medientitel der italienischsprachigen Schweiz"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348927184",
+      "statement": "Das Medienqualitätsrating (MQR) analysiert und bewertet die Qualität von reichweitenstarken Informationsmedien aus der Deutschschweiz und der Suisse romande seit 2014. Die Ausgabe 2020 umfasst 49 Medientitel der Gattungen Presse, Radio, Fernsehen sowie Online-Segment.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.zora.uzh.ch/server/api/core/bitstreams/55a9b6d4-9445-473a-9d7c-5ebd04de312e/content",
+      "sourceTitle": "content",
+      "sourceExcerpt": "Das Medienqualitätsrating (MQR) analysiert und bewertet die Qualität von reichweitenstarken Informationsmedien aus der Deutschschweiz und der Suisse romande seit 2014. Die Ausgabe 2020 umfasst 49 Medientitel der Gattungen Presse, Radio, Fernsehen sowie Online-Segment.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Systematische Analyse und Bewe",
+        "methodology": "Systematische Analyse und Bewertung von Medienqualität durch Inhaltsanalyse",
+        "temporal": "seit 2014, Ausgabe 2020",
+        "geographic": "Deutschschweiz und Suisse romande",
+        "boundaries": "Reichweitenstarke General-Interest-Medien mit breitem Themenspektrum"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348927185",
+      "statement": "Das Jahrbuch Qualität der Medien wird vom Forschungszentrum Öffentlichkeit und Gesellschaft (foeg) der Universität Zürich herausgegeben und untersucht systematisch die Medienqualität durch Inhaltsanalyse.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.zora.uzh.ch/server/api/core/bitstreams/55a9b6d4-9445-473a-9d7c-5ebd04de312e/content",
+      "sourceTitle": "content",
+      "sourceExcerpt": "Das Jahrbuch Qualität der Medien wird vom Forschungszentrum Öffentlichkeit und Gesellschaft (foeg) der Universität Zürich herausgegeben und untersucht systematisch die Medienqualität durch Inhaltsanalyse.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Systematische Inhaltsanalyse v",
+        "methodology": "Systematische Inhaltsanalyse von Medienberichterstattung",
+        "temporal": "2022 (Jahrbuch 2022 dokumentiert)",
+        "geographic": "Schweiz",
+        "boundaries": "Medientitel verschiedener Sprachregionen der Schweiz"
+      },
+      "probativeValue": "high",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348927186",
+      "statement": "Die Analyse im Jahrbuch Qualität der Medien untersucht die Entwicklung der Medienqualität bzw. der journalistischen Leistungen durch Inhaltsanalyse der Medienberichterstattung in Verbindung mit Medienstrukturanalyse.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.zora.uzh.ch/server/api/core/bitstreams/55a9b6d4-9445-473a-9d7c-5ebd04de312e/content",
+      "sourceTitle": "content",
+      "sourceExcerpt": "Die Analyse im Jahrbuch Qualität der Medien untersucht die Entwicklung der Medienqualität bzw. der journalistischen Leistungen durch Inhaltsanalyse der Medienberichterstattung in Verbindung mit Medienstrukturanalyse.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Kombinierte Medienstrukturanal",
+        "methodology": "Kombinierte Medienstrukturanalyse und manuelle Inhaltsanalyse",
+        "temporal": "Langzeitanalyse seit 2015",
+        "geographic": "Svizzera italiana",
+        "boundaries": "Alle Mediensektoren (Print, Rundfunk, Online)"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_05"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_11"
+    },
+    {
+      "id": "EV_1771348958378",
+      "statement": "Die Analyse ergibt keine Hinweise darauf, dass die SRG SSR private Medien im Informationsbereich verdrängt.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Die Analyse ergibt keine Hinweise darauf, dass die SRG SSR private Medien im Informationsbereich verdrängt.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Auswertung von repräsentativen",
+        "methodology": "Auswertung von repräsentativen Befragungsdaten aus dem Reuters Institute Digital News Report 2024 der University of Oxford",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Informationsbereich, Online- und Offline-Nutzung"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958380",
+      "statement": "Mit einem Anteil von 3,5 % an der Gesamtbevölkerung gibt es nur wenige Personen, die online ausschliesslich Informationsgebote der SRG nutzen, ohne gleichzeitig auch Abonnement- oder Pendler- und Boulevardmedien im Onlinebereich zu nutzen.",
+      "category": "statistic",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Mit einem Anteil von 3,5 % an der Gesamtbevölkerung gibt es nur wenige Personen, die online ausschliesslich Informationsgebote der SRG nutzen, ohne gleichzeitig auch Abonnement- oder Pendler- und Boulevardmedien im Onlinebereich zu nutzen.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Repräsentative Befragung aus d",
+        "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Online-Nutzung von Informationsmedien"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958381",
+      "statement": "Öffentliche Informationsangebote werden eher komplementär zu denjenigen privater Medien genutzt.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Öffentliche Informationsangebote werden eher komplementär zu denjenigen privater Medien genutzt.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Repräsentative Befragung aus d",
+        "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Informationsmediennutzung"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958382",
+      "statement": "Die Nutzung von Online- oder Offlineangeboten der SRG hängt nicht mit der (tiefen) Zahlungsbereitschaft für Onlinenachrichten zusammen – weder positiv noch negativ.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Die Nutzung von Online- oder Offlineangeboten der SRG hängt nicht mit der (tiefen) Zahlungsbereitschaft für Onlinenachrichten zusammen – weder positiv noch negativ.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Repräsentative Befragung aus d",
+        "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Zahlungsbereitschaft für Online-Nachrichten"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958383",
+      "statement": "Auf Basis dieser empirischen Daten kann die SRG SSR mit ihren Informationsangeboten nicht dafür verantwortlich gemacht werden, dass private Informationsmedien teilweise ein Reichweitenproblem haben oder dass (zu) wenige Menschen für Onlinenachrichten bezahlen.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Auf Basis dieser empirischen Daten kann die SRG SSR mit ihren Informationsangeboten nicht dafür verantwortlich gemacht werden, dass private Informationsmedien teilweise ein Reichweitenproblem haben oder dass (zu) wenige Menschen für Onlinenachrichten bezahlen.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Repräsentative Befragung aus d",
+        "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Informationsmedienmarkt"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958385",
+      "statement": "Die Nutzung öffentlicher Medien ergänzt die Nutzung privater Nachrichtenangebote und ersetzt sie nicht.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Die Nutzung öffentlicher Medien ergänzt die Nutzung privater Nachrichtenangebote und ersetzt sie nicht.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Repräsentative Befragung aus d",
+        "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Nachrichtenmediennutzung"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958386",
+      "statement": "Es gibt keinen Hinweis darauf, dass die Nutzung von SRG-Angeboten die Zahlungsbereitschaft für private journalistische Inhalte schmälert.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Es gibt keinen Hinweis darauf, dass die Nutzung von SRG-Angeboten die Zahlungsbereitschaft für private journalistische Inhalte schmälert.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Repräsentative Befragung aus d",
+        "methodology": "Repräsentative Befragung aus dem Reuters Institute Digital News Report 2024",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Zahlungsbereitschaft für journalistische Inhalte"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348958388",
+      "statement": "Die SRG konkurriere die privaten Medien im Nachrichtenbereich nicht. Es sei sogar umgekehrt: SRG-Nutzerinnen und -Nutzer konsumieren private Medienangebote häufiger.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://x.com/SRGSSR",
+      "sourceTitle": "x.com",
+      "sourceExcerpt": "Die SRG konkurriere die privaten Medien im Nachrichtenbereich nicht. Es sei sogar umgekehrt: SRG-Nutzerinnen und -Nutzer konsumieren private Medienangebote häufiger.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Vertiefungsstudie im Jahrbuch ",
+        "methodology": "Vertiefungsstudie im Jahrbuch Qualität der Medien 2024, basierend auf repräsentativer Befragung",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Nachrichtenbereich, Mediennutzung"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348978468",
+      "statement": "Bisherige wissenschaftliche, öffentlich zugängliche internationale Studien stützen in der Summe die «crowding-out»-These nicht.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.bakom.admin.ch/dam/en/sd-web/Tbtzxy9R6M7U/online-newsangebote-der-srg-ssr-und-privater-medien-2025.pdf",
+      "sourceTitle": "online newsangebote der srg ssr und privater medien 2025",
+      "sourceExcerpt": "Bisherige wissenschaftliche, öffentlich zugängliche internationale Studien stützen in der Summe die «crowding-out»-These nicht.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Systematische Überprüfung inte",
+        "methodology": "Systematische Überprüfung internationaler wissenschaftlicher Studien",
+        "temporal": "Bis zum Zeitpunkt der Berichterstellung 2025",
+        "geographic": "International",
+        "boundaries": "Öffentlich zugängliche wissenschaftliche Studien"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_15"
+    },
+    {
+      "id": "EV_1771348978469",
+      "statement": "Eine aktuelle Studie zeigt, dass die Nutzung von SRG-Online-Angeboten weder mit der Nutzung privater Medienangebote noch mit der Zahlungsbereitschaft negativ zusammenhängt (Udris et al., 2024).",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.bakom.admin.ch/dam/en/sd-web/Tbtzxy9R6M7U/online-newsangebote-der-srg-ssr-und-privater-medien-2025.pdf",
+      "sourceTitle": "online newsangebote der srg ssr und privater medien 2025",
+      "sourceExcerpt": "Eine aktuelle Studie zeigt, dass die Nutzung von SRG-Online-Angeboten weder mit der Nutzung privater Medienangebote noch mit der Zahlungsbereitschaft negativ zusammenhängt (Udris et al., 2024).",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Empirische Studie zur Analyse ",
+        "methodology": "Empirische Studie zur Analyse von Nutzungsmustern und deren Zusammenhänge",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Online-Mediennutzung und Zahlungsbereitschaft"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": true,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_15"
+    },
+    {
+      "id": "EV_1771348978470",
+      "statement": "Die Onlineportale der SRG unterscheiden sich mit ihrer relativ starken Gewichtung von nationalen Themen, ihrer Fokussierung auf redaktionell bearbeitete Agentur-Beiträge, ihrem Fokus auf das Vermitteln von aktuellen Nachrichten und ihrer sachlichen Berichterstattung in mehreren Punkten von den Online-Angeboten privater Medien.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.bakom.admin.ch/dam/en/sd-web/Tbtzxy9R6M7U/online-newsangebote-der-srg-ssr-und-privater-medien-2025.pdf",
+      "sourceTitle": "online newsangebote der srg ssr und privater medien 2025",
+      "sourceExcerpt": "Die Onlineportale der SRG unterscheiden sich mit ihrer relativ starken Gewichtung von nationalen Themen, ihrer Fokussierung auf redaktionell bearbeitete Agentur-Beiträge, ihrem Fokus auf das Vermitteln von aktuellen Nachrichten und ihrer sachlichen Berichterstattung in mehreren Punkten von den Online-Angeboten privater Medien.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Manuelle Inhaltsanalyse einer ",
+        "methodology": "Manuelle Inhaltsanalyse einer repräsentativen Auswahl der Gesamtberichterstattung von Online-Portalen der SRG aus drei Sprachregionen im Vergleich mit 20 Online-Medien privater Medien",
+        "temporal": "2024-2025",
+        "geographic": "Schweiz (drei Sprachregionen)",
+        "boundaries": "Online-Newsangebote; nur Textbeiträge und Informationsseiten der SRG-Onlineportale; 11 verschiedene Indikatoren"
+      },
+      "probativeValue": "high",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348978471",
+      "statement": "Das inhaltliche Profil der SRG-Onlineportale lässt sich «zwischen» den Online-Angeboten von Abonnementszeitungen, Boulevard-/Pendlerzeitungen und Portalen der Privaten verorten.",
+      "category": "evidence",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.bakom.admin.ch/dam/en/sd-web/Tbtzxy9R6M7U/online-newsangebote-der-srg-ssr-und-privater-medien-2025.pdf",
+      "sourceTitle": "online newsangebote der srg ssr und privater medien 2025",
+      "sourceExcerpt": "Das inhaltliche Profil der SRG-Onlineportale lässt sich «zwischen» den Online-Angeboten von Abonnementszeitungen, Boulevard-/Pendlerzeitungen und Portalen der Privaten verorten.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Manuelle Inhaltsanalyse mit Ve",
+        "methodology": "Manuelle Inhaltsanalyse mit Vergleich von Qualitätsindikatoren",
+        "temporal": "2024-2025",
+        "geographic": "Schweiz",
+        "boundaries": "Online-Newsangebote; Vergleich zwischen SRG und privaten Medientypen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "other",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_17"
+    },
+    {
+      "id": "EV_1771348997471",
+      "statement": "Mit einem Anteil von 3,5 % an der Gesamtbevölkerung gibt es nur wenige Personen, die online ausschliesslich Informationsangebote der SRG nutzen, ohne gleichzeitig auch Abonnement- oder Pendler- und Boulevardmedien im Onlinebereich zu nutzen. Dies verweist darauf, dass öffentliche Informationsangebote eher komplementär zu denjenigen privater Medien genutzt werden.",
+      "category": "statistic",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:d295cef3-c2ca-4eec-8c82-90d1981540cd/JB_2024_Studie_I_SRG_Private.pdf",
+      "sourceTitle": "JB 2024 Studie I SRG Private",
+      "sourceExcerpt": "Mit einem Anteil von 3,5 % an der Gesamtbevölkerung gibt es nur wenige Personen, die online ausschliesslich Informationsangebote der SRG nutzen, ohne gleichzeitig auch Abonnement- oder Pendler- und Boulevardmedien im Onlinebereich zu nutzen. Dies verweist darauf, dass öffentliche Informationsangebote eher komplementär zu denjenigen privater Medien genutzt werden.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Auswertung von repräsentativen",
+        "methodology": "Auswertung von repräsentativen Befragungsdaten aus dem Reuters Institute Digital News Report 2024 der University of Oxford",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Gesamtbevölkerung, Onlinebereich"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": true,
+      "derivedFromSourceUrl": "https://www.reutersinstitute.ox.ac.uk/",
+      "scopeQuality": "partial",
+      "derivativeClaimUnverified": true,
+      "claimBoundaryId": "CB_13"
+    },
+    {
+      "id": "EV_1771348997473",
+      "statement": "Auf Basis dieser empirischen Daten kann die SRG SSR mit ihren Informationsangeboten nicht dafür verantwortlich gemacht werden, dass private Informationsmedien teilweise ein Reichweitenproblem haben oder dass (zu) wenige Menschen für Onlinenachrichten bezahlen.",
+      "category": "expert_quote",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.foeg.uzh.ch/dam/jcr:d295cef3-c2ca-4eec-8c82-90d1981540cd/JB_2024_Studie_I_SRG_Private.pdf",
+      "sourceTitle": "JB 2024 Studie I SRG Private",
+      "sourceExcerpt": "Auf Basis dieser empirischen Daten kann die SRG SSR mit ihren Informationsangeboten nicht dafür verantwortlich gemacht werden, dass private Informationsmedien teilweise ein Reichweitenproblem haben oder dass (zu) wenige Menschen für Onlinenachrichten bezahlen.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Empirische Analyse von Befragu",
+        "methodology": "Empirische Analyse von Befragungsdaten",
+        "temporal": "2024",
+        "geographic": "Schweiz",
+        "boundaries": "Informationsmedien, Reichweite und Zahlungsbereitschaft"
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "relevantClaimIds": [
+        "AC_06"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "partial",
+      "claimBoundaryId": "CB_15"
+    },
+    {
+      "id": "EV_1771349029542",
+      "statement": "Der Bundesrat hat die Begleitmassnahme 14 zum Inland-Lohnschutz angepasst, basierend auf Gesprächen der Sozialpartner mit dem Staatssekretariat für Wirtschaft. Die Massnahme soll gewählte Arbeitnehmervertreter und -vertreterinnen besser vor missbräuchlichen Kündigungen schützen.",
+      "category": "evidence",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.moneycab.com/schweiz/kompromiss-bei-lohnschutz-begleitmassnahme-14-im-eu-vertragspaket/",
+      "sourceTitle": "Kompromiss bei Lohnschutz-Begleitmassnahme 14 im EU-Vertragspaket | Moneycabmoneycabmoneycab",
+      "sourceExcerpt": "Der Bundesrat hat die Begleitmassnahme 14 zum Inland-Lohnschutz angepasst, basierend auf Gesprächen der Sozialpartner mit dem Staatssekretariat für Wirtschaft. Die Massnahme soll gewählte Arbeitnehmervertreter und -vertreterinnen besser vor missbräuchlichen Kündigungen schützen.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Offizielle Bundesratsmitteilun",
+        "methodology": "Offizielle Bundesratsmitteilung basierend auf Sozialpartner-Verhandlungen",
+        "temporal": "11. Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "Begleitmassnahme 14 zum EU-Vertragspaket"
+      },
+      "probativeValue": "high",
+      "sourceType": "government_report",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771349029543",
+      "statement": "Der Schweizerische Arbeitgeberverband äusserte Skepsis gegenüber dem Kündigungsschutz für Arbeitnehmervertretungen und teilte mit, dass diese Lösung 'vom Bundesrat ohne Einigung der Sozialpartner beschlossen' wurde.",
+      "category": "expert_quote",
+      "specificity": "high",
+      "sourceId": "",
+      "sourceUrl": "https://www.moneycab.com/schweiz/kompromiss-bei-lohnschutz-begleitmassnahme-14-im-eu-vertragspaket/",
+      "sourceTitle": "Kompromiss bei Lohnschutz-Begleitmassnahme 14 im EU-Vertragspaket | Moneycabmoneycabmoneycab",
+      "sourceExcerpt": "Der Schweizerische Arbeitgeberverband äusserte Skepsis gegenüber dem Kündigungsschutz für Arbeitnehmervertretungen und teilte mit, dass diese Lösung 'vom Bundesrat ohne Einigung der Sozialpartner beschlossen' wurde.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Stellungnahme des Schweizerisc",
+        "methodology": "Stellungnahme des Schweizerischen Arbeitgeberverbands",
+        "temporal": "11. Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "Kündigungsschutz für Arbeitnehmervertretungen"
+      },
+      "probativeValue": "high",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771349029544",
+      "statement": "Der Verband der Schweizer Tech-Industrie Swissmem schrieb, dass der Kündigungsschutz für Arbeitnehmervertretungen in keinem Zusammenhang mit den Bilateralen III stehe und dass er diese 'vom Bundesrat ohne Einigung der Sozialpartner beschlossene Lösung' genau unter die Lupe nehmen werde.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.moneycab.com/schweiz/kompromiss-bei-lohnschutz-begleitmassnahme-14-im-eu-vertragspaket/",
+      "sourceTitle": "Kompromiss bei Lohnschutz-Begleitmassnahme 14 im EU-Vertragspaket | Moneycabmoneycabmoneycab",
+      "sourceExcerpt": "Der Verband der Schweizer Tech-Industrie Swissmem schrieb, dass der Kündigungsschutz für Arbeitnehmervertretungen in keinem Zusammenhang mit den Bilateralen III stehe und dass er diese 'vom Bundesrat ohne Einigung der Sozialpartner beschlossene Lösung' genau unter die Lupe nehmen werde.",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "name": "Stellungnahme des Verbands der",
+        "methodology": "Stellungnahme des Verbands der Schweizer Tech-Industrie Swissmem",
+        "temporal": "11. Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "Kündigungsschutz für Arbeitnehmervertretungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771349029545",
+      "statement": "Der Schweizerische Gewerkschaftsbund bezeichnete den Kündigungsschutz für Personalvertretungen als 'Minimallösung' und betonte, dass dieser als 'unabdingbarer Teil' des Pakets nicht gerüttelt werden dürfe.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.moneycab.com/schweiz/kompromiss-bei-lohnschutz-begleitmassnahme-14-im-eu-vertragspaket/",
+      "sourceTitle": "Kompromiss bei Lohnschutz-Begleitmassnahme 14 im EU-Vertragspaket | Moneycabmoneycabmoneycab",
+      "sourceExcerpt": "Der Schweizerische Gewerkschaftsbund bezeichnete den Kündigungsschutz für Personalvertretungen als 'Minimallösung' und betonte, dass dieser als 'unabdingbarer Teil' des Pakets nicht gerüttelt werden dürfe.",
+      "claimDirection": "neutral",
+      "evidenceScope": {
+        "name": "Stellungnahme des Schweizerisc",
+        "methodology": "Stellungnahme des Schweizerischen Gewerkschaftsbunds",
+        "temporal": "11. Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "Kündigungsschutz für Personalvertretungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    },
+    {
+      "id": "EV_1771349029546",
+      "statement": "Travailsuisse bezeichnete das gesamte Massnahmenpaket als akzeptablen Kompromiss und zeigte sich zufrieden damit, dass mit dem Kündigungsschutz von Arbeitnehmervertretungen 'nach zähem Ringen auch für diese letzte Massnahme eine einvernehmliche Lösung' gefunden werden konnte.",
+      "category": "expert_quote",
+      "specificity": "medium",
+      "sourceId": "",
+      "sourceUrl": "https://www.moneycab.com/schweiz/kompromiss-bei-lohnschutz-begleitmassnahme-14-im-eu-vertragspaket/",
+      "sourceTitle": "Kompromiss bei Lohnschutz-Begleitmassnahme 14 im EU-Vertragspaket | Moneycabmoneycabmoneycab",
+      "sourceExcerpt": "Travailsuisse bezeichnete das gesamte Massnahmenpaket als akzeptablen Kompromiss und zeigte sich zufrieden damit, dass mit dem Kündigungsschutz von Arbeitnehmervertretungen 'nach zähem Ringen auch für diese letzte Massnahme eine einvernehmliche Lösung' gefunden werden konnte.",
+      "claimDirection": "contradicts",
+      "evidenceScope": {
+        "name": "Stellungnahme von Travailsuiss",
+        "methodology": "Stellungnahme von Travailsuisse",
+        "temporal": "11. Februar 2026",
+        "geographic": "Schweiz",
+        "boundaries": "Kündigungsschutz für Arbeitnehmervertretungen"
+      },
+      "probativeValue": "medium",
+      "sourceType": "news_primary",
+      "relevantClaimIds": [
+        "AC_02"
+      ],
+      "isDerivative": false,
+      "scopeQuality": "complete",
+      "claimBoundaryId": "CB_07"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S_001",
+      "url": "https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html",
+      "title": "Die grossen Medien berichten politisch ausgewogen | Willkommen am fög – Forschungszentrum Öffentlichkeit und Gesellschaft | UZHLogo der Universität Zürich, zur Startseite",
+      "trackRecordScore": 0.68,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Medieninhaltsanalyse politische Ausrichtung Studie"
+    },
+    {
+      "id": "S_002",
+      "url": "https://www.bakom.admin.ch/dam/de/sd-web/-a0fvXX6fbaT/yougov-2024-programmanalysen-radio-srg-2023-abschlussbericht.pdf",
+      "title": "yougov 2024 programmanalysen radio srg 2023 abschlussbericht",
+      "trackRecordScore": 0.72,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Medieninhaltsanalyse politische Ausrichtung Studie"
+    },
+    {
+      "id": "S_003",
+      "url": "https://www.srf.ch/news/schweiz/analyse-der-berichterstattung-studie-grosse-schweizer-medien-berichten-politisch-ausgewogen",
+      "title": "Analyse der Berichterstattung - Studie: Grosse Schweizer Medien berichten politisch ausgewogen - News - SRF",
+      "trackRecordScore": 0.85,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Medieninhaltsanalyse politische Ausrichtung Studie"
+    },
+    {
+      "id": "S_004",
+      "url": "https://de.wikipedia.org/wiki/Medien_in_der_Schweiz",
+      "title": "Medien in der Schweiz – Wikipedia",
+      "trackRecordScore": 0.42,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Medieninhaltsanalyse politische Ausrichtung Studie"
+    },
+    {
+      "id": "S_005",
+      "url": "https://www.snf.ch/media/de/jOCg3ULB7qRLacH1/NFP58_Schlussbericht_Trebbe.pdf",
+      "title": "NFP58 Schlussbericht Trebbe",
+      "trackRecordScore": null,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Medieninhaltsanalyse politische Ausrichtung Studie"
+    },
+    {
+      "id": "S_006",
+      "url": "https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf",
+      "title": "JB 2024 Gesamt fin",
+      "trackRecordScore": 0.68,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "fög Jahrbuch Qualität Medien SRG Parteienvertretung"
+    },
+    {
+      "id": "S_007",
+      "url": "https://www.bakom.admin.ch/dam/de/sd-web/HU3yyhzcXGCV/foeg-analyse-ausgewaehlter-srg-angebote-auf-social-media-fuer-die-jungen-zielgruppen-2024.pdf",
+      "title": "foeg analyse ausgewaehlter srg angebote auf social media fuer die jungen zielgruppen 2024",
+      "trackRecordScore": 0.72,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "fög Jahrbuch Qualität Medien SRG Parteienvertretung"
+    },
+    {
+      "id": "S_008",
+      "url": "https://www.foeg.uzh.ch/dam/jcr:45cd9fc3-5be2-4ef0-8bec-bdf427d1a51b/JB_2025_20251030_final%20korr.pdf",
+      "title": "JB 2025 20251030 final%20korr",
+      "trackRecordScore": 0.68,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "fög Jahrbuch Qualität Medien SRG Parteienvertretung"
+    },
+    {
+      "id": "S_009",
+      "url": "https://www.ikmz.uzh.ch/de/research/divisions/publicsphere-and-society/team/daniel-vogler.html",
+      "title": "Daniel Vogler | Institut für Kommunikationswissenschaft und Medienforschung | UZHLogo der Universität Zürich, zur Startseite",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "fög Jahrbuch Qualität Medien SRG Parteienvertretung"
+    },
+    {
+      "id": "S_010",
+      "url": "https://srg-initiative.ch/initiative/argumentarium/",
+      "title": "Argumentarium – SRG-Initiative",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "UBI Beschwerde SRG politische Neutralität Entscheide"
+    },
+    {
+      "id": "S_011",
+      "url": "https://www.kleinreport.ch/news/emrah-erken-die-srg-verschweigt-systematisch-und-aus-politischen-motiven-relevante-informationen-106152/",
+      "title": "Emrah Erken: «Die SRG verschweigt systematisch und aus politischen Motiven relevante Informationen» - kleinreport.ch",
+      "trackRecordScore": 0.58,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "UBI Beschwerde SRG politische Neutralität Entscheide"
+    },
+    {
+      "id": "S_012",
+      "url": "https://www.srgd.ch/de/aktuelles/news/srf-hatte-uber-rki-protokolle-berichten-mussen/",
+      "title": "SRF hätte über RKI-Protokolle berichten müssen - Aktuelles | SRG Deutschschweiz",
+      "trackRecordScore": 0.72,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "UBI Beschwerde SRG politische Neutralität Entscheide"
+    },
+    {
+      "id": "S_013",
+      "url": "https://www.srf.ch/audio/echo-der-zeit/eu-vertragspaket-ergebnis-beim-kuendigungsschutz?partId=GdBxLIFx0Qu-838r10RYeBW-IsI",
+      "title": "EU-Vertragspaket: Ergebnis beim Kündigungsschutz - Audio & Podcasts - SRF",
+      "trackRecordScore": 0.85,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRF Echo der Zeit 11 Februar 2026 Kündigungsschutz Gewerkschafter"
+    },
+    {
+      "id": "S_014",
+      "url": "https://podcasts.apple.com/ch/podcast/eu-vertragspaket-ergebnis-beim-k%C3%BCndigungsschutz/id81345425?i=1000749297846",
+      "title": "EU-Vertragspaket: Ergebnis bei ... – Echo der Zeit – Apple Podcasts",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRF Echo der Zeit 11 Februar 2026 Kündigungsschutz Gewerkschafter"
+    },
+    {
+      "id": "S_015",
+      "url": "https://www.srf.ch/audio/echo-der-zeit/eu-vertragspaket-ergebnis-beim-kuendigungsschutz?id=AUDI20260211_RS_0050",
+      "title": "EU-Vertragspaket: Ergebnis beim Kündigungsschutz - Audio & Podcasts - SRF",
+      "trackRecordScore": 0.85,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRF Echo der Zeit 11 Februar 2026 Kündigungsschutz Gewerkschafter"
+    },
+    {
+      "id": "S_016",
+      "url": "https://www.srf.ch/audio/echo-der-zeit",
+      "title": "Echo der Zeit - Audio & Podcasts - SRF",
+      "trackRecordScore": 0.85,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRF Echo der Zeit 11 Februar 2026 Kündigungsschutz Gewerkschafter"
+    },
+    {
+      "id": "S_017",
+      "url": "https://www.srf.ch/news/schweiz/lohnschutz-kompromiss-spaltet-sozialpartner-unterstuetzen-lohnschutzpaket-mit-vorbehalten",
+      "title": "Vorwiegend positive Reaktionen zum Lohnschutz-Kompromiss - News - SRF",
+      "trackRecordScore": 0.85,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRF Kündigungsschutz Gewerkschafter Berichterstattung sgv"
+    },
+    {
+      "id": "S_018",
+      "url": "https://de.linkedin.com/posts/urs-furrer-9339a32_schweizerischer-gewerbeverband-sgv-medienmitteilung-activity-7427450055940284416-v9D4",
+      "title": "Schweizerischer Gewerbeverband sgv - Medienmitteilung «Bundesrat gibt Zwängerei der Gewerkschaften nach» | Urs Furrer | 10 Kommentare",
+      "trackRecordScore": 0.42,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRF Kündigungsschutz Gewerkschafter Berichterstattung sgv"
+    },
+    {
+      "id": "S_019",
+      "url": "https://www.ubi.admin.ch/de/aktuell/medienmitteilungen",
+      "title": "Medienmitteilungen - Unabhängige Beschwerdeinstanz für Radio und Fernsehen UBI",
+      "trackRecordScore": 0.8,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Ombudsstelle Echo der Zeit SRF News Entscheide"
+    },
+    {
+      "id": "S_020",
+      "url": "https://www.srgd.ch/de/aktuelles/news/jahresbericht-ombudsstelle-die-welle-der-beanstandungen-reisst-nicht-ab/",
+      "title": "Jahresbericht Ombudsstelle: Die Welle der Beanstandungen reisst nicht ab - Aktuelles | SRG Deutschschweiz",
+      "trackRecordScore": 0.72,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "Ombudsstelle SRG Jahresbericht Beanstandungen gutgeheissen"
+    },
+    {
+      "id": "S_021",
+      "url": "https://www.srgd.ch/de/aktuelles/news/?categories=ombudsstelle",
+      "title": "Aktuelles | SRG Deutschschweiz",
+      "trackRecordScore": 0.72,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "Ombudsstelle SRG Jahresbericht Beanstandungen gutgeheissen"
+    },
+    {
+      "id": "S_022",
+      "url": "https://www.ubi.admin.ch/inhalte/pdf/Dokumentation/Jahresberichte/Jahresberichte_DE/jb2024.pdf",
+      "title": "jb2024",
+      "trackRecordScore": 0.8,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "Ombudsstelle SRG Jahresbericht Beanstandungen gutgeheissen"
+    },
+    {
+      "id": "S_023",
+      "url": "https://www.srgd.ch/de/aktuelles/news/?tags=ombudsstelle",
+      "title": "Aktuelles | SRG Deutschschweiz",
+      "trackRecordScore": 0.72,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "Ombudsstelle SRG Jahresbericht Beanstandungen gutgeheissen"
+    },
+    {
+      "id": "S_024",
+      "url": "https://www.srgssr.ch/fileadmin/dam/documents/publikationen/geschaeftsbricht/SRG-GB-2023-de.pdf",
+      "title": "SRG GB 2023 de",
+      "trackRecordScore": 0.8,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "Ombudsstelle SRG Jahresbericht Beanstandungen gutgeheissen"
+    },
+    {
+      "id": "S_025",
+      "url": "https://publicvalue.srgssr.ch/ueber-public-value/medienqualitaet/",
+      "title": "So wird die SRG überprüft - SRG\n            So wird die SRG überprüft - SRG",
+      "trackRecordScore": 0.8,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "fög Jahrbuch Qualität der Medien 2024 SRG SSR"
+    },
+    {
+      "id": "S_026",
+      "url": "https://www.ikmz.uzh.ch/en/research/divisions/publicsphere-and-society/team/mark-eisenegger.html",
+      "title": "Mark Eisenegger | Department of Communication and Media Research | UZHLogo of the University of Zurich, to homepage",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "fög Jahrbuch Qualität der Medien 2024 SRG SSR"
+    },
+    {
+      "id": "S_027",
+      "url": "https://www.inlibra.com/document/download/pdf/uuid/c65368f8-05cf-3d7d-ae2e-fb251e9f0449",
+      "title": "UFITA Archiv für Medienrecht und Medienwissenschaft - Inlibra",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "fög Universität Zürich Medieninhaltsanalyse Qualitätsbewertung Kriterien"
+    },
+    {
+      "id": "S_028",
+      "url": "https://www.foeg.uzh.ch/dam/jcr:fcb110a0-7894-4a09-82c3-7bc3aba92d27/Hauptbefunde_2019.pdf",
+      "title": "Hauptbefunde 2019",
+      "trackRecordScore": 0.68,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "fög Universität Zürich Medieninhaltsanalyse Qualitätsbewertung Kriterien"
+    },
+    {
+      "id": "S_029",
+      "url": "https://www.zora.uzh.ch/server/api/core/bitstreams/55a9b6d4-9445-473a-9d7c-5ebd04de312e/content",
+      "title": "content",
+      "trackRecordScore": 0.72,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "SRG SSR Qualitätsscores private Medien Vergleich Schweiz"
+    },
+    {
+      "id": "S_030",
+      "url": "https://medienqualitaet-schweiz.ch/wp-content/uploads/2024/09/MQR-20.pdf",
+      "title": "MQR 20",
+      "trackRecordScore": 0.72,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "SRG SSR Qualitätsscores private Medien Vergleich Schweiz"
+    },
+    {
+      "id": "S_031",
+      "url": "https://x.com/SRGSSR",
+      "title": "x.com",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "Jahrbuch Qualität der Medien 2024 SRG SSR Vertiefungsstudie"
+    },
+    {
+      "id": "S_032",
+      "url": "https://www.srf.ch/news/wirtschaft/qualitaet-von-medien-studie-zeigt-oeffentliche-und-private-medien-ergaenzen-sich",
+      "title": "SRG und private Medien ergänzen sich laut neuer Studie - News - SRF",
+      "trackRecordScore": 0.85,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "Jahrbuch Qualität der Medien 2024 SRG SSR Vertiefungsstudie"
+    },
+    {
+      "id": "S_033",
+      "url": "https://www.zora.uzh.ch/server/api/core/bitstreams/22654108-4d27-4e34-9ec8-10bf8938e703/content",
+      "title": "content",
+      "trackRecordScore": 0.72,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "Jahrbuch Qualität der Medien 2024 SRG SSR Vertiefungsstudie"
+    },
+    {
+      "id": "S_034",
+      "url": "https://www.bakom.admin.ch/dam/en/sd-web/Tbtzxy9R6M7U/online-newsangebote-der-srg-ssr-und-privater-medien-2025.pdf",
+      "title": "online newsangebote der srg ssr und privater medien 2025",
+      "trackRecordScore": 0.72,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "SRG SSR Marktverdrängung privatwirtschaftliche Medien empirische Analyse"
+    },
+    {
+      "id": "S_035",
+      "url": "https://www.foeg.uzh.ch/dam/jcr:d295cef3-c2ca-4eec-8c82-90d1981540cd/JB_2024_Studie_I_SRG_Private.pdf",
+      "title": "JB 2024 Studie I SRG Private",
+      "trackRecordScore": 0.68,
+      "category": "application/pdf",
+      "fetchSuccess": true,
+      "searchQuery": "SRG Nutzung Zahlungsbereitschaft private Medienangebote Konkurrenz"
+    },
+    {
+      "id": "S_036",
+      "url": "https://www.moneycab.com/schweiz/kompromiss-bei-lohnschutz-begleitmassnahme-14-im-eu-vertragspaket/",
+      "title": "Kompromiss bei Lohnschutz-Begleitmassnahme 14 im EU-Vertragspaket | Moneycabmoneycabmoneycab",
+      "trackRecordScore": null,
+      "category": "text/html",
+      "fetchSuccess": true,
+      "searchQuery": "sgv Stellungnahme Kündigungsschutz Sozialpartner Einigung 2026"
+    }
+  ],
+  "searchQueries": [
+    {
+      "query": "SRG politische Ausrichtung Berichterstattung",
+      "iteration": 0,
+      "focus": "preliminary",
+      "resultsCount": 5,
+      "timestamp": "2026-02-17T17:14:03.680Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Die SRG zeigt in ihrer redaktionellen Berichterstattung eine Neigung zu linken p",
+      "iteration": 0,
+      "focus": "preliminary",
+      "resultsCount": 5,
+      "timestamp": "2026-02-17T17:14:09.857Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRG Programm linke Orientierung",
+      "iteration": 0,
+      "focus": "preliminary",
+      "resultsCount": 5,
+      "timestamp": "2026-02-17T17:14:26.481Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Die Programmgestaltung der SRG bevorzugt progressive oder linke Themen und Persp",
+      "iteration": 0,
+      "focus": "preliminary",
+      "resultsCount": 5,
+      "timestamp": "2026-02-17T17:15:29.762Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRG Kritik Neutralität Vorwürfe",
+      "iteration": 0,
+      "focus": "preliminary",
+      "resultsCount": 5,
+      "timestamp": "2026-02-17T17:15:50.670Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Kritiker werfen der SRG vor, nicht ausreichend politisch neutral zu sein.",
+      "iteration": 0,
+      "focus": "preliminary",
+      "resultsCount": 5,
+      "timestamp": "2026-02-17T17:16:04.541Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRG Medieninhaltsanalyse politische Ausrichtung Studie",
+      "iteration": 0,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:17:04.404Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "fög Jahrbuch Qualität Medien SRG Parteienvertretung",
+      "iteration": 0,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:17:35.545Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "UBI Beschwerde SRG politische Neutralität Entscheide",
+      "iteration": 0,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:18:01.476Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRF Echo der Zeit 11 Februar 2026 Kündigungsschutz Gewerkschafter",
+      "iteration": 1,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:18:37.418Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "sgv Schweizerischer Gewerbeverband Stellungnahme Kündigungsschutz Einigung 2026",
+      "iteration": 1,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:18:53.075Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Sozialpartner Kündigungsschutz Verhandlungen 2026 Einigung widersprochen",
+      "iteration": 1,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:19:01.841Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRF Kündigungsschutz Gewerkschafter Berichterstattung sgv",
+      "iteration": 2,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:19:14.422Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Schweizerischer Gewerbeverband sgv Kündigungsschutz Position 2026",
+      "iteration": 2,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:19:33.407Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRF Ombudsstelle Kündigungsschutz Gewerkschafter Beschwerde",
+      "iteration": 2,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:19:41.827Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRG Ombudsstelle Echo der Zeit SRF News Entscheide",
+      "iteration": 3,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:19:52.699Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Ombudsstelle SRG Jahresbericht Beanstandungen gutgeheissen",
+      "iteration": 3,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:20:02.456Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRF Sendungen Ombudsstelle Beanstandung abgewiesen Regelkonformität",
+      "iteration": 3,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:20:49.466Z",
+      "searchProvider": "Google-CSE, SerpAPI"
+    },
+    {
+      "query": "fög Jahrbuch Qualität der Medien 2024 SRG SSR",
+      "iteration": 4,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:21:02.622Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "fög Universität Zürich Medieninhaltsanalyse Qualitätsbewertung Kriterien",
+      "iteration": 4,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:21:19.528Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRG SSR Qualitätsscores private Medien Vergleich Schweiz",
+      "iteration": 4,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:21:44.709Z",
+      "searchProvider": "Google-CSE, SerpAPI"
+    },
+    {
+      "query": "Jahrbuch Qualität der Medien 2024 SRG SSR Vertiefungsstudie",
+      "iteration": 5,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:22:13.187Z",
+      "searchProvider": "Google-CSE, SerpAPI"
+    },
+    {
+      "query": "SRG SSR Marktverdrängung privatwirtschaftliche Medien empirische Analyse",
+      "iteration": 5,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:22:39.861Z",
+      "searchProvider": "Google-CSE, SerpAPI"
+    },
+    {
+      "query": "SRG Nutzung Zahlungsbereitschaft private Medienangebote Konkurrenz",
+      "iteration": 5,
+      "focus": "main",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:22:58.752Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "SRF Echo der Zeit 11 Februar 2026 Kündigungsschutz Gewerkschafter",
+      "iteration": 6,
+      "focus": "contradiction",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:23:20.852Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "sgv Stellungnahme Kündigungsschutz Sozialpartner Einigung 2026",
+      "iteration": 6,
+      "focus": "contradiction",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:23:31.003Z",
+      "searchProvider": "Google-CSE"
+    },
+    {
+      "query": "Kündigungsschutz Gewerkschafter Sozialpartner Verhandlungen Faktencheck",
+      "iteration": 6,
+      "focus": "contradiction",
+      "resultsCount": 8,
+      "timestamp": "2026-02-17T17:23:49.820Z",
+      "searchProvider": "Google-CSE"
+    }
+  ],
+  "qualityGates": {
+    "passed": true,
+    "gate1Stats": {
+      "total": 6,
+      "passed": 4,
+      "filtered": 2,
+      "centralKept": 6
+    },
+    "gate4Stats": {
+      "total": 6,
+      "publishable": 6,
+      "highConfidence": 3,
+      "mediumConfidence": 3,
+      "lowConfidence": 0,
+      "insufficient": 0,
+      "centralKept": 6
+    },
+    "summary": {
+      "totalEvidenceItems": 74,
+      "totalSources": 36,
+      "searchesPerformed": 27,
+      "contradictionSearchPerformed": true
+    }
+  }
+}
