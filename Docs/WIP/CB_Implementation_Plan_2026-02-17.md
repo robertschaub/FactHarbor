@@ -61,53 +61,75 @@ Attempting parallel implementation would require extensive mocking of data struc
 
 ---
 
-## Database Handling — No Migration Required
+## Database Handling — Clean Break Required
 
-**TL;DR:** Keep all existing databases as-is. No recreation or archiving required.
+**TL;DR:** Archive old databases and start fresh (except `source-reliability.db` which is preserved).
 
-### Backward Compatibility
+### Clean Break Strategy (Architecture §15.1)
 
-The ClaimBoundary pipeline is **fully backward compatible** at the database level:
+Per architecture decision (§21 Captain Input 2), ClaimBoundary migration uses a **clean break approach**:
 
-1. **Main API Database** (`apps/api/factharbor.db`)
-   - **Structure unchanged:** Table schemas remain the same (Jobs, JobEvents, etc.)
-   - **JSON versioning:** Old jobs use orchestrated schema, new jobs use CB schema (`_schemaVersion: "3.0.0-cb"`)
-   - **Coexistence:** Both schema versions can exist in the same database
-   - **UI compatibility:** Results page already handles both schema types (see Phase 3 — `isCBSchema` detection)
+**Reasoning:**
+- No backward compatibility burden
+- No schema versioning complexity
+- No `ClaimBoundary ↔ AnalysisContext` mapping layer
+- Simpler implementation and testing
+- Historical job data from orchestrated pipeline not needed for v1.0 validation
 
-2. **UCM Config Database** (`apps/web/config.db`)
-   - **Already updated:** CB parameters added via schema evolution (see UCM Config phase)
-   - **No recreation needed:** Existing database structure supports new configs
-   - **Defaults applied:** CB defaults already seeded (harmPotentialMultipliers, triangulation, etc.)
+### Before Starting Phase 5a
 
-3. **Source Reliability Database** (`apps/web/source-reliability.db`)
-   - **Pipeline-agnostic:** SR evaluations are independent of pipeline type
-   - **KEEP AS-IS:** Contains valuable historical source evaluations
-   - **No changes:** Database structure and content remain unchanged
+Archive existing databases and create fresh ones:
 
-### Optional: Clean Slate for Testing
+```powershell
+# Navigate to API directory
+cd apps\api
 
-If you prefer a clean slate for CB pipeline testing (not required):
+# Archive old main database
+if (Test-Path "factharbor.db") {
+  $timestamp = Get-Date -Format "yyyy-MM-dd"
+  Move-Item "factharbor.db" "factharbor.db.pre-cb-backup-$timestamp"
+  Write-Host "Archived factharbor.db → factharbor.db.pre-cb-backup-$timestamp"
+}
 
-```bash
-# Optional - archive old jobs
-cd apps/api
-mv factharbor.db factharbor.db.pre-cb-backup-$(date +%Y-%m-%d)
-# Database will auto-create on next API startup via EnsureCreated()
+# Archive old config database (will be recreated with CB defaults)
+cd ..\web
+if (Test-Path "config.db") {
+  $timestamp = Get-Date -Format "yyyy-MM-dd"
+  Move-Item "config.db" "config.db.pre-cb-backup-$timestamp"
+  Write-Host "Archived config.db → config.db.pre-cb-backup-$timestamp"
+}
 
-# KEEP these databases (do not archive):
-# - apps/web/config.db (already CB-ready)
-# - apps/web/source-reliability.db (valuable historical data)
+# PRESERVE source-reliability database (pipeline-agnostic, valuable historical data)
+# DO NOT archive or delete source-reliability.db
 ```
 
-**Recommendation:** Keep existing databases unless you specifically need a clean slate for isolated testing.
+**What gets recreated:**
+- `apps/api/factharbor.db` — Auto-created via `EnsureCreated()` on next API startup
+- `apps/web/config.db` — Auto-created and seeded with CB defaults on next web startup
+
+**What is preserved:**
+- `apps/web/source-reliability.db` — KEEP unchanged (contains historical SR evaluations)
 
 ### Verification
 
 After first CB analysis completes:
-- Query database: `SELECT _schemaVersion FROM (SELECT json_extract(resultJson, '$._schemaVersion') as _schemaVersion FROM Jobs ORDER BY id DESC LIMIT 1);`
-- Expected: `"3.0.0-cb"`
-- Old jobs still readable: Previous analyses remain accessible with orchestrated schema
+```sql
+-- Verify CB schema version in latest job
+SELECT json_extract(resultJson, '$._schemaVersion') as schemaVersion
+FROM Jobs
+ORDER BY id DESC
+LIMIT 1;
+```
+
+**Expected:** `"3.0.0-cb"`
+
+### Note on Old Data
+
+Archived databases remain accessible for reference:
+- Old orchestrated job results: `factharbor.db.pre-cb-backup-YYYY-MM-DD`
+- Old config values: `config.db.pre-cb-backup-YYYY-MM-DD`
+
+These can be restored if needed, but are not used by the CB pipeline.
 
 ---
 
