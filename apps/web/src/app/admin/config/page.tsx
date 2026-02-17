@@ -240,7 +240,7 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
     claimSimilarityThreshold: 0.85,
     contextMergeThreshold: 0.7,
   },
-  mixedConfidenceThreshold: 60,
+  mixedConfidenceThreshold: 40,
   probativeValueWeights: {
     high: 1.0,
     medium: 0.8,
@@ -720,7 +720,7 @@ function CalcConfigForm({
               const v = parseInt(e.target.value, 10);
               onChange({
                 ...config,
-                mixedConfidenceThreshold: isNaN(v) ? 60 : v,
+                mixedConfidenceThreshold: isNaN(v) ? 40 : v,
               });
             }}
           />

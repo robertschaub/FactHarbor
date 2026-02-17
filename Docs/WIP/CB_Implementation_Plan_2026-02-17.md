@@ -134,8 +134,8 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Call `extractTextFromUrl()` for each relevant source
   - Call `prefetchSourceReliability()` for batch (reuse existing module)
 - [ ] Evidence extraction with mandatory EvidenceScope
-  - Load UCM prompt (evidence extraction section, TBD which prompt file)
-  - Call LLM with claim + source content
+  - Load UCM prompt `EXTRACT_EVIDENCE` from `claimboundary` profile
+  - Call LLM with claim + source content + sourceUrl
   - Parse `{evidenceItems[]: {statement, category, claimDirection, evidenceScope, probativeValue, sourceType, isDerivative, derivedFromSourceUrl?, relevantClaimIds[]}}`
   - Include derivative fields per §8.5.3
 - [ ] EvidenceScope validation
@@ -153,7 +153,6 @@ Attempting parallel implementation would require extensive mocking of data struc
 - [ ] Contradiction search (reserved iterations)
   - After main loop, run `contradictionReservedIterations` (UCM, default 2) targeting claims with low contradiction coverage
   - **Generate contradiction queries via LLM** (UCM `GENERATE_QUERIES` with `iterationType: "contradiction"`) — no hardcoded phrases
-  - Generate "critique" or "counterevidence" queries
   - Same search → extract → filter flow
 - [ ] Update state
   - `state.evidenceItems` populated with all evidence
@@ -240,7 +239,7 @@ Attempting parallel implementation would require extensive mocking of data struc
 - [ ] Create LLM call wrapper
   - Function signature matches `LLMCallFn` from verdict-stage.ts
   - Loads UCM prompt by `promptKey` (e.g., "VERDICT_ADVOCATE")
-  - Uses `loadAndRenderSection()` from prompt-loader.ts (like monolithic-dynamic does)
+  - Uses `loadAndRenderSection()` from `apps/web/src/lib/analyzer/prompt-loader.ts` (like monolithic-dynamic does)
   - Calls AI SDK `generateText()` with provider from UCM config
   - Parses structured output (Zod schema or JSON mode)
   - Returns typed result
@@ -256,7 +255,7 @@ Attempting parallel implementation would require extensive mocking of data struc
   - If LLM fails, decide: retry, fallback, or throw (per UCM `allowQualityFallbacks` config)
 
 **Dependencies:**
-- Existing: `loadAndRenderSection` (prompt-loader.ts), `getModelForTask` (llm.ts), AI SDK `generateText`
+- Existing: `loadAndRenderSection` (apps/web/src/lib/analyzer/prompt-loader.ts), `getModelForTask` (llm.ts), AI SDK `generateText`
 - UCM prompts: All verdict prompts already exist in `claimboundary.prompt.md`
 - UCM config: `modelVerdict`, `llmProvider`, verdict-stage config params
 

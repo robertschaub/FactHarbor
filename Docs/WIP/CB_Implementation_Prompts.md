@@ -155,8 +155,8 @@ Implement the `researchEvidence()` function in `claimboundary-pipeline.ts` (curr
      e. **Source Fetch:** Call `extractTextFromUrl()` for top 3-5 relevant results
      f. **Reliability Prefetch:** Call `prefetchSourceReliability()` with batch of URLs (reuse existing module)
      g. **Evidence Extraction (LLM):** For each fetched source:
-        - Load evidence extraction prompt (use monolithic-dynamic pattern or create new section in claimboundary.prompt.md)
-        - Call LLM with claim + source content
+        - Load UCM prompt `EXTRACT_EVIDENCE` from `claimboundary` profile using `loadAndRenderSection()`
+        - Call LLM with claim + source content + sourceUrl
         - Parse: `{evidenceItems: Array<{statement, category, claimDirection, evidenceScope, probativeValue, sourceType, isDerivative, derivedFromSourceUrl?, relevantClaimIds[]}>}`
         - **Critical:** Ensure `evidenceScope` is always populated (methodology, temporal, geographic, etc.)
         - **Derivative fields (§8.5.3):** `isDerivative` (boolean), `derivedFromSourceUrl` (optional URL of original source if evidence cites another study)
@@ -464,7 +464,7 @@ Create the production LLM call wrapper and wire it into `generateVerdicts()` in 
      moderateThreshold: calcConfig.selfConsistencySpreadThresholds.moderate ?? 12,
      unstableThreshold: calcConfig.selfConsistencySpreadThresholds.unstable ?? 20,
      spreadMultipliers: { /* ... */ },
-     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 60,
+     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
    };
    ```
 
@@ -563,10 +563,13 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
    // For each claim verdict:
    const baseWeight = getClaimWeight(claim.centrality, calcConfig.aggregation.centralityWeights);
    const harmMultiplier = calcConfig.aggregation.harmPotentialMultipliers[claim.harmPotential]; // 4-level
+   const confidenceFactor = verdict.confidence / 100;
+   const contestationFactor = verdict.isContested ? 0.85 : 1.0;
    const triangulationFactor = verdict.triangulationScore.factor;
-   const derivativeFactor = isDerivative ? calcConfig.aggregation.derivativeMultiplier : 1.0;
+   // derivativeFactor calculated per claim using formula from step 2 above
+   const derivativeFactor = 1.0 - (derivativeRatio × (1.0 - calcConfig.aggregation.derivativeMultiplier));
 
-   const finalWeight = baseWeight * harmMultiplier * (1 + triangulationFactor) * derivativeFactor;
+   const finalWeight = baseWeight * harmMultiplier * confidenceFactor * contestationFactor * (1 + triangulationFactor) * derivativeFactor;
 
    // Aggregate across all claims:
    const weightedTruthPercentage = calculateWeightedVerdictAverage(
@@ -577,9 +580,9 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
 4. **Confidence Aggregation (§8.5.5)**
 
    - Weighted average of claim confidences (same weights as verdicts)
-   - Apply spread multipliers from self-consistency results (already in `verdict.consistencyResult.spread`)
-   - **Existing confidence calibration:** Reuse `confidence-calibration.ts` if needed (apply density anchor, band snapping, etc.)
-   - For v1, **simple approach:** weighted average with spread multipliers only
+   - **Note:** `verdict-stage.ts` already applied self-consistency spread multipliers to per-claim confidence — do NOT re-apply in Stage 5
+   - Apply existing confidence calibration (reuse `confidence-calibration.ts`) for overall confidence only
+   - For v1, **simple approach:** weighted average only (spread already applied per-claim)
 
 5. **VerdictNarrative Generation (§8.5.6, Sonnet call)**
 
