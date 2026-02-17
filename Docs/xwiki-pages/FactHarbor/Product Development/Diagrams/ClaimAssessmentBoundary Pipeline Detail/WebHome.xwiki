@@ -1,0 +1,145 @@
+= ClaimAssessmentBoundary Pipeline Detail =
+
+{{info}}
+**Current Architecture (v2.11.0+):** The ClaimAssessmentBoundary pipeline is the production default pipeline. See the [[architecture document>>doc:Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]] for detailed specifications.
+{{/info}}
+
+{{mermaid}}
+flowchart TB
+    subgraph Entry["Entry Point"]
+        START["runClaimBoundaryAnalysis()"]
+        INIT["Initialize State<br/>Budget tracker, timeline, config"]
+    end
+
+    subgraph Stage1["Stage 1: EXTRACT CLAIMS"]
+        CLASSIFY["[LLM] Input Classification<br/>article vs claim, topic identification"]
+        DECOMPOSE["[LLM] Claim Decomposition<br/>Extract atomic claims (maxAtomicClaims)"]
+        PRELIM_SEARCH["[WEB] Preliminary Search<br/>Grounding pass (2 queries × 5 sources per claim)"]
+        PRELIM_EXTRACT["[LLM] Preliminary Evidence<br/>Extract evidence from prelim sources"]
+        GATE1["Gate 1: Claim Validation<br/>Filter opinion/prediction/vague<br/>Central claims auto-pass"]
+        CLAIMS_OUT["AtomicClaim[] (5-15 claims)"]
+    end
+
+    subgraph Stage2["Stage 2: RESEARCH EVIDENCE"]
+        RESEARCH_LOOP["Research Loop (maxResearchIterations)"]
+        SUFFICIENCY["Claim Sufficiency Check<br/>claimSufficiencyThreshold (default: 3)"]
+        CONTRADICTION["Contradiction Search<br/>Reserved iterations (default: 2)"]
+        DECIDE_NEXT["decideNextResearch()<br/>Priority: unsufficient → central → high-harm"]
+        SEARCH["[WEB] searchWebWithProvider()"]
+        RELEVANCE["[LLM] assessSearchRelevance()<br/>Primary / secondary / unrelated"]
+        FETCH["[WEB] fetchSourceContent()"]
+        SR_PREFETCH["[EXT] prefetchSourceReliability()<br/>Batch lookup (async)"]
+        EXTRACT["[LLM] extractEvidence()<br/>Per source → EvidenceItem[]"]
+        EVIDENCE_OUT["EvidenceItem[] (boundary-unassigned)"]
+    end
+
+    subgraph Stage3["Stage 3: CLUSTER BOUNDARIES"]
+        PROPOSE["[LLM] Propose ClaimAssessmentBoundaries<br/>Evidence-emergent clustering"]
+        VALIDATE["Structural Validation<br/>Coverage, coherence, overlap checks"]
+        MERGE{"Merge needed?<br/>(>maxClaimBoundaries)"}
+        MERGE_BOUNDARIES["[LLM] Merge similar boundaries<br/>Reduce count, preserve coverage"]
+        ASSIGN["Assign evidence to boundaries<br/>+ build coverage matrix"]
+        BOUNDARIES_OUT["ClaimAssessmentBoundary[]<br/>CoverageMatrix"]
+    end
+
+    subgraph Stage4["Stage 4: VERDICT (5-step debate pattern)"]
+        DEBATE_INTRO["Step 1: Introduce Question<br/>Present claim + evidence base"]
+        CASE_FOR["Step 2: Case For<br/>Supporting evidence synthesis"]
+        CASE_AGAINST["Step 3: Case Against<br/>Contradicting evidence synthesis"]
+        CHALLENGE["Step 4: Challenge Weak Evidence<br/>Methodological critique"]
+        SYNTHESIS["Step 5: Synthesis<br/>Final verdict (0-100% + confidence)"]
+        SELF_CONSIST{"selfConsistencyMode?"}
+        SC_CHECK["Self-Consistency Check<br/>Re-run with temperature=0.3<br/>Check spread against thresholds"]
+        TRIANGULATION["Triangulation Scoring<br/>Cross-boundary agreement"]
+        VERDICTS_OUT["ClaimVerdict[] (with triangulation)"]
+    end
+
+    subgraph Stage5["Stage 5: AGGREGATE ASSESSMENT"]
+        WEIGHTED_AVG["calculateWeightedVerdictAverage()<br/>Centrality + harm + triangulation weights"]
+        CONTEST_DETECT["detectClaimContestation()<br/>factualBasis classification"]
+        HARM_DETECT["detectHarmPotential()<br/>4-level: critical/high/medium/low"]
+        NARRATIVE["[LLM] Generate VerdictNarrative<br/>Headline, key finding, limitations"]
+        GATE4["Gate 4: Verdict Confidence<br/>HIGH/MEDIUM/LOW/INSUFFICIENT distribution"]
+        ENVELOPE["Result Envelope<br/>schemaVersion: 3.0.0-cb"]
+    end
+
+    START --> INIT
+    INIT --> CLASSIFY
+    CLASSIFY --> DECOMPOSE
+    DECOMPOSE --> PRELIM_SEARCH
+    PRELIM_SEARCH --> PRELIM_EXTRACT
+    PRELIM_EXTRACT --> GATE1
+    GATE1 --> CLAIMS_OUT
+
+    CLAIMS_OUT --> RESEARCH_LOOP
+    RESEARCH_LOOP --> SUFFICIENCY
+    SUFFICIENCY -->|"insufficient"| DECIDE_NEXT
+    SUFFICIENCY -->|"sufficient"| CONTRADICTION
+    CONTRADICTION --> DECIDE_NEXT
+    DECIDE_NEXT --> SEARCH
+    SEARCH --> RELEVANCE
+    RELEVANCE --> FETCH
+    FETCH --> SR_PREFETCH
+    SR_PREFETCH --> EXTRACT
+    EXTRACT --> EVIDENCE_OUT
+    EVIDENCE_OUT -->|"loop continues"| RESEARCH_LOOP
+
+    EVIDENCE_OUT --> PROPOSE
+    PROPOSE --> VALIDATE
+    VALIDATE --> MERGE
+    MERGE -->|"yes"| MERGE_BOUNDARIES
+    MERGE_BOUNDARIES --> ASSIGN
+    MERGE -->|"no"| ASSIGN
+    ASSIGN --> BOUNDARIES_OUT
+
+    BOUNDARIES_OUT --> DEBATE_INTRO
+    DEBATE_INTRO --> CASE_FOR
+    CASE_FOR --> CASE_AGAINST
+    CASE_AGAINST --> CHALLENGE
+    CHALLENGE --> SYNTHESIS
+    SYNTHESIS --> SELF_CONSIST
+    SELF_CONSIST -->|"enabled"| SC_CHECK
+    SELF_CONSIST -->|"disabled"| TRIANGULATION
+    SC_CHECK --> TRIANGULATION
+    TRIANGULATION --> VERDICTS_OUT
+
+    VERDICTS_OUT --> WEIGHTED_AVG
+    WEIGHTED_AVG --> CONTEST_DETECT
+    CONTEST_DETECT --> HARM_DETECT
+    HARM_DETECT --> NARRATIVE
+    NARRATIVE --> GATE4
+    GATE4 --> ENVELOPE
+
+    style Stage1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Stage2 fill:#fff9c4,stroke:#f57f17,color:#000
+    style Stage3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Stage4 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style Stage5 fill:#fce4ec,stroke:#c2185b,color:#000
+{{/mermaid}}
+
+== Key Features ==
+
+* **Evidence-emergent boundaries:** ClaimAssessmentBoundaries emerge from evidence clustering (Stage 3), not pre-detected
+* **5-step debate pattern:** Each verdict goes through structured debate (introduce → case for → case against → challenge → synthesis)
+* **Self-consistency checking:** Optional re-run with temperature variance to detect unstable verdicts (stable/moderate/unstable spread thresholds)
+* **Triangulation scoring:** Cross-boundary agreement assessment (strong/moderate/weak/conflicted levels)
+* **Quality gates:** Gate 1 (claim validation) and Gate 4 (verdict confidence distribution) are mandatory checkpoints
+* **UCM-configurable:** 24 pipeline parameters organized by stage, editable in Admin UI
+
+== Comparison to Legacy Pipelines ==
+
+| Aspect | Orchestrated (removed v2.11.0) | ClaimAssessmentBoundary (v2.11.0+) |
+|--------|-------------------------------|-----------------------------------|
+| **Context detection** | Pre-detected AnalysisContexts | Evidence-emergent ClaimAssessmentBoundaries |
+| **Verdict generation** | Single LLM call per claim | 5-step debate pattern |
+| **Cross-boundary analysis** | None | Triangulation scoring |
+| **Self-consistency** | None | Optional spread checking |
+| **Budget control** | Per-context iteration limits | Claim sufficiency + reserved contradiction iterations |
+| **Schema version** | 2.x or 3.0.0 | 3.0.0-cb |
+
+== Related Documentation ==
+
+* [[ClaimAssessmentBoundary Architecture>>doc:Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]] — Full specification (§8.1-§8.6)
+* [[Pipeline Variant Dispatch>>doc:FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — How pipelines are selected
+* [[System Architecture>>doc:FactHarbor.Product Development.Diagrams.System Architecture.WebHome]] — Overall system overview
+* [[Quality Gates Flow>>doc:FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome]] — Gate 1 and Gate 4 details
