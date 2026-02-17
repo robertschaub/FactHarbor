@@ -1,8 +1,8 @@
-{{info}}
-**Current Implementation** — Orchestrated pipeline: ##orchestrated.ts## (~13,600 lines). Updated 2026-02-12 from source code.
-{{/info}}
+{{warning}}
+**OBSOLETE (v2.11.0):** The Orchestrated pipeline (##orchestrated.ts##) was removed in v2.11.0 and replaced by the **ClaimAssessmentBoundary pipeline** (##claimboundary-pipeline.ts##). This diagram is retained for historical reference only. For current architecture, see the [[ClaimAssessmentBoundary Pipeline Architecture>>doc:Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]].
+{{/warning}}
 
-= Orchestrated Pipeline Detail =
+= Orchestrated Pipeline Detail (OBSOLETE) =
 
 {{mermaid}}
 flowchart TB

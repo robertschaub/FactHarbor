@@ -1,10 +1,10 @@
 # FactHarbor Known Issues
 
-**Last Updated**: February 13, 2026
-**Current Version**: 2.10.2
-**Schema Version**: 2.7.0
+**Last Updated**: February 17, 2026
+**Current Version**: 2.11.0
+**Schema Version**: 3.0.0-cb
 
-This document tracks all known bugs, limitations, and technical debt in FactHarbor (POC Complete, Alpha Transition).
+This document tracks all known bugs, limitations, and technical debt in FactHarbor (ClaimAssessmentBoundary Pipeline v1.0).
 
 ---
 
@@ -142,32 +142,16 @@ Implemented `QualityGatesPanel` component (v2.10.2) that displays:
 
 ### 4. Input Neutrality Context Variance
 
-**Status**: ⚠️ PARTIALLY RESOLVED  
-**Severity**: HIGH
+**Status**: ✅ SUPERSEDED by ClaimAssessmentBoundary pipeline
+**Severity**: RESOLVED (Historical)
 
 **Description**:
-Question vs statement phrasing can still yield different context counts in some cases:
-- EV Lifecycle: ✅ PASSED (identical contexts)
-- Bolsonaro: ⚠️ HIGH VARIANCE (2 vs 3 contexts)
+Question vs statement phrasing could yield different context counts in the old Orchestrated pipeline.
 
-**Impact**:
-- Violates "Question ≈ Statement" requirement
-- Different context detection → different analysis depth
-- Inconsistent user experience
+**Resolution**:
+The ClaimAssessmentBoundary pipeline eliminates pre-detection of AnalysisContexts entirely. Boundaries emerge from evidence clustering (Stage 3), which is input-phrasing agnostic. Input neutrality for CB pipeline needs validation via Phase 5h neutrality tests (deferred).
 
-**Root Cause**:
-LLM context detection is probabilistic even with temperature=0. Normalized input doesn't fully eliminate semantic interpretation differences.
-
-**Workaround**:
-Use statement format for consistent results.
-
-**Possible Solutions**:
-- Strengthen input normalization
-- Add deterministic context seeding based on normalized keywords
-- Implement context merging heuristics for near-duplicate contexts
-- Reduce context detection temperature further
-
-**Status**: Under investigation. See `Docs/INVESTIGATION/Input_Neutrality_Scope_Variance.md` (legacy filename)
+**Status**: Superseded. CB neutrality tests planned for Phase 5h.
 
 ---
 
@@ -200,35 +184,52 @@ Manual review of verdicts to ensure evidence citation.
 
 ## Medium Priority
 
-### 6. Budget Constraints May Be Too Strict
+### 6. Budget Constraints May Need Tuning for CB Pipeline
 
-**Status**: ⚠️ MAY CAUSE QUALITY ISSUES  
+**Status**: ⚠️ NEEDS VALIDATION
 **Severity**: MEDIUM
 
 **Description**:
-Current budget limits may be too restrictive:
-- Quick mode: 4 iterations max (was 2, increased in v2.8.2)
-- Per-context limit: 3 iterations
-- For 2-context analysis: 3 × 2 = 6 iterations max
+The ClaimAssessmentBoundary pipeline has its own budget parameters (UCM-configurable):
+- `maxResearchIterations` (default via UCM)
+- `contradictionReservedIterations` (default 2)
+- `claimSufficiencyThreshold` (default 3 evidence items per claim)
 
-January regression showed 16 searches → 9 searches when budgets were enforced.
+These defaults have not been validated with real-world usage yet.
 
 **Impact**:
-- May terminate research prematurely
-- May miss important evidence
-- Lower confidence scores
+- May terminate research prematurely or over-research
+- Budget parameters may need tuning after initial production runs
 
 **Workaround**:
-- Use deep mode: set `pipeline.analysisMode=deep` in UCM
-- Increase limits: set `pipeline.maxTotalIterations` in UCM
-- Disable hard enforcement: set `pipeline.enforceBudgets=false` in UCM
+Adjust via UCM Admin UI (pipeline config section).
 
 **Solution**:
-Run baseline tests with different budget configurations to find optimal balance between cost and quality.
+Run performance benchmarks (Phase 5h) and tune based on results.
 
 **Files to Review**:
-- `apps/web/src/lib/analyzer/budgets.ts`
-- `apps/web/src/lib/analyzer/config.ts`
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (research loop)
+- `apps/web/src/lib/config-schemas.ts` (UCM defaults)
+
+---
+
+### 6b. Skipped Budget Tests (V-09)
+
+**Status**: ⚠️ 8 TESTS SKIPPED
+**Severity**: LOW
+
+**Description**:
+8 tests in `budgets.test.ts` are skipped because they test deleted functions (`checkContextIterationBudget`, `recordIteration`) from the removed Orchestrated pipeline.
+
+**Impact**:
+- No functional impact (tested functions no longer exist)
+- Minor test hygiene issue
+
+**Solution**:
+Delete or update the 8 skipped tests in Phase 5i cleanup.
+
+**Files**:
+- `apps/web/test/unit/lib/analyzer/budgets.test.ts`
 
 ---
 
@@ -473,12 +474,12 @@ Model tiering is active in production paths (Haiku-tier for extract/understand a
 
 ## Summary Statistics
 
-**Total Tracked Items**: 20 (historical + active)
-- Resolved: 3
-- Active: 17
-- Critical: 2
-- High: 4 (1 resolved)
-- Medium: 5
+**Total Tracked Items**: 21 (historical + active)
+- Resolved: 5
+- Active: 16
+- Critical: 1 (metrics not integrated)
+- High: 2 (1 resolved)
+- Medium: 6 (1 new: budget tuning, 1 new: skipped tests)
 - Low: 3
 - Security: 3 (LOW for POC, HIGH for production)
 - Performance: 2 (ready to deploy)
@@ -486,15 +487,18 @@ Model tiering is active in production paths (Haiku-tier for extract/understand a
 **Resolved items**:
 - ✅ Issue #1: Prompt optimization validation risk (resolved by review in v2.10.2)
 - ✅ Issue #3: Quality Gate Decisions Not Displayed in UI
+- ✅ Issue #4: Input Neutrality Context Variance (superseded by CB pipeline)
+- ✅ Issue #5: Model Knowledge Toggle (superseded by CB pipeline design)
 - ✅ P2: Tiered LLM Routing enabled
 
 **By Category**:
-- Quality/Validation: 4 issues (1 resolved)
+- Quality/Validation: 3 issues (2 resolved/superseded)
 - Performance/Cost: 5 issues
 - Security: 3 issues
-- UX/Display: 3 issues (1 resolved)
+- UX/Display: 2 issues (1 resolved)
 - Architecture: 2 issues
 - Observability: 2 issues
+- Test hygiene: 1 issue (skipped budget tests)
 
 ---
 

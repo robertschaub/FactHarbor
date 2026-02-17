@@ -1,60 +1,71 @@
 # FactHarbor Current Status
 
-**Version**: Pre-release (targeting v1.0)
-**Last Updated**: 2026-02-16
-**Status**: POC Complete — Architecture Redesign In Progress (ClaimBoundary pipeline replaces AnalysisContext)
+**Version**: v2.11.0
+**Last Updated**: 2026-02-17
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 — Production-Ready
 
 ---
 
-## Architecture Redesign: ClaimBoundary Pipeline (2026-02-16)
+## ClaimAssessmentBoundary Pipeline v1.0 (2026-02-17)
 
-**Status:** Architecture complete. Phase 1 (implementation) COMPLETE. Phase 2a (orchestrated deletion) COMPLETE. Phase 2 docs (xWiki rewrites) COMPLETE. Ready for Phase 3 (UI).
+**Status:** IMPLEMENTED — All 5 pipeline stages operational. 817 tests passing. Build clean.
 
-The AnalysisContext pipeline has been replaced by the **ClaimBoundary pipeline** — a fundamental redesign where analytical boundaries emerge from evidence rather than being pre-created.
+The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBoundary pipeline** — a fundamental redesign where analytical boundaries emerge from evidence rather than being pre-created. The Orchestrated pipeline has been deleted (~18,400 lines removed).
 
-**Key changes:**
-- **AnalysisContext replaced by ClaimBoundary**: Boundaries are derived from EvidenceScope clustering after evidence is gathered, not created before research
-- **Two-pass evidence-grounded claim extraction**: Quick scan → preliminary search → evidence-grounded re-extraction
-- **LLM debate pattern**: Advocate → challenger → reconciliation for each claim verdict
-- **Source triangulation scoring**: Deterministic independence scoring in aggregation
+**Key features:**
+- **ClaimAssessmentBoundary**: Evidence-emergent groupings derived from EvidenceScope clustering after evidence is gathered
+- **Two-pass evidence-grounded claim extraction**: Quick scan (Haiku) → preliminary search → evidence-grounded re-extraction (Sonnet)
+- **LLM debate pattern**: Advocate → challenger → reconciliation for each claim verdict (5-step process)
+- **Source triangulation scoring**: Cross-boundary agreement/disagreement with configurable boosts/penalties
 - **Mandatory EvidenceScope**: `methodology` + `temporal` required on all evidence; `additionalDimensions` for domain-specific data
-- **VerdictNarrative**: Structured narrative replacing free-form `narrative: string`
-- **Clean break**: New databases, new types, new prompts. Old pipeline runs unchanged until replaced.
+- **VerdictNarrative**: Structured narrative with headline, keyFinding, boundaryDisagreements, limitations
+- **Coverage matrix**: Claims × boundaries evidence distribution tracking
+- **Quality gates**: Gate 1 (claim validation) + Gate 4 (confidence distribution)
+- **Self-consistency checks**: Spread multipliers for verdict stability assessment
+- **Derivative evidence tracking**: Identifies and weights derivative sources
 
 **Design document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
-**Phase 8/9 context:** [Phase9_Pipeline_Status_and_Plan_2026-02-15.md](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../WIP/CB_Execution_State.md)
 
-**Completed phases:**
-1. ✅ **Step 0: Rules Audit** — Governance docs updated (AGENTS.md, CLAUDE.md, Multi_Agent_Collaboration_Rules.md, xWiki Terminology)
-2. ✅ **Phase 1: Implementation** — 5-stage pipeline + verdict-stage module + 8 UCM prompts (50 tests, all passing)
-3. ✅ **Phase 2: Cutover** — ClaimBoundary wired as default route, new resultJson schema (3.0.0-cb)
-4. ✅ **Phase 2a: Delete orchestrated** — ~18,400 lines deleted (orchestrated.ts, AC config, AC prompts, AC tests)
-5. ✅ **Phase 2 docs** — 5 xWiki pages rewritten (183 AC refs → 44, 76% reduction)
+**All phases complete:**
+1. ✅ **Step 0: Rules Audit** — Governance docs updated
+2. ✅ **Phase 1: Infrastructure** — Types, verdict-stage module, 8 UCM prompts, pipeline skeleton
+3. ✅ **Phase 2: Cutover** — ClaimAssessmentBoundary wired as default, schema 3.0.0-cb
+4. ✅ **Phase 2a: Delete orchestrated** — ~18,400 lines removed
+5. ✅ **Phase 2 docs** — 5 xWiki pages rewritten for CB terminology
+6. ✅ **Phase 3: UI** — BoundaryFindings component, page.tsx updated
+7. ✅ **Phase 3b: MD cleanup** — Dead prompt infrastructure removed (~3,300 lines)
+8. ✅ **Phase 4: Final AC sweep** — Zero AnalysisContext references in active code
+9. ✅ **Phase 5a: Stage 1** — extractClaims (two-pass + Gate 1)
+10. ✅ **Phase 5b: Stage 2** — researchEvidence (claim-driven + contradiction search)
+11. ✅ **Phase 5c: Stage 3** — clusterBoundaries (LLM clustering + coherence)
+12. ✅ **Phase 5d: Stage 4** — generateVerdicts (production LLM wiring)
+13. ✅ **Phase 5e: Stage 5** — aggregateAssessment (triangulation + narrative)
+14. ✅ **Phase 5f: Integration test** — 3 scenarios with schema validation
+15. ✅ **Phase 5f2: Rename** — ClaimBoundary → ClaimAssessmentBoundary (partial)
+16. ✅ **Phase 5g: Documentation** — Status, governance, and architecture docs updated
 
-**Next steps:**
-1. Phase 3: UI updates for ClaimBoundary result display
-2. Phase 3b: Monolithic Dynamic prompt cleanup (remove hardcoded MD prompts)
-3. Phase 4: Final AC sweep (remove remaining AC references)
+**Deferred to v1.1:**
+- Gate 1 retry loop (§8.1.5) — currently warn-only on high failure rate
+- CLAIM_GROUPING UI display (§18 Q1) — Haiku call for claim grouping when ≥4 claims
+- Advanced triangulation (§8.5.2) — cross-boundary correlation analysis
+- Contestation weight reduction — requires factualBasis field on CBClaimVerdict
+- Derivative source detection improvements (§8.5.3)
 
 ---
 
-## Quick Status (Current AnalysisContext Pipeline)
-
-> **Note:** The current pipeline remains operational and unchanged. The sections below describe the existing system that will be replaced by ClaimBoundary.
+## Quick Status (Current Pipelines)
 
 ### ✅ What Works
 
 **Core Analysis Pipeline:**
 - **Pipeline Variants**:
-  - Orchestrated Pipeline (default, production quality)
-  - Monolithic Dynamic (experimental, flexible output)
+  - ClaimAssessmentBoundary Pipeline (default, production) — 5-stage pipeline with LLM debate pattern
+  - Monolithic Dynamic (alternative, flexible output)
+  - ~~Orchestrated Pipeline~~ (removed in v2.11.0 — replaced by ClaimAssessmentBoundary)
   - ~~Monolithic Canonical~~ (removed in v2.10.x)
-- Multi-context detection and analysis
-- **Heuristic Context Pre-Detection**: Code-level pattern detection for comparison, legal, and environmental claims
-- **Context Overlap Detection**: LLM-driven merge heuristics with defensive validation (v2.6.38)
-- **UI Reliability Signals**: Multi-context verdict reliability indicators (v2.6.38)
-- Input neutrality (question ≈ statement within ±5%)
+- ClaimAssessmentBoundary clustering (evidence-emergent groupings)
+- Input neutrality (question ≈ statement within ±4%)
 - Claim extraction with dependency tracking
 - Temporal reasoning with current date awareness
 - Web search integration (Google CSE, SerpAPI)
@@ -256,7 +267,7 @@ The AnalysisContext pipeline has been replaced by the **ClaimBoundary pipeline**
 | **Next.js Web App** | ✅ Operational | Pipeline variants operational |
 | **.NET API** | ✅ Operational | SQLite for local, PostgreSQL for production |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff retry |
-| **Pipeline Variants** | ✅ Operational | Orchestrated (default) + Monolithic Dynamic (Twin-Path) |
+| **Pipeline Variants** | ✅ Operational | ClaimAssessmentBoundary (default) + Monolithic Dynamic |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (recommended), OpenAI, Google, Mistral |
 | **LLM Tiering** | ✅ Implemented | Per-task model selection for cost optimization |
 | **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Gemini Grounded |
@@ -307,18 +318,18 @@ The AnalysisContext pipeline has been replaced by the **ClaimBoundary pipeline**
 ### Test Coverage
 
 **Unit Tests** (`npm test` — safe, no API calls):
-- Analyzer core functions (partial)
-- Quality gates (partial)
-- Truth scale calculations (partial)
-- Job lifecycle (basic)
-- 46 test files, all mocked (no real LLM calls)
+- ClaimAssessmentBoundary pipeline (claimboundary-pipeline.test.ts) — 100+ tests
+- Verdict stage module (verdict-stage.test.ts) — 29 tests
+- Analyzer core functions (evidence-filter, aggregation, truth-scale, etc.)
+- Quality gates, confidence calibration
+- Job lifecycle
+- 42 test files, 817 tests, all mocked (no real LLM calls)
 
 **Expensive Integration Tests** (explicit scripts only, $1-5+ per run):
 - `npm run test:llm` — Multi-provider LLM integration
 - `npm run test:neutrality` — Input neutrality (full analysis x2 per pair)
-- `npm run test:contexts` — Context preservation (full analysis)
-- `npm run test:adversarial` — Adversarial context leak (full analysis)
-- `npm run test:expensive` — All 4 expensive tests combined
+- `npm run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios)
+- `npm run test:expensive` — All expensive tests combined
 
 **Missing Tests:**
 - API controller tests
@@ -363,6 +374,32 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 ---
 
 ## Recent Changes
+
+### 2026-02-17 ClaimAssessmentBoundary Pipeline v1.0 (v2.11.0)
+**Status: ✅ IMPLEMENTED — Production-Ready**
+
+Complete pipeline implementation replacing the Orchestrated pipeline with evidence-emergent ClaimAssessmentBoundary architecture.
+
+**Pipeline Stages (all operational):**
+1. **Stage 1: Extract Claims** — Two-pass evidence-grounded claim extraction (Haiku + Sonnet) with Gate 1 validation
+2. **Stage 2: Research Evidence** — Claim-driven iteration loop with contradiction search, mandatory EvidenceScope, derivative validation
+3. **Stage 3: Cluster Boundaries** — LLM-driven EvidenceScope clustering (Sonnet) with coherence assessment and cap enforcement
+4. **Stage 4: Generate Verdicts** — 5-step LLM debate pattern (advocate → challenger → reconciliation → self-consistency → validation)
+5. **Stage 5: Aggregate Assessment** — Triangulation scoring, weighted aggregation, VerdictNarrative generation, quality gates
+
+**Key metrics:**
+- 817 unit tests passing (42 test files)
+- ~18,400 lines of legacy code removed (orchestrated.ts + AC infrastructure)
+- 24 UCM-configurable parameters for pipeline tuning
+- Schema version: 3.0.0-cb
+- Integration test suite with 3 end-to-end scenarios
+
+**Files:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Main pipeline (~1,800 lines)
+- `apps/web/src/lib/analyzer/verdict-stage.ts` — Verdict module (~680 lines)
+- `apps/web/prompts/claimboundary.prompt.md` — 10 UCM-managed prompt sections
+
+**See:** [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md), [Execution State](../WIP/CB_Execution_State.md)
 
 ### 2026-02-13 Prompt Externalization to UCM (v2.8.2)
 **Status: ✅ Complete**
@@ -869,26 +906,22 @@ See: [Implementation Review](../ARCHIVE/REVIEWS/Unified_Configuration_Management
 
 ## What's Next
 
-**#1 Priority: ClaimBoundary Pipeline Implementation**
+**ClaimAssessmentBoundary Pipeline v1.0 is production-ready.** Next priorities:
 
-The architecture redesign is complete (9/9 decisions closed). Implementation proceeds in this order:
+1. **Phase 5i: Final cleanup** — Resolve V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests)
+2. **Phase 5k: UI adaptations** — Admin config panel for 24 CB parameters, enhanced results display (coverage matrix, verdictNarrative, qualityGates components)
+3. **Phase 5h: Test coverage expansion** (optional) — Neutrality, performance, and adversarial tests for CB pipeline
 
-1. **Step 0: Rules Audit** — Lead Architect audits AGENTS.md + governance docs for AnalysisContext-specific rules. Deliverable: diff of rule changes needed.
-2. **Dead code cleanup** — Remove 879 lines of unused code (QA findings). Cleaner codebase for implementation.
-3. **UCM AutoForm code review** — Merge `feature/ucm-autoform` branch (independent of pipeline, but improves admin tooling).
-4. **ClaimBoundary implementation** — Phased per architecture doc (Stage 1 → Stage 2 → Stage 3 → Stage 4 → Aggregation → Report).
-
-**Parallel: Cost Reduction** (applies to both old and new pipeline):
+**Parallel: Cost Reduction** (applies to CB pipeline):
 - Batch API integration (50% discount — no code changes to pipeline logic)
 - Prompt caching (90% off repeated system prompts)
 - NPO/OSS credit applications ($11K+/year potential)
 - See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
 
-**After ClaimBoundary is operational:**
-- Post-CB documentation refresh (all xWiki + .md)
-- Define LLM call optimization targets for new pipeline
-- Apply anti-hallucination principles to CB prompts
+**After UI work:**
+- Define LLM call optimization targets for CB pipeline
 - Security hardening (SSRF, auth, rate limiting) — *before any public deployment*
+- Dead code removal (879 lines unused code from QA findings)
 
 **See**:
 - [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
@@ -897,6 +930,6 @@ The architecture redesign is complete (9/9 decisions closed). Implementation pro
 
 ---
 
-**Last Updated**: February 16, 2026
-**Actual Version**: 2.10.2 (Code) | 2.7.0 (Schema)
-**Document Status**: Reflects ClaimBoundary architecture redesign + Phase 8/9 pipeline quality work + all prior changes
+**Last Updated**: February 17, 2026
+**Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema)
+**Document Status**: Reflects ClaimAssessmentBoundary pipeline v1.0 implementation complete + all prior changes

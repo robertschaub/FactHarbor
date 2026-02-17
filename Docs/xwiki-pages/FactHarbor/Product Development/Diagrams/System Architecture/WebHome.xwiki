@@ -10,7 +10,7 @@ flowchart TB
         UI["UI Pages\n/analyze, /jobs, /admin"]
         FH_API["Proxy API Routes\n/api/fh/*"]
         INTERNAL["Internal API\n/api/internal/run-job"]
-        AKEL["AKEL Pipeline\norchestrated.ts"]
+        AKEL["ClaimAssessmentBoundary Pipeline\nclaimboundary-pipeline.ts"]
         SHARED["Shared Modules\nevidence-filter, aggregation,\nquality-gates, source-reliability"]
         CONFIG_DB[("config.db\nUCM Config")]
         SR_DB[("source-reliability.db\nSR Cache")]
@@ -45,4 +45,4 @@ flowchart TB
     style External fill:#fff3e0,stroke:#e65100,color:#000
 {{/mermaid}}
 
-//Two-service architecture: Next.js web app (UI + AKEL analysis engine) and .NET API (job management + persistence), communicating via HTTP on a single host.//
+//Two-service architecture: Next.js web app (UI + ClaimAssessmentBoundary analysis engine) and .NET API (job management + persistence), communicating via HTTP on a single host.//

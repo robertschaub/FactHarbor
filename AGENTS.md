@@ -60,7 +60,7 @@ Exception: Structural constants are allowed in code (e.g., enum-like labels, sch
 ### Analysis Prompt Rules
 These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is welcome — but only with explicit human approval.
 - **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
-- **Do not enforce** finding AnalysisContexts (or ClaimBoundaries) or EvidenceScopes by using non-generic terms, date-periods, or regions. These must emerge naturally from evidence.
+- **Do not enforce** finding ClaimAssessmentBoundaries or EvidenceScopes by using non-generic terms, date-periods, or regions. These must emerge naturally from evidence.
 
 ### Terminology — NEVER Confuse These
 
@@ -104,11 +104,10 @@ UCM implementation: `apps/web/src/lib/config-storage.ts`. UCM docs: see Area-to-
 ```
 User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port 5000)
              ├─ src/lib/analyzer/                 ├─ Controllers/ (Jobs, Analyze, Internal)
-             │  claimboundary-pipeline.ts [NEW]   ├─ Services/ (JobService, RunnerClient)
-             │  verdict-stage.ts [NEW]            ├─ Data/ (Entities, FhDbContext)
-             │  orchestrated.ts [REPLACING]       └─ SQLite: factharbor.db
-             │  monolithic-dynamic.ts             Swagger: http://localhost:5000/swagger
-             ├─ src/app/api/internal/run-job/
+             │  claimboundary-pipeline.ts          ├─ Services/ (JobService, RunnerClient)
+             │  verdict-stage.ts                   ├─ Data/ (Entities, FhDbContext)
+             │  monolithic-dynamic.ts              └─ SQLite: factharbor.db
+             ├─ src/app/api/internal/run-job/     Swagger: http://localhost:5000/swagger
              └─ LLM calls via AI SDK
 ```
 
@@ -116,9 +115,8 @@ User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port
 
 | File | Purpose |
 |------|---------|
-| `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` | **[NEW]** ClaimAssessmentBoundary pipeline — replaces orchestrated.ts |
-| `apps/web/src/lib/analyzer/verdict-stage.ts` | **[NEW]** Verdict stage module (5-step debate pattern) |
-| `apps/web/src/lib/analyzer/orchestrated.ts` | **[BEING REPLACED]** Legacy pipeline (~13600 lines). Do not extend — being replaced by ClaimAssessmentBoundary pipeline. |
+| `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` | ClaimAssessmentBoundary pipeline (default, 5 stages) |
+| `apps/web/src/lib/analyzer/verdict-stage.ts` | Verdict stage module (5-step LLM debate pattern) |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
 | `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting |
 | `apps/web/src/lib/analyzer/evidence-filter.ts` | Deterministic evidence quality filtering |
@@ -146,8 +144,7 @@ Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` 
 | Tests (expensive) | `npm -w apps/web run test:expensive` — runs ALL tests including real LLM calls |
 | Test: LLM integration | `npm -w apps/web run test:llm` — real LLM calls to multiple providers |
 | Test: input neutrality | `npm -w apps/web run test:neutrality` — full analysis x2 per pair |
-| Test: context preservation | `npm -w apps/web run test:contexts` — full analysis runs |
-| Test: adversarial | `npm -w apps/web run test:adversarial` — full analysis runs |
+| Test: CB integration | `npm -w apps/web run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios) |
 | Lint | `npm run lint` — placeholder (not yet configured) |
 
 ### Test Cost Warning
@@ -158,8 +155,7 @@ The following tests are **excluded from `npm test`** because they call real LLM 
 
 - `test/unit/lib/llm-integration.test.ts` — multi-provider LLM integration
 - `test/unit/lib/input-neutrality.test.ts` — full analysis x2 per neutrality pair
-- `test/unit/lib/analyzer/context-preservation.test.ts` — full multi-context analysis
-- `test/unit/lib/analyzer/adversarial-context-leak.test.ts` — full adversarial analysis
+- `test/integration/claimboundary-integration.test.ts` — ClaimAssessmentBoundary end-to-end (3 scenarios, ~$1-2/run)
 
 **NEVER run these tests routinely or as part of verification.** Only run them when:
 1. Explicitly asked by the user
@@ -339,7 +335,7 @@ Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/we
 
 ## Current State (Pre-release, targeting v1.0)
 
-Pipeline variants: Orchestrated (default, being replaced), Monolithic Dynamic (fast alternative). Monolithic Canonical was removed in v2.10.x. **ClaimAssessmentBoundary pipeline** is the approved replacement — see `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+Pipeline variants: ClaimAssessmentBoundary (default, production), Monolithic Dynamic (alternative). Orchestrated was removed in v2.11.0 (replaced by ClaimAssessmentBoundary). Monolithic Canonical was removed in v2.10.x. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
 
 LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
 

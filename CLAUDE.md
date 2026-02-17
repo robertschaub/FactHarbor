@@ -6,7 +6,7 @@ Project rules, terminology, and architecture: @AGENTS.md
 
 Two apps + one tool:
 - `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts` [NEW], `src/lib/analyzer/verdict-stage.ts` [NEW], `src/lib/analyzer/orchestrated.ts` [BEING REPLACED].
+- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts`, `src/lib/analyzer/verdict-stage.ts`.
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
 
 ## Primary data flow
@@ -15,7 +15,7 @@ Two apps + one tool:
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
 3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
 
-> **Migration complete (2026-02-16):** The ClaimAssessmentBoundary pipeline (`claimboundary-pipeline.ts`) has replaced the Orchestrated pipeline (`orchestrated.ts`). AnalysisContext types removed. All new code uses ClaimBoundary. See `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md`.
+> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 817 tests passing. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 
@@ -38,7 +38,7 @@ Two apps + one tool:
 - Web: `cd apps/web && npm run dev` (port 3000)
 - API: `cd apps/api && dotnet run` (port 5000)
 - Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
-- **Do NOT run** `test:llm`, `test:neutrality`, `test:contexts`, `test:adversarial`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
+- **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
 
 ## Patterns & conventions
 

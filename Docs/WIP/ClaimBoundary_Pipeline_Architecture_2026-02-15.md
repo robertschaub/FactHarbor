@@ -2,9 +2,11 @@
 
 **Date:** 2026-02-15 (reviewed 2026-02-16, revised 2026-02-16)
 **Author:** Claude Opus 4.6 (Lead Architect)
-**Status:** APPROVED — All decisions finalized. Definitive implementation reference.
+**Status:** IMPLEMENTED (v2.11.0, 2026-02-17) — All 5 stages operational. 817 tests passing.
 **Supersedes:** Orchestrated pipeline AnalysisContext architecture (Phases 1–9)
 **Git tag:** `pre-claimboundary-redesign` (tagged before any changes)
+
+> **Implementation Note (2026-02-17):** This architecture is fully implemented in `claimboundary-pipeline.ts` and `verdict-stage.ts`. The following items are **deferred to v1.1**: Gate 1 retry loop (§8.1.5), CLAIM_GROUPING UI display (§18 Q1), advanced triangulation (§8.5.2), contestation weight reduction (requires factualBasis field), derivative detection improvements (§8.5.3). See [CB_Execution_State.md](CB_Execution_State.md) for full implementation history.
 
 ### Review & Revision History
 

@@ -665,7 +665,6 @@ export interface AnalysisWarning {
   /** Optional details for debugging */
   details?: {
     claimId?: string;
-    contextId?: string;
     expectedDirection?: "supports" | "contradicts" | "high" | "low";  // Evidence direction or verdict direction
     actualVerdictPct?: number;
     evidenceSupportPct?: number;
