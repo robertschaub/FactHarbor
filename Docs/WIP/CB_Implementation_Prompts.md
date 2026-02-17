@@ -538,9 +538,18 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
 
 2. **Derivative Weight Reduction (§8.5.3)**
 
-   - Check each claim's evidence for derivative sources (if `derivativeSource` field exists on EvidenceItem)
-   - If >50% of claim's evidence is derivative, apply `derivativeMultiplier` (CalcConfig, default 0.5) to claim weight
-   - **Note for v1:** Derivative detection may not be implemented yet — skip if `derivativeSource` field doesn't exist
+   - For each claim, calculate `derivativeRatio`:
+     ```typescript
+     const derivativeCount = claim.supportingEvidence.filter(e =>
+       e.isDerivative === true && e.derivativeClaimUnverified !== true
+     ).length;
+     const derivativeRatio = derivativeCount / claim.supportingEvidence.length;
+     ```
+   - Apply formula (architecture §8.5.3):
+     ```typescript
+     const derivativeFactor = 1.0 - (derivativeRatio × (1.0 - calcConfig.aggregation.derivativeMultiplier));
+     ```
+   - Use `derivativeFactor` in final weight calculation (see step 3)
 
 3. **Weighted Average Computation (§8.5.4)**
 

@@ -1063,7 +1063,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     claimSimilarityThreshold: 0.85,
     contextMergeThreshold: 0.7,
   },
-  mixedConfidenceThreshold: 60,
+  mixedConfidenceThreshold: 40,
   // ClaimBoundary Stage 4: Self-consistency spread thresholds (in percentage points)
   selfConsistencySpreadThresholds: {
     stable: 5,

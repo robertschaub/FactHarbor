@@ -10,6 +10,10 @@ variables:
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_EXTRACTION_PASS2"
+  - "CLAIM_VALIDATION"
+  - "GENERATE_QUERIES"
+  - "RELEVANCE_CLASSIFICATION"
+  - "EXTRACT_EVIDENCE"
   - "BOUNDARY_CLUSTERING"
   - "VERDICT_ADVOCATE"
   - "VERDICT_CHALLENGER"
@@ -151,6 +155,231 @@ Notes:
 - `retainedEvidence`: IDs of high-quality preliminary evidence items that should be kept in the evidence pool (avoiding redundant re-extraction in Stage 2).
 - Only include claims where `centrality` is "high" or "medium" in the final output. Drop "low" centrality claims.
 - `specificityScore`: 0.0–1.0. Claims below 0.6 should be flagged for potential decomposition.
+
+---
+
+## CLAIM_VALIDATION
+
+You are a claim validation engine (Gate 1). Your task is to assess whether atomic claims meet quality thresholds for opinion and specificity.
+
+### Task
+
+For each claim, determine:
+1. **passedOpinion**: Is this a factual assertion (true) or primarily an opinion/prediction/value judgment (false)?
+2. **passedSpecificity**: Is the claim specific enough to verify (true) or too vague/broad (false)?
+
+### Rules
+
+- Do not assume any particular language. Assess based on semantic content, not keywords.
+- **Opinion check**: Flag claims that express preferences, value judgments, predictions, or rhetorical positions rather than verifiable facts.
+- **Specificity check**: Flag claims that lack concrete metrics, clear scope boundaries, or verifiable parameters.
+- A claim can pass opinion but fail specificity (e.g., "The economy grew" — factual but vague).
+- A claim can fail opinion even if it contains factual elements (e.g., "X is clearly the best approach" — opinion-laden).
+- Provide brief reasoning for each assessment.
+
+### Input
+
+**Atomic Claims:**
+```
+{{atomicClaims}}
+```
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "validatedClaims": [
+    {
+      "claimId": "AC_01",
+      "passedOpinion": true,
+      "passedSpecificity": false,
+      "reasoning": "Factual but lacks specific metrics or time bounds"
+    }
+  ]
+}
+```
+
+---
+
+## GENERATE_QUERIES
+
+You are a search query generation engine. Your task is to create targeted web search queries for a specific claim.
+
+### Task
+
+Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries optimized for finding evidence that would verify or refute the claim.
+
+### Rules
+
+- Do not assume any particular language. Generate queries in the language most likely to find relevant evidence.
+- Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
+- Include one query targeting potential contradictions or counterevidence.
+- Avoid overly broad queries — target specific evidence types.
+- Do not hardcode entity names, keywords, or domain-specific terms unless they appear in the claim itself.
+- Keep queries concise (3–8 words typical).
+
+### Input
+
+**Claim:**
+```
+{{claim}}
+```
+
+**Expected Evidence Profile:**
+```
+{{expectedEvidenceProfile}}
+```
+
+**Iteration Type:**
+```
+{{iterationType}}
+```
+(One of: "main", "contradiction")
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "queries": [
+    {
+      "query": "string — search query",
+      "rationale": "string — what evidence type this targets"
+    }
+  ]
+}
+```
+
+---
+
+## RELEVANCE_CLASSIFICATION
+
+You are a relevance classification engine. Your task is to assess whether search results are relevant to a specific claim.
+
+### Task
+
+Given a claim and a list of search results (title, snippet, URL), classify each result as relevant or not relevant.
+
+A result is **relevant** if:
+- It appears to contain evidence that would verify, refute, or contextualize the claim.
+- The methodology, metrics, or source type match the claim's `expectedEvidenceProfile`.
+- The content is substantive (not just tangentially mentioning keywords).
+
+A result is **not relevant** if:
+- It only mentions keywords without addressing the claim's substance.
+- It's a different topic that shares terminology.
+- It's meta-content (lists of links, summaries of other content, ads).
+
+### Rules
+
+- Do not assume any particular language. Assess based on semantic relevance.
+- Assign a relevance score (0.0–1.0): 0.0 = completely irrelevant, 1.0 = highly relevant.
+- Provide brief reasoning for each classification.
+- Be conservative — when uncertain, score 0.5 (borderline).
+
+### Input
+
+**Claim:**
+```
+{{claim}}
+```
+
+**Search Results:**
+```
+{{searchResults}}
+```
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "relevantSources": [
+    {
+      "url": "string — source URL",
+      "relevanceScore": 0.85,
+      "reasoning": "string — why this is relevant"
+    }
+  ]
+}
+```
+
+---
+
+## EXTRACT_EVIDENCE
+
+You are an evidence extraction engine. Your task is to extract evidence items from a source that relate to a specific claim.
+
+### Task
+
+Given a claim and source content, extract evidence items with full metadata including:
+- `statement`: The evidence assertion (fact, finding, data point)
+- `category`: Type of evidence (statistical_data, expert_testimony, case_study, etc.)
+- `claimDirection`: How this relates to the claim ("supports", "contradicts", "contextual")
+- `evidenceScope`: **REQUIRED** — methodology, temporal bounds, geographic/system boundaries
+- `probativeValue`: Quality assessment ("high", "medium", "low")
+- `sourceType`: Source classification (peer_reviewed_study, news_primary, government_report, etc.)
+- `isDerivative`: **boolean** — true if this evidence cites another source's underlying study rather than presenting independent findings
+- `derivedFromSourceUrl`: **string (optional)** — URL of the original source if `isDerivative` is true
+- `relevantClaimIds`: Array of claim IDs this evidence relates to
+
+### Rules
+
+- Do not assume any particular language. Extract evidence in the source's original language.
+- **EvidenceScope is MANDATORY**: Every item must have `methodology`, `temporal` fields populated. Geographic/system boundaries if applicable.
+- **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
+- Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
+- `claimDirection`:
+  - "supports": Evidence affirms the claim
+  - "contradicts": Evidence refutes the claim
+  - "contextual": Evidence provides relevant context but doesn't affirm/refute
+- `probativeValue`: Assess based on source quality, methodology rigor, and directness.
+- Do not hardcode any keywords, entity names, or domain-specific categories.
+
+### Input
+
+**Claim:**
+```
+{{claim}}
+```
+
+**Source Content:**
+```
+{{sourceContent}}
+```
+
+**Source URL:**
+```
+{{sourceUrl}}
+```
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "evidenceItems": [
+    {
+      "statement": "string — the evidence assertion",
+      "category": "string — evidence type",
+      "claimDirection": "supports",
+      "evidenceScope": {
+        "methodology": "string — how this was measured/studied",
+        "temporal": "string — time period or date",
+        "geographic": "string (optional) — location/region",
+        "boundaries": "string (optional) — system boundaries",
+        "additionalDimensions": {}
+      },
+      "probativeValue": "high",
+      "sourceType": "peer_reviewed_study",
+      "isDerivative": false,
+      "derivedFromSourceUrl": null,
+      "relevantClaimIds": ["AC_01"]
+    }
+  ]
+}
+```
 
 ---
 

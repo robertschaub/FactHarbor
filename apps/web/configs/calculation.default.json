@@ -51,7 +51,7 @@
     "claimSimilarityThreshold": 0.85,
     "contextMergeThreshold": 0.7
   },
-  "mixedConfidenceThreshold": 60,
+  "mixedConfidenceThreshold": 40,
   "selfConsistencySpreadThresholds": {
     "stable": 5,
     "moderate": 12,

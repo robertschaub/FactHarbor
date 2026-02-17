@@ -282,8 +282,9 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Apply triangulation factor from CalcConfig (`triangulation.strongAgreementBoost`, etc.)
   - Attach `triangulationScore` to each `CBClaimVerdict`
 - [ ] Derivative weight reduction (§8.5.3)
-  - Flag derivative evidence (if `derivativeSource` field exists)
-  - Apply `derivativeMultiplier` (CalcConfig, default 0.5) to claim weight
+  - For each claim, calculate `derivativeRatio` = proportion of supporting evidence with `isDerivative: true` AND `derivativeClaimUnverified: false`
+  - Apply formula: `derivativeFactor = 1.0 - (derivativeRatio × (1.0 - derivativeMultiplier))`
+  - Use in final weight calculation
 - [ ] Weighted average computation (§8.5.4)
   - Reuse `getClaimWeight()` from aggregation.ts (centrality weights)
   - Apply harm multipliers: use 4-level `harmPotentialMultipliers` from CalcConfig (not scalar)
@@ -291,12 +292,12 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Call `calculateWeightedVerdictAverage()` (existing function in aggregation.ts)
 - [ ] Confidence aggregation (§8.5.5)
   - Weighted average of claim confidences (same weights as verdicts)
-  - Apply spread multipliers from verdict-stage self-consistency results
-  - Apply existing confidence calibration (reuse existing module)
+  - **Note:** `verdict-stage.ts` already applied self-consistency spread multipliers to per-claim confidence — do NOT re-apply in Stage 5
+  - Apply existing confidence calibration (reuse existing module) for overall confidence only
 - [ ] VerdictNarrative generation (§8.5.6, Sonnet call)
   - Load UCM prompt `VERDICT_NARRATIVE`
   - Input: overall verdict, claim verdicts, boundaries, coverage matrix
-  - Output: `{summary, keyEvidence[], limitations[], methodology}`
+  - Output: `{headline, evidenceBaseSummary, keyFinding, boundaryDisagreements[], limitations}` (per types.ts line 862-868)
 - [ ] Optional: CLAIM_GROUPING (§18 Q1)
   - If `claimCount >= 4` AND UCM `ui.enableClaimGrouping` enabled
   - Call Haiku with `CLAIM_GROUPING` prompt
@@ -321,7 +322,7 @@ Attempting parallel implementation would require extensive mocking of data struc
 - Test triangulation scoring with different boundary agreement patterns
 - Test derivative weight reduction
 - Test weighted average calculation (compare to hand-calculated expected values)
-- Test confidence aggregation with spread multipliers
+- Test confidence aggregation (verify spread multipliers NOT re-applied)
 - Test quality gates population
 
 **Estimated effort:** 2 sessions (4-6 hours)
@@ -748,7 +749,7 @@ The following items from the architecture doc are **deferred** to v1.1+ (not blo
 1. **Stage 1 Gate 1 retry loop** (§8.1.5) — if >50% claims fail grounding check, retry with stricter prompt. Can start without this.
 2. **CLAIM_GROUPING for UI** (§18 Q1) — optional Haiku call for 4+ claims. UI can work without grouping.
 3. **Advanced triangulation** (§8.5.2 extended) — initial version uses simple counts, can refine scoring logic later.
-4. **Derivative evidence detection** (§8.5.3) — requires `derivativeSource` field population, may need additional extraction logic.
+4. **Derivative evidence detection** (§8.5.3) — `isDerivative`/`derivedFromSourceUrl` fields are extracted in Stage 2, but improved heuristics for detecting derivative relationships may be added in v1.1.
 5. **F-05 aggregation gaps** (from Phase 1 Review) — triangulationFactor/derivativeFactor integration with `aggregation.ts`. Can start with CalcConfig values applied in Stage 5 directly.
 
 ---
