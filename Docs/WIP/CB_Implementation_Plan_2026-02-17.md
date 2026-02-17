@@ -287,12 +287,12 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Use in final weight calculation
 - [ ] Weighted average computation (§8.5.4)
   - Compute weight directly using CalcConfig multipliers: `centralityWeights` + `harmPotentialMultipliers` (4-level) + `confidenceFactor` + `triangulationFactor` + `derivativeFactor`
-  - **Note:** Do NOT use `aggregation.ts:getClaimWeight()` — it expects legacy ClaimVerdict fields (factualBasis, thesisRelevance) not present in CBClaimVerdict
-  - Call `calculateWeightedVerdictAverage()` (existing function in aggregation.ts)
-- [ ] Confidence aggregation (§8.5.5)
-  - Weighted average of claim confidences (same weights as verdicts)
+  - **Note:** Do NOT use `aggregation.ts:getClaimWeight()` or `calculateWeightedVerdictAverage()` — both expect legacy ClaimVerdict type shapes incompatible with CB
+  - Compute weighted averages inline: `Σ(truthPercentage × weight) / Σ(weight)` and `Σ(confidence × weight) / Σ(weight)` using the same precomputed weights
+- [ ] Confidence calibration (§8.5.5)
+  - Use `weightedConfidence` from weighted average (same weights as truth percentage)
   - **Note:** `verdict-stage.ts` already applied self-consistency spread multipliers to per-claim confidence — do NOT re-apply in Stage 5
-  - Apply existing confidence calibration (reuse existing module) for overall confidence only
+  - Apply existing confidence calibration (reuse `confidence-calibration.ts`) for overall confidence only if needed
 - [ ] VerdictNarrative generation (§8.5.6, Sonnet call)
   - Load UCM prompt `VERDICT_NARRATIVE`
   - Input: overall verdict, claim verdicts, boundaries, coverage matrix

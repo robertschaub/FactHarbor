@@ -539,13 +539,12 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
 2. **Weighted Average Computation (§8.5.4)**
 
    ```typescript
-   import { calculateWeightedVerdictAverage } from "./aggregation";
    import { loadCalcConfig } from "@/lib/config-loader";
 
    const calcConfig = await loadCalcConfig();
 
    // For each claim verdict, compute weights using CalcConfig directly:
-   const weightsPerClaim = claimVerdicts.map((verdict, idx) => {
+   const weightsData = claimVerdicts.map((verdict, idx) => {
      const claim = state.atomicClaims.find(c => c.id === verdict.claimId)!;
 
      // Centrality weight (3-level: high/medium/low)
@@ -575,16 +574,28 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
      // Final weight formula (§8.5.4)
      const finalWeight = centralityWeight * harmMultiplier * confidenceFactor * (1 + triangulationFactor) * derivativeFactor;
 
-     return { truthPercentage: verdict.truthPercentage, weight: finalWeight };
+     return {
+       truthPercentage: verdict.truthPercentage,
+       confidence: verdict.confidence,
+       weight: finalWeight
+     };
    });
 
-   // Aggregate across all claims:
-   const weightedTruthPercentage = calculateWeightedVerdictAverage(weightsPerClaim);
+   // Compute weighted averages inline (same precomputed weights for both):
+   const totalWeight = weightsData.reduce((sum, item) => sum + item.weight, 0);
+   const weightedTruthPercentage = weightsData.reduce((sum, item) =>
+     sum + (item.truthPercentage * item.weight), 0
+   ) / totalWeight;
+   const weightedConfidence = weightsData.reduce((sum, item) =>
+     sum + (item.confidence * item.weight), 0
+   ) / totalWeight;
    ```
 
-3. **Confidence Aggregation (§8.5.5)**
+   **Note:** Do NOT use `aggregation.ts:calculateWeightedVerdictAverage()` — it expects legacy ClaimVerdict objects and recomputes weights via `getClaimWeight()`, which is incompatible with CB's direct CalcConfig approach and 4-level harm multipliers.
 
-   - Weighted average of claim confidences (same weights as verdicts)
+3. **Confidence Calibration (§8.5.5)**
+
+   - Use `weightedConfidence` computed above (same weights as truth percentage)
    - **Note:** `verdict-stage.ts` already applied self-consistency spread multipliers to per-claim confidence — do NOT re-apply in Stage 5
    - Apply existing confidence calibration (reuse `confidence-calibration.ts`) for overall confidence only
    - For v1, **simple approach:** weighted average only (spread already applied per-claim)
