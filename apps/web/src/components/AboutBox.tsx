@@ -71,41 +71,26 @@ export function AboutBox() {
     <div className={styles.container}>
       <div className={styles.content}>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>Web</div>
-          {errWeb ? (
-            <div className={styles.error}>Error: {errWeb}</div>
-          ) : web ? (
+          <div className={styles.sectionTitle}>System Info</div>
+          {errWeb && errApi ? (
+            <div className={styles.error}>Error loading system info</div>
+          ) : (web || api) ? (
             <div className={styles.grid}>
-              <div>Service</div><div><code>{web.service}</code></div>
-              <div>Env</div><div><code>{web.node_env ?? "—"}</code></div>
-              <div>LLM</div><div><code>{web.llm_provider ?? "—"}</code></div>
-              <div>Git</div><div><code>{shortSha(web.git_sha)}</code></div>
-            </div>
-          ) : <div>Loading…</div>}
-        </div>
-
-        <div className={`${styles.section} ${styles.sectionLarge}`}>
-          <div className={styles.sectionTitle}>API</div>
-          {errApi ? (
-            <div className={styles.error}>Error: {errApi}</div>
-          ) : api ? (
-            <div className={styles.grid}>
-              <div>Service</div><div><code>{api.service}</code></div>
-              <div>Env</div><div><code>{api.environment ?? "—"}</code></div>
-              <div>DB</div><div><code>{api.db_provider ?? "—"}</code></div>
-              <div>Asm</div><div><code>{api.assembly_version ?? "—"}</code></div>
-              <div>Git</div><div><code>{shortSha(api.git_sha)}</code></div>
+              {web && <><div>Environment</div><div><code>{web.node_env ?? "—"}</code></div></>}
+              {web && <><div>LLM Provider</div><div><code>{web.llm_provider ?? "—"}</code></div></>}
+              {api && <><div>API Version</div><div><code>{api.assembly_version ?? "—"}</code></div></>}
+              {(web?.git_sha || api?.git_sha) && (
+                <><div>Build</div><div><code>{shortSha(web?.git_sha || api?.git_sha)}</code></div></>
+              )}
             </div>
           ) : <div>Loading…</div>}
         </div>
 
         <div className={`${styles.section} ${styles.sectionLinks}`}>
-          <div className={styles.sectionTitle}>Links</div>
+          <div className={styles.sectionTitle}>Health</div>
           <div className={styles.linksContainer}>
-            <a href="/api/health" className={styles.link}>Web health</a>
-            <a href="/api/fh/health" className={styles.link}>API health</a>
-            <a href="/api/version" className={styles.link}>Web version</a>
-            <a href="/api/fh/version" className={styles.link}>API version</a>
+            <a href="/api/health" className={styles.link} target="_blank" rel="noopener">Web</a>
+            <a href="/api/fh/health" className={styles.link} target="_blank" rel="noopener">API</a>
           </div>
         </div>
       </div>

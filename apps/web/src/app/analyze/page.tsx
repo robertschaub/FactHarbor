@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
 import { readDefaultPipelineVariant } from "@/lib/pipeline-variant";
+import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -134,6 +135,7 @@ export default function AnalyzePage() {
 
   return (
     <div className={styles.container}>
+      <SystemHealthBanner />
       <h1 className={styles.title}>FactHarbor Analysis</h1>
       <p className={styles.subtitle}>
         Enter a claim, question, article text, or URL to analyze
