@@ -13,13 +13,13 @@ Two apps + one tool:
 
 1. Client/UI -> API creates a job via `JobService` (`apps/api/Services/JobService.cs`).
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
-3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimBoundary pipeline), writes progress/results back to API.
+3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
 
-> **Migration complete (2026-02-16):** The ClaimBoundary pipeline (`claimboundary-pipeline.ts`) has replaced the Orchestrated pipeline (`orchestrated.ts`). AnalysisContext types removed. All new code uses ClaimBoundary. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+> **Migration complete (2026-02-16):** The ClaimAssessmentBoundary pipeline (`claimboundary-pipeline.ts`) has replaced the Orchestrated pipeline (`orchestrated.ts`). AnalysisContext types removed. All new code uses ClaimBoundary. See `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 
-- **ClaimBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame.
+- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame.
 - **AtomicClaim** = Single verifiable assertion extracted from user input. The analytical unit.
 - **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
 - **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.

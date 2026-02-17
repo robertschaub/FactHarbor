@@ -1,4 +1,4 @@
-# ClaimBoundary Pipeline — Architecture & Design
+# ClaimAssessmentBoundary Pipeline — Architecture & Design
 
 **Date:** 2026-02-15 (reviewed 2026-02-16, revised 2026-02-16)
 **Author:** Claude Opus 4.6 (Lead Architect)
@@ -107,11 +107,11 @@
 
 This document proposes a **complete rework** of the FactHarbor orchestrated analysis pipeline. The central change is replacing the **AnalysisContext** concept (pre-created analytical frames that drive research and verdicts) with **ClaimBoundary** (evidence-grouping boundaries that emerge organically from gathered EvidenceScopes).
 
-**Core thesis:** The current pipeline creates analytical contexts *before* evidence is gathered, then struggles to maintain them (context explosion, cap enforcement bugs, refinement instability). The new design inverts this: **claims extracted from the input article drive all research**, and **ClaimBoundaries are created *after* research** by clustering compatible EvidenceScopes. This eliminates the context lifecycle management that has been the source of persistent quality issues through Phases 1–9.
+**Core thesis:** The current pipeline creates analytical contexts *before* evidence is gathered, then struggles to maintain them (context explosion, cap enforcement bugs, refinement instability). The new design inverts this: **claims extracted from the input article drive all research**, and **ClaimAssessmentBoundaries are created *after* research** by clustering compatible EvidenceScopes. This eliminates the context lifecycle management that has been the source of persistent quality issues through Phases 1–9.
 
 **Key changes:**
 - **Drop AnalysisContext** as a pipeline concept (UI: renamed to ClaimBoundary)
-- **ClaimBoundaries emerge from evidence**, not from input analysis
+- **ClaimAssessmentBoundaries emerge from evidence**, not from input analysis
 - **Atomic claims are the sole research driver** — no context-driven queries
 - **Aggressive centrality filtering** — only central claims from the input article
 - **Recommend removing Key Factors** as a pipeline stage (see §10)
@@ -165,7 +165,7 @@ Trustworthy evidence documentation states its scope (methodology, temporal bound
 | 1 | **Claims drive research, nothing else** | Removes context bias from search queries |
 | 2 | **Only central claims survive extraction** | Prevents research budget waste on peripheral claims |
 | 3 | **Boundaries emerge from evidence** | Eliminates speculative context creation |
-| 4 | **EvidenceScopes cluster into ClaimBoundaries** | Compatible scopes merge; contradictory scopes separate |
+| 4 | **EvidenceScopes cluster into ClaimAssessmentBoundaries** | Compatible scopes merge; contradictory scopes separate |
 | 5 | **One verdict per claim** | Simpler than per-claim-per-context; boundaries provide narrative nuance |
 | 6 | **LLM intelligence for all semantic decisions** | Per AGENTS.md mandate — no deterministic text analysis |
 | 7 | **Generic by design** | No domain-specific logic — works for legal, scientific, regulatory, any topic |
@@ -178,7 +178,7 @@ Trustworthy evidence documentation states its scope (methodology, temporal bound
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────┐
-│                             ClaimBoundary Pipeline                                          │
+│                             ClaimAssessmentBoundary Pipeline                                          │
 │                                                                                            │
 │  ┌──────────────┐   ┌──────────┐   ┌───────────┐   ┌──────────────┐   ┌─────────────┐   │
 │  │ EXTRACT      │──▶│ RESEARCH │──▶│ CLUSTER   │──▶│ VERDICT      │──▶│  AGGREGATE   │   │
@@ -399,9 +399,9 @@ flowchart TD
 
     subgraph "Stage 3: CLUSTER BOUNDARIES"
         EV --> SC2["Collect All EvidenceScopes"]
-        SC2 --> LLM2["[LLM] Cluster Scopes<br>into ClaimBoundaries<br>(Sonnet tier)"]
-        LLM2 --> ASN["Assign Evidence<br>to ClaimBoundaries"]
-        ASN --> CB["ClaimBoundaries<br>+ assigned evidence"]
+        SC2 --> LLM2["[LLM] Cluster Scopes<br>into ClaimAssessmentBoundaries<br>(Sonnet tier)"]
+        LLM2 --> ASN["Assign Evidence<br>to ClaimAssessmentBoundaries"]
+        ASN --> CB["ClaimAssessmentBoundaries<br>+ assigned evidence"]
     end
 
     subgraph "Stage 4: VERDICT (LLM Debate — verdict-stage.ts)"
@@ -471,7 +471,7 @@ sequenceDiagram
     participant UI as Client/UI
     participant API as API (ASP.NET)
     participant Runner as Runner (Next.js)
-    participant Pipeline as ClaimBoundary Pipeline
+    participant Pipeline as ClaimAssessmentBoundary Pipeline
     participant LLM as LLM Service
     participant Search as Web Search
     participant SR as Source Reliability
@@ -518,7 +518,7 @@ sequenceDiagram
 
     Note over Pipeline: Stage 3: CLUSTER BOUNDARIES
     Pipeline->>LLM: [LLM] clusterEvidenceScopes(allScopes, allEvidence) — Sonnet
-    LLM-->>Pipeline: ClaimBoundary[] + assignments
+    LLM-->>Pipeline: ClaimAssessmentBoundary[] + assignments
     Pipeline->>Pipeline: assignEvidenceToBoundaries()
 
     Note over Pipeline: Stage 4: VERDICT (LLM Debate — verdict-stage.ts)
@@ -882,7 +882,7 @@ The LLM populates `additionalDimensions` when domain-specific scope data enriche
 
 ### 8.3 Stage 3: CLUSTER BOUNDARIES
 
-**Purpose:** Organize gathered evidence into coherent ClaimBoundaries by clustering compatible EvidenceScopes.
+**Purpose:** Organize gathered evidence into coherent ClaimAssessmentBoundaries by clustering compatible EvidenceScopes.
 
 **Input:** `EvidenceItem[]` (each with `EvidenceScope`), `AtomicClaim[]`
 
@@ -896,7 +896,7 @@ The LLM populates `additionalDimensions` when domain-specific scope data enriche
 2. **LLM clustering** — single Sonnet-tier call that:
    - Groups EvidenceScopes with compatible methodology, boundaries, geography, and temporal period
    - Separates scopes where evidence within them is contradictory due to different methodological assumptions
-   - Names each cluster as a ClaimBoundary with a human-readable label
+   - Names each cluster as a ClaimAssessmentBoundary with a human-readable label
    - Assigns each EvidenceItem to its ClaimBoundary
 3. **Coherence assessment** — for each boundary, compute `internalCoherence` (0–1) measuring how consistent the evidence within the boundary is
 4. **Post-clustering validation** (deterministic, addressing Observation O1):
@@ -904,7 +904,7 @@ The LLM populates `additionalDimensions` when domain-specific scope data enriche
    - Validate that every evidence item is assigned to exactly one boundary (no orphans, no duplicates)
    - Validate no duplicate boundary IDs
    - If validation fails (0 boundaries, malformed output, orphaned evidence): **fallback to single "General" boundary** containing all evidence
-   - If LLM returns more than `maxClaimBoundaries` (UCM, soft cap): merge the two most similar boundaries (using scope similarity from the clustering output) and repeat until under cap. This is a safety net, not the primary control — the congruence-focused prompt (§11) is the primary mechanism.
+   - If LLM returns more than `maxClaimAssessmentBoundaries` (UCM, soft cap): merge the two most similar boundaries (using scope similarity from the clustering output) and repeat until under cap. This is a safety net, not the primary control — the congruence-focused prompt (§11) is the primary mechanism.
 
 **Clustering criteria (LLM-evaluated):**
 
@@ -1220,7 +1220,7 @@ All thresholds are **UCM-configurable** in CalcConfig (mandatory per AGENTS.md):
 ```typescript
 function computeTriangulation(
   coverageMatrix: CoverageMatrix,
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   verdicts: ClaimVerdict[],
   claim: AtomicClaim
 ): TriangulationScore {
@@ -1481,7 +1481,7 @@ interface OverallAssessment {
   confidence: number;            // 0-100 weighted average
   verdictNarrative: VerdictNarrative; // D7: Structured narrative (replaces free-form string)
   hasMultipleBoundaries: boolean; // true when boundaries.length > 2 (§18 Q10: UI shows boundary breakdown only for 3+)
-  claimBoundaries: ClaimBoundary[];
+  claimBoundaries: ClaimAssessmentBoundary[];
   claimVerdicts: ClaimVerdict[];
   coverageMatrix: CoverageMatrix; // §22: Claims × boundaries evidence distribution
   qualityGates: QualityGates;
@@ -1597,7 +1597,7 @@ interface ResearchState {
   contradictionIterationsReserved: number; // From UCM config
   contradictionIterationsUsed: number;     // Contradiction iterations consumed
   contradictionSourcesFound: number;
-  claimBoundaries: ClaimBoundary[]; // Populated in Stage 3
+  claimBoundaries: ClaimAssessmentBoundary[]; // Populated in Stage 3
   llmCalls: number;
 }
 ```
@@ -1680,7 +1680,7 @@ This would be a **post-processing UI enhancement**, not a pipeline stage.
 
 ### 11.1 Core Concept: Scope Congruence
 
-**The clustering stage's primary function is congruence assessment** — determining whether two EvidenceScopes are measuring the same thing in a compatible way (congruent → merge into one ClaimBoundary) or measuring different things / the same thing in incompatible ways (non-congruent → separate ClaimBoundaries).
+**The clustering stage's primary function is congruence assessment** — determining whether two EvidenceScopes are measuring the same thing in a compatible way (congruent → merge into one ClaimBoundary) or measuring different things / the same thing in incompatible ways (non-congruent → separate ClaimAssessmentBoundaries).
 
 This is what transforms a flat evidence pool into structured analysis. Without it, evidence from WTW and TTW studies would be mixed together, leading to apparent contradictions that are actually methodological differences.
 
@@ -1698,7 +1698,7 @@ flowchart TD
     G --> I["Name each boundary<br>+ compute internalCoherence"]
     H --> I
     I --> J["Post-clustering validation<br>(§8.3 step 4)"]
-    J --> K["ClaimBoundaries ready"]
+    J --> K["ClaimAssessmentBoundaries ready"]
     D --> K
 ```
 
@@ -1713,7 +1713,7 @@ The clustering LLM call receives:
 
 > "For each pair of EvidenceScopes, assess congruence: Are these scopes measuring the same thing in a compatible way?
 >
-> **Congruent** = merge into one ClaimBoundary. **Non-congruent** = separate ClaimBoundaries.
+> **Congruent** = merge into one ClaimBoundary. **Non-congruent** = separate ClaimAssessmentBoundaries.
 >
 > Focus on whether merging would obscure a meaningful analytical distinction. The number of boundaries is not a goal — congruence accuracy is.
 >
@@ -1763,7 +1763,7 @@ These examples should be included in the clustering prompt to calibrate the LLM'
 |----------|----------|
 | All scopes congruent | Single boundary (valid — many topics have uniform methodology) |
 | All scopes non-congruent | N boundaries (valid but unusual — the prompt asks: "could any of these be merged?") |
-| 20+ unique scopes | LLM clusters by congruence; post-validation merges if >maxClaimBoundaries (safety cap) |
+| 20+ unique scopes | LLM clusters by congruence; post-validation merges if >maxClaimAssessmentBoundaries (safety cap) |
 | Single evidence item per scope | Cluster by methodology family similarity; avoid singleton boundaries (merge with closest) |
 | Scopes disagree but NOT because of methodology | **Merge** — the contradiction is factual, not methodological. The boundary should show internal disagreement via low `internalCoherence`. |
 | Evidence with `scopeQuality: "incomplete"` | Still clustered (using whatever scope data exists). Low-quality scopes are clustered by source type and temporal proximity as secondary signals. |
@@ -1879,7 +1879,7 @@ If semantic consistency checking is desired in the future, it must be routed thr
 
 | Parameter | Default | Type | Description |
 |-----------|---------|------|-------------|
-| `maxClaimBoundaries` | `6` | int | Safety cap on boundary count (post-validation merge trigger, not prompt target) |
+| `maxClaimAssessmentBoundaries` | `6` | int | Safety cap on boundary count (post-validation merge trigger, not prompt target) |
 | `boundaryCoherenceMinimum` | `0.3` | float | Minimum internalCoherence; below this, boundary is flagged |
 
 **Stage 4 — Verdict (§22 additions):**
@@ -2205,7 +2205,7 @@ git tag cb-phase2-cutover     # after route wiring, before cleanup
 - *Consensus: all 6 roles. Captain decision: v1.0 priority.*
 
 **Q2: Boundary count guidance** → **CLOSED — already resolved in §13.1**
-- `maxClaimBoundaries: 6` is a post-validation merge trigger, not a prompt target. Soft prompt guidance, no hard cap.
+- `maxClaimAssessmentBoundaries: 6` is a post-validation merge trigger, not a prompt target. Soft prompt guidance, no hard cap.
 - *Identified by Senior Architect + Code Reviewer as already decided.*
 
 **Q3: Claim–boundary verdicts** → **CLOSED — already resolved in §9**
@@ -2247,8 +2247,8 @@ git tag cb-phase2-cutover     # after route wiring, before cleanup
 
 ### 18.3 Product/UX — CLOSED
 
-**Q9: ClaimBoundary UI presentation** → **Inline boundary findings within claim verdicts**
-- NOT tabs (AnalysisContexts were mutually exclusive lenses — tabs made sense; ClaimBoundaries are methodology groups informing one verdict — inline makes sense).
+**Q9: ClaimAssessmentBoundary UI presentation** → **Inline boundary findings within claim verdicts**
+- NOT tabs (AnalysisContexts were mutually exclusive lenses — tabs made sense; ClaimAssessmentBoundaries are methodology groups informing one verdict — inline makes sense).
 - `BoundaryFinding` component with direction icons: ✓ supports, ✗ refutes, ⚖ mixed.
 - Show "Evidence by methodology" breakdown only when `boundaries.length > 2`.
 - **Hybrid tooltip display (Captain decision):** Compact inline metadata (evidence count + temporal range) in boundary finding rows for multi-boundary claims. Full scope details (source types, geographic scope, methodology description) on hover. Example:
@@ -2370,10 +2370,10 @@ VERDICT → 4 verdicts with boundary-specific findings
 | **AtomicClaim** | A single, verifiable factual assertion extracted from the input article. Only central claims survive the extraction filter. |
 | **ClaimBoundary** | A grouping of compatible EvidenceScopes that defines a coherent analytical lens. Created post-research by clustering, not pre-created. Replaces AnalysisContext in the UI. |
 | **EvidenceScope** | Per-evidence source methodology metadata. Core fields: `methodology` (required), `temporal` (required), `boundaries` (optional), `geographic` (optional). Extended by `additionalDimensions` (D4) for domain-specific scope data. Attached to each EvidenceItem. |
-| **EvidenceItem** | A piece of evidence extracted from a web source. Carries an EvidenceScope and is assigned to a ClaimBoundary during clustering. |
+| **EvidenceItem** | A piece of evidence extracted from a web source. Carries an EvidenceScope and is assigned to a ClaimAssessmentBoundary during clustering. |
 | **BoundaryFinding** | A per-boundary summary within a claim verdict, explaining what that boundary's evidence says about the claim. |
 | **Centrality** | How central a claim is to the article's thesis. Only "high" and "medium" centrality claims are retained. |
-| **Internal Coherence** | A 0–1 score measuring how consistent the evidence within a ClaimBoundary is. Low coherence suggests the boundary may need to be split. |
+| **Internal Coherence** | A 0–1 score measuring how consistent the evidence within a ClaimAssessmentBoundary is. Low coherence suggests the boundary may need to be split. |
 | **VerdictNarrative** | (D7) Structured narrative for the overall assessment. Contains headline, evidence base summary, key finding, boundary disagreements, and limitations. LLM-generated (Sonnet). Replaces free-form `narrative: string`. |
 
 ---
@@ -2648,7 +2648,7 @@ If new code creates an import cycle with existing modules:
 
 **Reviewer:** Claude Opus 4.6 (Senior Developer)
 **Date:** 2026-02-16
-**Document Reviewed:** ClaimBoundary Pipeline Architecture §1–18 + Appendices A-C
+**Document Reviewed:** ClaimAssessmentBoundary Pipeline Architecture §1–18 + Appendices A-C
 **Cross-checked:** Current codebase (`orchestrated.ts`, `types.ts`, `aggregation.ts`, `budgets.ts`, `config.ts`, `config-storage.ts`), `AGENTS.md`, Phase 9a validation results
 
 ---
@@ -2699,7 +2699,7 @@ Additionally, the `enrichContextsForReport()` function at `orchestrated.ts:3347`
 
 **Condition:** Add a **§15.3a API Contract Migration** section that specifies:
 1. Schema version bump (e.g., `3.0.0` for the new pipeline)
-2. During parallel operation: ClaimBoundary pipeline MUST produce a backward-compatible `resultJson` that maps `ClaimBoundary → analysisContexts` shape (rename `claimBoundaryId` → `contextId`, `ClaimBoundary` → `AnalysisContext` in the response)
+2. During parallel operation: ClaimAssessmentBoundary pipeline MUST produce a backward-compatible `resultJson` that maps `ClaimBoundary → analysisContexts` shape (rename `claimBoundaryId` → `contextId`, `ClaimBoundary` → `AnalysisContext` in the response)
 3. New fields (`claimBoundaries`, `boundaryFindings`) added alongside, not replacing
 4. Breaking change (drop `analysisContexts`) only after deprecation period
 
@@ -2721,13 +2721,13 @@ The worked example in Appendix A shows well-scoped claims. But the UNDERSTAND LL
 
 ### 19.5 Condition 4 — Hard Safety Cap on Boundaries (MEDIUM)
 
-**Finding:** §13.1 specifies `maxClaimBoundaries: 6` as **soft prompt guidance**. The rationale (§18.1 Q2) is that "boundaries don't drive research, so count is less critical." This is correct in principle — boundary explosion is less harmful than context explosion. However:
+**Finding:** §13.1 specifies `maxClaimAssessmentBoundaries: 6` as **soft prompt guidance**. The rationale (§18.1 Q2) is that "boundaries don't drive research, so count is less critical." This is correct in principle — boundary explosion is less harmful than context explosion. However:
 
 - The clustering LLM could still return 15+ boundaries in edge cases (many diverse sources)
 - Too many boundaries dilute the verdict narrative and make UI unreadable
 - **Lesson from Phase 9:** Soft guidance alone proved insufficient for context cap (the LLM ignored the SUPPLEMENTAL_CONTEXTS hint and returned 9 contexts)
 
-**Condition:** Add a **hard safety cap** alongside the soft prompt guidance. If the LLM returns more than `maxClaimBoundaries` boundaries, merge the most similar ones (using the same evidence-scope similarity the clustering LLM already computed). This is a 10-line safety net, not a complex enforcement mechanism — boundaries are already clustered, so further merging is trivial.
+**Condition:** Add a **hard safety cap** alongside the soft prompt guidance. If the LLM returns more than `maxClaimAssessmentBoundaries` boundaries, merge the most similar ones (using the same evidence-scope similarity the clustering LLM already computed). This is a 10-line safety net, not a complex enforcement mechanism — boundaries are already clustered, so further merging is trivial.
 
 ---
 
@@ -2871,7 +2871,7 @@ The proposal's value of 12 is actually an **increase** from the current 10, not 
 
 ### 20.4 Captain Input 4 — EvidenceScope Congruence Is the Critical Decision
 
-> "With ClaimBoundary such a cap will be less important. But what's important is deciding if a ClaimBoundary should aggregate multiple similar EvidenceScopes vs. creating different ClaimBoundaries — in other words deciding if multiple EvidenceScopes are congruent or not is crucial."
+> "With ClaimBoundary such a cap will be less important. But what's important is deciding if a ClaimAssessmentBoundary should aggregate multiple similar EvidenceScopes vs. creating different ClaimAssessmentBoundaries — in other words deciding if multiple EvidenceScopes are congruent or not is crucial."
 
 **Impact on review:** **Condition 4 (hard safety cap) is REFRAMED.** The Captain shifts focus from boundary count to **clustering quality**. The critical decision is not "how many boundaries" but "when do EvidenceScopes belong together vs. apart."
 
@@ -3021,7 +3021,7 @@ The risk is that preliminary search results could bias claim extraction toward t
 
 6. **§11.6 (Edge Cases):** Updated to reflect congruence framing. Added handling for `scopeQuality: "incomplete"` items.
 
-7. **§13.1 (UCM):** `maxClaimBoundaries` description changed from "soft guidance for max boundaries" to "safety cap on boundary count (post-validation merge trigger, not prompt target)."
+7. **§13.1 (UCM):** `maxClaimAssessmentBoundaries` description changed from "soft guidance for max boundaries" to "safety cap on boundary count (post-validation merge trigger, not prompt target)."
 
 **Design rationale:** The Captain correctly identified that boundary count is a secondary concern. With mandatory EvidenceScopes and congruence-focused clustering, the number of boundaries emerges naturally from the evidence structure. The safety cap (6) only fires as a post-validation fallback, not as a prompt target — this avoids the Phase 9 lesson where LLMs ignored count guidance.
 

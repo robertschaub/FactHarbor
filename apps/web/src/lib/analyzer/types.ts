@@ -208,7 +208,7 @@ export interface QualityGates {
  */
 
 // DELETED: AnalysisContext, ContextVerdict, EnrichedAnalysisContext (Phase 4 cleanup)
-// These types were part of the orchestrated pipeline, removed in ClaimBoundary migration.
+// These types were part of the orchestrated pipeline, removed in ClaimAssessmentBoundary migration.
 
 /**
  * EvidenceScope: Per-evidence source methodology metadata defined BY a source document
@@ -432,7 +432,7 @@ export interface EvidenceItem {
   sourceType?: SourceType;
   // CB pipeline: Which atomic claims this evidence relates to
   relevantClaimIds?: string[];
-  // CB pipeline: Which ClaimBoundary this evidence belongs to (assigned in Stage 3)
+  // CB pipeline: Which ClaimAssessmentBoundary this evidence belongs to (assigned in Stage 3)
   claimBoundaryId?: string;
   // CB pipeline §8.5.3: True if this evidence cites another source's underlying study
   isDerivative?: boolean;
@@ -698,7 +698,7 @@ export interface VerdictDirectionMismatch {
  * AtomicClaim: A single verifiable assertion extracted from the input article.
  * Only central claims (high/medium centrality) survive the extraction filter.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.1 Stage 1: EXTRACT CLAIMS
  */
 export interface AtomicClaim {
@@ -721,16 +721,16 @@ export interface AtomicClaim {
 }
 
 /**
- * ClaimBoundary: A group of compatible EvidenceScopes that define
+ * ClaimAssessmentBoundary: A group of compatible EvidenceScopes that define
  * a coherent analytical lens. Created AFTER research by clustering
  * EvidenceScopes — NOT pre-created.
  *
  * Replaces AnalysisContext in the UI (different name to avoid confusion).
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.3 Stage 3: CLUSTER BOUNDARIES
  */
-export interface ClaimBoundary {
+export interface ClaimAssessmentBoundary {
   id: string;                    // "CB_01", "CB_02", ...
   name: string;                  // Human-readable: "Well-to-Wheel Analyses"
   shortName: string;             // Short label: "WTW"
@@ -753,7 +753,7 @@ export interface ClaimBoundary {
  * Provides nuance when different methodological boundaries yield
  * different conclusions about the same claim.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.4 Stage 4: VERDICT
  */
 export interface BoundaryFinding {
@@ -766,12 +766,12 @@ export interface BoundaryFinding {
 }
 
 /**
- * CBClaimVerdict: Verdict for a single claim in the ClaimBoundary pipeline.
+ * CBClaimVerdict: Verdict for a single claim in the ClaimAssessmentBoundary pipeline.
  * One per claim, not per-boundary. Boundary-specific nuance in boundaryFindings[].
  *
  * Named CBClaimVerdict to avoid conflict with existing ClaimVerdict type.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.4 Stage 4: VERDICT
  */
 export interface CBClaimVerdict {
@@ -795,7 +795,7 @@ export interface CBClaimVerdict {
  * ConsistencyResult: Output of self-consistency check (§8.4 Step 2).
  * Measures verdict stability across multiple LLM runs with temperature > 0.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface ConsistencyResult {
   claimId: string;
@@ -809,7 +809,7 @@ export interface ConsistencyResult {
 /**
  * ChallengeDocument: Output of adversarial challenge (§8.4 Step 3).
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface ChallengeDocument {
   challenges: Array<{
@@ -821,7 +821,7 @@ export interface ChallengeDocument {
 /**
  * ChallengePoint: A single adversarial challenge against a verdict.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface ChallengePoint {
   type: "assumption" | "missing_evidence" | "methodology_weakness" | "independence_concern";
@@ -833,7 +833,7 @@ export interface ChallengePoint {
 /**
  * ChallengeResponse: How a challenge point was addressed in reconciliation (§8.4 Step 4).
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface ChallengeResponse {
   challengeType: ChallengePoint["type"];
@@ -844,7 +844,7 @@ export interface ChallengeResponse {
 /**
  * TriangulationScore: Cross-boundary agreement assessment (§8.5.2).
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface TriangulationScore {
   boundaryCount: number;         // Number of boundaries with evidence for this claim
@@ -858,7 +858,7 @@ export interface TriangulationScore {
  * CoverageMatrix: Claims × boundaries evidence distribution (§8.5.1).
  * Computed after Stage 3, used by triangulation, sufficiency check, and structural validation.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface CoverageMatrix {
   claims: string[];              // Claim IDs (rows)
@@ -872,7 +872,7 @@ export interface CoverageMatrix {
  * VerdictNarrative: Structured narrative for the overall assessment.
  * LLM-generated (Sonnet, 1 call) after weighted aggregation.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.5.6
  */
 export interface VerdictNarrative {
@@ -884,10 +884,10 @@ export interface VerdictNarrative {
 }
 
 /**
- * CBClaimUnderstanding: Output of Stage 1 in the ClaimBoundary pipeline.
+ * CBClaimUnderstanding: Output of Stage 1 in the ClaimAssessmentBoundary pipeline.
  * Simplified from current ClaimUnderstanding — no analysisContexts, no keyFactors.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.1 Stage 1: EXTRACT CLAIMS
  */
 export interface CBClaimUnderstanding {
@@ -914,7 +914,7 @@ export interface CBClaimUnderstanding {
 /**
  * CBResearchState: Accumulating state through CB pipeline analysis.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §9.1
  */
 export interface CBResearchState {
@@ -930,14 +930,14 @@ export interface CBResearchState {
   contradictionIterationsReserved: number;
   contradictionIterationsUsed: number;
   contradictionSourcesFound: number;
-  claimBoundaries: ClaimBoundary[]; // Populated in Stage 3
+  claimBoundaries: ClaimAssessmentBoundary[]; // Populated in Stage 3
   llmCalls: number;
 }
 
 /**
- * OverallAssessment: Final aggregated result of the ClaimBoundary pipeline.
+ * OverallAssessment: Final aggregated result of the ClaimAssessmentBoundary pipeline.
  *
- * @since ClaimBoundary pipeline v1
+ * @since ClaimAssessmentBoundary pipeline v1
  * @see §8.5 Stage 5: AGGREGATE
  */
 export interface OverallAssessment {
@@ -946,7 +946,7 @@ export interface OverallAssessment {
   confidence: number;            // 0-100 weighted average
   verdictNarrative: VerdictNarrative;
   hasMultipleBoundaries: boolean;
-  claimBoundaries: ClaimBoundary[];
+  claimBoundaries: ClaimAssessmentBoundary[];
   claimVerdicts: CBClaimVerdict[];
   coverageMatrix: CoverageMatrix;
   qualityGates: QualityGates;

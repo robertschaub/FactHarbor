@@ -28,6 +28,8 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
+Continue with the next stage according to the prompt for the next stage in Docs\WIP\CB_Implementation_Prompts.md
+---
 See all jobs submitted today, analyze them one by one, look into every single issue. Analyze systematically, find patterns and search for systematic problems and architecture and design problems. Analyze what changes tid work an what did not, draw according conclusions. We have tried for a long time to improve the analysis - but failed. 
 The report quality remains low, we cannot continue like this! 
 We need to re-think concepts and design and architecture of the analysis pipeline. 

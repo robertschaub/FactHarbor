@@ -1,4 +1,4 @@
-# ClaimBoundary Pipeline — Implementation Prompts (Phase 5)
+# ClaimAssessmentBoundary Pipeline — Implementation Prompts (Phase 5)
 
 **Purpose:** Ready-to-paste prompts for implementing the 5 pipeline stages.
 
@@ -12,7 +12,7 @@
 
 **Role:** As Senior Developer
 **Prerequisite Reading:**
-- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.1 (Stage 1 spec)
+- `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` §8.1 (Stage 1 spec)
 - `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5a checklist
 - `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (current skeleton)
 - `apps/web/prompts/claimboundary.prompt.md` (CLAIM_EXTRACTION_PASS1, CLAIM_EXTRACTION_PASS2)
@@ -124,7 +124,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Role:** As Senior Developer
 **Prerequisite Reading:**
-- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.2 (Stage 2 spec)
+- `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` §8.2 (Stage 2 spec)
 - `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5b checklist
 - `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Stage 1 now implemented)
 - Existing evidence extraction in `monolithic-dynamic.ts` (reference for patterns, lines 300-450)
@@ -240,7 +240,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Role:** As Senior Developer or As LLM Expert
 **Prerequisite Reading:**
-- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.3 (Stage 3 spec) + §11.5 (congruence examples)
+- `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` §8.3 (Stage 3 spec) + §11.5 (congruence examples)
 - `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5c checklist
 - `apps/web/prompts/claimboundary.prompt.md` BOUNDARY_CLUSTERING section
 - `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Stages 1-2 now implemented)
@@ -361,7 +361,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Role:** As Senior Developer or As LLM Expert
 **Prerequisite Reading:**
-- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.4 (Stage 4 spec)
+- `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` §8.4 (Stage 4 spec)
 - `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5d checklist
 - `apps/web/src/lib/analyzer/verdict-stage.ts` (already implemented, needs LLM glue)
 - `apps/web/src/lib/analyzer/monolithic-dynamic.ts` lines 190-250 (LLM call pattern reference)
@@ -504,7 +504,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 
 **Role:** As Senior Developer
 **Prerequisite Reading:**
-- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.5 (Stage 5 spec)
+- `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` §8.5 (Stage 5 spec)
 - `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5e checklist
 - `apps/web/src/lib/analyzer/aggregation.ts` (existing functions to reuse)
 - `apps/web/prompts/claimboundary.prompt.md` VERDICT_NARRATIVE section
@@ -733,7 +733,7 @@ Create an integration test file `apps/web/test/integration/claimboundary-integra
 import { describe, test, expect } from "vitest";
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 
-describe("ClaimBoundary Pipeline - Integration Tests", () => {
+describe("ClaimAssessmentBoundary Pipeline - Integration Tests", () => {
   test.skip("simple input: Eiffel Tower in Paris", async () => {
     const result = await runClaimBoundaryAnalysis({
       inputType: "text",
@@ -800,7 +800,7 @@ Update all status, governance, and xWiki documentation to reflect ClaimBoundary 
 
 1. **Status Documents (Docs/STATUS/):**
    - Update `Current_Status.md`:
-     - Add "ClaimBoundary Pipeline v1.0" to "Recent Changes" section
+     - Add "ClaimAssessmentBoundary Pipeline v1.0" to "Recent Changes" section
      - Update pipeline status from "in development" to "production-ready"
      - Update version to v2.11.0
    - Update `KNOWN_ISSUES.md`:
@@ -811,7 +811,7 @@ Update all status, governance, and xWiki documentation to reflect ClaimBoundary 
      - Add deferred items: Gate 1 retry loop (§8.1.5), CLAIM_GROUPING (§18 Q1), advanced triangulation (§8.5.2), derivative detection (§8.5.3)
 
 2. **xWiki Pages:**
-   - Update `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`:
+   - Update `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md`:
      - Add implementation status section at top: "**Status:** IMPLEMENTED (v2.11.0, 2026-02-17)"
      - Note which items are deferred to v1.1 (refer to Phase 5 "Deferred Items")
    - Check if these xWiki pages need updates (read them first):
@@ -884,7 +884,7 @@ Create comprehensive test suite for ClaimBoundary pipeline: neutrality, performa
    import { describe, test, expect } from "vitest";
    import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 
-   describe("ClaimBoundary Pipeline - Input Neutrality Tests", () => {
+   describe("ClaimAssessmentBoundary Pipeline - Input Neutrality Tests", () => {
      const neutralityPairs = [
        {
          name: "fairness statement vs question",
@@ -941,7 +941,7 @@ Create comprehensive test suite for ClaimBoundary pipeline: neutrality, performa
    import { describe, test, expect } from "vitest";
    import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 
-   describe("ClaimBoundary Pipeline - Performance Benchmarks", () => {
+   describe("ClaimAssessmentBoundary Pipeline - Performance Benchmarks", () => {
      test.skip("simple input (1 claim): <60s, <$0.30", async () => {
        const start = Date.now();
        const result = await runClaimBoundaryAnalysis({
@@ -981,7 +981,7 @@ Create comprehensive test suite for ClaimBoundary pipeline: neutrality, performa
    import { describe, test, expect } from "vitest";
    import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 
-   describe("ClaimBoundary Pipeline - Adversarial Tests", () => {
+   describe("ClaimAssessmentBoundary Pipeline - Adversarial Tests", () => {
      test.skip("opinion + fact mix: Gate 1 should filter opinion", async () => {
        const result = await runClaimBoundaryAnalysis({
          inputType: "text",
@@ -1148,7 +1148,7 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 **Role:** As Senior Developer (UI/Frontend focus)
 **Prerequisite Reading:**
 - `Docs/WIP/CB_Implementation_Plan_2026-02-17.md` Phase 5k checklist
-- `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §16 (UI considerations)
+- `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` §16 (UI considerations)
 - `apps/web/src/app/jobs/[id]/page.tsx` (current results page)
 - `apps/web/src/app/jobs/[id]/components/BoundaryFindings.tsx` (Phase 3 component)
 - `apps/web/src/app/admin/page.tsx` (admin UI entry point)
@@ -1405,8 +1405,8 @@ Update `ClaimCard.tsx` (or wherever claims are displayed):
 
 **Diagram Updates:**
 
-1. **Create new diagram:** "ClaimBoundary Pipeline Detail"
-   - Location: `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/ClaimBoundary Pipeline Detail/WebHome.xwiki`
+1. **Create new diagram:** "ClaimAssessmentBoundary Pipeline Detail"
+   - Location: `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/ClaimAssessmentBoundary Pipeline Detail/WebHome.xwiki`
    - Content: Mermaid flowchart showing 5 stages:
      ```
      Stage 1: Extract Claims
@@ -1431,7 +1431,7 @@ Update `ClaimCard.tsx` (or wherever claims are displayed):
    - Update claimboundary-pipeline.ts box (remove [NEW] tag)
 
 4. **Mark obsolete:** "Orchestrated Pipeline Detail"
-   - Add warning box at top: "⚠️ **OBSOLETE:** This pipeline was removed in v2.10.x. See ClaimBoundary Pipeline Detail for current architecture."
+   - Add warning box at top: "⚠️ **OBSOLETE:** This pipeline was removed in v2.10.x. See ClaimAssessmentBoundary Pipeline Detail for current architecture."
 
 **Commit Message Format:**
 ```

@@ -1,7 +1,7 @@
 /**
  * ClaimBoundary Pipeline — Unit Tests
  *
- * Tests for the ClaimBoundary pipeline skeleton and supporting functions.
+ * Tests for the ClaimAssessmentBoundary pipeline skeleton and supporting functions.
  * All fixtures use CB types only (AtomicClaim, ClaimBoundary, BoundaryFinding, etc.)
  * per §22.3.2 confusion prevention rules.
  *
@@ -91,7 +91,7 @@ function createAtomicClaim(overrides: Partial<AtomicClaim> = {}): AtomicClaim {
   };
 }
 
-function createClaimBoundary(overrides: Partial<ClaimBoundary> = {}): ClaimBoundary {
+function createClaimBoundary(overrides: Partial<ClaimBoundary> = {}): ClaimAssessmentBoundary {
   return {
     id: "CB_01",
     name: "Standard Analysis Boundary",
@@ -1591,7 +1591,7 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
       createEvidenceItem({ id: "EV_02", evidenceScope: scopeB }),
     ];
 
-    const boundaries: ClaimBoundary[] = [
+    const boundaries: ClaimAssessmentBoundary[] = [
       { id: "CB_01", name: "WTW", shortName: "WTW", description: "Well-to-Wheel", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 0 },
       { id: "CB_02", name: "TTW", shortName: "TTW", description: "Tank-to-Wheel", constituentScopes: [scopeB], internalCoherence: 0.85, evidenceCount: 0 },
     ];
@@ -1615,7 +1615,7 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
       createEvidenceItem({ id: "EV_01", evidenceScope: scopeUnmatched }),
     ];
 
-    const boundaries: ClaimBoundary[] = [
+    const boundaries: ClaimAssessmentBoundary[] = [
       { id: "CB_GENERAL", name: "General", shortName: "Gen", description: "Fallback", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
     ];
 
@@ -1629,16 +1629,16 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
 describe("Stage 3: boundaryJaccardSimilarity", () => {
   it("should return 1.0 for identical scope sets", () => {
     const scope: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
-    const a: ClaimBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scope], internalCoherence: 0.9, evidenceCount: 1 };
-    const b: ClaimBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scope], internalCoherence: 0.9, evidenceCount: 1 };
+    const a: ClaimAssessmentBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scope], internalCoherence: 0.9, evidenceCount: 1 };
+    const b: ClaimAssessmentBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scope], internalCoherence: 0.9, evidenceCount: 1 };
     expect(boundaryJaccardSimilarity(a, b)).toBe(1);
   });
 
   it("should return 0 for completely disjoint scope sets", () => {
     const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
     const scopeB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
-    const a: ClaimBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 1 };
-    const b: ClaimBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scopeB], internalCoherence: 0.9, evidenceCount: 1 };
+    const a: ClaimAssessmentBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 1 };
+    const b: ClaimAssessmentBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scopeB], internalCoherence: 0.9, evidenceCount: 1 };
     expect(boundaryJaccardSimilarity(a, b)).toBe(0);
   });
 
@@ -1646,8 +1646,8 @@ describe("Stage 3: boundaryJaccardSimilarity", () => {
     const shared: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
     const uniqueA: EvidenceScope = { name: "LCA", methodology: "EU RED II", temporal: "2020" };
     const uniqueB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
-    const a: ClaimBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [shared, uniqueA], internalCoherence: 0.9, evidenceCount: 2 };
-    const b: ClaimBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [shared, uniqueB], internalCoherence: 0.9, evidenceCount: 2 };
+    const a: ClaimAssessmentBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [shared, uniqueA], internalCoherence: 0.9, evidenceCount: 2 };
+    const b: ClaimAssessmentBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [shared, uniqueB], internalCoherence: 0.9, evidenceCount: 2 };
     // Jaccard: 1 / (2 + 2 - 1) = 1/3
     expect(boundaryJaccardSimilarity(a, b)).toBeCloseTo(1 / 3, 5);
   });
@@ -1659,7 +1659,7 @@ describe("Stage 3: mergeClosestBoundaries", () => {
     const scopeB: EvidenceScope = { name: "LCA", methodology: "EU RED II", temporal: "2020" };
     const scopeC: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
 
-    const boundaries: ClaimBoundary[] = [
+    const boundaries: ClaimAssessmentBoundary[] = [
       { id: "CB_01", name: "WTW", shortName: "WTW", description: "Well-to-Wheel", constituentScopes: [shared], internalCoherence: 0.9, evidenceCount: 3 },
       { id: "CB_02", name: "LCA", shortName: "LCA", description: "Lifecycle", constituentScopes: [shared, scopeB], internalCoherence: 0.85, evidenceCount: 2 },
       { id: "CB_03", name: "TTW", shortName: "TTW", description: "Tank-to-Wheel", constituentScopes: [scopeC], internalCoherence: 0.8, evidenceCount: 1 },
@@ -1676,7 +1676,7 @@ describe("Stage 3: mergeClosestBoundaries", () => {
     const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
     const scopeB: EvidenceScope = { name: "LCA", methodology: "EU RED II", temporal: "2020" };
 
-    const boundaries: ClaimBoundary[] = [
+    const boundaries: ClaimAssessmentBoundary[] = [
       { id: "CB_01", name: "A", shortName: "A", description: "A", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 2 },
       { id: "CB_02", name: "B", shortName: "B", description: "B", constituentScopes: [scopeB], internalCoherence: 0.7, evidenceCount: 1 },
     ];
@@ -2092,7 +2092,7 @@ describe("Stage 4: generateVerdicts (wiring)", () => {
 
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem()];
-    const boundaries: ClaimBoundary[] = [{
+    const boundaries: ClaimAssessmentBoundary[] = [{
       id: "CB_01", name: "Test", shortName: "T", description: "Test",
       constituentScopes: [], internalCoherence: 0.9, evidenceCount: 1,
     }];
@@ -2144,7 +2144,7 @@ describe("Stage 4: generateVerdicts (wiring)", () => {
 
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem()];
-    const boundaries: ClaimBoundary[] = [{
+    const boundaries: ClaimAssessmentBoundary[] = [{
       id: "CB_01", name: "Test", shortName: "T", description: "Test",
       constituentScopes: [], internalCoherence: 0.9, evidenceCount: 1,
     }];

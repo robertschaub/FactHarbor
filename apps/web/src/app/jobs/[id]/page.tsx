@@ -343,7 +343,7 @@ export default function JobPage() {
   const researchStats = result?.researchStats;
   const evidenceItems = result?.evidenceItems || [];
 
-  // ClaimBoundary schema detection (Phase 3)
+  // ClaimAssessmentBoundary schema detection (Phase 3)
   const isCBSchema = result?._schemaVersion === "3.0.0-cb" ||
                      result?.meta?.schemaVersion === "3.0.0-cb" ||
                      result?.meta?.pipeline === "claimboundary";
@@ -1640,7 +1640,7 @@ function ClaimCard({
         </div>
       )}
 
-      {/* ClaimBoundary pipeline: show boundary findings (Phase 3) */}
+      {/* ClaimAssessmentBoundary pipeline: show boundary findings (Phase 3) */}
       {claim.boundaryFindings && (
         <BoundaryFindings
           boundaryFindings={claim.boundaryFindings}

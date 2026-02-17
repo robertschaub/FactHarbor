@@ -2,7 +2,7 @@
  * BoundaryFindings Component
  *
  * Displays inline boundary findings within claim verdict cards for the
- * ClaimBoundary pipeline. Shows per-boundary evidence breakdowns when
+ * ClaimAssessmentBoundary pipeline. Shows per-boundary evidence breakdowns when
  * multiple methodologies yield different conclusions about the same claim.
  *
  * Features:
@@ -11,8 +11,8 @@
  * - Compact metadata with hover tooltips for full EvidenceScope details
  * - Suppressed when boundaries.length ≤ 2 per §18 Q10
  *
- * @since ClaimBoundary pipeline v1
- * @see Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §18 Q9/Q10
+ * @since ClaimAssessmentBoundary pipeline v1
+ * @see Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md §18 Q9/Q10
  */
 
 import React from "react";
@@ -27,7 +27,7 @@ type BoundaryFinding = {
   evidenceCount: number;
 };
 
-type ClaimBoundary = {
+type ClaimAssessmentBoundary = {
   id: string;
   name: string;
   shortName: string;
@@ -43,7 +43,7 @@ type ClaimBoundary = {
 
 type BoundaryFindingsProps = {
   boundaryFindings: BoundaryFinding[];
-  claimBoundaries: ClaimBoundary[];
+  claimBoundaries: ClaimAssessmentBoundary[];
   totalBoundaryCount: number;    // From result.claimBoundaries.length
 };
 
@@ -70,7 +70,7 @@ function getDirectionDisplay(direction: BoundaryFinding["evidenceDirection"]): {
 /**
  * Format temporal range for compact display.
  */
-function formatTemporalRange(boundary: ClaimBoundary): string {
+function formatTemporalRange(boundary: ClaimAssessmentBoundary): string {
   if (!boundary.temporal) return "";
   // Extract year range if possible (e.g., "2018-2024" from "Studies from 2018-2024")
   const match = boundary.temporal.match(/(\d{4})\s*[-–—]\s*(\d{4})/);

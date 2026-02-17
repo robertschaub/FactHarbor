@@ -15,7 +15,7 @@
  * - Full runVerdictStage orchestration
  *
  * @see apps/web/src/lib/analyzer/verdict-stage.ts
- * @see Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §8.4
+ * @see Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md §8.4
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -359,7 +359,7 @@ describe("adversarialChallenge (Step 3)", () => {
   it("should handle empty challenge response gracefully", async () => {
     const verdicts: CBClaimVerdict[] = [];
     const evidence: EvidenceItem[] = [];
-    const boundaries: ClaimBoundary[] = [];
+    const boundaries: ClaimAssessmentBoundary[] = [];
 
     const mockLLM = createMockLLM({ VERDICT_CHALLENGER: {} });
 

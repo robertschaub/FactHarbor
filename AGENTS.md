@@ -66,8 +66,8 @@ These rules apply specifically to the LLM prompts used in the analysis pipeline 
 
 | Term | Meaning | Variable names | NEVER call it |
 |------|---------|---------------|---------------|
-| **ClaimBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
-| **AtomicClaim** | Single verifiable assertion extracted from user input. The analytical unit in the ClaimBoundary pipeline. | `atomicClaim`, `atomicClaims` | "context", "fact" |
+| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
+| **AtomicClaim** | Single verifiable assertion extracted from user input. The analytical unit in the ClaimAssessmentBoundary pipeline. | `atomicClaim`, `atomicClaims` | "context", "fact" |
 | **EvidenceScope** | Per-evidence source metadata (methodology, temporal bounds) | `evidenceScope` | "context" |
 | **EvidenceItem** | Extracted evidence from a source (NOT a verified fact) | — | "fact" (in new code) |
 | **probativeValue** | Quality assessment of evidence (high/medium/low). Assigned by LLM, filtered by `evidence-filter.ts` | — | — |
@@ -116,9 +116,9 @@ User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port
 
 | File | Purpose |
 |------|---------|
-| `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` | **[NEW]** ClaimBoundary pipeline — replaces orchestrated.ts |
+| `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` | **[NEW]** ClaimAssessmentBoundary pipeline — replaces orchestrated.ts |
 | `apps/web/src/lib/analyzer/verdict-stage.ts` | **[NEW]** Verdict stage module (5-step debate pattern) |
-| `apps/web/src/lib/analyzer/orchestrated.ts` | **[BEING REPLACED]** Legacy pipeline (~13600 lines). Do not extend — being replaced by ClaimBoundary pipeline. |
+| `apps/web/src/lib/analyzer/orchestrated.ts` | **[BEING REPLACED]** Legacy pipeline (~13600 lines). Do not extend — being replaced by ClaimAssessmentBoundary pipeline. |
 | `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
 | `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting |
 | `apps/web/src/lib/analyzer/evidence-filter.ts` | Deterministic evidence quality filtering |
@@ -339,7 +339,7 @@ Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/we
 
 ## Current State (Pre-release, targeting v1.0)
 
-Pipeline variants: Orchestrated (default, being replaced), Monolithic Dynamic (fast alternative). Monolithic Canonical was removed in v2.10.x. **ClaimBoundary pipeline** is the approved replacement — see `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+Pipeline variants: Orchestrated (default, being replaced), Monolithic Dynamic (fast alternative). Monolithic Canonical was removed in v2.10.x. **ClaimAssessmentBoundary pipeline** is the approved replacement — see `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
 
 LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
 

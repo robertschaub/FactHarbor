@@ -1,10 +1,10 @@
-# ClaimBoundary Pipeline — Implementation Plan (Phase 5: Stage Implementation)
+# ClaimAssessmentBoundary Pipeline — Implementation Plan (Phase 5: Stage Implementation)
 
 **Purpose:** Complete implementation of the 5 ClaimBoundary pipeline stages to make the pipeline fully functional.
 
 **Context:** Migration phases (0-4) are complete. The pipeline skeleton exists with types, prompts, config, and verdict-stage module, but Stages 1-3 and 5 throw "not yet implemented" errors. Stage 4 verdict logic exists but needs production LLM wiring.
 
-**Reference:** `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` — the definitive architecture specification.
+**Reference:** `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` — the definitive architecture specification.
 
 ---
 
@@ -443,17 +443,70 @@ These can be restored if needed, but are not used by the CB pipeline.
 
 **Milestone:** Full pipeline functional, can run end-to-end analysis.
 
-### Week 2-3: Testing, Documentation, Cleanup
+### Week 2-3: Testing, Rename, Documentation, Cleanup
 6. **Phase 5f** (Integration test) — Code Reviewer — 1 session (optional)
-7. **Phase 5g** (Documentation updates) — Technical Writer — 1-2 sessions (REQUIRED)
-8. **Phase 5h** (Test coverage expansion) — Code Reviewer — 1 session (optional but recommended)
-9. **Phase 5i** (Final cleanup V-01 through V-09) — Lead Architect — 1 session (REQUIRED)
-10. **Phase 5j** (MD status verification) — Lead Architect — 0 sessions (documentation only)
-11. **Phase 5k** (UI adaptations + UCM config + diagrams) — Senior Developer (UI focus) — 2-3 sessions (REQUIRED)
+7. **Phase 5f2** (Terminology rename: ClaimBoundary → ClaimAssessmentBoundary) — Lead Architect — 1 session (REQUIRED) — **Must happen before Phase 5g to avoid double documentation work**
+8. **Phase 5g** (Documentation updates) — Technical Writer — 1-2 sessions (REQUIRED)
+9. **Phase 5h** (Test coverage expansion) — Code Reviewer — 1 session (optional but recommended)
+10. **Phase 5i** (Final cleanup V-01 through V-09) — Lead Architect — 1 session (REQUIRED)
+11. **Phase 5j** (MD status verification) — Lead Architect — 0 sessions (documentation only)
+12. **Phase 5k** (UI adaptations + UCM config + diagrams) — Senior Developer (UI focus) — 2-3 sessions (REQUIRED)
 
-**Final Milestone:** ClaimBoundary pipeline v1.0 production-ready with full UI support.
+**Final Milestone:** ClaimAssessmentBoundary pipeline v1.0 production-ready with full UI support.
 
-**Total Estimated Effort:** 11-17 agent sessions for core implementation (Phases 5a-5f), plus 5-8 sessions for polish/UI (Phases 5g-5k). Total: 16-25 sessions (35-55 hours) over 3-4 weeks.
+**Total Estimated Effort:** 11-17 agent sessions for core implementation (Phases 5a-5f), plus 6-9 sessions for polish/UI (Phases 5f2-5k). Total: 17-26 sessions (37-57 hours) over 3-4 weeks.
+
+---
+
+### Phase 5f2: Terminology Rename — ClaimBoundary → ClaimAssessmentBoundary
+
+**Owner:** Lead Architect
+**Timing:** **CRITICAL — Must occur BEFORE Phase 5g (Documentation)**
+
+**Rationale:**
+- Phase 5g will update xWiki pages, AGENTS.md, status docs, etc.
+- If we rename AFTER Phase 5g, we'd have to update all those docs twice
+- Renaming first means Phase 5g documents the **final** terminology from the start
+
+**Strategy:** Partial rename (types/docs/UI labels only, internal IDs unchanged)
+
+**What changes:**
+- ✅ TypeScript types: `ClaimBoundary` → `ClaimAssessmentBoundary`, `CBClaimBoundary` → `CBClaimAssessmentBoundary`
+- ✅ Variables: `claimBoundary` → `claimAssessmentBoundary` (or `assessmentBoundary` for brevity)
+- ✅ UI labels: "Claim Boundaries" → "Claim Assessment Boundaries"
+- ✅ Code comments and log messages
+- ✅ This plan document and prompts document
+
+**What stays unchanged (to avoid UCM/config migration):**
+- ❌ Prompt profile: `"claimboundary"`
+- ❌ File: `claimboundary.prompt.md`
+- ❌ Pipeline variant: `"claimboundary"`
+- ❌ Schema version: `"3.0.0-cb"`
+- ❌ Prompt section keys, config field names
+
+**Deliverables:**
+1. Execute rename checklist from `CB_Execution_State.md` §Post-5k Rename Checklist (now pre-5g)
+2. Update all TypeScript types and interfaces
+3. Update all implementation code variable names
+4. Update all test files
+5. Update UI components and labels
+6. Update architecture doc and this implementation plan
+7. Run full verification (build + tests)
+8. Single atomic commit: `refactor: rename ClaimBoundary → ClaimAssessmentBoundary (partial)`
+
+**Verification:**
+- [ ] `npm run build` — PASS
+- [ ] `npm test` — PASS
+- [ ] Grep verification: `ClaimBoundary` should only appear in internal IDs (function names, pipeline variant)
+- [ ] `ClaimAssessmentBoundary` appears in all user-facing types/docs
+
+**Addresses Codex cautions:**
+1. ✅ No AGENTS.md "scope" conflict (keeps "Boundary" terminology)
+2. ✅ Zero UCM/config blast radius (internal IDs unchanged)
+
+**Estimated effort:** 1 session (2-3 hours)
+
+**Note:** After this phase, **ALL subsequent phases (5g-5k) use ClaimAssessmentBoundary terminology.**
 
 ---
 
@@ -461,11 +514,14 @@ These can be restored if needed, but are not used by the CB pipeline.
 
 **Owner:** Technical Writer or Lead Architect
 
+**IMPORTANT:** This phase occurs AFTER Phase 5f2 (rename). Use **ClaimAssessmentBoundary** terminology throughout (not ClaimBoundary).
+
 **Deliverables:**
 1. Update all status/tracking documents
 2. Update xWiki pages to reflect implementation status
 3. Update governance docs (AGENTS.md, CLAUDE.md)
 4. Address V-03 through V-08 non-blocking items from final verification
+5. Add ClaimAssessmentBoundary to AGENTS.md terminology table
 
 **Documentation checklist:**
 
@@ -475,7 +531,7 @@ These can be restored if needed, but are not used by the CB pipeline.
 - [ ] **Backlog.md**: Move "Implement ClaimBoundary pipeline" to "Recently Completed", add any deferred items from Phase 5 (e.g., Gate 1 retry loop, CLAIM_GROUPING, derivative detection)
 
 **xWiki Pages (Docs/xwiki-pages/FactHarbor/):**
-- [ ] **ClaimBoundary_Pipeline_Architecture** (Docs/WIP/): Add implementation status section at top: "Status: IMPLEMENTED (v2.11.0, 2026-02-17)", note which items are deferred to v1.1
+- [ ] **ClaimAssessmentBoundary_Pipeline_Architecture** (Docs/WIP/): Add implementation status section at top: "Status: IMPLEMENTED (v2.11.0, 2026-02-17)", note which items are deferred to v1.1
 - [ ] **Testing Strategy** (Product Development/DevOps/Guidelines/): Add CB pipeline test coverage section (unit tests, integration tests, neutrality tests)
 - [ ] **Pipeline Variant Dispatch** (Product Development/Diagrams/): Update diagram to show CB as default (if not already done)
 - [ ] **System Architecture** (Product Development/Diagrams/): Update to remove orchestrated, show CB as primary
@@ -730,7 +786,7 @@ Current state: Job page shows summary + claims. Markdown report is downloadable 
 **Task:** Update xWiki diagrams and replace obsolete docs.
 
 - [ ] **Update xWiki diagrams** (in `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/`):
-  - `ClaimBoundary Pipeline Detail` (may need to create new diagram showing Stages 1-5)
+  - `ClaimAssessmentBoundary Pipeline Detail` (may need to create new diagram showing Stages 1-5)
   - `Pipeline Variant Dispatch` (ensure CB is default)
   - `System Architecture` (remove orchestrated, show CB)
   - `Quality Gates Flow` (update if CB quality gates differ from orchestrated)
@@ -739,7 +795,7 @@ Current state: Job page shows summary + claims. Markdown report is downloadable 
   - `Orchestrated Pipeline Detail` diagram → mark as "Obsolete (removed 2026-02-16)" or replace with CB diagram
   - Any other AC-related diagrams → mark obsolete or update
 - [ ] **Create new diagrams (optional):**
-  - ClaimBoundary Pipeline Flow (5 stages: Extract → Research → Cluster → Verdict → Aggregate)
+  - ClaimAssessmentBoundary Pipeline Flow (5 stages: Extract → Research → Cluster → Verdict → Aggregate)
   - Coverage Matrix visualization example
   - Verdict Stage 5-step debate flow (may already exist)
 

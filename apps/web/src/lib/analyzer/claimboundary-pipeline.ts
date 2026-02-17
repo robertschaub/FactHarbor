@@ -13,8 +13,8 @@
  *   Stage 5: AGGREGATE — Weighted aggregation with triangulation and narrative
  *
  * @module analyzer/claimboundary-pipeline
- * @since ClaimBoundary pipeline v1
- * @see Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md
+ * @since ClaimAssessmentBoundary pipeline v1
+ * @see Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md
  */
 
 import type {
@@ -23,7 +23,7 @@ import type {
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
-  ClaimBoundary,
+  ClaimAssessmentBoundary,
   CoverageMatrix,
   EvidenceItem,
   EvidenceScope,
@@ -149,7 +149,7 @@ export async function runClaimBoundaryAnalysis(
 
   // Wrap assessment in resultJson structure (no AnalysisContext references)
   const resultJson = {
-    _schemaVersion: "3.0.0-cb", // ClaimBoundary pipeline schema
+    _schemaVersion: "3.0.0-cb", // ClaimAssessmentBoundary pipeline schema
     meta: {
       schemaVersion: "3.0.0-cb",
       generatedUtc: new Date().toISOString(),
@@ -1513,7 +1513,7 @@ export interface UniqueScope {
  */
 export async function clusterBoundaries(
   state: CBResearchState
-): Promise<ClaimBoundary[]> {
+): Promise<ClaimAssessmentBoundary[]> {
   const [pipelineResult] = await Promise.all([
     loadPipelineConfig("default"),
   ]);
@@ -1535,7 +1535,7 @@ export async function clusterBoundaries(
   // ------------------------------------------------------------------
   // Step 2: LLM clustering (Sonnet tier)
   // ------------------------------------------------------------------
-  let boundaries: ClaimBoundary[];
+  let boundaries: ClaimAssessmentBoundary[];
   try {
     boundaries = await runLLMClustering(
       uniqueScopes,
@@ -1697,7 +1697,7 @@ export async function runLLMClustering(
   atomicClaims: AtomicClaim[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
-): Promise<ClaimBoundary[]> {
+): Promise<ClaimAssessmentBoundary[]> {
   const rendered = await loadAndRenderSection("claimboundary", "BOUNDARY_CLUSTERING", {
     currentDate,
     evidenceScopes: JSON.stringify(
@@ -1790,7 +1790,7 @@ export async function runLLMClustering(
 export function createFallbackBoundary(
   uniqueScopes: UniqueScope[],
   evidenceItems: EvidenceItem[],
-): ClaimBoundary {
+): ClaimAssessmentBoundary {
   return {
     id: "CB_GENERAL",
     name: "General Evidence",
@@ -1808,7 +1808,7 @@ export function createFallbackBoundary(
  */
 export function assignEvidenceToBoundaries(
   evidenceItems: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   uniqueScopes: UniqueScope[],
 ): void {
   // Build scope fingerprint → boundary ID mapping
@@ -1840,7 +1840,7 @@ export function assignEvidenceToBoundaries(
 /**
  * Compute Jaccard similarity between two boundaries based on scope fingerprints.
  */
-export function boundaryJaccardSimilarity(a: ClaimBoundary, b: ClaimBoundary): number {
+export function boundaryJaccardSimilarity(a: ClaimAssessmentBoundary, b: ClaimAssessmentBoundary): number {
   const setA = new Set(a.constituentScopes.map(scopeFingerprint));
   const setB = new Set(b.constituentScopes.map(scopeFingerprint));
 
@@ -1859,7 +1859,7 @@ export function boundaryJaccardSimilarity(a: ClaimBoundary, b: ClaimBoundary): n
  * Merge the two most similar boundaries (highest Jaccard similarity).
  * Returns new array with one fewer boundary.
  */
-export function mergeClosestBoundaries(boundaries: ClaimBoundary[]): ClaimBoundary[] {
+export function mergeClosestBoundaries(boundaries: ClaimAssessmentBoundary[]): ClaimAssessmentBoundary[] {
   if (boundaries.length <= 1) return boundaries;
 
   let bestI = 0;
@@ -1881,7 +1881,7 @@ export function mergeClosestBoundaries(boundaries: ClaimBoundary[]): ClaimBounda
   const b = boundaries[bestJ];
 
   // Merge b into a
-  const merged: ClaimBoundary = {
+  const merged: ClaimAssessmentBoundary = {
     id: a.id,
     name: `${a.name} + ${b.name}`,
     shortName: a.shortName,
@@ -1924,7 +1924,7 @@ export function mergeClosestBoundaries(boundaries: ClaimBoundary[]): ClaimBounda
  */
 export function buildCoverageMatrix(
   claims: AtomicClaim[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   evidence: EvidenceItem[]
 ): CoverageMatrix {
   const claimIds = claims.map(c => c.id);
@@ -1999,7 +1999,7 @@ export function buildCoverageMatrix(
 export async function generateVerdicts(
   claims: AtomicClaim[],
   evidence: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   llmCall?: LLMCallFn,
 ): Promise<CBClaimVerdict[]> {
@@ -2137,7 +2137,7 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
  */
 export async function aggregateAssessment(
   claimVerdicts: CBClaimVerdict[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   evidence: EvidenceItem[],
   coverageMatrix: CoverageMatrix,
   state: CBResearchState
@@ -2403,7 +2403,7 @@ export async function generateVerdictNarrative(
   verdict: string,
   confidence: number,
   claimVerdicts: CBClaimVerdict[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   evidence: EvidenceItem[],
   pipelineConfig: PipelineConfig,

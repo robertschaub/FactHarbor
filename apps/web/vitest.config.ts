@@ -17,6 +17,8 @@ export default defineConfig({
       "test/unit/lib/input-neutrality.test.ts",
       "test/unit/lib/analyzer/context-preservation.test.ts",
       "test/unit/lib/analyzer/adversarial-context-leak.test.ts",
+      // npm run test:cb-integration — Full CB pipeline with real LLM calls
+      "test/integration/claimboundary-integration.test.ts",
     ]
   },
   resolve: {

@@ -17,8 +17,8 @@
  * Prompts are UCM-managed (see §22.2 UCM Prompt Registry).
  *
  * @module analyzer/verdict-stage
- * @since ClaimBoundary pipeline v1
- * @see Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md §8.4
+ * @since ClaimAssessmentBoundary pipeline v1
+ * @see Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md §8.4
  */
 
 import type {
@@ -27,7 +27,7 @@ import type {
   CBClaimVerdict,
   ChallengeDocument,
   ChallengeResponse,
-  ClaimBoundary,
+  ClaimAssessmentBoundary,
   ClaimVerdict7Point,
   ConsistencyResult,
   CoverageMatrix,
@@ -124,7 +124,7 @@ export type LLMCallFn = (
 export async function runVerdictStage(
   claims: AtomicClaim[],
   evidence: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
@@ -180,7 +180,7 @@ export async function runVerdictStage(
 export async function advocateVerdict(
   claims: AtomicClaim[],
   evidence: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
@@ -249,7 +249,7 @@ function parseAdvocateVerdict(
 export async function selfConsistencyCheck(
   claims: AtomicClaim[],
   evidence: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   advocateVerdicts: CBClaimVerdict[],
   llmCall: LLMCallFn,
@@ -323,7 +323,7 @@ export async function selfConsistencyCheck(
 export async function adversarialChallenge(
   advocateVerdicts: CBClaimVerdict[],
   evidence: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   llmCall: LLMCallFn,
 ): Promise<ChallengeDocument> {
   const result = await llmCall("VERDICT_CHALLENGER", {
@@ -489,7 +489,7 @@ export async function validateVerdicts(
 export function runStructuralConsistencyCheck(
   verdicts: CBClaimVerdict[],
   evidence: EvidenceItem[],
-  boundaries: ClaimBoundary[],
+  boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): string[] {
