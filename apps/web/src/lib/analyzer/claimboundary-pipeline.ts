@@ -82,6 +82,9 @@ import {
 import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
 
+// Provider health — report failures so circuit breaker can trip
+import { recordProviderFailure } from "@/lib/provider-health";
+
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
@@ -1313,10 +1316,13 @@ export async function runResearchIteration(
         searchProvider: response.providersUsed.join(", "),
       });
 
-      // Capture search provider errors as warnings (429/quota exhaustion)
+      // Capture search provider errors as warnings AND report to circuit breaker
       if (response.errors && response.errors.length > 0) {
         for (const provErr of response.errors) {
-          // Deduplicate: only warn once per provider
+          // Report to circuit breaker so health banner can trip
+          recordProviderFailure("search", provErr.message, pipelineConfig.heuristicCircuitBreakerThreshold);
+
+          // Deduplicate warnings: only warn once per provider in result
           const alreadyWarned = state.warnings.some(
             (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
           );
@@ -1327,6 +1333,8 @@ export async function runResearchIteration(
               message: `Search provider "${provErr.provider}" failed: ${provErr.message}`,
               details: { provider: provErr.provider, status: provErr.status },
             });
+            // Emit to live events log so the user sees the error during the run
+            state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
           }
         }
       }

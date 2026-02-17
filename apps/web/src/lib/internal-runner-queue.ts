@@ -192,7 +192,7 @@ async function runJobBackground(jobId: string) {
         jobId,
         inputType,
         inputValue,
-        onEvent: async (m, p) => emit("info", m, p),
+        onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
       });
     } else if (pipelineVariant === "monolithic_dynamic") {
       try {
@@ -200,7 +200,7 @@ async function runJobBackground(jobId: string) {
           jobId,
           inputType,
           inputValue,
-          onEvent: async (m, p) => emit("info", m, p),
+          onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
         });
       } catch (monolithicError: any) {
         await emit("warn", `Monolithic dynamic failed, falling back to claimboundary: ${monolithicError?.message}`, 10);
@@ -210,7 +210,7 @@ async function runJobBackground(jobId: string) {
           jobId,
           inputType,
           inputValue,
-          onEvent: async (m, p) => emit("info", m, p),
+          onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
         });
       }
     } else {
@@ -219,7 +219,7 @@ async function runJobBackground(jobId: string) {
         jobId,
         inputType,
         inputValue,
-        onEvent: async (m, p) => emit("info", m, p),
+        onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
       });
     }
 
@@ -249,8 +249,14 @@ async function runJobBackground(jobId: string) {
           message: "Done",
         });
 
-        recordProviderSuccess("search");
-        recordProviderSuccess("llm");
+        // Only record provider success if the pipeline didn't report provider errors.
+        // Search 429/quota errors are caught gracefully inside the pipeline (job still "succeeds")
+        // but the circuit breaker must NOT be reset when search was actually broken.
+        const warnings: any[] = result?.resultJson?.analysisWarnings ?? [];
+        const hadSearchErrors = warnings.some((w: any) => w?.type === "search_provider_error");
+        const hadLlmErrors = warnings.some((w: any) => w?.type === "llm_provider_error");
+        if (!hadSearchErrors) recordProviderSuccess("search");
+        if (!hadLlmErrors) recordProviderSuccess("llm");
       } else {
         console.warn(`[Runner] Job ${jobId} is ${currentStatus}, not updating to SUCCEEDED (late completion after ${currentStatus})`);
       }
