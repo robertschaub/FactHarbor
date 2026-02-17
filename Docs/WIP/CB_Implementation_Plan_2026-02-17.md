@@ -286,9 +286,8 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Apply formula: `derivativeFactor = 1.0 - (derivativeRatio * (1.0 - derivativeMultiplier))`
   - Use in final weight calculation
 - [ ] Weighted average computation (§8.5.4)
-  - Reuse `getClaimWeight()` from aggregation.ts (centrality weights)
-  - Apply harm multipliers: use 4-level `harmPotentialMultipliers` from CalcConfig (not scalar)
-  - Apply triangulation factors
+  - Compute weight directly using CalcConfig multipliers: `centralityWeights` + `harmPotentialMultipliers` (4-level) + `confidenceFactor` + `triangulationFactor` + `derivativeFactor`
+  - **Note:** Do NOT use `aggregation.ts:getClaimWeight()` — it expects legacy ClaimVerdict fields (factualBasis, thesisRelevance) not present in CBClaimVerdict
   - Call `calculateWeightedVerdictAverage()` (existing function in aggregation.ts)
 - [ ] Confidence aggregation (§8.5.5)
   - Weighted average of claim confidences (same weights as verdicts)

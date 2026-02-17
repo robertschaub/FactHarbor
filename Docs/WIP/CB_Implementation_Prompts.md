@@ -536,22 +536,7 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
      }
      ```
 
-2. **Derivative Weight Reduction (§8.5.3)**
-
-   - For each claim, calculate `derivativeRatio`:
-     ```typescript
-     const derivativeCount = claim.supportingEvidence.filter(e =>
-       e.isDerivative === true && e.derivativeClaimUnverified !== true
-     ).length;
-     const derivativeRatio = derivativeCount / claim.supportingEvidence.length;
-     ```
-   - Apply formula (architecture §8.5.3):
-     ```typescript
-     const derivativeFactor = 1.0 - (derivativeRatio * (1.0 - calcConfig.aggregation.derivativeMultiplier));
-     ```
-   - Use `derivativeFactor` in final weight calculation (see step 3)
-
-3. **Weighted Average Computation (§8.5.4)**
+2. **Weighted Average Computation (§8.5.4)**
 
    ```typescript
    import { calculateWeightedVerdictAverage } from "./aggregation";
@@ -597,14 +582,14 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
    const weightedTruthPercentage = calculateWeightedVerdictAverage(weightsPerClaim);
    ```
 
-4. **Confidence Aggregation (§8.5.5)**
+3. **Confidence Aggregation (§8.5.5)**
 
    - Weighted average of claim confidences (same weights as verdicts)
    - **Note:** `verdict-stage.ts` already applied self-consistency spread multipliers to per-claim confidence — do NOT re-apply in Stage 5
    - Apply existing confidence calibration (reuse `confidence-calibration.ts`) for overall confidence only
    - For v1, **simple approach:** weighted average only (spread already applied per-claim)
 
-5. **VerdictNarrative Generation (§8.5.6, Sonnet call)**
+4. **VerdictNarrative Generation (§8.5.6, Sonnet call)**
 
    - Load UCM prompt section `VERDICT_NARRATIVE` from `claimboundary.prompt.md`
    - Input to LLM:
@@ -624,14 +609,14 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
      ```
    - Parse LLM output into `VerdictNarrative` object
 
-6. **Optional: CLAIM_GROUPING (§18 Q1)**
+5. **Optional: CLAIM_GROUPING (§18 Q1)**
 
    - **Defer to v1.1** — not blocking v1.0
    - If implemented: only call if `claimCount >= 4` AND UCM `ui.enableClaimGrouping` enabled
    - Haiku call with `CLAIM_GROUPING` prompt
    - Output: claim groups for UI display
 
-7. **Quality Gates Summary (§8.5.7)**
+6. **Quality Gates Summary (§8.5.7)**
 
    - Gate 1 stats: copy from `state.understanding.gate1Stats` (Stage 1 output)
    - Gate 4 stats: classify each claim's confidence as high/medium/low
@@ -640,7 +625,7 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
      - Low: `confidence < 40`
    - Populate `QualityGates` object
 
-8. **Report Assembly (§8.5.7)**
+7. **Report Assembly (§8.5.7)**
 
    Return `OverallAssessment`:
    ```typescript
@@ -664,7 +649,7 @@ Add 15-20 tests to `claimboundary-pipeline.test.ts`:
 1. Test triangulation scoring (3 supporting → strong agreement boost)
 2. Test derivative weight reduction (if implemented)
 3. Test weighted average calculation (compare to hand-calculated expected)
-4. Test confidence aggregation with spread multipliers
+4. Test confidence aggregation (verify spread multipliers are NOT re-applied in Stage 5)
 5. Test VerdictNarrative LLM call (mock to return fixture)
 6. Test quality gates population (Gate 1 + Gate 4 stats)
 7. Test report assembly (all fields populated correctly)

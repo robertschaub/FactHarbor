@@ -1258,17 +1258,23 @@ Where `derivativeRatio` = proportion of supporting evidence items marked `isDeri
 
 #### 8.5.4 Revised Aggregation Weight Formula
 
+**v1.0 formula:**
 ```
-weight = centrality × harm × (confidence/100) × contestation × triangulationFactor × derivativeFactor
+weight = centrality × harm × (confidence/100) × triangulationFactor × derivativeFactor
 ```
 
 Where:
 - `centrality`: high=3.0, medium=2.0
 - `harm` (D9 — 4-level): critical=1.5, high=1.2, medium=1.0, low=1.0 (UCM `harmPotentialMultipliers`)
 - `confidence`: from Gate 4 (0–100), adjusted by self-consistency spread
-- `contestation`: established counter-evidence → 0.5, disputed → 0.7, none → 1.0
 - `triangulationFactor`: from §8.5.2 (UCM-configured boosts/penalties)
 - `derivativeFactor`: from §8.5.3 (UCM `derivativeMultiplier`)
+
+**Contestation weighting deferred to v1.1:**
+- CBClaimVerdict (v1.0) has `isContested: boolean` but lacks the `factualBasis` field ("established" / "disputed" / "opinion") needed for 3-level contestationWeights mapping
+- Current `aggregation.ts:getClaimWeight()` expects factualBasis field, which is incompatible with CB types
+- v1.1 will either: (a) add `factualBasis` field to CBClaimVerdict, or (b) implement simple binary contestation penalty (e.g., `isContested ? 0.7 : 1.0`)
+- For v1.0, contestation factor = 1.0 (no penalty)
 
 #### 8.5.5 Weighted Average + Confidence
 
