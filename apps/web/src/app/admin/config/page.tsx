@@ -270,7 +270,7 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
 const DEFAULT_PIPELINE_CONFIG: PipelineConfig = SHARED_DEFAULT_PIPELINE_CONFIG;
 
 const DEFAULT_PROMPT_PROFILES = [
-  "orchestrated",
+  "claimboundary",
   "monolithic-dynamic",
   "source-reliability",
   "text-analysis-input",

@@ -17,6 +17,9 @@ type RunnerQueueState = {
   runningCount: number;
   queue: Array<{ jobId: string; enqueuedAt: number }>;
   runningJobIds: Set<string>;
+  isDraining: boolean;
+  drainRequested: boolean;
+  watchdogTimer: ReturnType<typeof setInterval> | null;
 };
 
 function getEnv(name: string): string | null {
@@ -27,7 +30,14 @@ function getEnv(name: string): string | null {
 function getRunnerQueueState(): RunnerQueueState {
   const g = globalThis as any;
   if (!g.__fhRunnerQueueState) {
-    g.__fhRunnerQueueState = { runningCount: 0, queue: [], runningJobIds: new Set<string>() } satisfies RunnerQueueState;
+    g.__fhRunnerQueueState = {
+      runningCount: 0,
+      queue: [],
+      runningJobIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+      watchdogTimer: null,
+    } satisfies RunnerQueueState;
   }
   const st = g.__fhRunnerQueueState as RunnerQueueState;
   if (!(st as any).runningJobIds || typeof (st as any).runningJobIds.has !== "function") {
@@ -38,6 +48,17 @@ function getRunnerQueueState(): RunnerQueueState {
   }
   if (typeof (st as any).runningCount !== "number") {
     (st as any).runningCount = 0;
+  }
+  if (typeof (st as any).isDraining !== "boolean") {
+    (st as any).isDraining = false;
+  }
+  if (typeof (st as any).drainRequested !== "boolean") {
+    (st as any).drainRequested = false;
+  }
+  const watchdog = (st as any).watchdogTimer;
+  const isIntervalLike = watchdog === null || typeof watchdog === "object";
+  if (!isIntervalLike) {
+    (st as any).watchdogTimer = null;
   }
   return st;
 }
@@ -57,6 +78,60 @@ function getMaxConcurrency(): number {
     1,
     Number.parseInt(process.env.FH_RUNNER_MAX_CONCURRENCY ?? "3", 10) || 3,
   );
+}
+
+/** Max slots for slow pipelines (claimboundary). Reserves capacity for fast jobs. */
+function getMaxSlowConcurrency(): number {
+  const maxTotal = getMaxConcurrency();
+  const raw = Number.parseInt(process.env.FH_RUNNER_MAX_SLOW_CONCURRENCY ?? "", 10);
+  if (Number.isFinite(raw) && raw >= 1) {
+    return Math.min(raw, maxTotal);
+  }
+  // Default: total - 1 (reserve at least 1 slot for fast jobs), min 1
+  return Math.max(1, maxTotal - 1);
+}
+
+function getMaxQueueWaitMs(): number {
+  const raw = Number.parseInt(process.env.FH_RUNNER_QUEUE_MAX_WAIT_MS ?? "", 10);
+  if (Number.isFinite(raw) && raw >= 60_000) {
+    return raw;
+  }
+  return 6 * 60 * 60 * 1000;
+}
+
+function getRunnerWatchdogIntervalMs(): number {
+  const raw = Number.parseInt(process.env.FH_RUNNER_WATCHDOG_INTERVAL_MS ?? "", 10);
+  if (Number.isFinite(raw) && raw >= 5_000) {
+    return raw;
+  }
+  return 30_000;
+}
+
+function parseApiUtcTimestampMs(value: unknown): number | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const hasTimezone = /(?:Z|[+\-]\d{2}:\d{2})$/i.test(value);
+  const normalized = hasTimezone ? value : `${value}Z`;
+  const parsed = Date.parse(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function ensureQueueWatchdogStarted(): void {
+  const qs = getRunnerQueueState();
+  if (qs.watchdogTimer) return;
+
+  const intervalMs = getRunnerWatchdogIntervalMs();
+  qs.watchdogTimer = setInterval(() => {
+    const state = getRunnerQueueState();
+    if (state.queue.length === 0 && state.runningJobIds.size === 0) {
+      return;
+    }
+    void drainRunnerQueue();
+  }, intervalMs);
+
+  const timer = qs.watchdogTimer as { unref?: () => void };
+  if (typeof timer.unref === "function") {
+    timer.unref();
+  }
 }
 
 async function apiGet(apiBase: string, path: string) {
@@ -160,15 +235,31 @@ async function runJobBackground(jobId: string) {
     await emit("info", "Storing result", 95);
     await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/result`, result);
 
-    await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
-      status: "SUCCEEDED",
-      progress: 100,
-      level: "info",
-      message: "Done",
-    });
+    // **P0 FIX**: Guard against late SUCCEEDED overwrite
+    // If job was marked FAILED by stale recovery or cancellation, don't overwrite with SUCCEEDED
+    try {
+      const currentJob = await apiGet(apiBase, `/v1/jobs/${jobId}`);
+      const currentStatus = String(currentJob?.status || "").toUpperCase();
 
-    recordProviderSuccess("search");
-    recordProviderSuccess("llm");
+      if (currentStatus === "RUNNING") {
+        await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+          status: "SUCCEEDED",
+          progress: 100,
+          level: "info",
+          message: "Done",
+        });
+
+        recordProviderSuccess("search");
+        recordProviderSuccess("llm");
+      } else {
+        console.warn(`[Runner] Job ${jobId} is ${currentStatus}, not updating to SUCCEEDED (late completion after ${currentStatus})`);
+      }
+    } catch (guardErr) {
+      console.error(
+        `[Runner] Guard check failed for job ${jobId}; leaving status unchanged to avoid unsafe SUCCEEDED overwrite:`,
+        guardErr,
+      );
+    }
   } catch (e: any) {
     const msg = e?.message ?? String(e);
     const stack = typeof e?.stack === "string" ? e.stack : null;
@@ -229,6 +320,7 @@ async function runJobBackground(jobId: string) {
 
 export function enqueueRunnerJob(jobId: string): { alreadyQueued: boolean; alreadyRunning: boolean } {
   const qs = getRunnerQueueState();
+  ensureQueueWatchdogStarted();
   const alreadyQueued = qs.queue.some((x) => x.jobId === jobId);
   const alreadyRunning = qs.runningJobIds.has(jobId);
   if (!alreadyQueued && !alreadyRunning) {
@@ -238,51 +330,199 @@ export function enqueueRunnerJob(jobId: string): { alreadyQueued: boolean; alrea
 }
 
 export async function drainRunnerQueue() {
-  if (isSystemPaused()) {
-    console.warn("[Runner] System is PAUSED — skipping queue drain. Jobs remain QUEUED until admin resumes.");
+  const qs = getRunnerQueueState();
+  ensureQueueWatchdogStarted();
+  if (qs.isDraining) {
+    qs.drainRequested = true;
     return;
   }
+  qs.isDraining = true;
 
-  const apiBase = getApiBaseOrThrow();
-  const adminKey = getAdminKeyOrNull();
-  const maxConcurrency = getMaxConcurrency();
-  const qs = getRunnerQueueState();
-
-  const now = Date.now();
-  const maxQueueWaitMs = 5 * 60 * 1000;
-  const remaining: Array<{ jobId: string; enqueuedAt: number }> = [];
-  for (const item of qs.queue) {
-    const waitedMs = now - item.enqueuedAt;
-    if (waitedMs > maxQueueWaitMs) {
-      try {
-        await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${item.jobId}/status`, {
-          status: "FAILED",
-          progress: 0,
-          level: "error",
-          message: "Job timed out waiting in queue (exceeded 5 minute limit)",
-        });
-      } catch {}
-      continue;
+  try {
+    if (isSystemPaused()) {
+      console.warn("[Runner] System is PAUSED — skipping queue drain. Jobs remain QUEUED until admin resumes.");
+      return;
     }
-    remaining.push(item);
-  }
-  qs.queue = remaining;
 
-  while (qs.runningCount < maxConcurrency && qs.queue.length > 0) {
-    const next = qs.queue.shift();
-    if (!next) break;
-    if (qs.runningJobIds.has(next.jobId)) continue;
+    const apiBase = getApiBaseOrThrow();
+    const adminKey = getAdminKeyOrNull();
+    const maxConcurrency = getMaxConcurrency();
 
+    const now = Date.now();
+    let effectiveRunningCount = qs.runningCount;
+    let runningSlowCount = 0; // Track slow (claimboundary) jobs for queue partitioning
+
+    // **P0 FIX**: Detect and recover stale RUNNING jobs
+    // Note: runningJobIds is process-local; in multi-process/runtime scenarios it cannot be used
+    // for immediate orphan failure. We only recover when the job is actually stale.
+    const STALE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
     try {
-      const j = await apiGet(apiBase, `/v1/jobs/${next.jobId}`);
-      const st = String(j?.status || "").toUpperCase();
-      if (st === "RUNNING" || st === "SUCCEEDED") {
+      // Fetch all RUNNING jobs from DB (paginated API: { jobs, pagination })
+      const runningJobs: Array<{ jobId: string; updatedUtc: string; progress?: number; pipelineVariant?: string }> = [];
+      const queuedJobsFromDb: Array<{ jobId: string; createdUtc: string }> = [];
+      const pageSize = 200;
+      let page = 1;
+      let totalPages = 1;
+
+      do {
+        const payload = await apiGet(apiBase, `/v1/jobs?page=${page}&pageSize=${pageSize}`);
+        const jobs = Array.isArray(payload?.jobs) ? payload.jobs : [];
+
+        for (const job of jobs) {
+          const status = String(job?.status || "").toUpperCase();
+          if (status === "RUNNING") {
+            runningJobs.push({
+              jobId: String(job.jobId),
+              updatedUtc: String(job.updatedUtc),
+              progress: typeof job.progress === "number" ? job.progress : 0,
+              pipelineVariant: String(job.pipelineVariant || "claimboundary"),
+            });
+          } else if (status === "QUEUED") {
+            queuedJobsFromDb.push({
+              jobId: String(job.jobId),
+              createdUtc: String(job.createdUtc),
+            });
+          }
+        }
+
+        const reportedTotalPages = Number(payload?.pagination?.totalPages);
+        totalPages = Number.isFinite(reportedTotalPages) && reportedTotalPages > 0
+          ? reportedTotalPages
+          : page;
+        page++;
+      } while (page <= totalPages);
+
+      let nonStaleRunningCount = 0;
+      for (const job of runningJobs) {
+        const jobId = job.jobId;
+        const wasLocallyRunning = qs.runningJobIds.has(jobId);
+        const lastUpdateMs = parseApiUtcTimestampMs(job.updatedUtc);
+        if (lastUpdateMs === null) {
+          console.warn(`[Runner] Skipping stale check for ${jobId}: invalid updatedUtc "${job.updatedUtc}"`);
+          nonStaleRunningCount++;
+          if (job.pipelineVariant === "claimboundary") runningSlowCount++;
+          continue;
+        }
+        const staleDurationMs = now - lastUpdateMs;
+        const isStale = staleDurationMs > STALE_THRESHOLD_MS;
+
+        if (isStale) {
+          const reason = !wasLocallyRunning
+            ? `Orphaned stale job (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`
+            : `Stale job (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`;
+
+          console.warn(`[Runner] Recovering job ${jobId}: ${reason}`);
+
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+            status: "FAILED",
+            progress: job.progress || 0,
+            level: "error",
+            message: `Job failed: ${reason}`,
+          });
+
+          // Clean up local state only if this process believed the job was running
+          if (wasLocallyRunning) {
+            qs.runningJobIds.delete(jobId);
+          }
+        } else {
+          nonStaleRunningCount++;
+          if (job.pipelineVariant === "claimboundary") runningSlowCount++;
+        }
+      }
+      effectiveRunningCount = nonStaleRunningCount;
+      qs.runningCount = nonStaleRunningCount;
+
+      // Recover persisted QUEUED jobs that may be missing from in-memory queue
+      // (e.g., process restart between API enqueue trigger and local queue insertion).
+      const inMemoryQueuedIds = new Set(qs.queue.map((item) => item.jobId));
+      const sortedQueuedJobs = [...queuedJobsFromDb].sort((a, b) => {
+        const aMs = parseApiUtcTimestampMs(a.createdUtc) ?? 0;
+        const bMs = parseApiUtcTimestampMs(b.createdUtc) ?? 0;
+        return aMs - bMs;
+      });
+
+      for (const queuedJob of sortedQueuedJobs) {
+        if (qs.runningJobIds.has(queuedJob.jobId)) continue;
+        if (inMemoryQueuedIds.has(queuedJob.jobId)) continue;
+        const enqueuedAt = parseApiUtcTimestampMs(queuedJob.createdUtc) ?? now;
+        qs.queue.push({ jobId: queuedJob.jobId, enqueuedAt });
+        inMemoryQueuedIds.add(queuedJob.jobId);
+      }
+    } catch (err) {
+      console.error("[Runner] Stale job recovery check failed:", err);
+      // Non-fatal - continue with normal queue processing using in-memory count
+    }
+
+    const maxQueueWaitMs = getMaxQueueWaitMs();
+    const queueWaitLimitMinutes = Math.round(maxQueueWaitMs / 60_000);
+    const remaining: Array<{ jobId: string; enqueuedAt: number }> = [];
+    for (const item of qs.queue) {
+      const waitedMs = now - item.enqueuedAt;
+      if (waitedMs > maxQueueWaitMs) {
+        try {
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${item.jobId}/status`, {
+            status: "FAILED",
+            progress: 0,
+            level: "error",
+            message: `Job timed out waiting in queue (exceeded ${queueWaitLimitMinutes} minute limit)`,
+          });
+        } catch {}
         continue;
       }
-    } catch {}
+      remaining.push(item);
+    }
+    qs.queue = remaining;
 
-    qs.runningCount++;
-    qs.runningJobIds.add(next.jobId);
-    void runJobBackground(next.jobId);
+    const maxSlowConcurrency = getMaxSlowConcurrency();
+    const skippedSlowJobs: Array<{ jobId: string; enqueuedAt: number }> = [];
+
+    while (effectiveRunningCount < maxConcurrency && qs.queue.length > 0) {
+      const next = qs.queue.shift();
+      if (!next) break;
+      if (qs.runningJobIds.has(next.jobId)) continue;
+
+      let jobVariant: PipelineVariant | null = null;
+      try {
+        const j = await apiGet(apiBase, `/v1/jobs/${next.jobId}`);
+        const st = String(j?.status || "").toUpperCase();
+        if (st !== "QUEUED") {
+          continue;
+        }
+        jobVariant = (j.pipelineVariant || "claimboundary") as PipelineVariant;
+      } catch {}
+      // If we couldn't determine variant, don't classify as slow — avoid starving unknown jobs
+      if (!jobVariant) jobVariant = "monolithic_dynamic";
+
+      // Queue partitioning: cap slow (claimboundary) jobs to reserve slots for fast jobs
+      const isSlow = jobVariant === "claimboundary";
+      if (isSlow && runningSlowCount >= maxSlowConcurrency) {
+        skippedSlowJobs.push(next);
+        continue;
+      }
+
+      effectiveRunningCount++;
+      if (isSlow) runningSlowCount++;
+      qs.runningCount = effectiveRunningCount;
+      qs.runningJobIds.add(next.jobId);
+      void runJobBackground(next.jobId);
+    }
+
+    // Re-queue skipped slow jobs (they'll be picked up when a CB slot frees)
+    if (skippedSlowJobs.length > 0) {
+      qs.queue.unshift(...skippedSlowJobs);
+    }
+  } finally {
+    qs.isDraining = false;
+    if (qs.drainRequested) {
+      qs.drainRequested = false;
+      void drainRunnerQueue();
+    }
   }
 }
+
+// Bootstrap: start watchdog on module load so persisted QUEUED jobs are
+// recovered after a process restart without waiting for a new job trigger.
+// Short delay lets the server finish initializing before the first drain
+// attempts API calls (failures are non-fatal and retry on next watchdog tick).
+ensureQueueWatchdogStarted();
+setTimeout(() => void drainRunnerQueue(), 5_000);

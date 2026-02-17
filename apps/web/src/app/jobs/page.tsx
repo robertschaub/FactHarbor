@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 type JobSummary = {
   jobId: string;
@@ -129,14 +130,16 @@ export default function JobsPage() {
     switch (variant) {
       case "monolithic_dynamic":
         return { icon: "⚡", label: "Dynamic", className: styles.pipelineBadgeDyn };
-      case "orchestrated":
+      case "claimboundary":
       default:
-        return { icon: "🎯", label: "Orchestrated", className: styles.pipelineBadgeDefault };
+        return { icon: "🎯", label: "ClaimBoundary", className: styles.pipelineBadgeDefault };
     }
   };
 
   return (
     <div className={styles.container}>
+      <SystemHealthBanner />
+
       <div className={styles.header}>
         <h1 className={styles.headerTitle}>FactHarbor Jobs</h1>
         <Link href="/analyze" className={styles.newAnalysisLink}>

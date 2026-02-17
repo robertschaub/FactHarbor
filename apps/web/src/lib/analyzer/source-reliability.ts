@@ -190,12 +190,19 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
   // Find cache misses that need evaluation
   const misses = newDomains.filter((d) => !cached.has(d));
 
-  for (const domain of misses) {
+  // **PERFORMANCE FIX**: Parallelize SR evaluations with concurrency limit
+  // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
+  // Processing serially caused 10+ minute delays with 39 domains
+  // Concurrency=3 reduces SR-Eval time by ~3x
+  const SR_EVAL_CONCURRENCY = 3;
+
+  // Process domains in parallel batches
+  const evaluateDomain = async (domain: string) => {
     // Apply importance filter
     if (!isImportantSource(domain)) {
       console.log(`[SR] Skipping unimportant source: ${domain}`);
       prefetchedData.set(domain, null);
-      continue;
+      return;
     }
 
     // Evaluate via internal API
@@ -237,6 +244,13 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
       console.error(`[SR] Error evaluating ${domain}:`, err);
       prefetchedData.set(domain, null);
     }
+  };
+
+  // Process in batches of SR_EVAL_CONCURRENCY
+  for (let i = 0; i < misses.length; i += SR_EVAL_CONCURRENCY) {
+    const batch = misses.slice(i, i + SR_EVAL_CONCURRENCY);
+    console.log(`[SR] Evaluating batch ${Math.floor(i / SR_EVAL_CONCURRENCY) + 1}/${Math.ceil(misses.length / SR_EVAL_CONCURRENCY)}: ${batch.join(', ')}`);
+    await Promise.all(batch.map(evaluateDomain));
   }
 
   console.log(`[SR] Prefetch complete: ${prefetchedData.size} domains total`);
@@ -320,6 +334,11 @@ async function evaluateSourceInternal(
   const baseUrl = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
   const runnerKey = process.env.FH_INTERNAL_RUNNER_KEY || "";
 
+  // **P0 FIX**: Add timeout to prevent indefinite hangs (90 sec max per domain)
+  const EVAL_TIMEOUT_MS = 90000; // 90 seconds
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), EVAL_TIMEOUT_MS);
+
   try {
     const response = await fetch(`${baseUrl}/api/internal/evaluate-source`, {
       method: "POST",
@@ -333,7 +352,10 @@ async function evaluateSourceInternal(
         confidenceThreshold: SR_CONFIG.confidenceThreshold,
         consensusThreshold: SR_CONFIG.consensusThreshold,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error(
@@ -344,8 +366,13 @@ async function evaluateSourceInternal(
 
     const data = await response.json();
     return data as EvaluationResult;
-  } catch (err) {
-    console.error(`[SR] Evaluation API call failed for ${domain}:`, err);
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err?.name === 'AbortError') {
+      console.error(`[SR] Evaluation timeout for ${domain} after ${EVAL_TIMEOUT_MS}ms`);
+    } else {
+      console.error(`[SR] Evaluation API call failed for ${domain}:`, err);
+    }
     return null;
   }
 }

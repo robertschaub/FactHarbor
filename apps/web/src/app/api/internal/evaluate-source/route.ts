@@ -72,6 +72,31 @@ debugLog(`[SR-Eval] Configuration check`, {
   multiModelAvailable: hasAnthropicKey && hasOpenAIKey,
 });
 
+const SR_TRANSLATION_TIMEOUT_MS = 30_000;
+const SR_REFINEMENT_TIMEOUT_MS = 90_000;
+const SR_PRIMARY_EVALUATION_TIMEOUT_MS = 90_000;
+
+async function withTimeout<T>(
+  operationName: string,
+  timeoutMs: number,
+  operation: () => Promise<T>,
+): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(`${operationName} timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation(), timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
+
 // ============================================================================
 // TYPES & SCHEMAS
 // ============================================================================
@@ -724,17 +749,22 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
       .slice(0, 1000);
 
     if (textContent.length > 100) {
-      const { text } = await generateText({
-        model: anthropic("claude-3-5-haiku-20241022"),
-        prompt: `What is the primary publication language of this webpage content?
+      const { text } = await withTimeout(
+        "SR language detection",
+        SR_TRANSLATION_TIMEOUT_MS,
+        () =>
+          generateText({
+            model: anthropic("claude-3-5-haiku-20241022"),
+            prompt: `What is the primary publication language of this webpage content?
 Return ONLY the language name in English (e.g., "German", "French", "Russian", "English").
 If uncertain, return "English".
 
 Content sample:
 ${textContent}`,
-        temperature: 0,
-        maxOutputTokens: 50,
-      });
+            temperature: 0,
+            maxOutputTokens: 50,
+          }),
+      );
 
       const detectedLang = text.trim();
       const normalized = normalizeLanguageName(detectedLang);
@@ -879,12 +909,17 @@ ${SEARCH_TERMS_TO_TRANSLATE.map((t) => `- "${t}"`).join("\n")}
 Output format (JSON only, no markdown):
 {"fact check": "...", "reliability": "...", ...}`;
 
-    const { text } = await generateText({
-      model: anthropic("claude-3-5-haiku-20241022"),
-      prompt,
-      temperature: 0,
-      maxOutputTokens: 800,
-    });
+    const { text } = await withTimeout(
+      "SR translation",
+      SR_TRANSLATION_TIMEOUT_MS,
+      () =>
+        generateText({
+          model: anthropic("claude-3-5-haiku-20241022"),
+          prompt,
+          temperature: 0,
+          maxOutputTokens: 800,
+        }),
+    );
 
     // Parse the JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -2020,12 +2055,17 @@ async function refineEvaluation(
   debugLog(`[SR-Eval] Starting refinement pass with ${modelName} for ${domain}...`);
 
   try {
-    const { text } = await generateText({
-      model: openai(modelName),
-      prompt,
-      temperature,
-      maxOutputTokens: 2000,
-    });
+    const { text } = await withTimeout(
+      "SR refinement",
+      SR_REFINEMENT_TIMEOUT_MS,
+      () =>
+        generateText({
+          model: openai(modelName),
+          prompt,
+          temperature,
+          maxOutputTokens: 2000,
+        }),
+    );
 
     // Parse JSON response
     const cleaned = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
@@ -2297,12 +2337,16 @@ async function evaluateWithModel(
     : openai(modelName);
 
   try {
-    const response = await generateText({
-      model,
-      messages: [
-        {
-          role: "system",
-          content: `You are a media reliability analyst using EVIDENCE-ONLY methodology. CRITICAL RULES:
+    const response = await withTimeout(
+      "SR primary evaluation",
+      SR_PRIMARY_EVALUATION_TIMEOUT_MS,
+      () =>
+        generateText({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: `You are a media reliability analyst using EVIDENCE-ONLY methodology. CRITICAL RULES:
 (1) Evaluate sources based solely on PROVIDED EVIDENCE - cite evidence pack items (E1, E2, etc.) for every claim.
 (2) Apply SOURCE TYPE CAPS: propaganda_outlet/known_disinformation → ≤14%, state_controlled_media/platform_ugc → ≤42%.
 (3) Apply negative evidence caps: fabrication/disinformation → ≤14%, 3+ failures → ≤42%, 1-2 failures → ≤57%.
@@ -2311,12 +2355,13 @@ async function evaluateWithModel(
 (6) Default to insufficient_data when evidence is sparse (confidence < 0.50).
 (7) Separate political bias from accuracy - bias alone does not reduce score.
 Always respond with valid JSON only.`,
-          providerOptions: getPromptCachingOptions(modelProvider),
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature,
-    });
+              providerOptions: getPromptCachingOptions(modelProvider),
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature,
+        }),
+    );
 
     const text = response.text?.trim() || "";
     if (!text) {

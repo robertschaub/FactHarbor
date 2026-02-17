@@ -14,7 +14,7 @@ import { getPromptForExport } from "@/lib/config-storage";
 export const runtime = "nodejs";
 
 const VALID_PROFILES = [
-  "orchestrated",
+  "claimboundary",
   "monolithic-dynamic",
   "source-reliability",
   "text-analysis-input",

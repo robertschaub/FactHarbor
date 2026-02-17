@@ -1,9 +1,9 @@
-export type PipelineVariant = "orchestrated" | "monolithic_dynamic";
+export type PipelineVariant = "claimboundary" | "monolithic_dynamic";
 
 export const PIPELINE_STORAGE_KEY = "fh_default_pipeline";
 
 const VALID: ReadonlySet<string> = new Set([
-  "orchestrated",
+  "claimboundary",
   "monolithic_dynamic",
 ]);
 
@@ -14,15 +14,15 @@ export function isPipelineVariant(value: unknown): value is PipelineVariant {
 /**
  * Browser-local default pipeline variant.
  *
- * NOTE: This must be safe to call in SSR contexts (returns "orchestrated" when window is unavailable).
+ * NOTE: This must be safe to call in SSR contexts (returns "claimboundary" when window is unavailable).
  */
 export function readDefaultPipelineVariant(): PipelineVariant {
-  if (typeof window === "undefined") return "orchestrated";
+  if (typeof window === "undefined") return "claimboundary";
   try {
     const v = window.localStorage.getItem(PIPELINE_STORAGE_KEY);
-    return isPipelineVariant(v) ? v : "orchestrated";
+    return isPipelineVariant(v) ? v : "claimboundary";
   } catch {
-    return "orchestrated";
+    return "claimboundary";
   }
 }
 

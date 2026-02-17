@@ -32,7 +32,7 @@ type HealthState = {
 };
 
 export default function AdminPage() {
-  const [defaultPipeline, setDefaultPipeline] = useState<PipelineVariant>("orchestrated");
+  const [defaultPipeline, setDefaultPipeline] = useState<PipelineVariant>("claimboundary");
   const [exporting, setExporting] = useState(false);
   const [jobIdInput, setJobIdInput] = useState("");
   const [health, setHealth] = useState<HealthState | null>(null);
@@ -314,31 +314,31 @@ export default function AdminPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           <div
-            onClick={() => selectPipeline("orchestrated")}
+            onClick={() => selectPipeline("claimboundary")}
             role="button"
             tabIndex={0}
             style={{
               cursor: "pointer",
-              border: defaultPipeline === "orchestrated" ? "2px solid #28a745" : "1px solid #ddd",
+              border: defaultPipeline === "claimboundary" ? "2px solid #28a745" : "1px solid #ddd",
               borderRadius: 8,
               padding: 14,
-              background: defaultPipeline === "orchestrated" ? "#f3fff6" : "#fff",
+              background: defaultPipeline === "claimboundary" ? "#f3fff6" : "#fff",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <span>🎯</span>
-              <strong>Orchestrated</strong>
-              {defaultPipeline === "orchestrated" && (
+              <strong>ClaimBoundary</strong>
+              {defaultPipeline === "claimboundary" && (
                 <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: "#28a745" }}>
                   Selected
                 </span>
               )}
             </div>
             <div style={{ fontSize: 13, color: "#555" }}>
-              Highest quality multi-stage pipeline. Best for complex claims and multi-context analysis.
+              Production pipeline with 5-stage debate pattern. Evidence-emergent boundaries, triangulation scoring.
             </div>
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
-              <span title="Approach">Comprehensive</span>
+              <span title="Approach">5-stage + debate</span>
               <span title="Speed">2-5 min</span>
               <span title="Cost">$0.50-$2</span>
             </div>
@@ -364,7 +364,7 @@ export default function AdminPage() {
               </span>
             </div>
             <div style={{ fontSize: 13, color: "#555" }}>
-              Fast, streamlined analysis at lower cost. Can complement Orchestrated as a second opinion.
+              Fast, streamlined analysis at lower cost. Can complement ClaimBoundary as a second opinion.
             </div>
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
               <span title="Approach">Streamlined</span>

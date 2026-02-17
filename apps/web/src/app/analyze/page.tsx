@@ -16,13 +16,14 @@ import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
 import { readDefaultPipelineVariant } from "@/lib/pipeline-variant";
+import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 export default function AnalyzePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("orchestrated");
+  const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("claimboundary");
   const [pipelineLoaded, setPipelineLoaded] = useState(false);
 
   // Load default pipeline from localStorage on mount.
@@ -139,6 +140,8 @@ export default function AnalyzePage() {
         Enter a claim, question, article text, or URL to analyze
       </p>
 
+      <SystemHealthBanner />
+
       <form onSubmit={handleSubmit}>
         <div className={styles.inputContainer}>
           <textarea
@@ -166,16 +169,16 @@ export default function AnalyzePage() {
           <label className={styles.variantLabel} style={{ display: "block", marginBottom: 8 }}>Pipeline:</label>
           <div className={styles.pipelineInfoGrid} style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
             <div
-              className={`${styles.pipelineInfoCard} ${pipelineVariant === "orchestrated" ? styles.pipelineInfoCardSelected : ""}`}
-              onClick={() => setPipelineVariant("orchestrated")}
+              className={`${styles.pipelineInfoCard} ${pipelineVariant === "claimboundary" ? styles.pipelineInfoCardSelected : ""}`}
+              onClick={() => setPipelineVariant("claimboundary")}
             >
               <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
                 <span>🎯</span>
-                <strong>Orchestrated</strong>
+                <strong>ClaimBoundary</strong>
                 <span className={styles.pipelineInfoBadge} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#28a745", color: "#fff", borderRadius: 3 }}>Default</span>
               </div>
               <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-                <span title="Approach">Comprehensive</span>
+                <span title="Approach">5-stage + debate</span>
                 <span title="Speed">2-5 min</span>
                 <span title="Cost">$0.50-$2</span>
               </div>
