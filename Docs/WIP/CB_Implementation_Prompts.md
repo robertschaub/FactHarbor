@@ -76,7 +76,7 @@ Implement the `extractClaims()` function in `apps/web/src/lib/analyzer/claimboun
      }
      ```
 
-**Testing:**
+**Testing (Target: 15-20 tests):**
 
 Add tests to `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`:
 
@@ -468,7 +468,7 @@ Create the production LLM call wrapper and wire it into `generateVerdicts()` in 
    };
    ```
 
-**Testing:**
+**Testing (Target: 5-10 tests):**
 
 1. **Unit test:** Mock `loadAndRenderSection` and `generateText` to verify correct prompt loading
 2. **Integration test (optional, expensive):** Call `generateVerdicts()` with real LLM, verify output structure
@@ -678,7 +678,7 @@ Add 15-20 tests to `claimboundary-pipeline.test.ts`:
    ];
    const assessment = await aggregateAssessment(claimVerdicts, boundaries, evidence, coverageMatrix, state);
    console.log(assessment.truthPercentage); // Should be weighted average ~70-75
-   console.log(assessment.verdictNarrative); // Should have summary, keyEvidence, etc.
+   console.log(assessment.verdictNarrative); // Should have headline, keyFinding, etc.
    ```
 
 **Commit Message Format:**
@@ -1127,6 +1127,19 @@ Co-Authored-By: Claude <model> <noreply@anthropic.com>
 - Change "Current Phase" to "PHASE 5 COMPLETE (core) — UI work pending Phase 5k"
 - Add entry to Handover Log for Phase 5i
 - Update "Last Updated" date to today
+
+---
+
+## Phase 5j: Monolithic Dynamic Status Verification
+
+**Note:** This phase (0 sessions) consists of verification only — no code changes needed. The Monolithic Dynamic pipeline is already ClaimBoundary-compatible and requires no updates. See `CB_Implementation_Plan_2026-02-17.md` Phase 5j for verification checklist.
+
+**Verification steps:**
+1. Confirm MD pipeline uses CB terminology (already done in Phase 3b)
+2. Confirm no stub errors exist (verified via grep)
+3. Document MD status as "complete" in execution state
+
+**No agent prompts needed** — this is a documentation/verification task only.
 
 ---
 

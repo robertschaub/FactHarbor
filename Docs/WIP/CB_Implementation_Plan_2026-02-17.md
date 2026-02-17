@@ -312,7 +312,8 @@ Attempting parallel implementation would require extensive mocking of data struc
   - `claimVerdicts`, `claimBoundaries`, `coverageMatrix`, `verdictNarrative`, `qualityGates`
 
 **Dependencies:**
-- Existing: `getClaimWeight`, `calculateWeightedVerdictAverage` (aggregation.ts), confidence calibration modules
+- Existing: confidence calibration modules (confidence-calibration.ts)
+- **Note:** Do NOT use `aggregation.ts:getClaimWeight()` or `calculateWeightedVerdictAverage()` — both expect legacy types incompatible with CB. Compute weights inline using CalcConfig directly.
 - UCM prompts: `VERDICT_NARRATIVE`, `CLAIM_GROUPING` (optional)
 - UCM config: All CalcConfig aggregation params (triangulation, derivativeMultiplier, harmPotentialMultipliers)
 
@@ -614,10 +615,11 @@ Current state: `apps/web/src/app/jobs/[id]/page.tsx` already updated in Phase 3 
   - Only show if `hasMultipleBoundaries === true`
 - [ ] **VerdictNarrative Display:**
   - Create `apps/web/src/app/jobs/[id]/components/VerdictNarrative.tsx`
-  - Display `verdictNarrative.summary` as prominent callout
-  - Display `verdictNarrative.keyEvidence` as bulleted list with citations
+  - Display `verdictNarrative.headline` as prominent callout
+  - Display `verdictNarrative.evidenceBaseSummary` as evidence base line
+  - Display `verdictNarrative.keyFinding` as main synthesis
+  - Display `verdictNarrative.boundaryDisagreements` as expandable section (if present)
   - Display `verdictNarrative.limitations` as expandable "Limitations" section
-  - Display `verdictNarrative.methodology` in footer/metadata area
 - [ ] **Quality Gates Display:**
   - Create `apps/web/src/app/jobs/[id]/components/QualityGates.tsx`
   - Display Gate 1 stats: claims passed/failed opinion + specificity checks
@@ -750,23 +752,24 @@ The following items from the architecture doc are **deferred** to v1.1+ (not blo
 3. **Advanced triangulation** (§8.5.2 extended) — initial version uses simple counts, can refine scoring logic later.
 4. **Derivative evidence detection** (§8.5.3) — `isDerivative`/`derivedFromSourceUrl` fields are extracted in Stage 2, but improved heuristics for detecting derivative relationships may be added in v1.1.
 5. **F-05 aggregation gaps** (from Phase 1 Review) — triangulationFactor/derivativeFactor integration with `aggregation.ts`. Can start with CalcConfig values applied in Stage 5 directly.
+6. **Contestation weight reduction** (§8.5.4) — CB debate pattern (advocate/challenger/reconciliation) already adjusts verdict for counter-evidence. The separate contestation multiplier from the old pipeline's `getClaimWeight()` is not included in the CB weight formula (deferred to v1.1 — requires adding `factualBasis` field to CBClaimVerdict or implementing simple binary penalty).
 
 ---
 
 ## Handoff to Execution
 
-**Next Step:** Create `Docs/WIP/CB_Implementation_Prompts.md` with detailed agent prompts for Phases 5a-5f.
+**Prompts document created:** `Docs/WIP/CB_Implementation_Prompts.md` — ready-to-paste prompts for Phases 5a-5f.
 
 **Captain's Decision Points:**
-1. Approve this plan before proceeding?
-2. Any changes to stage order or scope?
-3. Which agent should start with Phase 5a (Stage 1 implementation)?
+1. Approve this plan before proceeding? ✅ **APPROVED** (Lead Developer review complete)
+2. Any changes to stage order or scope? None — proceed as documented
+3. Which agent should start with Phase 5a (Stage 1 implementation)? Senior Developer
 
-**Estimated Total Effort:** 10-15 agent sessions (20-35 hours of implementation + testing), spread over 2-3 weeks.
+**Estimated Total Effort:** 16-25 sessions (35-55 hours), spread over 3-4 weeks. See Execution Sequence above for breakdown.
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Created:** 2026-02-17
-**Author:** Lead Architect (Claude Opus 4.6)
-**Status:** Awaiting Captain approval
+**Author:** Lead Architect (Claude Sonnet 4.5)
+**Status:** APPROVED — Ready for Phase 5a execution
