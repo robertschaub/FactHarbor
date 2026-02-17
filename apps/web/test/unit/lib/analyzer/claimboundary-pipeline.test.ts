@@ -29,6 +29,14 @@ import {
   extractResearchEvidence,
   fetchSources,
   runResearchIteration,
+  scopeFingerprint,
+  collectUniqueScopes,
+  runLLMClustering,
+  createFallbackBoundary,
+  assignEvidenceToBoundaries,
+  boundaryJaccardSimilarity,
+  mergeClosestBoundaries,
+  clusterBoundaries,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -1483,5 +1491,410 @@ describe("Stage 2: runResearchIteration", () => {
 
     // contradictionSourcesFound should be 0 (no sources found)
     expect(state.contradictionSourcesFound).toBe(0);
+  });
+});
+
+// ============================================================================
+// Stage 3: Cluster Boundaries — Pure function tests
+// ============================================================================
+
+describe("Stage 3: scopeFingerprint", () => {
+  it("should produce same fingerprint for identical scopes", () => {
+    const scope1: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020-2025" };
+    const scope2: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020-2025" };
+    expect(scopeFingerprint(scope1)).toBe(scopeFingerprint(scope2));
+  });
+
+  it("should be case-insensitive and trim-insensitive", () => {
+    const scope1: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020-2025" };
+    const scope2: EvidenceScope = { name: "WTW", methodology: "  iso 14040  ", temporal: "  2020-2025 " };
+    expect(scopeFingerprint(scope1)).toBe(scopeFingerprint(scope2));
+  });
+
+  it("should differ for scopes with different methodology", () => {
+    const scope1: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020-2025" };
+    const scope2: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2020-2025" };
+    expect(scopeFingerprint(scope1)).not.toBe(scopeFingerprint(scope2));
+  });
+});
+
+describe("Stage 3: collectUniqueScopes", () => {
+  it("should deduplicate identical scopes and track original indices", () => {
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: { name: "WTW", methodology: "ISO 14040", temporal: "2020" } }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: { name: "WTW", methodology: "ISO 14040", temporal: "2020" } }),
+      createEvidenceItem({ id: "EV_03", evidenceScope: { name: "TTW", methodology: "EPA test", temporal: "2021" } }),
+    ];
+    const result = collectUniqueScopes(items);
+    expect(result).toHaveLength(2);
+    expect(result[0].originalIndices).toEqual([0, 1]);
+    expect(result[1].originalIndices).toEqual([2]);
+  });
+
+  it("should skip evidence items without evidenceScope", () => {
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: undefined as any }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: { name: "WTW", methodology: "ISO 14040", temporal: "2020" } }),
+    ];
+    const result = collectUniqueScopes(items);
+    expect(result).toHaveLength(1);
+    expect(result[0].originalIndices).toEqual([1]);
+  });
+
+  it("should return empty array when no evidence items have scopes", () => {
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ evidenceScope: undefined as any }),
+    ];
+    const result = collectUniqueScopes(items);
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe("Stage 3: createFallbackBoundary", () => {
+  it("should create a General boundary containing all scopes", () => {
+    const scopes = [
+      { index: 0, scope: { name: "WTW", methodology: "ISO 14040", temporal: "2020" } as EvidenceScope, originalIndices: [0, 1] },
+      { index: 1, scope: { name: "TTW", methodology: "EPA test", temporal: "2021" } as EvidenceScope, originalIndices: [2] },
+    ];
+    const items = [
+      createEvidenceItem({ id: "EV_01" }),
+      createEvidenceItem({ id: "EV_02" }),
+      createEvidenceItem({ id: "EV_03" }),
+    ];
+    const boundary = createFallbackBoundary(scopes, items);
+    expect(boundary.id).toBe("CB_GENERAL");
+    expect(boundary.name).toBe("General Evidence");
+    expect(boundary.constituentScopes).toHaveLength(2);
+    expect(boundary.internalCoherence).toBe(0.8);
+    expect(boundary.evidenceCount).toBe(3);
+  });
+});
+
+describe("Stage 3: assignEvidenceToBoundaries", () => {
+  it("should assign items to boundaries matching their scope fingerprint", () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
+
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeA }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: scopeB }),
+    ];
+
+    const boundaries: ClaimBoundary[] = [
+      { id: "CB_01", name: "WTW", shortName: "WTW", description: "Well-to-Wheel", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 0 },
+      { id: "CB_02", name: "TTW", shortName: "TTW", description: "Tank-to-Wheel", constituentScopes: [scopeB], internalCoherence: 0.85, evidenceCount: 0 },
+    ];
+
+    const uniqueScopes = [
+      { index: 0, scope: scopeA, originalIndices: [0] },
+      { index: 1, scope: scopeB, originalIndices: [1] },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, uniqueScopes);
+
+    expect(items[0].claimBoundaryId).toBe("CB_01");
+    expect(items[1].claimBoundaryId).toBe("CB_02");
+  });
+
+  it("should assign items with no matching scope to fallback boundary", () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeUnmatched: EvidenceScope = { name: "Other", methodology: "Custom", temporal: "2022" };
+
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeUnmatched }),
+    ];
+
+    const boundaries: ClaimBoundary[] = [
+      { id: "CB_GENERAL", name: "General", shortName: "Gen", description: "Fallback", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, []);
+
+    // Should fall back to CB_GENERAL since no fingerprint match
+    expect(items[0].claimBoundaryId).toBe("CB_GENERAL");
+  });
+});
+
+describe("Stage 3: boundaryJaccardSimilarity", () => {
+  it("should return 1.0 for identical scope sets", () => {
+    const scope: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const a: ClaimBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scope], internalCoherence: 0.9, evidenceCount: 1 };
+    const b: ClaimBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scope], internalCoherence: 0.9, evidenceCount: 1 };
+    expect(boundaryJaccardSimilarity(a, b)).toBe(1);
+  });
+
+  it("should return 0 for completely disjoint scope sets", () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
+    const a: ClaimBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 1 };
+    const b: ClaimBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scopeB], internalCoherence: 0.9, evidenceCount: 1 };
+    expect(boundaryJaccardSimilarity(a, b)).toBe(0);
+  });
+
+  it("should return 0.5 for partial overlap (1 shared, 1 unique each)", () => {
+    const shared: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const uniqueA: EvidenceScope = { name: "LCA", methodology: "EU RED II", temporal: "2020" };
+    const uniqueB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
+    const a: ClaimBoundary = { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [shared, uniqueA], internalCoherence: 0.9, evidenceCount: 2 };
+    const b: ClaimBoundary = { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [shared, uniqueB], internalCoherence: 0.9, evidenceCount: 2 };
+    // Jaccard: 1 / (2 + 2 - 1) = 1/3
+    expect(boundaryJaccardSimilarity(a, b)).toBeCloseTo(1 / 3, 5);
+  });
+});
+
+describe("Stage 3: mergeClosestBoundaries", () => {
+  it("should merge the two most similar boundaries and reduce count by 1", () => {
+    const shared: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "LCA", methodology: "EU RED II", temporal: "2020" };
+    const scopeC: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
+
+    const boundaries: ClaimBoundary[] = [
+      { id: "CB_01", name: "WTW", shortName: "WTW", description: "Well-to-Wheel", constituentScopes: [shared], internalCoherence: 0.9, evidenceCount: 3 },
+      { id: "CB_02", name: "LCA", shortName: "LCA", description: "Lifecycle", constituentScopes: [shared, scopeB], internalCoherence: 0.85, evidenceCount: 2 },
+      { id: "CB_03", name: "TTW", shortName: "TTW", description: "Tank-to-Wheel", constituentScopes: [scopeC], internalCoherence: 0.8, evidenceCount: 1 },
+    ];
+
+    const result = mergeClosestBoundaries(boundaries);
+    expect(result).toHaveLength(2);
+    // CB_01 and CB_02 share 'shared' scope, so they should be merged
+    const mergedBoundary = result.find((b) => b.constituentScopes.length > 1 && b.constituentScopes.some(s => s.name === "LCA"));
+    expect(mergedBoundary).toBeTruthy();
+  });
+
+  it("should average internalCoherence of merged boundaries", () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "LCA", methodology: "EU RED II", temporal: "2020" };
+
+    const boundaries: ClaimBoundary[] = [
+      { id: "CB_01", name: "A", shortName: "A", description: "A", constituentScopes: [scopeA], internalCoherence: 0.9, evidenceCount: 2 },
+      { id: "CB_02", name: "B", shortName: "B", description: "B", constituentScopes: [scopeB], internalCoherence: 0.7, evidenceCount: 1 },
+    ];
+
+    const result = mergeClosestBoundaries(boundaries);
+    expect(result).toHaveLength(1);
+    expect(result[0].internalCoherence).toBeCloseTo(0.8, 5);
+  });
+});
+
+// ============================================================================
+// Stage 3: Cluster Boundaries — LLM-dependent tests
+// ============================================================================
+
+describe("Stage 3: runLLMClustering", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should parse LLM output into ClaimBoundary array", async () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
+
+    const uniqueScopes = [
+      { index: 0, scope: scopeA, originalIndices: [0, 1] },
+      { index: 1, scope: scopeB, originalIndices: [2] },
+    ];
+
+    const llmOutput = {
+      claimBoundaries: [
+        {
+          id: "CB_01",
+          name: "Well-to-Wheel Studies",
+          shortName: "WTW",
+          description: "Full lifecycle analysis studies",
+          methodology: "ISO 14040",
+          temporal: "2020",
+          constituentScopeIndices: [0],
+          internalCoherence: 0.92,
+        },
+        {
+          id: "CB_02",
+          name: "Tank-to-Wheel Tests",
+          shortName: "TTW",
+          description: "Direct emission tests",
+          methodology: "EPA test",
+          temporal: "2021",
+          constituentScopeIndices: [1],
+          internalCoherence: 0.88,
+        },
+      ],
+      scopeToBoundaryMapping: [
+        { scopeIndex: 0, boundaryId: "CB_01", rationale: "Same WTW methodology" },
+        { scopeIndex: 1, boundaryId: "CB_02", rationale: "Different methodology" },
+      ],
+      congruenceDecisions: [
+        { scopeA: 0, scopeB: 1, congruent: false, rationale: "Different system boundaries" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "boundary clustering prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(llmOutput);
+
+    const items = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeA }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: scopeA }),
+      createEvidenceItem({ id: "EV_03", evidenceScope: scopeB }),
+    ];
+
+    const result = await runLLMClustering(uniqueScopes, items, [], mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe("CB_01");
+    expect(result[0].name).toBe("Well-to-Wheel Studies");
+    expect(result[0].constituentScopes).toHaveLength(1);
+    expect(result[0].constituentScopes[0]).toEqual(scopeA);
+    expect(result[1].id).toBe("CB_02");
+    expect(result[1].constituentScopes[0]).toEqual(scopeB);
+    expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "BOUNDARY_CLUSTERING", expect.any(Object));
+  });
+
+  it("should throw when LLM returns 0 boundaries", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: [],
+      scopeToBoundaryMapping: [],
+      congruenceDecisions: [],
+    });
+
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const uniqueScopes = [{ index: 0, scope: scopeA, originalIndices: [0] }];
+
+    await expect(
+      runLLMClustering(uniqueScopes, [createEvidenceItem()], [], mockPipelineConfig, "2026-02-17"),
+    ).rejects.toThrow("LLM returned 0 boundaries");
+  });
+
+  it("should throw when prompt section is not found", async () => {
+    mockLoadSection.mockResolvedValue(null as any);
+
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const uniqueScopes = [{ index: 0, scope: scopeA, originalIndices: [0] }];
+
+    await expect(
+      runLLMClustering(uniqueScopes, [createEvidenceItem()], [], mockPipelineConfig, "2026-02-17"),
+    ).rejects.toThrow("Failed to load BOUNDARY_CLUSTERING");
+  });
+
+  it("should clamp internalCoherence to 0-1 range", async () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const uniqueScopes = [{ index: 0, scope: scopeA, originalIndices: [0] }];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: [{
+        id: "CB_01", name: "Test", shortName: "T", description: "Test",
+        constituentScopeIndices: [0], internalCoherence: 1.5,
+      }],
+      scopeToBoundaryMapping: [{ scopeIndex: 0, boundaryId: "CB_01", rationale: "test" }],
+      congruenceDecisions: [],
+    });
+
+    const result = await runLLMClustering(uniqueScopes, [createEvidenceItem()], [], mockPipelineConfig, "2026-02-17");
+    expect(result[0].internalCoherence).toBe(1);
+  });
+});
+
+describe("Stage 3: clusterBoundaries (integration)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should fallback to single General boundary when only 1 unique scope", async () => {
+    const scope: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const state = {
+      evidenceItems: [
+        createEvidenceItem({ id: "EV_01", evidenceScope: scope }),
+        createEvidenceItem({ id: "EV_02", evidenceScope: scope }),
+      ],
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      llmCalls: 0,
+    } as any;
+
+    const result = await clusterBoundaries(state);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("CB_GENERAL");
+    expect(result[0].name).toBe("General Evidence");
+    // All items should be assigned
+    expect(state.evidenceItems.every((e: any) => e.claimBoundaryId === "CB_GENERAL")).toBe(true);
+    // No LLM call should have been made (skipped for 1 unique scope)
+    expect(state.llmCalls).toBe(0);
+  });
+
+  it("should fallback to General boundary when LLM clustering fails", async () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
+
+    const state = {
+      evidenceItems: [
+        createEvidenceItem({ id: "EV_01", evidenceScope: scopeA }),
+        createEvidenceItem({ id: "EV_02", evidenceScope: scopeB }),
+      ],
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      llmCalls: 0,
+    } as any;
+
+    // Make LLM call fail
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockRejectedValue(new Error("LLM timeout"));
+
+    const result = await clusterBoundaries(state);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("CB_GENERAL");
+    expect(state.evidenceItems.every((e: any) => e.claimBoundaryId === "CB_GENERAL")).toBe(true);
+  });
+
+  it("should enforce maxClaimBoundaries cap via merge", async () => {
+    // Create 3 different scopes
+    const scopes = Array.from({ length: 3 }, (_, i) => ({
+      name: `Scope${i}`,
+      methodology: `Method ${i}`,
+      temporal: `202${i}`,
+    } as EvidenceScope));
+
+    const items = scopes.map((s, i) =>
+      createEvidenceItem({ id: `EV_${i}`, evidenceScope: s }),
+    );
+
+    const state = {
+      evidenceItems: items,
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      llmCalls: 0,
+    } as any;
+
+    // LLM returns 3 boundaries but cap is 2
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: scopes.map((_, i) => ({
+        id: `CB_0${i + 1}`,
+        name: `Boundary ${i + 1}`,
+        shortName: `B${i + 1}`,
+        description: `Test boundary ${i + 1}`,
+        constituentScopeIndices: [i],
+        internalCoherence: 0.85,
+      })),
+      scopeToBoundaryMapping: scopes.map((_, i) => ({
+        scopeIndex: i, boundaryId: `CB_0${i + 1}`, rationale: "test",
+      })),
+      congruenceDecisions: [],
+    });
+
+    // Override pipeline config to set maxClaimBoundaries = 2
+    const { loadPipelineConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { maxClaimBoundaries: 2, boundaryCoherenceMinimum: 0.3 } as any,
+    } as any);
+
+    const result = await clusterBoundaries(state);
+
+    expect(result.length).toBeLessThanOrEqual(2);
+    // All evidence should still be assigned
+    expect(state.evidenceItems.every((e: any) => e.claimBoundaryId)).toBe(true);
   });
 });

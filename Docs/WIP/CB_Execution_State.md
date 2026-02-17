@@ -7,12 +7,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Phase** | **Phase 5b COMPLETE** — Stage 2 (researchEvidence) fully implemented with claim-driven iteration, LLM query generation, relevance classification, evidence extraction with mandatory EvidenceScope, derivative validation, contradiction search. 28 new tests (76 total in pipeline test file). Build + tests pass (42 files, 768 tests). |
+| **Current Phase** | **Phase 5c COMPLETE** — Stage 3 (clusterBoundaries) fully implemented with EvidenceScope deduplication, LLM-driven congruence clustering (Sonnet tier), coherence assessment, post-clustering validation (completeness check, duplicate ID handling, orphan scope recovery, cap enforcement via Jaccard merge), evidence item boundary assignment, fallback to "General" boundary. 21 new tests (97 total in pipeline test file). Build + tests pass (42 files, 789 tests). |
 | **Last Completed Tag** | `cb-phase2-cutover` (tags cb-phase2a/2b/2c/phase3/phase3b/phase4 pending from Captain) |
-| **Next Action** | Phase 5c: Stage 3 — Cluster Boundaries (EvidenceScope clustering, boundary assignment) |
+| **Next Action** | Phase 5d: Stage 4 LLM wiring (createProductionLLMCall + wire into generateVerdicts) |
 | **Blocking Issues** | None. |
 | **Last Updated** | 2026-02-17 |
-| **Last Updated By** | Senior Developer (Phase 5b) |
+| **Last Updated By** | Senior Developer (Phase 5c) |
 
 ## Phase Checklist
 
@@ -32,8 +32,8 @@
 | Phase 3b: Monolithic Dynamic | ✅ Complete | `cb-phase3b-monolithic` | Dead prompt infrastructure removed (~3300 lines), MD prompt updated for CB terminology, all AC refs eliminated from prompts/ directory |
 | Phase 4: Final sweep | ✅ Complete | `cb-phase4-ac-removed` | All AnalysisContext types deleted (types.ts, budgets.ts, evidence-normalization.ts, claim-importance.ts, metrics-integration.ts), comments updated (page.tsx, config-schemas.ts, config.ts), governance docs updated (AGENTS.md, CLAUDE.md). Zero active AC code remains. Migration complete. |
 | Final Verification | ✅ PASS | — | Build PASS, 716/724 tests PASS. Zero active AC code (grep verified). 9 non-blocking items: V-01 (contextId in AnalysisWarning.details), V-02 (LEGACY page.tsx), V-03 (AGENTS.md stale orchestrated refs), V-04 (CLAUDE.md stale orchestrated ref), V-05 (AGENTS.md deleted test refs), V-06 (CLAUDE.md deleted test refs), V-07 (AGENTS.md AC mention in prompt rules), V-08 (package.json dead test scripts), V-09 (8 skipped budget tests). |
-| **Phase 5a-5k** | 🔧 Phase 5b in progress | — | Implementation of 5 pipeline stages. See individual phase entries in Handover Log. |
-| **Post-5k Rename** | 🧭 Planned | — | **ClaimBoundary → ClaimAssessmentScope rename.** Timing: After Phase 5k (all stages implemented), before final QA/merge. Captain decision 2026-02-17. Cross-cutting change: types, filenames, prompts, docs, tests. ~1 session, atomic commit. See handover log 2026-02-17 for full strategy. |
+| **Phase 5a-5k** | 🔧 Phase 5d pending | — | Implementation of 5 pipeline stages. 5a COMPLETE (extractClaims), 5b COMPLETE (researchEvidence), 5c COMPLETE (clusterBoundaries). See individual phase entries in Handover Log. |
+| **Post-5k Rename** | 🧭 Planned | — | **ClaimBoundary → ClaimAssessmentBoundary rename (partial).** Timing: After Phase 5k (all stages implemented), before final QA/merge. Captain decision 2026-02-17 (refined after Codex cautions). **Partial rename:** types/docs/UI labels only. **Internal IDs unchanged:** "claimboundary" profile, pipeline variant, schema version "3.0.0-cb". ~1 session, atomic commit, low risk. Addresses Codex cautions: (1) No AGENTS.md "scope" conflict, (2) Zero UCM/config blast radius. See handover log 2026-02-17 for full strategy + checklist. |
 
 ## Handover Log
 
@@ -63,7 +63,138 @@ Each agent writes a short entry here when completing a session.
 | 2026-02-17 | Senior Developer | Phase 5b: Stage 2 | **Stage 2 (researchEvidence) fully implemented.** Claim-driven iteration loop: seed evidence from Stage 1 preliminary search, target claim with fewest evidence items, LLM query generation (GENERATE_QUERIES UCM prompt), web search + batched LLM relevance classification (RELEVANCE_CLASSIFICATION UCM prompt), source fetch + reliability prefetch, evidence extraction with mandatory EvidenceScope (EXTRACT_EVIDENCE UCM prompt), scope quality assessment (complete/partial/incomplete), derivative validation (§8.2 step 9), deterministic evidence filter, sufficiency check with early exit. Contradiction search (reserved iterations) targeting claims with fewest contradicting evidence. Added CB-specific fields to EvidenceItem type: sourceType, relevantClaimIds, claimBoundaryId, isDerivative, derivedFromSourceUrl, derivativeClaimUnverified, scopeQuality. Added additionalDimensions to EvidenceScope (D4). All sub-functions exported for testing: seedEvidenceFromPreliminarySearch, findLeastResearchedClaim, findLeastContradictedClaim, allClaimsSufficient, assessScopeQuality, generateResearchQueries, classifyRelevance, extractResearchEvidence, fetchSources, runResearchIteration. 28 new tests. Build PASS, 42 files 768 tests PASS. | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/CB_Execution_State.md` | None |
 | 2026-02-17 | Senior Developer | Phase 5a: Stage 1 | **Stage 1 (extractClaims) fully implemented.** Two-pass evidence-grounded claim extraction: Pass 1 (Haiku rapid scan → roughClaims + searchHint), Preliminary Search (web search + source fetch + batched evidence extraction), Pass 2 (Sonnet evidence-grounded atomic claim extraction with full AtomicClaim schema), Centrality Filter (deterministic, sorts high-first, caps at maxAtomicClaims), Gate 1 Validation (batched Haiku, opinion + specificity checks, overallPass). All sub-functions exported for unit testing: runPass1, runPass2, runGate1Validation, runPreliminarySearch, generateSearchQueries, filterByCentrality, detectInputType. Added "claimboundary" to Pipeline type in prompt-loader.ts. Zod schemas for all LLM output parsing (Pass1, Pass2, Gate1, ExtractEvidence). 24 new tests with vi.mock for ai, llm, prompt-loader, config-loader, web-search, retrieval modules. Build PASS, 42 files 740 tests PASS. | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/prompt-loader.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/CB_Execution_State.md` | None |
 | 2026-02-17 | Lead Architect | Final Housekeeping | **Implementation plan APPROVED — ready for Phase 5a execution.** Codex GPT 5.2 final review: APPROVE verdict (0 blocking, 0 suggestions). Applied Lead Developer requested updates: (1) Added deferred item #6: contestation weight reduction — CB debate pattern already adjusts for counter-evidence, separate multiplier from legacy getClaimWeight() deferred to v1.1 (requires factualBasis field or binary penalty). (2) Updated Plan footer v1.0→v1.1: changed "Next Step" to "Prompts document created", updated Captain Decision Points with APPROVED status, changed Status to "APPROVED — Ready for Phase 5a execution". (3) Added test count targets to Prompts Testing sections (Phases 5a, 5d). (4) Added Phase 5j note to Prompts (verification-only, no code changes needed, MD already CB-compatible). Build PASS. Total review effort: 6 rounds, 35 blocking issues + 9 suggestions = 44 improvements. Both documents approved and production-ready. | `Docs/WIP/CB_Implementation_Plan_2026-02-17.md`, `Docs/WIP/CB_Implementation_Prompts.md`, `Docs/WIP/CB_Execution_State.md` | None |
-| 2026-02-17 | Lead Architect | Rename Strategy | **ClaimBoundary → ClaimAssessmentScope rename timing decided.** Captain intends to rename terminology post-implementation. **Lead Architect recommendation: After Phase 5k (all stages implemented), before final QA/merge.** Rationale: (1) Zero disruption — Senior Dev completes all implementation without mid-flight changes. (2) Single atomic change — one commit renames everything (types, filenames, prompts, docs, tests, comments), easier to review and verify. (3) Full test coverage — all 5 stages tested before rename, re-test after to catch any breaks. (4) Pre-release window — still internal (v1.0 not released), no breaking changes for users. (5) Clean separation — implementation work separate from naming refactor. Estimated effort: ~1 session (mostly find/replace with careful review). Cross-cutting scope: CBClaimBoundary type, ClaimBoundary interface, claimboundary-pipeline.ts, claimboundary.prompt.md, all UCM prompt sections, architecture/plan/prompts docs, all test files, variable names throughout implementation. **Captain approved recommendation.** Execution: pause after Phase 5k verification pass, create rename checklist, execute as single commit `refactor: rename ClaimBoundary → ClaimAssessmentScope`, run full test suite, update execution state, proceed to final QA. | `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-17 | Senior Developer | Phase 5c: Stage 3 | **Stage 3 (clusterBoundaries) fully implemented.** EvidenceScope deduplication via fingerprinting (methodology+temporal+geographic+boundaries, case/trim-insensitive). LLM clustering via BOUNDARY_CLUSTERING UCM prompt (Sonnet tier): receives unique scopes, evidence items with scope assignments, atomic claims for context; returns ClaimBoundary[] with constituent scopes, coherence scores, congruence rationale. Coherence assessment: flags boundaries below boundaryCoherenceMinimum (UCM, default 0.3) — warn only in v1. Post-clustering validation (deterministic): empty/malformed boundary filtering, duplicate ID resolution, completeness check (every scope in exactly one boundary), orphan scope recovery (adds to "General" fallback), cap enforcement via Jaccard similarity merge (mergeClosestBoundaries). Evidence item assignment: fingerprint-based scope→boundary mapping, fallback to General boundary for unmatched items. All sub-functions exported for testing: scopeFingerprint, collectUniqueScopes, runLLMClustering, createFallbackBoundary, assignEvidenceToBoundaries, boundaryJaccardSimilarity, mergeClosestBoundaries. 21 new tests. Build PASS, 42 files 789 tests PASS. | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/CB_Execution_State.md` | None |
+| 2026-02-17 | Lead Architect | Rename Strategy (Refined) | **ClaimBoundary → ClaimAssessmentBoundary rename timing and scope decided.** **Initial proposal:** ClaimAssessmentScope (full rename). **Codex cautions:** (1) AGENTS.md says ClaimBoundary "NEVER call it scope" — renaming to ClaimAssessmentScope violates governance, requires AGENTS.md rule changes. (2) UCM/config blast radius — renaming prompt profile, pipeline variant, schema version = DB migration + seeding changes + UI detection updates (2-3 sessions, HIGH risk). **Captain's solution:** Rename to **ClaimAssessmentBoundary** instead → keeps "Boundary" terminology (no governance conflict), allows partial rename (types/docs only, internals unchanged). **Lead Architect recommendation: Partial rename (Option B).** What changes: Types (CBClaimBoundary→CBClaimAssessmentBoundary, ClaimBoundary→ClaimAssessmentBoundary), variables (claimBoundary→claimAssessmentBoundary or assessmentBoundary), UI labels ("Claim Boundaries"→"Claim Assessment Boundaries"), docs (architecture/plan/prompts), governance (add ClaimAssessmentBoundary to AGENTS.md terminology table). What stays: prompt profile ("claimboundary"), file name (claimboundary.prompt.md), pipeline variant ("claimboundary"), schema version ("3.0.0-cb"), config keys. **Timing:** After Phase 5k (all stages implemented), before final QA/merge. **Effort:** ~1 session (find/replace + governance updates), low risk, zero UCM/config changes. **Captain approved.** Execution: pause after Phase 5k, create rename checklist, execute as single commit `refactor: rename ClaimBoundary → ClaimAssessmentBoundary (partial)`, run full test suite, update execution state, proceed to final QA. | `Docs/WIP/CB_Execution_State.md` | None |
+
+## Post-5k Rename Checklist
+
+**Execute after Phase 5k completion, before final QA.**
+
+### Rename Strategy: Partial (Types/Docs Only)
+
+**Target:** `ClaimBoundary` → `ClaimAssessmentBoundary`
+
+**Approach:** Keep internal infrastructure IDs unchanged to avoid UCM/config migration.
+
+### Step 1: TypeScript Types and Interfaces
+
+- [ ] `apps/web/src/lib/analyzer/types.ts`:
+  - [ ] `interface ClaimBoundary` → `ClaimAssessmentBoundary`
+  - [ ] `interface CBClaimBoundary` → `CBClaimAssessmentBoundary`
+  - [ ] `interface BoundaryFinding` → `AssessmentBoundaryFinding` (or keep as-is if "Boundary" is sufficient)
+  - [ ] All related type references in same file
+
+- [ ] `apps/web/src/lib/analyzer/index.ts`: Update exports
+
+### Step 2: Implementation Code (Variable Names)
+
+- [ ] `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`:
+  - [ ] Variables: `claimBoundary` → `claimAssessmentBoundary` or `assessmentBoundary`
+  - [ ] Comments: Update terminology
+  - [ ] **Do NOT rename:** function name `runClaimBoundaryAnalysis` (internal routing ID)
+
+- [ ] `apps/web/src/lib/analyzer/verdict-stage.ts`: Update variable names + comments
+
+- [ ] `apps/web/src/lib/internal-runner-queue.ts`: Update variable names in CB routing (keep function name)
+
+### Step 3: Test Files
+
+- [ ] `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`:
+  - [ ] Variables: `claimBoundary` → `claimAssessmentBoundary`
+  - [ ] Mock data: Update object literals
+  - [ ] Comments and test descriptions
+
+- [ ] `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`: Update variables + comments
+
+### Step 4: UI Components and Labels
+
+- [ ] `apps/web/src/app/jobs/[id]/components/BoundaryFindings.tsx`:
+  - [ ] Variables: `claimBoundaries` → `claimAssessmentBoundaries` (or `assessmentBoundaries`)
+  - [ ] UI labels: "Claim Boundaries" → "Claim Assessment Boundaries"
+  - [ ] Comments
+
+- [ ] `apps/web/src/app/jobs/[id]/page.tsx`:
+  - [ ] Variables: `claimBoundaries` → `claimAssessmentBoundaries`
+  - [ ] Badge text: "BOUNDARIES" → "ASSESSMENT BOUNDARIES" (or keep short)
+  - [ ] Comments
+
+### Step 5: Documentation
+
+- [ ] `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`:
+  - [ ] All references: `ClaimBoundary` → `ClaimAssessmentBoundary`
+  - [ ] Rename file → `ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` (optional)
+
+- [ ] `Docs/WIP/CB_Implementation_Plan_2026-02-17.md`: Update all references
+
+- [ ] `Docs/WIP/CB_Implementation_Prompts.md`: Update all references
+
+- [ ] `Docs/WIP/CB_Execution_State.md`:
+  - [ ] Update terminology in Confusion Prevention
+  - [ ] Update handover log entries (historical — mark as "pre-rename terminology")
+  - [ ] Rename file → `CAB_Execution_State.md` (optional)
+
+### Step 6: Governance Documents
+
+- [ ] `AGENTS.md`:
+  - [ ] Terminology table: Update `ClaimBoundary` entry to `ClaimAssessmentBoundary`
+  - [ ] Update "NEVER call it" column (keep "context, scope")
+  - [ ] Update Key Files section if file names changed
+  - [ ] Update Confusion Prevention examples
+
+- [ ] `CLAUDE.md`: Update terminology references
+
+- [ ] `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`: Update if ClaimBoundary appears
+
+### Step 7: Infrastructure (DO NOT CHANGE)
+
+**Keep these unchanged to avoid UCM/config migration:**
+
+- [ ] ❌ **Do NOT rename:** `"claimboundary"` prompt profile (config-storage.ts)
+- [ ] ❌ **Do NOT rename:** `claimboundary.prompt.md` file
+- [ ] ❌ **Do NOT rename:** `"claimboundary"` pipeline variant enum value
+- [ ] ❌ **Do NOT rename:** `"3.0.0-cb"` schema version
+- [ ] ❌ **Do NOT rename:** UCM prompt section keys (CLAIM_EXTRACTION_PASS1, etc.)
+- [ ] ❌ **Do NOT rename:** Config field names in database
+
+### Step 8: Verification
+
+- [ ] Run `npm run build` — must PASS
+- [ ] Run `npm test` — must PASS (all existing tests)
+- [ ] Grep verification:
+  - [ ] `grep -r "ClaimBoundary" apps/web/src/` — should only find internal IDs (function names, pipeline variant)
+  - [ ] `grep -r "claimBoundary" apps/web/src/` — should only find internal routing/config references
+  - [ ] `grep -r "ClaimAssessmentBoundary" apps/web/src/` — should find new type names
+- [ ] Review changes: ensure internal IDs preserved, user-facing names updated
+
+### Step 9: Commit
+
+```bash
+git add -A
+git commit -m "refactor: rename ClaimBoundary → ClaimAssessmentBoundary (partial)
+
+Partial rename: types, variables, UI labels, and documentation only.
+Internal infrastructure IDs unchanged (prompt profile, pipeline variant,
+schema version) to avoid UCM/config migration.
+
+Addresses Codex cautions:
+- No AGENTS.md 'scope' terminology conflict (keeps 'Boundary')
+- Zero UCM/config blast radius (internal IDs unchanged)
+
+Build PASS | Tests PASS
+
+Co-Authored-By: Claude <model> <noreply@anthropic.com>"
+```
+
+### Step 10: Post-Rename Updates
+
+- [ ] Update `CB_Execution_State.md` (or `CAB_Execution_State.md`) handover log
+- [ ] Update phase checklist: mark "Post-5k Rename" as ✅ Complete
+- [ ] Proceed to final QA
+
+**Estimated effort:** ~1 session (~1-2 hours)
+**Risk:** LOW (no infrastructure changes, pure refactor)
+
+---
 
 ## Quick Reference for Agents
 

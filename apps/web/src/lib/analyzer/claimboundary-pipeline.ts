@@ -25,6 +25,7 @@ import type {
   ClaimBoundary,
   CoverageMatrix,
   EvidenceItem,
+  EvidenceScope,
   FetchedSource,
   OverallAssessment,
   QualityGates,
@@ -1454,6 +1455,43 @@ function mapSourceType(sourceType?: string): SourceType | undefined {
 // STAGE 3: CLUSTER BOUNDARIES (§8.3)
 // ============================================================================
 
+// --- Zod schema for Stage 3 LLM output parsing ---
+
+const BoundaryClusteringOutputSchema = z.object({
+  claimBoundaries: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    shortName: z.string(),
+    description: z.string(),
+    methodology: z.string().optional(),
+    boundaries: z.string().optional(),
+    geographic: z.string().optional(),
+    temporal: z.string().optional(),
+    constituentScopeIndices: z.array(z.number()),
+    internalCoherence: z.number(),
+  })),
+  scopeToBoundaryMapping: z.array(z.object({
+    scopeIndex: z.number(),
+    boundaryId: z.string(),
+    rationale: z.string(),
+  })),
+  congruenceDecisions: z.array(z.object({
+    scopeA: z.number(),
+    scopeB: z.number(),
+    congruent: z.boolean(),
+    rationale: z.string(),
+  })),
+});
+
+/**
+ * A unique scope entry with its index for LLM reference.
+ */
+export interface UniqueScope {
+  index: number;
+  scope: EvidenceScope;
+  originalIndices: number[]; // indices into state.evidenceItems that share this scope
+}
+
 /**
  * Stage 3: Organize evidence into ClaimBoundaries by clustering compatible EvidenceScopes.
  *
@@ -1467,13 +1505,397 @@ function mapSourceType(sourceType?: string): SourceType | undefined {
 export async function clusterBoundaries(
   state: CBResearchState
 ): Promise<ClaimBoundary[]> {
-  // TODO (Phase 1b/1c): Implement scope clustering
-  // 1. Collect unique EvidenceScopes
-  // 2. LLM clustering (Sonnet)
-  // 3. Coherence assessment
-  // 4. Post-clustering validation (deterministic)
-  // 5. Fallback to single "General" boundary if needed
-  throw new Error("Stage 3 (clusterBoundaries) not yet implemented");
+  const [pipelineResult] = await Promise.all([
+    loadPipelineConfig("default"),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  // ------------------------------------------------------------------
+  // Step 1: Collect unique EvidenceScopes
+  // ------------------------------------------------------------------
+  const uniqueScopes = collectUniqueScopes(state.evidenceItems);
+
+  // If 0 or 1 unique scopes, skip LLM — single boundary
+  if (uniqueScopes.length <= 1) {
+    const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
+    assignEvidenceToBoundaries(state.evidenceItems, [boundary], uniqueScopes);
+    return [boundary];
+  }
+
+  // ------------------------------------------------------------------
+  // Step 2: LLM clustering (Sonnet tier)
+  // ------------------------------------------------------------------
+  let boundaries: ClaimBoundary[];
+  try {
+    boundaries = await runLLMClustering(
+      uniqueScopes,
+      state.evidenceItems,
+      state.understanding?.atomicClaims ?? [],
+      pipelineConfig,
+      currentDate,
+    );
+    state.llmCalls++;
+  } catch (err) {
+    console.warn("[Stage3] LLM clustering failed, using fallback:", err);
+    const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
+    assignEvidenceToBoundaries(state.evidenceItems, [boundary], uniqueScopes);
+    return [boundary];
+  }
+
+  // ------------------------------------------------------------------
+  // Step 3: Coherence assessment — flag low-coherence boundaries
+  // ------------------------------------------------------------------
+  const coherenceMinimum = pipelineConfig.boundaryCoherenceMinimum ?? 0.3;
+  for (const b of boundaries) {
+    if (b.internalCoherence < coherenceMinimum) {
+      console.warn(
+        `[Stage3] Boundary "${b.name}" (${b.id}) has low coherence: ${b.internalCoherence} < ${coherenceMinimum}`,
+      );
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Step 4: Post-clustering validation (deterministic)
+  // ------------------------------------------------------------------
+
+  // 4a. Validate no empty or malformed boundaries
+  boundaries = boundaries.filter(
+    (b) => b.id && b.name && b.constituentScopes.length > 0,
+  );
+
+  if (boundaries.length === 0) {
+    console.warn("[Stage3] All boundaries invalid after filtering — using fallback");
+    const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
+    assignEvidenceToBoundaries(state.evidenceItems, [boundary], uniqueScopes);
+    return [boundary];
+  }
+
+  // 4b. Validate no duplicate boundary IDs
+  const idSet = new Set<string>();
+  for (const b of boundaries) {
+    if (idSet.has(b.id)) {
+      b.id = `${b.id}_${Date.now()}`;
+    }
+    idSet.add(b.id);
+  }
+
+  // 4c. Completeness check — every unique scope must be in exactly one boundary
+  const assignedScopeIndices = new Set<number>();
+  for (const b of boundaries) {
+    for (const scope of b.constituentScopes) {
+      const matchIdx = uniqueScopes.findIndex(
+        (us) => scopeFingerprint(us.scope) === scopeFingerprint(scope),
+      );
+      if (matchIdx >= 0) assignedScopeIndices.add(matchIdx);
+    }
+  }
+
+  // Find orphaned scopes
+  const orphanedScopes = uniqueScopes.filter((_, idx) => !assignedScopeIndices.has(idx));
+  if (orphanedScopes.length > 0) {
+    // Add orphaned scopes to a "General" fallback boundary
+    let generalBoundary = boundaries.find((b) => b.id === "CB_GENERAL");
+    if (!generalBoundary) {
+      generalBoundary = {
+        id: "CB_GENERAL",
+        name: "General Evidence",
+        shortName: "General",
+        description: "Evidence not assigned to a specific methodology boundary",
+        constituentScopes: [],
+        internalCoherence: 0.5,
+        evidenceCount: 0,
+      };
+      boundaries.push(generalBoundary);
+    }
+    for (const orphan of orphanedScopes) {
+      generalBoundary.constituentScopes.push(orphan.scope);
+    }
+  }
+
+  // 4d. Cap enforcement — merge if over maxClaimBoundaries
+  const maxBoundaries = pipelineConfig.maxClaimBoundaries ?? 6;
+  while (boundaries.length > maxBoundaries) {
+    boundaries = mergeClosestBoundaries(boundaries);
+  }
+
+  // ------------------------------------------------------------------
+  // Step 5: Assign evidence items to boundaries
+  // ------------------------------------------------------------------
+  assignEvidenceToBoundaries(state.evidenceItems, boundaries, uniqueScopes);
+
+  // Update evidenceCount per boundary
+  for (const b of boundaries) {
+    b.evidenceCount = state.evidenceItems.filter(
+      (e) => e.claimBoundaryId === b.id,
+    ).length;
+  }
+
+  return boundaries;
+}
+
+// ============================================================================
+// STAGE 3 HELPERS (exported for unit testing)
+// ============================================================================
+
+/**
+ * Generate a fingerprint for an EvidenceScope for deduplication.
+ * Uses methodology + temporal + geographic + boundaries as key fields.
+ */
+export function scopeFingerprint(scope: EvidenceScope): string {
+  return JSON.stringify({
+    m: (scope.methodology ?? "").trim().toLowerCase(),
+    t: (scope.temporal ?? "").trim().toLowerCase(),
+    g: (scope.geographic ?? "").trim().toLowerCase(),
+    b: (scope.boundaries ?? "").trim().toLowerCase(),
+  });
+}
+
+/**
+ * Collect unique EvidenceScopes from evidence items, deduplicating by fingerprint.
+ * Returns array of UniqueScope entries with indices back to originating evidence items.
+ */
+export function collectUniqueScopes(evidenceItems: EvidenceItem[]): UniqueScope[] {
+  const seen = new Map<string, UniqueScope>();
+
+  for (let i = 0; i < evidenceItems.length; i++) {
+    const scope = evidenceItems[i].evidenceScope;
+    if (!scope) continue;
+
+    const fp = scopeFingerprint(scope);
+    const existing = seen.get(fp);
+    if (existing) {
+      existing.originalIndices.push(i);
+    } else {
+      seen.set(fp, {
+        index: seen.size,
+        scope,
+        originalIndices: [i],
+      });
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
+/**
+ * Run LLM clustering via BOUNDARY_CLUSTERING prompt (Sonnet tier).
+ * Returns ClaimBoundary[] parsed from LLM output.
+ */
+export async function runLLMClustering(
+  uniqueScopes: UniqueScope[],
+  evidenceItems: EvidenceItem[],
+  atomicClaims: AtomicClaim[],
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<ClaimBoundary[]> {
+  const rendered = await loadAndRenderSection("claimboundary", "BOUNDARY_CLUSTERING", {
+    currentDate,
+    evidenceScopes: JSON.stringify(
+      uniqueScopes.map((us) => ({
+        index: us.index,
+        ...us.scope,
+      })),
+      null,
+      2,
+    ),
+    evidenceItems: JSON.stringify(
+      evidenceItems.map((ei, idx) => ({
+        index: idx,
+        statement: ei.statement.slice(0, 100),
+        claimDirection: ei.claimDirection,
+        scopeFingerprint: ei.evidenceScope ? scopeFingerprint(ei.evidenceScope) : null,
+        relevantClaimIds: ei.relevantClaimIds,
+      })),
+      null,
+      2,
+    ),
+    atomicClaims: JSON.stringify(
+      atomicClaims.map((c) => ({
+        id: c.id,
+        statement: c.statement,
+      })),
+      null,
+      2,
+    ),
+  });
+
+  if (!rendered) {
+    throw new Error("Stage 3: Failed to load BOUNDARY_CLUSTERING prompt section");
+  }
+
+  const model = getModelForTask("verdict", undefined, pipelineConfig);
+
+  const result = await generateText({
+    model: model.model,
+    messages: [
+      {
+        role: "system",
+        content: rendered.content,
+        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+      },
+      {
+        role: "user",
+        content: `Cluster ${uniqueScopes.length} unique EvidenceScopes into ClaimBoundaries based on methodological congruence.`,
+      },
+    ],
+    temperature: 0.15,
+    output: Output.object({ schema: BoundaryClusteringOutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(
+      pipelineConfig.llmProvider ?? "anthropic",
+    ),
+  });
+
+  const parsed = extractStructuredOutput(result);
+  if (!parsed) {
+    throw new Error("Stage 3: LLM returned no structured output");
+  }
+
+  const validated = BoundaryClusteringOutputSchema.parse(parsed);
+
+  if (validated.claimBoundaries.length === 0) {
+    throw new Error("Stage 3: LLM returned 0 boundaries");
+  }
+
+  // Map LLM output to ClaimBoundary[] with constituentScopes
+  return validated.claimBoundaries.map((cb) => ({
+    id: cb.id,
+    name: cb.name,
+    shortName: cb.shortName,
+    description: cb.description,
+    methodology: cb.methodology,
+    boundaries: cb.boundaries,
+    geographic: cb.geographic,
+    temporal: cb.temporal,
+    constituentScopes: cb.constituentScopeIndices
+      .filter((idx) => idx >= 0 && idx < uniqueScopes.length)
+      .map((idx) => uniqueScopes[idx].scope),
+    internalCoherence: Math.max(0, Math.min(1, cb.internalCoherence)),
+    evidenceCount: 0, // Populated after assignment
+  }));
+}
+
+/**
+ * Create a single fallback "General" boundary containing all scopes.
+ */
+export function createFallbackBoundary(
+  uniqueScopes: UniqueScope[],
+  evidenceItems: EvidenceItem[],
+): ClaimBoundary {
+  return {
+    id: "CB_GENERAL",
+    name: "General Evidence",
+    shortName: "General",
+    description: "All evidence analyzed together",
+    constituentScopes: uniqueScopes.map((us) => us.scope),
+    internalCoherence: 0.8,
+    evidenceCount: evidenceItems.length,
+  };
+}
+
+/**
+ * Assign each evidence item to a boundary by matching its scope fingerprint
+ * to the boundary's constituent scopes.
+ */
+export function assignEvidenceToBoundaries(
+  evidenceItems: EvidenceItem[],
+  boundaries: ClaimBoundary[],
+  uniqueScopes: UniqueScope[],
+): void {
+  // Build scope fingerprint → boundary ID mapping
+  const fpToBoundary = new Map<string, string>();
+  for (const boundary of boundaries) {
+    for (const scope of boundary.constituentScopes) {
+      fpToBoundary.set(scopeFingerprint(scope), boundary.id);
+    }
+  }
+
+  // Assign each evidence item
+  for (const item of evidenceItems) {
+    if (item.evidenceScope) {
+      const fp = scopeFingerprint(item.evidenceScope);
+      const boundaryId = fpToBoundary.get(fp);
+      if (boundaryId) {
+        item.claimBoundaryId = boundaryId;
+        continue;
+      }
+    }
+    // Fallback: assign to first boundary (General if exists, otherwise first)
+    const fallback = boundaries.find((b) => b.id === "CB_GENERAL") ?? boundaries[0];
+    if (fallback) {
+      item.claimBoundaryId = fallback.id;
+    }
+  }
+}
+
+/**
+ * Compute Jaccard similarity between two boundaries based on scope fingerprints.
+ */
+export function boundaryJaccardSimilarity(a: ClaimBoundary, b: ClaimBoundary): number {
+  const setA = new Set(a.constituentScopes.map(scopeFingerprint));
+  const setB = new Set(b.constituentScopes.map(scopeFingerprint));
+
+  if (setA.size === 0 && setB.size === 0) return 1;
+
+  let intersection = 0;
+  for (const fp of setA) {
+    if (setB.has(fp)) intersection++;
+  }
+
+  const union = setA.size + setB.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+/**
+ * Merge the two most similar boundaries (highest Jaccard similarity).
+ * Returns new array with one fewer boundary.
+ */
+export function mergeClosestBoundaries(boundaries: ClaimBoundary[]): ClaimBoundary[] {
+  if (boundaries.length <= 1) return boundaries;
+
+  let bestI = 0;
+  let bestJ = 1;
+  let bestSim = -1;
+
+  for (let i = 0; i < boundaries.length; i++) {
+    for (let j = i + 1; j < boundaries.length; j++) {
+      const sim = boundaryJaccardSimilarity(boundaries[i], boundaries[j]);
+      if (sim > bestSim) {
+        bestSim = sim;
+        bestI = i;
+        bestJ = j;
+      }
+    }
+  }
+
+  const a = boundaries[bestI];
+  const b = boundaries[bestJ];
+
+  // Merge b into a
+  const merged: ClaimBoundary = {
+    id: a.id,
+    name: `${a.name} + ${b.name}`,
+    shortName: a.shortName,
+    description: `Merged: ${a.description}; ${b.description}`,
+    methodology: a.methodology,
+    boundaries: a.boundaries,
+    geographic: a.geographic,
+    temporal: a.temporal,
+    constituentScopes: [
+      ...a.constituentScopes,
+      ...b.constituentScopes.filter(
+        (s) => !a.constituentScopes.some(
+          (as) => scopeFingerprint(as) === scopeFingerprint(s),
+        ),
+      ),
+    ],
+    internalCoherence: (a.internalCoherence + b.internalCoherence) / 2,
+    evidenceCount: a.evidenceCount + b.evidenceCount,
+  };
+
+  const result = boundaries.filter((_, idx) => idx !== bestI && idx !== bestJ);
+  result.push(merged);
+  return result;
 }
 
 // ============================================================================
