@@ -236,6 +236,8 @@ export interface EvidenceScope {
   // NEW v2.8 (Phase 2): Source type classification for better reliability calibration
   // This helps the system weight evidence appropriately based on source characteristics
   sourceType?: SourceType;
+  // CB pipeline D4: Domain-specific scope data (sample_size, blinding, jurisdiction_level, etc.)
+  additionalDimensions?: Record<string, string>;
 }
 
 /**
@@ -426,6 +428,20 @@ export interface EvidenceItem {
   probativeValue?: "high" | "medium" | "low";
   // NEW v2.8: Extraction confidence - how confident the LLM is in this extraction (0-100)
   extractionConfidence?: number;
+  // CB pipeline: Source classification (peer_reviewed_study, news_primary, etc.)
+  sourceType?: SourceType;
+  // CB pipeline: Which atomic claims this evidence relates to
+  relevantClaimIds?: string[];
+  // CB pipeline: Which ClaimBoundary this evidence belongs to (assigned in Stage 3)
+  claimBoundaryId?: string;
+  // CB pipeline §8.5.3: True if this evidence cites another source's underlying study
+  isDerivative?: boolean;
+  // CB pipeline §8.5.3: URL of the original source if isDerivative is true
+  derivedFromSourceUrl?: string;
+  // CB pipeline §8.2 step 9: True if derivedFromSourceUrl was not found in fetched sources pool
+  derivativeClaimUnverified?: boolean;
+  // CB pipeline §8.2 step 8: EvidenceScope quality assessment
+  scopeQuality?: "complete" | "partial" | "incomplete";
 }
 
 export interface FetchedSource {

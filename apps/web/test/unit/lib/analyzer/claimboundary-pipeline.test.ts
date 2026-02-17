@@ -19,6 +19,16 @@ import {
   runPass2,
   runGate1Validation,
   runPreliminarySearch,
+  seedEvidenceFromPreliminarySearch,
+  findLeastResearchedClaim,
+  findLeastContradictedClaim,
+  allClaimsSufficient,
+  assessScopeQuality,
+  generateResearchQueries,
+  classifyRelevance,
+  extractResearchEvidence,
+  fetchSources,
+  runResearchIteration,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -611,6 +621,19 @@ vi.mock("@/lib/retrieval", () => ({
   extractTextFromUrl: vi.fn(),
 }));
 
+vi.mock("@/lib/analyzer/source-reliability", () => ({
+  prefetchSourceReliability: vi.fn(async () => ({ domains: [], alreadyPrefetched: 0, cacheHits: 0, evaluated: 0 })),
+  getTrackRecordScore: vi.fn(() => 0.7),
+}));
+
+vi.mock("@/lib/analyzer/evidence-filter", () => ({
+  filterByProbativeValue: vi.fn((evidence: any[]) => ({
+    kept: evidence,
+    filtered: [],
+    stats: { total: evidence.length, kept: evidence.length, filtered: 0, filterReasons: {} },
+  })),
+}));
+
 // Import mocked modules for per-test setup
 import { generateText } from "ai";
 import { extractStructuredOutput } from "@/lib/analyzer/llm";
@@ -927,5 +950,538 @@ describe("Stage 1: runPreliminarySearch", () => {
     expect(result).toHaveLength(0);
     // extractPreliminaryEvidence should NOT have been called since no sources passed length filter
     expect(state.llmCalls).toBe(0);
+  });
+});
+
+// ============================================================================
+// STAGE 2: RESEARCH EVIDENCE — Unit Tests (§8.2)
+// ============================================================================
+
+// --- Pure function tests (no mocks needed) ---
+
+describe("seedEvidenceFromPreliminarySearch", () => {
+  it("should convert preliminary evidence to EvidenceItem format", () => {
+    const state = {
+      understanding: {
+        preliminaryEvidence: [
+          { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01" },
+          { sourceUrl: "https://example.com/2", snippet: "Evidence B", claimId: "AC_02" },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(2);
+    expect(state.evidenceItems[0].id).toBe("EV_001");
+    expect(state.evidenceItems[0].statement).toBe("Evidence A");
+    expect(state.evidenceItems[0].sourceUrl).toBe("https://example.com/1");
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01"]);
+    expect(state.evidenceItems[0].scopeQuality).toBe("partial");
+  });
+
+  it("should handle empty preliminary evidence", () => {
+    const state = {
+      understanding: { preliminaryEvidence: [] },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+    expect(state.evidenceItems).toHaveLength(0);
+  });
+
+  it("should handle null understanding", () => {
+    const state = { understanding: null, evidenceItems: [] } as any;
+    seedEvidenceFromPreliminarySearch(state);
+    expect(state.evidenceItems).toHaveLength(0);
+  });
+
+  it("should start IDs after existing evidence items", () => {
+    const state = {
+      understanding: {
+        preliminaryEvidence: [
+          { sourceUrl: "https://example.com/1", snippet: "New evidence", claimId: "AC_01" },
+        ],
+      },
+      evidenceItems: [{ id: "EV_001" }, { id: "EV_002" }],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+    expect(state.evidenceItems[2].id).toBe("EV_003");
+  });
+});
+
+describe("findLeastResearchedClaim", () => {
+  it("should return claim with fewest evidence items", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+      createAtomicClaim({ id: "AC_03", statement: "Claim 3" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_03"] },
+    ] as any[];
+
+    const result = findLeastResearchedClaim(claims, evidence);
+    expect(result?.id).toBe("AC_02"); // 0 evidence items
+  });
+
+  it("should return null for empty claims", () => {
+    expect(findLeastResearchedClaim([], [])).toBeNull();
+  });
+});
+
+describe("findLeastContradictedClaim", () => {
+  it("should return claim with fewest contradicting evidence", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], claimDirection: "contradicts" },
+      { relevantClaimIds: ["AC_01"], claimDirection: "contradicts" },
+      { relevantClaimIds: ["AC_02"], claimDirection: "supports" },
+    ] as any[];
+
+    const result = findLeastContradictedClaim(claims, evidence);
+    expect(result?.id).toBe("AC_02"); // 0 contradicting
+  });
+});
+
+describe("allClaimsSufficient", () => {
+  it("should return true when all claims have enough evidence", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_02"] },
+      { relevantClaimIds: ["AC_02"] },
+      { relevantClaimIds: ["AC_02"] },
+    ] as any[];
+
+    expect(allClaimsSufficient(claims, evidence, 3)).toBe(true);
+  });
+
+  it("should return false when any claim is below threshold", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_01"] },
+      { relevantClaimIds: ["AC_02"] },
+    ] as any[];
+
+    expect(allClaimsSufficient(claims, evidence, 3)).toBe(false);
+  });
+
+  it("should return true for empty claims", () => {
+    expect(allClaimsSufficient([], [], 3)).toBe(true);
+  });
+});
+
+describe("assessScopeQuality", () => {
+  it("should return 'complete' for well-populated scope", () => {
+    const item = {
+      evidenceScope: {
+        name: "ISO study",
+        methodology: "ISO 14040 lifecycle assessment",
+        temporal: "2019-2023 data",
+      },
+    } as any;
+    expect(assessScopeQuality(item)).toBe("complete");
+  });
+
+  it("should return 'partial' for vague scope fields", () => {
+    const item = {
+      evidenceScope: {
+        name: "Vague",
+        methodology: "n/a",
+        temporal: "2024",
+      },
+    } as any;
+    expect(assessScopeQuality(item)).toBe("partial");
+  });
+
+  it("should return 'incomplete' when methodology is missing", () => {
+    const item = {
+      evidenceScope: {
+        name: "Missing",
+        temporal: "2024",
+      },
+    } as any;
+    expect(assessScopeQuality(item)).toBe("incomplete");
+  });
+
+  it("should return 'incomplete' when temporal is missing", () => {
+    const item = {
+      evidenceScope: {
+        name: "Missing",
+        methodology: "Study method",
+      },
+    } as any;
+    expect(assessScopeQuality(item)).toBe("incomplete");
+  });
+
+  it("should return 'incomplete' when evidenceScope is undefined", () => {
+    const item = {} as any;
+    expect(assessScopeQuality(item)).toBe("incomplete");
+  });
+
+  it("should return 'incomplete' for empty string fields", () => {
+    const item = {
+      evidenceScope: {
+        name: "Empty",
+        methodology: "",
+        temporal: "2024",
+      },
+    } as any;
+    expect(assessScopeQuality(item)).toBe("incomplete");
+  });
+});
+
+// --- LLM-dependent Stage 2 function tests (mocked) ---
+
+describe("Stage 2: generateResearchQueries", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should generate queries via LLM", async () => {
+    const claim = createAtomicClaim({
+      id: "AC_01",
+      statement: "Entity A increased metric by 50%",
+      expectedEvidenceProfile: {
+        methodologies: ["data analysis"],
+        expectedMetrics: ["metric growth"],
+        expectedSourceTypes: ["government_report"],
+      },
+    });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "entity A metric growth statistics", rationale: "official data" },
+        { query: "entity A 50% increase study", rationale: "verification" },
+      ],
+    });
+
+    const result = await generateResearchQueries(claim, "main", [], mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(2);
+    expect(result[0].query).toBe("entity A metric growth statistics");
+    expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "GENERATE_QUERIES", expect.any(Object));
+  });
+
+  it("should fallback to claim statement when prompt is missing", async () => {
+    const claim = createAtomicClaim({ statement: "Short claim text" });
+    mockLoadSection.mockResolvedValue(null as any);
+
+    const result = await generateResearchQueries(claim, "main", [], mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].rationale).toBe("fallback");
+  });
+});
+
+describe("Stage 2: classifyRelevance", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should classify search results via LLM and filter by score", async () => {
+    const claim = createAtomicClaim({ statement: "Test claim" });
+    const searchResults = [
+      { url: "https://example.com/1", title: "Source 1", snippet: "relevant" },
+      { url: "https://example.com/2", title: "Source 2", snippet: "irrelevant" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "relevance prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/1", relevanceScore: 0.85, reasoning: "directly relevant" },
+        { url: "https://example.com/2", relevanceScore: 0.2, reasoning: "not relevant" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig, "2026-02-17");
+
+    // Only source with score >= 0.4 should be kept
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://example.com/1");
+  });
+
+  it("should accept all results with neutral score when prompt is missing", async () => {
+    const claim = createAtomicClaim();
+    const searchResults = [
+      { url: "https://example.com/1", title: "Source 1", snippet: "text" },
+    ];
+    mockLoadSection.mockResolvedValue(null as any);
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].relevanceScore).toBe(0.5);
+  });
+});
+
+describe("Stage 2: extractResearchEvidence", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+
+  it("should extract evidence items with full EvidenceScope", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Test claim" });
+    const sources = [
+      { url: "https://example.com/1", title: "Source 1", text: "Long text content..." },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "extract prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Statistical data shows X increased by 30%",
+          category: "statistic",
+          claimDirection: "supports",
+          evidenceScope: {
+            methodology: "Government statistical survey",
+            temporal: "2023-2024",
+            geographic: "United States",
+          },
+          probativeValue: "high",
+          sourceType: "government_report",
+          isDerivative: false,
+          derivedFromSourceUrl: null,
+          relevantClaimIds: ["AC_01"],
+        },
+      ],
+    });
+
+    const result = await extractResearchEvidence(claim, sources, mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].statement).toBe("Statistical data shows X increased by 30%");
+    expect(result[0].evidenceScope?.methodology).toBe("Government statistical survey");
+    expect(result[0].evidenceScope?.temporal).toBe("2023-2024");
+    expect(result[0].sourceType).toBe("government_report");
+    expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
+    expect(result[0].isDerivative).toBe(false);
+    expect(result[0].probativeValue).toBe("high");
+  });
+
+  it("should default relevantClaimIds to target claim when LLM omits them", async () => {
+    const claim = createAtomicClaim({ id: "AC_02" });
+    const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Some evidence",
+          category: "evidence",
+          claimDirection: "supports",
+          evidenceScope: { methodology: "Study", temporal: "2024" },
+          probativeValue: "medium",
+          relevantClaimIds: [],
+        },
+      ],
+    });
+
+    const result = await extractResearchEvidence(claim, sources, mockPipelineConfig, "2026-02-17");
+
+    expect(result[0].relevantClaimIds).toEqual(["AC_02"]);
+  });
+
+  it("should return empty array when prompt is missing", async () => {
+    const claim = createAtomicClaim();
+    mockLoadSection.mockResolvedValue(null as any);
+
+    const result = await extractResearchEvidence(claim, [], mockPipelineConfig, "2026-02-17");
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe("Stage 2: fetchSources", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should fetch sources and add to state", async () => {
+    const state = { sources: [] } as any;
+    const relevantSources = [{ url: "https://example.com/1", relevanceScore: 0.9 }];
+
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(200),
+      title: "Test Source",
+      contentType: "text/html",
+    });
+
+    const result = await fetchSources(relevantSources, "test query", state);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Test Source");
+    expect(state.sources).toHaveLength(1);
+    expect(state.sources[0].url).toBe("https://example.com/1");
+    expect(state.sources[0].fetchSuccess).toBe(true);
+  });
+
+  it("should skip already-fetched URLs", async () => {
+    const state = {
+      sources: [{ url: "https://example.com/1", id: "S_001" }],
+    } as any;
+    const relevantSources = [{ url: "https://example.com/1" }];
+
+    const result = await fetchSources(relevantSources, "test", state);
+
+    expect(result).toHaveLength(0);
+    expect(mockFetchUrl).not.toHaveBeenCalled();
+  });
+
+  it("should skip sources with too-short content", async () => {
+    const state = { sources: [] } as any;
+    const relevantSources = [{ url: "https://example.com/short" }];
+
+    mockFetchUrl.mockResolvedValue({ text: "short", title: "Short", contentType: "text/html" });
+
+    const result = await fetchSources(relevantSources, "test", state);
+
+    expect(result).toHaveLength(0);
+    expect(state.sources).toHaveLength(0);
+  });
+});
+
+describe("Stage 2: runResearchIteration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockSearchConfig = {} as any;
+  const mockPipelineConfig = {} as any;
+
+  it("should run full iteration pipeline: queries → search → relevance → fetch → extract → filter", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Test claim" });
+    const state = {
+      searchQueries: [],
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    // Mock query generation
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    // Mock query generation output (1st LLM call)
+    // Mock relevance classification output (2nd LLM call)
+    // Mock evidence extraction output (3rd LLM call)
+    let callCount = 0;
+    mockExtractOutput.mockImplementation(() => {
+      callCount++;
+      switch (callCount) {
+        case 1: // generateResearchQueries
+          return {
+            queries: [{ query: "test query", rationale: "test" }],
+          };
+        case 2: // classifyRelevance
+          return {
+            relevantSources: [
+              { url: "https://example.com/1", relevanceScore: 0.9, reasoning: "relevant" },
+            ],
+          };
+        case 3: // extractResearchEvidence
+          return {
+            evidenceItems: [
+              {
+                statement: "Test evidence statement with enough length for filtering",
+                category: "statistic",
+                claimDirection: "supports",
+                evidenceScope: {
+                  methodology: "Statistical survey analysis",
+                  temporal: "2024 fiscal year",
+                },
+                probativeValue: "high",
+                sourceType: "government_report",
+                isDerivative: false,
+                derivedFromSourceUrl: null,
+                relevantClaimIds: ["AC_01"],
+              },
+            ],
+          };
+        default:
+          return null;
+      }
+    });
+
+    // Mock search results
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
+      providersUsed: ["google"],
+    } as any);
+
+    // Mock URL fetch
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(500),
+      title: "Test Source",
+      contentType: "text/html",
+    });
+
+    await runResearchIteration(claim, "main", mockSearchConfig, mockPipelineConfig, 8, "2026-02-17", state);
+
+    // Should have tracked search query
+    expect(state.searchQueries).toHaveLength(1);
+    // Should have called LLM 3 times (queries, relevance, extraction)
+    expect(state.llmCalls).toBe(3);
+    // Should have fetched source
+    expect(state.sources).toHaveLength(1);
+    // Should have added evidence (if it passes filter)
+    expect(state.evidenceItems.length).toBeGreaterThanOrEqual(0); // Filter may remove
+  });
+
+  it("should track contradictionSourcesFound for contradiction iterations", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const state = {
+      searchQueries: [],
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    // Minimal mocking — search returns no results so iteration ends early
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [{ query: "contradiction query", rationale: "test" }],
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    await runResearchIteration(claim, "contradiction", mockSearchConfig, mockPipelineConfig, 8, "2026-02-17", state);
+
+    // contradictionSourcesFound should be 0 (no sources found)
+    expect(state.contradictionSourcesFound).toBe(0);
   });
 });

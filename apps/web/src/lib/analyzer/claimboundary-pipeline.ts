@@ -35,7 +35,7 @@ import type {
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
 import { filterByProbativeValue } from "./evidence-filter";
-import { prefetchSourceReliability } from "./source-reliability";
+import { prefetchSourceReliability, getTrackRecordScore } from "./source-reliability";
 import { getClaimWeight, calculateWeightedVerdictAverage } from "./aggregation";
 
 // Verdict stage module (§8.4 — 5-step debate pattern)
@@ -812,6 +812,46 @@ export async function runGate1Validation(
 // STAGE 2: RESEARCH (§8.2)
 // ============================================================================
 
+// --- Zod schemas for Stage 2 LLM output parsing ---
+
+const GenerateQueriesOutputSchema = z.object({
+  queries: z.array(z.object({
+    query: z.string(),
+    rationale: z.string(),
+  })),
+});
+
+const RelevanceClassificationOutputSchema = z.object({
+  relevantSources: z.array(z.object({
+    url: z.string(),
+    relevanceScore: z.number(),
+    reasoning: z.string(),
+  })),
+});
+
+// Full evidence extraction schema (Stage 2 uses same EXTRACT_EVIDENCE prompt as Stage 1)
+const Stage2EvidenceItemSchema = z.object({
+  statement: z.string(),
+  category: z.string(),
+  claimDirection: z.enum(["supports", "contradicts", "contextual"]),
+  evidenceScope: z.object({
+    methodology: z.string().optional(),
+    temporal: z.string().optional(),
+    geographic: z.string().optional(),
+    boundaries: z.string().optional(),
+    additionalDimensions: z.record(z.string()).optional(),
+  }),
+  probativeValue: z.enum(["high", "medium", "low"]),
+  sourceType: z.string().optional(),
+  isDerivative: z.boolean().optional(),
+  derivedFromSourceUrl: z.string().nullable().optional(),
+  relevantClaimIds: z.array(z.string()),
+});
+
+const Stage2ExtractEvidenceOutputSchema = z.object({
+  evidenceItems: z.array(Stage2EvidenceItemSchema),
+});
+
 /**
  * Stage 2: Gather evidence for each central claim using web search and LLM extraction.
  *
@@ -824,16 +864,590 @@ export async function runGate1Validation(
 export async function researchEvidence(
   state: CBResearchState
 ): Promise<void> {
-  // TODO (Phase 1b/1c): Implement claim-driven research loop
-  // 1. Seed evidence pool from Stage 1 preliminary search
-  // 2. Claim-driven query generation
-  // 3. Web search + relevance classification
-  // 4. Source fetch + reliability prefetch
-  // 5. Evidence extraction with mandatory EvidenceScope
-  // 6. EvidenceScope validation
-  // 7. Evidence filter (LLM + deterministic safety net)
-  // 8. Sufficiency check + contradiction search
-  throw new Error("Stage 2 (researchEvidence) not yet implemented");
+  const [pipelineResult, searchResult] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadSearchConfig("default"),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const searchConfig = searchResult.config;
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  const claims = state.understanding?.atomicClaims ?? [];
+  if (claims.length === 0) return;
+
+  // ------------------------------------------------------------------
+  // Step 1: Seed evidence pool from Stage 1 preliminary search
+  // ------------------------------------------------------------------
+  seedEvidenceFromPreliminarySearch(state);
+
+  // ------------------------------------------------------------------
+  // Step 2: Claim-driven main iteration loop
+  // ------------------------------------------------------------------
+  const maxIterations = pipelineConfig.maxTotalIterations ?? 10;
+  const reservedContradiction = pipelineConfig.contradictionReservedIterations ?? 2;
+  const maxMainIterations = maxIterations - reservedContradiction;
+  const sufficiencyThreshold = pipelineConfig.claimSufficiencyThreshold ?? 3;
+  const maxSourcesPerIteration = searchConfig.maxSourcesPerIteration ?? 8;
+
+  for (let iteration = 0; iteration < maxMainIterations; iteration++) {
+    // Find claim with fewest evidence items
+    const targetClaim = findLeastResearchedClaim(claims, state.evidenceItems);
+    if (!targetClaim) break;
+
+    // Check if all claims are sufficient
+    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold)) break;
+
+    // Run one research iteration for the target claim
+    await runResearchIteration(
+      targetClaim,
+      "main",
+      searchConfig,
+      pipelineConfig,
+      maxSourcesPerIteration,
+      currentDate,
+      state,
+    );
+
+    state.mainIterationsUsed++;
+  }
+
+  // ------------------------------------------------------------------
+  // Step 3: Contradiction search (reserved iterations)
+  // ------------------------------------------------------------------
+  for (let cIter = 0; cIter < reservedContradiction; cIter++) {
+    // Target: claim with fewest contradicting evidence items
+    const targetClaim = findLeastContradictedClaim(claims, state.evidenceItems);
+    if (!targetClaim) break;
+
+    await runResearchIteration(
+      targetClaim,
+      "contradiction",
+      searchConfig,
+      pipelineConfig,
+      maxSourcesPerIteration,
+      currentDate,
+      state,
+    );
+
+    state.contradictionIterationsUsed++;
+  }
+}
+
+// ============================================================================
+// STAGE 2 HELPERS (exported for unit testing)
+// ============================================================================
+
+/**
+ * Seed the evidence pool from Stage 1 preliminary evidence.
+ * Converts lightweight PreliminaryEvidenceItem to full EvidenceItem format.
+ */
+export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void {
+  const preliminary = state.understanding?.preliminaryEvidence ?? [];
+  let idCounter = state.evidenceItems.length + 1;
+
+  for (const pe of preliminary) {
+    state.evidenceItems.push({
+      id: `EV_${String(idCounter++).padStart(3, "0")}`,
+      statement: pe.snippet,
+      category: "evidence",
+      specificity: "medium",
+      sourceId: "",
+      sourceUrl: pe.sourceUrl,
+      sourceTitle: "",
+      sourceExcerpt: pe.snippet,
+      relevantClaimIds: pe.claimId ? [pe.claimId] : [],
+      scopeQuality: "partial", // Preliminary evidence has limited scope data
+    });
+  }
+}
+
+/**
+ * Find the claim with the fewest evidence items (for targeting).
+ */
+export function findLeastResearchedClaim(
+  claims: AtomicClaim[],
+  evidenceItems: EvidenceItem[],
+): AtomicClaim | null {
+  if (claims.length === 0) return null;
+
+  let minCount = Infinity;
+  let target: AtomicClaim | null = null;
+
+  for (const claim of claims) {
+    const count = evidenceItems.filter(
+      (e) => e.relevantClaimIds?.includes(claim.id),
+    ).length;
+    if (count < minCount) {
+      minCount = count;
+      target = claim;
+    }
+  }
+
+  return target;
+}
+
+/**
+ * Find the claim with the fewest contradicting evidence items.
+ */
+export function findLeastContradictedClaim(
+  claims: AtomicClaim[],
+  evidenceItems: EvidenceItem[],
+): AtomicClaim | null {
+  if (claims.length === 0) return null;
+
+  let minCount = Infinity;
+  let target: AtomicClaim | null = null;
+
+  for (const claim of claims) {
+    const contradictionCount = evidenceItems.filter(
+      (e) => e.relevantClaimIds?.includes(claim.id) && e.claimDirection === "contradicts",
+    ).length;
+    if (contradictionCount < minCount) {
+      minCount = contradictionCount;
+      target = claim;
+    }
+  }
+
+  return target;
+}
+
+/**
+ * Check if all claims have reached the sufficiency threshold.
+ */
+export function allClaimsSufficient(
+  claims: AtomicClaim[],
+  evidenceItems: EvidenceItem[],
+  threshold: number,
+): boolean {
+  return claims.every((claim) => {
+    const count = evidenceItems.filter(
+      (e) => e.relevantClaimIds?.includes(claim.id),
+    ).length;
+    return count >= threshold;
+  });
+}
+
+/**
+ * Run a single research iteration for a target claim.
+ * Covers: query generation → web search → relevance check → source fetch →
+ * reliability prefetch → evidence extraction → scope validation → derivative validation → filter
+ */
+export async function runResearchIteration(
+  targetClaim: AtomicClaim,
+  iterationType: "main" | "contradiction",
+  searchConfig: SearchConfig,
+  pipelineConfig: PipelineConfig,
+  maxSourcesPerIteration: number,
+  currentDate: string,
+  state: CBResearchState,
+): Promise<void> {
+  // 1. Generate search queries via LLM (Haiku)
+  const queries = await generateResearchQueries(
+    targetClaim,
+    iterationType,
+    state.evidenceItems,
+    pipelineConfig,
+    currentDate,
+  );
+  state.llmCalls++;
+
+  for (const queryObj of queries) {
+    try {
+      // 2. Web search
+      const response = await searchWebWithProvider({
+        query: queryObj.query,
+        maxResults: maxSourcesPerIteration,
+        config: searchConfig,
+      });
+
+      state.searchQueries.push({
+        query: queryObj.query,
+        iteration: state.mainIterationsUsed + state.contradictionIterationsUsed,
+        focus: iterationType,
+        resultsCount: response.results.length,
+        timestamp: new Date().toISOString(),
+        searchProvider: response.providersUsed.join(", "),
+      });
+
+      if (response.results.length === 0) continue;
+
+      // 3. Relevance classification via LLM (Haiku, batched)
+      const relevantSources = await classifyRelevance(
+        targetClaim,
+        response.results,
+        pipelineConfig,
+        currentDate,
+      );
+      state.llmCalls++;
+
+      if (relevantSources.length === 0) continue;
+
+      // 4. Fetch top sources
+      const fetchedSources = await fetchSources(
+        relevantSources.slice(0, 5),
+        queryObj.query,
+        state,
+      );
+
+      if (fetchedSources.length === 0) continue;
+
+      // 5. Reliability prefetch (batch)
+      const urlsToCheck = fetchedSources.map((s) => s.url);
+      await prefetchSourceReliability(urlsToCheck);
+
+      // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
+      const rawEvidence = await extractResearchEvidence(
+        targetClaim,
+        fetchedSources,
+        pipelineConfig,
+        currentDate,
+      );
+      state.llmCalls++;
+
+      // 7. EvidenceScope validation (deterministic)
+      for (const item of rawEvidence) {
+        item.scopeQuality = assessScopeQuality(item);
+      }
+
+      // 8. Derivative validation (§8.2 step 9)
+      const allFetchedUrls = new Set(state.sources.map((s) => s.url));
+      for (const item of rawEvidence) {
+        if (item.isDerivative && item.derivedFromSourceUrl) {
+          if (!allFetchedUrls.has(item.derivedFromSourceUrl)) {
+            item.derivativeClaimUnverified = true;
+          }
+        }
+      }
+
+      // 9. Evidence filter (deterministic safety net)
+      const { kept } = filterByProbativeValue(rawEvidence);
+
+      // 10. Add to state
+      state.evidenceItems.push(...kept);
+
+      // Track contradiction sources
+      if (iterationType === "contradiction") {
+        state.contradictionSourcesFound += fetchedSources.length;
+      }
+    } catch (err) {
+      console.warn(`[Stage2] Research iteration failed for query "${queryObj.query}":`, err);
+    }
+  }
+}
+
+/**
+ * Generate search queries for a claim using LLM (Haiku tier).
+ * Uses GENERATE_QUERIES UCM prompt.
+ */
+export async function generateResearchQueries(
+  claim: AtomicClaim,
+  iterationType: "main" | "contradiction",
+  existingEvidence: EvidenceItem[],
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<Array<{ query: string; rationale: string }>> {
+  const rendered = await loadAndRenderSection("claimboundary", "GENERATE_QUERIES", {
+    currentDate,
+    claim: claim.statement,
+    expectedEvidenceProfile: JSON.stringify(claim.expectedEvidenceProfile ?? {}),
+    iterationType,
+  });
+  if (!rendered) {
+    // Fallback: use claim statement directly
+    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }];
+  }
+
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+
+  try {
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: `Generate search queries for this claim: "${claim.statement}"`,
+        },
+      ],
+      temperature: 0.2,
+      output: Output.object({ schema: GenerateQueriesOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }];
+
+    const validated = GenerateQueriesOutputSchema.parse(parsed);
+    return validated.queries.slice(0, 3);
+  } catch (err) {
+    console.warn("[Stage2] Query generation failed, using fallback:", err);
+    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }];
+  }
+}
+
+/**
+ * Classify search results for relevance to a claim using LLM (Haiku, batched).
+ * Uses RELEVANCE_CLASSIFICATION UCM prompt.
+ */
+export async function classifyRelevance(
+  claim: AtomicClaim,
+  searchResults: Array<{ url: string; title: string; snippet?: string | null }>,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<Array<{ url: string; relevanceScore: number }>> {
+  const rendered = await loadAndRenderSection("claimboundary", "RELEVANCE_CLASSIFICATION", {
+    currentDate,
+    claim: claim.statement,
+    searchResults: JSON.stringify(
+      searchResults.map((r) => ({ url: r.url, title: r.title, snippet: r.snippet ?? "" })),
+      null,
+      2,
+    ),
+  });
+  if (!rendered) {
+    // Fallback: accept all results with neutral score
+    return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+  }
+
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+
+  try {
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: `Classify the relevance of ${searchResults.length} search results to this claim: "${claim.statement}"`,
+        },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: RelevanceClassificationOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+
+    const validated = RelevanceClassificationOutputSchema.parse(parsed);
+    // Filter to minimum relevance score of 0.4
+    return validated.relevantSources.filter((s) => s.relevanceScore >= 0.4);
+  } catch (err) {
+    console.warn("[Stage2] Relevance classification failed, accepting all results:", err);
+    return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+  }
+}
+
+/**
+ * Fetch sources and add to state.sources[].
+ * Returns successfully fetched sources with their extracted text.
+ */
+export async function fetchSources(
+  relevantSources: Array<{ url: string; relevanceScore?: number }>,
+  searchQuery: string,
+  state: CBResearchState,
+): Promise<Array<{ url: string; title: string; text: string }>> {
+  const fetched: Array<{ url: string; title: string; text: string }> = [];
+
+  for (const source of relevantSources) {
+    // Skip already-fetched URLs
+    if (state.sources.some((s) => s.url === source.url)) continue;
+
+    try {
+      const content = await extractTextFromUrl(source.url, {
+        timeoutMs: 12000,
+        maxLength: 15000,
+      });
+
+      if (content.text.length < 100) continue; // Too short to be useful
+
+      const fetchedSource: FetchedSource = {
+        id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
+        url: source.url,
+        title: content.title || source.url,
+        trackRecordScore: getTrackRecordScore(source.url),
+        fullText: content.text,
+        fetchedAt: new Date().toISOString(),
+        category: content.contentType || "text/html",
+        fetchSuccess: true,
+        searchQuery,
+      };
+      state.sources.push(fetchedSource);
+
+      fetched.push({
+        url: source.url,
+        title: content.title || source.url,
+        text: content.text.slice(0, 8000), // Cap for prompt size
+      });
+    } catch {
+      // Non-fatal: skip sources that fail to fetch
+    }
+  }
+
+  return fetched;
+}
+
+/**
+ * Extract evidence from fetched sources for a target claim (Haiku, batched).
+ * Uses EXTRACT_EVIDENCE UCM prompt. Returns full EvidenceItem[] with all CB fields.
+ */
+export async function extractResearchEvidence(
+  targetClaim: AtomicClaim,
+  sources: Array<{ url: string; title: string; text: string }>,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+): Promise<EvidenceItem[]> {
+  const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
+    currentDate,
+    claim: targetClaim.statement,
+    sourceContent: sources.map((s, i) =>
+      `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
+    ).join("\n\n---\n\n"),
+    sourceUrl: sources.map((s) => s.url).join(", "),
+  });
+  if (!rendered) return [];
+
+  const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+
+  try {
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`,
+        },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: Stage2ExtractEvidenceOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) return [];
+
+    const validated = Stage2ExtractEvidenceOutputSchema.parse(parsed);
+
+    // Map to full EvidenceItem format
+    let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
+    return validated.evidenceItems.map((ei) => {
+      // Find which source this evidence came from (match by URL in relevantClaimIds or first source)
+      const matchedSource = sources.find((s) => ei.relevantClaimIds?.length > 0)
+        ?? sources[0];
+
+      return {
+        id: `EV_${String(idCounter++)}`,
+        statement: ei.statement,
+        category: mapCategory(ei.category),
+        specificity: ei.probativeValue === "high" ? "high" as const : "medium" as const,
+        sourceId: "",
+        sourceUrl: matchedSource?.url ?? "",
+        sourceTitle: matchedSource?.title ?? "",
+        sourceExcerpt: ei.statement,
+        claimDirection: ei.claimDirection === "contextual" ? "neutral" as const : ei.claimDirection,
+        evidenceScope: {
+          name: ei.evidenceScope?.methodology?.slice(0, 30) || "Unspecified",
+          methodology: ei.evidenceScope?.methodology,
+          temporal: ei.evidenceScope?.temporal,
+          geographic: ei.evidenceScope?.geographic,
+          boundaries: ei.evidenceScope?.boundaries,
+          additionalDimensions: ei.evidenceScope?.additionalDimensions,
+        },
+        probativeValue: ei.probativeValue,
+        sourceType: mapSourceType(ei.sourceType),
+        relevantClaimIds: ei.relevantClaimIds.length > 0
+          ? ei.relevantClaimIds
+          : [targetClaim.id],
+        isDerivative: ei.isDerivative ?? false,
+        derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
+      } satisfies EvidenceItem;
+    });
+  } catch (err) {
+    console.warn("[Stage2] Evidence extraction failed:", err);
+    return [];
+  }
+}
+
+/**
+ * Assess EvidenceScope quality (§8.2 step 8).
+ * Deterministic structural check: complete/partial/incomplete.
+ */
+export function assessScopeQuality(
+  item: EvidenceItem,
+): "complete" | "partial" | "incomplete" {
+  const scope = item.evidenceScope;
+  if (!scope) return "incomplete";
+
+  const hasMethodology = !!(scope.methodology && scope.methodology.trim().length > 0);
+  const hasTemporal = !!(scope.temporal && scope.temporal.trim().length > 0);
+
+  if (!hasMethodology || !hasTemporal) return "incomplete";
+
+  // Check if fields are meaningful vs vague
+  const isVague = (s: string) =>
+    s.length < 5 || /^(unknown|unspecified|n\/?a|none|other)$/i.test(s.trim());
+
+  if (isVague(scope.methodology!) || isVague(scope.temporal!)) return "partial";
+
+  return "complete";
+}
+
+/**
+ * Map LLM category strings to EvidenceItem.category enum values.
+ */
+function mapCategory(category: string): EvidenceItem["category"] {
+  const normalized = category.toLowerCase().replace(/[_\s-]+/g, "_");
+  const validCategories: Record<string, EvidenceItem["category"]> = {
+    legal_provision: "legal_provision",
+    evidence: "evidence",
+    direct_evidence: "direct_evidence",
+    expert_quote: "expert_quote",
+    expert_testimony: "expert_quote",
+    statistic: "statistic",
+    statistical_data: "statistic",
+    event: "event",
+    criticism: "criticism",
+    case_study: "evidence",
+  };
+  return validCategories[normalized] ?? "evidence";
+}
+
+/**
+ * Map LLM sourceType strings to SourceType enum values.
+ */
+function mapSourceType(sourceType?: string): SourceType | undefined {
+  if (!sourceType) return undefined;
+  const normalized = sourceType.toLowerCase().replace(/[_\s-]+/g, "_");
+  const validTypes: Record<string, SourceType> = {
+    peer_reviewed_study: "peer_reviewed_study",
+    fact_check_report: "fact_check_report",
+    government_report: "government_report",
+    legal_document: "legal_document",
+    news_primary: "news_primary",
+    news_secondary: "news_secondary",
+    expert_statement: "expert_statement",
+    organization_report: "organization_report",
+  };
+  return validTypes[normalized] ?? "other";
 }
 
 // ============================================================================
