@@ -40,6 +40,11 @@ import {
   buildVerdictStageConfig,
   createProductionLLMCall,
   generateVerdicts,
+  computeTriangulationScore,
+  computeDerivativeFactor,
+  generateVerdictNarrative,
+  buildQualityGates,
+  aggregateAssessment,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -497,6 +502,8 @@ describe("ClaimBoundary Pipeline Stages (skeleton)", () => {
       expect(typeof aggregateAssessment).toBe("function");
     });
   });
+
+  // Stage 5 placeholder tests — full suite is below in dedicated describe blocks
 
   describe("runClaimBoundaryAnalysis", () => {
     it("should exist as the main entry point", async () => {
@@ -2149,5 +2156,498 @@ describe("Stage 4: generateVerdicts (wiring)", () => {
     expect(mockGenerateText).toHaveBeenCalled();
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
+  });
+});
+
+// ============================================================================
+// STAGE 5: AGGREGATE — Unit Tests (§8.5)
+// ============================================================================
+
+describe("Stage 5: computeTriangulationScore", () => {
+  const defaultCalcConfig = {
+    triangulation: {
+      strongAgreementBoost: 0.15,
+      moderateAgreementBoost: 0.05,
+      singleBoundaryPenalty: -0.10,
+    },
+  } as any;
+
+  it("should return strong when >=3 boundaries support", () => {
+    const verdict = createCBClaimVerdict({
+      claimId: "AC_01",
+      boundaryFindings: [
+        createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" }),
+        createBoundaryFinding({ boundaryId: "CB_02", evidenceDirection: "supports" }),
+        createBoundaryFinding({ boundaryId: "CB_03", evidenceDirection: "supports" }),
+      ],
+    });
+    const claims = [createAtomicClaim()];
+    const boundaries = [
+      createClaimBoundary({ id: "CB_01" }),
+      createClaimBoundary({ id: "CB_02" }),
+      createClaimBoundary({ id: "CB_03" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_02", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_03", claimBoundaryId: "CB_03", relevantClaimIds: ["AC_01"] }),
+    ];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const score = computeTriangulationScore(verdict, matrix, defaultCalcConfig);
+
+    expect(score.level).toBe("strong");
+    expect(score.factor).toBe(0.15);
+    expect(score.boundaryCount).toBe(3);
+    expect(score.supporting).toBe(3);
+    expect(score.contradicting).toBe(0);
+  });
+
+  it("should return moderate when 2 boundaries support", () => {
+    const verdict = createCBClaimVerdict({
+      claimId: "AC_01",
+      boundaryFindings: [
+        createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" }),
+        createBoundaryFinding({ boundaryId: "CB_02", evidenceDirection: "supports" }),
+      ],
+    });
+    const claims = [createAtomicClaim()];
+    const boundaries = [
+      createClaimBoundary({ id: "CB_01" }),
+      createClaimBoundary({ id: "CB_02" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_02", relevantClaimIds: ["AC_01"] }),
+    ];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const score = computeTriangulationScore(verdict, matrix, defaultCalcConfig);
+
+    expect(score.level).toBe("moderate");
+    expect(score.factor).toBe(0.05);
+    expect(score.supporting).toBe(2);
+  });
+
+  it("should return weak (single boundary penalty) for 1 boundary", () => {
+    const verdict = createCBClaimVerdict({
+      claimId: "AC_01",
+      boundaryFindings: [
+        createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" }),
+      ],
+    });
+    const claims = [createAtomicClaim()];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const score = computeTriangulationScore(verdict, matrix, defaultCalcConfig);
+
+    expect(score.level).toBe("weak");
+    expect(score.factor).toBe(-0.10);
+    expect(score.boundaryCount).toBe(1);
+  });
+
+  it("should return conflicted when evenly split", () => {
+    const verdict = createCBClaimVerdict({
+      claimId: "AC_01",
+      boundaryFindings: [
+        createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" }),
+        createBoundaryFinding({ boundaryId: "CB_02", evidenceDirection: "contradicts" }),
+      ],
+    });
+    const claims = [createAtomicClaim()];
+    const boundaries = [
+      createClaimBoundary({ id: "CB_01" }),
+      createClaimBoundary({ id: "CB_02" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_02", relevantClaimIds: ["AC_01"] }),
+    ];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const score = computeTriangulationScore(verdict, matrix, defaultCalcConfig);
+
+    expect(score.level).toBe("conflicted");
+    expect(score.factor).toBe(0);
+    expect(score.supporting).toBe(1);
+    expect(score.contradicting).toBe(1);
+  });
+});
+
+describe("Stage 5: computeDerivativeFactor", () => {
+  it("should return 1.0 when no supporting evidence IDs", () => {
+    const verdict = createCBClaimVerdict({ supportingEvidenceIds: [] });
+    const factor = computeDerivativeFactor(verdict, [], 0.5);
+    expect(factor).toBe(1.0);
+  });
+
+  it("should return 1.0 when no evidence is derivative", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", isDerivative: undefined }),
+      createEvidenceItem({ id: "EV_02", isDerivative: undefined }),
+    ];
+    const verdict = createCBClaimVerdict({
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+    });
+    const factor = computeDerivativeFactor(verdict, evidence, 0.5);
+    expect(factor).toBe(1.0);
+  });
+
+  it("should reduce weight when all evidence is derivative", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", isDerivative: true }),
+      createEvidenceItem({ id: "EV_02", isDerivative: true }),
+    ];
+    const verdict = createCBClaimVerdict({
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+    });
+    // derivativeRatio = 1.0, factor = 1.0 - 1.0 * (1.0 - 0.5) = 0.5
+    const factor = computeDerivativeFactor(verdict, evidence, 0.5);
+    expect(factor).toBe(0.5);
+  });
+
+  it("should not count unverified derivative claims", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", isDerivative: true, derivativeClaimUnverified: true }),
+      createEvidenceItem({ id: "EV_02", isDerivative: false }),
+    ];
+    const verdict = createCBClaimVerdict({
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+    });
+    // Only EV_01 is derivative but it's unverified, so derivativeCount = 0
+    const factor = computeDerivativeFactor(verdict, evidence, 0.5);
+    expect(factor).toBe(1.0);
+  });
+});
+
+describe("Stage 5: generateVerdictNarrative", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should call LLM and return parsed VerdictNarrative", async () => {
+    const narrativeOutput = {
+      headline: "Analysis shows moderate support",
+      evidenceBaseSummary: "5 items, 3 sources",
+      keyFinding: "Evidence generally supports the claim.",
+      limitations: "Limited temporal scope.",
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const verdicts = [createCBClaimVerdict()];
+    const boundaries = [createClaimBoundary()];
+    const evidence = [createEvidenceItem()];
+    const matrix = buildCoverageMatrix(
+      [createAtomicClaim()],
+      boundaries,
+      evidence,
+    );
+
+    const result = await generateVerdictNarrative(
+      75, "MOSTLY-TRUE", 80,
+      verdicts, boundaries, matrix, evidence,
+      {} as any,
+    );
+
+    expect(result.headline).toBe("Analysis shows moderate support");
+    expect(result.evidenceBaseSummary).toBe("5 items, 3 sources");
+    expect(result.keyFinding).toBe("Evidence generally supports the claim.");
+    expect(result.limitations).toBe("Limited temporal scope.");
+    expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "VERDICT_NARRATIVE", expect.any(Object));
+  });
+
+  it("should include boundaryDisagreements when present", async () => {
+    const narrativeOutput = {
+      headline: "Mixed findings",
+      evidenceBaseSummary: "10 items",
+      keyFinding: "Boundaries disagree.",
+      boundaryDisagreements: ["CB_01 vs CB_02 on temporal scope"],
+      limitations: "None.",
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const result = await generateVerdictNarrative(
+      50, "MIXED", 60,
+      [createCBClaimVerdict()], [createClaimBoundary()],
+      buildCoverageMatrix([createAtomicClaim()], [createClaimBoundary()], [createEvidenceItem()]),
+      [createEvidenceItem()],
+      {} as any,
+    );
+
+    expect(result.boundaryDisagreements).toEqual(["CB_01 vs CB_02 on temporal scope"]);
+  });
+});
+
+describe("Stage 5: buildQualityGates", () => {
+  it("should map CB gate1Stats to Gate1Stats shape", () => {
+    const cbGate1 = {
+      totalClaims: 5,
+      passedOpinion: 4,
+      passedSpecificity: 3,
+      overallPass: true,
+    };
+    const verdicts = [
+      createCBClaimVerdict({ confidence: 80 }),
+      createCBClaimVerdict({ confidence: 50 }),
+    ];
+    const evidence = [createEvidenceItem()];
+    const state = {
+      sources: [{ url: "https://example.com" }],
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    const gates = buildQualityGates(cbGate1, verdicts, evidence, state);
+
+    expect(gates.gate1Stats).toBeDefined();
+    expect(gates.gate1Stats!.total).toBe(5);
+    expect(gates.gate1Stats!.passed).toBe(3);
+    expect(gates.gate1Stats!.filtered).toBe(2);
+    expect(gates.gate1Stats!.centralKept).toBe(5);
+  });
+
+  it("should compute Gate4Stats confidence breakdown", () => {
+    const verdicts = [
+      createCBClaimVerdict({ confidence: 90 }),  // high
+      createCBClaimVerdict({ confidence: 75 }),  // high
+      createCBClaimVerdict({ confidence: 55 }),  // medium
+      createCBClaimVerdict({ confidence: 25 }),  // low
+      createCBClaimVerdict({ confidence: 0 }),   // insufficient
+    ];
+
+    const gates = buildQualityGates(undefined, verdicts, [], { sources: [], searchQueries: [], contradictionIterationsUsed: 0 } as any);
+
+    expect(gates.gate4Stats.total).toBe(5);
+    expect(gates.gate4Stats.highConfidence).toBe(2);
+    expect(gates.gate4Stats.mediumConfidence).toBe(1);
+    expect(gates.gate4Stats.lowConfidence).toBe(1);
+    expect(gates.gate4Stats.insufficient).toBe(1);
+    expect(gates.gate4Stats.publishable).toBe(3); // high + medium
+  });
+
+  it("should set passed=false when gate1 overallPass is false", () => {
+    const cbGate1 = {
+      totalClaims: 2,
+      passedOpinion: 0,
+      passedSpecificity: 0,
+      overallPass: false,
+    };
+    const verdicts = [createCBClaimVerdict({ confidence: 80 })];
+
+    const gates = buildQualityGates(cbGate1, verdicts, [], { sources: [], searchQueries: [], contradictionIterationsUsed: 0 } as any);
+
+    expect(gates.passed).toBe(false);
+  });
+
+  it("should include summary with search and evidence stats", () => {
+    const verdicts = [createCBClaimVerdict({ confidence: 70 })];
+    const evidence = [createEvidenceItem(), createEvidenceItem({ id: "EV_02" })];
+    const state = {
+      sources: [{ url: "a" }, { url: "b" }, { url: "c" }],
+      searchQueries: ["q1", "q2", "q3", "q4"],
+      contradictionIterationsUsed: 2,
+    } as any;
+
+    const gates = buildQualityGates(undefined, verdicts, evidence, state);
+
+    expect(gates.summary.totalEvidenceItems).toBe(2);
+    expect(gates.summary.totalSources).toBe(3);
+    expect(gates.summary.searchesPerformed).toBe(4);
+    expect(gates.summary.contradictionSearchPerformed).toBe(true);
+  });
+});
+
+describe("Stage 5: aggregateAssessment (integration)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should produce an OverallAssessment with all required fields", async () => {
+    // Mock config loading
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {} as any,
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: {
+          centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
+          derivativeMultiplier: 0.5,
+        },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: {
+          strongAgreementBoost: 0.15,
+          moderateAgreementBoost: 0.05,
+          singleBoundaryPenalty: -0.10,
+        },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    // Mock VerdictNarrative LLM call
+    const narrativeOutput = {
+      headline: "Test headline",
+      evidenceBaseSummary: "2 items",
+      keyFinding: "Test finding.",
+      limitations: "Test limitations.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [createAtomicClaim({ id: "AC_01", centrality: "high", harmPotential: "medium" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 75,
+        confidence: 80,
+        harmPotential: "medium",
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [
+          createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" }),
+        ],
+      }),
+    ];
+
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["test query"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 5,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    // All required fields present
+    expect(result.truthPercentage).toBeGreaterThanOrEqual(0);
+    expect(result.truthPercentage).toBeLessThanOrEqual(100);
+    expect(result.verdict).toBeTruthy();
+    expect(result.confidence).toBeGreaterThanOrEqual(0);
+    expect(result.verdictNarrative).toBeDefined();
+    expect(result.verdictNarrative.headline).toBe("Test headline");
+    expect(result.hasMultipleBoundaries).toBe(false);
+    expect(result.claimBoundaries).toEqual(boundaries);
+    expect(result.claimVerdicts).toEqual(verdicts);
+    expect(result.coverageMatrix).toBeDefined();
+    expect(result.qualityGates).toBeDefined();
+    expect(result.qualityGates.passed).toBe(true);
+  });
+
+  it("should use fallback narrative when LLM fails", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: { centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 }, derivativeMultiplier: 0.5 },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: { strongAgreementBoost: 0.15, moderateAgreementBoost: 0.05, singleBoundaryPenalty: -0.10 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    // Simulate LLM failure
+    mockLoadSection.mockRejectedValue(new Error("Prompt load failed"));
+
+    const claims = [createAtomicClaim()];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01", truthPercentage: 60, confidence: 70,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+    ];
+    const state: CBResearchState = {
+      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, overallPass: true } } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 3,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    // Fallback narrative should be used
+    expect(result.verdictNarrative.headline).toContain("verdict at");
+    expect(result.verdictNarrative.headline).toContain("confidence");
+    expect(result.verdictNarrative.evidenceBaseSummary).toContain("1 evidence items");
+    expect(result.verdictNarrative.keyFinding).toContain("1 claims");
+    expect(result.verdictNarrative.limitations).toContain("Automated analysis");
+  });
+
+  it("should set hasMultipleBoundaries=true for >1 boundary", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: { centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 }, derivativeMultiplier: 0.5 },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: { strongAgreementBoost: 0.15, moderateAgreementBoost: 0.05, singleBoundaryPenalty: -0.10 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    const narrativeOutput = {
+      headline: "Multi-boundary analysis",
+      evidenceBaseSummary: "4 items",
+      keyFinding: "Finding.",
+      limitations: "Limits.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [createAtomicClaim()];
+    const boundaries = [
+      createClaimBoundary({ id: "CB_01" }),
+      createClaimBoundary({ id: "CB_02" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_02", relevantClaimIds: ["AC_01"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01", truthPercentage: 65, confidence: 75,
+        supportingEvidenceIds: ["EV_01", "EV_02"],
+        boundaryFindings: [
+          createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" }),
+          createBoundaryFinding({ boundaryId: "CB_02", evidenceDirection: "supports" }),
+        ],
+      }),
+    ];
+    const state: CBResearchState = {
+      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, overallPass: true } } as any,
+      sources: [{ url: "a" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.hasMultipleBoundaries).toBe(true);
   });
 });

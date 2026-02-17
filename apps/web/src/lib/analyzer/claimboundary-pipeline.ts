@@ -19,6 +19,7 @@
 
 import type {
   AtomicClaim,
+  ArticleVerdict7Point,
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
@@ -27,17 +28,20 @@ import type {
   EvidenceItem,
   EvidenceScope,
   FetchedSource,
+  Gate4Stats,
   OverallAssessment,
   QualityGates,
   Gate1Stats,
   AnalysisInput,
   SourceType,
+  TriangulationScore,
+  VerdictNarrative,
 } from "./types";
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
 import { filterByProbativeValue } from "./evidence-filter";
 import { prefetchSourceReliability, getTrackRecordScore } from "./source-reliability";
-import { getClaimWeight, calculateWeightedVerdictAverage } from "./aggregation";
+import { percentageToArticleVerdict } from "./truth-scale";
 
 // Verdict stage module (§8.4 — 5-step debate pattern)
 import {
@@ -2138,11 +2142,398 @@ export async function aggregateAssessment(
   coverageMatrix: CoverageMatrix,
   state: CBResearchState
 ): Promise<OverallAssessment> {
-  // TODO (Phase 1b): Implement aggregation
-  // 1. Triangulation scoring per claim (§8.5.2)
-  // 2. Derivative weight reduction (§8.5.3)
-  // 3. Weighted average + confidence (§8.5.4-8.5.5)
-  // 4. VerdictNarrative generation (§8.5.6, Sonnet call)
-  // 5. Report assembly (§8.5.7)
-  throw new Error("Stage 5 (aggregateAssessment) not yet implemented");
+  const [pipelineResult, calcResult] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadCalcConfig("default"),
+  ]);
+  const pipelineConfig = pipelineResult.config;
+  const calcConfig = calcResult.config;
+
+  const claims = state.understanding?.atomicClaims ?? [];
+
+  // ------------------------------------------------------------------
+  // Step 1: Triangulation scoring per claim (§8.5.2)
+  // ------------------------------------------------------------------
+  for (const verdict of claimVerdicts) {
+    verdict.triangulationScore = computeTriangulationScore(
+      verdict,
+      coverageMatrix,
+      calcConfig,
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Step 2: Weighted average computation (§8.5.4)
+  // ------------------------------------------------------------------
+  const aggregation = calcConfig.aggregation ?? {
+    centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
+    harmPotentialMultiplier: 1.5,
+    derivativeMultiplier: 0.5,
+  };
+  const harmMultipliers = (calcConfig as any).harmPotentialMultipliers ?? {
+    critical: 1.5,
+    high: 1.2,
+    medium: 1.0,
+    low: 1.0,
+  };
+  const derivativeMultiplier = aggregation.derivativeMultiplier ?? 0.5;
+
+  const weightsData = claimVerdicts.map((verdict) => {
+    const claim = claims.find((c) => c.id === verdict.claimId);
+
+    // Centrality weight
+    const centrality = claim?.centrality ?? "low";
+    const centralityWeight =
+      (aggregation.centralityWeights as any)?.[centrality] ?? 1.0;
+
+    // Harm multiplier (4-level)
+    const harmLevel = verdict.harmPotential ?? "medium";
+    const harmWeight = (harmMultipliers as any)[harmLevel] ?? 1.0;
+
+    // Confidence factor (0-100 → 0-1)
+    const confidenceFactor = verdict.confidence / 100;
+
+    // Triangulation factor
+    const triangulationFactor = verdict.triangulationScore?.factor ?? 0;
+
+    // Derivative factor (§8.5.3)
+    const derivativeFactor = computeDerivativeFactor(
+      verdict,
+      evidence,
+      derivativeMultiplier,
+    );
+
+    // Final weight (§8.5.4): centrality × harm × confidence × (1 + triangulation) × derivative
+    const finalWeight =
+      centralityWeight *
+      harmWeight *
+      confidenceFactor *
+      (1 + triangulationFactor) *
+      derivativeFactor;
+
+    return {
+      truthPercentage: verdict.truthPercentage,
+      confidence: verdict.confidence,
+      weight: Math.max(0, finalWeight),
+    };
+  });
+
+  // Compute weighted averages inline (same weights for both)
+  const totalWeight = weightsData.reduce((sum, item) => sum + item.weight, 0);
+  const weightedTruthPercentage =
+    totalWeight > 0
+      ? weightsData.reduce(
+          (sum, item) => sum + item.truthPercentage * item.weight,
+          0,
+        ) / totalWeight
+      : 50;
+  const weightedConfidence =
+    totalWeight > 0
+      ? weightsData.reduce(
+          (sum, item) => sum + item.confidence * item.weight,
+          0,
+        ) / totalWeight
+      : 50;
+
+  // 7-point verdict label
+  const mixedConfidenceThreshold = calcConfig.mixedConfidenceThreshold ?? 40;
+  const verdictLabel = percentageToArticleVerdict(
+    weightedTruthPercentage,
+    weightedConfidence,
+    undefined,
+    mixedConfidenceThreshold,
+  );
+
+  // ------------------------------------------------------------------
+  // Step 3: VerdictNarrative generation (§8.5.6, Sonnet call)
+  // ------------------------------------------------------------------
+  let verdictNarrative: VerdictNarrative;
+  try {
+    verdictNarrative = await generateVerdictNarrative(
+      weightedTruthPercentage,
+      verdictLabel,
+      weightedConfidence,
+      claimVerdicts,
+      boundaries,
+      coverageMatrix,
+      evidence,
+      pipelineConfig,
+    );
+    state.llmCalls++;
+  } catch (err) {
+    console.warn("[Stage5] VerdictNarrative generation failed, using fallback:", err);
+    verdictNarrative = {
+      headline: `Analysis yields ${verdictLabel} verdict at ${Math.round(weightedConfidence)}% confidence`,
+      evidenceBaseSummary: `${evidence.length} evidence items from ${state.sources.length} sources across ${boundaries.length} perspective${boundaries.length !== 1 ? "s" : ""}`,
+      keyFinding: `Weighted analysis of ${claimVerdicts.length} claims produces an overall truth assessment of ${Math.round(weightedTruthPercentage)}%.`,
+      limitations: "Automated analysis with limitations inherent to evidence availability and source coverage.",
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // Step 4: Quality gates summary (§8.5.7)
+  // ------------------------------------------------------------------
+  const qualityGates = buildQualityGates(
+    state.understanding?.gate1Stats,
+    claimVerdicts,
+    evidence,
+    state,
+  );
+
+  // ------------------------------------------------------------------
+  // Step 5: Report assembly
+  // ------------------------------------------------------------------
+  return {
+    truthPercentage: Math.round(weightedTruthPercentage * 10) / 10,
+    verdict: verdictLabel,
+    confidence: Math.round(weightedConfidence * 10) / 10,
+    verdictNarrative,
+    hasMultipleBoundaries: boundaries.length > 1,
+    claimBoundaries: boundaries,
+    claimVerdicts,
+    coverageMatrix,
+    qualityGates,
+  };
+}
+
+// ============================================================================
+// STAGE 5 HELPERS (exported for unit testing)
+// ============================================================================
+
+/**
+ * Compute triangulation score for a claim verdict (§8.5.2).
+ * Deterministic — no LLM calls.
+ */
+export function computeTriangulationScore(
+  verdict: CBClaimVerdict,
+  coverageMatrix: CoverageMatrix,
+  calcConfig: CalcConfig,
+): TriangulationScore {
+  const triangulationConfig = (calcConfig as any).triangulation ?? {
+    strongAgreementBoost: 0.15,
+    moderateAgreementBoost: 0.05,
+    singleBoundaryPenalty: -0.10,
+  };
+
+  const boundaryIds = coverageMatrix.getBoundariesForClaim(verdict.claimId);
+  const findings = verdict.boundaryFindings ?? [];
+
+  let supporting = 0;
+  let contradicting = 0;
+
+  for (const bId of boundaryIds) {
+    const finding = findings.find((f) => f.boundaryId === bId);
+    if (!finding) continue;
+    if (finding.evidenceDirection === "supports") supporting++;
+    else if (finding.evidenceDirection === "contradicts") contradicting++;
+  }
+
+  const boundaryCount = boundaryIds.length;
+
+  // Classify triangulation level and compute factor
+  let level: TriangulationScore["level"];
+  let factor: number;
+
+  if (boundaryCount <= 1) {
+    level = "weak";
+    factor = triangulationConfig.singleBoundaryPenalty ?? -0.10;
+  } else if (supporting >= 3) {
+    level = "strong";
+    factor = triangulationConfig.strongAgreementBoost ?? 0.15;
+  } else if (supporting >= 2 && contradicting <= 1) {
+    level = "moderate";
+    factor = triangulationConfig.moderateAgreementBoost ?? 0.05;
+  } else if (supporting > 0 && contradicting > 0 && Math.abs(supporting - contradicting) <= 1) {
+    level = "conflicted";
+    factor = 0; // No boost/penalty for conflicted
+  } else if (supporting > contradicting) {
+    level = "moderate";
+    factor = triangulationConfig.moderateAgreementBoost ?? 0.05;
+  } else {
+    level = "weak";
+    factor = triangulationConfig.singleBoundaryPenalty ?? -0.10;
+  }
+
+  return { boundaryCount, supporting, contradicting, level, factor };
+}
+
+/**
+ * Compute derivative weight reduction factor for a claim verdict (§8.5.3).
+ * derivativeFactor = 1.0 - (derivativeRatio × (1.0 - derivativeMultiplier))
+ */
+export function computeDerivativeFactor(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  derivativeMultiplier: number,
+): number {
+  const supportingIds = verdict.supportingEvidenceIds ?? [];
+  if (supportingIds.length === 0) return 1.0;
+
+  const supportingEvidence = supportingIds
+    .map((id) => evidence.find((e) => e.id === id))
+    .filter(Boolean) as EvidenceItem[];
+
+  if (supportingEvidence.length === 0) return 1.0;
+
+  // Count verified derivatives (isDerivative=true AND derivativeClaimUnverified is NOT true)
+  const derivativeCount = supportingEvidence.filter(
+    (e) => e.isDerivative === true && e.derivativeClaimUnverified !== true,
+  ).length;
+
+  const derivativeRatio = derivativeCount / supportingEvidence.length;
+  return 1.0 - derivativeRatio * (1.0 - derivativeMultiplier);
+}
+
+/**
+ * Zod schema for VerdictNarrative LLM output.
+ */
+const VerdictNarrativeOutputSchema = z.object({
+  headline: z.string(),
+  evidenceBaseSummary: z.string(),
+  keyFinding: z.string(),
+  boundaryDisagreements: z.array(z.string()).optional(),
+  limitations: z.string(),
+});
+
+/**
+ * Generate a VerdictNarrative using Sonnet LLM call (§8.5.6).
+ */
+export async function generateVerdictNarrative(
+  truthPercentage: number,
+  verdict: string,
+  confidence: number,
+  claimVerdicts: CBClaimVerdict[],
+  boundaries: ClaimBoundary[],
+  coverageMatrix: CoverageMatrix,
+  evidence: EvidenceItem[],
+  pipelineConfig: PipelineConfig,
+): Promise<VerdictNarrative> {
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  const rendered = await loadAndRenderSection("claimboundary", "VERDICT_NARRATIVE", {
+    currentDate,
+    overallVerdict: JSON.stringify({
+      truthPercentage: Math.round(truthPercentage),
+      verdict,
+      confidence: Math.round(confidence),
+    }),
+    claimVerdicts: JSON.stringify(
+      claimVerdicts.slice(0, 7).map((v) => ({
+        claimId: v.claimId,
+        truthPercentage: v.truthPercentage,
+        verdict: v.verdict,
+        confidence: v.confidence,
+        reasoning: v.reasoning?.slice(0, 200),
+        boundaryFindings: v.boundaryFindings?.map((f) => ({
+          boundaryId: f.boundaryId,
+          boundaryName: f.boundaryName,
+          evidenceDirection: f.evidenceDirection,
+          evidenceCount: f.evidenceCount,
+        })),
+      })),
+      null,
+      2,
+    ),
+    claimBoundaries: JSON.stringify(
+      boundaries.map((b) => ({
+        id: b.id,
+        name: b.name,
+        description: b.description,
+        evidenceCount: b.evidenceCount,
+      })),
+      null,
+      2,
+    ),
+    coverageMatrix: JSON.stringify({
+      claims: coverageMatrix.claims,
+      boundaries: coverageMatrix.boundaries,
+      counts: coverageMatrix.counts,
+    }),
+    evidenceCount: String(evidence.length),
+  });
+
+  if (!rendered) {
+    throw new Error("Stage 5: Failed to load VERDICT_NARRATIVE prompt section");
+  }
+
+  const model = getModelForTask("verdict", undefined, pipelineConfig);
+
+  const result = await generateText({
+    model: model.model,
+    messages: [
+      {
+        role: "system",
+        content: rendered.content,
+        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+      },
+      {
+        role: "user",
+        content: `Generate a structured narrative for the overall assessment (truth: ${Math.round(truthPercentage)}%, verdict: ${verdict}, confidence: ${Math.round(confidence)}%).`,
+      },
+    ],
+    temperature: 0.2,
+    output: Output.object({ schema: VerdictNarrativeOutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(
+      pipelineConfig.llmProvider ?? "anthropic",
+    ),
+  });
+
+  const parsed = extractStructuredOutput(result);
+  if (!parsed) {
+    throw new Error("Stage 5: LLM returned no structured output for VerdictNarrative");
+  }
+
+  return VerdictNarrativeOutputSchema.parse(parsed);
+}
+
+/**
+ * Build quality gates summary (§8.5.7).
+ */
+export function buildQualityGates(
+  cbGate1Stats: CBClaimUnderstanding["gate1Stats"] | undefined,
+  claimVerdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  state: CBResearchState,
+): QualityGates {
+  // Map CB gate1Stats to Gate1Stats shape
+  const gate1Stats: Gate1Stats | undefined = cbGate1Stats
+    ? {
+        total: cbGate1Stats.totalClaims,
+        passed: cbGate1Stats.passedSpecificity,
+        filtered: cbGate1Stats.totalClaims - cbGate1Stats.passedSpecificity,
+        centralKept: cbGate1Stats.totalClaims, // CB pipeline keeps all central claims
+      }
+    : undefined;
+
+  // Gate 4 stats: classify confidence levels
+  const highConfidence = claimVerdicts.filter((v) => v.confidence >= 70).length;
+  const mediumConfidence = claimVerdicts.filter(
+    (v) => v.confidence >= 40 && v.confidence < 70,
+  ).length;
+  const lowConfidence = claimVerdicts.filter(
+    (v) => v.confidence > 0 && v.confidence < 40,
+  ).length;
+  const insufficient = claimVerdicts.filter((v) => v.confidence === 0).length;
+
+  const gate4Stats: Gate4Stats = {
+    total: claimVerdicts.length,
+    publishable: highConfidence + mediumConfidence,
+    highConfidence,
+    mediumConfidence,
+    lowConfidence,
+    insufficient,
+    centralKept: claimVerdicts.length, // All claims retained in CB pipeline
+  };
+
+  return {
+    passed: cbGate1Stats?.overallPass !== false && gate4Stats.publishable > 0,
+    gate1Stats,
+    gate4Stats,
+    summary: {
+      totalEvidenceItems: evidence.length,
+      totalSources: state.sources.length,
+      searchesPerformed: state.searchQueries.length,
+      contradictionSearchPerformed: state.contradictionIterationsUsed > 0,
+    },
+  };
 }
