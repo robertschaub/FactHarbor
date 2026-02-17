@@ -1,7 +1,7 @@
 = ClaimAssessmentBoundary Pipeline Detail =
 
 {{info}}
-**Current Architecture (v2.11.0+):** The ClaimAssessmentBoundary pipeline is the production default pipeline. See the [[architecture document>>doc:Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]] for detailed specifications.
+**Current Architecture (v2.11.0+):** The ClaimAssessmentBoundary pipeline is the production default pipeline. See ##Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md## for detailed specifications.
 {{/info}}
 
 {{mermaid}}
@@ -139,7 +139,7 @@ flowchart TB
 
 == Related Documentation ==
 
-* [[ClaimAssessmentBoundary Architecture>>doc:Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]] — Full specification (§8.1-§8.6)
-* [[Pipeline Variant Dispatch>>doc:FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — How pipelines are selected
-* [[System Architecture>>doc:FactHarbor.Product Development.Diagrams.System Architecture.WebHome]] — Overall system overview
-* [[Quality Gates Flow>>doc:FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome]] — Gate 1 and Gate 4 details
+* ##Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md## — Full specification (§8.1-§8.6)
+* [[Pipeline Variant Dispatch>>FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — How pipelines are selected
+* [[System Architecture>>FactHarbor.Product Development.Diagrams.System Architecture.WebHome]] — Overall system overview
+* [[Quality Gates Flow>>FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome]] — Gate 1 and Gate 4 details

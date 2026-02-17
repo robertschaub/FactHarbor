@@ -1,5 +1,5 @@
 {{warning}}
-**OBSOLETE (v2.11.0):** The Orchestrated pipeline (##orchestrated.ts##) was removed in v2.11.0 and replaced by the **ClaimAssessmentBoundary pipeline** (##claimboundary-pipeline.ts##). This diagram is retained for historical reference only. For current architecture, see the [[ClaimAssessmentBoundary Pipeline Architecture>>doc:Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]].
+**OBSOLETE (v2.11.0):** The Orchestrated pipeline (##orchestrated.ts##) was removed in v2.11.0 and replaced by the **ClaimAssessmentBoundary pipeline** (##claimboundary-pipeline.ts##). This diagram is retained for historical reference only. For current architecture, see the [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]].
 {{/warning}}
 
 = Orchestrated Pipeline Detail (OBSOLETE) =
