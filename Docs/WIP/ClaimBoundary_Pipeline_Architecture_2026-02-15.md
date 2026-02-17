@@ -786,7 +786,7 @@ Gate 1 `specificityScore` should be assessed relative to the evidence landscape,
 |-----------|---------|--------|
 | `maxResearchIterations` | 12 | UCM |
 | `contradictionReservedIterations` | 2 | UCM |
-| `evidenceSufficiencyThreshold` | 3 | UCM |
+| `claimSufficiencyThreshold` | 3 | UCM |
 | `maxSourcesPerIteration` | 8 | UCM |
 | `maxEvidencePerSource` | 5 | UCM |
 
@@ -1882,7 +1882,7 @@ If semantic consistency checking is desired in the future, it must be routed thr
 |-----------|---------|------|--------|-------------|
 | `selfConsistencyMode` | `"full"` | `"full" \| "disabled"` | PipelineConfig | §22: Self-consistency check mode. No "lightweight" option (Decision D2). |
 | `selfConsistencyTemperature` | `0.3` | float | PipelineConfig | §22: Temperature for self-consistency re-runs |
-| `selfConsistencySpreadThresholds` | `[5, 12, 20]` | int[] | CalcConfig | §22: [stable, moderate, unstable] spread boundaries in pp |
+| `selfConsistencySpreadThresholds` | `{stable: 5, moderate: 12, unstable: 20}` | object | CalcConfig | §22: Spread thresholds (pp) for stable/moderate/unstable classification |
 
 **Note:** `selfConsistencyTemperature` floor (0.1) and ceiling (0.7) are **hardcoded structural constants** — below 0.1 the spread is always near-zero (meaningless), above 0.7 everything looks unstable. These are fixed design decisions per AGENTS.md Configuration Placement.
 

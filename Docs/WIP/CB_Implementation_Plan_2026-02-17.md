@@ -125,7 +125,7 @@ Attempting parallel implementation would require extensive mocking of data struc
 - [ ] Claim-driven iteration loop
   - Budget: `maxResearchIterations` - `contradictionReservedIterations` (UCM)
   - Target: claim with fewest evidence items (min-heap or sort)
-  - Generate 2-3 search queries per claim
+  - **Generate queries via LLM** (UCM `GENERATE_QUERIES` prompt) — no hardcoded query templates
 - [ ] Web search + relevance classification
   - Call `searchWebWithProvider()` (max `maxSourcesPerIteration`, UCM)
   - **Batched LLM relevance check (Haiku):** One call with all search results for current claim
@@ -152,6 +152,7 @@ Attempting parallel implementation would require extensive mocking of data struc
   - If all claims sufficient, exit loop early
 - [ ] Contradiction search (reserved iterations)
   - After main loop, run `contradictionReservedIterations` (UCM, default 2) targeting claims with low contradiction coverage
+  - **Generate contradiction queries via LLM** (UCM `GENERATE_QUERIES` with `iterationType: "contradiction"`) — no hardcoded phrases
   - Generate "critique" or "counterevidence" queries
   - Same search → extract → filter flow
 - [ ] Update state
