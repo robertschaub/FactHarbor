@@ -80,7 +80,7 @@ Attempting parallel implementation would require extensive mocking of data struc
 - [ ] Preliminary search (Stage 1 only, not Stage 2)
   - Generate 1-2 queries per roughClaim (UCM `preliminarySearchQueriesPerClaim`)
   - Call `searchWebWithProvider()` (max `preliminaryMaxSources` per query)
-  - Fetch top sources, extract preliminary evidence (lightweight)
+  - Fetch top sources, **extract evidence with batched LLM (Haiku)** - include EvidenceScope for each item
 - [ ] Pass 2: Evidence-grounded extraction (Sonnet)
   - Load UCM prompt `CLAIM_EXTRACTION_PASS2`
   - Call LLM with input text + preliminary evidence
@@ -88,9 +88,9 @@ Attempting parallel implementation would require extensive mocking of data struc
 - [ ] Centrality filter
   - Keep only claims with `centrality >= centralityThreshold` (UCM, default "medium")
   - Cap at `maxAtomicClaims` (UCM, default 15)
-- [ ] Gate 1: Claim validation
-  - Check `opinionScore < gate1OpinionThreshold` (CalcConfig)
-  - Check `specificity >= claimSpecificityMinimum` (UCM, default 0.6)
+- [ ] Gate 1: Claim validation (LLM assessment)
+  - **Use batched LLM assessment (Haiku)** to validate all claims in one call
+  - Check opinion score and specificity for each claim
   - If >X% fail (UCM `gate1GroundingRetryThreshold`), trigger retry loop (optional, can defer)
 - [ ] Return `CBClaimUnderstanding`
 
@@ -128,8 +128,8 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Generate 2-3 search queries per claim
 - [ ] Web search + relevance classification
   - Call `searchWebWithProvider()` (max `maxSourcesPerIteration`, UCM)
-  - LLM relevance check: "Is this source relevant to claim X?" (optional, can use heuristics)
-  - Filter to top-N relevant sources
+  - **Batched LLM relevance check (Haiku):** One call with all search results for current claim
+  - Filter to top-N relevant sources based on LLM relevance scores
 - [ ] Source fetch + reliability prefetch
   - Call `extractTextFromUrl()` for each relevant source
   - Call `prefetchSourceReliability()` for batch (reuse existing module)
@@ -138,8 +138,8 @@ Attempting parallel implementation would require extensive mocking of data struc
   - Call LLM with claim + source content
   - Parse `{evidenceItems[]: {statement, category, claimDirection, evidenceScope, probativeValue, sourceType}}`
 - [ ] EvidenceScope validation
-  - Ensure all `evidenceScope` fields are populated
-  - Flag/warn if scope is too vague (deterministic heuristics)
+  - **Deterministic structural check:** Ensure methodology, temporal fields are non-empty strings
+  - If validation fails, retry extraction with more explicit prompt (not heuristic fallback)
 - [ ] Evidence filter
   - Call `filterByProbativeValue()` (existing deterministic filter)
   - Optional: LLM quality check (if UCM `llmEvidenceQuality` enabled)
@@ -376,7 +376,7 @@ Attempting parallel implementation would require extensive mocking of data struc
 
 **Final Milestone:** ClaimBoundary pipeline v1.0 production-ready with full UI support.
 
-**Total Estimated Effort:** 10-15 agent sessions for core implementation (Phases 5a-5f), plus 4-7 sessions for polish/UI (Phases 5g-5k). Total: 14-22 sessions (30-50 hours) over 3-4 weeks.
+**Total Estimated Effort:** 11-17 agent sessions for core implementation (Phases 5a-5f), plus 5-8 sessions for polish/UI (Phases 5g-5k). Total: 16-25 sessions (35-55 hours) over 3-4 weeks.
 
 ---
 

@@ -35,7 +35,10 @@ Implement the `extractClaims()` function in `apps/web/src/lib/analyzer/claimboun
    - Call `searchWebWithProvider()` from `web-search.ts` (import it)
    - Limit results to UCM param `preliminaryMaxSources` (default 5) per query
    - Fetch top 3-5 sources using `extractTextFromUrl()` from `retrieval.ts`
-   - Extract lightweight evidence snippets (simple text extraction, no LLM yet)
+   - **Extract evidence with batched LLM (Haiku):** For each source, extract preliminary evidence items with EvidenceScope
+     - Batch multiple sources per LLM call for efficiency
+     - Parse: `{evidenceItems: Array<{statement, evidenceScope, sourceUrl}>}`
+     - EvidenceScope must include methodology, temporal bounds
    - Store as `preliminaryEvidence[]` array
 
 3. **Pass 2: Evidence-Grounded Extraction (Sonnet tier)**
@@ -52,10 +55,11 @@ Implement the `extractClaims()` function in `apps/web/src/lib/analyzer/claimboun
    - Cap at UCM param `maxAtomicClaims` (default 15)
    - If over cap, keep highest-centrality claims first
 
-5. **Gate 1: Claim Validation (Deterministic + Optional LLM)**
-   - For each claim, check:
-     - Opinion score: if claim contains opinion markers, flag (use simple heuristic or skip for v1)
-     - Specificity: check `groundingQuality !== "none"` (LLM already assessed this in Pass 2)
+5. **Gate 1: Claim Validation (LLM Assessment)**
+   - **Use batched LLM assessment (Haiku)** to validate all claims in one call
+   - Load UCM prompt section `CLAIM_VALIDATION` (Gate 1 prompt from claimboundary.prompt.md)
+   - Input: array of atomicClaims
+   - Output: `{validatedClaims: Array<{claimId, passedOpinion: boolean, passedSpecificity: boolean, reasoning}>}`
    - If specificity check fails for >X% of claims (UCM `gate1GroundingRetryThreshold`, default 0.5), **skip retry for v1** — just warn and continue
    - Populate `gate1Stats: {totalClaims, passedOpinion, passedSpecificity, overallPass}`
 
@@ -144,7 +148,10 @@ Implement the `researchEvidence()` function in `claimboundary-pipeline.ts` (curr
      a. **Target Selection:** Find claim with fewest evidence items (use `state.evidenceItems.filter(e => e.relevantClaimIds.includes(claimId)).length`)
      b. **Query Generation:** Generate 2-3 search queries for target claim (use claim statement + expectedEvidenceProfile hint)
      c. **Web Search:** Call `searchWebWithProvider()` with max `maxSourcesPerIteration` (UCM, default 8)
-     d. **Relevance Check (Optional LLM):** For each search result, optionally call LLM to check "Is this source relevant to claim X?" — **skip for v1**, use title/snippet heuristics
+     d. **Relevance Check (Batched LLM - Haiku):** Call LLM once with all search results for current claim
+        - Input: claim + array of search results (title, snippet, URL)
+        - Output: `{relevantSources: Array<{url, relevanceScore, reasoning}>}`
+        - Filter to top-N relevant sources (relevanceScore >= threshold)
      e. **Source Fetch:** Call `extractTextFromUrl()` for top 3-5 relevant results
      f. **Reliability Prefetch:** Call `prefetchSourceReliability()` with batch of URLs (reuse existing module)
      g. **Evidence Extraction (LLM):** For each fetched source:
@@ -152,7 +159,7 @@ Implement the `researchEvidence()` function in `claimboundary-pipeline.ts` (curr
         - Call LLM with claim + source content
         - Parse: `{evidenceItems: Array<{statement, category, claimDirection, evidenceScope, probativeValue, sourceType}>}`
         - **Critical:** Ensure `evidenceScope` is always populated (methodology, temporal, geographic, etc.)
-     h. **EvidenceScope Validation:** Check all extracted items have non-empty `evidenceScope.methodology` — warn if missing
+     h. **EvidenceScope Validation:** Deterministic structural check - ensure methodology, temporal fields are non-empty strings. If validation fails, retry extraction with more explicit prompt instructions (not heuristic fallback)
      i. **Evidence Filter:** Call `filterByProbativeValue()` from `evidence-filter.ts` (deterministic quality check)
      j. **Add to State:** Append filtered evidence to `state.evidenceItems[]`, sources to `state.sources[]`
      k. **Sufficiency Check:** If target claim now has ≥`claimSufficiencyThreshold` (UCM, default 3) items, mark sufficient
@@ -574,10 +581,11 @@ Implement the `aggregateAssessment()` function in `claimboundary-pipeline.ts` (c
    - Expected output:
      ```typescript
      {
-       summary: string,           // 2-3 sentence overall summary
-       keyEvidence: string[],     // 3-5 key evidence items cited
-       limitations: string[],     // 2-3 limitations or caveats
-       methodology: string        // 1 sentence methodology summary
+       headline: string,              // Overall finding in one sentence
+       evidenceBaseSummary: string,   // Quantitative: "14 items, 9 sources, 3 perspectives"
+       keyFinding: string,            // Main synthesis (2–3 sentences) — the "so what"
+       boundaryDisagreements: string[], // Where and why boundaries diverge (only when relevant)
+       limitations: string            // What the analysis couldn't determine
      }
      ```
    - Parse LLM output into `VerdictNarrative` object
@@ -1235,24 +1243,27 @@ interface Props {
 export function VerdictNarrativeDisplay({ narrative }: Props) {
   return (
     <section className={styles.narrative}>
-      <div className={styles.summary}>
-        <strong>Summary:</strong> {narrative.summary}
+      <div className={styles.headline}>
+        <strong>Headline:</strong> {narrative.headline}
       </div>
-      <details>
-        <summary>Key Evidence</summary>
-        <ul>
-          {narrative.keyEvidence.map((e, i) => <li key={i}>{e}</li>)}
-        </ul>
-      </details>
+      <div className={styles.evidenceBase}>
+        <em>{narrative.evidenceBaseSummary}</em>
+      </div>
+      <div className={styles.keyFinding}>
+        {narrative.keyFinding}
+      </div>
+      {narrative.boundaryDisagreements && narrative.boundaryDisagreements.length > 0 && (
+        <details>
+          <summary>Boundary Disagreements</summary>
+          <ul>
+            {narrative.boundaryDisagreements.map((d, i) => <li key={i}>{d}</li>)}
+          </ul>
+        </details>
+      )}
       <details>
         <summary>Limitations</summary>
-        <ul>
-          {narrative.limitations.map((l, i) => <li key={i}>{l}</li>)}
-        </ul>
+        <p>{narrative.limitations}</p>
       </details>
-      <footer className={styles.methodology}>
-        <em>Methodology: {narrative.methodology}</em>
-      </footer>
     </section>
   );
 }
@@ -1286,9 +1297,9 @@ export function QualityGatesDisplay({ gates }: Props) {
       </div>
       <div className={styles.gate}>
         <h4>Gate 4: Confidence Quality</h4>
-        <p>High: {gates.gate4Stats.highConfidenceCount}</p>
-        <p>Medium: {gates.gate4Stats.mediumConfidenceCount}</p>
-        <p>Low: {gates.gate4Stats.lowConfidenceCount}</p>
+        <p>High: {gates.gate4Stats.highConfidence}</p>
+        <p>Medium: {gates.gate4Stats.mediumConfidence}</p>
+        <p>Low: {gates.gate4Stats.lowConfidence}</p>
       </div>
     </div>
   );

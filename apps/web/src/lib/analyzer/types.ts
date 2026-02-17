@@ -882,6 +882,17 @@ export interface CBClaimUnderstanding {
   atomicClaims: AtomicClaim[];   // Replaces subClaims
   distinctEvents: Array<{ name: string; date: string; description: string }>;
   riskTier: "A" | "B" | "C";
+  preliminaryEvidence: Array<{
+    sourceUrl: string;
+    snippet: string;
+    claimId: string;
+  }>;
+  gate1Stats: {
+    totalClaims: number;
+    passedOpinion: number;
+    passedSpecificity: number;
+    overallPass: boolean;
+  };
 }
 
 /**
