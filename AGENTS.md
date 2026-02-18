@@ -204,7 +204,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 3. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
 4. **Acknowledge**: State your role, focus areas, and which docs you've loaded
 5. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
-6. **On handoff/completion**: Follow the Agent Exchange Protocol (Role Handoff mode) — write output, include Warnings and Learnings fields, and append any learnings to `Role_Learnings.md`.
+6. **On handoff/completion**: Follow the Agent Exchange Protocol using the appropriate mode (`Completion` or `Role Handoff`). For role handoffs, include `Warnings` and `Learnings`, and append learnings to `Role_Learnings.md`.
 
 **Role Alias Quick-Reference:**
 

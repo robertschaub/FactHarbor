@@ -75,7 +75,7 @@ Copy the template below and fill in the `{PLACEHOLDERS}`. Use this for complex t
 
 ## Your Role
 **Role:** {ROLE}
-<!-- Options: Lead Architect | Lead Developer | Senior Developer | Technical Writer | LLM Expert | Product Strategist | Code Reviewer | Security Expert | DevOps Expert -->
+<!-- Options: Lead Architect | Lead Developer | Senior Developer | Technical Writer | LLM Expert | Product Strategist | Code Reviewer | Security Expert | DevOps Expert | Agents Supervisor -->
 
 ---
 
