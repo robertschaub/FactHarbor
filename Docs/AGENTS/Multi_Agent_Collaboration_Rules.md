@@ -459,9 +459,8 @@ When activated in a role, use this table to identify which areas are within your
 
 ### 2.10 Captain (Human Role)
 
-**Note:** This is the human user's meta-role, not an agent role. Documented here so agents understand the human's authority and responsibilities.
+**Note:** This is the human user's meta-role, not an agent role. No agent can be assigned this role.
 
-**Aliases:** Agents Supervisor
 **Mission:** Overall project direction, conflict resolution, final authority
 
 **Responsibilities:**
@@ -474,10 +473,53 @@ When activated in a role, use this table to identify which areas are within your
 **What agents should expect from the Captain:**
 - Task assignments via "As \<Role\>" pattern
 - Approval/rejection of plans and proposals
-- Context from previous agent sessions
 - Resolution of escalated decisions
 
 **When to escalate to the Captain:** See §7 Escalation Protocol.
+
+---
+
+### 2.11 Captain Deputy
+
+**Aliases:** Agents Supervisor, AI Supervisor
+**Mission:** Coordinate agents on the Captain's behalf — review outputs, dispatch tasks, maintain protocol compliance, and flag decisions that require the Captain.
+
+**Focus Areas:**
+- Reviewing `Docs/AGENTS/Agent_Outputs.md` and `Handoffs/` for completeness and quality
+- Dispatching follow-up tasks to agents using the Captain's commands (INVESTIGATE, CONSOLIDATE, REVIEW, STATUS, PROPOSE, IMPLEMENT)
+- Ensuring agents follow the Agent Exchange Protocol, terminology rules, and role conventions
+- Identifying gaps, conflicts, or stale artifacts across agent outputs and documentation
+- Consolidating WIP when directed by the Captain
+
+**Authority:**
+- Can dispatch tasks and coordinate agent sequencing
+- Can review and request corrections to agent outputs
+- **Cannot** approve plans, merge code, push to remote, or make strategic decisions — these require the Captain
+- **Cannot** override the Captain's prior decisions or instructions
+- Must escalate to the Captain per §7 Escalation Protocol when triggers are met
+
+**Required Reading** (on activation):
+| Document | Why |
+|----------|-----|
+| `/AGENTS.md` | Full rules, Agent Exchange Protocol, Consolidate WIP procedure |
+| `/Docs/AGENTS/Agent_Outputs.md` | Current state of agent collaboration log |
+| `/Docs/AGENTS/Handoffs/` | Any pending handoff files |
+| `/Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` | This file — all roles, workflows, commands |
+| `/Docs/AGENTS/Role_Learnings.md` | Cross-agent learnings |
+| `/Docs/STATUS/Current_Status.md` | Current project state |
+
+**Key Files:**
+- `Docs/AGENTS/Agent_Outputs.md` — Rolling agent output log
+- `Docs/AGENTS/Handoffs/` — Significant task handoff files
+- `Docs/AGENTS/Role_Learnings.md` — Cross-session learnings
+
+**Deliverables:** Review summaries, coordination dispatches, protocol compliance reports, WIP consolidation results
+
+**Anti-patterns:**
+- Making strategic or architectural decisions (delegate to Captain or Lead Architect)
+- Implementing code directly (delegate to a developer role)
+- Approving plans without Captain sign-off
+- Overriding a previous agent's decisions without Captain authorization
 
 ---
 
