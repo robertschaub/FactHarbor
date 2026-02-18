@@ -124,6 +124,30 @@ _(No entries yet)_
 **Learning:** When new pipeline code accesses UCM config with `(calcConfig as any).fieldName`, it usually means the CalcConfig type definition hasn't been updated to include the new field. These casts bypass type safety for analysis-critical parameters (like harmPotentialMultipliers, triangulation config). Flag all `as any` config accesses as type-safety gaps. The fix is to update the CalcConfig Zod schema in config-schemas.ts to include the new fields with proper typing.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (lines 2173, 2187, 2191, 2312)
 
+### 2026-02-18 — Auth utility extraction reduces copy-paste drift
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
+**Category:** tip
+**Learning:** All route files duplicated auth checks with varying quality — some used timingSafeEqual, some used ===. Extracting into a shared `lib/auth.ts` utility ensures consistent timing-safe comparison and reduces copy-paste drift.
+**Files:** `apps/web/src/lib/auth.ts` (new), all route files under `apps/web/src/app/api/`
+
+### 2026-02-18 — Circuit breaker double-counting causes early trips
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
+**Category:** gotcha
+**Learning:** Circuit breaker `recordFailure()` was called in BOTH `web-search.ts` AND `claimboundary-pipeline.ts` for the same provider error, causing double-counting. With failureThreshold=3, circuits tripped after only 2 real failures. Record failures in exactly one place — the search abstraction layer.
+**Files:** `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
+
+### 2026-02-18 — Module-scoped state resets on HMR in Next.js dev mode
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
+**Category:** gotcha
+**Learning:** In Next.js dev mode, module-scoped Map/Set instances reset on HMR (hot module reload). The abort signals Map in the abort-job route was module-scoped, so cancelled jobs kept running after code changes. Use `globalThis` pattern for any in-memory state that must survive hot reloads. Pattern reference: `getRunnerQueueState()` in `internal-runner-queue.ts`.
+**Files:** `apps/web/src/app/api/internal/abort-job/[id]/route.ts`
+
+### 2026-02-18 — New modules need test files to avoid coverage gaps
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
+**Category:** tip
+**Learning:** Three new modules (search-brave.ts, search-cache.ts, search-circuit-breaker.ts) shipped with zero test coverage. When adding new modules, create corresponding test files in the same session to avoid coverage gaps accumulating.
+**Files:** `apps/web/src/lib/search-brave.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/search-circuit-breaker.ts`
+
 ## Security Expert
 
 _(No entries yet)_
