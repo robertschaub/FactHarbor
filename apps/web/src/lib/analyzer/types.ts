@@ -906,6 +906,7 @@ export interface CBClaimUnderstanding {
     totalClaims: number;
     passedOpinion: number;
     passedSpecificity: number;
+    passedFidelity?: number;
     filteredCount: number;
     overallPass: boolean;
   };

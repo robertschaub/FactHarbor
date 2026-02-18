@@ -421,6 +421,7 @@ const Gate1OutputSchema = z.object({
     claimId: z.string(),
     passedOpinion: z.boolean(),
     passedSpecificity: z.boolean(),
+    passedFidelity: z.boolean().catch(true),
     reasoning: z.string(),
   })),
 });
@@ -541,6 +542,7 @@ export async function extractClaims(
     filteredClaims,
     pipelineConfig,
     currentDate,
+    state.originalInput,
   );
   state.llmCalls++;
 
@@ -919,8 +921,11 @@ export async function runPass2(
     analysisInput: inputText,
     preliminaryEvidence: JSON.stringify(
       preliminaryEvidence.map((pe) => ({
-        statement: pe.statement,
-        sourceUrl: pe.sourceUrl,
+        // Truncate evidence to topic-level signals only (reduce contamination risk).
+        // Full statements give the LLM too much factual detail to import into claims.
+        topicSignal: pe.statement.length > 120
+          ? pe.statement.slice(0, 120) + "…"
+          : pe.statement,
         sourceTitle: pe.sourceTitle,
         evidenceScope: pe.evidenceScope,
       })),
@@ -1059,10 +1064,18 @@ export async function runGate1Validation(
   claims: AtomicClaim[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  analysisInput = "",
 ): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[] }> {
   if (claims.length === 0) {
     return {
-      stats: { totalClaims: 0, passedOpinion: 0, passedSpecificity: 0, filteredCount: 0, overallPass: true },
+      stats: {
+        totalClaims: 0,
+        passedOpinion: 0,
+        passedSpecificity: 0,
+        passedFidelity: 0,
+        filteredCount: 0,
+        overallPass: true,
+      },
       filteredClaims: [],
     };
   }
@@ -1071,6 +1084,7 @@ export async function runGate1Validation(
 
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_VALIDATION", {
     currentDate,
+    analysisInput,
     atomicClaims: JSON.stringify(
       claims.map((c) => ({ id: c.id, statement: c.statement, category: c.category })),
       null,
@@ -1085,6 +1099,7 @@ export async function runGate1Validation(
         totalClaims: claims.length,
         passedOpinion: claims.length,
         passedSpecificity: claims.length,
+        passedFidelity: claims.length,
         filteredCount: 0,
         overallPass: true,
       },
@@ -1127,6 +1142,7 @@ export async function runGate1Validation(
           totalClaims: claims.length,
           passedOpinion: claims.length,
           passedSpecificity: claims.length,
+          passedFidelity: claims.length,
           filteredCount: 0,
           overallPass: true,
         },
@@ -1138,6 +1154,7 @@ export async function runGate1Validation(
 
     const passedOpinion = validated.validatedClaims.filter((v) => v.passedOpinion).length;
     const passedSpecificity = validated.validatedClaims.filter((v) => v.passedSpecificity).length;
+    const passedFidelity = validated.validatedClaims.filter((v) => v.passedFidelity).length;
 
     // Build set of claim IDs that fail BOTH opinion AND specificity
     const failedBothIds = new Set(
@@ -1145,24 +1162,68 @@ export async function runGate1Validation(
         .filter((v) => !v.passedOpinion && !v.passedSpecificity)
         .map((v) => v.claimId),
     );
+    const failedFidelityIds = new Set(
+      validated.validatedClaims
+        .filter((v) => !v.passedFidelity)
+        .map((v) => v.claimId),
+    );
 
-    // Filter claims: remove those that fail both LLM checks OR have specificityScore below minimum
+    // Filter claims: remove those that fail fidelity, fail both opinion+specificity,
+    // or are below specificity threshold when grounded.
+    let fidelityFiltered = 0;
+    let bothFiltered = 0;
+    let specificityFiltered = 0;
     const keptClaims = claims.filter((claim) => {
+      // Remove if claim is not faithful to original input meaning
+      if (failedFidelityIds.has(claim.id)) {
+        fidelityFiltered++;
+        return false;
+      }
       // Remove if LLM says both opinion and specificity fail
-      if (failedBothIds.has(claim.id)) return false;
+      if (failedBothIds.has(claim.id)) {
+        bothFiltered++;
+        return false;
+      }
       // Remove if specificityScore is below UCM-configured minimum —
       // but only when grounding was available (moderate/strong/weak).
       // With groundingQuality "none" (no preliminary evidence), low specificity
       // is expected and should not cause filtering — the claim may become
       // specific once real evidence is found in Stage 2.
-      if (claim.groundingQuality !== "none" && claim.specificityScore < specificityMin) return false;
+      if (claim.groundingQuality !== "none" && claim.specificityScore < specificityMin) {
+        specificityFiltered++;
+        return false;
+      }
       return true;
     });
+
+    // Safety net: never filter ALL claims — an empty pipeline produces a
+    // meaningless default verdict which is worse than analyzing a vague claim.
+    // If filtering would leave 0, keep the highest-centrality claim that
+    // passed fidelity (or the first claim if none passed fidelity).
+    if (keptClaims.length === 0 && claims.length > 0) {
+      const fidelityPassIds = new Set(
+        validated.validatedClaims.filter((v) => v.passedFidelity).map((v) => v.claimId),
+      );
+      const centralityOrder = ["high", "medium", "low"];
+      const rescued = [...claims]
+        .sort((a, b) => {
+          // Prefer fidelity-passing claims
+          const aFid = fidelityPassIds.has(a.id) ? 0 : 1;
+          const bFid = fidelityPassIds.has(b.id) ? 0 : 1;
+          if (aFid !== bFid) return aFid - bFid;
+          // Then by centrality
+          return centralityOrder.indexOf(a.centrality ?? "low") - centralityOrder.indexOf(b.centrality ?? "low");
+        })[0];
+      keptClaims.push(rescued);
+      console.warn(
+        `[Stage1] Gate 1: all ${claims.length} claims would be filtered — rescued "${rescued.id}" (centrality: ${rescued.centrality}) to prevent empty pipeline.`,
+      );
+    }
 
     const filteredCount = claims.length - keptClaims.length;
     if (filteredCount > 0) {
       console.info(
-        `[Stage1] Gate 1: filtered ${filteredCount} of ${claims.length} claims (${failedBothIds.size} failed both checks, ${claims.length - keptClaims.length - failedBothIds.size} below specificity minimum ${specificityMin}; ungrounded claims exempt from specificity filter).`,
+        `[Stage1] Gate 1: filtered ${filteredCount} of ${claims.length} claims (${fidelityFiltered} fidelity failures, ${bothFiltered} failed both checks, ${specificityFiltered} below specificity minimum ${specificityMin}; ungrounded claims exempt from specificity filter).`,
       );
     }
 
@@ -1180,6 +1241,7 @@ export async function runGate1Validation(
         totalClaims: claims.length,
         passedOpinion,
         passedSpecificity,
+        passedFidelity,
         filteredCount,
         overallPass: keptClaims.length > 0,
       },
@@ -1192,6 +1254,7 @@ export async function runGate1Validation(
         totalClaims: claims.length,
         passedOpinion: claims.length,
         passedSpecificity: claims.length,
+        passedFidelity: claims.length,
         filteredCount: 0,
         overallPass: true,
       },

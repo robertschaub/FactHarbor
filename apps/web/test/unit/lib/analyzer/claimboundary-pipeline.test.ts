@@ -821,6 +821,7 @@ describe("Stage 1: runGate1Validation", () => {
       totalClaims: 0,
       passedOpinion: 0,
       passedSpecificity: 0,
+      passedFidelity: 0,
       filteredCount: 0,
       overallPass: true,
     });
@@ -836,9 +837,9 @@ describe("Stage 1: runGate1Validation", () => {
 
     const gate1Fixture = {
       validatedClaims: [
-        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
-        { claimId: "AC_02", passedOpinion: true, passedSpecificity: false, reasoning: "too vague" },
-        { claimId: "AC_03", passedOpinion: false, passedSpecificity: true, reasoning: "opinion" },
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "too vague" },
+        { claimId: "AC_03", passedOpinion: false, passedSpecificity: true, passedFidelity: true, reasoning: "opinion" },
       ],
     };
 
@@ -851,6 +852,7 @@ describe("Stage 1: runGate1Validation", () => {
     expect(result.stats.totalClaims).toBe(3);
     expect(result.stats.passedOpinion).toBe(2);
     expect(result.stats.passedSpecificity).toBe(2);
+    expect(result.stats.passedFidelity).toBe(3);
     expect(result.stats.overallPass).toBe(true);
     // All 3 claims pass either opinion or specificity, so all are kept
     expect(result.filteredClaims).toHaveLength(3);
@@ -864,15 +866,16 @@ describe("Stage 1: runGate1Validation", () => {
 
     expect(result.stats.totalClaims).toBe(1);
     expect(result.stats.passedOpinion).toBe(1);
+    expect(result.stats.passedFidelity).toBe(1);
     expect(result.stats.overallPass).toBe(true);
     expect(result.filteredClaims).toHaveLength(1);
   });
 
-  it("should set overallPass false and filter claims failing both checks", async () => {
+  it("should rescue last claim when all would be filtered (safety net)", async () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const gate1Fixture = {
       validatedClaims: [
-        { claimId: "AC_01", passedOpinion: false, passedSpecificity: false, reasoning: "invalid" },
+        { claimId: "AC_01", passedOpinion: false, passedSpecificity: false, passedFidelity: true, reasoning: "invalid" },
       ],
     };
 
@@ -884,9 +887,12 @@ describe("Stage 1: runGate1Validation", () => {
 
     expect(result.stats.passedOpinion).toBe(0);
     expect(result.stats.passedSpecificity).toBe(0);
-    expect(result.stats.overallPass).toBe(false);
-    expect(result.stats.filteredCount).toBe(1);
-    expect(result.filteredClaims).toHaveLength(0);
+    expect(result.stats.passedFidelity).toBe(1);
+    // Safety net: rescued 1 claim to prevent empty pipeline
+    expect(result.stats.overallPass).toBe(true);
+    expect(result.stats.filteredCount).toBe(0);
+    expect(result.filteredClaims).toHaveLength(1);
+    expect(result.filteredClaims[0].id).toBe("AC_01");
   });
 
   it("should keep claims that pass either opinion or specificity", async () => {
@@ -899,10 +905,10 @@ describe("Stage 1: runGate1Validation", () => {
 
     const gate1Fixture = {
       validatedClaims: [
-        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
-        { claimId: "AC_02", passedOpinion: false, passedSpecificity: true, reasoning: "opinion" },
-        { claimId: "AC_03", passedOpinion: true, passedSpecificity: false, reasoning: "vague" },
-        { claimId: "AC_04", passedOpinion: false, passedSpecificity: false, reasoning: "invalid" },
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: false, passedSpecificity: true, passedFidelity: true, reasoning: "opinion" },
+        { claimId: "AC_03", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "vague" },
+        { claimId: "AC_04", passedOpinion: false, passedSpecificity: false, passedFidelity: true, reasoning: "invalid" },
       ],
     };
 
@@ -926,8 +932,8 @@ describe("Stage 1: runGate1Validation", () => {
 
     const gate1Fixture = {
       validatedClaims: [
-        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
-        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, reasoning: "ok" },
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
       ],
     };
 
@@ -942,6 +948,32 @@ describe("Stage 1: runGate1Validation", () => {
     expect(result.filteredClaims).toHaveLength(1);
     expect(result.filteredClaims[0].id).toBe("AC_01");
     expect(result.stats.filteredCount).toBe(1);
+  });
+
+  it("should filter claims that fail fidelity even if they pass opinion and specificity", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01", statement: "Input-faithful claim" }),
+      createAtomicClaim({ id: "AC_02", statement: "Evidence-derived drifted claim" }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "introduces evidence-specific details absent from input" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17", "Original input claim");
+
+    expect(result.stats.passedOpinion).toBe(2);
+    expect(result.stats.passedSpecificity).toBe(2);
+    expect(result.stats.passedFidelity).toBe(1);
+    expect(result.filteredClaims).toHaveLength(1);
+    expect(result.filteredClaims[0].id).toBe("AC_01");
   });
 });
 
@@ -2456,6 +2488,7 @@ describe("Stage 5: buildQualityGates", () => {
       totalClaims: 5,
       passedOpinion: 4,
       passedSpecificity: 3,
+      passedFidelity: 4,
       filteredCount: 2,
       overallPass: true,
     };
@@ -2503,6 +2536,7 @@ describe("Stage 5: buildQualityGates", () => {
       totalClaims: 2,
       passedOpinion: 0,
       passedSpecificity: 0,
+      passedFidelity: 0,
       filteredCount: 2,
       overallPass: false,
     };
@@ -2591,7 +2625,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     const state: CBResearchState = {
       understanding: {
         atomicClaims: claims,
-        gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, filteredCount: 0, overallPass: true },
+        gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, passedFidelity: 1, filteredCount: 0, overallPass: true },
       } as any,
       sources: [{ url: "https://example.com" }] as any,
       searchQueries: ["test query"],
@@ -2643,7 +2677,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
       }),
     ];
     const state: CBResearchState = {
-      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, filteredCount: 0, overallPass: true } } as any,
+      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, passedFidelity: 1, filteredCount: 0, overallPass: true } } as any,
       sources: [{ url: "https://example.com" }] as any,
       searchQueries: ["q1"],
       contradictionIterationsUsed: 0,
@@ -2703,7 +2737,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
       }),
     ];
     const state: CBResearchState = {
-      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, filteredCount: 0, overallPass: true } } as any,
+      understanding: { atomicClaims: claims, gate1Stats: { totalClaims: 1, passedOpinion: 1, passedSpecificity: 1, passedFidelity: 1, filteredCount: 0, overallPass: true } } as any,
       sources: [{ url: "a" }] as any,
       searchQueries: ["q1"],
       contradictionIterationsUsed: 0,
