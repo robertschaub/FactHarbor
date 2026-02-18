@@ -82,8 +82,8 @@ import {
 import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
 
-// Provider health — report failures so circuit breaker can trip
-import { recordProviderFailure } from "@/lib/provider-health";
+// Search circuit breaker — report failures so circuit breaker can trip
+import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-breaker";
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -564,7 +564,7 @@ export async function runPreliminarySearch(
         // Report search provider errors to circuit breaker and warnings
         if (response.errors && response.errors.length > 0) {
           for (const provErr of response.errors) {
-            recordProviderFailure("search", provErr.message, pipelineConfig.heuristicCircuitBreakerThreshold);
+            recordSearchFailure(provErr.provider, provErr.message);
             const alreadyWarned = state.warnings.some(
               (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
             );
@@ -619,16 +619,16 @@ export async function runPreliminarySearch(
         console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
 
         // If this was a search provider error (not a general exception), report it
-        const errorMsg = err?.message || String(err);
-        if (errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("rate limit")) {
-          recordProviderFailure("search", errorMsg, pipelineConfig.heuristicCircuitBreakerThreshold);
+        // The SearchProviderError has provider name, but generic exceptions don't
+        if (err?.name === "SearchProviderError" && err?.provider) {
+          recordSearchFailure(err.provider, err.message);
           state.warnings.push({
             type: "search_provider_error",
             severity: "error",
-            message: `Preliminary search failed: ${errorMsg}`,
-            details: { query },
+            message: `Preliminary search failed: ${err.provider} - ${err.message}`,
+            details: { query, provider: err.provider },
           });
-          state.onEvent?.(`Preliminary search error: ${errorMsg}`, 0);
+          state.onEvent?.(`Preliminary search error: ${err.provider} - ${err.message}`, 0);
         }
       }
     }
@@ -1352,7 +1352,7 @@ export async function runResearchIteration(
       if (response.errors && response.errors.length > 0) {
         for (const provErr of response.errors) {
           // Report to circuit breaker so health banner can trip
-          recordProviderFailure("search", provErr.message, pipelineConfig.heuristicCircuitBreakerThreshold);
+          recordSearchFailure(provErr.provider, provErr.message);
 
           // Deduplicate warnings: only warn once per provider in result
           const alreadyWarned = state.warnings.some(
