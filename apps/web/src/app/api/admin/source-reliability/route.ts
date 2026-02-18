@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore, batchGetCachedData } from "@/lib/source-reliability-cache";
 import { getConfig } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -21,24 +22,8 @@ async function getWeightConfig() {
   };
 }
 
-function getEnv(name: string): string | null {
-  const v = process.env[name];
-  return v && v.trim() ? v : null;
-}
-
-// Check admin auth
-function checkAuth(req: Request): boolean {
-  const adminKey = getEnv("FH_ADMIN_KEY");
-  if (!adminKey) {
-    // Allow in development without key
-    return process.env.NODE_ENV !== "production";
-  }
-  const got = req.headers.get("x-admin-key");
-  return got === adminKey;
-}
-
 export async function GET(req: Request) {
-  if (!checkAuth(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -82,7 +67,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!checkAuth(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -254,7 +239,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  if (!checkAuth(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

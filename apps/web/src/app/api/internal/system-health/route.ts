@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import {
   getHealthState,
   resumeSystem,
@@ -7,35 +6,9 @@ import {
 } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 import { drainRunnerQueue } from "@/lib/internal-runner-queue";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
-
-function getEnv(name: string): string | null {
-  const v = process.env[name];
-  return v && v.trim() ? v : null;
-}
-
-function secureCompare(expected: string, provided: string | null): boolean {
-  if (provided === null) return false;
-  const expectedBuffer = Buffer.from(expected);
-  const providedBuffer = Buffer.from(provided);
-  const maxLength = Math.max(expectedBuffer.length, providedBuffer.length);
-  const expectedPadded = Buffer.alloc(maxLength);
-  const providedPadded = Buffer.alloc(maxLength);
-  expectedBuffer.copy(expectedPadded);
-  providedBuffer.copy(providedPadded);
-  const matched = timingSafeEqual(expectedPadded, providedPadded);
-  return matched && expectedBuffer.length === providedBuffer.length;
-}
-
-function isAuthorized(req: Request): boolean {
-  const expectedKey = getEnv("FH_ADMIN_KEY");
-  if (!expectedKey) {
-    // In dev, allow without key
-    return process.env.NODE_ENV !== "production";
-  }
-  return secureCompare(expectedKey, req.headers.get("x-admin-key"));
-}
 
 /** GET — return current health state (for UI polling and admin dashboard) */
 export async function GET() {
@@ -44,7 +17,7 @@ export async function GET() {
 
 /** POST — admin actions: resume or pause the system */
 export async function POST(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

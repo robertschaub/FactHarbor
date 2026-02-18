@@ -114,8 +114,10 @@ export async function searchBrave(options: WebSearchOptions): Promise<WebSearchR
       });
     }
 
-    console.log(`[Search] Brave: Returning ${out.length} valid results`);
-    return out;
+    // Ensure we never return more than requested (defensive client-side truncation)
+    const truncated = out.slice(0, options.maxResults);
+    console.log(`[Search] Brave: Returning ${truncated.length} valid results`);
+    return truncated;
   } catch (error) {
     // Re-throw SearchProviderError so callers can detect fatal provider failures
     if (error instanceof SearchProviderError) {

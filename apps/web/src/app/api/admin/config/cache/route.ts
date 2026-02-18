@@ -8,26 +8,15 @@
 import { NextResponse } from "next/server";
 import { invalidateConfigCache, getConfigCacheStatus } from "@/lib/config-loader";
 import { getConfigCacheStats, type ConfigType } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
-
-function getAdminKey(): string | null {
-  const v = process.env.FH_ADMIN_KEY;
-  return v && v.trim() ? v : null;
-}
-
-function isAuthorized(req: Request): boolean {
-  const adminKey = getAdminKey();
-  if (!adminKey && process.env.NODE_ENV !== "production") return true;
-  const providedKey = req.headers.get("x-admin-key");
-  return !!providedKey && providedKey === adminKey;
-}
 
 /**
  * GET - Get cache status
  */
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -45,7 +34,7 @@ export async function GET(req: Request) {
  * POST - Invalidate cache
  */
 export async function POST(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

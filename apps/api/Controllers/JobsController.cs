@@ -13,12 +13,14 @@ public sealed class JobsController : ControllerBase
     private readonly JobService _jobs;
     private readonly FhDbContext _db;
     private readonly RunnerClient _runner;
+    private readonly ILogger<JobsController> _log;
 
-    public JobsController(JobService jobs, FhDbContext db, RunnerClient runner)
+    public JobsController(JobService jobs, FhDbContext db, RunnerClient runner, ILogger<JobsController> log)
     {
         _jobs = jobs;
         _db = db;
         _runner = runner;
+        _log = log;
     }
 
     [HttpGet]
@@ -95,6 +97,73 @@ public sealed class JobsController : ControllerBase
         }
 
         return Ok(new { ok = true, status = job.Status });
+    }
+
+    public sealed record RetryJobRequest(
+        string? pipelineVariant = null,
+        string? retryReason = null
+    );
+
+    /// <summary>
+    /// Retry a failed job with optional pipeline variant change
+    /// </summary>
+    [HttpPost("{jobId}/retry")]
+    public async Task<IActionResult> RetryJob(string jobId, [FromBody] RetryJobRequest? req)
+    {
+        var originalJob = await _jobs.GetJobAsync(jobId);
+        if (originalJob is null)
+            return NotFound(new { error = "Job not found" });
+
+        // Validation: only FAILED jobs can be retried
+        if (originalJob.Status != "FAILED")
+        {
+            return BadRequest(new
+            {
+                error = "Only FAILED jobs can be retried",
+                currentStatus = originalJob.Status
+            });
+        }
+
+        // Prevent excessive retries
+        const int MAX_RETRY_DEPTH = 3;
+        if (originalJob.RetryCount >= MAX_RETRY_DEPTH)
+        {
+            return BadRequest(new
+            {
+                error = $"Maximum retry depth ({MAX_RETRY_DEPTH}) exceeded",
+                retryCount = originalJob.RetryCount
+            });
+        }
+
+        var newPipelineVariant = req?.pipelineVariant ?? originalJob.PipelineVariant;
+        var retryReason = req?.retryReason;
+
+        try
+        {
+            var retryJob = await _jobs.CreateRetryJobAsync(jobId, newPipelineVariant, retryReason);
+
+            // Trigger runner (same pattern as AnalyzeController.Create)
+            await _jobs.UpdateStatusAsync(retryJob.JobId, "QUEUED", 0, "info", "Triggering runner");
+            await _runner.TriggerRunnerAsync(retryJob.JobId);
+
+            return Ok(new
+            {
+                retryJobId = retryJob.JobId,
+                originalJobId = jobId,
+                pipelineVariant = retryJob.PipelineVariant,
+                retryCount = retryJob.RetryCount,
+                status = retryJob.Status
+            });
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to create/trigger retry job for {JobId}", jobId);
+            return StatusCode(500, new
+            {
+                error = "Failed to create retry job",
+                details = ex.Message
+            });
+        }
     }
 
     [HttpGet("{jobId}/events")]

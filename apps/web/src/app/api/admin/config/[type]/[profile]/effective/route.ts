@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import { getEffectiveConfig } from "@/lib/config-loader";
 import type { ConfigType } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -18,17 +19,7 @@ function isValidEffectiveType(type: string): type is EffectiveConfigType {
   return VALID_EFFECTIVE_TYPES.includes(type as EffectiveConfigType);
 }
 
-function getAdminKey(): string | null {
-  const v = process.env.FH_ADMIN_KEY;
-  return v && v.trim() ? v : null;
-}
 
-function isAuthorized(req: Request): boolean {
-  const adminKey = getAdminKey();
-  if (!adminKey && process.env.NODE_ENV !== "production") return true;
-  const providedKey = req.headers.get("x-admin-key");
-  return !!providedKey && providedKey === adminKey;
-}
 
 interface RouteParams {
   params: Promise<{ type: string; profile: string }>;
@@ -38,7 +29,7 @@ interface RouteParams {
  * GET - Get effective config (base + overrides applied)
  */
 export async function GET(req: Request, context: RouteParams) {
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

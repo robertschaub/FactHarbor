@@ -296,35 +296,27 @@ body.view-preview .preview-pane{width:100%}
 /* ── ANALYTICS MODAL ── */
 .analytics-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);align-items:center;justify-content:center}
 .analytics-overlay.active{display:flex}
-.analytics-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:90vw;max-width:740px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4)}
-.analytics-modal .am-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
-.analytics-modal .am-header h2{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--accent)}
-.analytics-modal .am-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px;transition:all .15s}
-.analytics-modal .am-close:hover{color:var(--text);background:var(--surface-2)}
-.analytics-modal .am-close svg{width:18px;height:18px;display:block}
-.am-tabs{display:flex;gap:2px;padding:8px 18px 0;border-bottom:1px solid var(--border)}
-.am-tabs button{padding:6px 14px;border:none;background:none;color:var(--text-muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
-.am-tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
-.am-tabs button:hover:not(.active){color:var(--text)}
-.am-body{flex:1;overflow-y:auto;padding:14px 18px 18px}
+.analytics-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:90vw;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.am-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.am-header h2{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--accent)}
+.am-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px}
+.am-close:hover{color:var(--text);background:var(--surface-2)}
+.am-close svg{width:18px;height:18px;display:block}
+.am-body{flex:1;overflow-y:auto;padding:12px 16px 16px}
 .am-body::-webkit-scrollbar{width:6px}
 .am-body::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
-.am-summary{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
-.am-stat-card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:120px;text-align:center}
-.am-stat-card .asc-value{font-family:'Crimson Pro',serif;font-size:28px;font-weight:700;color:var(--accent);line-height:1}
-.am-stat-card .asc-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+.am-summary{display:flex;gap:10px;margin-bottom:12px}
+.am-stat{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;text-align:center}
+.am-stat b{font-family:'Crimson Pro',serif;font-size:24px;color:var(--accent);display:block}
+.am-stat span{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px}
 .am-table{width:100%;border-collapse:collapse;font-size:12px}
-.am-table th{text-align:left;padding:6px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
-.am-table th:hover{color:var(--accent)}
-.am-table td{padding:6px 10px;border-bottom:1px solid rgba(51,51,59,.4);color:var(--text)}
+.am-table th{text-align:left;padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);border-bottom:1px solid var(--border)}
+.am-table td{padding:5px 8px;border-bottom:1px solid rgba(51,51,59,.3);color:var(--text)}
 .am-table tr:hover td{background:var(--surface-2)}
 .am-table .num{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px}
-.am-table .page-ref{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.am-table .page-ref:hover{text-decoration:underline}
-.am-table .visitor-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)}
-.am-empty{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:13px}
-.am-loading{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px}
-.am-error{text-align:center;padding:20px;color:#c86060;font-size:12px;background:rgba(200,96,96,.08);border-radius:6px;margin-bottom:12px}
+.am-table .pg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.am-table .pg:hover{text-decoration:underline}
+.am-msg{text-align:center;padding:30px 20px;color:var(--text-dim);font-size:13px}
 </style>
 </head>
 <body class="view-preview">
@@ -463,17 +455,13 @@ body.view-preview .preview-pane{width:100%}
 <div class="analytics-overlay" id="analyticsOverlay" onclick="if(event.target===this)toggleAnalytics()">
   <div class="analytics-modal">
     <div class="am-header">
-      <h2>Page View Statistics</h2>
+      <h2>Page Views</h2>
       <button class="am-close" onclick="toggleAnalytics()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
-    <div class="am-tabs">
-      <button class="active" onclick="showAnalyticsTab('pages',this)">Pages</button>
-      <button onclick="showAnalyticsTab('visitors',this)">Visitors</button>
-    </div>
     <div class="am-body" id="analyticsBody">
-      <div class="am-loading">Loading statistics...</div>
+      <div class="am-msg">Loading...</div>
     </div>
   </div>
 </div>
@@ -2139,178 +2127,76 @@ function applySortToTree(items, path, sorts){
 // Analytics — Privacy-preserving page view tracking
 // =================================================================
 const Analytics = (function(){
-  // Configuration — set by build_ghpages.py or manually
-  // When empty string, analytics is disabled (standalone/local mode)
-  let ENDPOINT = '';
+  let EP = '';
 
-  // Anonymous visitor ID — random UUID stored in localStorage, no PII
-  function getVisitorId(){
-    const key = 'fh_docs_visitor_id';
-    let id = localStorage.getItem(key);
+  function vid(){
+    let id = localStorage.getItem('fh_vid');
     if(!id){
-      // Generate UUID v4
-      id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random()*16|0;
-        return (c==='x' ? r : (r&0x3|0x8)).toString(16);
-      });
-      localStorage.setItem(key, id);
+      id = crypto.randomUUID ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+            const r=Math.random()*16|0; return(c==='x'?r:(r&0x3|0x8)).toString(16);
+          });
+      localStorage.setItem('fh_vid', id);
     }
     return id;
   }
 
-  // Track a page view (fire-and-forget, never blocks UI)
-  function trackPageView(pageRef){
-    if(!ENDPOINT) return;
-    const visitorId = getVisitorId();
-    try {
-      fetch(ENDPOINT + '/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pageRef, visitorId }),
-      }).catch(()=>{}); // Silently ignore errors
-    } catch(e){ /* ignore */ }
+  function track(pageRef){
+    if(!EP) return;
+    fetch(EP+'/track',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({p:pageRef,id:vid()})}).catch(()=>{});
   }
 
-  // Fetch stats from the worker
-  async function fetchStats(type){
-    if(!ENDPOINT) return null;
-    try {
-      const resp = await fetch(ENDPOINT + '/stats/' + type);
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
-      return await resp.json();
-    } catch(e){
-      console.warn('Analytics fetch failed:', e);
-      return { error: e.message };
-    }
+  async function stats(){
+    if(!EP) return null;
+    try{ const r=await fetch(EP+'/stats'); return r.ok?await r.json():null; }
+    catch{ return null; }
   }
 
-  function configure(endpoint){
-    ENDPOINT = (endpoint || '').replace(/\/+$/, ''); // Remove trailing slash
-    // Show stats button if configured
-    const btn = document.getElementById('btnStats');
-    if(btn) btn.style.display = ENDPOINT ? '' : 'none';
+  function configure(url){
+    EP=(url||'').replace(/\/+$/,'');
+    const btn=document.getElementById('btnStats');
+    if(btn) btn.style.display=EP?'':'none';
   }
 
-  function isEnabled(){ return !!ENDPOINT; }
-
-  return { trackPageView, fetchStats, configure, isEnabled, getVisitorId };
+  return { trackPageView:track, stats, configure, isEnabled:()=>!!EP };
 })();
 
-// Analytics UI
-let analyticsCache = {};
-
 function toggleAnalytics(){
-  const overlay = document.getElementById('analyticsOverlay');
-  const isOpen = overlay.classList.contains('active');
-  if(isOpen){
-    overlay.classList.remove('active');
-  } else {
-    overlay.classList.add('active');
-    analyticsCache = {};
-    showAnalyticsTab('pages', document.querySelector('.am-tabs button'));
-  }
+  const o=document.getElementById('analyticsOverlay');
+  if(o.classList.toggle('active')) loadAnalytics();
 }
 
-function showAnalyticsTab(tab, btn){
-  // Update tab buttons
-  document.querySelectorAll('.am-tabs button').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
+async function loadAnalytics(){
+  const body=document.getElementById('analyticsBody');
+  body.innerHTML='<div class="am-msg">Loading...</div>';
+  const data=await Analytics.stats();
+  if(!data){body.innerHTML='<div class="am-msg">No data yet.</div>';return;}
 
-  const body = document.getElementById('analyticsBody');
+  const totalViews=data.reduce((s,d)=>s+d.v,0);
+  // Collect unique visitor count from all pages (server already provides per-page unique count)
+  const totalUnique=new Set(); // approximate from page data
+  let html='<div class="am-summary">';
+  html+='<div class="am-stat"><b>'+totalViews+'</b><span>Total Views</span></div>';
+  html+='<div class="am-stat"><b>'+data.length+'</b><span>Pages Viewed</span></div>';
+  html+='</div>';
 
-  if(!Analytics.isEnabled()){
-    body.innerHTML = '<div class="am-empty">Analytics not configured.<br><span style="font-size:11px;color:var(--text-dim)">Set analytics endpoint in deployment config.</span></div>';
-    return;
-  }
-
-  body.innerHTML = '<div class="am-loading">Loading statistics...</div>';
-
-  if(tab === 'pages') loadPagesTab(body);
-  else if(tab === 'visitors') loadVisitorsTab(body);
-}
-
-async function loadPagesTab(body){
-  const [pagesData, summaryData] = await Promise.all([
-    analyticsCache.pages || Analytics.fetchStats('pages'),
-    analyticsCache.summary || Analytics.fetchStats('summary'),
-  ]);
-  analyticsCache.pages = pagesData;
-  analyticsCache.summary = summaryData;
-
-  if(pagesData && pagesData.error){
-    body.innerHTML = '<div class="am-error">Failed to load: ' + pagesData.error + '</div>';
-    return;
-  }
-
-  const summary = summaryData || {};
-  const pages = (pagesData && pagesData.pages) || [];
-
-  let html = '<div class="am-summary">';
-  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.totalViews || 0) + '</div><div class="asc-label">Total Views</div></div>';
-  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.uniqueVisitors || 0) + '</div><div class="asc-label">Unique Visitors</div></div>';
-  html += '<div class="am-stat-card"><div class="asc-value">' + pages.length + '</div><div class="asc-label">Pages Viewed</div></div>';
-  html += '</div>';
-
-  if(pages.length === 0){
-    html += '<div class="am-empty">No page views recorded yet.</div>';
+  if(data.length===0){
+    html+='<div class="am-msg">No page views recorded yet.</div>';
   } else {
-    html += '<table class="am-table"><thead><tr>';
-    html += '<th>#</th><th>Page</th><th style="text-align:right">Views</th><th style="text-align:right">Unique Visitors</th>';
-    html += '</tr></thead><tbody>';
-    pages.forEach((p, i) => {
-      const clickable = pageIndex[p.pageRef] ? ' onclick="toggleAnalytics();loadPage(\'' + p.pageRef.replace(/'/g,"\\'") + '\')"' : '';
-      html += '<tr>';
-      html += '<td class="num">' + (i+1) + '</td>';
-      html += '<td class="page-ref"' + clickable + ' title="' + p.pageRef + '">' + p.pageRef + '</td>';
-      html += '<td class="num">' + p.totalViews + '</td>';
-      html += '<td class="num">' + p.uniqueVisitors + '</td>';
-      html += '</tr>';
+    html+='<table class="am-table"><thead><tr>';
+    html+='<th>#</th><th>Page</th><th style="text-align:right">Views</th><th style="text-align:right">Visitors</th>';
+    html+='</tr></thead><tbody>';
+    data.forEach((d,i)=>{
+      const click=pageIndex[d.p]?' onclick="toggleAnalytics();loadPage(\''+d.p.replace(/'/g,"\\'")+'\')"':'';
+      html+='<tr><td class="num">'+(i+1)+'</td>';
+      html+='<td class="pg"'+click+' title="'+d.p+'">'+d.p+'</td>';
+      html+='<td class="num">'+d.v+'</td>';
+      html+='<td class="num">'+d.u+'</td></tr>';
     });
-    html += '</tbody></table>';
+    html+='</tbody></table>';
   }
-
-  body.innerHTML = html;
-}
-
-async function loadVisitorsTab(body){
-  const [visitorsData, summaryData] = await Promise.all([
-    analyticsCache.visitors || Analytics.fetchStats('visitors'),
-    analyticsCache.summary || Analytics.fetchStats('summary'),
-  ]);
-  analyticsCache.visitors = visitorsData;
-  analyticsCache.summary = summaryData;
-
-  if(visitorsData && visitorsData.error){
-    body.innerHTML = '<div class="am-error">Failed to load: ' + visitorsData.error + '</div>';
-    return;
-  }
-
-  const summary = summaryData || {};
-  const visitors = (visitorsData && visitorsData.visitors) || [];
-
-  let html = '<div class="am-summary">';
-  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.uniqueVisitors || 0) + '</div><div class="asc-label">Total Visitors</div></div>';
-  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.totalViews || 0) + '</div><div class="asc-label">Total Views</div></div>';
-  html += '</div>';
-
-  if(visitors.length === 0){
-    html += '<div class="am-empty">No visitors recorded yet.</div>';
-  } else {
-    html += '<table class="am-table"><thead><tr>';
-    html += '<th>#</th><th>Visitor (anonymous)</th><th style="text-align:right">Total Views</th><th style="text-align:right">Pages Visited</th>';
-    html += '</tr></thead><tbody>';
-    visitors.forEach((v, i) => {
-      html += '<tr>';
-      html += '<td class="num">' + (i+1) + '</td>';
-      html += '<td class="visitor-id">' + v.visitorId + '</td>';
-      html += '<td class="num">' + v.totalViews + '</td>';
-      html += '<td class="num">' + v.pagesVisited + '</td>';
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-  }
-
-  body.innerHTML = html;
+  body.innerHTML=html;
 }
 
 // =================================================================

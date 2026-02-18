@@ -30,12 +30,12 @@ describe("Brave Search API", () => {
     try {
       await searchBrave({ query: "test", maxResults: 5 });
       expect.unreachable("Should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(SearchProviderError);
-      const e = err as SearchProviderError;
-      expect(e.provider).toBe("Brave");
-      expect(e.status).toBe(429);
-      expect(e.fatal).toBe(true);
+    } catch (err: any) {
+      // Use duck-typing instead of instanceof (vi.resetModules breaks class identity)
+      expect(err.name).toBe("SearchProviderError");
+      expect(err.provider).toBe("Brave");
+      expect(err.status).toBe(429);
+      expect(err.fatal).toBe(true);
     }
   });
 
@@ -52,12 +52,12 @@ describe("Brave Search API", () => {
     try {
       await searchBrave({ query: "test", maxResults: 5 });
       expect.unreachable("Should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(SearchProviderError);
-      const e = err as SearchProviderError;
-      expect(e.provider).toBe("Brave");
-      expect(e.status).toBe(403);
-      expect(e.fatal).toBe(true);
+    } catch (err: any) {
+      // Use duck-typing instead of instanceof (vi.resetModules breaks class identity)
+      expect(err.name).toBe("SearchProviderError");
+      expect(err.provider).toBe("Brave");
+      expect(err.status).toBe(403);
+      expect(err.fatal).toBe(true);
     }
   });
 

@@ -409,6 +409,7 @@ export async function closeSearchCacheDb(): Promise<void> {
   if (db) {
     await db.close();
     db = null;
+    dbPromise = null;
     console.log("[Search-Cache] Database closed");
   }
 }

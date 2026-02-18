@@ -44,6 +44,7 @@ import {
   MIN_FOUNDEDNESS_FOR_HIGH_SCORES,
   type FactualRating,
 } from "@/lib/source-reliability-config";
+import { getEnv, checkRunnerKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
@@ -2589,24 +2590,10 @@ async function evaluateSourceWithConsensus(
 // API HANDLER
 // ============================================================================
 
-function getEnv(name: string): string | null {
-  const v = process.env[name];
-  return v && v.trim() ? v : null;
-}
-
 export async function POST(req: Request) {
   // Authentication
-  const expectedRunnerKey = getEnv("FH_INTERNAL_RUNNER_KEY");
-  if (expectedRunnerKey) {
-    const got = req.headers.get("x-runner-key");
-    if (got !== expectedRunnerKey) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  } else if (process.env.NODE_ENV === "production") {
-    return NextResponse.json(
-      { error: "FH_INTERNAL_RUNNER_KEY not set" },
-      { status: 503 }
-    );
+  if (!checkRunnerKey(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Parse request

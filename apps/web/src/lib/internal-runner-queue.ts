@@ -180,8 +180,6 @@ async function runJobBackground(jobId: string) {
     await emit("info", `Preparing input (pipeline: ${pipelineVariant})`, 5);
 
     let result: any;
-    let usedFallback = false;
-    let fallbackReason: string | undefined;
 
     if (pipelineVariant === "claimboundary") {
       result = await runClaimBoundaryAnalysis({
@@ -191,24 +189,12 @@ async function runJobBackground(jobId: string) {
         onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
       });
     } else if (pipelineVariant === "monolithic_dynamic") {
-      try {
-        result = await runMonolithicDynamic({
-          jobId,
-          inputType,
-          inputValue,
-          onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
-        });
-      } catch (monolithicError: any) {
-        await emit("warn", `Monolithic dynamic failed, falling back to claimboundary: ${monolithicError?.message}`, 10);
-        usedFallback = true;
-        fallbackReason = monolithicError?.message || "Unknown error";
-        result = await runClaimBoundaryAnalysis({
-          jobId,
-          inputType,
-          inputValue,
-          onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
-        });
-      }
+      result = await runMonolithicDynamic({
+        jobId,
+        inputType,
+        inputValue,
+        onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
+      });
     } else {
       await emit("warn", `Unknown pipeline variant '${pipelineVariant}', using claimboundary`, 5);
       result = await runClaimBoundaryAnalysis({
@@ -220,12 +206,7 @@ async function runJobBackground(jobId: string) {
     }
 
     if (result?.resultJson?.meta) {
-      result.resultJson.meta.pipelineVariantRequested = pipelineVariant;
-      result.resultJson.meta.pipelineVariant = usedFallback ? "claimboundary" : pipelineVariant;
-      result.resultJson.meta.pipelineFallback = usedFallback;
-      if (fallbackReason) {
-        result.resultJson.meta.fallbackReason = fallbackReason;
-      }
+      result.resultJson.meta.pipelineVariant = pipelineVariant;
     }
 
     await emit("info", "Storing result", 95);

@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { checkAdminKey } from "@/lib/auth";
 import {
   getActiveConfig,
   loadDefaultConfigFromFile,
@@ -20,25 +21,14 @@ import {
 
 export const runtime = "nodejs";
 
-function getAdminKey(): string | null {
-  const v = process.env.FH_ADMIN_KEY;
-  return v && v.trim() ? v : null;
-}
 
-function isAuthorized(req: Request): boolean {
-  const adminKey = getAdminKey();
-  // In development without a key configured, allow access
-  if (!adminKey && process.env.NODE_ENV !== "production") return true;
-  const providedKey = req.headers.get("x-admin-key");
-  return !!providedKey && providedKey === adminKey;
-}
 
 interface RouteParams {
   params: Promise<{ type: string }>;
 }
 
 export async function GET(req: Request, context: RouteParams) {
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

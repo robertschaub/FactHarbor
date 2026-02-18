@@ -2,7 +2,7 @@
  * ClaimBoundary Pipeline — Unit Tests
  *
  * Tests for the ClaimAssessmentBoundary pipeline skeleton and supporting functions.
- * All fixtures use CB types only (AtomicClaim, ClaimBoundary, BoundaryFinding, etc.)
+ * All fixtures use CB types only (AtomicClaim, ClaimAssessmentBoundary, BoundaryFinding, etc.)
  * per §22.3.2 confusion prevention rules.
  *
  * @see apps/web/src/lib/analyzer/claimboundary-pipeline.ts
@@ -91,7 +91,7 @@ function createAtomicClaim(overrides: Partial<AtomicClaim> = {}): AtomicClaim {
   };
 }
 
-function createClaimBoundary(overrides: Partial<ClaimAssessmentBoundary> = {}): ClaimAssessmentBoundary {
+function createClaimAssessmentBoundary(overrides: Partial<ClaimAssessmentBoundary> = {}): ClaimAssessmentBoundary {
   return {
     id: "CB_01",
     name: "Standard Analysis Boundary",
@@ -202,7 +202,7 @@ function createVerdictNarrative(overrides: Partial<VerdictNarrative> = {}): Verd
 // TYPE VALIDITY TESTS — ensure CB types are well-formed
 // ============================================================================
 
-describe("ClaimBoundary Pipeline Types", () => {
+describe("ClaimAssessmentBoundary Pipeline Types", () => {
   describe("AtomicClaim", () => {
     it("should create a valid AtomicClaim with all required fields", () => {
       const claim = createAtomicClaim();
@@ -238,9 +238,9 @@ describe("ClaimBoundary Pipeline Types", () => {
     });
   });
 
-  describe("ClaimBoundary", () => {
-    it("should create a valid ClaimBoundary", () => {
-      const boundary = createClaimBoundary();
+  describe("ClaimAssessmentBoundary", () => {
+    it("should create a valid ClaimAssessmentBoundary", () => {
+      const boundary = createClaimAssessmentBoundary();
       expect(boundary.id).toBe("CB_01");
       expect(boundary.name).toBeTruthy();
       expect(boundary.shortName).toBeTruthy();
@@ -250,7 +250,7 @@ describe("ClaimBoundary Pipeline Types", () => {
     });
 
     it("should allow optional scope metadata fields", () => {
-      const boundary = createClaimBoundary({
+      const boundary = createClaimAssessmentBoundary({
         methodology: undefined,
         boundaries: undefined,
         geographic: undefined,
@@ -340,8 +340,8 @@ describe("buildCoverageMatrix", () => {
       createAtomicClaim({ id: "AC_02", statement: "Second claim for testing" }),
     ];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02", name: "Alternative Boundary", shortName: "ALT" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02", name: "Alternative Boundary", shortName: "ALT" }),
     ];
     const evidence: (EvidenceItem & { claimBoundaryId?: string; relevantClaimIds?: string[] })[] = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
@@ -363,8 +363,8 @@ describe("buildCoverageMatrix", () => {
       createAtomicClaim({ id: "AC_02", statement: "Second claim for testing" }),
     ];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02", name: "Alternative Boundary", shortName: "ALT" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02", name: "Alternative Boundary", shortName: "ALT" }),
     ];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
@@ -386,9 +386,9 @@ describe("buildCoverageMatrix", () => {
   it("should return correct boundaries for a claim via getBoundariesForClaim", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02", name: "Second Boundary", shortName: "B2" }),
-      createClaimBoundary({ id: "CB_03", name: "Third Boundary", shortName: "B3" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02", name: "Second Boundary", shortName: "B2" }),
+      createClaimAssessmentBoundary({ id: "CB_03", name: "Third Boundary", shortName: "B3" }),
     ];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
@@ -408,7 +408,7 @@ describe("buildCoverageMatrix", () => {
       createAtomicClaim({ id: "AC_02", statement: "Second claim" }),
       createAtomicClaim({ id: "AC_03", statement: "Third claim" }),
     ];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
       createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_03"] }),
@@ -432,7 +432,7 @@ describe("buildCoverageMatrix", () => {
 
   it("should handle evidence with unknown boundary ID", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const evidence = [
       createEvidenceItem({
         id: "EV_01",
@@ -448,7 +448,7 @@ describe("buildCoverageMatrix", () => {
 
   it("should handle evidence with unknown claim ID", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const evidence = [
       createEvidenceItem({
         id: "EV_01",
@@ -467,7 +467,7 @@ describe("buildCoverageMatrix", () => {
 // STAGE SKELETON TESTS — verify stubs throw until implemented
 // ============================================================================
 
-describe("ClaimBoundary Pipeline Stages (skeleton)", () => {
+describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
   describe("Stage 1: extractClaims", () => {
     it("should exist as a function", async () => {
       const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
@@ -1760,7 +1760,7 @@ describe("Stage 3: runLLMClustering", () => {
 
   const mockPipelineConfig = {} as any;
 
-  it("should parse LLM output into ClaimBoundary array", async () => {
+  it("should parse LLM output into ClaimAssessmentBoundary array", async () => {
     const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
     const scopeB: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
 
@@ -2245,9 +2245,9 @@ describe("Stage 5: computeTriangulationScore", () => {
     });
     const claims = [createAtomicClaim()];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02" }),
-      createClaimBoundary({ id: "CB_03" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02" }),
+      createClaimAssessmentBoundary({ id: "CB_03" }),
     ];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
@@ -2275,8 +2275,8 @@ describe("Stage 5: computeTriangulationScore", () => {
     });
     const claims = [createAtomicClaim()];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02" }),
     ];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
@@ -2299,7 +2299,7 @@ describe("Stage 5: computeTriangulationScore", () => {
       ],
     });
     const claims = [createAtomicClaim()];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
     ];
@@ -2322,8 +2322,8 @@ describe("Stage 5: computeTriangulationScore", () => {
     });
     const claims = [createAtomicClaim()];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02" }),
     ];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
@@ -2404,7 +2404,7 @@ describe("Stage 5: generateVerdictNarrative", () => {
     mockExtractOutput.mockReturnValue(narrativeOutput);
 
     const verdicts = [createCBClaimVerdict()];
-    const boundaries = [createClaimBoundary()];
+    const boundaries = [createClaimAssessmentBoundary()];
     const evidence = [createEvidenceItem()];
     const matrix = buildCoverageMatrix(
       [createAtomicClaim()],
@@ -2440,8 +2440,8 @@ describe("Stage 5: generateVerdictNarrative", () => {
 
     const result = await generateVerdictNarrative(
       50, "MIXED", 60,
-      [createCBClaimVerdict()], [createClaimBoundary()],
-      buildCoverageMatrix([createAtomicClaim()], [createClaimBoundary()], [createEvidenceItem()]),
+      [createCBClaimVerdict()], [createClaimAssessmentBoundary()],
+      buildCoverageMatrix([createAtomicClaim()], [createClaimAssessmentBoundary()], [createEvidenceItem()]),
       [createEvidenceItem()],
       {} as any,
     );
@@ -2570,7 +2570,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     mockExtractOutput.mockReturnValue(narrativeOutput);
 
     const claims = [createAtomicClaim({ id: "AC_01", centrality: "high", harmPotential: "medium" })];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
     ];
@@ -2632,7 +2632,7 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     mockLoadSection.mockRejectedValue(new Error("Prompt load failed"));
 
     const claims = [createAtomicClaim()];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const evidence = [createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] })];
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
     const verdicts = [
@@ -2684,8 +2684,8 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
 
     const claims = [createAtomicClaim()];
     const boundaries = [
-      createClaimBoundary({ id: "CB_01" }),
-      createClaimBoundary({ id: "CB_02" }),
+      createClaimAssessmentBoundary({ id: "CB_01" }),
+      createClaimAssessmentBoundary({ id: "CB_02" }),
     ];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),

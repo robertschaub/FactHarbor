@@ -10,6 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { getPromptForExport } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -23,17 +24,7 @@ const VALID_PROFILES = [
   "text-analysis-verdict",
 ];
 
-function getAdminKey(): string | null {
-  const v = process.env.FH_ADMIN_KEY;
-  return v && v.trim() ? v : null;
-}
 
-function isAuthorized(req: Request): boolean {
-  const adminKey = getAdminKey();
-  if (!adminKey && process.env.NODE_ENV !== "production") return true;
-  const providedKey = req.headers.get("x-admin-key");
-  return !!providedKey && providedKey === adminKey;
-}
 
 interface RouteParams {
   params: Promise<{ type: string; profile: string }>;
@@ -44,7 +35,7 @@ interface RouteParams {
  */
 export async function GET(req: Request, context: RouteParams) {
   // Enforce admin auth
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

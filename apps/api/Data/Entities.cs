@@ -23,6 +23,29 @@ public sealed class JobEntity
     /// </summary>
     public string PipelineVariant { get; set; } = "orchestrated";
 
+    // Retry tracking
+    /// <summary>
+    /// If this job is a retry, the JobId of the root (original) job.
+    /// Always points to the root, not the immediate parent.
+    /// </summary>
+    public string? ParentJobId { get; set; }
+
+    /// <summary>
+    /// Number of times this job (or its ancestors) has been retried.
+    /// 0 = original job, 1 = first retry, 2 = second retry, etc.
+    /// </summary>
+    public int RetryCount { get; set; } = 0;
+
+    /// <summary>
+    /// Timestamp when this job was created as a retry of another job
+    /// </summary>
+    public DateTime? RetriedFromUtc { get; set; }
+
+    /// <summary>
+    /// Optional user-provided reason for retry (e.g., "trying different pipeline")
+    /// </summary>
+    public string? RetryReason { get; set; }
+
     // Prompt tracking (External Prompt File System)
     /// <summary>SHA-256 hash of the prompt content used for this analysis</summary>
     public string? PromptContentHash { get; set; }

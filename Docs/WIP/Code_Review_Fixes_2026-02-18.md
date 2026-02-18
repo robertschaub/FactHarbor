@@ -3,7 +3,7 @@
 **Date**: 2026-02-18
 **Reviewer**: Code Reviewer (AI Agent, Claude Opus 4.6)
 **Scope**: 20 commits + uncommitted working tree (30+ files across apps/api, apps/web)
-**Status**: Findings ready for execution
+**Status**: ✅ ALL PHASES COMPLETE (2026-02-18)
 
 ---
 
@@ -156,24 +156,34 @@ After fixes are complete, add these entries to `Docs/AGENTS/Role_Learnings.md`:
 
 ## Summary by Priority
 
-| Phase | Priority | Findings | Model Tier | Status |
-|-------|----------|----------|------------|--------|
-| **1** | BLOCKING | SEC-1,2,3,4 + H9,H10,L10 | Sonnet | Pending |
-| **2** | Before next analysis | BUG-1,2 + H1-H8 + M1 | Opus | Pending |
-| **3** | This week | M2,M3 + H11 + L9 | Sonnet/Cline | Pending |
-| **4** | Soon | M6,M7 + L3-L6 | Sonnet/Cline | Pending |
-| **5** | Track | M4,5,8-13 + L7,8,11,13-15 | Mixed | Pending |
+| Phase | Priority | Findings | Model Tier | Status | Commit |
+|-------|----------|----------|------------|--------|--------|
+| **1** | BLOCKING | SEC-1,2,3,4 + H9,H10,L10 | Sonnet | ✅ Done | (Phase 1-2 commits) |
+| **2** | Before next analysis | BUG-1,2 + H1-H8 + M1 | Opus | ✅ Done | (Phase 1-2 commits) |
+| **3** | This week | M2,M3 + H11 + L9 | Sonnet/Cline | ✅ Done | `5745432` |
+| **4** | Soon | M6,M7 + L3-L6 | Sonnet/Cline | ✅ Done | `8319866` (merged `720a944`) |
+| **5** | Track | M4,5,8-13 + L7,8,11,13-15 | Mixed | ✅ Done | `444e529` |
 
-**Total:** 45 findings. 7 blocking, 11 before-next-analysis, 4 this-week, 6 soon, 17 track.
+**Total:** 45 findings — all fixed across 5 phases. Role learnings committed (`88a5f63`).
+
+### Completion Summary (2026-02-18)
+
+**Phase 1-2** (Security + Correctness): Auth checks added to cancel/test-config endpoints, shared `lib/auth.ts` extracted, XSS fixed, circuit breaker double-counting resolved, cascade delete fixed, cache race condition fixed, abort signals moved to globalThis.
+
+**Phase 3** (Type Safety): 5 `as any` casts removed, phantom type import fixed, ClaimAssessmentBoundary rename completed, Tavily removed from enum, route handlers properly typed.
+
+**Phase 4** (Search Hardening): Config threading refactored (no global mutation), HALF_OPEN limited to one probe, 35 new tests across 3 modules (search-brave, search-cache, search-circuit-breaker).
+
+**Phase 5** (Polish): Abort signal in research loop, fragile error detection fixed, monolithic budget moved to UCM, stale Orchestrated references updated, UI state bugs fixed, version endpoint auth-gated, probabilistic cache cleanup added.
+
+**Build:** ✅ Compiles cleanly. **Tests:** 842/852 passing (10 failures are pre-existing framework issues).
 
 ---
 
 ## Agent Prompts
 
-Ready-to-use copy-paste prompts for each phase: **[Code_Review_Fixes_Agent_Prompts.md](Code_Review_Fixes_Agent_Prompts.md)**
+Prompts used for execution: **[Code_Review_Fixes_Agent_Prompts.md](Code_Review_Fixes_Agent_Prompts.md)**
 
-Each prompt is self-contained with specific files, line numbers, code snippets, and verification steps. Prompts state which phases were already applied so agents don't duplicate work.
-
-**Worktree strategy:**
+**Worktree strategy used:**
 - Phases 1 → 2 → 3 → 5: Sequential on main (overlapping files)
-- Phase 4: Can run in parallel on worktree `fix/search-hardening` (isolated files)
+- Phase 4: Ran on worktree `fix/search-hardening`, merged back

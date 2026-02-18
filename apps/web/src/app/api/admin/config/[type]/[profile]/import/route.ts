@@ -16,22 +16,13 @@ import {
   type ConfigType,
 } from "@/lib/config-storage";
 import { isValidConfigType } from "@/lib/config-schemas";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
 
-function getAdminKey(): string | null {
-  const v = process.env.FH_ADMIN_KEY;
-  return v && v.trim() ? v : null;
-}
 
-function isAuthorized(req: Request): boolean {
-  const adminKey = getAdminKey();
-  if (!adminKey && process.env.NODE_ENV !== "production") return true;
-  const providedKey = req.headers.get("x-admin-key");
-  return !!providedKey && providedKey === adminKey;
-}
 
 interface RouteParams {
   params: Promise<{ type: string; profile: string }>;
@@ -44,7 +35,7 @@ export async function POST(req: Request, context: RouteParams) {
   const { type, profile } = await context.params;
 
   // 1. Auth check
-  if (!isAuthorized(req)) {
+  if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

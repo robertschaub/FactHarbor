@@ -101,6 +101,59 @@ public sealed class JobService
         return true;
     }
 
+    /// <summary>
+    /// Create a retry job from a failed job, optionally with a different pipeline variant.
+    /// </summary>
+    /// <param name="originalJobId">The job ID to retry</param>
+    /// <param name="newPipelineVariant">Pipeline to use (null = use original pipeline)</param>
+    /// <param name="retryReason">Optional user reason for retry</param>
+    /// <returns>New retry job entity</returns>
+    /// <exception cref="ArgumentException">If original job not found</exception>
+    public async Task<JobEntity> CreateRetryJobAsync(
+        string originalJobId,
+        string? newPipelineVariant = null,
+        string? retryReason = null)
+    {
+        var originalJob = await GetJobAsync(originalJobId);
+        if (originalJob is null)
+            throw new ArgumentException($"Job {originalJobId} not found", nameof(originalJobId));
+
+        // Calculate retry count: if original was already a retry, increment its count
+        var retryCount = (originalJob.RetryCount) + 1;
+
+        // Root job: if original has ParentJobId, use it; otherwise original IS the root
+        var rootJobId = originalJob.ParentJobId ?? originalJobId;
+
+        var retryJob = new JobEntity
+        {
+            JobId = Guid.NewGuid().ToString("N"),
+            Status = "QUEUED",
+            Progress = 0,
+            InputType = originalJob.InputType,
+            InputValue = originalJob.InputValue,
+            InputPreview = originalJob.InputPreview,
+            PipelineVariant = newPipelineVariant ?? originalJob.PipelineVariant,
+            ParentJobId = rootJobId,  // Always point to root
+            RetryCount = retryCount,
+            RetriedFromUtc = DateTime.UtcNow,
+            RetryReason = retryReason,
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+
+        _db.Jobs.Add(retryJob);
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = retryJob.JobId,
+            Level = "info",
+            Message = $"Retry job created from {originalJobId} (retry #{retryCount}, pipeline: {retryJob.PipelineVariant})",
+            TsUtc = DateTime.UtcNow
+        });
+
+        await _db.SaveChangesAsync();
+        return retryJob;
+    }
+
     private static string MakePreview(string inputType, string inputValue)
     {
         if (inputType == "url") return inputValue.Length > 140 ? inputValue[..140] : inputValue;
