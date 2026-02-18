@@ -122,6 +122,14 @@ export async function runClaimBoundaryAnalysis(
     initializeMetrics(input.jobId, "claimboundary");
   }
 
+  // Load configs once at start to capture provider metadata
+  const [pipelineResult, searchResult] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadSearchConfig("default"),
+  ]);
+  const initialPipelineConfig = pipelineResult.config;
+  const initialSearchConfig = searchResult.config;
+
   try {
     // Initialize research state
     const state: CBResearchState = {
@@ -212,6 +220,16 @@ export async function runClaimBoundaryAnalysis(
 
     onEvent("Analysis complete.", 100);
 
+    // Collect unique search providers from searchQueries
+    const searchProviders = [...new Set(
+      state.searchQueries
+        .map(sq => sq.searchProvider)
+        .filter(Boolean)
+    )].join(", ");
+
+    // Get LLM model information
+    const verdictModel = getModelForTask("verdict", undefined, initialPipelineConfig);
+
     // Wrap assessment in resultJson structure (no AnalysisContext references)
     const resultJson = {
       _schemaVersion: "3.0.0-cb", // ClaimAssessmentBoundary pipeline schema
@@ -219,6 +237,10 @@ export async function runClaimBoundaryAnalysis(
         schemaVersion: "3.0.0-cb",
         generatedUtc: new Date().toISOString(),
         pipeline: "claimboundary",
+        llmProvider: initialPipelineConfig.llmProvider ?? "anthropic",
+        llmModel: verdictModel.modelName,
+        searchProvider: initialSearchConfig.provider,
+        searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
         inputType: input.inputType,
         detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
         hasMultipleBoundaries: assessment.hasMultipleBoundaries,
@@ -781,38 +803,66 @@ export async function runPass2(
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);
 
-  const result = await generateText({
-    model: model.model,
-    messages: [
-      {
-        role: "system",
-        content: rendered.content,
-        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-      },
-      { role: "user", content: inputText },
-    ],
-    temperature: 0.15,
-    output: Output.object({ schema: Pass2OutputSchema }),
-    providerOptions: getStructuredOutputProviderOptions(
-      (pipelineConfig.llmProvider) ?? "anthropic",
-    ),
-  });
+  // Retry logic for schema validation failures
+  const maxRetries = 2;
+  let lastError: Error | null = null;
 
-  const parsed = extractStructuredOutput(result);
-  if (!parsed) {
-    throw new Error("Stage 1 Pass 2: LLM returned no structured output");
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await generateText({
+        model: model.model,
+        messages: [
+          {
+            role: "system",
+            content: rendered.content,
+            providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+          },
+          { role: "user", content: inputText },
+        ],
+        temperature: 0.15 + (attempt * 0.05), // Slightly increase temperature on retry
+        output: Output.object({ schema: Pass2OutputSchema }),
+        providerOptions: getStructuredOutputProviderOptions(
+          (pipelineConfig.llmProvider) ?? "anthropic",
+        ),
+      });
+
+      const parsed = extractStructuredOutput(result);
+      if (!parsed) {
+        throw new Error("Stage 1 Pass 2: LLM returned no structured output");
+      }
+
+      const validated = Pass2OutputSchema.parse(parsed);
+
+      // Ensure all claims have sequential IDs if the LLM didn't provide them
+      validated.atomicClaims.forEach((claim, idx) => {
+        if (!claim.id || claim.id.trim() === "") {
+          claim.id = `AC_${String(idx + 1).padStart(2, "0")}`;
+        }
+      });
+
+      if (attempt > 0) {
+        console.log(`[Stage1 Pass2] Succeeded on attempt ${attempt + 1}/${maxRetries + 1}`);
+      }
+
+      return validated;
+    } catch (err) {
+      lastError = err as Error;
+      console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} failed:`, err);
+
+      // If this is the last attempt, throw with detailed error
+      if (attempt === maxRetries) {
+        const errorMsg = `Stage 1 Pass 2 failed after ${maxRetries + 1} attempts. Last error: ${lastError.message}`;
+        console.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Wait before retry (exponential backoff: 1s, 2s)
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
   }
 
-  const validated = Pass2OutputSchema.parse(parsed);
-
-  // Ensure all claims have sequential IDs if the LLM didn't provide them
-  validated.atomicClaims.forEach((claim, idx) => {
-    if (!claim.id || claim.id.trim() === "") {
-      claim.id = `AC_${String(idx + 1).padStart(2, "0")}`;
-    }
-  });
-
-  return validated;
+  // Should never reach here, but TypeScript doesn't know that
+  throw lastError || new Error("Stage 1 Pass 2: Unexpected error");
 }
 
 /**
