@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-16 (ClaimBoundary Consolidation)
-**Status**: Consolidated — 11 files archived, 8 active files remain
+**Last Updated**: 2026-02-18 (Schema Validation Fix Initiative)
+**Status**: 14 active files
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (9 files)
+## Active Documents (14 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** **THE** single definitive implementation reference for the next pipeline version
@@ -60,6 +60,19 @@ For completed work, historical documents, and reference materials, see:
 - **Commits:** `5745432` (Phase 3), `8319866`/`720a944` (Phase 4), `444e529` (Phase 5), `88a5f63` (learnings)
 - **Tests added:** 35 new tests (search-brave, search-cache, search-circuit-breaker)
 - **New shared utility:** `apps/web/src/lib/auth.ts` (timing-safe auth checks)
+
+### Schema Validation Fix Initiative (2026-02-18)
+**Status:** 🔧 Emergency Fixes Implemented — Remaining Work Open
+- **Status Tracker:** [Schema_Validation_Implementation_Status_2026-02-18.md](Schema_Validation_Implementation_Status_2026-02-18.md)
+- **Analysis Documents:**
+  - [LLM_Schema_Validation_Failures_Analysis.md](LLM_Schema_Validation_Failures_Analysis.md) — Root cause analysis
+  - [LLM_Expert_Review_Schema_Validation.md](LLM_Expert_Review_Schema_Validation.md) — LLM Expert recommendations (9 prioritized)
+  - [Lead_Architect_Schema_Assessment_2026-02-18.md](Lead_Architect_Schema_Assessment_2026-02-18.md) — Architectural decisions, Gate 1 finding
+  - [Schema_Validation_Fix_Multi_Agent_Plan.md](Schema_Validation_Fix_Multi_Agent_Plan.md) — Multi-agent 4-phase implementation plan
+- **Type:** Bug Fix / Schema Hardening / Quality
+- **Scope:** Pass 2 claim extraction schema validation failures (5-10% → target <1%)
+- **Implemented:** `.catch()` defaults, case-insensitive normalization, Zod error logging, retry logic
+- **Remaining:** Dead code cleanup (#1-3), Gate 1 rebuild (#4), telemetry (#5), Pass 2 split (#6)
 
 ### QA Review Findings (2026-02-12)
 **Status:** 🧭 NOT ACTIONED — Findings ready for execution
