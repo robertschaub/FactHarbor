@@ -2,14 +2,11 @@ import { DEFAULT_SEARCH_CONFIG, type SearchConfig } from "./config-schemas";
 import {
   getCachedSearchResults,
   cacheSearchResults,
-  setSearchCacheEnabled,
-  setSearchCacheTtlDays,
 } from "./search-cache";
 import {
   isProviderAvailable,
   recordSuccess,
   recordFailure,
-  setCircuitBreakerConfig,
 } from "./search-circuit-breaker";
 
 export type WebSearchResult = {
@@ -82,19 +79,14 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
   const providersUsed: string[] = [];
   const errors: SearchProviderErrorInfo[] = [];
 
-  // Apply configuration to cache and circuit breaker
-  if (config.cache) {
-    setSearchCacheEnabled(config.cache.enabled);
-    setSearchCacheTtlDays(config.cache.ttlDays);
-  }
-  if (config.circuitBreaker) {
-    setCircuitBreakerConfig(config.circuitBreaker);
-  }
+  // Extract configs for threading (no global mutation)
+  const cacheConfig = config.cache ? { enabled: config.cache.enabled, ttlDays: config.cache.ttlDays } : undefined;
+  const cbConfig = config.circuitBreaker;
 
   console.log(`[Search] Provider: ${provider} | Query: "${options.query.substring(0, 60)}..." | Max results: ${options.maxResults}`);
 
   // 1. Check cache first (if enabled)
-  const cached = await getCachedSearchResults(options);
+  const cached = await getCachedSearchResults(options, cacheConfig);
   if (cached) {
     console.log(`[Search] 🎯 Cache HIT - returning ${cached.results.length} cached results from ${cached.provider}`);
     return {
@@ -108,7 +100,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     console.log("[Search] Using SerpAPI (explicit)");
 
     // Check circuit breaker
-    if (!isProviderAvailable("SerpAPI")) {
+    if (!isProviderAvailable("SerpAPI", cbConfig)) {
       errors.push({ provider: "SerpAPI", message: "Circuit breaker OPEN", fatal: true });
       return { results: [], providersUsed: ["SerpAPI (circuit-open)"], errors };
     }
@@ -121,14 +113,14 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
       // Record success and cache results (only if results exist)
       if (results.length > 0) {
-        recordSuccess("SerpAPI");
+        recordSuccess("SerpAPI", cbConfig);
       }
-      await cacheSearchResults(options, results, "SerpAPI");
+      await cacheSearchResults(options, results, "SerpAPI", cacheConfig);
 
       return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
     } catch (err) {
       if (err instanceof SearchProviderError) {
-        recordFailure("SerpAPI", err.message);
+        recordFailure("SerpAPI", err.message, cbConfig);
         errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
         return { results: [], providersUsed, errors };
       }
@@ -139,7 +131,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     console.log("[Search] Using Google CSE (explicit)");
 
     // Check circuit breaker
-    if (!isProviderAvailable("Google-CSE")) {
+    if (!isProviderAvailable("Google-CSE", cbConfig)) {
       errors.push({ provider: "Google-CSE", message: "Circuit breaker OPEN", fatal: true });
       return { results: [], providersUsed: ["Google-CSE (circuit-open)"], errors };
     }
@@ -152,14 +144,14 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
       // Record success and cache results (only if results exist)
       if (results.length > 0) {
-        recordSuccess("Google-CSE");
+        recordSuccess("Google-CSE", cbConfig);
       }
-      await cacheSearchResults(options, results, "Google-CSE");
+      await cacheSearchResults(options, results, "Google-CSE", cacheConfig);
 
       return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
     } catch (err) {
       if (err instanceof SearchProviderError) {
-        recordFailure("Google-CSE", err.message);
+        recordFailure("Google-CSE", err.message, cbConfig);
         errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
         return { results: [], providersUsed, errors };
       }
@@ -170,7 +162,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     console.log("[Search] Using Brave (explicit)");
 
     // Check circuit breaker
-    if (!isProviderAvailable("Brave")) {
+    if (!isProviderAvailable("Brave", cbConfig)) {
       errors.push({ provider: "Brave", message: "Circuit breaker OPEN", fatal: true });
       return { results: [], providersUsed: ["Brave (circuit-open)"], errors };
     }
@@ -183,14 +175,14 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
       // Record success and cache results (only if results exist)
       if (results.length > 0) {
-        recordSuccess("Brave");
+        recordSuccess("Brave", cbConfig);
       }
-      await cacheSearchResults(options, results, "Brave");
+      await cacheSearchResults(options, results, "Brave", cacheConfig);
 
       return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
     } catch (err) {
       if (err instanceof SearchProviderError) {
-        recordFailure("Brave", err.message);
+        recordFailure("Brave", err.message, cbConfig);
         errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
         return { results: [], providersUsed, errors };
       }
@@ -213,21 +205,21 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       providers.push({
         name: "Google-CSE",
         priority: config.providers?.googleCse?.priority ?? 1,
-        available: isProviderAvailable("Google-CSE"),
+        available: isProviderAvailable("Google-CSE", cbConfig),
       });
     }
     if (hasSerpApi && (config.providers?.serpapi?.enabled ?? true)) {
       providers.push({
         name: "SerpAPI",
         priority: config.providers?.serpapi?.priority ?? 2,
-        available: isProviderAvailable("SerpAPI"),
+        available: isProviderAvailable("SerpAPI", cbConfig),
       });
     }
     if (hasBrave && (config.providers?.brave?.enabled ?? true)) {
       providers.push({
         name: "Brave",
         priority: config.providers?.brave?.priority ?? 2,
-        available: isProviderAvailable("Brave"),
+        available: isProviderAvailable("Brave", cbConfig),
       });
     }
 
@@ -272,7 +264,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
         // Only record success if provider returned results
         if (providerResults.length > 0) {
-          recordSuccess(providerInfo.name);
+          recordSuccess(providerInfo.name, cbConfig);
         }
         console.log(
           `[Search] ${providerInfo.name} returned ${providerResults.length} results, total now: ${results.length}`,
@@ -284,7 +276,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         }
       } catch (err) {
         if (err instanceof SearchProviderError) {
-          recordFailure(providerInfo.name, err.message);
+          recordFailure(providerInfo.name, err.message, cbConfig);
           errors.push({
             provider: err.provider,
             status: err.status,
@@ -311,7 +303,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
     if (finalResults.length > 0 && providersUsed.length > 0) {
       const primaryProvider = providersUsed.find((p) => !p.includes("circuit-open")) || providersUsed[0];
-      await cacheSearchResults(options, finalResults, primaryProvider);
+      await cacheSearchResults(options, finalResults, primaryProvider, cacheConfig);
     }
 
     return { results: finalResults, providersUsed, ...(errors.length > 0 ? { errors } : {}) };

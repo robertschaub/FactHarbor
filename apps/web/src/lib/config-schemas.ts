@@ -80,17 +80,17 @@ export const SearchConfigSchema = z.object({
     googleCse: z.object({
       enabled: z.boolean().describe("Enable Google CSE provider"),
       priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
-      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
     }).optional(),
     serpapi: z.object({
       enabled: z.boolean().describe("Enable SerpAPI provider"),
       priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
-      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
     }).optional(),
     brave: z.object({
       enabled: z.boolean().describe("Enable Brave Search API provider"),
       priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
-      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
     }).optional(),
   }).optional().describe("Provider-specific settings"),
 
