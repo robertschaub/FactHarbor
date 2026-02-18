@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore, batchGetCachedData } from "@/lib/source-reliability-cache";
 import { getConfig } from "@/lib/config-storage";
-import { checkAdminKey } from "@/lib/auth";
+import { checkAdminKey, getEnv } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
