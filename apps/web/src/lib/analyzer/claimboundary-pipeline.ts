@@ -85,9 +85,24 @@ import { extractTextFromUrl } from "@/lib/retrieval";
 // Search circuit breaker — report failures so circuit breaker can trip
 import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-breaker";
 
+// Job cancellation detection
+import { isJobAborted, clearAbortSignal } from "@/app/api/internal/abort-job/[id]/route";
+
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
+
+/**
+ * Checks if a job has been aborted via the abort-job endpoint.
+ * Throws an error if the job was cancelled.
+ * @param jobId - The job ID to check
+ * @throws {Error} If the job has been aborted
+ */
+function checkAbortSignal(jobId: string | undefined): void {
+  if (jobId && isJobAborted(jobId)) {
+    throw new Error(`Job ${jobId} was cancelled`);
+  }
+}
 
 /**
  * Run the ClaimBoundary analysis pipeline.
@@ -129,6 +144,7 @@ export async function runClaimBoundaryAnalysis(
     };
 
     // Stage 1: Extract Claims
+    checkAbortSignal(input.jobId);
     onEvent("Extracting claims from input...", 10);
     startPhase("understand");
     const understanding = await extractClaims(state);
@@ -146,12 +162,14 @@ export async function runClaimBoundaryAnalysis(
     }
 
     // Stage 2: Research
+    checkAbortSignal(input.jobId);
     onEvent("Researching evidence for claims...", 30);
     startPhase("research");
     await researchEvidence(state);
     endPhase("research");
 
     // Stage 3: Cluster Boundaries
+    checkAbortSignal(input.jobId);
     onEvent("Clustering evidence into boundaries...", 60);
     startPhase("summary");
     const boundaries = await clusterBoundaries(state);
@@ -166,6 +184,7 @@ export async function runClaimBoundaryAnalysis(
     );
 
     // Stage 4: Verdict
+    checkAbortSignal(input.jobId);
     onEvent("Generating verdicts...", 70);
     startPhase("verdict");
     const claimVerdicts = await generateVerdicts(
@@ -180,6 +199,7 @@ export async function runClaimBoundaryAnalysis(
     recordGate4Stats(claimVerdicts);
 
     // Stage 5: Aggregate
+    checkAbortSignal(input.jobId);
     onEvent("Aggregating final assessment...", 90);
     startPhase("report");
     const assessment = await aggregateAssessment(
@@ -252,6 +272,11 @@ export async function runClaimBoundaryAnalysis(
   } finally {
     // Always finalize and persist metrics, even on failure
     await finalizeMetrics();
+
+    // Clear abort signal to avoid memory leaks
+    if (input.jobId) {
+      clearAbortSignal(input.jobId);
+    }
   }
 }
 

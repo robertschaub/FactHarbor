@@ -12,11 +12,13 @@ public sealed class JobsController : ControllerBase
 {
     private readonly JobService _jobs;
     private readonly FhDbContext _db;
+    private readonly RunnerClient _runner;
 
-    public JobsController(JobService jobs, FhDbContext db)
+    public JobsController(JobService jobs, FhDbContext db, RunnerClient runner)
     {
         _jobs = jobs;
         _db = db;
+        _runner = runner;
     }
 
     [HttpGet]
@@ -78,6 +80,21 @@ public sealed class JobsController : ControllerBase
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });
+    }
+
+    [HttpPost("{jobId}/cancel")]
+    public async Task<IActionResult> CancelJob(string jobId)
+    {
+        var job = await _jobs.CancelJobAsync(jobId);
+        if (job is null) return NotFound();
+
+        // Try to abort on runner (best effort - job status is already CANCELLED in DB)
+        if (job.Status == "CANCELLED")
+        {
+            await _runner.AbortJobAsync(jobId);
+        }
+
+        return Ok(new { ok = true, status = job.Status });
     }
 
     [HttpGet("{jobId}/events")]

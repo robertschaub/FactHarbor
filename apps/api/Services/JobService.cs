@@ -70,6 +70,32 @@ public sealed class JobService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<JobEntity?> CancelJobAsync(string jobId)
+    {
+        var job = await GetJobAsync(jobId);
+        if (job is null) return null;
+
+        // Only cancel if in cancellable state (idempotent for final states)
+        if (job.Status == "SUCCEEDED" || job.Status == "FAILED" || job.Status == "CANCELLED")
+            return job; // Already in final state, idempotent
+
+        await UpdateStatusAsync(jobId, "CANCELLED", job.Progress, "info", "Job cancelled by user");
+
+        return await GetJobAsync(jobId);
+    }
+
+    public async Task<bool> DeleteJobAsync(string jobId)
+    {
+        var job = await _db.Jobs.FindAsync(jobId);
+        if (job is null) return false;
+
+        // Cascade delete will remove JobEvents automatically (ON DELETE CASCADE)
+        _db.Jobs.Remove(job);
+        await _db.SaveChangesAsync();
+
+        return true;
+    }
+
     private static string MakePreview(string inputType, string inputValue)
     {
         if (inputType == "url") return inputValue.Length > 140 ? inputValue[..140] : inputValue;

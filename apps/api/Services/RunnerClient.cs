@@ -36,6 +36,48 @@ public sealed class RunnerClient
     }
 
     /// <summary>
+    /// Requests the runner to abort a running job.
+    /// Best-effort call (no retries) - job status is already CANCELLED in DB.
+    /// </summary>
+    public async Task<bool> AbortJobAsync(string jobId)
+    {
+        var baseUrl = _cfg["Runner:BaseUrl"]?.TrimEnd('/');
+        var runnerKey = _cfg["Runner:RunnerKey"];
+
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            _log.LogWarning("Runner:BaseUrl not set, cannot abort job {JobId}", jobId);
+            return false;
+        }
+
+        var url = $"{baseUrl}/api/internal/abort-job/{jobId}";
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url);
+        if (!string.IsNullOrWhiteSpace(runnerKey))
+        {
+            req.Headers.Add("X-Runner-Key", runnerKey);
+        }
+
+        try
+        {
+            var res = await _http.SendAsync(req);
+            if (res.IsSuccessStatusCode)
+            {
+                _log.LogInformation("Successfully requested abort for job {JobId}", jobId);
+                return true;
+            }
+
+            _log.LogWarning("Abort request failed for job {JobId}: {StatusCode}", jobId, res.StatusCode);
+            return false;
+        }
+        catch (HttpRequestException ex)
+        {
+            _log.LogWarning(ex, "Failed to abort job {JobId} on runner (runner may not be running)", jobId);
+            return false; // Runner may not be running, that's okay
+        }
+    }
+
+    /// <summary>
     /// Triggers the runner with automatic retry on transient failures.
     /// Uses exponential backoff with jitter.
     /// </summary>

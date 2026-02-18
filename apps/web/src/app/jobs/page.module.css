@@ -144,6 +144,10 @@
   background-color: #fce4ec;
 }
 
+.statusCancelled {
+  background-color: #e0e0e0;
+}
+
 .jobInfo {
   flex: 1;
   min-width: 0;
@@ -191,6 +195,11 @@
 .statusBadgePaused {
   background-color: #fce4ec;
   color: #c2185b;
+}
+
+.statusBadgeCancelled {
+  background-color: #e0e0e0;
+  color: #616161;
 }
 
 .inputTypeBadge {
@@ -266,6 +275,10 @@
 
 .progressPercentPaused {
   color: #c2185b;
+}
+
+.progressPercentCancelled {
+  color: #616161;
 }
 
 .progressPercentDefault {

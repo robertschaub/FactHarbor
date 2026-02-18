@@ -45,4 +45,15 @@ public sealed class InternalJobsController : ControllerBase
         await _jobs.StoreResultAsync(jobId, req.resultJson, req.reportMarkdown);
         return Ok(new { ok = true });
     }
+
+    [HttpDelete("{jobId}")]
+    public async Task<IActionResult> DeleteJob(string jobId)
+    {
+        if (!IsAuthorized()) return Unauthorized();
+
+        var deleted = await _jobs.DeleteJobAsync(jobId);
+        if (!deleted) return NotFound();
+
+        return Ok(new { ok = true });
+    }
 }

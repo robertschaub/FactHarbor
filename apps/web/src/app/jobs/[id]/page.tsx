@@ -14,7 +14,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -246,6 +247,7 @@ function getTrackRecordClass(score: number): string {
 
 export default function JobPage() {
   const params = useParams();
+  const router = useRouter();
   const jobId = params?.id as string;
 
   const [job, setJob] = useState<Job | null>(null);
@@ -254,6 +256,79 @@ export default function JobPage() {
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // Job action states
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [hasAdminKey, setHasAdminKey] = useState(false);
+
+  // Check for admin key on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const key = sessionStorage.getItem("fh-admin-key");
+      setHasAdminKey(!!key);
+    }
+  }, []);
+
+  // Cancel job handler
+  const handleCancel = async () => {
+    if (!window.confirm("Cancel this analysis job?")) return;
+
+    setIsCancelling(true);
+    try {
+      const res = await fetch(`/api/fh/jobs/${jobId}/cancel`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      toast.success("Job cancelled successfully");
+      // Refresh page after 1 second to show updated status
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err: any) {
+      toast.error(`Cancel failed: ${err.message}`);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Delete job handler
+  const handleDelete = async () => {
+    if (!window.confirm("Permanently delete this job? This cannot be undone.")) return;
+
+    setIsDeleting(true);
+    try {
+      const adminKey = sessionStorage.getItem("fh-admin-key");
+      const res = await fetch(`/api/fh/jobs/${jobId}/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Key": adminKey || "",
+        },
+      });
+
+      if (res.status === 401) {
+        toast.error("Unauthorized: Invalid admin key");
+        setIsDeleting(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      toast.success("Job deleted successfully");
+      // Redirect to jobs list after 1 second
+      setTimeout(() => router.push("/jobs"), 1000);
+    } catch (err: any) {
+      toast.error(`Delete failed: ${err.message}`);
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (!jobId) return;
@@ -461,6 +536,13 @@ export default function JobPage() {
     return () => { document.title = "FactHarbor POC1"; };
   }, [job, twoPanelSummary]);
 
+  // Helper: Escape HTML entities to prevent XSS
+  const escapeHtml = (str: string): string => {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  };
+
   // Export functions
   const handlePrint = () => {
     window.print();
@@ -469,11 +551,13 @@ export default function JobPage() {
   const handleExportHTML = () => {
     const content = reportRef.current?.innerHTML || report;
     const generatedAt = getDisplayDateTime();
+    const analysisId = result?.meta?.analysisId || 'N/A';
+    const shortName = getShortName();
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>FactHarbor Analysis - ${getShortName()}</title>
+  <title>FactHarbor Analysis - ${escapeHtml(shortName)}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
     table { border-collapse: collapse; width: 100%; margin: 16px 0; }
@@ -485,8 +569,8 @@ export default function JobPage() {
 </head>
 <body>
   <h1>FactHarbor Analysis Report</h1>
-  <p><strong>Analysis ID:</strong> ${result?.meta?.analysisId || 'N/A'}</p>
-  <p><strong>Generated:</strong> ${generatedAt}</p>
+  <p><strong>Analysis ID:</strong> ${escapeHtml(analysisId)}</p>
+  <p><strong>Generated:</strong> ${escapeHtml(generatedAt)}</p>
   <hr>
   ${content}
 </body>
@@ -590,6 +674,56 @@ export default function JobPage() {
               )}
             </div>
           )}
+
+          {/* Job Action Buttons */}
+          {(() => {
+            const canCancel = job.status === "QUEUED" || job.status === "RUNNING";
+            const showActions = canCancel || hasAdminKey;
+
+            return showActions ? (
+              <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {canCancel && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={isCancelling}
+                    style={{
+                      padding: "10px 16px",
+                      backgroundColor: "#ff9800",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: isCancelling ? "wait" : "pointer",
+                      opacity: isCancelling ? 0.6 : 1,
+                    }}
+                  >
+                    {isCancelling ? "Cancelling..." : "⏸️ Cancel Job"}
+                  </button>
+                )}
+
+                {hasAdminKey && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    style={{
+                      padding: "10px 16px",
+                      backgroundColor: "#f44336",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: isDeleting ? "wait" : "pointer",
+                      opacity: isDeleting ? 0.6 : 1,
+                    }}
+                  >
+                    {isDeleting ? "Deleting..." : "🗑️ Delete Job (Admin)"}
+                  </button>
+                )}
+              </div>
+            ) : null;
+          })()}
         </div>
       ) : (
         <div className={styles.contentCard} style={{ textAlign: "center", color: "#666" }}>Loading...</div>
