@@ -28,7 +28,12 @@ And analyze the current source code.
 
 ## Tasks Pending:
 ---
-Continue with the next stage according to the prompt for the next stage in Docs\WIP\CB_Implementation_Prompts.md
+As LLM Expert,
+Investigate why these issues appear and propose solution to get much better atomic claims!
+There are a severe problems In understanding: 
+in 6317f52b158646ee80263bd28e682340
+a) articleThesis is somehow expanded to impliedClaim which does not sound bad but it's quite specific (maybe too specific - it seems just one of many possible interpretationa) which could cause problems when used for later analysis (not sure if this is the case?).
+b) atomicClaims were created that are not really claims, but already evidence reports - this is wrong.
 ---
 See all jobs submitted today, analyze them one by one, look into every single issue. Analyze systematically, find patterns and search for systematic problems and architecture and design problems. Analyze what changes tid work an what did not, draw according conclusions. We have tried for a long time to improve the analysis - but failed. 
 The report quality remains low, we cannot continue like this! 
