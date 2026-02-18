@@ -1,0 +1,21 @@
+# FactHarbor Docs Analytics — Cloudflare Worker config
+#
+# Setup:
+#   1. npm install -g wrangler (or npx wrangler)
+#   2. wrangler login
+#   3. Create KV namespace:  wrangler kv namespace create ANALYTICS
+#   4. Paste the binding ID below
+#   5. Deploy:  wrangler deploy
+#
+# The worker URL will be printed after deploy — use it as ANALYTICS_ENDPOINT
+# in build_ghpages.py (--analytics-url flag).
+
+name = "factharbor-docs-analytics"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+
+# Replace <YOUR_KV_NAMESPACE_ID> after running:
+#   wrangler kv namespace create ANALYTICS
+[[kv_namespaces]]
+binding = "ANALYTICS"
+id = "<YOUR_KV_NAMESPACE_ID>"

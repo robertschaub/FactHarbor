@@ -22,7 +22,12 @@ jobs:
           python-version: '3.12'
 
       - name: Build gh-pages
-        run: python Docs/xwiki-pages/scripts/build_ghpages.py
+        run: |
+          ANALYTICS_FLAG=""
+          if [ -n "${{ secrets.DOCS_ANALYTICS_URL }}" ]; then
+            ANALYTICS_FLAG="--analytics-url ${{ secrets.DOCS_ANALYTICS_URL }}"
+          fi
+          python Docs/xwiki-pages/scripts/build_ghpages.py $ANALYTICS_FLAG
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4

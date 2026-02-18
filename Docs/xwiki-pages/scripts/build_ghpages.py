@@ -166,7 +166,7 @@ def find_root_ref(pages: Dict[str, str]) -> str:
     return next(iter(pages)) if pages else ''
 
 
-def generate_viewer_html(template_path: Path) -> str:
+def generate_viewer_html(template_path: Path, analytics_url: str = '') -> str:
     """
     Read the existing xwiki-viewer.html and produce a modified version
     for static GitHub Pages deployment.
@@ -178,6 +178,7 @@ def generate_viewer_html(template_path: Path) -> str:
     - Add hash-based deep linking
     - Hide inapplicable UI elements
     - Update branding
+    - Configure analytics endpoint (if provided)
     """
     html = template_path.read_text(encoding='utf-8')
 
@@ -199,8 +200,8 @@ def generate_viewer_html(template_path: Path) -> str:
 
     # 5. Add hash update to loadPage() - after currentPageRef = ref
     html = html.replace(
-        "    currentPageRef = ref;\n    currentFileHandle = page.handle || null;",
-        "    currentPageRef = ref;\n    if(history.replaceState) history.replaceState(null,'','#'+ref);\n    currentFileHandle = page.handle || null;"
+        "    currentPageRef = ref;\n    Analytics.trackPageView(ref);\n    currentFileHandle = page.handle || null;",
+        "    currentPageRef = ref;\n    Analytics.trackPageView(ref);\n    if(history.replaceState) history.replaceState(null,'','#'+ref);\n    currentFileHandle = page.handle || null;"
     )
 
     # 8. Inject loadBundle() function and replace init block
@@ -312,6 +313,15 @@ loadBundle();"""
         '<div class="main-area" id="mainArea">'
     )
 
+    # 12. Configure analytics endpoint (if provided)
+    if analytics_url:
+        safe_url = analytics_url.rstrip('/').replace("'", "\\'")
+        analytics_init = f"\n// Configure analytics endpoint\nAnalytics.configure('{safe_url}');\n"
+        html = html.replace(
+            '// Auto-load documentation bundle\nloadBundle();',
+            analytics_init + '// Auto-load documentation bundle\nloadBundle();'
+        )
+
     return html
 
 
@@ -328,6 +338,9 @@ def main():
     parser.add_argument('--output', '-o',
         default='gh-pages-build',
         help='Output directory (default: gh-pages-build)')
+    parser.add_argument('--analytics-url',
+        default='',
+        help='Cloudflare Worker URL for page view analytics (e.g. https://factharbor-docs-analytics.your-subdomain.workers.dev)')
 
     args = parser.parse_args()
 
@@ -385,7 +398,9 @@ def main():
 
     # Generate modified viewer HTML
     print(f'Generating viewer from {viewer_path} ...')
-    viewer_html = generate_viewer_html(viewer_path)
+    viewer_html = generate_viewer_html(viewer_path, analytics_url=args.analytics_url)
+    if args.analytics_url:
+        print(f'  Analytics endpoint: {args.analytics_url}')
     html_path = output_dir / 'index.html'
     html_path.write_text(viewer_html, encoding='utf-8')
     html_size = html_path.stat().st_size

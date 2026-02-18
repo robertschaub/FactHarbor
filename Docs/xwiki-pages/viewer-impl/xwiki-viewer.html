@@ -292,6 +292,39 @@ body.view-preview .preview-pane{width:100%}
   .tree-item{padding-top:4px;padding-bottom:4px;min-height:36px;display:flex;align-items:center}
   .toolbar .btn{min-width:36px;min-height:36px}
 }
+
+/* ── ANALYTICS MODAL ── */
+.analytics-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);align-items:center;justify-content:center}
+.analytics-overlay.active{display:flex}
+.analytics-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:90vw;max-width:740px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.analytics-modal .am-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.analytics-modal .am-header h2{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--accent)}
+.analytics-modal .am-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px;transition:all .15s}
+.analytics-modal .am-close:hover{color:var(--text);background:var(--surface-2)}
+.analytics-modal .am-close svg{width:18px;height:18px;display:block}
+.am-tabs{display:flex;gap:2px;padding:8px 18px 0;border-bottom:1px solid var(--border)}
+.am-tabs button{padding:6px 14px;border:none;background:none;color:var(--text-muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+.am-tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.am-tabs button:hover:not(.active){color:var(--text)}
+.am-body{flex:1;overflow-y:auto;padding:14px 18px 18px}
+.am-body::-webkit-scrollbar{width:6px}
+.am-body::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
+.am-summary{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.am-stat-card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:120px;text-align:center}
+.am-stat-card .asc-value{font-family:'Crimson Pro',serif;font-size:28px;font-weight:700;color:var(--accent);line-height:1}
+.am-stat-card .asc-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+.am-table{width:100%;border-collapse:collapse;font-size:12px}
+.am-table th{text-align:left;padding:6px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+.am-table th:hover{color:var(--accent)}
+.am-table td{padding:6px 10px;border-bottom:1px solid rgba(51,51,59,.4);color:var(--text)}
+.am-table tr:hover td{background:var(--surface-2)}
+.am-table .num{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px}
+.am-table .page-ref{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.am-table .page-ref:hover{text-decoration:underline}
+.am-table .visitor-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)}
+.am-empty{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:13px}
+.am-loading{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px}
+.am-error{text-align:center;padding:20px;color:#c86060;font-size:12px;background:rgba(200,96,96,.08);border-radius:6px;margin-bottom:12px}
 </style>
 </head>
 <body class="view-preview">
@@ -319,6 +352,10 @@ body.view-preview .preview-pane{width:100%}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
     </button>
     <span class="file-size" id="fileSize"></span>
+    <button class="btn ghost" id="btnStats" onclick="toggleAnalytics()" title="Page view stats" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Stats
+      </button>
     <span class="watch-badge" id="watchBadge"><span class="pulse"></span>Watching</span>
   </div>
 
@@ -420,6 +457,24 @@ body.view-preview .preview-pane{width:100%}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     <p>Drop to open</p>
     <span>file or folder</span>
+  </div>
+</div>
+<!-- ANALYTICS MODAL -->
+<div class="analytics-overlay" id="analyticsOverlay" onclick="if(event.target===this)toggleAnalytics()">
+  <div class="analytics-modal">
+    <div class="am-header">
+      <h2>Page View Statistics</h2>
+      <button class="am-close" onclick="toggleAnalytics()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="am-tabs">
+      <button class="active" onclick="showAnalyticsTab('pages',this)">Pages</button>
+      <button onclick="showAnalyticsTab('visitors',this)">Visitors</button>
+    </div>
+    <div class="am-body" id="analyticsBody">
+      <div class="am-loading">Loading statistics...</div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
@@ -1203,6 +1258,7 @@ async function loadPage(ref, addHistory=true){
     lastContent = text;
     lastMod = fileMod;
     currentPageRef = ref;
+    Analytics.trackPageView(ref);
     currentFileHandle = page.handle || null;
     currentSpace = page.segments.slice(0,-1);
 
@@ -2077,6 +2133,184 @@ function applySortToTree(items, path, sorts){
       applySortToTree(item.children, childPath, sorts);
     }
   }
+}
+
+// =================================================================
+// Analytics — Privacy-preserving page view tracking
+// =================================================================
+const Analytics = (function(){
+  // Configuration — set by build_ghpages.py or manually
+  // When empty string, analytics is disabled (standalone/local mode)
+  let ENDPOINT = '';
+
+  // Anonymous visitor ID — random UUID stored in localStorage, no PII
+  function getVisitorId(){
+    const key = 'fh_docs_visitor_id';
+    let id = localStorage.getItem(key);
+    if(!id){
+      // Generate UUID v4
+      id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random()*16|0;
+        return (c==='x' ? r : (r&0x3|0x8)).toString(16);
+      });
+      localStorage.setItem(key, id);
+    }
+    return id;
+  }
+
+  // Track a page view (fire-and-forget, never blocks UI)
+  function trackPageView(pageRef){
+    if(!ENDPOINT) return;
+    const visitorId = getVisitorId();
+    try {
+      fetch(ENDPOINT + '/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageRef, visitorId }),
+      }).catch(()=>{}); // Silently ignore errors
+    } catch(e){ /* ignore */ }
+  }
+
+  // Fetch stats from the worker
+  async function fetchStats(type){
+    if(!ENDPOINT) return null;
+    try {
+      const resp = await fetch(ENDPOINT + '/stats/' + type);
+      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      return await resp.json();
+    } catch(e){
+      console.warn('Analytics fetch failed:', e);
+      return { error: e.message };
+    }
+  }
+
+  function configure(endpoint){
+    ENDPOINT = (endpoint || '').replace(/\/+$/, ''); // Remove trailing slash
+    // Show stats button if configured
+    const btn = document.getElementById('btnStats');
+    if(btn) btn.style.display = ENDPOINT ? '' : 'none';
+  }
+
+  function isEnabled(){ return !!ENDPOINT; }
+
+  return { trackPageView, fetchStats, configure, isEnabled, getVisitorId };
+})();
+
+// Analytics UI
+let analyticsCache = {};
+
+function toggleAnalytics(){
+  const overlay = document.getElementById('analyticsOverlay');
+  const isOpen = overlay.classList.contains('active');
+  if(isOpen){
+    overlay.classList.remove('active');
+  } else {
+    overlay.classList.add('active');
+    analyticsCache = {};
+    showAnalyticsTab('pages', document.querySelector('.am-tabs button'));
+  }
+}
+
+function showAnalyticsTab(tab, btn){
+  // Update tab buttons
+  document.querySelectorAll('.am-tabs button').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  const body = document.getElementById('analyticsBody');
+
+  if(!Analytics.isEnabled()){
+    body.innerHTML = '<div class="am-empty">Analytics not configured.<br><span style="font-size:11px;color:var(--text-dim)">Set analytics endpoint in deployment config.</span></div>';
+    return;
+  }
+
+  body.innerHTML = '<div class="am-loading">Loading statistics...</div>';
+
+  if(tab === 'pages') loadPagesTab(body);
+  else if(tab === 'visitors') loadVisitorsTab(body);
+}
+
+async function loadPagesTab(body){
+  const [pagesData, summaryData] = await Promise.all([
+    analyticsCache.pages || Analytics.fetchStats('pages'),
+    analyticsCache.summary || Analytics.fetchStats('summary'),
+  ]);
+  analyticsCache.pages = pagesData;
+  analyticsCache.summary = summaryData;
+
+  if(pagesData && pagesData.error){
+    body.innerHTML = '<div class="am-error">Failed to load: ' + pagesData.error + '</div>';
+    return;
+  }
+
+  const summary = summaryData || {};
+  const pages = (pagesData && pagesData.pages) || [];
+
+  let html = '<div class="am-summary">';
+  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.totalViews || 0) + '</div><div class="asc-label">Total Views</div></div>';
+  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.uniqueVisitors || 0) + '</div><div class="asc-label">Unique Visitors</div></div>';
+  html += '<div class="am-stat-card"><div class="asc-value">' + pages.length + '</div><div class="asc-label">Pages Viewed</div></div>';
+  html += '</div>';
+
+  if(pages.length === 0){
+    html += '<div class="am-empty">No page views recorded yet.</div>';
+  } else {
+    html += '<table class="am-table"><thead><tr>';
+    html += '<th>#</th><th>Page</th><th style="text-align:right">Views</th><th style="text-align:right">Unique Visitors</th>';
+    html += '</tr></thead><tbody>';
+    pages.forEach((p, i) => {
+      const clickable = pageIndex[p.pageRef] ? ' onclick="toggleAnalytics();loadPage(\'' + p.pageRef.replace(/'/g,"\\'") + '\')"' : '';
+      html += '<tr>';
+      html += '<td class="num">' + (i+1) + '</td>';
+      html += '<td class="page-ref"' + clickable + ' title="' + p.pageRef + '">' + p.pageRef + '</td>';
+      html += '<td class="num">' + p.totalViews + '</td>';
+      html += '<td class="num">' + p.uniqueVisitors + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  body.innerHTML = html;
+}
+
+async function loadVisitorsTab(body){
+  const [visitorsData, summaryData] = await Promise.all([
+    analyticsCache.visitors || Analytics.fetchStats('visitors'),
+    analyticsCache.summary || Analytics.fetchStats('summary'),
+  ]);
+  analyticsCache.visitors = visitorsData;
+  analyticsCache.summary = summaryData;
+
+  if(visitorsData && visitorsData.error){
+    body.innerHTML = '<div class="am-error">Failed to load: ' + visitorsData.error + '</div>';
+    return;
+  }
+
+  const summary = summaryData || {};
+  const visitors = (visitorsData && visitorsData.visitors) || [];
+
+  let html = '<div class="am-summary">';
+  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.uniqueVisitors || 0) + '</div><div class="asc-label">Total Visitors</div></div>';
+  html += '<div class="am-stat-card"><div class="asc-value">' + (summary.totalViews || 0) + '</div><div class="asc-label">Total Views</div></div>';
+  html += '</div>';
+
+  if(visitors.length === 0){
+    html += '<div class="am-empty">No visitors recorded yet.</div>';
+  } else {
+    html += '<table class="am-table"><thead><tr>';
+    html += '<th>#</th><th>Visitor (anonymous)</th><th style="text-align:right">Total Views</th><th style="text-align:right">Pages Visited</th>';
+    html += '</tr></thead><tbody>';
+    visitors.forEach((v, i) => {
+      html += '<tr>';
+      html += '<td class="num">' + (i+1) + '</td>';
+      html += '<td class="visitor-id">' + v.visitorId + '</td>';
+      html += '<td class="num">' + v.totalViews + '</td>';
+      html += '<td class="num">' + v.pagesVisited + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  body.innerHTML = html;
 }
 
 // =================================================================
