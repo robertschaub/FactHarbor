@@ -112,60 +112,44 @@ interface DynamicBudget {
 // SCHEMAS
 // ============================================================================
 
-const DynamicAnalysisSchema = z.object({
-  summary: z.string().describe("A comprehensive summary of the analysis"),
-  verdict: z
-    .object({
-      label: z.string().describe("Verdict label (e.g., 'Mostly True', 'Unverifiable', 'Context Needed')"),
-      score: z.number().min(0).max(100).describe("REQUIRED: Truth score 0-100 (0=False, 50=Unverified, 100=True)"),
-      confidence: z.number().min(0).max(100).describe("REQUIRED: Confidence level 0-100"),
-      reasoning: z.string().optional().describe("Brief reasoning for the verdict"),
-    })
-    .optional(),
-  findings: z
-    .array(
-      z.object({
-        point: z.string().describe("A key finding or observation"),
-        support: z.enum(["strong", "moderate", "weak", "none"]).describe("Level of evidence support"),
-        sources: z.array(z.string()).optional().describe("Source URLs that support this finding"),
-        notes: z.string().optional().describe("Additional notes about this finding"),
-      })
-    )
-    .optional(),
-  methodology: z.string().optional().describe("Brief description of analysis approach"),
-  limitations: z.array(z.string()).optional().describe("Known limitations of this analysis"),
-  // Optional: LLM may not reproduce search queries from the planning stage
-  searchQueries: z.array(z.string()).optional().describe("Queries used for research"),
-  additionalInsights: z.any().optional().describe("Any additional structured insights"),
+// Shared finding item schema — used in both provider schemas.
+// .catch("none") silently accepts unexpected enum values rather than failing validation.
+// .nullish() = .optional().nullable() — accepts undefined, null, or the typed value.
+const DynamicFindingSchema = z.object({
+  point: z.string().describe("A key finding or observation"),
+  support: z.enum(["strong", "moderate", "weak", "none"]).catch("none").describe("Level of evidence support"),
+  sources: z.array(z.string()).nullish().describe("Source URLs that support this finding"),
+  notes: z.string().nullish().describe("Additional notes about this finding"),
 });
 
-const DynamicAnalysisSchemaAnthropic = z.object({
-  summary: z.string().describe("A comprehensive summary of the analysis"),
-  verdict: z
-    .object({
-      label: z.string().describe("Verdict label (e.g., 'Mostly True', 'Unverifiable', 'Context Needed')"),
-      score: z.number().describe("REQUIRED: Truth score 0-100 (0=False, 50=Unverified, 100=True)"),
-      confidence: z.number().describe("REQUIRED: Confidence level 0-100"),
-      reasoning: z.string().optional().describe("Brief reasoning for the verdict"),
-    })
-    .optional(),
-  findings: z
-    .array(
-      z.object({
-        point: z.string().describe("A key finding or observation"),
-        support: z.enum(["strong", "moderate", "weak", "none"]).describe("Level of evidence support"),
-        sources: z.array(z.string()).optional().describe("Source URLs that support this finding"),
-        notes: z.string().optional().describe("Additional notes about this finding"),
-      })
-    )
-    .optional(),
-  methodology: z.string().optional().describe("Brief description of analysis approach"),
-  limitations: z.array(z.string()).optional().describe("Known limitations of this analysis"),
-  // Optional: LLM may not reproduce search queries from the planning stage
-  searchQueries: z.array(z.string()).optional().describe("Queries used for research"),
-  // z.any() matches non-Anthropic schema — z.object({}) was too strict and rejected null
-  additionalInsights: z.any().optional().describe("Any additional structured insights"),
+// Shared verdict schema.
+// z.coerce.number() coerces string numbers ("85") to numbers — LLMs sometimes quote numbers.
+// .catch(50) falls back to 50 (neutral) when coercion fails (e.g. null inside a non-null verdict).
+const DynamicVerdictSchema = z.object({
+  label: z.string().describe("Verdict label (e.g., 'Mostly True', 'Unverifiable', 'Context Needed')"),
+  score: z.coerce.number().catch(50).describe("Truth score 0-100 (0=False, 50=Unverified, 100=True)"),
+  confidence: z.coerce.number().catch(50).describe("Confidence level 0-100"),
+  reasoning: z.string().nullish().describe("Brief reasoning for the verdict"),
 });
+
+// Both provider schemas are now unified — previously diverged on .min/.max and additionalInsights.
+// .nullish() throughout: LLMs (especially Anthropic) emit null for absent optional fields;
+// .optional() alone only accepts undefined, so null would fail Zod validation and trigger
+// AI_NoObjectGeneratedError even when the JSON is otherwise valid.
+const DynamicAnalysisSchema = z.object({
+  summary: z.string().describe("A comprehensive summary of the analysis"),
+  verdict: DynamicVerdictSchema.nullish(),
+  findings: z.array(DynamicFindingSchema).nullish(),
+  methodology: z.string().nullish().describe("Brief description of analysis approach"),
+  limitations: z.array(z.string()).nullish().describe("Known limitations of this analysis"),
+  // Pipeline collects search queries programmatically — LLM need not echo them back.
+  searchQueries: z.array(z.string()).nullish().describe("Queries used for research"),
+  additionalInsights: z.any().nullish().describe("Any additional structured insights"),
+});
+
+// Anthropic and non-Anthropic providers now share the same schema.
+// Kept as a named alias for clarity and future divergence if needed.
+const DynamicAnalysisSchemaAnthropic = DynamicAnalysisSchema;
 
 const DynamicPlanSchema = z.object({
   keyQuestions: z.array(z.string()).describe("Main questions to investigate"),
