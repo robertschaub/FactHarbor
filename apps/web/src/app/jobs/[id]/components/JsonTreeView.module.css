@@ -113,10 +113,33 @@
   user-select: none;
   color: #007bff;
   margin-right: 4px;
+  display: inline-block;
+  font-size: 10px;
+}
+
+.expandIcon::after {
+  content: "\25B6";
+}
+
+.collapseIcon::after {
+  content: "\25BC";
+}
+
+.clickableLabel:hover {
+  color: #007bff;
+  text-decoration: underline;
 }
 
 .collapsedContent {
   color: #999;
   font-style: italic;
   cursor: pointer;
+}
+
+.collapsedContent::after {
+  content: "...";
+}
+
+.collapsedContent:hover {
+  color: #007bff;
 }

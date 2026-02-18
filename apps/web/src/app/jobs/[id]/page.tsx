@@ -198,6 +198,7 @@ function getVerdictLabel(verdict: string): string {
     "TRUE": "True",
     "MOSTLY-TRUE": "Mostly True",
     "LEANING-TRUE": "Leaning True",
+    "MIXED": "Mixed",
     "UNVERIFIED": "Unverified",
     "LEANING-FALSE": "Leaning False",
     "MOSTLY-FALSE": "Mostly False",
@@ -214,6 +215,7 @@ function getAnswerLabel(answer: string): string {
     "YES": "Yes",
     "MOSTLY-YES": "Mostly Yes",
     "LEANING-YES": "Leaning Yes",
+    "MIXED": "Mixed",
     "UNVERIFIED": "Unverified",
     "LEANING-NO": "Leaning No",
     "MOSTLY-NO": "Mostly No",
@@ -532,7 +534,7 @@ export default function JobPage() {
     } else if (job) {
       document.title = `FactHarbor_${job.jobId.slice(0, 8)}`;
     }
-    return () => { document.title = "FactHarbor POC1"; };
+    return () => { document.title = "FactHarbor Alpha"; };
   }, [job, twoPanelSummary]);
 
   // Helper: Escape HTML entities to prevent XSS
@@ -619,6 +621,11 @@ export default function JobPage() {
 
       {job ? (
         <div className={styles.jobInfoCard}>
+          {hasAdminKey && (
+            <button onClick={handleDelete} disabled={isDeleting} className={styles.deleteBtn}>
+              {isDeleting ? "Deleting…" : "🗑️ Delete"}
+            </button>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span><b>ID:</b> <code>{job.jobId}</code></span>
             <Badge
@@ -632,7 +639,16 @@ export default function JobPage() {
           <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
           <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
           <div className={styles.inputRow}>
-            <b>Input:</b> <code>{job.inputType}</code> — <span className={styles.inputValue}>{job.inputValue || job.inputPreview || "—"}</span>
+            <div className={styles.inputMeta}><b>Input:</b> <code>{job.inputType}</code></div>
+            {(() => {
+              const inputText = job.inputValue || job.inputPreview || "—";
+              const isLong = inputText.length > 1000;
+              return (
+                <div className={`${styles.inputValueBox}${isLong ? ` ${styles.inputValueBoxLong}` : ""}`}>
+                  {inputText}
+                </div>
+              );
+            })()}
           </div>
           {hasV22Data && (
             <div className={styles.badgesRow}>
@@ -684,54 +700,27 @@ export default function JobPage() {
           )}
 
           {/* Job Action Buttons */}
-          {(() => {
-            const canCancel = job.status === "QUEUED" || job.status === "RUNNING";
-            const showActions = canCancel || hasAdminKey;
-
-            return showActions ? (
-              <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {canCancel && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={isCancelling}
-                    style={{
-                      padding: "10px 16px",
-                      backgroundColor: "#ff9800",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      cursor: isCancelling ? "wait" : "pointer",
-                      opacity: isCancelling ? 0.6 : 1,
-                    }}
-                  >
-                    {isCancelling ? "Cancelling..." : "⏸️ Cancel Job"}
-                  </button>
-                )}
-
-                {hasAdminKey && (
-                  <button
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    style={{
-                      padding: "10px 16px",
-                      backgroundColor: "#f44336",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      cursor: isDeleting ? "wait" : "pointer",
-                      opacity: isDeleting ? 0.6 : 1,
-                    }}
-                  >
-                    {isDeleting ? "Deleting..." : "🗑️ Delete Job (Admin)"}
-                  </button>
-                )}
-              </div>
-            ) : null;
-          })()}
+          {(job.status === "QUEUED" || job.status === "RUNNING") && (
+            <div style={{ marginTop: 16 }}>
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: "#ff9800",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: isCancelling ? "wait" : "pointer",
+                  opacity: isCancelling ? 0.6 : 1,
+                }}
+              >
+                {isCancelling ? "Cancelling..." : "⏸️ Cancel Job"}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className={styles.contentCard} style={{ textAlign: "center", color: "#666" }}>Loading...</div>
@@ -883,7 +872,7 @@ export default function JobPage() {
               {/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */}
               {isCBSchema && result?.verdictNarrative && (
                 <section className={styles.cbSection}>
-                  <h3 className={styles.sectionTitle}>Analysis Narrative</h3>
+                  <h3 className={styles.sectionTitle}>Verdict Overview</h3>
                   <VerdictNarrativeDisplay narrative={result.verdictNarrative} />
                 </section>
               )}
@@ -1903,7 +1892,7 @@ function ClaimCard({
       </div>
       <div className={styles.claimLabel}>Claim Being Evaluated:</div>
       <div className={styles.claimText}>"{claim.claimText}"</div>
-      <div className={styles.claimReasoning}>{claim.reasoning}</div>
+      <div className={`${styles.claimReasoning}${(claim.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{claim.reasoning}</div>
       {claim.isContested && claim.contestedBy && (
         <div className={styles.claimContestation}>
           {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {claim.contestedBy}
@@ -2001,7 +1990,7 @@ function DynamicResultViewer({ result }: { result: any }) {
             <div className={styles.verdictConfidence}>Confidence: {result.verdict.confidence}%</div>
           )}
           {result.verdict.reasoning && (
-            <div className={styles.verdictReasoning}>{result.verdict.reasoning}</div>
+            <div className={`${styles.verdictReasoning}${(result.verdict.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{result.verdict.reasoning}</div>
           )}
         </div>
       )}

@@ -25,8 +25,8 @@
 
 .headlineText {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
   color: #1f2937;
   line-height: 1.4;
 }
@@ -74,6 +74,15 @@
   color: #374151;
   font-size: 15px;
   line-height: 1.6;
+}
+
+.findingTextLong {
+  overflow-y: auto;
+  max-height: 200px;
+  resize: vertical;
+  border: 1px solid #d9c96a;
+  border-radius: 4px;
+  padding: 6px 8px;
 }
 
 .details {

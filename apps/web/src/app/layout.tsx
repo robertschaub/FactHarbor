@@ -8,7 +8,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <div className={styles.wrapper}>
           <header className={styles.header}>
-            <div className={styles.logo}>FactHarbor POC1</div>
+            <div className={styles.logo}>FactHarbor Alpha</div>
             <nav className={styles.nav}>
               <a href="/analyze" className={styles.navLink}>Analyze</a>
               <a href="/jobs" className={styles.navLink}>Jobs</a>

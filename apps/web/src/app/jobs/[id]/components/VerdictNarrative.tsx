@@ -31,7 +31,7 @@ export function VerdictNarrativeDisplay({ narrative }: Props) {
 
       <div className={styles.keyFinding}>
         <strong className={styles.label}>Key Finding:</strong>
-        <p className={styles.findingText}>{keyFinding}</p>
+        <p className={`${styles.findingText}${keyFinding.length > 1000 ? ` ${styles.findingTextLong}` : ""}`}>{keyFinding}</p>
       </div>
 
       {boundaryDisagreements && boundaryDisagreements.length > 0 && (

@@ -15,6 +15,32 @@
   border-radius: 10px;
   padding: 12px;
   background-color: #fff;
+  position: relative;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #c62828;
+  background: transparent;
+  border: 1px solid #ef9a9a;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+.deleteBtn:hover {
+  opacity: 1;
+  background-color: #ffebee;
+}
+
+.deleteBtn:disabled {
+  opacity: 0.4;
+  cursor: wait;
 }
 
 .statusSuccess {
@@ -33,22 +59,44 @@
   margin-top: 4px;
 }
 
-.inputRow {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: flex-start;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+/* Applied to any long text block (>1000 chars) to add a bounded, resizable container */
+.resizableLong {
+  overflow-y: auto;
+  max-height: 200px;
+  resize: vertical;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #f8f9fa;
 }
 
-.inputValue {
-  flex: 1;
-  min-width: 0;
-  word-break: break-all;
-  overflow-wrap: anywhere;
+.inputRow {
+  margin-top: 8px;
+}
+
+.inputMeta {
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.inputValueBox {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
   white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 38px;
+}
+
+.inputValueBoxLong {
+  overflow: auto;
+  max-height: 120px;
+  resize: vertical;
 }
 
 .badgesRow {
