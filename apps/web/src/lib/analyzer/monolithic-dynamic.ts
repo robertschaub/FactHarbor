@@ -15,6 +15,7 @@
  */
 
 import { generateText, Output } from "ai";
+import { generateWithSchemaRetry } from "./schema-retry";
 import { z } from "zod";
 import { getModel, getModelForTask, getStructuredOutputProviderOptions, getPromptCachingOptions } from "./llm";
 import { CONFIG, getDeterministicTemperature } from "./config";
@@ -133,7 +134,8 @@ const DynamicAnalysisSchema = z.object({
     .optional(),
   methodology: z.string().optional().describe("Brief description of analysis approach"),
   limitations: z.array(z.string()).optional().describe("Known limitations of this analysis"),
-  searchQueries: z.array(z.string()).describe("Queries used for research"),
+  // Optional: LLM may not reproduce search queries from the planning stage
+  searchQueries: z.array(z.string()).optional().describe("Queries used for research"),
   additionalInsights: z.any().optional().describe("Any additional structured insights"),
 });
 
@@ -159,8 +161,10 @@ const DynamicAnalysisSchemaAnthropic = z.object({
     .optional(),
   methodology: z.string().optional().describe("Brief description of analysis approach"),
   limitations: z.array(z.string()).optional().describe("Known limitations of this analysis"),
-  searchQueries: z.array(z.string()).describe("Queries used for research"),
-  additionalInsights: z.object({}).optional().describe("Any additional structured insights"),
+  // Optional: LLM may not reproduce search queries from the planning stage
+  searchQueries: z.array(z.string()).optional().describe("Queries used for research"),
+  // z.any() matches non-Anthropic schema — z.object({}) was too strict and rejected null
+  additionalInsights: z.any().optional().describe("Any additional structured insights"),
 });
 
 const DynamicPlanSchema = z.object({
@@ -554,29 +558,67 @@ export async function runMonolithicDynamic(
     throw new Error("Missing DYNAMIC_ANALYSIS_USER prompt section in monolithic-dynamic prompt profile");
   }
 
-  const analysisResult = await generateText({
-    model: verdictModel.model,
-    messages: [
-      {
-        role: "system",
-        content: dynamicAnalysisPrompt,
-        providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider),
+  // Wrap in retry + graceful degradation.
+  // Primary root cause of failures: schema validation errors (missing required fields,
+  // null in z.object({}), content-sensitive LLM soft-refusals producing partial JSON).
+  // generateWithSchemaRetry handles NoObjectGeneratedError + provides Zod-aware retry prompt.
+  let analysis: any;
+  try {
+    analysis = await generateWithSchemaRetry(
+      dynamicOutputSchema,
+      async (retryPrompt) => {
+        const userContent = retryPrompt
+          ? `${renderedDynamicUser.content}\n\n${retryPrompt}`
+          : renderedDynamicUser.content;
+        const result = await generateText({
+          model: verdictModel.model,
+          messages: [
+            {
+              role: "system",
+              content: dynamicAnalysisPrompt,
+              providerOptions: getPromptCachingOptions(pipelineConfig?.llmProvider),
+            },
+            { role: "user", content: userContent },
+          ],
+          temperature: getDeterministicTemperature(0.15, pipelineConfig),
+          output: Output.object({ schema: dynamicOutputSchema }),
+          providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
+        });
+        return extractStructuredOutput(result);
       },
       {
-        role: "user",
-        content: renderedDynamicUser.content,
-      },
-    ],
-    temperature: getDeterministicTemperature(0.15, pipelineConfig),
-    output: Output.object({ schema: dynamicOutputSchema }),
-    providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
-  });
-  recordLLMCall(budgetTracker, 4000);
-
-  const analysis = extractStructuredOutput(analysisResult);
-
-  if (!analysis) {
-    throw new Error("Failed to generate analysis. Falling back to orchestrated pipeline.");
+        maxRetries: 1,
+        provider: verdictProvider as "anthropic" | "openai" | "google" | "mistral",
+        onRetry: (attempt, err) => {
+          console.warn(`[MonolithicDynamic] Analysis schema retry ${attempt}: ${err}`);
+          if (input.onEvent) void input.onEvent(`Retrying analysis (attempt ${attempt})...`, 72);
+        },
+      }
+    );
+    recordLLMCall(budgetTracker, 4000);
+  } catch (err) {
+    // All retries exhausted — degrade gracefully instead of failing the entire job.
+    // The pipeline still has citations and search queries to show the user.
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[MonolithicDynamic] Analysis generation failed after retries: ${errMsg}`);
+    warnings.push({
+      type: "analysis_generation_failed",
+      severity: "error",
+      message: `Dynamic analysis failed to produce valid structured output: ${errMsg}`,
+    });
+    analysis = {
+      summary:
+        "Analysis generation failed — the LLM could not produce valid structured output. " +
+        "Collected citations are available for manual review.",
+      verdict: undefined,
+      findings: [],
+      methodology: undefined,
+      limitations: [
+        "Analysis generation failed. Citations collected during research are provided for manual review.",
+        "For a complete analysis, retry with the ClaimAssessmentBoundary pipeline.",
+      ],
+      searchQueries: [],
+    };
   }
   endPhase("verdict");
 
