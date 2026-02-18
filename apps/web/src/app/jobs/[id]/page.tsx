@@ -35,6 +35,7 @@ import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
+import { JsonTreeView } from "./components/JsonTreeView";
 
 type Job = {
   jobId: string;
@@ -971,9 +972,11 @@ export default function JobPage() {
 
       {/* JSON Tab */}
       {tab === "json" && (
-        <pre className={styles.jsonContainer}>
-          {jsonText || "No result yet."}
-        </pre>
+        job?.resultJson ? (
+          <JsonTreeView data={job.resultJson} jsonText={jsonText} />
+        ) : (
+          <pre className={styles.jsonContainer}>No result yet.</pre>
+        )
       )}
 
       {/* Events Tab */}

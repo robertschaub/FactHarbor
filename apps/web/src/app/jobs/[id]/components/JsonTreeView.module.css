@@ -1,0 +1,122 @@
+.wrapper {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.toolbarGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.toolbarBtn {
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  background-color: #fff;
+  color: #333;
+  transition: background-color 0.15s;
+}
+
+.toolbarBtn:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.toolbarBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.copyBtn {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+.copyBtn:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.treeWrapper {
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 11px;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  line-height: 1.5;
+}
+
+/* react-json-view-lite style overrides */
+
+.treeContainer {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.childNode {
+  padding-left: 16px;
+}
+
+.childFieldsContainer {
+  padding-left: 0;
+}
+
+.nodeLabel {
+  color: #333;
+  font-weight: 500;
+}
+
+.clickableLabel {
+  cursor: pointer;
+}
+
+.valueString {
+  color: #0b7285;
+}
+
+.valueNumber {
+  color: #1565c0;
+}
+
+.valueBoolean {
+  color: #6a1b9a;
+}
+
+.valueNull,
+.valueUndefined {
+  color: #999;
+  font-style: italic;
+}
+
+.valueOther {
+  color: #555;
+}
+
+.punctuation {
+  color: #666;
+}
+
+.expandIcon,
+.collapseIcon {
+  cursor: pointer;
+  user-select: none;
+  color: #007bff;
+  margin-right: 4px;
+}
+
+.collapsedContent {
+  color: #999;
+  font-style: italic;
+  cursor: pointer;
+}
