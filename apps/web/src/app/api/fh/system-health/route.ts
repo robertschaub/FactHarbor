@@ -1,32 +1,46 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { getHealthState, resumeSystem, pauseSystem } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 import { drainRunnerQueue } from "@/lib/internal-runner-queue";
+import { getAllProviderStats } from "@/lib/search-circuit-breaker";
+import { getEnv, secureCompare } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-function getEnv(name: string): string | null {
-  const v = process.env[name];
-  return v && v.trim() ? v : null;
-}
-
-function secureCompare(expected: string, provided: string | null): boolean {
-  if (provided === null) return false;
-  const expectedBuffer = Buffer.from(expected);
-  const providedBuffer = Buffer.from(provided);
-  const maxLength = Math.max(expectedBuffer.length, providedBuffer.length);
-  const expectedPadded = Buffer.alloc(maxLength);
-  const providedPadded = Buffer.alloc(maxLength);
-  expectedBuffer.copy(expectedPadded);
-  providedBuffer.copy(providedPadded);
-  const matched = timingSafeEqual(expectedPadded, providedPadded);
-  return matched && expectedBuffer.length === providedBuffer.length;
-}
-
 /** GET — public: return current system health state (for UI banner polling) */
 export async function GET() {
-  return NextResponse.json(getHealthState());
+  const healthState = getHealthState();
+
+  // Add search provider circuit breaker stats
+  const searchProviders = getAllProviderStats();
+
+  // Create extended health state with search providers
+  const extendedProviders: Record<string, any> = { ...healthState.providers };
+
+  for (const provider of searchProviders) {
+    if (provider.state !== "closed") {
+      // Map provider name to lowercase for consistency (e.g., "Google-CSE" → "google_cse")
+      const providerKey = provider.provider.toLowerCase().replace("-", "_");
+
+      extendedProviders[providerKey] = {
+        state: provider.state,
+        consecutiveFailures: provider.consecutiveFailures,
+        lastFailureTime: provider.lastFailureTime,
+        lastFailureMessage: `${provider.provider} circuit ${provider.state.toUpperCase()}`,
+        lastSuccessTime: provider.lastSuccessTime,
+      };
+    }
+  }
+
+  // Always remove the generic "search" provider from the UI response.
+  // We now use specific provider tracking (Google-CSE, Brave, SerpAPI) which is more accurate.
+  // The generic "search" provider in provider-health.ts is legacy and can have stale state.
+  delete extendedProviders.search;
+
+  return NextResponse.json({
+    ...healthState,
+    providers: extendedProviders,
+  });
 }
 
 /** POST — admin-only actions: resume or pause the system */

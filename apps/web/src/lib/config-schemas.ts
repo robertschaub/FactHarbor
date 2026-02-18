@@ -68,6 +68,38 @@ export const SearchConfigSchema = z.object({
     maxSearchTerms: z.number().int().min(1).max(20),
     maxFallbackTerms: z.number().int().min(1).max(15),
   }).optional(),
+
+  // Search result caching
+  cache: z.object({
+    enabled: z.boolean().describe("Enable search result caching"),
+    ttlDays: z.number().int().min(1).max(30).describe("Cache TTL in days"),
+  }).optional().describe("Search cache settings"),
+
+  // Multi-provider configuration
+  providers: z.object({
+    googleCse: z.object({
+      enabled: z.boolean().describe("Enable Google CSE provider"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited)"),
+    }).optional(),
+    serpapi: z.object({
+      enabled: z.boolean().describe("Enable SerpAPI provider"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited)"),
+    }).optional(),
+    brave: z.object({
+      enabled: z.boolean().describe("Enable Brave Search API provider"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited)"),
+    }).optional(),
+  }).optional().describe("Provider-specific settings"),
+
+  // Circuit breaker for provider health tracking
+  circuitBreaker: z.object({
+    enabled: z.boolean().describe("Enable circuit breaker"),
+    failureThreshold: z.number().int().min(1).max(10).describe("Consecutive failures before opening circuit"),
+    resetTimeoutSec: z.number().int().min(10).max(3600).describe("Seconds before attempting retry"),
+  }).optional().describe("Circuit breaker settings for provider health"),
 });
 
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;
@@ -87,6 +119,32 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     maxWordLength: 2,
     maxSearchTerms: 8,
     maxFallbackTerms: 6,
+  },
+  cache: {
+    enabled: true,
+    ttlDays: 7,
+  },
+  providers: {
+    googleCse: {
+      enabled: true,
+      priority: 1,
+      dailyQuotaLimit: 8000, // Leave buffer below 10k limit
+    },
+    serpapi: {
+      enabled: true,
+      priority: 2,
+      dailyQuotaLimit: 0, // Unlimited (paid tier)
+    },
+    brave: {
+      enabled: true,
+      priority: 2,
+      dailyQuotaLimit: 10000, // Adjust based on plan
+    },
+  },
+  circuitBreaker: {
+    enabled: true,
+    failureThreshold: 3,
+    resetTimeoutSec: 300, // 5 minutes
   },
 };
 

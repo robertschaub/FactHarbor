@@ -35,6 +35,9 @@ const POLL_INTERVAL_MS = 30_000;
 const PROVIDER_MESSAGES: Record<string, string> = {
   search: "Web search unavailable \u2014 analyses will have limited or no evidence",
   llm: "LLM provider experiencing issues \u2014 analyses may fail or be delayed",
+  google_cse: "Google Custom Search unavailable \u2014 using fallback provider",
+  brave: "Brave Search unavailable \u2014 using fallback provider",
+  serpapi: "SerpAPI unavailable \u2014 using fallback provider",
 };
 
 export function SystemHealthBanner() {
@@ -106,10 +109,7 @@ export function SystemHealthBanner() {
             <div className={styles.details}>
               {unhealthyProviders.map((p) => (
                 <div key={p.name} className={styles.providerBadge}>
-                  <span>{PROVIDER_MESSAGES[p.name] ?? `${p.name}: ${p.state}`}</span>
-                  {p.lastError && (
-                    <span className={styles.providerError}> ({p.lastError.slice(0, 80)})</span>
-                  )}
+                  {PROVIDER_MESSAGES[p.name] ?? `${p.name}: ${p.state}`}
                 </div>
               ))}
             </div>

@@ -20,15 +20,16 @@ import { getModel, getModelForTask, getStructuredOutputProviderOptions, getPromp
 import { CONFIG, getDeterministicTemperature } from "./config";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { filterEvidenceByProvenance } from "./provenance-validation";
-import type { EvidenceItem } from "./types";
+import type { AnalysisWarning, EvidenceItem } from "./types";
 import {
   createBudgetTracker,
   getBudgetConfig,
   recordLLMCall,
   getBudgetStats,
 } from "./budgets";
-import { searchWebWithProvider } from "../web-search";
+import { searchWebWithProvider, type SearchProviderErrorInfo } from "../web-search";
 import { extractTextFromUrl } from "../retrieval";
+import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-breaker";
 import { detectProvider } from "./prompts/prompt-builder";
 import { loadAndRenderSection, loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
@@ -261,6 +262,7 @@ export async function runMonolithicDynamic(
   // Collected citations (safety contract)
   const citations: Citation[] = [];
   const searchQueries: string[] = [];
+  const warnings: AnalysisWarning[] = [];
   let searchCount = 0;
   let fetchCount = 0;
   // v2.6.35: Track URLs for source reliability prefetch
@@ -374,6 +376,31 @@ export async function runMonolithicDynamic(
         config: searchConfig,
       });
 
+      // Capture search provider errors as warnings AND report to circuit breaker
+      if (response.errors && response.errors.length > 0) {
+        for (const provErr of response.errors) {
+          // Report to circuit breaker so health banner can trip
+          recordSearchFailure(provErr.provider, provErr.message);
+
+          // Deduplicate warnings: only warn once per provider
+          const alreadyWarned = warnings.some(
+            (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
+          );
+          if (!alreadyWarned) {
+            warnings.push({
+              type: "search_provider_error",
+              severity: "error",
+              message: `Search provider "${provErr.provider}" failed: ${provErr.message}`,
+              details: { provider: provErr.provider, status: provErr.status },
+            });
+            // Emit to live events log
+            if (input.onEvent) {
+              await input.onEvent(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
+            }
+          }
+        }
+      }
+
       const maxSourcesToFetch = Math.min(
         searchConfig.maxSourcesPerIteration,
         Math.max(0, dynamicBudget.maxFetches - fetchCount),
@@ -439,6 +466,45 @@ export async function runMonolithicDynamic(
       }
     } catch (err) {
       console.error(`Search failed for "${query}":`, err);
+    }
+  }
+
+  // Post-research quality warnings
+  const totalSearches = searchQueries.length;
+  const totalSources = citations.length;
+  const uniqueSourceUrls = new Set(citations.map((c) => c.url)).size;
+
+  if (totalSources === 0) {
+    warnings.push({
+      type: "no_successful_sources",
+      severity: "error",
+      message: "No sources were successfully fetched during research — verdict is based on zero evidence.",
+      details: { searchQueries: totalSearches },
+    });
+    if (totalSearches >= 3) {
+      warnings.push({
+        type: "source_acquisition_collapse",
+        severity: "error",
+        message: `${totalSearches} search queries were executed but yielded zero usable sources — search providers may be unavailable.`,
+        details: { searchQueries: totalSearches },
+      });
+    }
+  } else {
+    if (totalSources < 3) {
+      warnings.push({
+        type: "low_source_count",
+        severity: "warning",
+        message: `Only ${totalSources} source(s) fetched — verdict reliability is reduced.`,
+        details: { sourceCount: totalSources },
+      });
+    }
+    if (uniqueSourceUrls < 2) {
+      warnings.push({
+        type: "low_source_count",
+        severity: "warning",
+        message: `Evidence comes from only ${uniqueSourceUrls} unique source(s) — limited triangulation possible.`,
+        details: { uniqueSources: uniqueSourceUrls },
+      });
     }
   }
 
@@ -651,6 +717,9 @@ export async function runMonolithicDynamic(
       knownSources: finalCitations.filter((c) => c.trackRecordScore !== null).length,
       unknownSources: finalCitations.filter((c) => c.trackRecordScore === null).length,
     },
+
+    // Analysis quality warnings (surfaced to UI via FallbackReport)
+    analysisWarnings: warnings,
 
     // Compatibility layer for UI (minimal canonical fields)
     verdictSummary: analysis.verdict
