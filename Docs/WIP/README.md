@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (8 files)
+## Active Documents (9 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** **THE** single definitive implementation reference for the next pipeline version
@@ -51,6 +51,14 @@ For completed work, historical documents, and reference materials, see:
 - **Impact:** ~40% reduction in LLM calls, evidence items, and cost per analysis
 - **New UCM params:** `maxAtomicClaimsBase`, `atomicClaimsInputCharsPerClaim`, `claimAtomicityLevel`
 - **Pending:** Manual validation with real LLM calls (Captain approval needed)
+
+### Code Review Fixes (2026-02-18)
+**Status:** 🧭 NOT ACTIONED — Prioritized work plan ready for execution
+- **Document:** [Code_Review_Fixes_2026-02-18.md](Code_Review_Fixes_2026-02-18.md)
+- **Type:** Code Quality / Security / Correctness
+- **Scope:** 45 findings from full code review of Feb 17-18 changes (20 commits + uncommitted)
+- **Phases:** 5 phases — Phase 1 (security, blocking), Phase 2 (correctness, before next analysis), Phase 3-5 (type safety, search hardening, polish)
+- **Key issues:** 4 unauthenticated endpoints, 2 XSS vectors, circuit breaker double-counting, orphaned DB records on delete
 
 ### QA Review Findings (2026-02-12)
 **Status:** 🧭 NOT ACTIONED — Findings ready for execution
