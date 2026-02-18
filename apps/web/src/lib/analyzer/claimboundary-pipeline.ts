@@ -378,23 +378,28 @@ const Pass1OutputSchema = z.object({
   })),
 });
 
+// Pass2AtomicClaimSchema: All non-essential fields use .catch(default) to prevent
+// "No object generated" errors from the AI SDK when the LLM outputs wrong enum casing,
+// missing fields, or type mismatches. The .catch() provides sensible defaults while
+// the JSON schema sent to the LLM still shows correct enum values.
+// See: Docs/WIP/LLM_Expert_Review_Schema_Validation.md
 const Pass2AtomicClaimSchema = z.object({
   id: z.string(),
   statement: z.string(),
-  category: z.enum(["factual", "evaluative", "procedural"]),
-  centrality: z.enum(["high", "medium", "low"]),
-  harmPotential: z.enum(["critical", "high", "medium", "low"]),
-  isCentral: z.boolean(),
-  claimDirection: z.enum(["supports_thesis", "contradicts_thesis", "contextual"]),
-  keyEntities: z.array(z.string()),
-  checkWorthiness: z.enum(["high", "medium", "low"]),
-  specificityScore: z.number(),
-  groundingQuality: z.enum(["strong", "moderate", "weak", "none"]),
+  category: z.enum(["factual", "evaluative", "procedural"]).catch("factual"),
+  centrality: z.enum(["high", "medium", "low"]).catch("low"),
+  harmPotential: z.enum(["critical", "high", "medium", "low"]).catch("low"),
+  isCentral: z.boolean().catch(false),
+  claimDirection: z.enum(["supports_thesis", "contradicts_thesis", "contextual"]).catch("contextual"),
+  keyEntities: z.array(z.string()).catch([]),
+  checkWorthiness: z.enum(["high", "medium", "low"]).catch("medium"),
+  specificityScore: z.number().catch(0.5),
+  groundingQuality: z.enum(["strong", "moderate", "weak", "none"]).catch("moderate"),
   expectedEvidenceProfile: z.object({
-    methodologies: z.array(z.string()),
-    expectedMetrics: z.array(z.string()),
-    expectedSourceTypes: z.array(z.string()),
-  }),
+    methodologies: z.array(z.string()).catch([]),
+    expectedMetrics: z.array(z.string()).catch([]),
+    expectedSourceTypes: z.array(z.string()).catch([]),
+  }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [] }),
 });
 
 const Pass2OutputSchema = z.object({
@@ -835,6 +840,71 @@ async function extractPreliminaryEvidence(
 }
 
 /**
+ * Normalize Pass 2 LLM output before Zod validation.
+ * Handles case-insensitive enum matching and type coercion for known failure modes.
+ * This runs AFTER the AI SDK's internal validation (which uses .catch() defaults)
+ * but BEFORE our explicit .parse() call, catching any remaining issues.
+ */
+function normalizePass2Output(raw: Record<string, unknown>): Record<string, unknown> {
+  if (!raw || typeof raw !== "object") return raw;
+
+  // Normalize enum string values in atomicClaims
+  if (Array.isArray(raw.atomicClaims)) {
+    raw.atomicClaims = raw.atomicClaims.map((claim: Record<string, unknown>) => {
+      if (!claim || typeof claim !== "object") return claim;
+
+      const normalized = { ...claim };
+
+      // Lowercase all known enum fields
+      const enumFields = [
+        "category", "centrality", "harmPotential", "claimDirection",
+        "checkWorthiness", "groundingQuality",
+      ];
+      for (const field of enumFields) {
+        if (typeof normalized[field] === "string") {
+          normalized[field] = (normalized[field] as string).toLowerCase();
+        }
+      }
+
+      // Fix common claimDirection variants (e.g., "supports" → "supports_thesis")
+      if (typeof normalized.claimDirection === "string") {
+        const dir = normalized.claimDirection as string;
+        if (dir.includes("support") && !dir.includes("thesis")) {
+          normalized.claimDirection = "supports_thesis";
+        } else if (dir.includes("contradict") && !dir.includes("thesis")) {
+          normalized.claimDirection = "contradicts_thesis";
+        } else if (dir === "neutral" || dir === "unrelated") {
+          normalized.claimDirection = "contextual";
+        }
+      }
+
+      // Coerce specificityScore from string to number
+      if (typeof normalized.specificityScore === "string") {
+        const num = parseFloat(normalized.specificityScore as string);
+        normalized.specificityScore = isNaN(num) ? 0.5 : num;
+      }
+
+      // Ensure keyEntities is an array (might be null)
+      if (!Array.isArray(normalized.keyEntities)) {
+        normalized.keyEntities = [];
+      }
+
+      // Ensure expectedEvidenceProfile has required arrays
+      if (normalized.expectedEvidenceProfile && typeof normalized.expectedEvidenceProfile === "object") {
+        const profile = normalized.expectedEvidenceProfile as Record<string, unknown>;
+        if (!Array.isArray(profile.methodologies)) profile.methodologies = [];
+        if (!Array.isArray(profile.expectedMetrics)) profile.expectedMetrics = [];
+        if (!Array.isArray(profile.expectedSourceTypes)) profile.expectedSourceTypes = [];
+      }
+
+      return normalized;
+    });
+  }
+
+  return raw;
+}
+
+/**
  * Pass 2: Evidence-grounded claim extraction using Sonnet.
  * Uses preliminary evidence to produce specific, research-ready atomic claims.
  */
@@ -893,7 +963,10 @@ export async function runPass2(
         throw new Error("Stage 1 Pass 2: LLM returned no structured output");
       }
 
-      const validated = Pass2OutputSchema.parse(parsed);
+      // Normalize enum values (case-insensitive) before Zod validation
+      const normalized = normalizePass2Output(parsed as Record<string, unknown>);
+
+      const validated = Pass2OutputSchema.parse(normalized);
 
       // Ensure all claims have sequential IDs if the LLM didn't provide them
       validated.atomicClaims.forEach((claim, idx) => {
@@ -909,7 +982,14 @@ export async function runPass2(
       return validated;
     } catch (err) {
       lastError = err as Error;
-      console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} failed:`, err);
+
+      // Log detailed Zod validation errors for diagnostics
+      if (err instanceof z.ZodError) {
+        const fieldErrors = err.issues.map(i => `  ${i.path.join(".")}: ${i.message} (code: ${i.code})`);
+        console.error(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} — Zod validation failed:\n${fieldErrors.join("\n")}`);
+      } else {
+        console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${(err as Error).message}`);
+      }
 
       // If this is the last attempt, throw with detailed error
       if (attempt === maxRetries) {
