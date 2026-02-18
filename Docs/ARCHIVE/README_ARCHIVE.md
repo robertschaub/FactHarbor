@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-16 (ClaimBoundary Consolidation)
+**Last Updated**: 2026-02-18 (Post-CB + Code Review Consolidation)
 
 ---
 
@@ -114,6 +114,39 @@ The following documents had valuable content extracted and merged into active do
 
 ---
 
+### Post-CB Implementation Consolidation (2026-02-18)
+
+**Description**: Documents archived after CB pipeline v1.0 completion and code review sprint. CB implementation is fully operational (all stages, 853 tests). Code review sprint (45 findings) and search hardening features are complete and committed.
+
+**CB implementation process** (DONE — all phases complete, pipeline operational):
+1. `CB_Execution_State.md` — Phase-by-phase execution tracker (all phases 5a-5k complete)
+2. `CB_Implementation_Plan_2026-02-17.md` — Stage implementation plan (DONE)
+3. `CB_Implementation_Plan_REVIEW_PROMPT.md` — Review prompt for implementation plan (process doc)
+4. `CB_Phase_Prompts.md` — Phase-specific prompt drafts (DONE — prompts in `claimboundary.prompt.md`)
+5. `CB_Implementation_Prompts.md` — Agent prompt templates for implementation (process doc)
+6. `CB_Review_Fixes_2026-02-17.md` — First-round review fixes (DONE)
+7. `CB_Codex_Review_Fixes_2026-02-17.md` — Codex review fixes round 1 (DONE)
+8. `CB_Codex_Review_Fixes_3_2026-02-17.md` — Codex review fixes round 3 (DONE)
+9. `CB_Codex_Review_Fixes_4_2026-02-17.md` — Codex review fixes round 4 (DONE)
+10. `CB_Codex_Review_Fixes_5_2026-02-17.md` — Codex review fixes round 5 (DONE)
+
+**Code review sprint** (DONE — all 5 phases, 45 findings fixed):
+11. `Code_Review_Fixes_2026-02-18.md` — Main tracker: phases, commits, tests (DONE)
+12. `Code_Review_Fixes_Agent_Prompts.md` — Agent prompts for each phase (process doc)
+
+**Search hardening** (DONE — cache, multi-provider, circuit breaker shipped):
+13. `Search_Cache_MultiProvider_Implementation.md` — Cache + multi-provider design (DONE — committed)
+14. `Search_Provider_Testing_Integration.md` — Test-config and health banner integration (DONE)
+15. `Brave_Search_Setup.md` — Brave Search API quick-start guide (implementation done; key configured via `.env.local`)
+
+**Feature implementations** (DONE):
+16. `Job_Cancellation_Delete_Implementation.md` — Job cancel/delete plan (DONE — implemented)
+
+**Superseded analysis** (SUPERSEDED):
+17. `Pass2_Claim_Quality_Issues_2026-02-18.md` — LLM Expert analysis of impliedClaim overexpansion (SUPERSEDED by `Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md` which covers the same issue with a fuller fix plan)
+
+---
+
 ### Source Reliability Service Reviews
 
 **Location**: `Source_Reliability_Service_Reviews/` (Note: Files are at root of ARCHIVE for now)
@@ -178,5 +211,5 @@ If you need to reference archived documents:
 ---
 
 **Archive Maintainer**: Plan Coordinator
-**Last Review**: 2026-02-16 (ClaimBoundary Consolidation)
+**Last Review**: 2026-02-18 (Post-CB + Code Review Consolidation)
 **Next Review**: Quarterly (or when major features complete)

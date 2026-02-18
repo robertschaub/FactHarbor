@@ -1,14 +1,14 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-02-17
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 — Production-Ready
+**Last Updated**: 2026-02-18
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 — Production-Ready (Claim Fidelity P0 Fix In Progress)
 
 ---
 
 ## ClaimAssessmentBoundary Pipeline v1.0 (2026-02-17)
 
-**Status:** IMPLEMENTED — All 5 pipeline stages operational. 817 tests passing. Build clean.
+**Status:** IMPLEMENTED — All 5 pipeline stages operational. 853 tests passing. Build clean.
 
 The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBoundary pipeline** — a fundamental redesign where analytical boundaries emerge from evidence rather than being pre-created. The Orchestrated pipeline has been deleted (~18,400 lines removed).
 
@@ -323,7 +323,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Analyzer core functions (evidence-filter, aggregation, truth-scale, etc.)
 - Quality gates, confidence calibration
 - Job lifecycle
-- 42 test files, 817 tests, all mocked (no real LLM calls)
+- 45 test files, 853 tests, all mocked (no real LLM calls)
 
 **Expensive Integration Tests** (explicit scripts only, $1-5+ per run):
 - `npm run test:llm` — Multi-provider LLM integration
@@ -374,6 +374,26 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 ---
 
 ## Recent Changes
+
+### 2026-02-18 Stage 1 Claim Fidelity Fix — Phase 1+2 (P0 In Progress)
+**Status: 🔧 Partially Implemented — Phase 3+4 Pending**
+
+P0 quality fix: Stage 1 Pass 2 was over-anchoring claims to preliminary evidence instead of the user's input, causing claim drift that propagated through all downstream stages. Phases 1+2 implemented by Codex (o4-mini).
+
+**Implemented (Phases 1+2):**
+- `impliedClaim` must now be derivable from user input alone (evidence refines verifiability, not thesis scope)
+- LLM classifies input as `single_atomic_claim` vs `multi_assertion_input` before decomposition
+- `passedFidelity` per-claim check added to Gate 1 — filters claims that drift from original input
+- Safety-net rescue: if all claims filtered by gates, highest-scoring ones rescued to prevent empty output
+- Mixed confidence threshold lowered 60→40 in truth-scale to reduce false "mixed" classifications
+- Metrics persistence fix: uses absolute API URL + admin auth header for server-side calls
+
+**Pending:**
+- Phase 3: Evidence payload compression (scope signals instead of full statements in Pass 2)
+- Phase 4: Validation against baseline scenarios with real LLM calls (SRF report + "sky is blue")
+- Full acceptance criteria: [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
+
+**Tests:** 853 passing (45 test files). New tests: fidelity filtering, safety-net rescue.
 
 ### 2026-02-17 ClaimAssessmentBoundary Pipeline v1.0 (v2.11.0)
 **Status: ✅ IMPLEMENTED — Production-Ready**

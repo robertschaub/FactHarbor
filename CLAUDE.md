@@ -15,7 +15,7 @@ Two apps + one tool:
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
 3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
 
-> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 817 tests passing. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 853 tests passing. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 

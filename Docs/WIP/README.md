@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-18 (Schema Validation Fix Initiative)
-**Status**: 14 active files
+**Last Updated**: 2026-02-18 (WIP Consolidation)
+**Status**: 18 active files (13 standalone + 5 schema validation group)
 
 ---
 
@@ -17,16 +17,15 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (14 files)
+## Active Documents (18 files, 14 entries)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
-**Status:** **THE** single definitive implementation reference for the next pipeline version
+**Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
 - **Document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
-- **Type:** Architecture / Pipeline Redesign
-- **Scope:** Complete pipeline redesign replacing AnalysisContext with evidence-emergent ClaimBoundary
-- **Decisions:** 9/9 closed (D1-D9), Round 1 + Round 2 integrated
-- **Next step:** Step 0 Rules Audit (Lead Architect audits AGENTS.md for AnalysisContext-specific rules)
-- **Related:** [Phase9_Pipeline_Status_and_Plan_2026-02-15.md](../REVIEWS/Phase9_Pipeline_Status_and_Plan_2026-02-15.md) (Phase 8/9 results + decision to redesign)
+- **Type:** Architecture Reference
+- **Scope:** Complete 5-stage pipeline with LLM debate pattern. All 5 stages operational, 853 tests passing.
+- **Decisions:** 9/9 closed (D1-D9). Implementation complete.
+- **Related:** [Current_Status.md](../STATUS/Current_Status.md) for live status; [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md) (archived — all phases done)
 
 ### UCM Auto-Form: Schema-Driven Config UI (2026-02-14)
 **Status:** 🔧 Implementation Complete — Awaiting Code Review
@@ -52,14 +51,13 @@ For completed work, historical documents, and reference materials, see:
 - **New UCM params:** `maxAtomicClaimsBase`, `atomicClaimsInputCharsPerClaim`, `claimAtomicityLevel`
 - **Pending:** Manual validation with real LLM calls (Captain approval needed)
 
-### Code Review Fixes (2026-02-18)
-**Status:** ✅ **ALL 5 PHASES COMPLETE** — Ready for archive
-- **Document:** [Code_Review_Fixes_2026-02-18.md](Code_Review_Fixes_2026-02-18.md)
-- **Type:** Code Quality / Security / Correctness
-- **Scope:** 45 findings fixed across 5 phases (security, correctness, types, search hardening, polish)
-- **Commits:** `5745432` (Phase 3), `8319866`/`720a944` (Phase 4), `444e529` (Phase 5), `88a5f63` (learnings)
-- **Tests added:** 35 new tests (search-brave, search-cache, search-circuit-breaker)
-- **New shared utility:** `apps/web/src/lib/auth.ts` (timing-safe auth checks)
+### Claim Fidelity Fix (2026-02-18)
+**Status:** 🔧 Phase 1+2 Implemented — Phase 3 + Validation Pending
+- **Document:** [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
+- **Type:** Pipeline Quality / P0 Bug Fix
+- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence instead of user input (claim drift). Phase 1 (prompt hardening) + Phase 2 (Gate 1 `passedFidelity` check) implemented by Codex.
+- **Remaining:** Phase 3 (evidence payload compression) + Phase 4 (validation against baseline scenarios with real LLM calls)
+- **Handoff:** [Handoffs/2026-02-18_Lead_Developer_Claim_Fidelity.md](../AGENTS/Handoffs/2026-02-18_Lead_Developer_Claim_Fidelity.md)
 
 ### Schema Validation Fix Initiative (2026-02-18)
 **Status:** 🔧 Emergency Fixes Implemented — Remaining Work Open
@@ -102,6 +100,30 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Evaluate vector database integration for Shadow Mode similarity detection
 - **Recommendation:** Stay SQLite-only initially
 
+### Test/Tuning Mode Design (2026-02-17)
+**Status:** 🧭 Proposal — Pending Approval
+- **Document:** [TestTuning_Mode_Design_2026-02-17.md](TestTuning_Mode_Design_2026-02-17.md)
+- **Type:** Feature Design / Admin Tooling
+- **Scope:** Test/tuning workflow for pipeline — run partial stages, manage test data, experiment without affecting production jobs
+
+### Test/Tuning UI Design (2026-02-17)
+**Status:** 🧭 Proposal — Pending Approval
+- **Document:** [TestTuning_UI_Design_2026-02-17.md](TestTuning_UI_Design_2026-02-17.md)
+- **Type:** Feature Design / UI
+- **Scope:** UI design for the Test/Tuning Mode (companion to the mode design above)
+
+### Runtime Issues Analysis (2026-02-17)
+**Status:** 🧭 Draft — Awaiting Review
+- **Document:** [Runtime_Issues_Analysis_2026-02-17.md](Runtime_Issues_Analysis_2026-02-17.md)
+- **Type:** Architecture Analysis / Infrastructure
+- **Scope:** Post-CB v1.0 runtime issues — provider saturation, queue behavior, structural weaknesses. Input for architectural planning.
+
+### UCM Configuration Audit (2026-02-17)
+**Status:** ⚠️ Gaps Identified — CB config parameters not in UCM schema
+- **Document:** [UCM_Configuration_Audit_2026-02-17.md](UCM_Configuration_Audit_2026-02-17.md)
+- **Type:** Configuration / Audit
+- **Scope:** Audit of UCM completeness for CB pipeline config — identifies missing parameters (centralityThreshold, maxAtomicClaims, etc.)
+
 ---
 
 ## Recently Completed Work
@@ -138,6 +160,17 @@ When adding new work to this folder:
 ---
 
 ## Cleanup History
+
+**2026-02-18 (Post-CB + Code Review Consolidation)**: Full WIP audit after CB pipeline v1.0 completion and code review sprint
+- Archived 17 files:
+  - CB implementation process docs (DONE — CB pipeline v1.0 complete): `CB_Execution_State.md`, `CB_Implementation_Plan_2026-02-17.md`, `CB_Implementation_Plan_REVIEW_PROMPT.md`, `CB_Phase_Prompts.md`, `CB_Implementation_Prompts.md`, `CB_Review_Fixes_2026-02-17.md`, `CB_Codex_Review_Fixes_{2,3,4,5}_2026-02-17.md`
+  - Code review process docs (DONE — all 5 phases complete): `Code_Review_Fixes_2026-02-18.md`, `Code_Review_Fixes_Agent_Prompts.md`
+  - Search implementation docs (DONE — cache, multi-provider, circuit breaker all shipped): `Search_Cache_MultiProvider_Implementation.md`, `Search_Provider_Testing_Integration.md`, `Brave_Search_Setup.md`
+  - `Job_Cancellation_Delete_Implementation.md` (DONE — implemented)
+  - `Pass2_Claim_Quality_Issues_2026-02-18.md` (SUPERSEDED — claim fidelity fix covers this)
+- Added 5 previously-unlisted active files to README: TestTuning_Mode_Design, TestTuning_UI_Design, Runtime_Issues_Analysis, UCM_Configuration_Audit, Lead_Developer_Companion_Claim_Fidelity
+- Updated CB architecture entry status (IMPLEMENTED, v1.0)
+- Replaced "Code Review Fixes" entry with "Claim Fidelity Fix" (active, phases 3+4 pending)
 
 **2026-02-16 (ClaimBoundary Consolidation)**: Full audit per Consolidate WIP Procedure (AGENTS.md)
 - Archived 11 files (4 ClaimBoundary process docs + 6 superseded pipeline plans + 2 Captain decisions):
