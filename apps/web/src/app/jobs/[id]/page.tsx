@@ -987,10 +987,8 @@ export default function JobPage() {
 function decodeHtmlEntities(text: string): string {
   if (typeof document === 'undefined') return text;
   try {
-    const textarea = document.createElement('textarea');
-    if (!textarea) return text;
-    textarea.innerHTML = text;
-    return textarea.value || text;
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.documentElement.textContent || text;
   } catch (e) {
     return text;
   }

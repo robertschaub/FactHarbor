@@ -10,6 +10,7 @@ import {
   getHealthState,
 } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
+import { getEnv } from "@/lib/auth";
 
 type PipelineVariant = "claimboundary" | "monolithic_dynamic";
 
@@ -21,11 +22,6 @@ type RunnerQueueState = {
   drainRequested: boolean;
   watchdogTimer: ReturnType<typeof setInterval> | null;
 };
-
-function getEnv(name: string): string | null {
-  const v = process.env[name];
-  return v && v.trim() ? v : null;
-}
 
 function getRunnerQueueState(): RunnerQueueState {
   const g = globalThis as any;
