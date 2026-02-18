@@ -70,3 +70,11 @@ export function checkRunnerKey(req: Request): boolean {
   const got = req.headers.get("x-runner-key");
   return secureCompare(expectedKey, got);
 }
+
+/**
+ * Validates a job ID to prevent injection attacks.
+ * Only allows alphanumeric characters, hyphens, and underscores.
+ */
+export function validateJobId(id: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(id) && id.length > 0 && id.length <= 128;
+}

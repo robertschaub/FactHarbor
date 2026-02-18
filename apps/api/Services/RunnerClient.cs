@@ -60,7 +60,7 @@ public sealed class RunnerClient
 
         try
         {
-            var res = await _http.SendAsync(req);
+            using var res = await _http.SendAsync(req);
             if (res.IsSuccessStatusCode)
             {
                 _log.LogInformation("Successfully requested abort for job {JobId}", jobId);

@@ -119,8 +119,10 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       const results = await applyDomainFilters(searchSerpApi(options), options);
       console.log(`[Search] Final results from SerpAPI: ${results.length}`);
 
-      // Record success and cache results
-      recordSuccess("SerpAPI");
+      // Record success and cache results (only if results exist)
+      if (results.length > 0) {
+        recordSuccess("SerpAPI");
+      }
       await cacheSearchResults(options, results, "SerpAPI");
 
       return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
@@ -148,8 +150,10 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       const results = await applyDomainFilters(searchGoogleCse(options), options);
       console.log(`[Search] Final results from Google CSE: ${results.length}`);
 
-      // Record success and cache results
-      recordSuccess("Google-CSE");
+      // Record success and cache results (only if results exist)
+      if (results.length > 0) {
+        recordSuccess("Google-CSE");
+      }
       await cacheSearchResults(options, results, "Google-CSE");
 
       return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
@@ -177,8 +181,10 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       const results = await applyDomainFilters(searchBrave(options), options);
       console.log(`[Search] Final results from Brave: ${results.length}`);
 
-      // Record success and cache results
-      recordSuccess("Brave");
+      // Record success and cache results (only if results exist)
+      if (results.length > 0) {
+        recordSuccess("Brave");
+      }
       await cacheSearchResults(options, results, "Brave");
 
       return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
@@ -254,25 +260,26 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         if (providerInfo.name === "Google-CSE") {
           const { searchGoogleCse } = await import("./search-google-cse");
           providerResults = await searchGoogleCse({ ...options, maxResults: remaining });
-          recordSuccess("Google-CSE");
         } else if (providerInfo.name === "SerpAPI") {
           const { searchSerpApi } = await import("./search-serpapi");
           providerResults = await searchSerpApi({ ...options, maxResults: remaining });
-          recordSuccess("SerpAPI");
         } else if (providerInfo.name === "Brave") {
           const { searchBrave } = await import("./search-brave");
           providerResults = await searchBrave({ ...options, maxResults: remaining });
-          recordSuccess("Brave");
         }
 
         results.push(...providerResults);
+
+        // Only record success if provider returned results
+        if (providerResults.length > 0) {
+          recordSuccess(providerInfo.name);
+        }
         console.log(
           `[Search] ${providerInfo.name} returned ${providerResults.length} results, total now: ${results.length}`,
         );
 
-        // If this provider gave us enough results, cache them and return
+        // If this provider gave us enough results, stop searching
         if (results.length >= options.maxResults) {
-          await cacheSearchResults(options, results, providerInfo.name);
           break;
         }
       } catch (err) {

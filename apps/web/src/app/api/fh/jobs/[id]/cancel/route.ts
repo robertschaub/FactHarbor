@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminKey } from "@/lib/auth";
+import { checkAdminKey, validateJobId } from "@/lib/auth";
 
 async function resolveJobId(context: any): Promise<string> {
   const params = await Promise.resolve(context.params);
@@ -15,6 +15,9 @@ export async function POST(
   }
 
   const jobId = await resolveJobId(context);
+  if (!validateJobId(jobId)) {
+    return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
+  }
   const baseUrl = process.env.FH_API_BASE_URL || "http://localhost:5000";
 
   const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/v1/jobs/${jobId}/cancel`;

@@ -82,11 +82,8 @@ import {
 import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
 
-// Search circuit breaker — report failures so circuit breaker can trip
-import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-breaker";
-
 // Job cancellation detection
-import { isJobAborted, clearAbortSignal } from "@/app/api/internal/abort-job/[id]/route";
+import { isJobAborted, clearAbortSignal } from "@/lib/job-abort";
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -586,10 +583,9 @@ export async function runPreliminarySearch(
           searchProvider: response.providersUsed.join(", "),
         });
 
-        // Report search provider errors to circuit breaker and warnings
+        // Report search provider errors to warnings
         if (response.errors && response.errors.length > 0) {
           for (const provErr of response.errors) {
-            recordSearchFailure(provErr.provider, provErr.message);
             const alreadyWarned = state.warnings.some(
               (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
             );
@@ -646,7 +642,6 @@ export async function runPreliminarySearch(
         // If this was a search provider error (not a general exception), report it
         // The SearchProviderError has provider name, but generic exceptions don't
         if (err?.name === "SearchProviderError" && err?.provider) {
-          recordSearchFailure(err.provider, err.message);
           state.warnings.push({
             type: "search_provider_error",
             severity: "error",
@@ -1376,9 +1371,6 @@ export async function runResearchIteration(
       // Capture search provider errors as warnings AND report to circuit breaker
       if (response.errors && response.errors.length > 0) {
         for (const provErr of response.errors) {
-          // Report to circuit breaker so health banner can trip
-          recordSearchFailure(provErr.provider, provErr.message);
-
           // Deduplicate warnings: only warn once per provider in result
           const alreadyWarned = state.warnings.some(
             (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
@@ -1704,9 +1696,8 @@ export async function extractResearchEvidence(
     // Map to full EvidenceItem format
     let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
     return validated.evidenceItems.map((ei) => {
-      // Find which source this evidence came from (match by URL in relevantClaimIds or first source)
-      const matchedSource = sources.find((s) => ei.relevantClaimIds?.length > 0)
-        ?? sources[0];
+      // TODO: Match source by URL when LLM response includes source attribution
+      const matchedSource = sources[0];
 
       return {
         id: `EV_${String(idCounter++)}`,

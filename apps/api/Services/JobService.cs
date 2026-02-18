@@ -72,16 +72,18 @@ public sealed class JobService
 
     public async Task<JobEntity?> CancelJobAsync(string jobId)
     {
-        var job = await GetJobAsync(jobId);
+        var job = await _db.Jobs.FindAsync(jobId);
         if (job is null) return null;
-
-        // Only cancel if in cancellable state (idempotent for final states)
         if (job.Status == "SUCCEEDED" || job.Status == "FAILED" || job.Status == "CANCELLED")
-            return job; // Already in final state, idempotent
-
-        await UpdateStatusAsync(jobId, "CANCELLED", job.Progress, "info", "Job cancelled by user");
-
-        return await GetJobAsync(jobId);
+            return job;
+        job.Status = "CANCELLED";
+        job.UpdatedUtc = DateTime.UtcNow;
+        _db.JobEvents.Add(new JobEventEntity {
+            JobId = jobId, Level = "info", Message = "Job cancelled by user",
+            TsUtc = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync();
+        return job;
     }
 
     public async Task<bool> DeleteJobAsync(string jobId)
@@ -89,7 +91,10 @@ public sealed class JobService
         var job = await _db.Jobs.FindAsync(jobId);
         if (job is null) return false;
 
-        // Cascade delete will remove JobEvents automatically (ON DELETE CASCADE)
+        // Explicitly delete events to ensure no orphans (regardless of FK constraints)
+        var events = await _db.JobEvents.Where(e => e.JobId == jobId).ToListAsync();
+        _db.JobEvents.RemoveRange(events);
+
         _db.Jobs.Remove(job);
         await _db.SaveChangesAsync();
 

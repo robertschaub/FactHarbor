@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRunnerKey } from "@/lib/auth";
+import { checkRunnerKey, validateJobId } from "@/lib/auth";
+import { setAbortSignal } from "@/lib/job-abort";
 
 async function resolveJobId(context: any): Promise<string> {
   const params = await Promise.resolve(context.params);
   return params.id;
 }
-
-// In-memory abort signals (job ID → abort flag)
-const abortSignals = new Map<string, boolean>();
 
 export async function POST(
   req: NextRequest,
@@ -18,16 +16,11 @@ export async function POST(
   }
 
   const jobId = await resolveJobId(context);
-  abortSignals.set(jobId, true);
+  if (!validateJobId(jobId)) {
+    return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
+  }
+
+  setAbortSignal(jobId);
 
   return NextResponse.json({ ok: true, jobId, aborted: true });
-}
-
-// Helper function for pipeline to check abort status
-export function isJobAborted(jobId: string): boolean {
-  return abortSignals.get(jobId) === true;
-}
-
-export function clearAbortSignal(jobId: string): void {
-  abortSignals.delete(jobId);
 }

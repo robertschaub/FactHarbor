@@ -70,43 +70,49 @@ interface SearchCacheRow {
 // ============================================================================
 
 let db: Database | null = null;
+let dbPromise: Promise<Database> | null = null;
 
 async function getDb(): Promise<Database> {
   if (db) return db;
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const dbPath = path.resolve(SEARCH_CACHE_CONFIG.dbPath);
+      console.log(`[Search-Cache] Opening database at ${dbPath}`);
 
-  const dbPath = path.resolve(SEARCH_CACHE_CONFIG.dbPath);
-  console.log(`[Search-Cache] Opening database at ${dbPath}`);
+      const instance = await open({
+        filename: dbPath,
+        driver: sqlite3.Database,
+      });
 
-  db = await open({
-    filename: dbPath,
-    driver: sqlite3.Database,
-  });
+      // Enable WAL mode for better concurrent access
+      await instance.exec("PRAGMA journal_mode=WAL");
 
-  // Enable WAL mode for better concurrent access
-  await db.exec("PRAGMA journal_mode=WAL");
+      // Create table if not exists
+      await instance.exec(`
+        CREATE TABLE IF NOT EXISTS search_cache (
+          cache_key TEXT PRIMARY KEY,
+          query_text TEXT NOT NULL,
+          max_results INTEGER NOT NULL,
+          date_restrict TEXT,
+          domain_whitelist TEXT,
+          domain_blacklist TEXT,
+          results_json TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          cached_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL
+        );
 
-  // Create table if not exists
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS search_cache (
-      cache_key TEXT PRIMARY KEY,
-      query_text TEXT NOT NULL,
-      max_results INTEGER NOT NULL,
-      date_restrict TEXT,
-      domain_whitelist TEXT,
-      domain_blacklist TEXT,
-      results_json TEXT NOT NULL,
-      provider TEXT NOT NULL,
-      cached_at TEXT NOT NULL,
-      expires_at TEXT NOT NULL
-    );
+        CREATE INDEX IF NOT EXISTS idx_search_cache_expires ON search_cache(expires_at);
+        CREATE INDEX IF NOT EXISTS idx_search_cache_query ON search_cache(query_text);
+        CREATE INDEX IF NOT EXISTS idx_search_cache_cached_at ON search_cache(cached_at);
+      `);
 
-    CREATE INDEX IF NOT EXISTS idx_search_cache_expires ON search_cache(expires_at);
-    CREATE INDEX IF NOT EXISTS idx_search_cache_query ON search_cache(query_text);
-    CREATE INDEX IF NOT EXISTS idx_search_cache_cached_at ON search_cache(cached_at);
-  `);
-
-  console.log("[Search-Cache] Database initialized");
-  return db;
+      console.log("[Search-Cache] Database initialized");
+      db = instance;
+      return instance;
+    })();
+  }
+  return dbPromise;
 }
 
 // ============================================================================

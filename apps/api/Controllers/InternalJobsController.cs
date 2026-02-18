@@ -51,6 +51,11 @@ public sealed class InternalJobsController : ControllerBase
     {
         if (!IsAuthorized()) return Unauthorized();
 
+        var job = await _jobs.GetJobAsync(jobId);
+        if (job is null) return NotFound();
+        if (job.Status == "RUNNING" || job.Status == "QUEUED")
+            return BadRequest(new { error = $"Cannot delete job in {job.Status} state. Cancel it first." });
+
         var deleted = await _jobs.DeleteJobAsync(jobId);
         if (!deleted) return NotFound();
 
