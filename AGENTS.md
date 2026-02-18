@@ -298,14 +298,14 @@ Field requirements by mode:
 
 #### Role Handoff — incoming role checklist
 
-When you are the **incoming** role (receiving a handoff or starting a role mid-project):
+When you are the **incoming** role (receiving a handoff or starting a role mid-project), **self-serve context before asking the Captain**:
 
-1. Read the handoff output (in `Agent_Outputs.md`, `Handoffs/`, or conversation context)
-2. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
-3. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
-4. Check `Docs/WIP/` for active task documents related to the current work
-5. Check `Docs/AGENTS/Agent_Outputs.md` for recent entries relevant to your task
-6. Acknowledge role activation before starting work
+1. Read `Docs/AGENTS/Agent_Outputs.md` — find the most recent entries relevant to your task
+2. Read any referenced files in `Docs/AGENTS/Handoffs/`
+3. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
+4. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
+5. Check `Docs/WIP/` for active task documents related to the current work
+6. Acknowledge role activation, summarizing the context you found — only ask the Captain for what's missing
 
 #### Rules
 

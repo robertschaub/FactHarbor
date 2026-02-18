@@ -40,14 +40,27 @@ Complexity: simple
 
 ### Captain's Assignment Checklist
 
-What to provide based on task complexity:
+Agents self-serve context from `Docs/AGENTS/Agent_Outputs.md` and `Docs/AGENTS/Handoffs/` (per Agent Exchange Protocol in AGENTS.md). The Captain only needs to provide what agents **cannot** find themselves:
 
-| Complexity | What to Include |
-|------------|----------------|
-| **Simple** | Role + instruction (the "As \<Role\> ..." pattern above) |
-| **Moderate** | + Area + relevant context/files |
-| **Complex** | + Constraints + acceptance criteria + related WIP docs + which roles reviewed previously |
-| **Investigation** | + Observed symptoms + recent changes + expected vs actual behavior |
+| Complexity | Captain Provides | Agent Self-Serves |
+|------------|-----------------|-------------------|
+| **Simple** | Role + instruction | Recent outputs, role learnings |
+| **Moderate** | + Area (if ambiguous) | + Previous agent's outputs, WIP docs |
+| **Complex** | + Constraints + acceptance criteria | + Full handoff chain, related WIP docs |
+| **Investigation** | + Observed symptoms + expected vs actual | + All spoke files, hub document |
+
+**Minimal dispatch examples:**
+```
+As Lead Developer, continue the claim fidelity work.
+```
+(Agent reads Agent_Outputs.md, finds the previous entry, picks up context.)
+
+```
+As Code Reviewer, review the changes in the last commit.
+```
+(Agent reads git log + Agent_Outputs.md for what was done and why.)
+
+**Only add context when** the agent can't find it: verbal decisions not yet written down, external requirements, or when overriding a previous agent's direction.
 
 ### Full Template (for complex/multi-agent tasks)
 
