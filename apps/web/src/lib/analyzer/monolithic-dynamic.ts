@@ -45,6 +45,13 @@ import {
   type CachedReliabilityData,
 } from "./source-reliability";
 import { percentageToArticleVerdict } from "./truth-scale";
+import {
+  initializeMetrics,
+  startPhase,
+  endPhase,
+  recordOutputQuality,
+  finalizeMetrics,
+} from "./metrics-integration";
 
 // ============================================================================
 // TYPES
@@ -231,33 +238,39 @@ export async function runMonolithicDynamic(
   // v2.6.35: Clear source reliability cache at start of analysis
   clearPrefetchedScores();
 
-  // External Prompt File System: Track prompt version per job
-  try {
-    const pipelineName: Pipeline = "monolithic-dynamic";
-    const promptResult = await loadPromptFile(pipelineName);
-    if (promptResult.success && promptResult.prompt) {
-      if (input.jobId) {
-        await recordConfigUsage(
-          input.jobId,
-          "prompt",
-          pipelineName,
-          promptResult.prompt.contentHash,
-        ).catch(() => {});
-      }
-      console.log(`[Prompt-Tracking] Loaded monolithic-dynamic prompt (hash: ${promptResult.prompt.contentHash.substring(0, 12)}...)`);
-    }
-  } catch (err: any) {
-    console.warn(`[Prompt-Tracking] Error loading prompt file (non-fatal): ${err?.message}`);
+  // Initialize metrics collection for this job
+  if (input.jobId) {
+    initializeMetrics(input.jobId, "monolithic-dynamic", pipelineConfig, searchConfig);
   }
 
-  // Collected citations (safety contract)
-  const citations: Citation[] = [];
-  const searchQueries: string[] = [];
-  const warnings: AnalysisWarning[] = [];
-  let searchCount = 0;
-  let fetchCount = 0;
-  // v2.6.35: Track URLs for source reliability prefetch
-  const urlsForReliability: string[] = [];
+  try {
+    // External Prompt File System: Track prompt version per job
+    try {
+      const pipelineName: Pipeline = "monolithic-dynamic";
+      const promptResult = await loadPromptFile(pipelineName);
+      if (promptResult.success && promptResult.prompt) {
+        if (input.jobId) {
+          await recordConfigUsage(
+            input.jobId,
+            "prompt",
+            pipelineName,
+            promptResult.prompt.contentHash,
+          ).catch(() => {});
+        }
+        console.log(`[Prompt-Tracking] Loaded monolithic-dynamic prompt (hash: ${promptResult.prompt.contentHash.substring(0, 12)}...)`);
+      }
+    } catch (err: any) {
+      console.warn(`[Prompt-Tracking] Error loading prompt file (non-fatal): ${err?.message}`);
+    }
+
+    // Collected citations (safety contract)
+    const citations: Citation[] = [];
+    const searchQueries: string[] = [];
+    const warnings: AnalysisWarning[] = [];
+    let searchCount = 0;
+    let fetchCount = 0;
+    // v2.6.35: Track URLs for source reliability prefetch
+    const urlsForReliability: string[] = [];
 
   if (input.onEvent) {
     await input.onEvent("Starting dynamic analysis", 5);
@@ -291,6 +304,7 @@ export async function runMonolithicDynamic(
   }
 
   // Step 1: Initial analysis to determine research approach
+  startPhase("understand");
   if (input.onEvent) {
     await input.onEvent("Analyzing input and planning research", 15);
   }
@@ -336,8 +350,10 @@ export async function runMonolithicDynamic(
   const queriesToRun = plannedQueries.slice(0, maxSearchQueries).length > 0
     ? plannedQueries.slice(0, maxSearchQueries)
     : [`claim verification: ${textToAnalyze.slice(0, 100)}`];
+  endPhase("understand");
 
   // Step 2: Research phase - gather sources
+  startPhase("research");
   const sourceContents: Array<{ url: string; title: string; content: string }> = [];
 
   for (const query of queriesToRun) {
@@ -498,8 +514,10 @@ export async function runMonolithicDynamic(
       });
     }
   }
+  endPhase("research");
 
   // Step 3: Dynamic analysis with collected sources
+  startPhase("verdict");
   if (input.onEvent) {
     await input.onEvent("Generating dynamic analysis", 70);
   }
@@ -560,8 +578,10 @@ export async function runMonolithicDynamic(
   if (!analysis) {
     throw new Error("Failed to generate analysis. Falling back to orchestrated pipeline.");
   }
+  endPhase("verdict");
 
   // Step 4: Harden with Provenance Validation
+  startPhase("report");
   // Preserve original accessedAt timestamps (Bug fix: don't lose fetch times)
   const citationTimestamps = new Map<string, string>();
   for (const c of citations) {
@@ -737,15 +757,23 @@ export async function runMonolithicDynamic(
           sourceReliabilityWeight: avgSourceReliabilityWeight,
         },
   };
+    endPhase("report");
 
-  // Generate report markdown
-  const reportMarkdown = generateDynamicReportMarkdown(resultJson);
+    // Generate report markdown
+    const reportMarkdown = generateDynamicReportMarkdown(resultJson);
 
-  if (input.onEvent) {
-    await input.onEvent("Analysis complete", 100);
+    // Record output quality metrics
+    recordOutputQuality(resultJson);
+
+    if (input.onEvent) {
+      await input.onEvent("Analysis complete", 100);
+    }
+
+    return { resultJson, reportMarkdown };
+  } finally {
+    // Always finalize and persist metrics, even on failure
+    await finalizeMetrics();
   }
-
-  return { resultJson, reportMarkdown };
 }
 
 // ============================================================================
