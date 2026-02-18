@@ -10,6 +10,9 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateText } from "ai";
 import { getConfig } from "@/lib/config-storage";
+import { getCacheStats } from "@/lib/search-cache";
+import { getAllProviderStats } from "@/lib/search-circuit-breaker";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +26,10 @@ type TestResult = {
 };
 
 export async function GET(request: NextRequest) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const results: TestResult[] = [];
 
   // Test FH API Base URL
@@ -56,6 +63,11 @@ export async function GET(request: NextRequest) {
 
   results.push(await testSerpApi(searchEnabled && (searchProvider === "serpapi" || searchProvider === "auto")));
   results.push(await testGoogleCse(searchEnabled && (searchProvider === "google-cse" || searchProvider === "auto")));
+  results.push(await testBrave(searchEnabled && (searchProvider === "brave" || searchProvider === "auto")));
+
+  // Test Search Cache & Circuit Breaker
+  results.push(await testSearchCache(searchEnabled));
+  results.push(await testSearchCircuitBreaker(searchEnabled));
 
   // Summary
   const summary = {
@@ -534,6 +546,176 @@ async function testGoogleCse(shouldTest: boolean): Promise<TestResult> {
       message: `Google CSE error: ${error.message}`,
       details: error.stack,
       configUrl: "https://developers.google.com/custom-search/v1/introduction",
+    };
+  }
+}
+
+async function testBrave(shouldTest: boolean): Promise<TestResult> {
+  const apiKey = process.env.BRAVE_API_KEY;
+
+  if (!shouldTest) {
+    return {
+      service: "Brave Search API",
+      status: "skipped",
+      message: "Search disabled or different provider selected",
+      configUrl: "https://api-dashboard.search.brave.com",
+    };
+  }
+
+  if (!apiKey) {
+    return {
+      service: "Brave Search API",
+      status: "not_configured",
+      message: "BRAVE_API_KEY is not set",
+      configUrl: "https://api-dashboard.search.brave.com",
+    };
+  }
+
+  if (apiKey.includes("PASTE")) {
+    return {
+      service: "Brave Search API",
+      status: "error",
+      message: "BRAVE_API_KEY contains placeholder text",
+      configUrl: "https://api-dashboard.search.brave.com",
+    };
+  }
+
+  try {
+    const url = "https://api.search.brave.com/res/v1/web/search?q=test&count=1";
+    const response = await fetch(url, {
+      headers: {
+        "X-Subscription-Token": apiKey,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        service: "Brave Search API",
+        status: "error",
+        message: `Brave returned status ${response.status}`,
+        details: errorText.substring(0, 200),
+        configUrl: "https://api-dashboard.search.brave.com",
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      service: "Brave Search API",
+      status: "success",
+      message: "Brave API key is valid",
+      details: `Test search returned ${data.web?.results?.length || 0} results`,
+      configUrl: "https://api-dashboard.search.brave.com",
+    };
+  } catch (error: any) {
+    return {
+      service: "Brave Search API",
+      status: "error",
+      message: `Brave error: ${error.message}`,
+      details: error.stack,
+      configUrl: "https://api-dashboard.search.brave.com",
+    };
+  }
+}
+
+async function testSearchCache(shouldTest: boolean): Promise<TestResult> {
+  if (!shouldTest) {
+    return {
+      service: "Search Cache",
+      status: "skipped",
+      message: "Search disabled",
+    };
+  }
+
+  try {
+    const stats = await getCacheStats();
+
+    const statusMessage = stats.validEntries > 0
+      ? `${stats.validEntries} cached queries (${stats.totalQueries} unique)`
+      : "Cache is empty (no queries cached yet)";
+
+    const hitRate = stats.validEntries > 0
+      ? Math.round((stats.validEntries / (stats.validEntries + stats.expiredEntries)) * 100)
+      : 0;
+
+    return {
+      service: "Search Cache",
+      status: "success",
+      message: statusMessage,
+      details: `Hit rate: ~${hitRate}% | DB size: ${(stats.dbSizeBytes || 0) / 1024}KB`,
+    };
+  } catch (error: any) {
+    return {
+      service: "Search Cache",
+      status: "error",
+      message: `Cache error: ${error.message}`,
+      details: error.stack,
+    };
+  }
+}
+
+async function testSearchCircuitBreaker(shouldTest: boolean): Promise<TestResult> {
+  if (!shouldTest) {
+    return {
+      service: "Search Circuit Breaker",
+      status: "skipped",
+      message: "Search disabled",
+    };
+  }
+
+  try {
+    const providerStats = getAllProviderStats();
+
+    const openCircuits = providerStats.filter((p) => p.state === "open");
+    const halfOpenCircuits = providerStats.filter((p) => p.state === "half_open");
+
+    if (openCircuits.length > 0) {
+      return {
+        service: "Search Circuit Breaker",
+        status: "error",
+        message: `${openCircuits.length} provider(s) circuit OPEN`,
+        details: openCircuits.map((p) => `${p.provider}: ${p.consecutiveFailures} failures`).join(", "),
+      };
+    }
+
+    if (halfOpenCircuits.length > 0) {
+      return {
+        service: "Search Circuit Breaker",
+        status: "success",
+        message: `${halfOpenCircuits.length} provider(s) testing recovery`,
+        details: halfOpenCircuits.map((p) => `${p.provider}: HALF_OPEN`).join(", "),
+      };
+    }
+
+    const totalRequests = providerStats.reduce((sum, p) => sum + p.totalRequests, 0);
+
+    if (totalRequests === 0) {
+      return {
+        service: "Search Circuit Breaker",
+        status: "success",
+        message: "All circuits healthy (no requests yet)",
+      };
+    }
+
+    const summary = providerStats
+      .filter((p) => p.totalRequests > 0)
+      .map((p) => `${p.provider}: ${Math.round(p.successRate * 100)}%`)
+      .join(", ");
+
+    return {
+      service: "Search Circuit Breaker",
+      status: "success",
+      message: "All circuits closed (healthy)",
+      details: `Success rates: ${summary}`,
+    };
+  } catch (error: any) {
+    return {
+      service: "Search Circuit Breaker",
+      status: "error",
+      message: `Circuit breaker error: ${error.message}`,
+      details: error.stack,
     };
   }
 }
