@@ -265,7 +265,7 @@ export default function JobPage() {
   // Check for admin key on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const key = sessionStorage.getItem("fh-admin-key");
+      const key = sessionStorage.getItem("fh_admin_key");
       setHasAdminKey(!!key);
     }
   }, []);
@@ -299,7 +299,7 @@ export default function JobPage() {
 
     setIsDeleting(true);
     try {
-      const adminKey = sessionStorage.getItem("fh-admin-key");
+      const adminKey = sessionStorage.getItem("fh_admin_key");
       const res = await fetch(`/api/fh/jobs/${jobId}/delete`, {
         method: "POST",
         headers: {
@@ -661,6 +661,15 @@ export default function JobPage() {
                   </Badge>
                 ) : null;
               })()}
+              {result.meta.llmProvider && (
+                <Badge
+                  bg="#e3f2fd"
+                  color="#1565c0"
+                  title={result.meta.llmModel || result.meta.llmProvider}
+                >
+                  🤖 {result.meta.llmProvider}
+                </Badge>
+              )}
               {pipelineFallback && requestedPipelineVariant !== pipelineVariant && (
                 <Badge
                   bg="#fff3e0"
@@ -943,7 +952,13 @@ export default function JobPage() {
       {/* Sources Tab */}
       {tab === "sources" && hasV22Data && (
         <div className={styles.contentCard}>
-          <SourcesPanel searchQueries={searchQueries} sources={sources} researchStats={researchStats} searchProvider={result?.meta?.searchProvider} />
+          <SourcesPanel
+            searchQueries={searchQueries}
+            sources={sources}
+            researchStats={researchStats}
+            searchProvider={result?.meta?.searchProvider}
+            searchProviders={result?.meta?.searchProviders}
+          />
           {/* NEW v2.6.29: Display evidence with counter-evidence marking */}
           {evidenceItems.length > 0 && (
             <EvidencePanel
@@ -997,14 +1012,14 @@ function decodeHtmlEntities(text: string): string {
 // Sources Panel
 // ============================================================================
 
-function SourcesPanel({ searchQueries, sources, researchStats, searchProvider }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string }) {
+function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, searchProviders }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string; searchProviders?: string }) {
   return (
     <div>
       <div className={styles.sourcesHeader}>
         <h3 className={styles.sourcesTitle}>🔍 Research Summary</h3>
-        {searchProvider && (
+        {(searchProviders || searchProvider) && (
           <span className={styles.providerBadge}>
-            via {searchProvider}
+            via {searchProviders || searchProvider}
           </span>
         )}
       </div>
