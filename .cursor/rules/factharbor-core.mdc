@@ -16,7 +16,8 @@ POC with two apps:
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews
 
 ## Critical Terminology (ALWAYS follow)
-- **AnalysisContext** = Top-level analytical frame. NEVER call this "scope".
+- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame. NEVER call this "context" or "scope".
+- **AtomicClaim** = Single verifiable assertion extracted from user input. NEVER call this "context" or "fact".
 - **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
 - **EvidenceItem** = Extracted evidence from a source. NEVER call these "facts".
 - **probativeValue** = Quality assessment (high/medium/low).
@@ -39,6 +40,15 @@ POC with two apps:
 When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
 
 **Context-budget note:** If loading all Required Reading exceeds your context window, load only the role entry from §2 and defer document reads until needed for the specific task.
+
+## Agent Exchange Protocol
+
+On task completion, write output so other agents can pick up your work:
+- **Trivial** (typo, quick fix): no file needed.
+- **Standard** (bug fix, feature, config change): append entry to `Docs/AGENTS/Agent_Outputs.md`.
+- **Significant** (multi-file, design decision): create `Docs/AGENTS/Handoffs/YYYY-MM-DD_<Role>_<Description>.md`.
+
+When **starting** a task, read `Docs/AGENTS/Agent_Outputs.md` first for recent context. Full rules: `/AGENTS.md` § Agent Exchange Protocol.
 
 ## Agent Handoff
 If another tool would be better for the task, say so:

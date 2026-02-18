@@ -10,7 +10,8 @@ POC with two apps:
 Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pipeline -> Results back to API.
 
 ## CRITICAL Terminology
-- **AnalysisContext** = top-level analytical frame. NEVER call "scope".
+- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. Top-level analytical frame. NEVER call "context"/"scope".
+- **AtomicClaim** = Single verifiable assertion from user input. NEVER call "context"/"fact".
 - **EvidenceScope** = per-evidence source metadata. NEVER call "context".
 - **EvidenceItem** = extracted evidence. NEVER call "fact" in new code.
 - **No hardcoded keywords** in code/prompts. Generic for ANY topic.
@@ -43,6 +44,11 @@ Config: `apps/api/appsettings.Development.example.json`, `apps/web/.env.example`
 When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
 
 **Context-budget note:** If loading all Required Reading exceeds Cascade's context window, load only the role entry from §2 and defer document reads until needed for the specific task.
+
+## Agent Exchange Protocol
+On task completion, write output for other agents:
+- **Trivial**: no file. **Standard**: append to `Docs/AGENTS/Agent_Outputs.md`. **Significant**: file in `Docs/AGENTS/Handoffs/`.
+- On task start, read `Agent_Outputs.md` for recent context. Full rules: `/AGENTS.md` § Agent Exchange Protocol.
 
 ## Agent Handoff
 If a task exceeds Cascade context limits or needs deep reasoning, recommend:

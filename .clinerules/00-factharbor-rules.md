@@ -14,7 +14,8 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 
 ## Critical Terminology (ALWAYS follow)
 
-- **AnalysisContext** = Top-level analytical frame. NEVER call this "scope".
+- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame. NEVER call this "context" or "scope".
+- **AtomicClaim** = Single verifiable assertion extracted from user input. NEVER call this "context" or "fact".
 - **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
 - **EvidenceItem** = Extracted evidence from a source. NEVER call these "facts" in new code.
 - **No hardcoded keywords**: Code, prompts, and logic must be generic for ANY topic.
@@ -52,6 +53,18 @@ Kimi K2 may not know FactHarbor conventions. Follow the terminology section abov
 When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
 
 **Context-budget note:** If loading all Required Reading exceeds your context window, load only the role entry from §2 and defer document reads until needed for the specific task.
+
+## Agent Exchange Protocol
+
+On task completion, write output so other agents can pick up your work:
+
+- **Trivial** (typo, quick fix): no file needed.
+- **Standard** (bug fix, feature, config change): append entry to `Docs/AGENTS/Agent_Outputs.md`.
+- **Significant** (multi-file, design decision): create `Docs/AGENTS/Handoffs/YYYY-MM-DD_<Role>_<Description>.md` + cross-reference in `Agent_Outputs.md`.
+
+Template and full rules: `/AGENTS.md` § Agent Exchange Protocol.
+
+When **starting** a task, read `Docs/AGENTS/Agent_Outputs.md` first for recent context from other agents.
 
 ## Agent Handoff
 

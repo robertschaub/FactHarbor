@@ -17,7 +17,8 @@ Purpose: short, actionable notes to help an AI coding agent be immediately produ
   3. Runner (Next route at `apps/web/src/app/api/internal/run-job/route.ts`) fetches the job (`/v1/jobs/{id}`), calls `runFactHarborAnalysis` from `apps/web/src/lib/analyzer.ts`, and writes progress/results back to API internal endpoints (`/internal/v1/jobs/{jobId}/status` and `/internal/v1/jobs/{jobId}/result`).
 
 - **Critical terminology** (always follow — see AGENTS.md for details):
-  - **AnalysisContext** = Top-level analytical frame. NEVER call this "scope".
+  - **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame. NEVER call this "context" or "scope".
+  - **AtomicClaim** = Single verifiable assertion extracted from user input. NEVER call this "context" or "fact".
   - **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
   - **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.
   - **No hardcoded keywords**: Code and prompts must be generic for ANY topic.
@@ -55,6 +56,8 @@ Purpose: short, actionable notes to help an AI coding agent be immediately produ
   - Avoid destructive git commands unless explicitly asked.
 
 - **Roles**: When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read. If loading all Required Reading exceeds your context window, load only the role entry and defer reads until needed.
+
+- **Agent Exchange Protocol**: On task completion, write output so other agents can pick up your work. Trivial tasks: no file. Standard tasks: append entry to `Docs/AGENTS/Agent_Outputs.md`. Significant tasks: create file in `Docs/AGENTS/Handoffs/`. When starting a task, read `Docs/AGENTS/Agent_Outputs.md` first for recent context. Full template: `/AGENTS.md` § Agent Exchange Protocol.
 
 - **Agent handoff**: You are primarily used for inline completions and chat. For large multi-file refactors, suggest Cursor Composer or Claude Code. See `/AGENTS.md` Agent Handoff Protocol for full reference.
 
