@@ -73,6 +73,7 @@ import {
   initializeMetrics,
   startPhase,
   endPhase,
+  recordLLMCall,
   recordGate1Stats,
   recordGate4Stats,
   recordOutputQuality,
@@ -86,6 +87,67 @@ import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-break
 
 // Job cancellation detection
 import { isJobAborted, clearAbortSignal } from "@/lib/job-abort";
+
+// ============================================================================
+// METRICS HELPERS
+// ============================================================================
+
+/**
+ * Wrapper for generateText that automatically records LLM call metrics
+ */
+async function callLLMWithMetrics<T>(
+  taskType: 'understand' | 'extract_evidence' | 'context_refinement' | 'verdict' | 'supplemental' | 'other',
+  modelInfo: { provider: string; modelName: string },
+  generateFn: () => Promise<{ text: string; usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number } }>,
+  onSuccess?: (result: any) => T
+): Promise<T> {
+  const startTime = Date.now();
+  let success = false;
+  let schemaCompliant = false;
+  let errorMessage: string | undefined;
+  let result: any;
+
+  try {
+    result = await generateFn();
+    success = true;
+    schemaCompliant = true; // Assume compliant if no error
+
+    recordLLMCall({
+      taskType,
+      provider: modelInfo.provider,
+      modelName: modelInfo.modelName,
+      promptTokens: result.usage?.promptTokens ?? 0,
+      completionTokens: result.usage?.completionTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - startTime,
+      success,
+      schemaCompliant,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    return onSuccess ? onSuccess(result) : result;
+  } catch (error) {
+    errorMessage = error instanceof Error ? error.message : String(error);
+
+    recordLLMCall({
+      taskType,
+      provider: modelInfo.provider,
+      modelName: modelInfo.modelName,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      durationMs: Date.now() - startTime,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
+
+    throw error;
+  }
+}
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -2464,6 +2526,8 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
     input: Record<string, unknown>,
     options?: { tier?: "sonnet" | "haiku"; temperature?: number },
   ): Promise<unknown> => {
+    const startTime = Date.now();
+
     // 1. Load UCM prompt section
     const currentDate = new Date().toISOString().split("T")[0];
     const rendered = await loadAndRenderSection("claimboundary", promptKey, {
@@ -2480,25 +2544,67 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
     const model = getModelForTask(taskKey, undefined, pipelineConfig);
 
     // 3. Call AI SDK
-    const result = await generateText({
-      model: model.model,
-      messages: [
-        {
-          role: "system",
-          content: rendered.content,
-          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-        },
-        {
-          role: "user",
-          content: typeof input.userMessage === "string"
-            ? input.userMessage
-            : JSON.stringify(input),
-        },
-      ],
-      temperature: options?.temperature ?? 0.0,
-      providerOptions: getStructuredOutputProviderOptions(
-        pipelineConfig.llmProvider ?? "anthropic",
-      ),
+    let result: any;
+    let success = false;
+    let errorMessage: string | undefined;
+
+    try {
+      result = await generateText({
+        model: model.model,
+        messages: [
+          {
+            role: "system",
+            content: rendered.content,
+            providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+          },
+          {
+            role: "user",
+            content: typeof input.userMessage === "string"
+              ? input.userMessage
+              : JSON.stringify(input),
+          },
+        ],
+        temperature: options?.temperature ?? 0.0,
+        providerOptions: getStructuredOutputProviderOptions(
+          pipelineConfig.llmProvider ?? "anthropic",
+        ),
+      });
+      success = true;
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Record failed LLM call
+      recordLLMCall({
+        taskType: 'verdict',
+        provider: pipelineConfig.llmProvider ?? "anthropic",
+        modelName: model.modelName,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        durationMs: Date.now() - startTime,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage,
+        timestamp: new Date(),
+      });
+
+      throw error;
+    }
+
+    // Record successful LLM call
+    recordLLMCall({
+      taskType: 'verdict',
+      provider: pipelineConfig.llmProvider ?? "anthropic",
+      modelName: model.modelName,
+      promptTokens: result.usage?.promptTokens ?? 0,
+      completionTokens: result.usage?.completionTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - startTime,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
     });
 
     // 4. Parse result as JSON
