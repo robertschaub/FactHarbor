@@ -332,19 +332,28 @@ export function createMetricsCollector(
  */
 export async function persistMetrics(metrics: AnalysisMetrics): Promise<void> {
   try {
-    const response = await fetch('/api/fh/metrics', {
+    // Call the API directly (server-side). Relative URLs don't work in Node.js
+    // server context, and a self-referential call to Next.js adds unnecessary latency.
+    const apiBaseUrl = process.env.FH_API_BASE_URL || 'http://localhost:5000';
+    const adminKey = process.env.FH_ADMIN_KEY || '';
+
+    const response = await fetch(`${apiBaseUrl}/api/fh/metrics`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey,
       },
       body: JSON.stringify(metrics),
     });
 
     if (!response.ok) {
-      console.error('Failed to persist metrics:', response.statusText);
+      const errorText = await response.text().catch(() => '');
+      console.error(`[Metrics] Failed to persist: ${response.status} ${response.statusText}${errorText ? ' — ' + errorText : ''}`);
+    } else {
+      console.info(`[Metrics] Persisted metrics for job ${metrics.jobId}`);
     }
   } catch (error) {
-    console.error('Error persisting metrics:', error);
+    console.error('[Metrics] Error persisting metrics:', error);
     // Don't throw - metrics persistence should not break analysis
   }
 }
