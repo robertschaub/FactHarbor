@@ -561,6 +561,25 @@ export async function runPreliminarySearch(
           searchProvider: response.providersUsed.join(", "),
         });
 
+        // Report search provider errors to circuit breaker and warnings
+        if (response.errors && response.errors.length > 0) {
+          for (const provErr of response.errors) {
+            recordProviderFailure("search", provErr.message, pipelineConfig.heuristicCircuitBreakerThreshold);
+            const alreadyWarned = state.warnings.some(
+              (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
+            );
+            if (!alreadyWarned) {
+              state.warnings.push({
+                type: "search_provider_error",
+                severity: "error",
+                message: `Search provider "${provErr.provider}" failed: ${provErr.message}`,
+                details: { provider: provErr.provider, status: provErr.status },
+              });
+              state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
+            }
+          }
+        }
+
         // Fetch and extract text from top results (limit to 3 per query)
         const sourcesToFetch = response.results.slice(0, 3);
         const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
@@ -595,9 +614,22 @@ export async function runPreliminarySearch(
         state.llmCalls++;
 
         allEvidence.push(...evidence);
-      } catch (err) {
-        // Search failures are non-fatal for Stage 1 preliminary search
+      } catch (err: any) {
+        // Search failures are non-fatal for Stage 1 preliminary search, but should be reported
         console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
+
+        // If this was a search provider error (not a general exception), report it
+        const errorMsg = err?.message || String(err);
+        if (errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("rate limit")) {
+          recordProviderFailure("search", errorMsg, pipelineConfig.heuristicCircuitBreakerThreshold);
+          state.warnings.push({
+            type: "search_provider_error",
+            severity: "error",
+            message: `Preliminary search failed: ${errorMsg}`,
+            details: { query },
+          });
+          state.onEvent?.(`Preliminary search error: ${errorMsg}`, 0);
+        }
       }
     }
   }
