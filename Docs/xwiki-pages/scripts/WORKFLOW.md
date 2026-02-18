@@ -23,7 +23,7 @@ python Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py FactHarbor_Export.xar --out
 
 ```bash
 # Open any file and edit
-code Docs/xwiki-pages/FactHarbor/Product Development/Specification/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
 
 # Commit to git
 git add Docs/xwiki-pages/
@@ -94,7 +94,7 @@ FactHarbor.xar (ready to import: xWiki → Administration → Import)
 
 **Pure xWiki 2.1 syntax - copy-paste ready for xWiki editor.**
 
-**Example:** `FactHarbor/Product Development/Specification/WebHome.xwiki`
+**Example:** `FactHarbor/Specification/Architecture/WebHome.xwiki`
 ```xwiki
 = Specification =
 
@@ -122,8 +122,8 @@ graph TD
 | File Path | PageId | Parent | Title |
 |-----------|--------|--------|-------|
 | `FactHarbor/WebHome.xwiki` | `FactHarbor.WebHome` | `None` (root) | `FactHarbor` (dir name) |
-| `FactHarbor/Product Development/Specification/WebHome.xwiki` | `FactHarbor.Product Development.Specification.WebHome` | `FactHarbor.WebHome` | `Specification` (dir name) |
-| `FactHarbor/Product Development/Specification/Architecture.xwiki` | `FactHarbor.Product Development.Specification.Architecture` | `FactHarbor.Product Development.Specification.WebHome` | From first heading |
+| `FactHarbor/Specification/Architecture/WebHome.xwiki` | `FactHarbor.Product Development.Specification.WebHome` | `FactHarbor.WebHome` | `Specification` (dir name) |
+| `FactHarbor/Specification/Architecture/Architecture.xwiki` | `FactHarbor.Product Development.Specification.Architecture` | `FactHarbor.Product Development.Specification.WebHome` | From first heading |
 
 **Parent derivation:**
 - **WebHome pages**: Go up two levels (skip self + space name), append `.WebHome`
@@ -134,7 +134,7 @@ graph TD
 
 **Title derivation:**
 - **WebHome pages**: Title = parent directory name (space name in xWiki)
-  - `FactHarbor/Product Development/Specification/WebHome.xwiki` → title: "Specification"
+  - `FactHarbor/Specification/Architecture/WebHome.xwiki` → title: "Specification"
 - **Non-WebHome pages**: First xWiki heading (`= Title =`), fallback to filename
 - Escaped dots in directory names are unescaped: `Architecture Analysis 1.Jan.26` → title as-is
 
@@ -262,7 +262,7 @@ git commit -m "docs: initial import from xWiki"
 
 ```bash
 # 1. Open and edit files
-code Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture.xwiki
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/Architecture.xwiki
 
 # 2. Make changes (pure xWiki syntax)
 # = Architecture =
@@ -270,7 +270,7 @@ code Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture.
 # Updated content here...
 
 # 3. Commit changes
-git add Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture.xwiki
+git add Docs/xwiki-pages/FactHarbor/Specification/Architecture/Architecture.xwiki
 git commit -m "docs: update architecture documentation"
 
 # 4. Export to XAR (optional - for xWiki sync, from repo root)
@@ -302,7 +302,7 @@ python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output F
 **Option C: View as plain text**
 ```bash
 # Open in VS Code
-code Docs/xwiki-pages/FactHarbor/Product Development/Specification/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
 ```
 
 ### Scenario 4: Consolidate Documentation
@@ -419,5 +419,5 @@ python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output F
 
 ---
 
-**Last Updated:** 2026-02-08
-**Version:** 2.1 (Updated paths, title derivation for WebHome pages)
+**Last Updated:** 2026-02-19
+**Version:** 2.2 (Script renames: fulltree_to_xar.py, xar_to_fulltree.py)

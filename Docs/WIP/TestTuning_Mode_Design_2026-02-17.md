@@ -239,18 +239,18 @@ function buildPartialResult(
 **File:** `apps/web/src/lib/internal-runner-queue.ts`
 
 In `runJobBackground` (line 154+):
-- Read `maxStage` and `configOverrides` from the job record (already fetched via `apiGet`)
+- Read `stopAfterStage` and `configOverrides` from the job record (already fetched via `apiGet`)
 - Parse `configOverrides` from JSON string to object
 - Pass both to `runClaimBoundaryAnalysis` via the `AnalysisInput`
 
 ```typescript
-const maxStage = typeof job.maxStage === "number" ? job.maxStage : undefined;
+const stopAfterStage = job.stopAfterStage as PipelineStageId | undefined ?? undefined;
 const configOverrides = job.configOverrides
   ? JSON.parse(job.configOverrides)
   : undefined;
 
 result = await runClaimBoundaryAnalysis({
-  jobId, inputType, inputValue, maxStage, configOverrides,
+  jobId, inputType, inputValue, stopAfterStage, configOverrides,
   onEvent: async (m, p) => emit("info", m, p),
 });
 ```
@@ -302,7 +302,7 @@ No changes to these existing routes needed.
 
 **File:** `apps/web/src/app/api/fh/analyze/route.ts`
 
-Pass through `isTestRun`, `maxStage`, `configOverrides` fields to upstream .NET API.
+Pass through `isTestRun`, `stopAfterStage`, `configOverrides` fields to upstream .NET API.
 
 ### 4.2 Jobs list proxy
 
@@ -385,21 +385,21 @@ Add a "Test Profiles" tab that:
 
 | File | Change |
 |------|--------|
-| `Data/Entities.cs` | Add `IsTestRun`, `MaxStage`, `ConfigOverrides` to JobEntity |
+| `Data/Entities.cs` | Add `IsTestRun`, `StopAfterStage`, `ConfigOverrides` to JobEntity (additive to existing retry fields) |
 | `Program.cs` | Add ALTER TABLE migration at startup |
-| `Services/JobService.cs` | Extend CreateJobAsync, ListJobsAsync; add DeleteTestJobsAsync, CountTestJobsAsync |
+| `Services/JobService.cs` | Extend CreateJobAsync, ListJobsAsync; add DeleteTestJobsAsync, CountTestJobsAsync (additive to existing cancel/delete/retry) |
 | `Services/RunnerClient.cs` | Minor: include configOverrides in trigger payload |
 | `Controllers/AnalyzeController.cs` | Extend CreateJobRequest; add admin auth gate for test jobs |
-| `Controllers/JobsController.cs` | Add includeTestJobs filter; expose new fields in responses |
+| `Controllers/JobsController.cs` | Add includeTestJobs filter; expose new fields in responses (additive to existing cancel/retry endpoints) |
 | `Controllers/InternalJobsController.cs` | Add DELETE test-jobs cleanup endpoint |
 
 ### Next.js (`apps/web/`)
 
 | File | Change |
 |------|--------|
-| `src/lib/analyzer/types.ts` | Extend AnalysisInput with maxStage + configOverrides |
-| `src/lib/analyzer/claimboundary-pipeline.ts` | Stage gates, config profile resolution, buildPartialResult helper; modify ~7 config loading sites |
-| `src/lib/internal-runner-queue.ts` | Read maxStage + configOverrides from job record, pass to pipeline |
+| `src/lib/analyzer/types.ts` | Add `PipelineStageId` type + `PIPELINE_STAGE_IDS` constant; extend `AnalysisInput` with `stopAfterStage` + `configOverrides` |
+| `src/lib/analyzer/claimboundary-pipeline.ts` | Stage gates (string-based), config profile resolution, `buildPartialResult` helper; modify ~7 config loading sites |
+| `src/lib/internal-runner-queue.ts` | Read `stopAfterStage` + `configOverrides` from job record, pass to pipeline |
 | `src/lib/config-storage.ts` | Add listTestProfiles, deleteTestProfiles, countTestProfiles helpers |
 | `src/app/api/fh/analyze/route.ts` | Pass through test fields to upstream |
 | `src/app/api/fh/jobs/route.ts` | Pass through includeTestJobs param |
@@ -428,21 +428,22 @@ curl -X POST -H "X-Admin-Key: $KEY" -H "Content-Type: application/json" \
   "http://localhost:3000/api/admin/config/pipeline/test%2Fexp-1/activate" \
   -d '{"contentHash": "<hash from step 1>"}'
 
-# 3. Submit test job (partial: stop after stage 2)
+# 3. Submit test job (partial: stop after research stage)
 curl -X POST -H "X-Admin-Key: $KEY" -H "Content-Type: application/json" \
   "http://localhost:3000/api/fh/analyze" \
   -d '{
     "inputType": "text",
     "inputValue": "Test claim here",
     "isTestRun": true,
-    "maxStage": 2,
+    "stopAfterStage": "research",
     "configOverrides": { "pipeline": "test/exp-1" }
   }'
 # → Returns { jobId: "abc123", status: "QUEUED" }
 
 # 4. Poll for result
 curl "http://localhost:5000/v1/jobs/abc123"
-# → Returns partial result JSON with stages 1-2 data
+# → Returns partial result JSON with extract-claims + research data
+# → meta.completedThrough = "research", meta.partialExecution = true
 
 # 5. Cleanup (when done with experiments)
 curl -X DELETE -H "X-Admin-Key: $KEY" \
@@ -466,7 +467,7 @@ curl -X DELETE -H "X-Admin-Key: $KEY" \
 ## Verification
 
 1. **Unit tests**: Add tests for `buildPartialResult`, config profile resolution, test job filtering
-2. **Manual test**: Create test config via API → submit test job with maxStage=2 → verify partial JSON returned
+2. **Manual test**: Create test config via API → submit test job with `stopAfterStage="research"` → verify partial JSON with `meta.completedThrough="research"`
 3. **Isolation test**: Submit test job → verify it doesn't appear in public job list (`GET /v1/jobs`)
 4. **Cleanup test**: Create test jobs → run cleanup → verify deletion and correct counts
 5. **Build**: `npm -w apps/web run build` — verify no type errors

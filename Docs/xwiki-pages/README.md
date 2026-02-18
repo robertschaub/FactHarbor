@@ -19,21 +19,28 @@
 
 ```
 xwiki-pages/
-├── FactHarbor/                        (137+ pages - single combined tree)
-│   ├── Organisation/                  (Governance, processes, policies)
-│   ├── Product Development/           (All product-related documentation)
-│   │   ├── Requirements/              (Functional requirements, user needs, roles)
-│   │   ├── Specification/             (Architecture, data model, diagrams, etc.)
-│   │   ├── Planning/                  (Phases, status, roadmap)
-│   │   └── DevOps/                    (Guidelines, tooling, deployment, subsystems)
+├── FactHarbor/                        (160 pages - single combined tree)
+│   ├── FH Analysis Reports/           (Published analysis reports)
 │   ├── License and Disclaimer/
+│   ├── Organisation/                  (Governance, processes, policies)
+│   ├── Project Status/
+│   ├── Roadmap/                       (Phases, milestones, guidance)
+│   ├── Specification/                 (Architecture, data model, diagrams, requirements)
+│   │   ├── Architecture/              (System design, deep dives, data model)
+│   │   ├── Diagrams/                  (Mermaid diagrams)
+│   │   ├── Development/               (Guidelines, deployment)
+│   │   ├── Implementation/            (Status, quality)
+│   │   ├── POC/                       (API schemas, requirements, specification)
+│   │   ├── Reference/                 (Terminology, schemas, prompt engineering)
+│   │   └── Requirements/              (Functional requirements, roles, user needs)
+│   ├── User Guides/                   (Getting started, LLM config, admin)
 │   └── WebHome.xwiki                  (FactHarbor root page)
 │
 ├── scripts/                           (Conversion tools)
 │   ├── xar_to_xwiki_tree.py          (XAR → .xwiki tree)
 │   ├── xwiki_tree_to_xar.py          (.xwiki tree → XAR)
-│   ├── xar_to_fulltree.py               (dependency: XAR → JSON)
-│   ├── fulltree_to_xar.py               (dependency: JSON → XAR)
+│   ├── xar_to_fulltree.py            (dependency: XAR → JSON)
+│   ├── fulltree_to_xar.py            (dependency: JSON → XAR)
 │   └── WORKFLOW.md                    (Detailed workflow reference)
 │
 ├── View.cmd                           (Local WYSIWYG viewer launcher)
@@ -48,7 +55,7 @@ xwiki-pages/
 **Edit .xwiki files directly - no conversion needed:**
 ```bash
 # Edit any page
-code Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
 code Docs/xwiki-pages/FactHarbor/Organisation/Governance/WebHome.xwiki
 
 # Commit changes
@@ -77,7 +84,7 @@ python Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py Docs/xwiki-pages --output F
 
 Each `.xwiki` file contains **pure xWiki 2.1 syntax** - exactly what you would paste into the xWiki page editor.
 
-**Example:** `FactHarbor/Product Development/Specification/WebHome.xwiki`
+**Example:** `FactHarbor/Specification/Architecture/WebHome.xwiki`
 ```xwiki
 = Specification =
 
@@ -104,10 +111,10 @@ graph TD
 | - parent: | `None` (root) |
 | - title: | `FactHarbor` (from directory name) |
 | - syntax: | `xwiki/2.1` |
-| **File:** `FactHarbor/Product Development/Specification/WebHome.xwiki` | |
-| - pageId: | `FactHarbor.Product Development.Specification.WebHome` |
-| - parent: | `FactHarbor.WebHome` |
-| - title: | `Specification` (from directory name) |
+| **File:** `FactHarbor/Specification/Architecture/WebHome.xwiki` | |
+| - pageId: | `FactHarbor.Specification.Architecture.WebHome` |
+| - parent: | `FactHarbor.Specification.WebHome` |
+| - title: | `Architecture` (from directory name) |
 | - syntax: | `xwiki/2.1` |
 | **File:** `FactHarbor/Organisation/Governance/WebHome.xwiki` | |
 | - pageId: | `FactHarbor.Organisation.Governance.WebHome` |
@@ -194,6 +201,6 @@ The project's `.vscode/tasks.json` includes three XWiki Viewer tasks. Use **Term
 
 ---
 
-**Last Updated:** 2026-02-08
-**Total Pages:** 137
+**Last Updated:** 2026-02-19
+**Total Pages:** 160
 **Format:** xWiki 2.1

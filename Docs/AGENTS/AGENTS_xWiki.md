@@ -29,7 +29,7 @@ Agents edit `.xwiki` files directly — no conversion needed.
 
 ```bash
 # Edit any page (pure xWiki 2.1 syntax)
-code Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/WebHome.xwiki
+code Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki
 code Docs/xwiki-pages/FactHarbor/Organisation/Governance/WebHome.xwiki
 
 # Commit changes
@@ -95,7 +95,7 @@ Do NOT use `{{code language="mermaid"}}` — it doesn't work.
 
 | Path | Purpose |
 |------|---------|
-| `Docs/xwiki-pages/FactHarbor/` | Master documentation tree (137 pages) |
+| `Docs/xwiki-pages/FactHarbor/` | Master documentation tree (160 pages) |
 | `Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py` | XAR → .xwiki tree |
 | `Docs/xwiki-pages/scripts/xwiki_tree_to_xar.py` | .xwiki tree → XAR |
 | `Docs/xwiki-pages/scripts/WORKFLOW.md` | Detailed workflow reference |
@@ -182,4 +182,4 @@ GitHub Actions workflow (`.github/workflows/deploy-docs.yml`) triggers on push t
 
 ---
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-19
