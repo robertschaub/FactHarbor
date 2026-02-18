@@ -2,6 +2,7 @@
 
 **Status:** 🧭 Proposal — pending approval
 **Created:** 2026-02-17
+**Updated:** 2026-02-18 — `MaxStage: int?` renamed to `StopAfterStage: string?` throughout (aligns with UI doc)
 **Author:** Claude Code (Senior Developer role)
 
 ---
@@ -31,7 +32,7 @@ Currently there is no concept of test vs production jobs, no partial execution, 
 ## Design Overview
 
 **Core additions:**
-1. `IsTestRun` (bool) + `MaxStage` (int?) + `ConfigOverrides` (JSON string?) fields on `JobEntity`
+1. `IsTestRun` (bool) + `StopAfterStage` (string?) + `ConfigOverrides` (JSON string?) fields on `JobEntity`
 2. Test configs use `test/` prefixed profile keys (e.g., `test/high-iteration`) — leveraging existing UCM profile system
 3. Pipeline gains early-exit after any stage + config profile override support
 4. Public job listings filter out test jobs; admin can toggle visibility
@@ -51,9 +52,11 @@ The config-loader functions (`loadPipelineConfig`, `loadSearchConfig`, `loadCalc
 
 ```csharp
 public bool IsTestRun { get; set; } = false;
-public int? MaxStage { get; set; }           // 1-5, null = all stages
-public string? ConfigOverrides { get; set; }  // JSON: {"pipeline":"test/exp-1","search":"test/exp-1"}
+public string? StopAfterStage { get; set; }  // PipelineStageId or null = run all stages
+public string? ConfigOverrides { get; set; } // JSON: {"pipeline":"test/exp-1","search":"test/exp-1"}
 ```
+
+> **Note (2026-02-18):** `Entities.cs` already has retry tracking fields added separately (`ParentJobId`, `RetryCount`, `RetriedFromUtc`, `RetryReason`). These three test fields are additive to that existing state.
 
 ### 1.2 Startup migration
 
@@ -63,7 +66,7 @@ Add `ALTER TABLE` statements at startup (matching existing pattern for AnalysisM
 
 ```sql
 ALTER TABLE Jobs ADD COLUMN IsTestRun INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE Jobs ADD COLUMN MaxStage INTEGER;
+ALTER TABLE Jobs ADD COLUMN StopAfterStage TEXT;
 ALTER TABLE Jobs ADD COLUMN ConfigOverrides TEXT;
 ```
 
@@ -71,10 +74,12 @@ ALTER TABLE Jobs ADD COLUMN ConfigOverrides TEXT;
 
 **File:** `apps/api/Services/JobService.cs`
 
-- Extend `CreateJobAsync` signature: add `isTestRun`, `maxStage`, `configOverrides` params
+- Extend `CreateJobAsync` signature: add `isTestRun`, `stopAfterStage`, `configOverrides` params
 - Extend `ListJobsAsync`: add `includeTestJobs` filter (`.Where(j => includeTestJobs || !j.IsTestRun)`)
 - Add `DeleteTestJobsAsync(int olderThanDays)`: deletes JobEvents + Jobs where `IsTestRun=true` and `CreatedUtc < cutoff`
 - Add `CountTestJobsAsync()`: for admin dashboard stats
+
+> **Note (2026-02-18):** `JobService.cs` already has `CancelJobAsync`, `DeleteJobAsync`, and `CreateRetryJobAsync` added separately. The test extensions are additive.
 
 ### 1.4 CreateJobRequest extensions
 
@@ -88,20 +93,22 @@ public sealed record CreateJobRequest(
     string inputValue,
     string? pipelineVariant = "orchestrated",
     bool isTestRun = false,
-    int? maxStage = null,
+    string? stopAfterStage = null,
     Dictionary<string, string>? configOverrides = null
 );
 ```
 
-Validation: if `isTestRun=true`, require `X-Admin-Key` header. Validate `maxStage` is 1-5 if present.
+Validation: if `isTestRun=true`, require `X-Admin-Key` header. Validate `stopAfterStage` is one of the five canonical stage IDs if present (`"extract-claims"`, `"research"`, `"cluster-boundaries"`, `"verdict"`, `"aggregate"`).
 
 ### 1.5 JobsController extensions
 
 **File:** `apps/api/Controllers/JobsController.cs`
 
 - `List`: add `?includeTestJobs=true` query param (requires `X-Admin-Key`)
-- `Get`: include `isTestRun`, `maxStage`, `configOverrides` in response JSON
+- `Get`: include `isTestRun`, `stopAfterStage`, `configOverrides` in response JSON
 - Both `totalCount` and items respect the test filter
+
+> **Note (2026-02-18):** `JobsController.cs` already has `Cancel` and `Retry` endpoints added separately. The test filter extensions are additive.
 
 ### 1.6 Cleanup endpoint
 
@@ -130,9 +137,23 @@ export type AnalysisInput = {
   inputValue: string;
   onEvent?: (message: string, progress: number) => void;
   // Test/tuning mode
-  maxStage?: 1 | 2 | 3 | 4 | 5;
+  stopAfterStage?: PipelineStageId; // null / absent = run all stages
   configOverrides?: Partial<Record<ConfigType, string>>; // configType → profileKey
 };
+```
+
+`PipelineStageId` is also defined in `types.ts`:
+```typescript
+export type PipelineStageId =
+  | "extract-claims"
+  | "research"
+  | "cluster-boundaries"
+  | "verdict"
+  | "aggregate";
+
+export const PIPELINE_STAGE_IDS: PipelineStageId[] = [
+  "extract-claims", "research", "cluster-boundaries", "verdict", "aggregate"
+];
 ```
 
 ### 2.2 Pipeline partial execution + config overrides
@@ -156,50 +177,59 @@ loadPipelineConfig(configProfileFor("pipeline"))
 
 Same pattern for `loadSearchConfig` and `loadCalcConfig`.
 
-**c) Stage gate** — After each stage, check `maxStage`:
+**c) Stage gate** — After each stage, check `stopAfterStage` using ordinal position:
 
 ```typescript
-// After Stage 1:
-if (maxStage !== undefined && maxStage <= 1) return buildPartialResult(state, 1, input);
-// After Stage 2:
-if (maxStage !== undefined && maxStage <= 2) return buildPartialResult(state, 2, input);
-// After Stage 3:
-if (maxStage !== undefined && maxStage <= 3) return buildPartialResult(state, 3, input);
-// After Stage 4:
-if (maxStage !== undefined && maxStage <= 4) return buildPartialResult(state, 4, input);
+const stopIdx = input.stopAfterStage
+  ? PIPELINE_STAGE_IDS.indexOf(input.stopAfterStage)
+  : 4; // 0-indexed; 4 = "aggregate" = run all stages
+
+// After Stage 1 (extract-claims, idx 0):
+if (stopIdx <= 0) return buildPartialResult(state, "extract-claims", input);
+// After Stage 2 (research, idx 1):
+if (stopIdx <= 1) return buildPartialResult(state, "research", input);
+// After Stage 3 (cluster-boundaries, idx 2):
+if (stopIdx <= 2) return buildPartialResult(state, "cluster-boundaries", input);
+// After Stage 4 (verdict, idx 3):
+if (stopIdx <= 3) return buildPartialResult(state, "verdict", input);
 ```
 
 **d) `buildPartialResult` helper** — New function that constructs result JSON from available state:
 
 ```typescript
-function buildPartialResult(state: CBResearchState, completedStage: number, input: AnalysisInput) {
+function buildPartialResult(
+  state: CBResearchState,
+  completedThrough: PipelineStageId,
+  input: AnalysisInput
+) {
+  const stageIdx = PIPELINE_STAGE_IDS.indexOf(completedThrough);
   return {
     resultJson: {
       _schemaVersion: "3.0.0-cb",
       meta: {
         pipeline: "claimboundary",
         partialExecution: true,
-        completedStages: completedStage,
-        maxStage: completedStage,
+        completedThrough,            // e.g. "research"
+        stopAfterStage: completedThrough,
         isTestRun: true,
         configOverrides: input.configOverrides ?? {},
         // ... other standard meta fields (inputType, llmCalls, etc.)
       },
       // Include data from completed stages only
-      ...(completedStage >= 1 && { understanding: state.understanding }),
-      ...(completedStage >= 2 && {
+      ...(stageIdx >= 0 && { understanding: state.understanding }),
+      ...(stageIdx >= 1 && {
         evidenceItems: state.evidenceItems,
         sources: state.sources,
         searchQueries: state.searchQueries
       }),
-      ...(completedStage >= 3 && {
+      ...(stageIdx >= 2 && {
         claimBoundaries: state.claimBoundaries,
         coverageMatrix: state.coverageMatrix
       }),
-      ...(completedStage >= 4 && { claimVerdicts: state.claimVerdicts }),
-      // Stage 5 = full result (no partial needed)
+      ...(stageIdx >= 3 && { claimVerdicts: state.claimVerdicts }),
+      // stageIdx 4 = aggregate = full result (no partial needed)
     },
-    reportMarkdown: `# Partial Result (Stage ${completedStage}/5)\n\nThis is a test run that stopped after stage ${completedStage}.`,
+    reportMarkdown: `# Partial Result (stopped after: ${completedThrough})\n\nThis is a test run that stopped after the ${completedThrough} stage.`,
   };
 }
 ```

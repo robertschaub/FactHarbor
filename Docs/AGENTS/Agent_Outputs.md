@@ -7,6 +7,15 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-18 | Lead Architect | Claude Code (Opus) | Claim Fidelity Validation + Metrics Persistence Fix
+**Task:** Validate Lead Developer's claim fidelity fix with runtime testing, complete evidence decontamination (Phase 3), and fix metrics persistence.
+**Files touched:** `claimboundary.prompt.md`, `claimboundary-pipeline.ts`, `metrics.ts`
+**Key decisions:** Three-layer fidelity defense (prompt prevention + evidence truncation + Gate 1 detection). Direct API call for metrics persistence instead of proxy.
+**Open items:** Speed optimization (Phase 3), Gate 1 rebuild (Phase 4), metrics token aggregation. Changes uncommitted.
+**For next agent:** Full details in [`Docs/AGENTS/Handoffs/2026-02-18_Lead_Architect_Fidelity_Metrics.md`](Handoffs/2026-02-18_Lead_Architect_Fidelity_Metrics.md).
+
+---
+
 ### 2026-02-18 | Lead Developer | Codex (o4-mini) | Claim Extraction Fidelity Fix
 
 **Task:** Fix P0 claim drift caused by Stage 1 Pass 2 over-anchoring to preliminary evidence instead of user input.
