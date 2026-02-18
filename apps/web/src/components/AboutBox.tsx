@@ -79,8 +79,6 @@ export function AboutBox() {
 
   const [errWeb, setErrWeb] = useState<string | null>(null);
   const [errApi, setErrApi] = useState<string | null>(null);
-  const [errHealth, setErrHealth] = useState<string | null>(null);
-  const [errPipeline, setErrPipeline] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -103,14 +101,14 @@ export function AboutBox() {
       const h = await safeJson<HealthStatus>("/api/health");
       if (!alive) return;
       if (h.ok) setHealth(h.data!);
-      else setErrHealth(h.error ?? "Unknown error");
+      else console.error("Failed to fetch health:", h.error);
     })();
 
     (async () => {
       const p = await safeJson<PipelineConfig>("/api/admin/config/pipeline/default");
       if (!alive) return;
       if (p.ok) setPipeline(p.data!);
-      else setErrPipeline(p.error ?? "Unknown error");
+      else console.error("Failed to fetch pipeline config:", p.error);
     })();
 
     return () => {

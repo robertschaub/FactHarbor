@@ -227,6 +227,11 @@ export async function cacheSearchResults(
       ],
     );
 
+    // Probabilistic cleanup (1% chance)
+    if (Math.random() < 0.01) {
+      cleanupExpiredCache().catch(() => {});
+    }
+
     console.log(
       `[Search-Cache] ✅ Cached ${results.length} results for query "${options.query.substring(0, 50)}..." (provider: ${provider}, TTL: ${SEARCH_CACHE_CONFIG.cacheTtlDays}d)`,
     );

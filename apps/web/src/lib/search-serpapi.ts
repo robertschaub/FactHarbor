@@ -26,7 +26,7 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     return [];
   }
 
-  console.log(`[Search] SerpAPI: API key configured (length: ${apiKey.length}, starts with: ${apiKey.substring(0, 8)}...)`);
+  console.log(`[Search] SerpAPI: API key configured (length: ${apiKey.length})`);
 
   const params = new URLSearchParams({
     engine: "google",

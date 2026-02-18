@@ -217,9 +217,11 @@ export async function runMonolithicDynamic(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
-  const dynamicBudget = {
-    ...DYNAMIC_BUDGET,
-    timeoutMs: pipelineConfig.monolithicDynamicTimeoutMs ?? DYNAMIC_BUDGET.timeoutMs,
+  const dynamicBudget: DynamicBudget = {
+    maxIterations: pipelineConfig.monolithicMaxIterations ?? 4,
+    maxSearches: pipelineConfig.monolithicMaxSearches ?? 6,
+    maxFetches: pipelineConfig.monolithicMaxFetches ?? 8,
+    timeoutMs: pipelineConfig.monolithicDynamicTimeoutMs ?? 150_000,
   };
   const budgetConfig = getBudgetConfig(pipelineConfig);
   const budgetTracker = createBudgetTracker();
@@ -705,7 +707,7 @@ export async function runMonolithicDynamic(
     findings: analysis.findings || [],
     methodology: analysis.methodology || plan?.analysisApproach || "Dynamic analysis",
     limitations: analysis.limitations || [
-      "This is a streamlined analysis — for comprehensive analysis, use the Orchestrated pipeline",
+      "This is a streamlined analysis — for comprehensive analysis, use the ClaimAssessmentBoundary pipeline",
       "Results should be independently verified",
     ],
     searchQueries: searchQueries,
@@ -765,7 +767,7 @@ function generateDynamicReportMarkdown(result: any): string {
   let report = `# FactHarbor Dynamic Analysis Report
 
 > This analysis uses a fast, streamlined methodology.
-> For comprehensive multi-iteration analysis, use the Orchestrated pipeline.
+> For comprehensive multi-iteration analysis, use the ClaimAssessmentBoundary pipeline.
 
 ## Summary
 

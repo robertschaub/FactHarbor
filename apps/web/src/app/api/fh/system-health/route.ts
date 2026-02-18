@@ -20,7 +20,7 @@ export async function GET() {
   for (const provider of searchProviders) {
     if (provider.state !== "closed") {
       // Map provider name to lowercase for consistency (e.g., "Google-CSE" → "google_cse")
-      const providerKey = provider.provider.toLowerCase().replace("-", "_");
+      const providerKey = provider.provider.toLowerCase().replaceAll("-", "_");
 
       extendedProviders[providerKey] = {
         state: provider.state,

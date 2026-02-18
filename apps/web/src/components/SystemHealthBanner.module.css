@@ -55,12 +55,6 @@
   color: #721c24;
 }
 
-.providerError {
-  font-weight: 400;
-  font-size: 11px;
-  opacity: 0.85;
-}
-
 .timestamp {
   margin-top: 4px;
   font-size: 11px;

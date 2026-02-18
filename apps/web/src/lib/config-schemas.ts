@@ -131,12 +131,12 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       dailyQuotaLimit: 8000, // Leave buffer below 10k limit
     },
     serpapi: {
-      enabled: true,
+      enabled: false,
       priority: 2,
       dailyQuotaLimit: 0, // Unlimited (paid tier)
     },
     brave: {
-      enabled: true,
+      enabled: false,
       priority: 2,
       dailyQuotaLimit: 10000, // Adjust based on plan
     },
@@ -348,6 +348,9 @@ export const PipelineConfigSchema = z.object({
   monolithicDynamicTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
     "Max runtime for monolithic dynamic pipeline (ms)"
   ),
+  monolithicMaxIterations: z.number().int().min(1).max(10).optional().describe("Max research iterations for monolithic pipeline"),
+  monolithicMaxSearches: z.number().int().min(1).max(20).optional().describe("Max searches per monolithic analysis"),
+  monolithicMaxFetches: z.number().int().min(1).max(30).optional().describe("Max page fetches per monolithic analysis"),
   monolithicMaxEvidenceBeforeStop: z.number().int().min(5).max(20).optional().describe(
     "Max evidence items collected before stopping monolithic research (default: 8)"
   ),
@@ -671,6 +674,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   understandLlmTimeoutMs: 600000,
   extractEvidenceLlmTimeoutMs: 300000,
   monolithicDynamicTimeoutMs: 150000,
+  monolithicMaxIterations: 4,
+  monolithicMaxSearches: 6,
+  monolithicMaxFetches: 8,
   monolithicMaxEvidenceBeforeStop: 8,
   thesisRelevanceValidationEnabled: true,
   thesisRelevanceLowConfidenceThreshold: 70,

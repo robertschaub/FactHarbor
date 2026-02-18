@@ -286,8 +286,6 @@ export default function JobPage() {
       }
 
       toast.success("Job cancelled successfully");
-      // Refresh page after 1 second to show updated status
-      setTimeout(() => window.location.reload(), 1000);
     } catch (err: any) {
       toast.error(`Cancel failed: ${err.message}`);
     } finally {
@@ -312,7 +310,6 @@ export default function JobPage() {
 
       if (res.status === 401) {
         toast.error("Unauthorized: Invalid admin key");
-        setIsDeleting(false);
         return;
       }
 
@@ -326,6 +323,7 @@ export default function JobPage() {
       setTimeout(() => router.push("/jobs"), 1000);
     } catch (err: any) {
       toast.error(`Delete failed: ${err.message}`);
+    } finally {
       setIsDeleting(false);
     }
   };

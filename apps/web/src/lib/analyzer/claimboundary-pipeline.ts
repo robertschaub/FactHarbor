@@ -163,7 +163,7 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Researching evidence for claims...", 30);
     startPhase("research");
-    await researchEvidence(state);
+    await researchEvidence(state, input.jobId);
     endPhase("research");
 
     // Stage 3: Cluster Boundaries
@@ -1059,9 +1059,11 @@ const Stage2ExtractEvidenceOutputSchema = z.object({
  * Each evidence item carries a mandatory EvidenceScope.
  *
  * @param state - The mutable research state (evidenceItems and sources populated)
+ * @param jobId - Optional job ID for abort signal checking
  */
 export async function researchEvidence(
-  state: CBResearchState
+  state: CBResearchState,
+  jobId?: string
 ): Promise<void> {
   const [pipelineResult, searchResult] = await Promise.all([
     loadPipelineConfig("default"),
@@ -1094,6 +1096,9 @@ export async function researchEvidence(
   let consecutiveZeroYield = 0;
 
   for (let iteration = 0; iteration < maxMainIterations; iteration++) {
+    // Abort signal check
+    checkAbortSignal(jobId);
+
     // Time budget check
     const elapsedMs = Date.now() - researchStartMs;
     if (elapsedMs > timeBudgetMs) {
@@ -1151,6 +1156,9 @@ export async function researchEvidence(
   // Step 3: Contradiction search (reserved iterations)
   // ------------------------------------------------------------------
   for (let cIter = 0; cIter < reservedContradiction; cIter++) {
+    // Abort signal check
+    checkAbortSignal(jobId);
+
     // Time budget check (shared with main loop)
     const contradictionElapsedMs = Date.now() - researchStartMs;
     if (contradictionElapsedMs > timeBudgetMs) {
@@ -1454,9 +1462,11 @@ export async function runResearchIteration(
 
       // Surface LLM provider errors as warnings (once per error type)
       const errMsg = err instanceof Error ? err.message : String(err);
-      const isLlmError = errMsg.includes("429") || errMsg.includes("rate") ||
+      const isLlmError = errMsg.includes("429") ||
+        errMsg.includes("rate limit") || errMsg.includes("rate_limit") ||
         errMsg.includes("quota") || errMsg.includes("credit") ||
-        errMsg.includes("overloaded") || errMsg.includes("503");
+        errMsg.includes("overloaded") ||
+        errMsg.includes("status 503") || errMsg.includes("503 Service");
       if (isLlmError) {
         const alreadyWarned = state.warnings.some((w) => w.type === "llm_provider_error");
         if (!alreadyWarned) {
