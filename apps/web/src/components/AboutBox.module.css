@@ -51,3 +51,23 @@
 .link {
   text-decoration: underline;
 }
+
+.statusHealthy {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.statusDegraded {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.statusUnhealthy {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.statusWarning {
+  color: #fbbf24;
+  font-size: 11px;
+}

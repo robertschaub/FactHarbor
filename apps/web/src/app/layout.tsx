@@ -6,7 +6,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <LayoutClientShell />
         <div className={styles.wrapper}>
           <header className={styles.header}>
             <div className={styles.logo}>FactHarbor POC1</div>
@@ -19,6 +18,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <main className={styles.main}>{children}</main>
         </div>
+
+        <LayoutClientShell />
 
       </body>
     </html>

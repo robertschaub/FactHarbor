@@ -7,6 +7,7 @@ type WebVersion = {
   service: string;
   node_env?: string | null;
   llm_provider?: string | null;
+  search_providers?: string[];
   git_sha?: string | null;
   now_utc?: string | null;
 };
@@ -18,6 +19,20 @@ type ApiVersion = {
   db_provider?: string | null;
   git_sha?: string | null;
   now_utc?: string | null;
+};
+
+type HealthStatus = {
+  status: "healthy" | "degraded" | "unhealthy";
+  api: {
+    reachable: boolean;
+  };
+};
+
+type PipelineConfig = {
+  content: {
+    defaultPipelineVariant: "claimboundary" | "monolithic_dynamic";
+    analysisMode: "quick" | "deep";
+  };
 };
 
 async function safeJson<T>(url: string): Promise<{ ok: boolean; data?: T; error?: string }> {
@@ -38,12 +53,34 @@ function shortSha(sha?: string | null) {
   return sha.length > 10 ? sha.slice(0, 10) : sha;
 }
 
+function formatPipelineVariant(variant?: string | null) {
+  if (!variant) return "—";
+  if (variant === "claimboundary") return "ClaimBoundary";
+  if (variant === "monolithic_dynamic") return "Monolithic Dynamic";
+  return variant;
+}
+
+function formatAnalysisMode(mode?: string | null) {
+  if (!mode) return "—";
+  return mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
+function formatSearchProviders(providers?: string[]) {
+  if (!providers || providers.length === 0) return "—";
+  if (providers.length === 1) return providers[0];
+  return providers.join(" → ");
+}
+
 export function AboutBox() {
   const [web, setWeb] = useState<WebVersion | null>(null);
   const [api, setApi] = useState<ApiVersion | null>(null);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [pipeline, setPipeline] = useState<PipelineConfig | null>(null);
 
   const [errWeb, setErrWeb] = useState<string | null>(null);
   const [errApi, setErrApi] = useState<string | null>(null);
+  const [errHealth, setErrHealth] = useState<string | null>(null);
+  const [errPipeline, setErrPipeline] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -62,6 +99,20 @@ export function AboutBox() {
       else setErrApi(a.error ?? "Unknown error");
     })();
 
+    (async () => {
+      const h = await safeJson<HealthStatus>("/api/health");
+      if (!alive) return;
+      if (h.ok) setHealth(h.data!);
+      else setErrHealth(h.error ?? "Unknown error");
+    })();
+
+    (async () => {
+      const p = await safeJson<PipelineConfig>("/api/admin/config/pipeline/default");
+      if (!alive) return;
+      if (p.ok) setPipeline(p.data!);
+      else setErrPipeline(p.error ?? "Unknown error");
+    })();
+
     return () => {
       alive = false;
     };
@@ -78,9 +129,32 @@ export function AboutBox() {
             <div className={styles.grid}>
               {web && <><div>Environment</div><div><code>{web.node_env ?? "—"}</code></div></>}
               {web && <><div>LLM Provider</div><div><code>{web.llm_provider ?? "—"}</code></div></>}
+              {web && web.search_providers && <><div>Search Providers</div><div><code>{formatSearchProviders(web.search_providers)}</code></div></>}
+              {pipeline && <><div>Pipeline Variant</div><div><code>{formatPipelineVariant(pipeline.content?.defaultPipelineVariant)}</code></div></>}
+              {pipeline && <><div>Analysis Mode</div><div><code>{formatAnalysisMode(pipeline.content?.analysisMode)}</code></div></>}
               {api && <><div>API Version</div><div><code>{api.assembly_version ?? "—"}</code></div></>}
               {(web?.git_sha || api?.git_sha) && (
                 <><div>Build</div><div><code>{shortSha(web?.git_sha || api?.git_sha)}</code></div></>
+              )}
+              {health && (
+                <>
+                  <div>System Health</div>
+                  <div>
+                    <span className={
+                      health.status === 'healthy' ? styles.statusHealthy :
+                      health.status === 'degraded' ? styles.statusDegraded :
+                      styles.statusUnhealthy
+                    }>
+                      {health.status === 'healthy' ? '✅' :
+                       health.status === 'degraded' ? '⚠️' : '❌'}
+                      {' '}
+                      {health.status.charAt(0).toUpperCase() + health.status.slice(1)}
+                    </span>
+                    {!health.api.reachable && (
+                      <span className={styles.statusWarning}> ⚠️ API unreachable</span>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           ) : <div>Loading…</div>}
