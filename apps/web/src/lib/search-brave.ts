@@ -50,8 +50,11 @@ export async function searchBrave(options: WebSearchOptions): Promise<WebSearchR
       m: "pm", // past month
       w: "pw", // past week
     };
-    params.set("freshness", dateRestrictMap[options.dateRestrict]);
-    console.log(`[Search] Brave: Applying date restriction: ${options.dateRestrict} (freshness=${dateRestrictMap[options.dateRestrict]})`);
+    const mapped = dateRestrictMap[options.dateRestrict];
+    if (mapped) {
+      params.set("freshness", mapped);
+      console.log(`[Search] Brave: Applying date restriction: ${options.dateRestrict} (freshness=${mapped})`);
+    }
   }
 
   const urlForLog = `${BRAVE_API_BASE}?q=${encodeURIComponent(options.query)}&count=${Math.min(options.maxResults, 20)}`;

@@ -141,11 +141,16 @@ export function generateCacheKey(options: WebSearchOptions): string {
 /**
  * Get cached search results if valid (not expired).
  * Returns null if cache miss or expired.
+ *
+ * @param options - Search options
+ * @param cacheConfig - Optional cache config override (enabled, ttlDays). If not provided, uses module-level config.
  */
 export async function getCachedSearchResults(
   options: WebSearchOptions,
+  cacheConfig?: { enabled?: boolean; ttlDays?: number },
 ): Promise<CachedSearchResult | null> {
-  if (!SEARCH_CACHE_CONFIG.enabled) {
+  const enabled = cacheConfig?.enabled ?? SEARCH_CACHE_CONFIG.enabled;
+  if (!enabled) {
     return null;
   }
 
@@ -194,12 +199,24 @@ export async function getCachedSearchResults(
 /**
  * Cache search results with TTL expiration.
  */
+/**
+ * Cache search results with TTL-based expiration.
+ *
+ * @param options - Search options
+ * @param results - Search results to cache
+ * @param provider - Provider name
+ * @param cacheConfig - Optional cache config override (enabled, ttlDays). If not provided, uses module-level config.
+ */
 export async function cacheSearchResults(
   options: WebSearchOptions,
   results: WebSearchResult[],
   provider: string,
+  cacheConfig?: { enabled?: boolean; ttlDays?: number },
 ): Promise<void> {
-  if (!SEARCH_CACHE_CONFIG.enabled) {
+  const enabled = cacheConfig?.enabled ?? SEARCH_CACHE_CONFIG.enabled;
+  const ttlDays = cacheConfig?.ttlDays ?? SEARCH_CACHE_CONFIG.cacheTtlDays;
+
+  if (!enabled) {
     return;
   }
 
@@ -207,7 +224,7 @@ export async function cacheSearchResults(
     const database = await getDb();
     const cacheKey = generateCacheKey(options);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + SEARCH_CACHE_CONFIG.cacheTtlDays * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000);
 
     await database.run(
       `INSERT OR REPLACE INTO search_cache
@@ -353,7 +370,8 @@ export async function getCacheStats(): Promise<SearchCacheStats> {
     let dbSizeBytes: number | null = null;
     try {
       const fs = await import("fs");
-      const stats = fs.statSync(SEARCH_CACHE_CONFIG.dbPath);
+      const resolvedPath = path.resolve(SEARCH_CACHE_CONFIG.dbPath);
+      const stats = fs.statSync(resolvedPath);
       dbSizeBytes = stats.size;
     } catch {
       // Ignore if file doesn't exist yet

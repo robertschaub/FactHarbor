@@ -28,6 +28,7 @@ interface ProviderCircuitState {
   totalRequests: number;
   totalFailures: number;
   totalSuccesses: number;
+  halfOpenProbeInFlight: boolean; // True when a HALF_OPEN probe request is in progress
 }
 
 // ============================================================================
@@ -68,6 +69,7 @@ function getCircuitState(provider: string): ProviderCircuitState {
       totalRequests: 0,
       totalFailures: 0,
       totalSuccesses: 0,
+      halfOpenProbeInFlight: false,
     });
   }
   return circuitStates.get(provider)!;
@@ -80,9 +82,16 @@ function getCircuitState(provider: string): ProviderCircuitState {
 /**
  * Check if a provider is available (circuit not open).
  * If circuit is half-open, allow one test request.
+ *
+ * @param provider - Provider name
+ * @param cbConfig - Optional circuit breaker config override. If not provided, uses module-level config.
  */
-export function isProviderAvailable(provider: string): boolean {
-  if (!config.enabled) {
+export function isProviderAvailable(
+  provider: string,
+  cbConfig?: CircuitBreakerConfig,
+): boolean {
+  const cfg = cbConfig ?? config;
+  if (!cfg.enabled) {
     return true; // Circuit breaker disabled, all providers available
   }
 
@@ -93,8 +102,14 @@ export function isProviderAvailable(provider: string): boolean {
     return true;
   }
 
-  // HALF_OPEN: Allow one test request
+  // HALF_OPEN: Allow exactly one probe request at a time
   if (state.state === "half_open") {
+    if (state.halfOpenProbeInFlight) {
+      console.log(`[Circuit-Breaker] ${provider}: HALF_OPEN probe already in flight, skipping concurrent request`);
+      return false;
+    }
+    // Mark probe as in-flight
+    state.halfOpenProbeInFlight = true;
     return true;
   }
 
@@ -102,11 +117,12 @@ export function isProviderAvailable(provider: string): boolean {
   if (state.state === "open") {
     const now = Date.now();
     const timeSinceFailure = state.lastFailureTime ? now - state.lastFailureTime : Infinity;
-    const resetTimeoutMs = config.resetTimeoutSec * 1000;
+    const resetTimeoutMs = cfg.resetTimeoutSec * 1000;
 
     if (timeSinceFailure >= resetTimeoutMs) {
-      // Transition to HALF_OPEN
+      // Transition to HALF_OPEN and mark probe as in-flight
       state.state = "half_open";
+      state.halfOpenProbeInFlight = true;
       console.log(
         `[Circuit-Breaker] ${provider}: OPEN → HALF_OPEN (timeout elapsed, attempting recovery)`,
       );
@@ -126,9 +142,13 @@ export function isProviderAvailable(provider: string): boolean {
 
 /**
  * Record a successful request to a provider.
+ *
+ * @param provider - Provider name
+ * @param cbConfig - Optional circuit breaker config override. If not provided, uses module-level config.
  */
-export function recordSuccess(provider: string): void {
-  if (!config.enabled) return;
+export function recordSuccess(provider: string, cbConfig?: CircuitBreakerConfig): void {
+  const cfg = cbConfig ?? config;
+  if (!cfg.enabled) return;
 
   const state = getCircuitState(provider);
   state.totalRequests++;
@@ -139,6 +159,7 @@ export function recordSuccess(provider: string): void {
   // If recovering from HALF_OPEN, close the circuit
   if (state.state === "half_open") {
     state.state = "closed";
+    state.halfOpenProbeInFlight = false; // Reset probe flag
     console.log(
       `[Circuit-Breaker] ${provider}: HALF_OPEN → CLOSED (recovery successful, ${state.totalSuccesses}/${state.totalRequests} success rate)`,
     );
@@ -154,9 +175,14 @@ export function recordSuccess(provider: string): void {
 
 /**
  * Record a failed request to a provider.
+ *
+ * @param provider - Provider name
+ * @param error - Optional error message
+ * @param cbConfig - Optional circuit breaker config override. If not provided, uses module-level config.
  */
-export function recordFailure(provider: string, error?: string): void {
-  if (!config.enabled) return;
+export function recordFailure(provider: string, error?: string, cbConfig?: CircuitBreakerConfig): void {
+  const cfg = cbConfig ?? config;
+  if (!cfg.enabled) return;
 
   const state = getCircuitState(provider);
   state.totalRequests++;
@@ -165,12 +191,13 @@ export function recordFailure(provider: string, error?: string): void {
   state.lastFailureTime = Date.now();
 
   console.warn(
-    `[Circuit-Breaker] ${provider}: Failure recorded (${state.failures}/${config.failureThreshold}, error: ${error || "unknown"})`,
+    `[Circuit-Breaker] ${provider}: Failure recorded (${state.failures}/${cfg.failureThreshold}, error: ${error || "unknown"})`,
   );
 
   // If in HALF_OPEN and failed, reopen the circuit
   if (state.state === "half_open") {
     state.state = "open";
+    state.halfOpenProbeInFlight = false; // Reset probe flag
     console.error(
       `[Circuit-Breaker] ${provider}: HALF_OPEN → OPEN (recovery failed, circuit reopened)`,
     );
@@ -178,7 +205,7 @@ export function recordFailure(provider: string, error?: string): void {
   }
 
   // If consecutive failures exceed threshold, open the circuit
-  if (state.state === "closed" && state.failures >= config.failureThreshold) {
+  if (state.state === "closed" && state.failures >= cfg.failureThreshold) {
     state.state = "open";
     console.error(
       `[Circuit-Breaker] ${provider}: CLOSED → OPEN (threshold reached: ${state.failures} consecutive failures)`,
@@ -193,6 +220,7 @@ export function resetCircuit(provider: string): void {
   const state = getCircuitState(provider);
   state.state = "closed";
   state.failures = 0;
+  state.halfOpenProbeInFlight = false;
   console.log(`[Circuit-Breaker] ${provider}: Circuit manually reset to CLOSED`);
 }
 
