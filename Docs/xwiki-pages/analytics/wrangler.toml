@@ -18,4 +18,4 @@ compatibility_date = "2024-12-01"
 #   wrangler kv namespace create ANALYTICS
 [[kv_namespaces]]
 binding = "ANALYTICS"
-id = "<YOUR_KV_NAMESPACE_ID>"
+id = "7107113738734bb2bf7279519a901899"
