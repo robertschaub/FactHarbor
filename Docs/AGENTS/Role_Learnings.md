@@ -64,7 +64,29 @@ After completing a task, if you discovered something that would help future agen
 
 ## Senior Developer
 
-_(No entries yet)_
+### 2026-02-18 — Config threading eliminates global mutation race conditions
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** useful-pattern
+**Learning:** Search modules (`search-cache.ts`, `search-circuit-breaker.ts`) used module-level state mutated by `web-search.ts` before each call. With concurrent searches using different configs (e.g., different TTL or circuit breaker thresholds), one call's config could be overwritten mid-flight by another. Fix: add optional config parameters to each function (`cacheConfig?`, `cbConfig?`), pass config from caller, remove global setter calls. This is safer than locks, maintains backward compatibility (callers that don't pass config get module defaults), and makes config flow explicit.
+**Files:** `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/search-circuit-breaker.ts`
+
+### 2026-02-18 — Circuit breaker HALF_OPEN probe flag must be set at BOTH transition points
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** When adding a `halfOpenProbeInFlight` flag to limit HALF_OPEN to one concurrent probe, the flag must be set when transitioning from OPEN → HALF_OPEN (inside the OPEN block), not just in the HALF_OPEN check block. The first call after timeout goes through the OPEN block, transitions state to HALF_OPEN, and returns `true` — it never hits the HALF_OPEN block. Missing the first transition point means the second concurrent call also enters the HALF_OPEN block with the flag still `false`, defeating the single-probe protection.
+**Files:** `apps/web/src/lib/search-circuit-breaker.ts`
+
+### 2026-02-18 — EnsureCreated() doesn't update schema — delete DB after entity changes
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** The API uses `EnsureCreated()` for SQLite, which creates the DB if missing but does NOT add new columns to existing tables. After adding `ParentJobId`, `RetryCount`, `RetriedFromUtc`, `RetryReason` to `JobEntity`, the running DB threw "table Jobs has no column named ParentJobId" on every request (500s on both job creation and listing). Fix: stop API, back up `factharbor.db`, delete it, restart — `EnsureCreated()` rebuilds with the full schema. This is a known EF Core limitation; the project intentionally avoids migrations for POC simplicity.
+**Files:** `apps/api/Data/Entities.cs`, `apps/api/factharbor.db`
+
+### 2026-02-18 — Complex structured output schemas need retry logic as standard practice
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** tip
+**Learning:** Pass 2 claim extraction has 11+ required fields per claim with 6 strict enums and nested objects. LLMs fail schema validation ~5-10% of the time on complex schemas (enum capitalization, missing nested arrays, string-vs-number type confusion). Adding retry (3 attempts, exponential backoff, temperature variation +0.05/attempt) is cheap insurance — a single extra LLM call costs ~$0.01 but prevents a full job failure. The schema's `.catch()` defaults and case normalization (added by another agent) are complementary: retry handles complete parse failures, `.catch()` handles partial field-level issues.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
 
 ## Technical Writer
 
@@ -148,6 +170,24 @@ _(No entries yet)_
 **Learning:** Three new modules (search-brave.ts, search-cache.ts, search-circuit-breaker.ts) shipped with zero test coverage. When adding new modules, create corresponding test files in the same session to avoid coverage gaps accumulating.
 **Files:** `apps/web/src/lib/search-brave.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/search-circuit-breaker.ts`
 
+### 2026-02-18 — vi.resetModules() breaks instanceof across module boundaries
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** In vitest, calling `vi.resetModules()` then `await import(...)` creates a new module instance with a different class prototype. Any `instanceof SearchProviderError` check will silently fail because the class in the test scope and the class in the freshly-imported module are different objects — even though they look identical. Fix: use duck-typing instead (`err.name === "SearchProviderError"` or `'fatal' in err`). This pattern affects any test file that resets modules and then checks `instanceof` on errors or classes from those modules.
+**Files:** `apps/web/test/unit/lib/search-brave.test.ts`
+
+### 2026-02-18 — Promise-based DB singletons must reset the promise on close, not just the instance
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** When fixing a DB singleton race condition with a promise-based lock (`let dbPromise: Promise<Database> | null`), the close/reset function must set BOTH `db = null` AND `dbPromise = null`. If only `db` is reset, the next `getDb()` call sees a non-null `dbPromise` and awaits the already-resolved (but closed) connection. In tests this causes all subsequent DB operations to silently fail on a closed handle. Fix: `closeSearchCacheDb()` must reset both fields.
+**Files:** `apps/web/src/lib/search-cache.ts` (`closeSearchCacheDb`), `apps/web/test/unit/lib/search-cache.test.ts`
+
+### 2026-02-18 — Creating a shared utility is only half the migration — audit existing callers too
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** The Phase 1 security fix correctly created `lib/auth.ts` and applied it to new/refactored routes. But 18 pre-existing routes (14 admin config routes + 4 others) still use inline `===` for admin key comparison instead of the timing-safe `checkAdminKey`. The migration is only as good as its coverage. When extracting a shared utility for a security-sensitive function, always follow up with a codebase-wide grep to replace ALL callers — not just the ones you are currently touching.
+**Files:** `apps/web/src/lib/auth.ts`, `apps/web/src/app/api/admin/config/` (14 route files)
+
 ## Security Expert
 
 _(No entries yet)_
@@ -171,6 +211,24 @@ _(No entries yet)_
 **Category:** gotcha
 **Learning:** When creating a new repo and pushing `.github/workflows/` files, the `gh` CLI token may lack the `workflow` scope, causing a push rejection. Workaround: commit and push everything except the workflow file first, then add the workflow in a subsequent commit. Alternatively, re-authenticate with `gh auth login` and grant the `workflow` scope.
 **Files:** `.github/workflows/deploy-docs.yml`
+
+### 2026-02-19 — `!important` required to override JS inline styles in media queries
+**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** The viewer's `loadPage()` sets `document.getElementById('fileInfo').style.display = 'flex'` as an inline style. CSS media query rules (e.g. `.file-info{display:none}`) cannot override inline styles without `!important`. Any element whose visibility is toggled by JS must use `!important` in responsive CSS rules, otherwise the media query is silently ignored.
+**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (mobile `@media(max-width:480px)` block)
+
+### 2026-02-19 — Cloudflare Worker + KV is the right fit for static-site analytics
+**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** useful-pattern
+**Learning:** For a GitHub Pages static site needing privacy-preserving page view tracking, a Cloudflare Worker + KV namespace is the minimal viable backend. Free tier handles 100K req/day. KV data is completely independent of the gh-pages branch — `force_orphan: true` deployments do not affect analytics data. The worker can be deployed and updated with `npx wrangler deploy` without touching any application code. Analytics is opt-in via `--analytics-url` build flag, keeping the viewer functional in standalone/local mode.
+**Files:** `Docs/xwiki-pages/analytics/worker.js`, `Docs/xwiki-pages/analytics/wrangler.toml`
+
+### 2026-02-19 — build_ghpages.py patch strings must be kept in sync with viewer edits
+**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** `build_ghpages.py` patches the viewer via exact `str.replace()` matches. When new code is inserted into a patched region of the viewer (e.g., `Analytics.trackPageView(ref)` was inserted between two lines that patch #5 targeted), the patch target string must be updated to include the new line. A silent failure (no error, no replacement) is the symptom — always verify with a test build after any viewer edit that touches a patched region. Run `python build_ghpages.py -o /tmp/test` and grep the output for expected strings.
+**Files:** `Docs/xwiki-pages/scripts/build_ghpages.py` (patches #5, #8, #9, #10, #11, #12), `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html`
 
 ---
 

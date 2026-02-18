@@ -7,6 +7,254 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer / xWiki Expert | Claude Code (Sonnet 4.6) | gh-pages Analytics — Cloudflare Worker + KV Page View Tracking
+
+**Task:** Add privacy-preserving page view tracking to the gh-pages xWiki viewer. View counts per page and per anonymous visitor. No PII. Data persists across deployments.
+
+**Files touched:**
+- `Docs/xwiki-pages/analytics/worker.js` — NEW: Cloudflare Worker (~65 lines). `POST /track`, `GET /stats`. KV pattern: `page:{ref} → { v, u:{id:count} }`.
+- `Docs/xwiki-pages/analytics/wrangler.toml` — NEW: Worker config. KV namespace ID `7107113738734bb2bf7279519a901899` (live).
+- `Docs/xwiki-pages/analytics/README.md` — NEW: Setup instructions.
+- `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` — Analytics JS module (anonymous UUID via localStorage, fire-and-forget POST on `loadPage()`), Stats modal, Stats toolbar button, mobile hide (`!important` needed to override JS inline style).
+- `Docs/xwiki-pages/scripts/build_ghpages.py` — `--analytics-url` CLI flag; patch #5 updated; patch #12 injects `Analytics.configure(url)`.
+- `.github/workflows/deploy-docs.yml` — Reads `DOCS_ANALYTICS_URL` repo secret, passes as `--analytics-url`.
+
+**Key decisions:**
+- Cloudflare Worker on user's own account (not a third-party service). Free tier (100K req/day).
+- Simplified to 2 endpoints + 1 KV key pattern after initial over-engineered design.
+- Fire-and-forget tracking — never blocks UI. Analytics disabled by default when no endpoint configured.
+- KV is independent of gh-pages branch — data survives all deployments.
+
+**Live deployment:** Worker at `https://factharbor-docs-analytics.factharbor.workers.dev`. GitHub secret `DOCS_ANALYTICS_URL` set. Verified working.
+
+**Open items:**
+- Analytics changes NOT synced to `C:\DEV\BestWorkplace` repo. Viewer is shared — if analytics needed there, apply viewer changes + separate `--analytics-url` config to that repo's build script.
+- Stats button hidden on mobile (≤480px). Could add to hamburger menu for mobile access if needed.
+
+**Warnings:**
+- `build_ghpages.py` patch #5 target string now includes `Analytics.trackPageView(ref);`. If viewer line order changes, patch silently fails — always run a test build after viewer edits.
+- `!important` is required on `.file-info` and `#btnStats` mobile CSS rules because `loadPage()` sets `style.display = 'flex'` inline, which overrides media query rules without it.
+
+**For next agent:** Worker deployed and live. To update worker: edit `worker.js`, run `npx wrangler deploy` from `Docs/xwiki-pages/analytics/`. No changes needed for content-only doc updates.
+
+**Learnings:** Appended to `Role_Learnings.md` — yes.
+
+---
+
+### 2026-02-19 | DevOps / Setup | Claude Code (Sonnet 4.6) | GitHub CLI Installation
+
+**Task:** Install and authenticate GitHub CLI (`gh`) on the developer's Windows machine, pointed at `github.com/robertschaub/FactHarbor`.
+
+**Files touched:** None (environment setup only).
+
+**Key decisions:** Chocolatey was chosen as install method. Initial attempt failed — non-elevated shell + stale NuGet lock file at `C:\ProgramData\chocolatey\lib\03fa614411207ddb46e8aca6ad6abb2721319062`. Resolution: delete lock file + re-run from an admin terminal. User confirmed `gh` working.
+
+**Open items:** None.
+
+**For next agent:** `gh` is installed and authenticated. `gh repo view robertschaub/FactHarbor`, `gh pr create`, `gh issue list`, etc. are all available.
+
+---
+
+### 2026-02-19 | LLM Expert + Senior Developer | Claude Code (Sonnet 4.6) + Claude Opus 4.6 | Dynamic Pipeline `AI_NoObjectGeneratedError` Fix
+
+**Task:** Investigate and fix the recurring `FAILED (100%)` error in the Monolithic Dynamic pipeline (`AI_NoObjectGeneratedError: response did not match schema`). Multi-agent: LLM Expert (Sonnet) + Software Engineer (Opus) ran parallel investigations; findings consolidated and implemented.
+
+**Files touched:**
+- `apps/web/src/lib/analyzer/monolithic-dynamic.ts` — Schema fixes (`searchQueries` → optional, `additionalInsights` → `z.any()`) + wired `schema-retry.ts` (1 retry) + graceful degradation fallback
+- `apps/web/src/lib/analyzer/types.ts` — Added `"analysis_generation_failed"` to `AnalysisWarningType`
+
+**Key decisions:** Primary root cause: `searchQueries` required in schema but never mentioned in analysis prompt → LLM omits it → Zod rejects. Secondary: `additionalInsights: z.object({})` rejects `null`. Fix: both fields relaxed to `.optional()`. Wired existing `schema-retry.ts` (was dead code for this pipeline) — 1 Zod-aware retry + graceful degradation instead of throwing. Changes **not yet committed**.
+
+**Open items:** Prompt framing for sensitive content (needs Captain approval); `maxOutputTokens` ceiling; schema unification; PLAN stage has no retry wrapper.
+
+**For next agent:** Full details → [`Docs/AGENTS/Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Dynamic_Pipeline_Fix.md`](Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Dynamic_Pipeline_Fix.md)
+
+---
+
+### 2026-02-19 | LLM Expert | Claude Code (Sonnet 4.6) | Claim Fidelity Phase 1+2 — Gap Review, Vector Fixes, Gate 1 Safety Net, Validation
+
+**Task:** Review Codex's Phase 1+2 claim fidelity implementation, fix remaining prompt/code gaps, run live validation reruns, diagnose and fix Gate 1 over-filtering for evaluative inputs.
+
+**Files touched:**
+- `apps/web/prompts/claimboundary.prompt.md` — 3 gap fixes: Pass 2 opening framing, schema descriptions, Gate 1 opinion check refinement
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Gate 1 `passedFidelity` filtering + safety net (rescue last claim if all would be filtered)
+- `apps/web/src/lib/analyzer/types.ts` — `passedFidelity?: number` added to `gate1Stats`
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — Updated test + new fidelity test cases
+
+**Key decisions:** Gate 1 safety net prevents empty pipeline — rescues highest-centrality fidelity-passing claim rather than returning a meaningless default verdict. Opinion check refined: evaluative assertions ("X reports in a balanced way") are passed (evidence can assess them); pure opinions ("X is the best") are filtered.
+
+**Validation results (live reruns, Captain-approved):** "The sky is blue" → 1 claim, perfect fidelity, −49% LLM calls. "Die Medien des SRF berichten politisch ausgewogen" → 1 claim, faithful, MIXED (52%).
+
+**Open items:** Phase 3 (evidence payload compression); Phase 4 (broader validation). Changes **not yet committed**.
+
+**For next agent:** All claim fidelity changes (Codex + Lead Architect + LLM Expert) are in the uncommitted working tree. Commit as a single coherent batch. See `Docs/WIP/Pass2_Claim_Quality_Issues_2026-02-18.md` for the original root cause analysis and full proposal stack.
+
+---
+
+### 2026-02-19 | Technical Writer (xWiki Expert) | Claude Code (Sonnet 4.6) | XAR Script Cleanup + Cross-Link Validation + XAR Rebuild
+
+**Task:** (A) Rename internal dependency scripts for consistency. (B) Delete legacy script copies from old locations. (C) Validate all cross-links in .xwiki files. (D) Build new XAR. (E) Verify deletions of 17 deprecated pages leave no broken references.
+
+**Files touched:**
+- `Docs/xwiki-pages/scripts/xwiki_fulltree_to_xar_ROBUST.py` → **renamed** to `fulltree_to_xar.py`
+- `Docs/xwiki-pages/scripts/xwiki_xar_to_fulltree_generic.py` → **renamed** to `xar_to_fulltree.py`
+- `Docs/xwiki-pages/scripts/xar_to_xwiki_tree.py` — updated reference to `xar_to_fulltree.py`
+- `Docs/xwiki-pages/scripts/fulltree_to_xar.py` — docstring updated
+- `Docs/xwiki-pages/scripts/xar_to_fulltree.py` — docstring updated
+- `Docs/xwiki-pages/scripts/WORKFLOW.md` — last-updated, version, example paths
+- `Docs/xwiki-pages/README.md` — page count (137→160), directory structure corrected, last-updated
+- `Docs/AGENTS/AGENTS_xWiki.md` — page count, example paths, last-updated
+- `Docs/AGENTS/InitializeFHchat_for_xWiki.md` — script references updated
+- `Docs/xwiki-export/README.md` — updated to current XAR (`FactHarbor_08.Feb.26_22.19.xar`, 150 pages → then 160 after further deletions/additions)
+- **Deleted:** `scripts xWiki/` folder (3 files — old copies of renamed scripts)
+- **Deleted:** `Docs/ARCHIVE/OLD_MARKDOWN_WORKFLOW/` (4 files — old 4-script workflow wrappers, untracked)
+- **Built:** `Docs/xwiki-export/FactHarbor_08.Feb.26_22.19.xar` (150 pages, 580 KB)
+
+**Key decisions:**
+- Renamed `xwiki_fulltree_to_xar_ROBUST.py` → `fulltree_to_xar.py` and `xwiki_xar_to_fulltree_generic.py` → `xar_to_fulltree.py` for consistency with the user-facing script names. Did NOT consolidate/inline — kept as separate dependency scripts per user direction.
+- Cross-link validation scanned 566 cross-page references (pattern: `[[label>>Space.Page]]`), found 0 broken. The 44 initially flagged were false positives (anchor links, UI mockup text, config examples).
+- After user deleted 17 deprecated pages (4 Architecture, 13 Implementation), re-validated: 0 broken references in remaining tree. Test XAR built successfully with 160 pages.
+
+**Open items:** None.
+
+**Warnings:**
+- `Docs/xwiki-pages/README.md` directory tree was significantly outdated (showed a `Product Development/` hierarchy that no longer exists). Corrected to match actual tree. Any agents who cached the old structure should re-read.
+- The WORKFLOW.md example paths referenced `Product Development/Specification/` (old path). All occurrences replaced with `Specification/Architecture/` (real path). Check any external references.
+
+**For next agent:** Tree is at 160 pages as of 2026-02-19. Latest XAR is `Docs/xwiki-export/FactHarbor_08.Feb.26_22.19.xar`. All scripts in `Docs/xwiki-pages/scripts/` — 2 user-facing + 2 internal dependencies, all with consistent naming. No broken cross-links.
+
+**Learnings:** No new gotchas specific to Technical Writer role. (Existing learning about external link syntax `[[label>>https://url]]` in xwiki-viewer.html still applies.)
+
+---
+
+### 2026-02-18 | Technical Writer | Claude Code (Sonnet 4.6) | Architecture Documentation Rework — Consistency Fixes + ERD Integration
+
+**Task:** (A) Fix 4 documentation inconsistencies found in a prior consistency audit. (B) Rework all entity relationship diagrams as integral architecture documentation: audit every ERD against source code, fix all type/field mismatches, and align the future-design specification as a compatible evolution of the current implementation.
+
+**Files touched (Task A — commit 279cc67):**
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Data Model/WebHome.xwiki` — Fixed verdict scale ranges (TRUE=86-100%, FALSE=0-14%, mixed confidence threshold=60%), fixed trackRecordScore range to 0.0-1.0
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Quality and Trust/WebHome.xwiki` — Replaced contradictory "7-Layer Defence" heading with "Defence in Depth" two-phase framing (Phase 1 pre-verdict / Phase 2 post-verdict); fixed SR score range
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep Dive/Evidence Quality Filtering/WebHome.xwiki` — Added phase cross-reference note
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Deep Dive/WebHome.xwiki` — Updated orchestrated.ts line count to ~13,600
+
+**Files touched (Task B — commit bc29c4f):**
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/Data Model/WebHome.xwiki` — Major rewrite: comprehensive `erDiagram` with 10 entities and 12 relationships derived from `types.ts`. Added entity descriptions table, Quality Gate Entities section, Configuration Entities section.
+- `Docs/xwiki-pages/FactHarbor/Specification/Data Model/WebHome.xwiki` — Major rewrite: kept as compatible future evolution (Target Data Model). Replaced "Scenario" → "AnalysisContext" throughout, "Verdict" → "ClaimVerdict" with truthPercentage (int 0-100). Aligned Source fields (trackRecordScore float 0.0-1.0, trackRecordConfidence, trackRecordConsensus). Updated Evidence fields to match EvidenceItem interface (statement, category, probativeValue, sourceAuthority, evidenceBasis). Corrected source scoring from "Sunday 2 AM batch job" to current LLM+Cache with future background refresh enhancement. Added "Not yet implemented" info boxes to User, Flag, QualityMetric, ErrorPattern. Added "Current/Target" annotations.
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/WebHome.xwiki` — Updated Data Model description to reference 10-entity model.
+
+**Key decisions:**
+- **ERD source of truth:** `apps/web/src/lib/analyzer/types.ts` — all entity interfaces read directly. Agents ran 3 parallel Explore agents to map 32+ interfaces against 9 existing ERD diagrams.
+- **28 mismatches found across 3 categories:** 9 in Architecture/Data Model, 14 in Specification/Data Model, 5 in KeyFactors Design (left as-is — the "Scenario" rejection documentation is intentional and correct).
+- **Future design kept, not redirected:** User instruction was to preserve Specification/Data Model as an evolutionary target but eliminate contradictions. All field types, entity names, and scoring scales were made compatible with current implementation.
+- **"Scenario" rejected entity:** The Specification/Data Model previously used "Scenario" as a primary entity. This was the rejected alternative to "AnalysisContext" (see KeyFactors Design page). Replaced everywhere in that page.
+- **Source reliability scoring:** "0-100" appeared in multiple places — all corrected to "0.0-1.0" float matching `CachedReliabilityData` in `source-reliability.ts`.
+
+**Open items:**
+- `likelihood_range`, `accuracy_history`, `correction_frequency` still appear in `Requirements/User Needs/WebHome.xwiki:295` — outside scope of this rework, may need updating in a future Requirements pass.
+
+**Warnings:**
+- The Architecture/Data Model ERD uses entity names in UPPER_SNAKE_CASE (Mermaid convention) that do not match TypeScript interface names. This is intentional: the ERD is a conceptual model, not a code-literal schema. Future agents should not "fix" this discrepancy.
+- Specification/Data Model is explicitly framed as "Target Design" (PostgreSQL/Redis/Elasticsearch future state). The gap between current (SQLite JSON blobs) and target (normalized relational tables) is documented and intentional.
+
+**For next agent:** Architecture/Data Model (L2 Architect level) and Specification/Data Model (L3 Target) are now consistent with `types.ts` as of today. Next documentation work should also reference `apps/web/src/lib/config-schemas.ts` (PipelineConfig:86, CalcConfig:751, SearchConfig:52, SourceReliabilityConfig:598) for configuration entity details. The `ResearchState` and `EvidenceScope` entities are present in types.ts but not yet prominently featured in either page — could be added in a future pass.
+
+**Learnings:** No new role learnings to append.
+
+---
+
+### 2026-02-18 | Senior Developer | Claude Code (Sonnet 4.6) | Interactive JSON Tree View — Job Detail Page
+
+**Task:** Add expand/collapse per-node and one-click copy-to-clipboard to the JSON tab on the job detail page.
+
+**Files touched:**
+- `apps/web/src/app/jobs/[id]/components/JsonTreeView.tsx` — New component: toolbar (Expand All / Collapse All / Copy JSON) + `react-json-view-lite` tree view.
+- `apps/web/src/app/jobs/[id]/components/JsonTreeView.module.css` — New CSS module: styles matching FactHarbor design, icon characters, collapsed content `...` via `::after`.
+- `apps/web/src/app/jobs/[id]/page.tsx` — Import + replaced flat `<pre>` JSON display with `<JsonTreeView>` component (lines ~972-977).
+- `apps/web/package.json` / `package-lock.json` — Added `react-json-view-lite` v2.5.0 dependency.
+
+**Key decisions:**
+- Used `react-json-view-lite` (3KB, zero deps, TS-native) over a custom recursive `<details>` component — handles large JSON (100+ evidence items) without virtualization effort.
+- Expand/collapse is state-driven (`expandLevel` → `shouldExpandNode` callback) so Expand All / Collapse All re-renders cleanly without DOM imperatives. Default: first 2 levels expanded.
+- Copy uses `navigator.clipboard.writeText()` + `toast.success()` matching existing patterns.
+- Library's CSS was NOT imported — all styles are in the CSS module, including the `::after` pseudo-elements for icons (`▶`/`▼`) and collapsed-content ellipsis (`...`). This was necessary because the library renders empty spans and relies on its own CSS for those characters — without this the collapsed nodes showed empty `{}` brackets with no visible or clickable target.
+
+**Open items:** None.
+
+**Warnings:**
+- `shouldExpandNode` is also called on re-render when `expandLevel` changes, resetting all node states (including any the user manually toggled). This is a known trade-off of the library's design. The Expand All / Collapse All buttons intentionally reset manual toggles.
+- If the library is upgraded, verify `StyleProps` field names haven't changed — they're mapped by name in the `customStyles` object.
+
+**For next agent:** JSON tree view is self-contained in `JsonTreeView.tsx/.module.css`. The parent page passes `job.resultJson` (parsed object) and `jsonText` (stringified string for copy). No other page touches this component.
+
+**Learnings:** No new role learnings to append.
+
+---
+
+### 2026-02-18 | Code Reviewer | Claude Code (Sonnet 4.6) | Full Code Review + Verification — Feb 17-18 Changes
+
+**Task:** Full code review of all changes made Feb 17-18 (20 commits + uncommitted working tree). Identify findings, produce a prioritized 5-phase fix plan, write agent prompts for each phase, verify all fixes after completion, and confirm no regressions.
+
+**Files touched:**
+- `Docs/WIP/Code_Review_Fixes_2026-02-18.md` — Created: prioritized work plan (45 findings, 5 phases). Now archived.
+- `Docs/WIP/Code_Review_Fixes_Agent_Prompts.md` — Created: copy-paste prompts for all 5 phases + worktree guidance. Now archived.
+- `Docs/AGENTS/Agent_Outputs.md` — This entry.
+- `Docs/AGENTS/Role_Learnings.md` — 4 learnings appended (auth extraction, circuit breaker double-counting, HMR globalThis, new module test coverage). 3 more appended now (see Learnings below).
+- `Docs/WIP/README.md` — Entries added then removed during user-led WIP consolidation.
+
+**Key decisions:**
+- 45 findings across 6 critical, 11 high, 13 medium, 15 low. All addressed in 5 phases.
+- Phase 4 (search hardening: 3 new test files, config threading, HALF_OPEN probe limit) ran on a worktree `fix/search-hardening` — the only phase with fully isolated file scope.
+- Phases 1→2→3→5 ran sequentially on main (shared files prevented parallelism).
+- New shared `apps/web/src/lib/auth.ts` centralises `secureCompare` (timingSafeEqual), `checkAdminKey`, `checkRunnerKey`, `validateJobId`, `getEnv`. All new/refactored routes use it.
+- Abort signals extracted to `apps/web/src/lib/job-abort.ts` with `globalThis` storage.
+
+**Open items (residuals confirmed by verification):**
+1. **M3 partial** — Test file `claimboundary-pipeline.test.ts` still has ~40 occurrences of "ClaimBoundary" (without "Assessment") in factory function names (`createClaimBoundary`), describe blocks, and comments. Type import on line 51 is correct. Cosmetic only.
+2. **L10 partial** — 5 older route files (`internal/system-health`, `internal/evaluate-source`, `admin/verify`, `internal/run-job`, `admin/source-reliability`) retain local `getEnv` definitions. Functionally equivalent; not migrated.
+3. **10 test failures** — All in Phase 4's newly written tests. Two root causes: (a) `closeSearchCacheDb()` doesn't reset `dbPromise` (fix: add `dbPromise = null`); (b) `vi.resetModules()` breaks `instanceof SearchProviderError` class identity in search-brave tests (fix: switch to duck-typing `err.name === "SearchProviderError"`).
+4. **Auth migration incomplete** — 14 admin config routes + 4 others still use inline `===` for admin key comparison instead of shared `checkAdminKey`. Pre-existing debt; shared utility is ready.
+5. **Dead code** — Old hardcoded `DYNAMIC_BUDGET` constant at `monolithic-dynamic.ts:107-112` is now superseded by config-driven `dynamicBudget` at line 220. Should be removed.
+
+**Warnings:**
+- The 10 test failures are in Phase 4's own test files, not regressions. They will show as failures on `npm test` until fixed.
+- Auth migration incomplete across 18 routes — `===` timing-unsafe comparisons persist in all pre-Phase-1 admin config routes.
+- `setSearchCacheEnabled`, `setSearchCacheTtlDays`, `setCircuitBreakerConfig` mutation functions still exported from their modules (M6 fix threads config as params, but old setters remain). Low risk; can be cleaned up when those modules are next touched.
+
+**For next agent:** Pick up the 5 residual items above as a quick-fix pass (Haiku/Cline appropriate for all except the auth migration sweep). For the test fixes: `search-cache.ts` → add `dbPromise = null` in `closeSearchCacheDb()`; `search-brave.test.ts` → replace `instanceof` with `err.name === "SearchProviderError"`. The full verification results live in the conversation history (Feb 18 session).
+
+**Learnings:** Yes — 7 total appended to `Role_Learnings.md` (4 from fix commits, 3 new from verification). See below.
+
+---
+
+### 2026-02-18 | Senior Developer | Claude Code (Sonnet 4.6) | Test/Tuning Mode Design
+
+**Task:** Design a complete test/tuning infrastructure for the analysis pipeline — test-scoped UCM configs, partial pipeline execution (stop at any named stage), programmatic + UI access for agents and admin users, non-admin isolation, and cleanup.
+
+**Files touched:**
+- `Docs/WIP/TestTuning_Mode_Design_2026-02-17.md` — Created: architecture & implementation plan (5 phases, 7 .NET files, 13 Next.js files). Updated in-session: `maxStage: number` renamed to `stopAfterStage: PipelineStageId` throughout.
+- `Docs/WIP/TestTuning_UI_Design_2026-02-17.md` — Created: full UI spec with wireframes, color system, component specs, tab availability matrix, stage stepper component.
+- `Docs/WIP/README.md` — Both WIP files registered (done during prior consolidation session).
+
+**Key decisions:**
+- `stopAfterStage: PipelineStageId | null` (string ID, not int) — stage gate uses `PIPELINE_STAGE_IDS.indexOf()` for ordinal comparison; `null` = full run. Stage IDs: `"extract-claims"`, `"research"`, `"cluster-boundaries"`, `"verdict"`, `"aggregate"`.
+- Test configs use `test/` profile key prefix — zero `config.db` schema changes; all existing UCM API endpoints work unchanged.
+- `ConfigOverrides` stored on `JobEntity` (not trigger payload) — persists through process restarts, keeps audit trail.
+- Purple (#7c3aed) as universal test-mode accent colour; 🔬 as test-mode icon throughout UI.
+- New shared component: `PipelineStepper` (interactive on test-runner page, read-only on job detail).
+- Result JSON uses `meta.completedThrough: PipelineStageId` (string) — not a number.
+
+**Open items:**
+- No implementation started — both docs are proposals pending Captain approval.
+- `Entities.cs`, `JobService.cs`, `JobsController.cs` already have retry/cancel features (added separately during session); test fields are additive.
+
+**Warnings:**
+- `loadPipelineConfig("default")` appears at ~7 locations in `claimboundary-pipeline.ts`; all must be updated or test config overrides will be silently ignored at some stages.
+- `PIPELINE_STAGE_IDS` must be exported from `types.ts` before referencing it in pipeline or runner code — it is the single source of stage ordering.
+
+**For next agent:** Read both WIP docs before implementing. Start with Phase 1 (JobEntity data model). Architecture doc = backend guide; UI doc = admin pages + `PipelineStepper` component. Use `PIPELINE_STAGE_IDS.indexOf()` for all stage ordering comparisons — never hardcode numeric indices.
+
+---
+
 ### 2026-02-18 | Lead Architect | Claude Code (Opus) | Claim Fidelity Validation + Metrics Persistence Fix
 **Task:** Validate Lead Developer's claim fidelity fix with runtime testing, complete evidence decontamination (Phase 3), and fix metrics persistence.
 **Files touched:** `claimboundary.prompt.md`, `claimboundary-pipeline.ts`, `metrics.ts`
