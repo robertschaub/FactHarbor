@@ -113,6 +113,6 @@
   "contradictionReservedIterations": 1,
   "maxClaimBoundaries": 6,
   "boundaryCoherenceMinimum": 0.3,
-  "selfConsistencyMode": "full",
+  "selfConsistencyMode": "disabled",
   "selfConsistencyTemperature": 0.3
 }
