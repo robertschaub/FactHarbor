@@ -66,7 +66,8 @@ When activated in a role, use this table to identify which areas are within your
 ### 1.4 WIP Folder Protocol
 
 - **Location:** `/Docs/WIP/`
-- **Purpose:** Active collaborative documents, plans, reviews in progress
+- **Purpose:** Design documents, plans, reviews in progress, and Investigation hub/spoke files (§3.4)
+- **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `AGENTS.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
 - **On Completion:** Move finalized documents to appropriate `Docs/` subfolder or `Docs/ARCHIVE/REVIEWS/`
 
 ---
@@ -734,26 +735,18 @@ Use **REVIEW**, **PROPOSE**, or **IMPLEMENT** commands as needed. These can go t
 
 ### 3.5 Role Handoff Protocol
 
-When the user switches roles mid-conversation or continues work from a previous session:
+Role handoffs follow the **Agent Exchange Protocol** in `AGENTS.md` (Role Handoff mode).
 
-**Outgoing role provides (in final message):**
-1. **Summary**: What was accomplished
-2. **Decisions**: Key choices made and rationale
-3. **Open items**: Unresolved questions, blocked tasks
-4. **Files touched**: Modified/created files list
-5. **Warnings**: Gotchas, fragile areas, things to verify
-6. **Learnings** (if any): Append to `/Docs/AGENTS/Role_Learnings.md` under your role section — tips, gotchas, wrong assumptions, or missing docs you discovered
+- **Outgoing role:** Write a completion output using the unified template. The **Warnings** and **Learnings** fields are required (not optional). Always append learnings to `/Docs/AGENTS/Role_Learnings.md`.
+- **Incoming role:** Follow the incoming-role checklist in AGENTS.md § Agent Exchange Protocol.
 
-**Incoming role should:**
-1. Read the handoff summary (if provided by user or in conversation context)
-2. Read Required Reading for their role (from §2 Role Registry)
-3. Scan your role's section in `/Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
-4. Check `Docs/WIP/` for active task documents related to the current work
-5. Acknowledge role activation before starting work
+See `AGENTS.md` § Agent Exchange Protocol for the full template, output tiers, and file locations.
 
 ---
 
 ## 4. Collaboration Document Protocol
+
+> This section governs **formal collaborative documents** (plans, reviews, investigations) that live in `Docs/WIP/`. For agent task-completion outputs and role handoffs, see `AGENTS.md` § Agent Exchange Protocol.
 
 ### 4.1 Document Naming Convention
 

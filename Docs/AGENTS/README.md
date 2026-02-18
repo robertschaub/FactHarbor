@@ -25,6 +25,18 @@
 
 ---
 
+## Agent Collaboration
+
+| Document | Purpose |
+|----------|---------|
+| [Agent_Outputs.md](Agent_Outputs.md) | Rolling log of agent task completions (Standard tier) |
+| [Handoffs/](Handoffs/) | Dedicated output files for significant tasks |
+| [Role_Learnings.md](Role_Learnings.md) | Tips and gotchas from previous agents, organized by role |
+
+See AGENTS.md § Agent Exchange Protocol for when and how to write outputs.
+
+---
+
 ## Tool-Specific Config Files
 
 All tool configs reference `/AGENTS.md` as the single source of truth.

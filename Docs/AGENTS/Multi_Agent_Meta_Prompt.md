@@ -110,11 +110,14 @@ Example:
 
 {DELIVERABLES}
 <!--
-What outputs are expected.
+What outputs are expected. Two categories:
+- Formal documents (design, review, investigation) → Docs/WIP/
+- Task completion outputs → per Agent Exchange Protocol (AGENTS.md)
 Example:
 - Architecture document in Docs/WIP/
 - Mermaid diagrams showing data flow
 - Risk assessment section
+- Task completion output per Agent Exchange Protocol (AGENTS.md)
 -->
 
 ---
@@ -393,15 +396,26 @@ Now proceed with your task as LLM Expert.
 
 # DOCUMENT TYPE REFERENCE
 
+**Formal documents** (live in `Docs/WIP/` during active work):
+
 | Document Type | Purpose | Typical Author |
 |---------------|---------|----------------|
 | `_Plan.md` | Implementation plan with steps | Lead Developer |
 | `_Architecture.md` | Design proposals, data models | Lead Architect |
 | `_Review.md` | Review comments and feedback | Any reviewer |
 | `_Analysis.md` | Investigation findings | Any analyst |
-| `_Implementation_Report.md` | Post-implementation summary | Senior Developer |
+| `_Implementation_Report.md` | Formal post-implementation review (Captain-requested) | Senior Developer |
 | `_Code_Review.md` | Code review findings | Lead Developer |
 | `_Doc_Review.md` | Documentation review | Technical Writer |
+
+**Agent exchange outputs** (live in `Docs/AGENTS/`):
+
+| Document Type | Purpose | Location |
+|---------------|---------|----------|
+| `Agent_Outputs.md` entry | Standard task completion log | `Docs/AGENTS/Agent_Outputs.md` |
+| `_Handoff.md` | Significant task completion or role handoff | `Docs/AGENTS/Handoffs/` |
+
+Routine task completions use the Agent Exchange Protocol (`AGENTS.md`), not `_Implementation_Report.md` in WIP.
 
 ---
 

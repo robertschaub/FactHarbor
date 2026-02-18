@@ -204,7 +204,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 3. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
 4. **Acknowledge**: State your role, focus areas, and which docs you've loaded
 5. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
-6. **On handoff/completion**: Summarize work done, decisions made, open items, files touched. If you learned something useful, append it to `Role_Learnings.md`.
+6. **On handoff/completion**: Follow the Agent Exchange Protocol (Role Handoff mode) — write output, include Warnings and Learnings fields, and append any learnings to `Role_Learnings.md`.
 
 **Role Alias Quick-Reference:**
 
@@ -238,7 +238,81 @@ Full role definitions, required reading, and area-to-document mapping: `Docs/AGE
 - **Be cost-aware.** Minimize unnecessary LLM calls, file reads, and token usage. Don't re-read files you already have in context. Don't generate verbose output when concise will do.
 - **Don't gold-plate.** Deliver what was requested — don't also refactor the file, add comments, and update docs unrequested. But DO report issues, inconsistencies, or improvement opportunities you notice along the way — just flag them, don't act on them without asking.
 - **Cross-check code against docs.** When working on code, consult the related documentation under `Docs/xwiki-pages/FactHarbor/` (see the area-to-document mapping in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2). When working on docs, check the code it describes. Report any mismatches — stale docs and diverged implementations are high-value catches.
-- **Summarize when done.** List files touched, note assumptions, and flag if tests were not run and why.
+- **Summarize when done.** Follow the Agent Exchange Protocol below — write a completion output to `Agent_Outputs.md` or `Handoffs/` (unless the task is trivial).
+
+### Agent Exchange Protocol (MANDATORY)
+
+One protocol for all agent-to-agent communication. Three modes, one template.
+
+#### Modes
+
+| Mode | When | Where Output Lives |
+|------|------|-------------------|
+| **Completion** | Any agent finishing a non-trivial task | `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/` |
+| **Role Handoff** | Switching from one role to another | Same as Completion + incoming-role checklist |
+| **Investigation** | Multi-agent parallel research (Captain-directed) | `Docs/WIP/` hub+spoke — see `Multi_Agent_Collaboration_Rules.md` §3.4 |
+
+#### Output tiers (Completion and Role Handoff modes)
+
+| Task Tier | Criteria | Output Action |
+|-----------|----------|---------------|
+| **Trivial** | Single-file tweak, typo fix, quick answer, < 3 minutes of work | No file. Chat summary is sufficient. |
+| **Standard** | Bug fix, small feature, config change, investigation with clear outcome | **Append entry** to `Docs/AGENTS/Agent_Outputs.md` |
+| **Significant** | Multi-file change, design decision, new module, investigation with findings that other agents need | **Dedicated .md file** in `Docs/AGENTS/Handoffs/` |
+
+**Tier is determined by task scope, not by role activation.** Working under a role (e.g., "As Lead Developer, fix this typo") does not automatically elevate the tier. A trivial task stays trivial regardless of role. However, a Role Handoff (switching from one role to another mid-project) always requires at least a Standard entry so the incoming role has context.
+
+**When in doubt, write it.** The cost of an unnecessary entry is near zero; the cost of lost context between agents is high.
+
+#### Unified template
+
+Use for both Standard (append to `Agent_Outputs.md`) and Significant (file in `Handoffs/`) outputs:
+
+```markdown
+---
+### YYYY-MM-DD | <Role> | <Agent/Tool> | <Short Task Title>
+**Task:** One-line description of what was requested.
+**Files touched:** List of files created/modified.
+**Key decisions:** What was decided and why (brief).
+**Open items:** Unfinished, blocked, or deferred items.
+**Warnings:** Gotchas, fragile areas, things to verify.
+**For next agent:** Context needed to continue or build on this work.
+**Learnings:** Appended to Role_Learnings.md? (yes/no + summary if yes)
+```
+
+Field requirements by mode:
+
+| Field | Completion | Role Handoff |
+|-------|-----------|-------------|
+| Task, Files touched, Key decisions | Required | Required |
+| Open items, For next agent | Required | Required |
+| Warnings | Optional | **Required** |
+| Learnings | Optional | **Required** — always check and append to `Role_Learnings.md` |
+
+#### Significant output — file in `Docs/AGENTS/Handoffs/`
+
+- **Naming:** `YYYY-MM-DD_<Role>_<Short_Description>.md`
+- **Content:** Unified template fields + any additional detail (code snippets, diagrams, analysis).
+- **Cross-reference:** Add a one-line entry in `Agent_Outputs.md` pointing to the handoff file.
+- **Lifecycle:** Consumed by the next agent, then archived during Consolidate WIP. NOT long-lived design docs (those go in `Docs/WIP/`).
+
+#### Role Handoff — incoming role checklist
+
+When you are the **incoming** role (receiving a handoff or starting a role mid-project):
+
+1. Read the handoff output (in `Agent_Outputs.md`, `Handoffs/`, or conversation context)
+2. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
+3. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
+4. Check `Docs/WIP/` for active task documents related to the current work
+5. Check `Docs/AGENTS/Agent_Outputs.md` for recent entries relevant to your task
+6. Acknowledge role activation before starting work
+
+#### Rules
+
+- **`Docs/WIP/` is NOT for agent completion outputs.** WIP is for design documents, plans, reviews, and Investigation hub/spoke files. Agent completion outputs go in `Agent_Outputs.md` or `Handoffs/`.
+- **Append, don't overwrite.** When writing to `Agent_Outputs.md`, always append below the header — never delete or modify previous entries.
+- **Be concise.** The "For next agent" field is the most important — focus on what someone picking up this work needs to know.
+- **Cleanup:** During Consolidate WIP (or periodically), the Captain may archive old entries from `Agent_Outputs.md` and clear processed handoff files.
 
 ### Consolidate WIP Procedure
 
