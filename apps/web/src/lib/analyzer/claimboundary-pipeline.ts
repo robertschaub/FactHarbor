@@ -82,6 +82,7 @@ import {
 // Search and retrieval
 import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
+import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-breaker";
 
 // Job cancellation detection
 import { isJobAborted, clearAbortSignal } from "@/lib/job-abort";
@@ -1380,6 +1381,11 @@ export async function runResearchIteration(
       // Capture search provider errors as warnings AND report to circuit breaker
       if (response.errors && response.errors.length > 0) {
         for (const provErr of response.errors) {
+          // Record failure to per-provider circuit breaker for operator visibility
+          if (provErr.provider) {
+            recordSearchFailure(provErr.provider, provErr.message);
+          }
+
           // Deduplicate warnings: only warn once per provider in result
           const alreadyWarned = state.warnings.some(
             (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
