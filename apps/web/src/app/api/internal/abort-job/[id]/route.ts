@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRunnerKey, validateJobId } from "@/lib/auth";
 import { setAbortSignal } from "@/lib/job-abort";
 
-async function resolveJobId(context: any): Promise<string> {
+async function resolveJobId(context: { params: Promise<{ id: string }> }): Promise<string> {
   const params = await Promise.resolve(context.params);
   return params.id;
 }

@@ -1,5 +1,5 @@
 /**
- * ClaimBoundary Pipeline — Main Entry Point
+ * ClaimAssessmentBoundary Pipeline — Main Entry Point
  *
  * Replaces the orchestrated pipeline with an evidence-emergent boundary model.
  * Claims drive research, evidence scopes determine boundaries, verdicts use
@@ -60,6 +60,7 @@ import {
   extractStructuredOutput,
   getStructuredOutputProviderOptions,
   getPromptCachingOptions,
+  type ModelTask,
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 
@@ -102,7 +103,7 @@ function checkAbortSignal(jobId: string | undefined): void {
 }
 
 /**
- * Run the ClaimBoundary analysis pipeline.
+ * Run the ClaimAssessmentBoundary analysis pipeline.
  *
  * This is the main entry point that orchestrates all 5 stages sequentially.
  * Each stage is an independently testable function.
@@ -233,7 +234,7 @@ export async function runClaimBoundaryAnalysis(
       confidence: assessment.confidence,
       verdictNarrative: assessment.verdictNarrative,
 
-      // ClaimBoundary-specific data (replaces analysisContexts)
+      // ClaimAssessmentBoundary-specific data (replaces analysisContexts)
       claimBoundaries: assessment.claimBoundaries,
       claimVerdicts: assessment.claimVerdicts,
       coverageMatrix: assessment.coverageMatrix,
@@ -263,7 +264,7 @@ export async function runClaimBoundaryAnalysis(
     recordOutputQuality(resultJson);
 
     // TODO: Generate markdown report (Phase 3 UI work)
-    const reportMarkdown = "# ClaimBoundary Analysis Report\n\n(Report generation not yet implemented)";
+    const reportMarkdown = "# ClaimAssessmentBoundary Analysis Report\n\n(Report generation not yet implemented)";
 
     return { resultJson, reportMarkdown };
   } finally {
@@ -2024,7 +2025,7 @@ export function collectUniqueScopes(evidenceItems: EvidenceItem[]): UniqueScope[
 
 /**
  * Run LLM clustering via BOUNDARY_CLUSTERING prompt (Sonnet tier).
- * Returns ClaimBoundary[] parsed from LLM output.
+ * Returns ClaimAssessmentBoundary[] parsed from LLM output.
  */
 export async function runLLMClustering(
   uniqueScopes: UniqueScope[],
@@ -2101,7 +2102,7 @@ export async function runLLMClustering(
     throw new Error("Stage 3: LLM returned 0 boundaries");
   }
 
-  // Map LLM output to ClaimBoundary[] with constituentScopes
+  // Map LLM output to ClaimAssessmentBoundary[] with constituentScopes
   return validated.claimBoundaries.map((cb) => ({
     id: cb.id,
     name: cb.name,
@@ -2409,8 +2410,8 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
 
     // 2. Select model based on tier
     const tier = options?.tier ?? "sonnet";
-    const taskKey = tier === "sonnet" ? "verdict" : "understand";
-    const model = getModelForTask(taskKey as any, undefined, pipelineConfig);
+    const taskKey: ModelTask = tier === "sonnet" ? "verdict" : "understand";
+    const model = getModelForTask(taskKey, undefined, pipelineConfig);
 
     // 3. Call AI SDK
     const result = await generateText({
@@ -2505,7 +2506,7 @@ export async function aggregateAssessment(
     harmPotentialMultiplier: 1.5,
     derivativeMultiplier: 0.5,
   };
-  const harmMultipliers = (calcConfig as any).harmPotentialMultipliers ?? {
+  const harmMultipliers = calcConfig.aggregation?.harmPotentialMultipliers ?? {
     critical: 1.5,
     high: 1.2,
     medium: 1.0,
@@ -2519,11 +2520,11 @@ export async function aggregateAssessment(
     // Centrality weight
     const centrality = claim?.centrality ?? "low";
     const centralityWeight =
-      (aggregation.centralityWeights as any)?.[centrality] ?? 1.0;
+      aggregation.centralityWeights[centrality as keyof typeof aggregation.centralityWeights] ?? 1.0;
 
     // Harm multiplier (4-level)
     const harmLevel = verdict.harmPotential ?? "medium";
-    const harmWeight = (harmMultipliers as any)[harmLevel] ?? 1.0;
+    const harmWeight = harmMultipliers[harmLevel as keyof typeof harmMultipliers] ?? 1.0;
 
     // Confidence factor (0-100 → 0-1)
     const confidenceFactor = verdict.confidence / 100;
@@ -2644,7 +2645,7 @@ export function computeTriangulationScore(
   coverageMatrix: CoverageMatrix,
   calcConfig: CalcConfig,
 ): TriangulationScore {
-  const triangulationConfig = (calcConfig as any).triangulation ?? {
+  const triangulationConfig = calcConfig.aggregation?.triangulation ?? {
     strongAgreementBoost: 0.15,
     moderateAgreementBoost: 0.05,
     singleBoundaryPenalty: -0.10,

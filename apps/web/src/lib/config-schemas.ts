@@ -51,7 +51,7 @@ export interface ValidationResult {
 
 export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
-  provider: z.enum(["auto", "google-cse", "serpapi", "tavily", "brave"]),
+  provider: z.enum(["auto", "google-cse", "serpapi", "brave"]),
   mode: z.enum(["standard", "grounded"]),
   searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),

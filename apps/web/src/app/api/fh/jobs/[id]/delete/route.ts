@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, validateJobId } from "@/lib/auth";
 
-async function resolveJobId(context: any): Promise<string> {
+async function resolveJobId(context: { params: Promise<{ id: string }> }): Promise<string> {
   const params = await Promise.resolve(context.params);
   return params.id;
 }

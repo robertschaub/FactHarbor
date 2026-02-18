@@ -48,7 +48,7 @@ import {
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
-  ClaimBoundary,
+  ClaimAssessmentBoundary,
   CBClaimVerdict,
   CBClaimUnderstanding,
   CBResearchState,
@@ -91,7 +91,7 @@ function createAtomicClaim(overrides: Partial<AtomicClaim> = {}): AtomicClaim {
   };
 }
 
-function createClaimBoundary(overrides: Partial<ClaimBoundary> = {}): ClaimAssessmentBoundary {
+function createClaimBoundary(overrides: Partial<ClaimAssessmentBoundary> = {}): ClaimAssessmentBoundary {
   return {
     id: "CB_01",
     name: "Standard Analysis Boundary",
