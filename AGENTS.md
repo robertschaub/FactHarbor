@@ -219,7 +219,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 | "Code Reviewer" | Code Reviewer | §2.7 |
 | "Security Expert" | Security Expert | §2.8 |
 | "GIT Expert", "GitHub Expert" | DevOps Expert | §2.9 |
-| "Agents Supervisor", "AI Supervisor" | Captain Deputy | §2.11 |
+| "Agents Supervisor", "AI Supervisor" | Agents Supervisor | §2.11 |
 
 **If the role is NOT in the table above:**
 1. Tell the user which existing role is closest (if any) and ask whether to use that one
