@@ -240,6 +240,17 @@ body.view-preview .preview-pane{width:100%}
 .xwiki-children-list li{margin:.3em 0;padding:3px 0 3px 22px;position:relative;font-size:.95em}
 .xwiki-children-list li::before{content:'\1F4C4';position:absolute;left:0;top:3px;font-size:.8em}
 .xwiki-children-list .children-empty{color:var(--pv-muted);font-style:italic;font-size:.9em}
+.github-files-list{margin:1em 0;font-family:'Outfit',sans-serif}
+.github-files-table{width:100%;border-collapse:collapse;font-size:.9em}
+.github-files-table th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--pv-border);font-size:.8em;text-transform:uppercase;letter-spacing:.5px;color:var(--pv-muted)}
+.github-files-table td{padding:6px 12px;border-bottom:1px solid var(--pv-border)}
+.github-files-table tr:hover td{background:rgba(0,0,0,.03)}
+.github-files-table a{color:var(--pv-link);text-decoration:none}
+.github-files-table a:hover{text-decoration:underline}
+.github-files-loading{color:var(--pv-muted);font-style:italic;font-size:.9em}
+.github-files-empty{color:var(--pv-muted);font-style:italic;font-size:.9em}
+.github-files-error{color:#c33;font-style:italic;font-size:.9em}
+.github-files-footer{margin-top:8px;font-size:.8em}.github-files-footer a{color:var(--pv-muted);text-decoration:none}.github-files-footer a:hover{text-decoration:underline}
 .mermaid-container{margin:1em 0;background:#fff;border:1px solid var(--pv-border);border-radius:var(--radius);padding:18px;overflow-x:auto;text-align:center}
 .mermaid-container .mermaid-label{font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--pv-muted);text-align:right;margin-bottom:6px;opacity:.5}
 .mermaid-container svg{max-width:100%}
@@ -718,6 +729,8 @@ class XWikiParser {
     r=r.replace(/\{\{children\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_CHILDREN_${x++}%%`;this._placeholders[k]={type:'children'};return k});
     // Handle {{include}} macro - render as a navigable link
     r=r.replace(/\{\{include\s+reference="([^"]+)"[^}]*\/?\}\}/gi,(m,ref)=>{const k=`%%XWIKI_BLOCK_INCLUDE_${x++}%%`;this._placeholders[k]={type:'include',reference:ref};return k});
+    // Handle {{github-files}} macro - dynamic file listing from GitHub repo
+    r=r.replace(/\{\{github-files\s+([^}]*?)\/?\}\}/gi,(m,attrs)=>{const k=`%%XWIKI_BLOCK_GHFILES_${x++}%%`;const p=this.parseParams(attrs.replace(/&quot;/g,'"'));this._placeholders[k]={type:'github-files',repo:p.repo||'',path:p.path||''};return k});
     return r;
   }
 
@@ -738,6 +751,10 @@ class XWikiParser {
           const ref = d.reference;
           // Output a marker that will be resolved async with actual content
           r=`<!--XWIKI_INCLUDE_START:${this.esc(ref)}--><div class="xwiki-include-placeholder" data-include-ref="${this.esc(ref)}"></div><!--XWIKI_INCLUDE_END:${this.esc(ref)}-->`;
+          break;
+        }
+        case'github-files':{
+          r=`<div class="github-files-list" data-gh-repo="${this.esc(d.repo)}" data-gh-path="${this.esc(d.path)}"><span class="github-files-loading">Loading files from GitHub…</span></div>`;
           break;
         }
       }
@@ -1054,6 +1071,49 @@ async function renderPreview(){
         h += `<li><a class="wiki-link resolved" data-wiki-ref="${parser.esc(c.ref)}" href="javascript:void(0)" onclick="navigateToRef('${parser.escAttr(c.ref)}')">${parser.esc(c.name)}</a></li>`;
       }
       el.innerHTML = h + '</ul>';
+    }
+  });
+
+  // Resolve {{github-files/}} placeholders - fetch file list from GitHub Contents API
+  previewEl.querySelectorAll('.github-files-list').forEach(async el => {
+    const repo = el.getAttribute('data-gh-repo');
+    const ghPath = el.getAttribute('data-gh-path');
+    if(!repo || !ghPath){ el.innerHTML = '<span class="github-files-error">Missing repo or path attribute.</span>'; return; }
+    try {
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/${ghPath}`;
+      const resp = await fetch(apiUrl, {headers:{Accept:'application/vnd.github.v3+json'}});
+      if(!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+      const files = await resp.json();
+      if(!Array.isArray(files) || files.length === 0){
+        el.innerHTML = '<span class="github-files-empty">No files found.</span>';
+        return;
+      }
+      // Sort: directories first, then by name
+      files.sort((a,b) => {
+        if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      let h = `<table class="github-files-table"><thead><tr><th>File</th><th>Type</th><th>Size</th></tr></thead><tbody>`;
+      for(const f of files){
+        if(f.type === 'dir') continue; // skip subdirectories
+        const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
+        const typeLabel = ext.toUpperCase() || 'FILE';
+        const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
+        // HTML files open via htmlpreview.github.io; others open on GitHub directly
+        let href;
+        if(ext === 'html' || ext === 'htm'){
+          href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+        } else {
+          href = `https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+        }
+        const icon = ext === 'html' || ext === 'htm' ? '📊' : ext === 'pdf' ? '📄' : ext === 'json' ? '📋' : '📁';
+        h += `<tr><td>${icon} <a href="${parser.esc(href)}" target="_blank" rel="noopener">${parser.esc(f.name)}</a></td><td>${typeLabel}</td><td>${sizeKB}</td></tr>`;
+      }
+      h += '</tbody></table>';
+      h += `<div class="github-files-footer"><a href="https://github.com/${parser.esc(repo)}/tree/main/${parser.esc(ghPath)}" target="_blank" rel="noopener">View on GitHub</a></div>`;
+      el.innerHTML = h;
+    } catch(err) {
+      el.innerHTML = `<span class="github-files-error">Failed to load files: ${parser.esc(String(err.message))}</span>`;
     }
   });
 

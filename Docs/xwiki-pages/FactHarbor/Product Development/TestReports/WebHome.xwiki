@@ -10,13 +10,7 @@ Archived outputs from AKEL pipeline test runs, stored in [[##Docs/TESTREPORTS/##
 
 == Reports ==
 
-|= File |= Type |= Size |= Description
-| [[job-4dd7f840-SRG-Linksdrall.html>>https://htmlpreview.github.io/?https://github.com/robertschaub/FactHarbor/blob/main/Docs/TESTREPORTS/job-4dd7f840-SRG-Linksdrall.html]] | HTML | 72 KB | ClaimAssessmentBoundary analysis: "Die SRG hat einen Linksdrall" -- Verdict: LEANING-FALSE (42% truth, 68% confidence), 6 boundaries, 24 evidence items, 14 sources
-| [[Can_statements_from_the_current_US_feder_Report_20260213_234759.pdf>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/TESTREPORTS/Can_statements_from_the_current_US_feder_Report_20260213_234759.pdf]] | PDF | 287 KB | US federal statements analysis report (2026-02-13)
-| [[4a915d524423468a8bd475e8b7c3ad43.json>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/TESTREPORTS/4a915d524423468a8bd475e8b7c3ad43.json]] | JSON | 222 KB | Raw job result JSON
-| [[6317f52b158646ee80263bd28e682340.json>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/TESTREPORTS/6317f52b158646ee80263bd28e682340.json]] | JSON | 129 KB | Raw job result JSON
-
-----
+{{github-files repo="robertschaub/FactHarbor" path="Docs/TESTREPORTS" /}}
 
 {{info}}
 **HTML reports** open via [[htmlpreview.github.io>>https://htmlpreview.github.io/]] which renders static HTML files hosted on GitHub. PDF and JSON files open directly on GitHub.
