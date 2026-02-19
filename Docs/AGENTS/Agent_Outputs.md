@@ -4,6 +4,20 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-19 | Senior Developer | Claude Code | Wave 4A code fixes (P-M5, P-M6, P-L7)
+**Task:** Three code review fixes from Code_Review_23h_2026-02-19.md
+**Files touched:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — P-M5 (error detection), P-M6 (dead casts)
+- `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts` — P-L7 (argument order fix)
+**Key decisions:**
+- P-M5: Added status-code-first check `(err as any)?.status ?? (err as any)?.statusCode` before the message string matching block in `runResearchIteration`. Removed the bare `"429"` string match (now covered by status code check); retained all other message-based patterns as fallback. The existing `error-classification.ts` module already does this correctly — brought `claimboundary-pipeline.ts` into alignment with that pattern.
+- P-M6: `claimBoundaryId` and `relevantClaimIds` are already defined as optional fields directly on `EvidenceItem` in `types.ts` (lines 434–436). Removed the redundant intersection casts `(item as EvidenceItem & { claimBoundaryId?: string })` and `(item as EvidenceItem & { relevantClaimIds?: string[] })` — plain property access now works with correct types.
+- P-L7: Found a real bug in `verdict-stage.test.ts` line 968: `buildCoverageMatrix(claims, evidence, boundaries)` had args 2 and 3 swapped. Function signature is `(claims, boundaries, evidence)`. Fixed to `buildCoverageMatrix(claims, boundaries, evidence)`. All calls in `claimboundary-pipeline.test.ts` were already correct.
+**Open items:** None
+**Warnings:** The test that was fixed (P-L7) was in the "Configurable debate model tiers" describe block. The swapped arguments would have produced an empty coverage matrix (evidence items wouldn't match boundary IDs), silently degrading test coverage of the debate model tiers feature. The test still passed before because the coverage matrix result wasn't directly asserted — only the LLM mock calls were checked.
+**For next agent:** Wave 4 complete. See `Docs/WIP/Code_Review_23h_2026-02-19.md` for any remaining low-priority items not addressed in Waves 2A/2B/3A/3B/4A/4B.
+
+---
 ### 2026-02-19 | Technical Writer | Claude Code | Wave 4B — xWiki MIXED threshold + XAR rebuild
 **Task:** Fix MIXED confidence threshold (60%→40%) in Calculations and Verdicts xWiki page; rebuild XAR.
 **Files touched:**
