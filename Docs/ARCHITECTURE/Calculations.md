@@ -3,35 +3,38 @@
 **Version**: 2.11.0
 **Last Updated**: 2026-02-19
 
-## Overview
+> **Pipeline note**: This document describes the **ClaimAssessmentBoundary (CB) pipeline** — the current default production pipeline since v2.11.0. The **Monolithic Dynamic** pipeline is an alternative. The **Orchestrated pipeline was removed in v2.11.0**; any references to it here are legacy and should be ignored. Authoritative implementations: `aggregation.ts`, `truth-scale.ts`, `verdict-stage.ts`, `claimboundary-pipeline.ts`.
 
-This document explains how FactHarbor calculates verdicts, handles counter-evidence, aggregates results across different levels, manages confidence scores, and applies source reliability weighting.
+---
 
 ## 1. Verdict Scale (7-Point System with MIXED/UNVERIFIED Distinction)
 
-FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. The 43-57% range distinguishes between **MIXED** (high confidence, evidence on both sides) and **UNVERIFIED** (low confidence, insufficient evidence):
+FactHarbor uses a symmetric 7-point scale with truth percentages from 0–100%. The 43–57% range distinguishes between **MIXED** (high confidence, evidence on both sides) and **UNVERIFIED** (low confidence, insufficient evidence):
 
 | Verdict | Range | Confidence | Description |
 |---------|-------|------------|-------------|
-| **TRUE** | 86-100% | - | Strong support, no credible counter-evidence |
-| **MOSTLY-TRUE** | 72-85% | - | Mostly supported, minor gaps |
-| **LEANING-TRUE** | 58-71% | - | Mixed evidence, leans positive |
-| **MIXED** | 43-57% | >= 40% | Evidence on both sides, roughly equal |
-| **UNVERIFIED** | 43-57% | < 40% | Insufficient evidence to judge |
-| **LEANING-FALSE** | 29-42% | - | More counter-evidence than support |
-| **MOSTLY-FALSE** | 15-28% | - | Strong counter-evidence |
-| **FALSE** | 0-14% | - | Direct contradiction |
+| **TRUE** | 86–100% | — | Strong support, no credible counter-evidence |
+| **MOSTLY-TRUE** | 72–85% | — | Mostly supported, minor gaps |
+| **LEANING-TRUE** | 58–71% | — | Mixed evidence, leans positive |
+| **MIXED** | 43–57% | >= 40% | Evidence on both sides, roughly equal |
+| **UNVERIFIED** | 43–57% | < 40% | Insufficient evidence to judge |
+| **LEANING-FALSE** | 29–42% | — | More counter-evidence than support |
+| **MOSTLY-FALSE** | 15–28% | — | Strong counter-evidence |
+| **FALSE** | 0–14% | — | Direct contradiction |
 
 ### MIXED vs UNVERIFIED
 
-- **MIXED** (blue in UI): We have substantial evidence, but it's roughly equal on both sides. High confidence in the mixed state.
-- **UNVERIFIED** (orange in UI): We don't have enough evidence to make any judgment. Low confidence due to insufficient information.
+- **MIXED** (blue in UI): Substantial evidence exists but is roughly equal on both sides. High confidence in the mixed state.
+- **UNVERIFIED** (orange in UI): Not enough evidence to make any judgment. Low confidence due to insufficient information.
+
+The threshold is 40% confidence (UCM-configurable via `CalcConfig.mixedConfidenceThreshold`). The stale code comments in `truth-scale.ts` and `types.ts` incorrectly say 60% — the actual `DEFAULT_MIXED_CONFIDENCE_THRESHOLD` constant and production behavior use 40%.
 
 ### Implementation
 
 **File**: `apps/web/src/lib/analyzer/truth-scale.ts`
 
-**Function**: `percentageToClaimVerdict` (line 138)
+**Function**: `percentageToClaimVerdict`
+
 ```typescript
 // Confidence threshold to distinguish MIXED from UNVERIFIED (UCM-configurable)
 const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 40;
@@ -61,110 +64,114 @@ export function percentageToClaimVerdict(
 
 Band thresholds are UCM-configurable (`CalcConfig.verdictBands`); defaults match the 7-point scale in Section 1.
 
-### Truth Bands
+---
 
-The `truthFromBand` function converts confidence-adjusted bands to percentages:
+## 2. Primary Entity: ClaimAssessmentBoundary
+
+A **ClaimAssessmentBoundary** (CB) is a group of compatible EvidenceScopes that define a coherent analytical lens. It is created **after** evidence research by clustering EvidenceScopes — it is **not** pre-defined. This replaced the `AnalysisContext` entity from the Orchestrated pipeline (removed in v2.11.0).
+
+**File**: `apps/web/src/lib/analyzer/types.ts`
 
 ```typescript
-function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", confidence: number): number {
-  const conf = normalizePercentage(confidence) / 100;
-  switch (band) {
-    case "strong":    return Math.round(72 + 28 * conf);  // 72-100%
-    case "partial":   return Math.round(50 + 35 * conf);  // 50-85%
-    case "uncertain": return Math.round(35 + 30 * conf);  // 35-65%
-    case "refuted":   return Math.round(28 * (1 - conf)); // 0-28%
-  }
+/**
+ * ClaimAssessmentBoundary: A group of compatible EvidenceScopes that define
+ * a coherent analytical lens. Created AFTER research by clustering
+ * EvidenceScopes — NOT pre-created.
+ */
+export interface ClaimAssessmentBoundary {
+  id: string;                    // "CB_01", "CB_02", ...
+  name: string;                  // Human-readable: "Well-to-Wheel Analyses"
+  shortName: string;             // Short label: "WTW"
+  description: string;           // What this boundary represents
+
+  // Derived from constituent EvidenceScopes
+  methodology?: string;          // Dominant methodology
+  boundaries?: string;           // Scope boundaries
+  geographic?: string;           // Geographic scope
+  temporal?: string;             // Temporal scope
+
+  // Clustering metadata
+  constituentScopes: EvidenceScope[]; // The scopes that compose this boundary
+  internalCoherence: number;     // 0-1: how consistent evidence within is
+  evidenceCount: number;         // Number of evidence items in this boundary
 }
 ```
 
-## 2. ClaimAssessmentBoundary (Bounded Analytical Frame)
-
-> **Terminology note**: This section previously used the term **AnalysisContext**. The current pipeline uses **ClaimAssessmentBoundary** (CB) as the top-level analytical frame. The `AnalysisContext` interface described below is from the pre-v2.11.0 Orchestrated pipeline and is retained here for reference; in the CB pipeline, boundaries are defined by the `ClaimAssessmentBoundary` type in `types.ts`.
-
-A **ClaimAssessmentBoundary** is a bounded analytical frame — a cluster of compatible EvidenceScopes that should be analyzed together. It replaces the previous concept of "AnalysisContext".
-
-Note: **EvidenceScope** is the *per-evidence* source methodology/boundaries (`EvidenceItem.evidenceScope`). The ClaimAssessmentBoundary refers to the *top-level* clustered grouping that emerges from evidence.
-
-### Definition
-
-An AnalysisContext is defined by:
-- **Boundaries**: What's included/excluded (e.g., "vehicle-only", "full lifecycle")
-- **Methodology**: Standards used (e.g., "ISO 14040", "WTW analysis")
-- **Temporal**: Time period (e.g., "2020-2025", "January 2023")
-- **Subject**: What's being analyzed (e.g., "TSE case", "efficiency comparison")
-- **Institution**: Court, agency, or organization (optional)
-- **Jurisdiction**: Geographic/legal jurisdiction (optional)
-
-### AnalysisContext Types
-
-| Type | Examples |
-|------|----------|
-| **Legal** | TSE electoral case, STF criminal proceeding |
-| **Methodological** | WTW, TTW, LCA analysis |
-| **Regulatory** | EU regulations, US EPA standards |
-| **Temporal** | 2023 rollout vs 2024 review |
-
-### Multi-Context Detection
-
-The system detects multiple analysis contexts when an input requires separate analyses:
+### AtomicClaim: The Analytical Unit
 
 ```typescript
-interface AnalysisContext {
-  id: string;              // e.g., "CTX_TSE", "CTX_WTW"
-  name: string;            // Human-readable name
-  shortName: string;       // Abbreviation
-  institution?: string;    // Court, agency, organization
-  methodology?: string;    // Standard/method used
-  boundaries?: string;     // What's included/excluded
-  temporal?: string;       // Time period
-  subject: string;         // What's being analyzed
-  criteria?: string[];     // Evaluation criteria
-  outcome?: string;        // Result if known
-  status: "concluded" | "ongoing" | "pending" | "unknown";
-  decisionMakers?: DecisionMaker[];
+export interface AtomicClaim {
+  id: string;                    // "AC_01", "AC_02", ...
+  statement: string;             // The verifiable assertion
+  category: "factual" | "evaluative" | "procedural";
+  centrality: "high" | "medium"; // Only central claims survive extraction
+  harmPotential: "critical" | "high" | "medium" | "low";
+  isCentral: true;               // Always true (filtered by Gate 1)
+  claimDirection: "supports_thesis" | "contradicts_thesis" | "contextual";
+  keyEntities: string[];
+  checkWorthiness: "high" | "medium";
+  specificityScore: number;      // 0-1, LLM-assessed. >= 0.6 required by Gate 1.
+  groundingQuality: "strong" | "moderate" | "weak" | "none";
+  expectedEvidenceProfile: {
+    methodologies: string[];
+    expectedMetrics: string[];
+    expectedSourceTypes: SourceType[];
+  };
 }
 ```
 
-### AnalysisContext Sources
+### CBClaimVerdict: Per-Claim Verdict Output
 
-Analysis contexts are determined from:
-1. **Input analysis** (understandClaim phase): Explicit or implied analysis contexts in user query
-2. **Evidence extraction** (extractEvidence phase): Sources may define their own EvidenceScope via `evidenceScope`
-3. **Claim decomposition**: Claims tagged with `contextId`
+```typescript
+export interface CBClaimVerdict {
+  id: string;
+  claimId: string;               // FK to AtomicClaim
+  truthPercentage: number;       // 0–100
+  verdict: ClaimVerdict7Point;   // 7-point scale label
+  confidence: number;            // 0–100 (adjusted by self-consistency spread)
+  reasoning: string;             // LLM-generated explanation
+  harmPotential: "critical" | "high" | "medium" | "low";
+  isContested: boolean;
+  supportingEvidenceIds: string[];
+  contradictingEvidenceIds: string[];
+  boundaryFindings: BoundaryFinding[]; // Per-boundary quantitative signals
+  consistencyResult: ConsistencyResult;
+  challengeResponses: ChallengeResponse[];
+  triangulationScore: TriangulationScore;
+}
+```
 
-### EvidenceScope vs AnalysisContext
+### EvidenceScope vs ClaimAssessmentBoundary
 
-When evidence defines an EvidenceScope that differs from the AnalysisContext (e.g., WTW data applied to TTW analysis), this is flagged in verdict reasoning.
+- **EvidenceScope**: Per-evidence source metadata (methodology, temporal bounds, geographic scope). Attached to individual `EvidenceItem` objects as `evidenceItem.evidenceScope`. Describes how the *source* computed its data.
+- **ClaimAssessmentBoundary**: Top-level cluster of compatible EvidenceScopes. Emerges from evidence, not from input analysis.
 
-### Design Decision: evidenceScope Kept Separate
+Do **not** confuse these. Never call either one "context".
 
-The `evidenceScope` field on evidence items is intentionally kept separate from top-level analysis contexts. This enables:
-- **Provenance tracking**: Distinguishes analysis context detected from input vs EvidenceScope defined by evidence
-- **Mismatch detection**: Identifies when EvidenceScope differs from the analysis context
-- **Verdict enrichment**: Notes EvidenceScope metadata without modifying detected analysis contexts
+---
 
-## 3. Counter-Evidence Handling
+## 3. Contestation Weight Model
 
-Counter-evidence is distinguished from mere contestation and influences verdict calculations.
+Counter-evidence is distinguished from mere contestation. The CB pipeline uses **weight multipliers**, not point deductions. This approach avoids double-penalizing contested claims whose `truthPercentage` already reflects counter-evidence.
 
-### Doubted vs Contested (v2.8)
+### Doubted vs Contested
 
 ```mermaid
 flowchart TD
     subgraph Input["Opposition/Criticism"]
         OPP[Someone opposes or criticizes the claim]
     end
-    
+
     OPP --> CHECK{Has documented<br/>counter-evidence?}
-    
-    CHECK -->|No evidence| DOUBTED[DOUBTED<br/>factualBasis: opinion/alleged]
+
+    CHECK -->|No evidence| DOUBTED[DOUBTED<br/>factualBasis: opinion/unknown]
     CHECK -->|Some evidence| DISPUTED[CONTESTED<br/>factualBasis: disputed]
     CHECK -->|Strong evidence| ESTABLISHED[CONTESTED<br/>factualBasis: established]
-    
+
     DOUBTED --> W1[Weight: 1.0x<br/>Full weight]
-    DISPUTED --> W2[Weight: 0.5x<br/>Reduced]
-    ESTABLISHED --> W3[Weight: 0.3x<br/>Heavily reduced]
-    
+    DISPUTED --> W2[Weight: 0.7x<br/>Reduced]
+    ESTABLISHED --> W3[Weight: 0.5x<br/>Reduced further]
+
     style DOUBTED fill:#fff3e0
     style DISPUTED fill:#ffecb3
     style ESTABLISHED fill:#ffcdd2
@@ -174,333 +181,389 @@ flowchart TD
 ```
 
 **Key Distinction:**
-- **DOUBTED** = Political criticism, rhetoric, accusations WITHOUT documented evidence → Full weight (claim remains credible)
-- **CONTESTED** = Has actual documented counter-evidence → Reduced weight (genuine uncertainty)
+- **DOUBTED** = Political criticism, rhetoric, accusations WITHOUT documented evidence → Full weight (1.0x)
+- **CONTESTED** = Actual documented counter-evidence → Reduced weight (0.7x or 0.5x)
 
-**Implementation (v2.8):**
-- ~~`validateContestation()` in `aggregation.ts`~~: Removed with Orchestrated pipeline (v2.11.0)
-- ~~`detectClaimContestation()` in `aggregation.ts`~~: Removed (v2.11.0). CB pipeline handles contestation via LLM debate (verdict-stage.ts adversarial challenge)
+### Implementation
 
-### Evidence Item Categorization
+**File**: `apps/web/src/lib/analyzer/aggregation.ts`
 
-**File**: `apps/web/src/lib/analyzer/types.ts` (EvidenceItem interface)
-
-Evidence items are categorized during extraction:
-- `category: "evidence"` - Supporting evidence
-- `category: "criticism"` - Counter-evidence or opposing views
-- `category: "expert_quote"` - Expert testimony
-- `category: "statistic"` - Numerical data
-- `category: "legal_provision"` - Legal framework
-- `category: "event"` - Factual events
-
-### Contestation Fields
+**Function**: `getClaimWeight()`
 
 ```typescript
-interface EvidenceItem {
-  category: "legal_provision" | "evidence" | "expert_quote" | "statistic" | "event" | "criticism";
-  isContestedClaim?: boolean;  // True if this evidence item contests a claim
-  claimSource?: string;         // Who makes the contested claim
+export function getClaimWeight(claim: {
+  centrality?: "high" | "medium" | "low";
+  confidence?: number;
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
+  harmPotential?: "high" | "medium" | "low";
+  isContested?: boolean;
+  factualBasis?: "established" | "disputed" | "opinion" | "unknown";
+}, weights?: AggregationWeights): number {
+  // Only direct claims contribute to the verdict
+  if (claim.thesisRelevance && claim.thesisRelevance !== "direct") return 0;
+
+  // ... centrality and harm multipliers applied first ...
+
+  // Contestation weight reduction (v2.9.0 — multipliers, not point deductions)
+  if (claim.isContested) {
+    const ctw = weights?.contestationWeights ?? { established: 0.5, disputed: 0.7, opinion: 1.0 };
+    const basis = claim.factualBasis || "unknown";
+    if (basis === "established") {
+      weight *= ctw.established; // default 0.5x
+    } else if (basis === "disputed") {
+      weight *= ctw.disputed;    // default 0.7x
+    }
+    // "opinion", "unknown" = just "doubted", no real evidence → full weight (1.0x)
+  }
+
+  return weight;
 }
 ```
 
-### Gate 4 Scoping
+| factualBasis | Weight Multiplier | Rationale |
+|---|---|---|
+| `"established"` | 0.5x (default) | Strong documented counter-evidence reduces influence |
+| `"disputed"` | 0.7x (default) | Some documented counter-evidence moderately reduces influence |
+| `"opinion"` | 1.0x | Rhetoric only, no documented evidence — full weight |
+| `"unknown"` | 1.0x | No evidence of contestation — full weight |
 
-**Function**: `applyGate4ToVerdicts` (line ~1018)
+All multipliers are UCM-configurable via `CalcConfig.aggregation.contestationWeights`.
 
-Counter-evidence is scoped to relevant analysis contexts:
+> **Note**: The old model (point deductions: `-12`/`-8` applied as `truthPct -= penalty`) does **not exist** in the CB pipeline. It was part of the removed Orchestrated pipeline. The CB pipeline uses **only** weight multipliers.
 
-```typescript
-// Count contradicting evidence items (criticism category)
-// Only count criticism items that are:
-// 1. In the same context as the verdict, OR
-// 2. Not scoped to any specific context (general criticism)
-const contradictingFactCount = evidenceItems.filter(f =>
-  !verdict.supportingEvidenceIds.includes(f.id) &&
-  f.category === "criticism" &&
-  (!f.contextId || f.contextId === verdict.contextId)
-).length;
-```
+---
 
-This prevents criticism of one analysis context from penalizing claims about a different analysis context.
+## 4. Aggregation: 3-Level Hierarchy
 
-### Evidence-Based Contestation
-
-**File**: `apps/web/src/lib/analyzer/verdict-stage.ts` (CB pipeline, Stage 4)
-
-Contestation with documented evidence reduces verdict scores:
-
-```typescript
-const evidenceBasedContestation =
-  cv.isContested &&
-  (cv.factualBasis === "established" || cv.factualBasis === "disputed");
-
-if (evidenceBasedContestation) {
-  const penalty = cv.factualBasis === "established" ? 12 : 8;
-  truthPct = Math.max(0, truthPct - penalty);
-}
-```
-
-- **"established"** counter-evidence: -12 points
-- **"disputed"** counter-evidence: -8 points
-- **"opinion"** contestation: No penalty (just rhetoric)
-
-## 4. Aggregation Hierarchy
+The CB pipeline aggregates verdicts through 3 levels — there is no KeyFactor intermediate layer and no AnalysisContext averaging layer from the Orchestrated pipeline.
 
 ```mermaid
 graph TD
-    Evidence[Evidence Items] --> ClaimVerdicts[Claim Verdicts]
-    ClaimVerdicts --> WeightCalc[Weight Calculation<br/>━━━━━━━━━━━━━<br/>• centrality: 2.0x<br/>• harmPotential: 1.5x<br/>• contested: 0.3-0.5x]
-    WeightCalc --> KeyFactors[Key Factor Verdicts]
-    KeyFactors --> ContextAnswers[Context Answers]
-    ContextAnswers --> OverallAnswer[Overall Answer]
-    
-    ClaimVerdicts --> ArticleVerdict[Article Verdict]
-    
+    Evidence["Evidence Items<br/>(per source, per EvidenceScope)"] --> ClaimVerdicts["AtomicClaim Verdicts<br/>(Stage 4: 5-step LLM debate per claim)"]
+    ClaimVerdicts --> WeightCalc["Weight Calculation<br/>━━━━━━━━━━━━━<br/>centralityWeight × harmWeight × confidenceFactor<br/>× (1 + triangulationFactor) × derivativeFactor<br/>contestation multiplier: established=0.5x, disputed=0.7x"]
+    WeightCalc --> OverallAnswer["Overall Assessment<br/>(Stage 5: aggregateAssessment)"]
+    OverallAnswer --> ArticleVerdict["Verdict Label + Narrative<br/>(percentageToArticleVerdict + generateVerdictNarrative)"]
+
     style WeightCalc fill:#e3f2fd
 ```
 
-### Weight Calculation (v3.1)
+### Level 1: Evidence Items (per AtomicClaim, per ClaimAssessmentBoundary)
 
-**Function**: `getClaimWeight()` in `aggregation.ts` — all multipliers UCM-configurable via `CalcConfig.aggregation`
+Evidence items are extracted and assigned to claims and boundaries during Stages 2–3. Each `EvidenceItem` carries provenance: `statement`, `category`, `claimDirection`, `evidenceScope`, `probativeValue`, `sourceType`.
+
+Source reliability scores are applied at this level via `getTrackRecordScore()` (from the prefetched map). See Section 7.
+
+### Level 2: AtomicClaim Verdicts
+
+Each `AtomicClaim` gets one `CBClaimVerdict` produced by the 5-step LLM debate in `verdict-stage.ts`:
+
+1. **Advocate Verdict** (Sonnet) — initial verdict for all claims
+2. **Self-Consistency Check** (Sonnet x2, parallel) — stability measurement
+3. **Adversarial Challenge** (Sonnet, parallel) — argue against emerging verdicts
+4. **Reconciliation** (Sonnet) — final verdict incorporating challenges
+5. **Verdict Validation** (Haiku x2) — grounding + direction checks
+
+### Level 3: Weighted Average → Overall Assessment
+
+**File**: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
+
+**Function**: `aggregateAssessment()`
+
+The full weight formula from the source (Stage 5, §8.5.4):
+
+```
+finalWeight = centralityWeight × harmWeight × confidenceFactor × (1 + triangulationFactor) × derivativeFactor
+```
+
+Where:
+- `centralityWeight`: from `CalcConfig.aggregation.centralityWeights` — defaults high=3.0, medium=2.0, low=1.0
+- `harmWeight`: from `CalcConfig.aggregation.harmPotentialMultipliers` — defaults critical/high=1.5, medium/low=1.0
+- `confidenceFactor`: `verdict.confidence / 100` (e.g., 80% confidence → 0.8)
+- `triangulationFactor`: cross-boundary agreement signal (see Section 8)
+- `derivativeFactor`: 0.5x–1.0x based on proportion of derivative evidence (§8.5.3)
+
+The contestation weight reduction (`established=0.5x`, `disputed=0.7x`) is applied by `getClaimWeight()` **in addition** to the above formula when processing claims that pass through the counter-claim inversion logic.
+
+**Actual code from `aggregateAssessment()`**:
 
 ```typescript
-// Tangential/irrelevant claims contribute zero weight
-if (claim.thesisRelevance && claim.thesisRelevance !== "direct") return 0;
+// Final weight (§8.5.4): centrality × harm × confidence × (1 + triangulation) × derivative
+const finalWeight =
+  centralityWeight *
+  harmWeight *
+  confidenceFactor *
+  (1 + triangulationFactor) *
+  derivativeFactor;
+```
 
-// Centrality multiplier (UCM defaults: high=3.0, medium=2.0, low=1.0)
-const centralityMultiplier =
-  claim.centrality === "high" ? cw.high :
-  claim.centrality === "medium" ? cw.medium : cw.low;
+**Counter-claim inversion**: Counter-claims (`claimDirection: "contradicts_thesis"`) have their truth percentage inverted before aggregation — if a counter-claim scores 85%, it contributes 15% to the overall verdict:
 
-// Confidence factor (0–1 range)
-const confidenceFactor = (claim.confidence ?? 100) / 100;
+```typescript
+// In calculateWeightedVerdictAverage (aggregation.ts):
+const effectiveTruthPct = claim.isCounterClaim
+  ? 100 - claim.truthPercentage
+  : claim.truthPercentage;
+```
 
-// Base weight = centrality × confidence
-let weight = centralityMultiplier * confidenceFactor;
+**Weighted sum**:
 
-// Harm potential boost (default 1.5x for high)
-if (claim.harmPotential === "high") weight *= hw;
+```typescript
+const totalWeight = weightsData.reduce((sum, item) => sum + item.weight, 0);
+const weightedTruthPercentage =
+  totalWeight > 0
+    ? weightsData.reduce((sum, item) => sum + item.truthPercentage * item.weight, 0) / totalWeight
+    : 50;
+const weightedConfidence =
+  totalWeight > 0
+    ? weightsData.reduce((sum, item) => sum + item.confidence * item.weight, 0) / totalWeight
+    : 50;
+```
 
-// Contestation reduction (only for documented counter-evidence)
-if (claim.isContested) {
-  if (claim.factualBasis === "established") weight *= cw_contested.established; // default 0.5x
-  else if (claim.factualBasis === "disputed")  weight *= cw_contested.disputed;  // default 0.7x
-  // "opinion"/"unknown" = full weight (doubt ≠ evidence)
+### Concrete Example
+
+Given three claims with these properties:
+
+| Claim | truthPct | confidence | centrality | harmPotential | triangulationFactor | derivativeFactor |
+|-------|----------|------------|------------|---------------|---------------------|------------------|
+| AC_01 | 80% | 70% | high | medium | 0.05 | 1.0 |
+| AC_02 | 45% | 55% | medium | high | 0.0 | 1.0 |
+| AC_03 | 90% | 85% | high | medium | 0.15 | 0.8 |
+
+Weights:
+- AC_01: 3.0 × 1.0 × 0.70 × (1 + 0.05) × 1.0 = **2.205**
+- AC_02: 2.0 × 1.5 × 0.55 × (1 + 0.00) × 1.0 = **1.650**
+- AC_03: 3.0 × 1.0 × 0.85 × (1 + 0.15) × 0.8 = **2.346**
+
+Weighted truth:
+```
+(80 × 2.205 + 45 × 1.650 + 90 × 2.346) / (2.205 + 1.650 + 2.346)
+= (176.4 + 74.25 + 211.14) / 6.201
+= 461.79 / 6.201
+= 74.5% → MOSTLY-TRUE (confidence 71.8%)
+```
+
+### Tangential Claim Pruning
+
+Tangential/irrelevant claims (`thesisRelevance !== "direct"`) receive weight = 0 in aggregation. Baseless tangential claims (insufficient supporting evidence) are dropped entirely by `pruneTangentialBaselessClaims()` in `aggregation.ts`.
+
+---
+
+## 5. Quality Gates
+
+### Gate 1: Claim Validation
+
+**File**: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — `validateClaims()` function
+
+Gate 1 is the LLM-powered claim fidelity filter at the end of Stage 1. Each claim is evaluated against three dimensions:
+
+- `passedOpinion`: Is the claim factual (not pure opinion or prediction)?
+- `passedSpecificity`: Is the claim specific enough to be verifiable (specificityScore >= 0.6)?
+- `passedFidelity`: Does the claim accurately represent the input? (New field, replaces `contextId`-based scoping)
+
+Claims failing both `passedOpinion` AND `passedSpecificity` are filtered out. Claims failing `passedFidelity` only are also filtered. Direct high-centrality claims are never fully eliminated — the **safety net** rescues the highest-centrality claim if filtering would result in zero claims:
+
+```typescript
+// Safety net: if all claims would be filtered, rescue the highest-centrality
+// claim that passed fidelity (or the first claim if none passed fidelity)
+if (keptClaims.length === 0 && claims.length > 0) {
+  const fidelityPassIds = new Set(
+    validated.validatedClaims.filter((v) => v.passedFidelity).map((v) => v.claimId),
+  );
+  // ... sort by centrality, prefer fidelity-passing claims, rescue first
 }
 ```
 
-### Level 1: Claim Verdicts
-
-**Source**: LLM verdict generation + source reliability weighting
-
-**Function**: `applyEvidenceWeighting` in `source-reliability.ts`
-
-Source reliability weighting adjusts verdicts based on the credibility of evidence sources. See [Source Reliability Weighting](#10-source-reliability-weighting) for full details.
+Gate 1 statistics are exposed in `CBClaimUnderstanding.gate1Stats`:
 
 ```typescript
-// Calculate effective weight from source reliability data
-const effectiveWeight = calculateEffectiveWeight(sourceData);
-
-// Adjust truth toward neutral (50) based on effective weight
-const adjustedTruth = Math.round(50 + (verdict.truthPercentage - 50) * avgEffectiveWeight);
-const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avgEffectiveWeight / 2));
-```
-
-| Source Quality | Effective Weight | Verdict Impact |
-|----------------|------------------|----------------|
-| High reliability (93% score, consensus) | ~97% | Minimal adjustment |
-| Medium reliability (70% score) | ~68% | Moderate pull toward neutral |
-| Unknown source (default) | ~41% | Strong pull toward neutral |
-| Low reliability (40% score) | ~39% | Strong pull toward neutral |
-
-### Level 2: Key Factor Verdicts
-
-**File**: `apps/web/src/lib/analyzer/aggregation.ts` (CB pipeline, Stage 5 aggregation)
-
-Key factors aggregate claims mapped to them:
-
-```typescript
-const factorClaims = weightedClaimVerdicts.filter(v => v.keyFactorId === factor.id);
-const factorAvgTruthPct = dedupeWeightedAverageTruth(factorClaims);
-
-// Determine support based on average
-if (factorAvgTruthPct >= 72) supports = "yes";
-else if (factorAvgTruthPct < 43) supports = "no";
-else supports = "neutral";
-```
-
-### Level 3: ClaimAssessmentBoundary Answers
-
-**File**: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Stage 5: `aggregateAssessment`)
-
-ClaimAssessmentBoundaries aggregate verdicts with contestation correction:
-
-```typescript
-// Calculate effective negatives (contested negatives are down-weighted)
-const effectiveNegatives = negativeFactors - (contestedNegatives * 0.7);
-
-// If positive factors > effective negatives, boost verdict
-if (answerTruthPct >= 72 && positiveFactors > effectiveNegatives) {
-  // Already positive, no change needed
-} else if (answerTruthPct < 72 && positiveFactors > effectiveNegatives) {
-  correctedConfidence = Math.min(correctedConfidence, 78);
-  answerTruthPct = truthFromBand("strong", correctedConfidence);
+gate1Stats: {
+  totalClaims: number;
+  passedOpinion: number;
+  passedSpecificity: number;
+  passedFidelity?: number;
+  filteredCount: number;
+  overallPass: boolean;
 }
 ```
 
-### Level 4: Overall Answer
+> **Removed field**: `contextId` was deleted during Phase 4 cleanup as part of the Orchestrated pipeline removal. All previous references to `f.contextId` or `verdict.contextId` in Gate 1 scoping no longer exist.
 
-**File**: ~~`apps/web/src/lib/analyzer/orchestrated.ts`~~ (removed in v2.11.0 — CB pipeline uses `aggregateAssessment()` in `claimboundary-pipeline.ts`)
+### Gate 4: Verdict Confidence Classification
 
-Overall answer averages analysis-context answers (de-duplicated) — **legacy Orchestrated logic:**
+**File**: `apps/web/src/lib/analyzer/verdict-stage.ts` — `classifyConfidence()` function
 
-```typescript
-const avgTruthPct = Math.round(
-  correctedContextAnswers.reduce((sum, pa) => sum + pa.truthPercentage, 0) /
-    correctedContextAnswers.length
-);
-```
+Gate 4 in the CB pipeline uses the LLM-derived `confidence` score already computed through the 5-step debate pattern. Unlike the old Orchestrated Gate 4 (which used `sourceCount`/`factCount` thresholds), the CB pipeline's confidence is:
 
-#### When is the Overall Average Meaningful?
+1. Set by the LLM during Step 1 (Advocate Verdict)
+2. Adjusted downward when the self-consistency spread is high (Steps 2–4)
+3. Enforced against a floor for high-harm claims (Step 5b — `enforceHarmConfidenceFloor`)
 
-**Single Context (Most Common Case)**:
-- Average = context verdict (identical)
-- Overall verdict fully represents the analysis
-- This is the primary use case
-
-**Multiple Contexts (Distinct Analytical Frames)**:
-- Average may not be meaningful if contexts answer different questions
-- Example: "Legal trial fairness (85%)" + "Scientific validity (30%)" = 57.5% average
-- The 57.5% doesn't represent either question well
-
-**UI Handling**:
-- `hasMultipleContexts` flag signals when average may be unreliable
-- `articleVerdictReason` explains: "Average of distinct contexts: [list]"
-- UI should de-emphasize overall average and highlight individual context verdicts
-- See `articleVerdictReliability` field for programmatic reliability signal
-
-**Architecture Decision (v2.6.38)**:
-- Simple averaging chosen over complex weighting schemes
-- Transparency via explicit messaging about meaningless averages
-- Individual context verdicts always preserved and displayed
-- Future enhancement: Primary context detection to show most relevant verdict
-
-## 5. Confidence Usage
-
-### LLM Confidence (0-100%)
-
-The LLM provides a confidence score for each verdict, representing its certainty in the assessment.
-
-### Gate 4 Confidence Tiers
-
-**Function**: `validateVerdictGate4` (line ~900)
+The `classifyConfidence()` function is a structural pass-through — verdicts are returned unchanged because confidence classification is informational only:
 
 ```typescript
-// HIGH: 3+ sources, 5+ facts, reasoning >100 chars
-if (sourceCount >= 3 && factCount >= 5 && reasoning.length >= 100) {
-  confidenceTier = "HIGH";
-}
-// MEDIUM: 2+ sources, 3+ facts, reasoning >50 chars
-else if (sourceCount >= 2 && factCount >= 3 && reasoning.length >= 50) {
-  confidenceTier = "MEDIUM";
-}
-// LOW: 1+ sources, 1+ facts
-else if (sourceCount >= 1 && factCount >= 1) {
-  confidenceTier = "LOW";
-}
-// INSUFFICIENT: Doesn't meet minimum criteria
-else {
-  confidenceTier = "INSUFFICIENT";
+/**
+ * Gate 4: Classify each verdict's confidence tier.
+ * Tiers: HIGH (>=75), MEDIUM (>=50), LOW (>=25), INSUFFICIENT (<25)
+ *
+ * Returns verdicts unchanged — classification is informational.
+ */
+export function classifyConfidence(verdicts: CBClaimVerdict[]): CBClaimVerdict[] {
+  // Confidence is already a 0-100 number on each verdict,
+  // adjusted by self-consistency spread in reconciliation.
+  return verdicts;
 }
 ```
 
-### Confidence Affects Truth Percentage
-
-Via `truthFromBand`, confidence modulates the final percentage within each band:
-
-- **High confidence** (90%): Verdict near top of band
-- **Medium confidence** (60%): Verdict in middle of band
-- **Low confidence** (30%): Verdict near bottom of band
-
-Example for "strong" band:
-- 90% confidence → 72 + 28×0.9 = 97% (TRUE)
-- 60% confidence → 72 + 28×0.6 = 89% (TRUE)
-- 30% confidence → 72 + 28×0.3 = 80% (MOSTLY-TRUE)
-
-### Confidence Clamping
-
-**Function**: `clampConfidence` (line ~1450)
+**High-harm confidence floor** (`enforceHarmConfidenceFloor`): Claims with `harmPotential` "critical" or "high" are downgraded to UNVERIFIED if confidence is below `highHarmMinConfidence` (UCM, default 50). This prevents misleadingly definitive verdicts on potentially harmful topics with weak evidentiary backing.
 
 ```typescript
-function clampConfidence(value: number): number {
-  if (!Number.isFinite(value)) return 0.5;
-  return Math.max(0.0, Math.min(1.0, value));
+// If high-harm claim has confidence < threshold, downgrade to UNVERIFIED
+const isHighHarm = floorLevels.includes(v.harmPotential);
+if (isHighHarm && v.confidence < threshold) {
+  return { ...v, verdict: "UNVERIFIED" };
 }
 ```
 
-Ensures confidence stays in valid range [0.0, 1.0].
+> **Removed logic**: The old Gate 4 code referencing `sourceCount >= 3`, `factCount >= 5`, and `reasoning.length >= 100` thresholds does **not exist** in the CB pipeline. That was Orchestrated-era logic.
 
-## 6. Near-Duplicate Claim Handling
+---
 
-### Problem
+## 6. Source Reliability Integration
 
-If the LLM generates multiple claims expressing the same idea:
-- "The Venezuelan takeover of oil assets constituted theft of American property"
-- "The Venezuelan oil asset seizure was one of the largest thefts of American property in US history"
+**Version**: v2.11.0+
+**Files**: `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
 
-Both would influence the overall verdict, effectively double-counting the same evidence.
+The CB pipeline uses a **prefetch → sync lookup** pattern for source reliability — not `applyEvidenceWeighting()` in `verdict-stage.ts` (that was the old integration path).
 
-### Solution: De-Duplication Weighting
+### How It Works
 
-**Function**: `dedupeWeightedAverageTruth` (line ~2014)
+**Step 1: Prefetch (async, before evidence research)**
 
-**Algorithm**:
-
-1. **Tokenize** each claim text (lowercase, remove punctuation, filter short words)
-2. **Calculate Jaccard similarity** between token sets
-3. **Cluster** claims with similarity ≥ 0.6
-4. **Weight** each cluster:
-   - Primary claim (highest truth%): weight = 1.0
-   - Duplicate claims: share weight = 0.5 / (n-1)
-5. **Average** using cluster weights
-
-**Example**:
-
-```
-Cluster 1: [Claim A (85%), Claim B (82%), Claim C (80%)]
-  - Claim A: 85% × 1.0 = 85.0
-  - Claim B: 82% × 0.25 = 20.5
-  - Claim C: 80% × 0.25 = 20.0
-  - Total weight: 1.5
-  - Contribution: 125.5 / 1.5 = 83.7%
-
-Cluster 2: [Claim D (90%)]
-  - Claim D: 90% × 1.0 = 90.0
-  - Total weight: 1.0
-  - Contribution: 90.0 / 1.0 = 90.0%
-
-Overall: (83.7 + 90.0) / 2 = 86.9%
-```
-
-### Application
-
-De-duplication is applied at multiple levels:
-
-- **Claims average** — `aggregation.ts` (`getClaimWeight`, weighted average in verdict stage)
-- **Key factor aggregation** — `aggregation.ts` (`pruneTangentialBaselessClaims`)
-
-### UI Impact
-
-**All claims are still displayed** in the UI. De-duplication only affects aggregation calculations, not visibility.
-
-## 7. Dependency Handling
-
-**File**: `apps/web/src/lib/analyzer/verdict-stage.ts` (CB pipeline, Stage 4)
-
-Claims can depend on other claims (e.g., "timing" depends on "attribution"):
+Called once in `claimboundary-pipeline.ts` after all sources are collected, before verdict generation:
 
 ```typescript
-// Check if any dependency is false (truthPercentage < 43%)
+// claimboundary-pipeline.ts — called at ~58% pipeline progress
+const allSourceUrls = state.sources.map((s) => s.url);
+if (allSourceUrls.length > 0) {
+  await prefetchSourceReliability(allSourceUrls);
+}
+```
+
+`prefetchSourceReliability()` from `source-reliability.ts`:
+1. Extracts unique domains from URLs
+2. Batch-checks the SQLite cache (`FH_SR_CACHE_PATH`)
+3. For cache misses on "important" sources, calls `evaluateSourceInternal()` — an LLM-powered evaluation
+4. Populates an in-memory map: `domain → { score, confidence, consensusAchieved }`
+5. Evaluations are parallelized (concurrency = 3)
+
+**Step 2: Sync lookup (during evidence processing)**
+
+```typescript
+// claimboundary-pipeline.ts — called per FetchedSource
+const fetchedSource: FetchedSource = {
+  trackRecordScore: getTrackRecordScore(result.source.url),
+  // ...
+};
+```
+
+`getTrackRecordScore(url)` from `source-reliability.ts`: returns a `number | null` (0.0–1.0 float) from the prefetched in-memory map. Returns `null` if SR is disabled or domain is not found.
+
+### Score Scale
+
+| Score Range | Credibility Band | Impact on Verdict |
+|-------------|-----------------|-------------------|
+| 0.86–1.00 | Highly Reliable | Verdict fully preserved (~95–100% weight) |
+| 0.72–0.85 | Reliable | Verdict mostly preserved (~75–90% weight) |
+| 0.58–0.71 | Leaning Reliable | Moderate preservation (~60–75% weight) |
+| 0.43–0.57 | Mixed | Appropriate skepticism (~40–60% weight) |
+| 0.29–0.42 | Leaning Unreliable | Pulls toward neutral (~30–45% weight) |
+| 0.15–0.28 | Unreliable | Strong pull toward neutral (~15–30% weight) |
+| 0.00–0.14 | Highly Unreliable | Maximum skepticism (~0–15% weight) |
+
+Unknown/unevaluated sources receive `defaultScore = 0.5` (neutral center), applying appropriate skepticism without discounting evidence entirely.
+
+### Verdict Adjustment Formula
+
+```typescript
+// Score IS the weight — no transformation
+function calculateEffectiveWeight(data: SourceReliabilityData): number {
+  return data.score;
+}
+
+// Pull verdict toward neutral (50) based on reliability
+adjustedTruth = Math.round(50 + (originalTruth - 50) * avgEffectiveWeight);
+// Scale confidence by reliability
+adjustedConfidence = Math.round(originalConfidence * (0.5 + avgEffectiveWeight / 2));
+```
+
+**Impact examples:**
+
+| Source | Score | Original Verdict | Adjusted Verdict |
+|--------|-------|-----------------|-----------------|
+| Reuters (95% score) | 0.95 | 85% (MOSTLY-TRUE) | 83% (MOSTLY-TRUE) |
+| Unknown source (50% score) | 0.50 | 85% (MOSTLY-TRUE) | 68% (LEANING-TRUE) |
+| Low credibility (27% score) | 0.27 | 85% (MOSTLY-TRUE) | 60% (LEANING-TRUE) |
+
+**Multi-source averaging**: When a verdict draws from multiple sources, their scores are averaged before applying the adjustment formula.
+
+---
+
+## 7. Triangulation Scoring
+
+Cross-boundary agreement/disagreement is measured for each claim verdict and expressed as a `triangulationFactor` that feeds directly into the weight formula.
+
+**File**: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
+
+**Function**: `computeTriangulationScore()`
+
+**Interface** (from `types.ts`):
+
+```typescript
+export interface TriangulationScore {
+  boundaryCount: number;  // Boundaries with evidence for this claim
+  supporting: number;     // Boundaries with "supports" evidence direction
+  contradicting: number;  // Boundaries with "contradicts" evidence direction
+  level: "strong" | "moderate" | "weak" | "conflicted";
+  factor: number;         // Multiplicative adjustment (feeds into weight formula)
+}
+```
+
+**Factor values** (UCM-configurable via `CalcConfig.aggregation.triangulation`):
+
+| Condition | Level | Factor |
+|-----------|-------|--------|
+| Only 1 boundary | `weak` | −0.10 (default) |
+| 3+ supporting boundaries | `strong` | +0.15 (default) |
+| 2+ supporting, ≤1 contradicting | `moderate` | +0.05 (default) |
+| Supporting and contradicting roughly equal | `conflicted` | 0 |
+| More supporting than contradicting | `moderate` | +0.05 (default) |
+| Other | `weak` | −0.10 (default) |
+
+The triangulation factor is used in the weight formula as `(1 + triangulationFactor)`, meaning:
+- Multi-boundary agreement boosts weight (up to 1.15×)
+- Single-boundary evidence reduces weight (down to 0.90×)
+
+---
+
+## 8. Deduplication
+
+In the CB pipeline, near-duplicate claim deduplication is handled **upstream** by the LLM during `CLAIM_EXTRACTION_PASS2` (Stage 1). The LLM consolidates semantically equivalent claims before they enter the aggregation stage.
+
+> **Removed function**: `dedupeWeightedAverageTruth()` does **not exist** in the CB pipeline. It was a Jaccard-similarity clustering function from the Orchestrated pipeline (removed in v2.11.0). Any references to it in older documentation are stale.
+
+If semantically similar claims survive extraction, the confidence-based weighted average in `aggregateAssessment()` (Stage 5) naturally dilutes their combined influence.
+
+**UI behavior**: All claims are displayed in the UI regardless of semantic overlap. Deduplication only affects aggregation calculations.
+
+---
+
+## 9. Dependency Handling
+
+**File**: `apps/web/src/lib/analyzer/verdict-stage.ts`
+
+Claims can depend on other claims (e.g., "timing" depends on "attribution"). If a prerequisite claim is false, the dependent claim is excluded from aggregation:
+
+```typescript
 const failedDeps = dependencies.filter((depId: string) => {
   const depVerdict = verdictMap.get(depId);
   return depVerdict && depVerdict.truthPercentage < 43;
@@ -512,181 +575,42 @@ if (failedDeps.length > 0) {
 }
 ```
 
-**Independent verdicts** (line ~5550): Claims with failed dependencies are excluded from aggregation to avoid double-counting the false prerequisite.
+Claims with `dependencyFailed = true` are excluded from the weighted average in Stage 5 (independent verdicts only). Threshold: `truthPercentage < 43%` (below the LEANING-FALSE/UNVERIFIED boundary).
 
-## 8. Pseudoscience Escalation
+---
 
-> **Note**: This feature was implemented in the Orchestrated pipeline (`orchestrated.ts`) which was removed in v2.11.0. Pseudoscience escalation is **not implemented** in the ClaimAssessmentBoundary pipeline. The CB pipeline relies on LLM reasoning to assign appropriately low truthPercentage to pseudoscientific claims based on evidence quality — no separate escalation layer is needed.
+## 10. Special-Case Guards (Legacy — Orchestrated Only)
 
-*Legacy behavior (Orchestrated, removed)*: Claims matching pseudoscience patterns were automatically capped at 28% (FALSE band). This deterministic pattern-matching was removed as part of the shift to LLM-first analysis.
+These features were implemented in `orchestrated.ts` which was **removed in v2.11.0**. They are **not implemented** in the ClaimAssessmentBoundary pipeline.
 
-## 9. Benchmark Guard (Proportionality Claims)
+### Pseudoscience Escalation (Removed)
 
-> **Note**: This feature was implemented in the Orchestrated pipeline (`orchestrated.ts`) which was removed in v2.11.0. The Benchmark Guard is **not implemented** in the ClaimAssessmentBoundary pipeline. The CB pipeline handles proportionality claims through LLM verdict reasoning — the `VERDICT_RECONCILIATION` prompt instructs the LLM to flag insufficient comparative evidence in its reasoning.
+The `escalatePseudoscienceVerdict()` function and associated keyword-pattern logic existed in `orchestrated.ts`. In the CB pipeline, pseudoscience claims are handled through LLM reasoning in the Advocate/Challenger/Reconciliation debate (Stage 4). The Challenger role naturally drives pseudoscience claims toward low truth percentages without hardcoded patterns.
 
-*Legacy behavior (Orchestrated, removed)*: Claims about proportionality without comparative evidence were forced to truthPercentage=50 (uncertain). This deterministic text-matching was removed as part of the shift to LLM-first analysis.
+### Benchmark Guard / Proportionality Claims (Removed)
 
-## 10. Source Reliability Weighting
+The `hasBenchmarkEvidence` heuristic and `EVALUATIVE_OUTCOME_RE` regex existed in `orchestrated.ts`. In the CB pipeline, the `VERDICT_RECONCILIATION` prompt instructs the model to flag insufficient comparative evidence via the `confidence` score, generalizing across languages and domains.
 
-**Version**: v2.6.35+  
-**Files**: `source-reliability.ts`, `monolithic-dynamic.ts`
-
-Source reliability scores influence verdict calculations by adjusting truth percentages based on the credibility of evidence sources. This applies across **all analysis pipelines**.
-
-### Score = Verdict Weight
-
-With the 7-band scale, the LLM score directly represents reliability and is used as-is for verdict weighting:
-
-```typescript
-function calculateEffectiveWeight(data: SourceReliabilityData): number {
-  // Simple: score IS the weight
-  // Confidence already filtered out low-quality evaluations (threshold gate)
-  return data.score;
-}
-```
-
-| Component | Purpose |
-|-----------|---------|
-| **Score** | LLM-evaluated reliability (7-band scale, 0.0-1.0) - used directly as weight |
-| **Confidence** | Quality gate (threshold: 65%) - scores below threshold are rejected |
-| **Consensus** | Multi-model agreement (Claude + GPT-4 must agree within 15%) |
-
-**Key Design Decisions**:
-- **Score = Weight** - No transformation, what LLM says is what we use
-- **Confidence is a gate, not a modifier** - If evaluation passes 65% confidence threshold, we trust it
-- **Transparency** - A 70% score means 70% weight, no hidden calculations
-
-### Reliability Score Scale (7-Band Credibility)
-
-The source reliability system uses a 7-band credibility scale centered at 0.5:
-
-| Score Range | Band | Label | Impact on Verdict |
-|-------------|------|-------|-------------------|
-| 0.86-1.00 | Highly Reliable | Verified accuracy | Verdict fully preserved (~95-100% weight) |
-| 0.72-0.85 | Reliable | Consistent accuracy | Verdict mostly preserved (~75-90% weight) |
-| 0.58-0.71 | Leaning Reliable | Often accurate | Moderate preservation (~60-75% weight) |
-| 0.43-0.57 | Mixed | Variable accuracy | Appropriate skepticism (~40-60% weight) |
-| 0.29-0.42 | Leaning Unreliable | Often inaccurate | Pulls toward neutral (~30-45% weight) |
-| 0.15-0.28 | Unreliable | Pattern of false claims | Strong pull (~15-30% weight) |
-| 0.00-0.14 | Highly Unreliable | Fabricates content | Maximum skepticism (~0-15% weight) |
-
-**Key properties**:
-- **Centered at 0.5** - Center of "Mixed" band (0.43-0.57)
-- **7 bands** for source credibility assessment
-- **Score = 0.5** means variable track record - appropriate default skepticism
-- **Above 0.58** = verdict preservation (credible source)
-- **Below 0.43** = verdict skepticism (low credibility source)
-
-### Score Examples
-
-| Source | Score | Confidence | Consensus | Used in Verdicts |
-|--------|-------|------------|-----------|------------------|
-| Reuters | 95% | 95% | ✓ | **95%** |
-| bag.admin.ch | 93% | 90% | ✓ | **93%** |
-| Fox Business | 67% | 83% | ✓ | **67%** |
-| xinhuanet.com | 27% | 73% | ✓ | **27%** |
-| bild.de | 44% | 73% | ✓ | **44%** |
-| Unknown source | 50%* | - | - | **50%** (neutral) |
-
-*Unknown sources use SR config `defaultScore=0.5` (symmetric scale center)
-
-**Key insight**: High confidence → effective weight ≈ score. Low confidence → pulled toward 50%.
-
-### Verdict Adjustment Formula
-
-```typescript
-// Average effective weight across all sources for a verdict
-const avgWeight = sources.map(s => calculateEffectiveWeight(s)).reduce((a,b) => a+b) / sources.length;
-
-// Pull verdict toward neutral (50) based on reliability
-adjustedTruth = Math.round(50 + (originalTruth - 50) * avgWeight);
-
-// Scale confidence by reliability
-adjustedConfidence = Math.round(originalConfidence * (0.5 + avgWeight / 2));
-```
-
-### Impact Examples
-
-**High Reliability Source (Reuters, 95% score)**
-```
-Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.95 = 83.3% → 83% (MOSTLY-TRUE)
-Impact: Verdict mostly preserved
-```
-
-**Unknown Source (50% score - neutral)**
-```
-Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.50 = 67.5% → 68% (LEANING-TRUE)
-Impact: Strong pull toward neutral (appropriate skepticism)
-```
-
-**Low Reliability Source (xinhuanet.com, 27% score)**
-```
-Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) × 0.27 = 59.5% → 60% (LEANING-TRUE)
-Impact: Strong pull toward neutral (unreliable source)
-```
-
-### Multi-Source Averaging
-
-When a verdict uses multiple sources, their scores are averaged:
-
-```
-Verdict evidence from:
-  - reuters.com: 95% score
-  - bild.de: 44% score
-  - unknown-blog.xyz: 50% score (default)
-
-Average weight: (95 + 44 + 50) / 3 = 63%
-
-Original: 85% → Adjusted: 50 + (85 - 50) × 0.63 = 72% (LEANING-TRUE)
-```
-
-### Unknown Source Handling
-
-Sources not in the reliability cache are assigned a default score:
-
-| Property | Default Value | Rationale |
-|----------|---------------|-----------|
-| Score | 0.5 (`sr.defaultScore`) | Neutral center (symmetric scale) |
-
-This results in 50% weight (neutral), applying appropriate skepticism without completely discounting evidence.
-
-### Pipeline Integration
-
-Source reliability weighting is applied in all pipelines:
-
-| Pipeline | Implementation |
-|----------|----------------|
-| **ClaimAssessmentBoundary** | `applyEvidenceWeighting()` in `source-reliability.ts`, called from `verdict-stage.ts` Stage 4 |
-| **Monolithic Dynamic** | Inline calculation with `adjustedVerdictScore` in `monolithic-dynamic.ts` |
-
-### Design Rationale
-
-1. **Evidence Over Authority**: Source reliability is supplementary—strong evidence from weak sources still matters
-2. **Appropriate Skepticism**: Unknown sources receive ~41% weight, not 0% or 100%
-3. **Consensus Bonus**: Multi-model agreement slightly boosts confidence
-4. **Transparency**: All adjustments logged and available in verdict metadata
+---
 
 ## Summary
 
-FactHarbor's calculation system:
+FactHarbor's CB pipeline calculation system:
 
-1. **Scales verdicts** using a symmetric 7-band reliability system (matches verdict scale)
-2. **Distinguishes counter-evidence** from contestation and applies penalties
-3. **Aggregates hierarchically** from evidence → claims → factors → analysis contexts → overall
-4. **Modulates by confidence** using truth bands
-5. **De-duplicates near-identical claims** to prevent double-counting
-6. **Handles dependencies** to avoid cascading false prerequisites
-7. **Applies quality gates** (Gate 1, Gate 4) for evidence sufficiency (see [Quality Gates Reference](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki))
-8. **Guards against unsupported judgments** (pseudoscience, proportionality without benchmarks)
-9. **Applies source reliability weighting** to adjust verdicts based on source credibility (v2.6.35+)
+1. **Scales verdicts** using a symmetric 7-band scale (0–100%). MIXED vs UNVERIFIED distinguished by confidence >= 40%.
+2. **Distinguishes counter-evidence** (weight multipliers: 0.5x/0.7x for contested claims) from mere contestation (1.0x for doubted claims). No point deductions.
+3. **Aggregates in 3 levels**: Evidence Items → AtomicClaim Verdicts (5-step LLM debate) → Weighted Average (Stage 5 `aggregateAssessment()`).
+4. **Weight formula**: `centralityWeight × harmWeight × confidenceFactor × (1 + triangulationFactor) × derivativeFactor`.
+5. **Deduplicates upstream** via LLM in Stage 1 Pass 2 (not `dedupeWeightedAverageTruth` — that function does not exist in the CB pipeline).
+6. **Applies quality gates**: Gate 1 (`passedFidelity` field, LLM-evaluated) and Gate 4 (LLM confidence score, self-consistency adjusted, high-harm floor enforced).
+7. **Integrates source reliability** via `prefetchSourceReliability()` / `getTrackRecordScore()` in `claimboundary-pipeline.ts` (not `applyEvidenceWeighting()` in `verdict-stage.ts`).
 
-All calculations are designed to be **transparent**, **traceable**, and **deterministic** (when `FH_DETERMINISTIC=true`).
+All calculations are designed to be **transparent**, **traceable**, and **LLM-intelligence-driven** (no deterministic text-analysis logic making semantic decisions).
 
 ---
 
 *See also:*
-- *[Quality Gates Reference](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki) for quality gates details*
-- *[Source Reliability System](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki) for full Source Reliability system documentation*
+- *[Quality Gates Reference](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki) for full quality gates documentation*
+- *[Source Reliability System](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki) for full Source Reliability system documentation*
+- *[Calculations and Verdicts (xWiki)](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Calculations%20and%20Verdicts/WebHome.xwiki) — xWiki counterpart (structural reference)*
+- *[Pipeline Variants](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki) — CB pipeline vs Monolithic Dynamic*
