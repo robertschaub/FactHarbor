@@ -169,6 +169,8 @@ a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
 .meter-group{display:flex;gap:32px;flex-wrap:wrap}
 .meter{text-align:center}
 .meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
 .meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
 .meter-fill{height:100%;border-radius:3px;transition:width .3s}
@@ -188,6 +190,7 @@ a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
 .claim-meters{display:flex;gap:20px}
 .small-meter{text-align:center}
 .small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
 .small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
 .reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
 details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
@@ -355,7 +358,7 @@ function buildVerdictBanner(input: HtmlReportInput): string {
         <div class="meter-label">Truth</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${truthPct}%;background:${v.fill}"></div></div>
       </div>
-      <div class="meter">
+      <div class="meter meter-conf">
         <div class="meter-value" style="color:#a0aec0">${conf}%</div>
         <div class="meter-label">Confidence</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${conf}%;background:#4a5568"></div></div>
@@ -432,7 +435,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
           <div class="small-meter-val ${v.color}">${tp}%</div>
           <div class="small-meter-label">Truth</div>
         </div>
-        <div class="small-meter">
+        <div class="small-meter small-meter-conf">
           <div class="small-meter-val" style="color:#a0aec0">${conf}%</div>
           <div class="small-meter-label">Confidence</div>
         </div>
