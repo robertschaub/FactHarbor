@@ -1,7 +1,7 @@
 # FactHarbor Calculations Documentation
 
-**Version**: 2.6.35  
-**Last Updated**: 2026-02-03
+**Version**: 2.11.0
+**Last Updated**: 2026-02-19
 
 ## Overview
 
@@ -29,32 +29,41 @@ FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. Th
 
 ### Implementation
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts`
+**File**: `apps/web/src/lib/analyzer/truth-scale.ts`
 
-**Function**: `percentageToClaimVerdict` (line ~1544)
+**Function**: `percentageToClaimVerdict` (line 138)
 ```typescript
-// Confidence threshold to distinguish MIXED from UNVERIFIED
-const MIXED_CONFIDENCE_THRESHOLD = 60;
+// Confidence threshold to distinguish MIXED from UNVERIFIED (UCM-configurable)
+const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 60;
 
-function percentageToClaimVerdict(truthPercentage: number, confidence?: number): ClaimVerdict7Point {
-  if (truthPercentage >= 86) return "TRUE";
-  if (truthPercentage >= 72) return "MOSTLY-TRUE";
-  if (truthPercentage >= 58) return "LEANING-TRUE";
-  if (truthPercentage >= 43) {
-    // Distinguish MIXED (high confidence, evidence on both sides) 
+export function percentageToClaimVerdict(
+  truthPercentage: number,
+  confidence?: number,
+  bands?: VerdictBandConfig,
+  mixedConfidenceThreshold?: number,
+): ClaimVerdict7Point {
+  const b = bands ?? DEFAULT_BANDS;
+  const mct = mixedConfidenceThreshold ?? DEFAULT_MIXED_CONFIDENCE_THRESHOLD;
+  if (truthPercentage >= b.TRUE) return "TRUE";
+  if (truthPercentage >= b.MOSTLY_TRUE) return "MOSTLY-TRUE";
+  if (truthPercentage >= b.LEANING_TRUE) return "LEANING-TRUE";
+  if (truthPercentage >= b.MIXED) {
+    // Distinguish MIXED (high confidence, evidence on both sides)
     // from UNVERIFIED (low confidence, insufficient evidence)
     const conf = confidence !== undefined ? normalizePercentage(confidence) : 0;
-    return conf >= MIXED_CONFIDENCE_THRESHOLD ? "MIXED" : "UNVERIFIED";
+    return conf >= mct ? "MIXED" : "UNVERIFIED";
   }
-  if (truthPercentage >= 29) return "LEANING-FALSE";
-  if (truthPercentage >= 15) return "MOSTLY-FALSE";
+  if (truthPercentage >= b.LEANING_FALSE) return "LEANING-FALSE";
+  if (truthPercentage >= b.MOSTLY_FALSE) return "MOSTLY-FALSE";
   return "FALSE";
 }
 ```
 
+Band thresholds are UCM-configurable (`CalcConfig.verdictBands`); defaults match the 7-point scale in Section 1.
+
 ### Truth Bands
 
-The `truthFromBand` function (line ~1471) converts confidence-adjusted bands to percentages:
+The `truthFromBand` function converts confidence-adjusted bands to percentages:
 
 ```typescript
 function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", confidence: number): number {
@@ -68,13 +77,13 @@ function truthFromBand(band: "strong" | "partial" | "uncertain" | "refuted", con
 }
 ```
 
-## 2. AnalysisContext (Bounded Analytical Frame)
+## 2. ClaimAssessmentBoundary (Bounded Analytical Frame)
 
-A **AnalysisContext** is a bounded analytical frame that should be analyzed separately. It replaces the previous terminology of "proceeding".
+> **Terminology note**: This section previously used the term **AnalysisContext**. The current pipeline uses **ClaimAssessmentBoundary** (CB) as the top-level analytical frame. The `AnalysisContext` interface described below is from the pre-v2.11.0 Orchestrated pipeline and is retained here for reference; in the CB pipeline, boundaries are defined by the `ClaimAssessmentBoundary` type in `types.ts`.
 
-Note: **EvidenceScope** is the *per-evidence* source methodology/boundaries (`EvidenceItem.evidenceScope`). This section's AnalysisContext refers to the *top-level* bounded analytical frame.
+A **ClaimAssessmentBoundary** is a bounded analytical frame — a cluster of compatible EvidenceScopes that should be analyzed together. It replaces the previous concept of "AnalysisContext".
 
-> **📘 For detailed context detection guidance**, see [Context and EvidenceScope Detection Guide](Context_and_EvidenceScope_Detection_Guide.md).
+Note: **EvidenceScope** is the *per-evidence* source methodology/boundaries (`EvidenceItem.evidenceScope`). The ClaimAssessmentBoundary refers to the *top-level* clustered grouping that emerges from evidence.
 
 ### Definition
 
@@ -216,7 +225,7 @@ This prevents criticism of one analysis context from penalizing claims about a d
 
 ### Evidence-Based Contestation
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~5478)
+**File**: `apps/web/src/lib/analyzer/verdict-stage.ts` (CB pipeline, Stage 4)
 
 Contestation with documented evidence reduces verdict scores:
 
@@ -250,28 +259,33 @@ graph TD
     style WeightCalc fill:#e3f2fd
 ```
 
-### Weight Calculation (v2.8)
+### Weight Calculation (v3.1)
 
-**Function**: `getClaimWeight()` in `aggregation.ts`
+**Function**: `getClaimWeight()` in `aggregation.ts` — all multipliers UCM-configurable via `CalcConfig.aggregation`
 
 ```typescript
-function getClaimWeight(claim: WeightedClaim): number {
-  let weight = 1.0;
-  
-  // Centrality boost
-  if (claim.centrality === "central") weight *= 2.0;
-  
-  // Harm potential boost
-  if (claim.harmPotential === "high") weight *= 1.5;
-  
-  // Contestation reduction (only for documented counter-evidence)
-  if (claim.isContested) {
-    if (claim.factualBasis === "established") weight *= 0.3;
-    else if (claim.factualBasis === "disputed") weight *= 0.5;
-    // "opinion"/"alleged"/"unknown" = full weight (just doubted)
-  }
-  
-  return weight;
+// Tangential/irrelevant claims contribute zero weight
+if (claim.thesisRelevance && claim.thesisRelevance !== "direct") return 0;
+
+// Centrality multiplier (UCM defaults: high=3.0, medium=2.0, low=1.0)
+const centralityMultiplier =
+  claim.centrality === "high" ? cw.high :
+  claim.centrality === "medium" ? cw.medium : cw.low;
+
+// Confidence factor (0–1 range)
+const confidenceFactor = (claim.confidence ?? 100) / 100;
+
+// Base weight = centrality × confidence
+let weight = centralityMultiplier * confidenceFactor;
+
+// Harm potential boost (default 1.5x for high)
+if (claim.harmPotential === "high") weight *= hw;
+
+// Contestation reduction (only for documented counter-evidence)
+if (claim.isContested) {
+  if (claim.factualBasis === "established") weight *= cw_contested.established; // default 0.5x
+  else if (claim.factualBasis === "disputed")  weight *= cw_contested.disputed;  // default 0.7x
+  // "opinion"/"unknown" = full weight (doubt ≠ evidence)
 }
 ```
 
@@ -301,7 +315,7 @@ const adjustedConfidence = Math.round(verdict.confidence * (0.5 + avgEffectiveWe
 
 ### Level 2: Key Factor Verdicts
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~5543)
+**File**: `apps/web/src/lib/analyzer/aggregation.ts` (CB pipeline, Stage 5 aggregation)
 
 Key factors aggregate claims mapped to them:
 
@@ -315,11 +329,11 @@ else if (factorAvgTruthPct < 43) supports = "no";
 else supports = "neutral";
 ```
 
-### Level 3: Context Answers
+### Level 3: ClaimAssessmentBoundary Answers
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~4700)
+**File**: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Stage 5: `aggregateAssessment`)
 
-Analysis contexts aggregate key factors with contestation correction:
+ClaimAssessmentBoundaries aggregate verdicts with contestation correction:
 
 ```typescript
 // Calculate effective negatives (contested negatives are down-weighted)
@@ -472,8 +486,8 @@ Overall: (83.7 + 90.0) / 2 = 86.9%
 
 De-duplication is applied at multiple levels:
 
-- **Claims average** (line ~4769, ~5096, ~5478)
-- **Key factor aggregation** (line ~5543)
+- **Claims average** — `aggregation.ts` (`getClaimWeight`, weighted average in verdict stage)
+- **Key factor aggregation** — `aggregation.ts` (`pruneTangentialBaselessClaims`)
 
 ### UI Impact
 
@@ -481,7 +495,7 @@ De-duplication is applied at multiple levels:
 
 ## 7. Dependency Handling
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~5512)
+**File**: `apps/web/src/lib/analyzer/verdict-stage.ts` (CB pipeline, Stage 4)
 
 Claims can depend on other claims (e.g., "timing" depends on "attribution"):
 
@@ -502,36 +516,15 @@ if (failedDeps.length > 0) {
 
 ## 8. Pseudoscience Escalation
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~1108)
+> **Note**: This feature was implemented in the Orchestrated pipeline (`orchestrated.ts`) which was removed in v2.11.0. Pseudoscience escalation is **not implemented** in the ClaimAssessmentBoundary pipeline. The CB pipeline relies on LLM reasoning to assign appropriately low truthPercentage to pseudoscientific claims based on evidence quality — no separate escalation layer is needed.
 
-Claims matching pseudoscience patterns (water memory, homeopathy, etc.) are automatically escalated:
-
-```typescript
-if (claimPseudo.isPseudoscience) {
-  const escalation = escalatePseudoscienceVerdict(truthPct, finalConfidence, claimPseudo);
-  truthPct = escalation.truthPercentage;  // Usually capped at 28% (FALSE)
-  finalConfidence = escalation.confidence;
-}
-```
+*Legacy behavior (Orchestrated, removed)*: Claims matching pseudoscience patterns were automatically capped at 28% (FALSE band). This deterministic pattern-matching was removed as part of the shift to LLM-first analysis.
 
 ## 9. Benchmark Guard (Proportionality Claims)
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~4879)
+> **Note**: This feature was implemented in the Orchestrated pipeline (`orchestrated.ts`) which was removed in v2.11.0. The Benchmark Guard is **not implemented** in the ClaimAssessmentBoundary pipeline. The CB pipeline handles proportionality claims through LLM verdict reasoning — the `VERDICT_RECONCILIATION` prompt instructs the LLM to flag insufficient comparative evidence in its reasoning.
 
-Claims about proportionality/appropriateness without comparative evidence are forced to "uncertain":
-
-```typescript
-const isEvaluativeOutcome = hasNumber && EVALUATIVE_OUTCOME_RE.test(claimText);
-const hasBenchmarkEvidence = hasComparativeBenchmarkEvidenceFromFacts(factsById, cv.supportingEvidenceIds);
-
-if (isEvaluativeOutcome && !hasBenchmarkEvidence) {
-  truthPct = 50;  // Uncertain
-  cv.confidence = Math.min(cv.confidence, 55);
-  cv.reasoning += " (Insufficient comparative evidence to assess proportionality; treating as uncertain.)";
-}
-```
-
-This prevents unsupported judgments like "27-year sentence was proportionate" without benchmark data.
+*Legacy behavior (Orchestrated, removed)*: Claims about proportionality without comparative evidence were forced to truthPercentage=50 (uncertain). This deterministic text-matching was removed as part of the shift to LLM-first analysis.
 
 ## 10. Source Reliability Weighting
 
@@ -666,8 +659,8 @@ Source reliability weighting is applied in all pipelines:
 
 | Pipeline | Implementation |
 |----------|----------------|
-| **Orchestrated** | `applyEvidenceWeighting()` function |
-| **Monolithic Dynamic** | Inline calculation with `adjustedVerdictScore` |
+| **ClaimAssessmentBoundary** | `applyEvidenceWeighting()` in `source-reliability.ts`, called from `verdict-stage.ts` Stage 4 |
+| **Monolithic Dynamic** | Inline calculation with `adjustedVerdictScore` in `monolithic-dynamic.ts` |
 
 ### Design Rationale
 

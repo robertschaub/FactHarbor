@@ -1,7 +1,7 @@
 # Prompt Architecture
 
-**Version**: 2.8.2
-**Last Updated**: February 13, 2026
+**Version**: 2.11.0
+**Last Updated**: February 19, 2026
 **Audience**: Developers, Prompt Engineers
 **Purpose**: Document the prompt management system used across all pipelines
 
@@ -31,7 +31,7 @@ A separate TypeScript prompt composition system exists under `apps/web/src/lib/a
 
 ```
 apps/web/prompts/
-├── orchestrated.prompt.md          # Orchestrated pipeline prompts (40+ sections)
+├── claimboundary.prompt.md         # ClaimAssessmentBoundary pipeline prompts (13 sections)
 ├── monolithic-dynamic.prompt.md    # Monolithic Dynamic pipeline prompts (7 sections)
 ├── source-reliability.prompt.md    # Source reliability evaluation prompts
 └── text-analysis/                  # LLM text analysis pipeline prompts
@@ -62,7 +62,7 @@ apps/web/src/lib/analyzer/prompts/  # TESTING HARNESS ONLY — not used at runti
 │                   loadAndRenderSection()                         │
 │                                                                  │
 │  Input:                                                          │
-│  ├─ pipeline: 'orchestrated' | 'monolithic-dynamic' | ...       │
+│  ├─ pipeline: 'claimboundary' | 'monolithic-dynamic' | ...       │
 │  ├─ sectionName: 'DYNAMIC_PLAN' | 'UNDERSTAND' | ...            │
 │  └─ variables: { currentDate, TEXT_TO_ANALYZE, ... }            │
 │                                                                  │
@@ -92,34 +92,28 @@ Provider-specific structured output is loaded as a separate section (e.g., `STRU
 
 ## Pipeline Prompt Sections
 
-### Orchestrated Pipeline (`orchestrated.prompt.md`)
+### ClaimAssessmentBoundary Pipeline (`claimboundary.prompt.md`)
 
-Contains 40+ named sections covering every LLM call point. Key section groups:
+Contains 13 named sections covering every LLM call point across all 5 CB pipeline stages:
 
-| Group | Key Sections | Phase |
-|-------|-------------|-------|
-| Understand | `UNDERSTAND`, `UNDERSTAND_USER`, `UNDERSTAND_JSON_FALLBACK_SYSTEM`, `UNDERSTAND_STRUCTURED_RETRY_SYSTEM` | Step 1 |
-| Supplemental | `SUPPLEMENTAL_CLAIMS`, `SUPPLEMENTAL_CONTEXTS`, `OUTCOME_CLAIMS`, `OUTCOME_ENRICH_*` | Step 1 |
-| Context Refinement | `CONTEXT_REFINEMENT`, `CONTEXT_REFINEMENT_CANDIDATES_BLOCK`, `CONTEXT_REFINEMENT_USER` | Post-Research |
-| Evidence Extraction | `EXTRACT_EVIDENCE`, `EXTRACT_EVIDENCE_USER`, `EXTRACT_EVIDENCE_HIGH_IMPACT_FILTER_USER` | Step 2 |
-| Search Relevance | `SEARCH_RELEVANCE_MODE_STRICT/MODERATE/RELAXED`, `SEARCH_RELEVANCE_BATCH_SYSTEM`, `SEARCH_RELEVANCE_BATCH_USER` | Step 2 |
-| Grounding | `GROUNDED_SEARCH_REQUEST`, `GROUNDING_KEY_TERMS_BATCH_USER`, `GROUNDING_ADJUDICATION_BATCH_USER` | Step 2-3 |
-| Verdict | `VERDICT`, `VERDICT_USER`, `VERDICT_BREVITY_RULES`, `VERDICT_DIRECTION_VALIDATION_BATCH_USER` | Step 3 |
-| Claim Verdicts | `CLAIM_VERDICTS`, `CLAIM_VERDICTS_USER`, `CLAIM_VERDICTS_KEY_FACTORS_APPEND` | Step 3 |
-| Knowledge Config | `KNOWLEDGE_RECENCY_GUIDANCE`, `KNOWLEDGE_INSTRUCTION_ALLOW_MODEL`, `KNOWLEDGE_INSTRUCTION_EVIDENCE_ONLY` | Cross-cutting |
-| Provider Hints | `PROVIDER_HINT_OPENAI/ANTHROPIC/GOOGLE/MISTRAL` | Cross-cutting |
+| Section | Stage | Purpose |
+|---------|-------|---------|
+| `CLAIM_EXTRACTION_PASS1` | Stage 1 | Rapid scan — implied claim + rough claim candidates |
+| `CLAIM_EXTRACTION_PASS2` | Stage 1 | Precise AtomicClaim extraction from rough candidates |
+| `CLAIM_VALIDATION` | Stage 1 (Gate 1) | Validate extracted AtomicClaims for fidelity + sufficiency |
+| `GENERATE_QUERIES` | Stage 2 | Generate search queries per AtomicClaim |
+| `RELEVANCE_CLASSIFICATION` | Stage 2 | Assess search result relevance |
+| `EXTRACT_EVIDENCE` | Stage 2 | Extract EvidenceItems from sources |
+| `BOUNDARY_CLUSTERING` | Stage 3 | Cluster EvidenceScopes into ClaimAssessmentBoundaries |
+| `VERDICT_ADVOCATE` | Stage 4 | Argue for the most supported interpretation |
+| `VERDICT_CHALLENGER` | Stage 4 | Argue against; surface counter-evidence |
+| `VERDICT_RECONCILIATION` | Stage 4 | Reconcile advocate/challenger to produce verdict |
+| `VERDICT_GROUNDING_VALIDATION` | Stage 4 | Verify verdict is grounded in evidence, not prior beliefs |
+| `VERDICT_DIRECTION_VALIDATION` | Stage 4 | Validate verdict direction consistency |
+| `VERDICT_NARRATIVE` | Stage 4 | Generate human-readable verdict explanation |
+| `CLAIM_GROUPING` | Stage 5 | Group related AtomicClaims for report output |
 
-#### Search Relevance Modes
-
-The `assessSearchRelevanceBatch()` function dynamically selects one of three relevance mode sections:
-
-| Mode | Section | Trigger |
-|------|---------|---------|
-| Strict | `SEARCH_RELEVANCE_MODE_STRICT` | `requireContextMatch` + `strictInstitutionMatch` |
-| Moderate | `SEARCH_RELEVANCE_MODE_MODERATE` | `requireContextMatch` only |
-| Relaxed | `SEARCH_RELEVANCE_MODE_RELAXED` | Neither constraint set |
-
-The mode content is injected as `${MODE_INSTRUCTIONS}` into the `SEARCH_RELEVANCE_BATCH_SYSTEM` prompt. This allows admin-tuning of relevance thresholds without code changes.
+> **Note**: `orchestrated.prompt.md` (40+ sections, used by the Orchestrated pipeline) was removed in v2.11.0 when the Orchestrated pipeline was replaced by ClaimAssessmentBoundary. See `Docs/xwiki-pages-ARCHIVE/` for the archived reference.
 
 ### Monolithic Dynamic Pipeline (`monolithic-dynamic.prompt.md`)
 
@@ -223,7 +217,7 @@ function detectProvider(modelName: string): ProviderType {
 ## Adding a New Provider
 
 1. Add a `STRUCTURED_OUTPUT_NEWPROVIDER` section to the relevant `.prompt.md` files
-2. Add a `PROVIDER_HINT_NEWPROVIDER` section to `orchestrated.prompt.md`
+2. Add a `PROVIDER_HINT_NEWPROVIDER` section to `claimboundary.prompt.md` and `monolithic-dynamic.prompt.md`
 3. Update `detectProvider()` in `prompt-builder.ts` to recognize new model IDs
 4. Update `isBudgetModel()` if the provider has fast-tier models
 5. Test with `prompt-optimization.test.ts` and `monolithic-dynamic-prompt.test.ts`
@@ -244,7 +238,7 @@ function detectProvider(modelName: string): ProviderType {
 
 **Impact**:
 - All LLM prompt text is now admin-configurable via UCM without code changes
-- Both orchestrated and monolithic-dynamic pipelines load prompts from UCM database
+- Both ClaimAssessmentBoundary and Monolithic Dynamic pipelines load prompts from UCM database
 - 27 new CI-safe tests validate prompt file structure and content
 
 ### v2.8.0: Token Optimization - Estimated 20-30% Reduction (Feb 3, 2026)

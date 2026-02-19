@@ -1,7 +1,7 @@
 # Evidence Quality Filtering Architecture
 
-**Version**: 2.6.42
-**Date**: 2026-02-02
+**Version**: 2.11.0
+**Date**: 2026-02-19
 **Status**: Implemented (Phase 1.5 + 7-Layer Defense documented)
 **Related**: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
 
@@ -56,22 +56,22 @@ The FactHarbor analysis system implements a **comprehensive 7-layer defense stra
 ### 7-Layer Defense Diagram
 
 ```
-analyzeOrchestrated()
+runClaimBoundaryAnalysis()
   │
-  ├─ extractEvidence() [for each source]
+  ├─ researchEvidence() [for each AtomicClaim]
   │   ├─ filterByProbativeValue()         ← Layer 1: Evidence Quality Filtering
   │   └─ filterEvidenceByProvenance()     ← Layer 2: Provenance Validation
   │
-  ├─ generateVerdicts()
+  ├─ generateVerdicts()  [verdict-stage.ts — 5-step LLM debate]
   │   └─ [LLM generates verdicts with thesisRelevance tagging]
   │
-  ├─ aggregateSummaryVerdicts()
+  ├─ aggregateAssessment()
   │   ├─ validateContestation()           ← Layer 6: Contestation Validation
   │   ├─ pruneOpinionOnlyFactors()        ← Layer 5: Opinion-Only Pruning
   │   ├─ calculateWeightedVerdictAverage()← Layer 4: Thesis Relevance Filtering
   │   └─ pruneTangentialBaselessClaims()  ← Layer 3: Tangential Baseless Pruning
   │
-  └─ Context routing throughout          ← Layer 7: Context-Aware Claim Routing
+  └─ ClaimAssessmentBoundary clustering  ← Layer 7: CB Boundary Grouping
 ```
 
 ### Layer Summary
@@ -84,7 +84,7 @@ analyzeOrchestrated()
 | **4** | Thesis Relevance Filtering | [aggregation.ts:257-258](../../apps/web/src/lib/analyzer/aggregation.ts#L257) | Give tangential claims weight=0 in verdict calc |
 | **5** | Opinion-Only Factor Pruning | [aggregation.ts:418-429](../../apps/web/src/lib/analyzer/aggregation.ts#L418) | Remove keyFactors with factualBasis="opinion" |
 | **6** | Contestation Validation | [aggregation.ts:40-222](../../apps/web/src/lib/analyzer/aggregation.ts#L40) | Downgrade opinion-based contestation, keep documented counter-evidence |
-| **7** | Context-Aware Routing | [analysis-contexts.ts](../../apps/web/src/lib/analyzer/analysis-contexts.ts) | Route claims to correct analytical context |
+| **7** | ClaimAssessmentBoundary Clustering | [claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts) | Cluster EvidenceScopes into ClaimAssessmentBoundaries (Stage 3) |
 
 ### Layer Protection Summary
 
@@ -96,7 +96,7 @@ analyzeOrchestrated()
 | 4 | All tangential claims | Claims contribute weight=0 to verdict |
 | 5 | Opinion-only keyFactors | Factors removed from report |
 | 6 | Opinion-based contestation | Full weight retained (doubt ≠ contestation) |
-| 7 | Cross-context evidence | Claims evaluated in correct analytical frame |
+| 7 | Cross-boundary evidence | Evidence evaluated within the correct ClaimAssessmentBoundary |
 
 ### Configuration Locations
 
@@ -476,25 +476,22 @@ interface CalcConfig {
 
 ## 6. Integration Points
 
-### Primary Integration: Orchestrated Pipeline
+### Primary Integration: ClaimAssessmentBoundary Pipeline
 
-**Location**: [apps/web/src/lib/analyzer/orchestrated.ts](../../apps/web/src/lib/analyzer/orchestrated.ts)
+**Location**: [apps/web/src/lib/analyzer/claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts)
 
-**Call Site**: After evidence extraction, before claim validation
+**Call Site**: Stage 2 (`researchEvidence`) — after raw evidence extraction, before boundary clustering
 
 ```typescript
-// Orchestrated pipeline flow:
+// ClaimAssessmentBoundary pipeline flow (Stage 2: researchEvidence):
 // 1. Extract evidence from sources (LLM call)
 const rawEvidence = await extractEvidence(sources);
 
-// 2. Apply deterministic filter (Layer 2)
-const { keptItems, filteredItems, stats } = filterByProbativeValue(
-  rawEvidence,
-  config.evidenceFilter || DEFAULT_FILTER_CONFIG
-);
+// 2. Apply deterministic filter (Layer 1 + 2)
+const { kept } = filterByProbativeValue(rawEvidence);
 
-// 3. Use only kept items for verdict aggregation
-const claimVerdicts = await evaluateClaims(keptItems);
+// 3. Use only kept items for boundary clustering and verdict generation
+const boundaries = await clusterBoundaries(kept);
 ```
 
 **Integration Flow**:
