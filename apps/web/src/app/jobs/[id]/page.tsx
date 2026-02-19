@@ -28,6 +28,7 @@ import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { BackgroundBanner } from "./components/BackgroundBanner";
 import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
+import { generateHtmlReport } from "./utils/generateHtmlReport";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
@@ -550,6 +551,35 @@ export default function JobPage() {
   };
 
   const handleExportHTML = () => {
+    // Rich HTML report for ClaimAssessmentBoundary pipeline results
+    if (isCBSchema && result && job) {
+      const html = generateHtmlReport({
+        job: {
+          jobId: job.jobId,
+          status: job.status,
+          inputValue: job.inputValue,
+          createdUtc: job.createdUtc,
+          updatedUtc: job.updatedUtc,
+        },
+        result,
+        claimVerdicts,
+        claimBoundaries,
+        evidenceItems,
+        sources,
+        searchQueries,
+        qualityGates,
+      });
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = generateFilename('Report', 'html');
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // Fallback: simple HTML export for non-CB results
     const content = reportRef.current?.innerHTML || report;
     const generatedAt = getDisplayDateTime();
     const analysisId = result?.meta?.analysisId || 'N/A';
