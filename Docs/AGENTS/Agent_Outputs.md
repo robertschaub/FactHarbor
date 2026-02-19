@@ -7,6 +7,28 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3B — xWiki Tier 1 Rewrites Complete
+**Task:** Rewrite the 3 Tier 1 xWiki pages (Direction Semantics, Calculations and Verdicts, Prompt Architecture) for the CB pipeline, and archive the Orchestrated Pipeline Detail diagram.
+**Files touched:**
+- `Docs/xwiki-pages-ARCHIVE/.../Diagrams/Orchestrated Pipeline Detail/WebHome.xwiki` (archived)
+- `Docs/xwiki-pages/.../Deep Dive/Direction Semantics/WebHome.xwiki` (major rewrite — commit `b4b26d4`)
+- `Docs/xwiki-pages/.../Deep Dive/Calculations and Verdicts/WebHome.xwiki` (major rewrite — commit `a39f24d`)
+- `Docs/xwiki-pages/.../Deep Dive/Prompt Architecture/WebHome.xwiki` (major rewrite — commit `6cf5336`)
+**Key decisions:**
+- CB aggregation hierarchy is 3-level (not 4): Evidence Items → AtomicClaim Verdicts (Stage 4 LLM debate) → Weighted Average → Overall Verdict. No "Key Factor" or "AnalysisContext" intermediate layers.
+- `aggregateAssessment()` (claimboundary-pipeline.ts:2789) weight formula: `centralityWeight × harmWeight × confidenceFactor × (1 + triangulationFactor) × derivativeFactor`
+- `dedupeWeightedAverageTruth()` and `validateContestation()` do NOT exist in CB. Dedup happens upstream via CLAIM_EXTRACTION_PASS2 LLM call.
+- Contestation is now weight-multiplier based (0.5x/0.7x), NOT point-deduction (-12/-8). Changed in v2.9.0.
+- Pseudoscience Escalation and Benchmark Guard: Orchestrated-only, not in CB. Added `{{warning}}` blocks to both.
+- Prompt Architecture: CB has 13 sections (see table in updated page). Advocate/Challenger/Reconciliation debate is Stage 4 core pattern.
+**Open items:** Phase 3C (5 analysis-contexts.ts fixes), 3D (6 schema/terminology pages), 3E (~20 Tier 4 batch), 3F (XAR rebuild). Captain decision pending on lost claim fidelity changes.
+**Warnings:**
+- §4 Near-Duplicate Claim Handling in Calculations page now explains that CLAIM_EXTRACTION_PASS2 handles dedup upstream — verify this is accurate if CB dedup behavior changes.
+- Triangulation and derivative factors in `aggregateAssessment` (lines 2808-2863) are not fully documented in these pages — they exist and affect weights but are currently only briefly noted in §3.1 table.
+**Learnings:** Appended to Role_Learnings.md? No — CB aggregation structure discoveries already implicit in the rewritten pages; no new gotchas beyond what's in the code.
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3A xWiki Triage + Phase 2C ARCHITECTURE edits + Phase 2D WIP audit
 **Task:** (A) Phase 2C: Update 3 ARCHITECTURE/ .md files for v2.11.0 (orchestrated refs, new CB pipeline refs). (B) Phase 2D targeted WIP audit: 3 files checked; flagged uncommitted claim fidelity gap fixes. (C) Phase 3A: Grep scan all xWiki pages, produce prioritised work plan.
 **Files touched:** `Docs/ARCHITECTURE/Calculations.md`, `Docs/ARCHITECTURE/Evidence_Quality_Filtering.md`, `Docs/ARCHITECTURE/Prompt_Architecture.md`, `Docs/WIP/README.md` (claim fidelity status), `Docs/AGENTS/Handoffs/2026-02-19_Technical_Writer_Phase3A_xWiki_Triage.md` (created).
