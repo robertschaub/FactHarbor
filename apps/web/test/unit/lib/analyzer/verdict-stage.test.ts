@@ -965,7 +965,7 @@ describe("Configurable debate model tiers", () => {
   const claims = [createAtomicClaim()];
   const evidence = [createEvidenceItem()];
   const boundaries = [createClaimBoundary()];
-  const coverageMatrix = buildCoverageMatrix(claims, evidence, boundaries);
+  const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
 
   it("advocateVerdict should use config.debateModelTiers.advocate", async () => {
     const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });

@@ -1920,7 +1920,10 @@ export async function runResearchIteration(
 
       // Surface LLM provider errors as warnings (once per error type)
       const errMsg = err instanceof Error ? err.message : String(err);
-      const isLlmError = errMsg.includes("429") ||
+      // Check status code first (AI SDK and provider error objects expose .status or .statusCode),
+      // then fall back to message string matching for providers that surface the code in the message.
+      const statusCode = (err as any)?.status ?? (err as any)?.statusCode;
+      const isLlmError = (typeof statusCode === "number" && (statusCode === 429 || statusCode === 503 || statusCode === 529)) ||
         errMsg.includes("rate limit") || errMsg.includes("rate_limit") ||
         errMsg.includes("quota") || errMsg.includes("credit") ||
         errMsg.includes("overloaded") ||
@@ -2848,13 +2851,11 @@ export function buildCoverageMatrix(
   // Evidence items carry claimBoundaryId (assigned in Stage 3)
   // and relevantClaimIds (assigned in Stage 2)
   for (const item of evidence) {
-    const bIdx = boundaryIds.indexOf(
-      (item as EvidenceItem & { claimBoundaryId?: string }).claimBoundaryId ?? ""
-    );
+    const bIdx = boundaryIds.indexOf(item.claimBoundaryId ?? "");
     if (bIdx === -1) continue;
 
     // Each evidence item may be relevant to multiple claims
-    const relevantClaims = (item as EvidenceItem & { relevantClaimIds?: string[] }).relevantClaimIds ?? [];
+    const relevantClaims = item.relevantClaimIds ?? [];
     for (const claimId of relevantClaims) {
       const cIdx = claimIds.indexOf(claimId);
       if (cIdx !== -1) {
