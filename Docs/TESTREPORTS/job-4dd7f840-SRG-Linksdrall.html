@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactHarbor Report — Die SRG hat einen "Linksdrall"</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+/* Layout */
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+
+/* Verdict Banner */
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* Section cards */
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+
+/* Narrative */
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+
+/* Claim Verdict */
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'▶';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+
+/* Evidence direction colors */
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+
+/* Evidence items */
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+
+/* Boundary findings */
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+
+/* Coverage matrix */
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+
+/* Boundaries accordion */
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+
+/* Challenge responses */
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.ch-response{color:#a0aec0;line-height:1.6}
+
+/* Sources */
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+
+/* Search queries */
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+
+/* Quality gates */
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+
+/* Footer */
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+
+/* Responsive */
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 4dd7f840f72d48bcb6f2786d9723ce8f</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-19 07:48 UTC</div>
+      <div>Completed: 2026-02-19 07:56 UTC</div>
+      <div>Duration: ~7 min 20 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">&#8222;Die SRG hat einen &#8222;Linksdrall&#8220;&#8220;</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">Claim</strong> — evaluative assertion about media political orientation</div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; claude-sonnet-4-5</span>
+    <span class="chip chip-gray">&#128269; Google-CSE &amp; Brave</span>
+    <span class="chip chip-gray">23 LLM calls</span>
+    <span class="chip chip-gray">10 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 37 evidence items · 14 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-lf">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge lf-color">LEANING-FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">Die Behauptung erhält nur begrenzte Unterstützung</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value lf-color">42%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:42%;background:#c05621"></div></div>
+      </div>
+      <div class="meter">
+        <div class="meter-value" style="color:#a0aec0">68%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:68%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">While some content analyses detect left-leaning patterns in specific contexts, this finding is contradicted by institutional safeguards, media self-assessments, and comparative European data. Evidence reveals significant interpretation ambiguities.</div>
+    </div>
+  </div>
+</div>
+
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Swiss media bias claims receive limited support, with evidence showing mixed patterns and significant methodological challenges in establishing systematic left-leaning tendencies.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">24 evidence items analyzed across 6 distinct analytical boundaries, including content analysis, journalist surveys, institutional reviews, and cross-national comparative studies.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The claim that Swiss media exhibits systematic left-leaning bias achieves only 42% truthfulness with moderate confidence (68%). While some content analyses detect left-leaning patterns in specific contexts, this finding is contradicted by institutional safeguards, media self-assessments, and comparative European data showing Switzerland's media landscape as relatively balanced. The evidence base reveals significant interpretation ambiguities, with different analytical approaches yielding conflicting conclusions about what constitutes "bias" versus legitimate editorial judgment.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Comparative content analysis (CB_01) shows mixed evidence with 13 items revealing nuanced patterns, while institutional analysis (CB_02), European comparisons (CB_05), and media self-statements (CB_07) directly contradict the bias claim, suggesting methodological boundaries fundamentally shape conclusions.</div>
+        <div class="disagreement-item">Survey-based approaches (CB_09) and literature reviews (CB_08) remain neutral, indicating that different evidentiary frameworks — content coding versus structural analysis versus self-reporting — produce incompatible assessments of the same media ecosystem.</div>
+        <div class="disagreement-item">The divergence centers on whether observed content patterns reflect institutional bias or legitimate journalistic responses to political contexts, with no consensus methodology for distinguishing between these interpretations.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively resolve whether observed content patterns constitute systematic institutional bias or reflect legitimate editorial responses to political contexts. Causal mechanisms linking journalist political orientation to actual coverage bias remain unclear. The evidence base lacks longitudinal data to assess temporal trends, and cross-boundary methodological inconsistencies prevent unified conclusions. No evidence directly addresses whether any detected patterns meaningfully influence public opinion or voting behavior beyond correlational VOX survey data.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 claim</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">&#8222;Die SRG hat eine politische Tendenz nach links&#8220;</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val lf-color">42%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter">
+          <div class="small-meter-val" style="color:#a0aec0">68%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: weak (−0.1)</span>
+    </div>
+
+    <!-- Boundary Findings per claim -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Content analysis — popular votes</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">28%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">13 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:28%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_02 · VOX survey analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val" style="color:#fc8181">15%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val dir-contradicts">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:15%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · European comparison</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val" style="color:#fc8181">20%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val dir-contradicts">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:20%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Organizational self-statements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val" style="color:#fc8181">10%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">45%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val dir-contradicts">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:10%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_08 · Literature review</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val" style="color:#90cdf4">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">50%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val dir-neutral">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 item</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:30%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Reuters survey analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val" style="color:#90cdf4">40%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">55%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val dir-neutral">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:40%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reasoning -->
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(10 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <p style="margin-bottom:12px">After incorporating adversarial challenges, the final verdict adjusts upward from 35% to 42% truthfulness, with reduced confidence from 82% to 68%.</p>
+        <p style="font-weight:700;margin-bottom:8px;color:#e2e8f0">Key adjustments:</p>
+        <ol style="padding-left:18px;display:flex;flex-direction:column;gap:8px">
+          <li><strong>Interpretation ambiguity accepted</strong> — Challenge #1 correctly identifies that 'politische Tendenz' could refer to organizational composition (75.7% left-identifying journalists) rather than output bias. TruthPercentage adjusted upward to reflect validity under compositional reading.</li>
+          <li><strong>Coverage gaps acknowledged</strong> — Challenge #2 identifies critical methodological limitation: content analyses examine only referendum coverage, not daily news selection, framing, or agenda-setting. Confidence reduced accordingly.</li>
+          <li><strong>Differential treatment evidence re-weighted</strong> — Challenge #3 correctly notes EV_1771487532371 shows right-wing initiatives face 'starke Ablehnung' vs. left-wing 'leichte Ablehnung' — this IS differential treatment. TruthPercentage increased to 42%.</li>
+          <li><strong>Independence concern validated</strong> — Challenge #4: CB_01's 'multiple studies' are variants from a single institution (fög). Apparent convergence is overstated. Confidence reduced.</li>
+          <li><strong>Professional norms mechanism untested</strong> — Challenge #5: EV_1771487432394's claim that professional standards prevent bias is asserted but not empirically demonstrated. Weakens contradictory evidence.</li>
+          <li><strong>Temporal validity concern accepted</strong> — Challenge #6: CB_02's key evidence (EV_1771487432392) dates from 2014, an 11-year gap. Reduces probative value for current analysis.</li>
+          <li><strong>Neutrality-as-leftward-pull partially accepted</strong> — Challenge #7: If journalists are 75.7% left but produce neutral output, this evidences a 'tendency' that is managed rather than absent. TruthPercentage increased.</li>
+          <li><strong>Verification gap noted</strong> — Challenge #8: Absence of independent audits or ombudsman statistics by bias direction reduces confidence in organizational self-statements.</li>
+          <li><strong>Reuters data relevance rejected (minor)</strong> — Challenge #9: Complementary usage patterns (CB_09) are non-sequitur to bias claims; had minimal weight.</li>
+          <li><strong>Circular reasoning concern rejected</strong> — Challenge #10: EV_1771487432395 was used only as context, not substantive evidence.</li>
+        </ol>
+      </div>
+
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #1: 'politische Tendenz' could refer to organizational composition (75.7% left) rather than output bias. Claim is genuinely ambiguous. TruthPercentage adjusted upward to reflect validity under compositional reading.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #2: Content analyses examine only referendum coverage (2018-2023), leaving gaps in daily news selection, agenda-setting, framing, source selection, and investigative targets. Confidence reduced from 82% to 68%.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #3: EV_1771487532371 shows differential treatment (right-wing: 'starke Ablehnung', left-wing: 'leichte Ablehnung'). Original verdict's explanation that this reflects 'gesellschaftlichen Trends' is unfalsified. TruthPercentage increased to 42%.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #4: Multiple fög studies are variants from a single institution with consistent methodology — not independent replication. Confidence reduced to reflect overstatement of convergence.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #5: EV_1771487432394 asserts professional norms prevent bias but is not empirically tested. Expected evidence would include comparative analysis of output by journalists of differing orientations. TruthPercentage adjusted upward, confidence reduced.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #6: CB_02's key evidence (EV_1771487432392) dates from 2014 — 11-year gap. Media dynamics may have shifted significantly. CB_02 confidence should be lower than originally assessed.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #7: If journalists are 75.7% left but produce output matching the more conservative voting population (33.6% left), this represents successfully managed tendency — still a tendency. Increases truthPercentage under this interpretation.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge #8: Absence of independent audits and third-party verification of editorial controls reduces confidence in organizational self-statements (CB_07). Extends verification concern to broader evidence base.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-no">ACCEPTED — minimal impact</span></div>
+          <div class="ch-response">Challenge #9: Reuters Institute data (CB_09) showing complementary usage patterns is non-sequitur to bias claims. Evidence had minimal weight originally; excluding it has negligible effect.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge #10: EV_1771487432395 (right-wing 'linkes Staatsfernsehen' accusations as strategic instrument) was used only as context, not as substantive evidence that the accusation is false. No adjustment needed.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+
+    <!-- Coverage Matrix -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Claim</th>
+              <th>CB_07<br><span style="font-weight:400;font-size:10px">Org. statements</span></th>
+              <th>CB_08<br><span style="font-weight:400;font-size:10px">Lit. review</span></th>
+              <th>CB_09<br><span style="font-weight:400;font-size:10px">Reuters survey</span></th>
+              <th>CB_01<br><span style="font-weight:400;font-size:10px">Content analysis</span></th>
+              <th>CB_02<br><span style="font-weight:400;font-size:10px">VOX survey</span></th>
+              <th>CB_05<br><span style="font-weight:400;font-size:10px">EU comparison</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="claim-col">AC_01 — SRG Linksdrall</td>
+              <td><span class="cell-val cell-low">2</span></td>
+              <td><span class="cell-val cell-zero">1</span></td>
+              <td><span class="cell-val cell-zero">3</span></td>
+              <td><span class="cell-val cell-high">13</span></td>
+              <td><span class="cell-val cell-zero">2</span></td>
+              <td><span class="cell-val cell-zero">3</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Boundary details -->
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">▶</span><span class="ba-id">CB_01</span><span class="ba-name">Comparative content analysis of Swiss media coverage during popular votes + Journalist self-assessment survey</span><span class="ba-ev-count">13 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Comparative content analysis of media coverage during popular votes</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Switzerland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2015–2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.915</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0;margin-bottom:8px">44 popular votes across 23 major Swiss media outlets. Includes self-assessment survey of 1,179 journalists (Nov 2022 – Jun 2023).</div>
+      </div>
+    </details>
+
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">▶</span><span class="ba-id">CB_02</span><span class="ba-name">VOX voting data survey analysis + Institutional analysis of editorial standards</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Analysis of VOX survey data</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Switzerland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2014</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">⚠ Note: Key evidence dates from 2014 — 11-year gap reduces probative value for current assessment.</div>
+      </div>
+    </details>
+
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">▶</span><span class="ba-id">CB_05</span><span class="ba-name">Comparative European media analysis + fög content analysis</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Comparative media analysis across European countries</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Europe (focus: Switzerland)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2024 (current research)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.975</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Focus on political accusations against public broadcasters across European countries, plus recent fög quality assessment of major Swiss media houses.</div>
+      </div>
+    </details>
+
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">▶</span><span class="ba-id">CB_07</span><span class="ba-name">Media organization self-statements</span><span class="ba-ev-count">2 evidence (of 15 total)</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Stellungnahme der Geschäftsleitung / Chefredaktion</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Switzerland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.90</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Official positions from SRG and 20 Minuten regarding editorial policies and commitment to neutrality. ⚠ Low confidence (45%) due to lack of independent verification.</div>
+      </div>
+    </details>
+
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">▶</span><span class="ba-id">CB_08</span><span class="ba-name">Literature review and research synthesis on public media</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Literaturübersicht und Forschungsstand zu öffentlichen Medien in westlichen Gesellschaften</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Western societies, focus Switzerland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Current research (refs to 2024)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">▶</span><span class="ba-id">CB_09</span><span class="ba-name">Reuters Institute Digital News Report survey analysis</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Auswertung von repräsentativen Befragungsdaten aus dem Reuters Institute Digital News Report 2024</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Switzerland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.98</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">⚠ Note: Complementary usage patterns do not directly address bias claims (non-sequitur). Verdict impact: minimal.</div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">24 for AC_01 (+ 13 preliminary)</span>
+  </div>
+  <div class="section-body">
+
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(6 items for AC_01)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487463671</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">75,7 Prozent der befragten Journalistinnen und Journalisten gaben an, «ganz links oder eher links» zu sein, während dieser Wert in der Gesamtbevölkerung nur 33,6 Prozent beträgt.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">fög JB 2024 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487463672</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der typische Schweizer Journalist ist gemäss ZHAW-Studie männlich, 43 Jahre alt, in der Schweiz geboren, konfessionslos, politisch links der Mitte und Akademiker.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">fög JB 2024 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487532371</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Linke Volksinitiativen stossen auf leichte, von rechts lancierte Initiativen auf starke Ablehnung. Wenn man nicht unterscheidet, ob es sich um Volksinitiativen oder Behördenvorlagen handelt, erhalten Vorlagen mit Unterstützung von Mitte-links etwas mehr Zuspruch als Vorlagen, die von Mitte-rechts unterstützt werden.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span><span class="ev-tag">⚠ differential treatment</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html" target="_blank">fög Studie Abstimmungsberichterstattung</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral" style="border-color:#4a5568">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487432393</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Der Mittelwert der Selbsteinstufung aller befragten Journalistinnen und Journalisten liegt auf einer 0–10-Skala (0 ganz links, 10 ganz rechts) bei 4.02, also leicht links der Mitte, jedoch nicht 'drei Viertel links'.</div>
+          <div class="ev-meta"><span class="ev-tag">other</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+      </div>
+    </details>
+
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(16 items for AC_01)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487432391</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Das Forschungszentrum Öffentlichkeit und Gesellschaft (fög) der Universität Zürich hat die Berichterstattung von 23 grossen Schweizer Medien vor 44 Volksabstimmungen der Jahre 2018 bis 2023 untersucht und kam zum Schluss, dass sich SRF und RTS als unparteiliche Berichterstatter profilieren. SRF würde bei Abstimmungen politisch neutral berichten und bilde die politische Mehrheit der Stimmbevölkerung ab.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_01</span><span class="ev-tag">⚠ fög only</span></div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487432392</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Das Institut für Politikwissenschaft der Universität Zürich hatte schon 2014 Daten der VOX-Analysen ausgewertet und kam zum Schluss: 'Es gibt keine empirische Evidenz für die Linkslastigkeit der SRG.'</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_02</span><span class="ev-tag">⚠ 2014 — 11 years old</span></div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487432394</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Selbst eine leicht linke durchschnittliche Selbsteinstufung in Redaktionen bedeutet keinen parteiisch linken Output, weil professionelle Normen wie Trennung von Nachricht und Kommentar, redaktionelle Kontrolle, Ombudsverfahren und Beschwerdestelle dagegenstehen.</div>
+          <div class="ev-meta"><span class="ev-tag">other</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_02</span><span class="ev-tag">⚠ mechanism untested</span></div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487463673</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Das Forschungszentrum Öffentlichkeit und Gesellschaft (fög) stellte den grossen Medienhäusern in seiner jüngsten Untersuchung ein gutes Zeugnis aus, was die politische Ausgewogenheit angeht.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_05</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">fög JB 2024 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487463674</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Eine Studie des Forschungszentrums Öffentlichkeit und Gesellschaft (fög) kommt zum Ergebnis, dass besonders die grossen Medien vielfältig und politisch ausgewogen berichten.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_05</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">fög JB 2024 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487463676</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">SRF erklärt, dass die Schweizer Gesellschaft in ihrer ganzen Vielfalt im Angebot des Schweizer Radios und Fernsehens hör- und sichtbar gemacht werde, gemäss ihrem Auftrag vom Bund. Für alle Mitarbeitenden der SRF-Redaktionen gelten publizistische Leitlinien, die zu Sachgerechtigkeit, Vielfalt und Unabhängigkeit verpflichten.</div>
+          <div class="ev-meta"><span class="ev-tag">news_primary</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_07</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">fög JB 2024 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487506840</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">SRG SSR wird in einer Analyse zur Berichterstattung über die Erbschaftssteuerinitiative 2015 als am ausgewogensten unter den traditionellen Medien bewertet.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.bakom.admin.ch/dam/fr/sd-web/bToKuBtmXz1o/TA-Swiss_2017_Medien_und_Meinungsmacht_2017.pdf" target="_blank">TA-Swiss 2017 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487532369</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Reichweitenstarke Medien wie SRF berichten politisch neutral. Das Forschungszentrum Öffentlichkeit und Gesellschaft (Fög) analysierte die Berichterstattung über 44 Volksabstimmungen zwischen 2018 und 2023 in 23 Schweizer Medien.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html" target="_blank">fög Studie</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487532370</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die neutrale Positionierung der besonders reichweitenstarken Medien zeigt sich auf der Einteilung auf einer Links-rechts-Achse. Laut der Studie spiegeln die Medien die politische Mehrheit sowie die Stimmbevölkerung wider.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html" target="_blank">fög Studie</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487545626</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">SRF positioniert sich auf einer Links-Rechts-Achse (−100 bis +100) mit einem Wert von −1, was einer politisch neutralen Positionierung entspricht.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_01</span><span class="ev-tag">key statistic</span></div>
+          <div class="ev-source-link"><a href="https://www.news.uzh.ch/de/articles/media/2023/Medienstudie-foeg.html" target="_blank">UZH News — Medienstudie fög</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487545627</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">SRF wird als reichweitenstarkes öffentliches Medium charakterisiert, das sich als unparteiischer Berichterstatter profiliert und sich weder am linken noch am rechten Pol des politischen Spektrums positioniert.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_01</span><span class="ev-tag">expert: Linards Udris, fög</span></div>
+          <div class="ev-source-link"><a href="https://www.news.uzh.ch/de/articles/media/2023/Medienstudie-foeg.html" target="_blank">UZH News — Medienstudie fög</a></div>
+        </div>
+      </div>
+    </details>
+
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(for AC_01)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487432395</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Laut Medienanalysen ist der Vorwurf eines 'linken Staatsfernsehens' in vielen europäischen Ländern ein strategisches Instrument rechter Parteien, um öffentlich-rechtliche Medien unter Druck zu setzen.</div>
+          <div class="ev-meta"><span class="ev-tag">other</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_05</span><span class="ev-tag">context only</span></div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487432396</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Studien zeigten, dass Medien bei gesellschaftspolitischen Vorlagen wie 'Ehe für alle' oder der Pflegeinitiative tendenziell positiver berichten als bei repressiven Sicherheits- oder Migrationsvorlagen. Das entspreche gesellschaftlichen Trends und habe nichts mit parteipolitischer Ausrichtung zu tun.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487463675</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Autoren der ZHAW-Studie warnen davor, anzunehmen, dass die politische Einstellung der Journalisten die Berichterstattung beeinflusst. Dafür bräuchte es eine tiefere inhaltliche Analyse.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">fög JB 2024 (PDF)</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487482657</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Öffentliche Medien wie die SRG SSR erreichen im Informationsbereich relativ viele Menschen mit qualitativ hochstehenden Nachrichtenangeboten und geniessen insgesamt grosses Vertrauen.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_08</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/de/news/2026/Factsheet-Forschung-SRG.html" target="_blank">fög Factsheet 2026</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487482658</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Analyse von Befragungsdaten aus dem Reuters Institute Digital News Report (2024) ergibt keine Hinweise darauf, dass die SRG SSR private Medien im Informationsbereich verdrängt.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: high</span><span class="ev-tag">CB_09</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/de/news/2026/Factsheet-Forschung-SRG.html" target="_blank">fög Factsheet 2026</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771487532372</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Insgesamt berichten die Medien eher positiv über Vorlagen von Regierung und Parlament, während Volksinitiativen tendenziell auf Ablehnung stossen.</div>
+          <div class="ev-meta"><span class="ev-tag">peer_reviewed_study</span><span class="ev-tag">probative: medium</span><span class="ev-tag">CB_01</span></div>
+          <div class="ev-source-link"><a href="https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html" target="_blank">fög Studie</a></div>
+        </div>
+      </div>
+    </details>
+
+    <details style="margin-bottom:4px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label" style="color:#718096">Preliminary Evidence</span><span class="sum-count">(13 pre-research items, not used in final verdict)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item" style="border-color:#2d3748;background:#0f1117;opacity:.7">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">preliminary</span></div>
+          <div class="ev-statement" style="color:#a0aec0">Knapp 70 Prozent aller SRG-Journalisten bezeichnen sich selbst als links, rund 16 Prozent verorten sich in der politischen Mitte, und 16 Prozent sehen sich als rechts.</div>
+          <div class="ev-source-link"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch</a></div>
+        </div>
+        <div class="ev-item" style="border-color:#2d3748;background:#0f1117;opacity:.7">
+          <div class="ev-item-head"><span class="ev-id">EV_002–EV_013</span><span class="ev-dir-badge ev-neu">preliminary</span></div>
+          <div class="ev-statement" style="color:#a0aec0">12 additional preliminary evidence items from infosperber.ch, sotomo.ch, and srf.ch supporting pre-research understanding. These informed the research strategy but were not included in the final verdict calculation.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">14 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">SRG: Linksopposition oder doch eher Sprachrohr der Regierung? — infosperber</span></div>
+        <div class="source-url"><a href="https://www.infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/" target="_blank">infosperber.ch/medien/medienkritik/srg-linksopposition-oder-doch-eher-sprachrohr-der-regierung/</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span><span class="ev-tag">query: SRG Journalisten politische Selbsteinstufung</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">fög Jahrbuch 2024 — Qualität der Medien (PDF)</span></div>
+        <div class="source-url"><a href="https://www.foeg.uzh.ch/dam/jcr:ace2b26a-bc4f-45af-b21e-10cbdb88fada/JB_2024_Gesamt_fin.pdf" target="_blank">foeg.uzh.ch — JB_2024_Gesamt_fin.pdf</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">fög Jahrbuch 2025 (PDF)</span></div>
+        <div class="source-url"><a href="https://www.foeg.uzh.ch/dam/jcr:45cd9fc3-5be2-4ef0-8bec-bdf427d1a51b/JB_2025_20251030_final%20korr.pdf" target="_blank">foeg.uzh.ch — JB_2025 (PDF)</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">fög Jahrbuch 2019 (PDF)</span></div>
+        <div class="source-url"><a href="https://www.foeg.uzh.ch/dam/jcr:e6c2d53a-8591-4c98-ba64-f361d6631d85/2019_Gesamtausgabe.pdf" target="_blank">foeg.uzh.ch — 2019_Gesamtausgabe.pdf</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">ZHAW-Studie: Schweizer Medien links geprägt? — 20 Minuten</span></div>
+        <div class="source-url"><a href="https://www.20min.ch/story/zhaw-studie-schweizer-medien-links-gepraegt-103224092" target="_blank">20min.ch</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Schweizer Journalismus: Das sagen die Daten — SRF News</span></div>
+        <div class="source-url"><a href="https://www.srf.ch/news/schweiz/neue-zhaw-studie-medienschaffende-sind-mehrheitlich-maennlich-und-links-der-mitte" target="_blank">srf.ch/news</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Aktuelle Forschungsergebnisse zur Rolle der SRG SSR — fög Factsheet 2026</span></div>
+        <div class="source-url"><a href="https://www.foeg.uzh.ch/de/news/2026/Factsheet-Forschung-SRG.html" target="_blank">foeg.uzh.ch/de/news/2026/Factsheet-Forschung-SRG.html</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">fög Studie I: SRG vs. Private (PDF)</span></div>
+        <div class="source-url"><a href="https://www.foeg.uzh.ch/dam/jcr:d295cef3-c2ca-4eec-8c82-90d1981540cd/JB_2024_Studie_I_SRG_Private.pdf" target="_blank">foeg.uzh.ch — JB_2024_Studie_I_SRG_Private.pdf</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">TA-Swiss: Medien und Meinungsmacht 2017 (BAKOM PDF)</span></div>
+        <div class="source-url"><a href="https://www.bakom.admin.ch/dam/fr/sd-web/bToKuBtmXz1o/TA-Swiss_2017_Medien_und_Meinungsmacht_2017.pdf" target="_blank">bakom.admin.ch — TA-Swiss_2017_Medien_und_Meinungsmacht_2017.pdf</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Die grossen Medien berichten politisch ausgewogen — fög Studie 2023</span></div>
+        <div class="source-url"><a href="https://www.foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html" target="_blank">foeg.uzh.ch/de/news/2023/Studie-Abstimmungsberichterstattung.html</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Studie: Grosse Schweizer Medien berichten politisch ausgewogen — SRF News</span></div>
+        <div class="source-url"><a href="https://www.srf.ch/news/schweiz/analyse-der-berichterstattung-studie-grosse-schweizer-medien-berichten-politisch-ausgewogen" target="_blank">srf.ch/news/schweiz/analyse-der-berichterstattung</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Medienqualitätsrating MQR-20 (PDF)</span></div>
+        <div class="source-url"><a href="https://medienqualitaet-schweiz.ch/wp-content/uploads/2024/09/MQR-20.pdf" target="_blank">medienqualitaet-schweiz.ch — MQR-20.pdf</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">ZORA UZH — Research article (PDF)</span></div>
+        <div class="source-url"><a href="https://www.zora.uzh.ch/server/api/core/bitstreams/c18dc2c0-7d25-4469-98c4-16d2db70bc5b/content" target="_blank">zora.uzh.ch (PDF)</a></div>
+        <div class="source-tags"><span class="ev-tag">application/pdf</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Die grossen Medien berichten politisch ausgewogen — UZH News</span></div>
+        <div class="source-url"><a href="https://www.news.uzh.ch/de/articles/media/2023/Medienstudie-foeg.html" target="_blank">news.uzh.ch/de/articles/media/2023/Medienstudie-foeg.html</a></div>
+        <div class="source-tags"><span class="ev-tag">text/html</span><span class="ev-tag">fetched ✓</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH QUERIES & PIPELINE META -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">10 queries · 3 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th><th>Timestamp</th></tr></thead>
+        <tbody>
+          <tr><td>SRG Linksdrall politische Ausrichtung</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>Google-CSE (cached)</td><td>07:48:54</td></tr>
+          <tr><td>Die SRG hat eine linke politische Ausrichtung.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>Google-CSE</td><td>07:49:13</td></tr>
+          <tr><td>SRG Berichterstattung politische Bias</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>Google-CSE</td><td>07:49:24</td></tr>
+          <tr><td>Die SRG zeigt in ihrer Berichterstattung eine Neigung zu linken Positionen.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>Google-CSE</td><td>07:49:31</td></tr>
+          <tr><td>SRG Journalisten politische Selbsteinstufung Studie</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>Google-CSE</td><td>07:50:09</td></tr>
+          <tr><td>ZHAW fög Medienanalyse SRG Berichterstattung Links-rechts</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>Google-CSE, Brave</td><td>07:50:33</td></tr>
+          <tr><td>SRG Berichterstattung Volksabstimmungen Vergleich private Medien</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>Google-CSE</td><td>07:51:03</td></tr>
+          <tr><td>SRG Journalisten politische Selbsteinstufung Studie</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>Google-CSE (cached)</td><td>07:51:25</td></tr>
+          <tr><td>SRG Berichterstattung Inhaltsanalyse Links-rechts-Achse</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>Google-CSE</td><td>07:51:47</td></tr>
+          <tr><td>SRG Medienanalyse politische Ausrichtung konservativ rechts</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>Google-CSE</td><td>07:52:12</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">37</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">For AC_01</span><span class="gate-stat-val">24</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">14</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">10</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Contradiction pass</span><span class="gate-stat-val" style="color:#68d391">yes</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Contradiction sources</span><span class="gate-stat-val">6</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">23</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Main iterations</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Contradiction iters</span><span class="gate-stat-val">1</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  FactHarbor Alpha · ClaimAssessmentBoundary pipeline v3.0.0-cb · Generated 2026-02-19 07:56 UTC
+  <br>Job 4dd7f840f72d48bcb6f2786d9723ce8f · claude-sonnet-4-5 · anthropic
+</div>
+</div>
+</body>
+</html>
