@@ -1,0 +1,79 @@
+= Pipeline Variants — Orchestrated-Era Archived Content =
+
+{{warning}}
+**Archived 2026-02-19** — This content was extracted from the [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] page when the Orchestrated pipeline was removed in v2.11.0 (2026-02-17). The sections below describe the Orchestrated pipeline as it existed before removal. The ClaimAssessmentBoundary pipeline is now the default.
+{{/warning}}
+
+== Variant Comparison (Orchestrated Era) ==
+
+This comparison table covered the two selectable variants when Orchestrated was the default:
+
+|= Criterion |= Orchestrated |= Monolithic Dynamic
+| **Maturity** | Production-ready (comprehensive) | Production-ready (fast alternative)
+| **Result Schema** | Canonical (stable) | Dynamic (flexible)
+| **UI Compatibility** | Full support | Separate viewer needed
+| **Quality Gates** | Gate 1 + Gate 4 | Minimum safety contract
+| **Pipeline Stages** | Fixed AKEL | LLM tool-loop
+| **Provenance** | Strict | Minimum requirements
+| **Budget Control** | Iterations / sources | maxSteps / sources
+| **Cost Predictability** | High | Low
+| **Typical Latency** | 2-5 min | 20-60s
+| **Use Case** | Comprehensive analysis (default) | Fast analysis, second opinion
+
+== Decision Tree (Orchestrated Era) ==
+
+{{mermaid}}
+flowchart TD
+    START{"What is your goal?"}
+
+    START -->|"Comprehensive<br/>fact-checking"| ORCH["Use Orchestrated<br/>Default choice"]
+    START -->|"Fast check or<br/>second opinion"| FAST{"Want LLM-driven<br/>result structure?"}
+
+    FAST -->|"Yes — streamlined"| DYN["Use Monolithic Dynamic<br/>Fast alternative"]
+    FAST -->|"No — standard format"| ORCH
+
+    style ORCH fill:#c8e6c9,color:#000
+    style DYN fill:#e3f2fd,color:#000
+{{/mermaid}}
+
+== Canonical Payload (Orchestrated) ==
+
+Used by ##orchestrated##. Must match the entity model that the existing Jobs UI expects: claims, claim verdicts, article verdict, evidence items, sources.
+
+== Configuration (Orchestrated Era Default) ==
+
+=== Pipeline Selection (UCM) ===
+
+{{code language="json"}}
+{
+  "defaultPipelineVariant": "orchestrated",
+  "allowedVariants": [
+    "orchestrated",
+    "monolithic_dynamic"
+  ]
+}
+{{/code}}
+
+=== Per-Job Override (API) ===
+
+{{code language="json"}}
+POST /api/fh/jobs
+{
+  "inputType": "text",
+  "inputValue": "...",
+  "pipelineVariant": "orchestrated"
+}
+{{/code}}
+
+== Performance Characteristics (Orchestrated Era) ==
+
+Typical analysis time for a 5-10 claim article when Orchestrated was active:
+
+|= Variant |= p50 |= p95 |= Est. Cost
+| **Orchestrated** | 2-3 min | 5-7 min | $0.15-0.30
+| **Monolithic Dynamic** | 1-2 min | 3-10 min | $0.10-0.50
+
+== Navigation Reference (Orchestrated Era) ==
+
+The Pipeline Variants page previously contained a navigation link to the Orchestrated Pipeline page, which has also been archived:
+[[Archived: Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] (see xwiki-pages-ARCHIVE)

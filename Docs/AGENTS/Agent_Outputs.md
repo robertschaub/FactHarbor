@@ -7,6 +7,20 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Documentation Cleanup — Historical Content Archival
+
+**Task:** Archive all historical `.md` and `.xwiki` content that does not document current implementation, future plans, or retained decisions. Split mixed pages.
+
+**Files touched:** 4 archive files created, 5 live files modified/deleted, 1 directory deleted. See full details in [Handoffs/2026-02-19_Technical_Writer_Documentation_Cleanup.md](Handoffs/2026-02-19_Technical_Writer_Documentation_Cleanup.md).
+
+**Key decisions:** Orchestrated Pipeline xwiki archived (pipeline removed v2.11.0). Pipeline Variants page rewritten for CB as default. Current_Status.md split at 2026-02-13 boundary. 18 WIP files all retained (confirmed active). All ARCHITECTURE/, AGENTS/, USER_GUIDES/ retained.
+
+**Open items:** Residual `orchestrated.ts` references in Direction Semantics and KeyFactors Design xwiki pages; `"claimboundary"` pipelineVariant string should be verified against code.
+
+**For next agent:** See handoff file linked above.
+
+---
+
 ### 2026-02-19 | Technical Writer / xWiki Expert | Claude Code (Sonnet 4.6) | gh-pages Analytics — Cloudflare Worker + KV Page View Tracking
 
 **Task:** Add privacy-preserving page view tracking to the gh-pages xWiki viewer. View counts per page and per anonymous visitor. No PII. Data persists across deployments.

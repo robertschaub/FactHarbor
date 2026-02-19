@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-18 (Post-CB + Code Review Consolidation)
+**Last Updated**: 2026-02-19 (Documentation Cleanup — Historical Content Archival)
 
 ---
 
@@ -173,6 +173,20 @@ The following documents had valuable content extracted and merged into active do
 
 ---
 
+### Documentation Cleanup (2026-02-19)
+
+**Description**: Historical content archived during comprehensive documentation cleanup. Criteria: archive anything that describes only completed/removed work with no future relevance. Split pages containing both current and historical content.
+
+**MD archives** (STATUS/):
+1. `STATUS/Documentation_Updates_2026-02-03.md` — Feb 2026 documentation initiative completion report. References files that no longer exist (`Pipeline_TriplePath_Architecture.md`, `Quality_Gates_Reference.md`, `Context_and_EvidenceScope_Detection_Guide.md`). Pure historical record.
+2. `STATUS/Current_Status_arch.md` — Historical changelog extracted from `Current_Status.md`: entries v2.10.2 (2026-02-04) and earlier. Split boundary: 2026-02-13 (everything before the current sprint kept in archive).
+
+**xWiki archives** (in `Docs/xwiki-pages-ARCHIVE/`):
+3. `FactHarbor/Product Development/Specification/Architecture/Deep Dive/Orchestrated Pipeline/WebHome.xwiki` — Full Orchestrated Pipeline reference page. Pipeline removed in v2.11.0 (2026-02-17); ~18,400 lines of code deleted. All content is historical.
+4. `FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome_arch.xwiki` — Orchestrated-era sections extracted from the Pipeline Variants page: variant comparison table, decision tree, canonical payload spec, UCM config with orchestrated as default, performance data, and navigation links. The live Pipeline Variants page was updated to reflect ClaimAssessmentBoundary as the current default.
+
+---
+
 ## Archive Policy
 
 ### When to Archive
@@ -211,5 +225,5 @@ If you need to reference archived documents:
 ---
 
 **Archive Maintainer**: Plan Coordinator
-**Last Review**: 2026-02-18 (Post-CB + Code Review Consolidation)
+**Last Review**: 2026-02-19 (Documentation Cleanup — Historical Content Archival)
 **Next Review**: Quarterly (or when major features complete)

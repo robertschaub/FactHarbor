@@ -3,7 +3,7 @@
 {{info}}
 **Developer Reference** — Twin-path pipeline architecture: the two selectable analysis variants, their shared primitives, invariants, result model, and configuration.
 
-**Key Files**: ##orchestrated.ts##, ##monolithic-dynamic.ts##, ##apps/web/prompts/orchestrated.prompt.md##, ##apps/web/prompts/monolithic-dynamic.prompt.md##
+**Key Files**: ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, ##monolithic-dynamic.ts##, ##apps/web/prompts/claimboundary.prompt.md##, ##apps/web/prompts/monolithic-dynamic.prompt.md##
 {{/info}}
 
 == Architecture Overview ==
@@ -21,7 +21,6 @@ Both variants must preserve these architectural invariants:
 |= Invariant |= Requirement
 | **Pipeline integrity** | Understand → Research → Verdict (no stage skipping)
 | **Input neutrality** | Question vs. statement divergence target <= 4 points (avg absolute)
-| **Context detection** | Multi-context detection with unified "Context" terminology
 | **Quality gates** | Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 | **Generic by design** | No domain-specific hardcoding or keyword lists
 | **No synthetic evidence** | Evidence must be attributable to fetched sources with real URLs + excerpts
@@ -29,12 +28,12 @@ Both variants must preserve these architectural invariants:
 
 == Variant Comparison ==
 
-|= Criterion |= Orchestrated |= Monolithic Dynamic
-| **Maturity** | Production-ready (comprehensive) | Production-ready (fast alternative)
+|= Criterion |= ClaimAssessmentBoundary |= Monolithic Dynamic
+| **Maturity** | Production-ready (default) | Production-ready (fast alternative)
 | **Result Schema** | Canonical (stable) | Dynamic (flexible)
 | **UI Compatibility** | Full support | Separate viewer needed
 | **Quality Gates** | Gate 1 + Gate 4 | Minimum safety contract
-| **Pipeline Stages** | Fixed AKEL | LLM tool-loop
+| **Pipeline Stages** | Fixed 5-stage (Understand → Research → Scope → Boundary → Verdict) | LLM tool-loop
 | **Provenance** | Strict | Minimum requirements
 | **Budget Control** | Iterations / sources | maxSteps / sources
 | **Cost Predictability** | High | Low
@@ -47,15 +46,19 @@ Both variants must preserve these architectural invariants:
 flowchart TD
     START{"What is your goal?"}
 
-    START -->|"Comprehensive<br/>fact-checking"| ORCH["Use Orchestrated<br/>Default choice"]
+    START -->|"Comprehensive<br/>fact-checking"| CB["Use ClaimAssessmentBoundary<br/>Default choice"]
     START -->|"Fast check or<br/>second opinion"| FAST{"Want LLM-driven<br/>result structure?"}
 
     FAST -->|"Yes — streamlined"| DYN["Use Monolithic Dynamic<br/>Fast alternative"]
-    FAST -->|"No — standard format"| ORCH
+    FAST -->|"No — standard format"| CB
 
-    style ORCH fill:#c8e6c9,color:#000
+    style CB fill:#c8e6c9,color:#000
     style DYN fill:#e3f2fd,color:#000
 {{/mermaid}}
+
+{{info}}
+The Orchestrated pipeline (previously the default) was removed in v2.11.0 (2026-02-17) and replaced by ClaimAssessmentBoundary. Historical comparison data for the Orchestrated era is available in the [[archive>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome_arch]].
+{{/info}}
 
 == Monolithic Dynamic Internals ==
 
@@ -73,7 +76,7 @@ Both variants reuse stable infrastructure primitives. Orchestration logic stays 
 
 === What Is Kept Separate ===
 
-* Orchestrated pipeline orchestration logic (##orchestrated.ts##)
+* ClaimAssessmentBoundary pipeline orchestration logic (##claimboundary-pipeline.ts##, ##verdict-stage.ts##)
 * Dynamic monolithic tool-loop orchestration logic (##monolithic-dynamic.ts##)
 
 === Text Analysis Service (v2.9+) ===
@@ -93,16 +96,12 @@ LLM-only text analysis (no heuristic fallback), shared by both pipelines:
 Every job result includes a common envelope regardless of variant:
 
 |= Field |= Type |= Description
-| ##pipelineVariant## | string | ##"orchestrated"## / ##"monolithic_dynamic"##
+| ##pipelineVariant## | string | ##"claimboundary"## / ##"monolithic_dynamic"##
 | ##pipelineVersion## | string | Schema version / build info
 | ##budgets## | object | Configured caps (iterations, maxSteps, maxSources, tokens)
 | ##budgetStats## | object | Observed usage
 | ##warnings## | array | Fallback events, provenance rejections
 | ##providerInfo## | object | Model and provider identifiers used
-
-=== Canonical Payload ===
-
-Used by ##orchestrated##. Must match the entity model that the existing Jobs UI expects: claims, claim verdicts, article verdict, evidence items, sources.
 
 === Dynamic Payload (Minimum Safety Contract) ===
 
@@ -120,9 +119,9 @@ Used by ##monolithic_dynamic##. Allows flexible structure but requires:
 
 {{code language="json"}}
 {
-  "defaultPipelineVariant": "orchestrated",
+  "defaultPipelineVariant": "claimboundary",
   "allowedVariants": [
-    "orchestrated",
+    "claimboundary",
     "monolithic_dynamic"
   ]
 }
@@ -135,7 +134,7 @@ POST /api/fh/jobs
 {
   "inputType": "text",
   "inputValue": "...",
-  "pipelineVariant": "orchestrated"
+  "pipelineVariant": "claimboundary"
 }
 {{/code}}
 
@@ -153,14 +152,14 @@ The selected variant is **persisted on the job at creation time**, ensuring repr
 Typical analysis time for a 5-10 claim article:
 
 |= Variant |= p50 |= p95 |= Est. Cost
-| **Orchestrated** | 2-3 min | 5-7 min | $0.15-0.30
+| **ClaimAssessmentBoundary** | 2-3 min | 5-7 min | $0.15-0.30
 | **Monolithic Dynamic** | 1-2 min | 3-10 min | $0.10-0.50
 
 == Risks and Mitigations ==
 
 |= Risk |= Description |= Mitigation
 | **Complexity creep** | Multiple variants can explode configuration and branching | Single dispatcher + strict shared-primitive boundary
-| **Current-path regressions** | Refactoring shared primitives can change orchestrated behavior | Phase unifications behind thin wrappers; contract tests
+| **CB regressions** | Refactoring shared primitives can change ClaimAssessmentBoundary behavior | Phase unifications behind thin wrappers; contract tests
 | **Dynamic output safety** | Dynamic payload could omit evidence or mislead users | Minimum safety contract; clear pipeline labelling in UI
 | **Cost/latency tail risk** | Uncontrolled tool loops cause runaway cost | maxSteps + maxSources + timeouts + budget enforcement
 | **Security/abuse risk** | Users pick dynamic path consuming resources differently | Budget enforcement; optionally gate variants later
@@ -177,4 +176,4 @@ Without search credentials, analysis continues without external sources (LLM int
 
 ----
 
-**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Prev: [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] | Next: [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Next: [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]

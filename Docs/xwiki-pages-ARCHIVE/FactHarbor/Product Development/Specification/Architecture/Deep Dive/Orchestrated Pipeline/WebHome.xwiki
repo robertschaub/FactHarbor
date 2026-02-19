@@ -1,9 +1,13 @@
 = Orchestrated Pipeline =
 
-{{info}}
-**Developer Reference** — Detailed implementation of the default pipeline with function names, LLM call points, budget controls, and adaptive fallback mechanisms.
+{{warning}}
+**Archived 2026-02-19** — The Orchestrated pipeline was **removed in v2.11.0 (2026-02-17)**. It has been replaced by the **[[ClaimAssessmentBoundary pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]** as the default analysis pipeline. This page is preserved for historical reference only. The source file ##orchestrated.ts## (~18,400 lines) has been deleted from the codebase.
+{{/warning}}
 
-**Key Files**: ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
+{{info}}
+**Developer Reference (HISTORICAL)** — Detailed implementation of the former default pipeline with function names, LLM call points, budget controls, and adaptive fallback mechanisms.
+
+**Key Files (removed)**: ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
 {{/info}}
 
 == Pipeline Flow ==
@@ -155,8 +159,6 @@ All LLM prompts are loaded from UCM-managed ##orchestrated.prompt.md## via ##loa
 | Knowledge Config | ##KNOWLEDGE_RECENCY_GUIDANCE##, ##KNOWLEDGE_INSTRUCTION_ALLOW_MODEL##, ##KNOWLEDGE_INSTRUCTION_EVIDENCE_ONLY## | Cross-cutting
 | Provider Hints | ##PROVIDER_HINT_OPENAI##, ##PROVIDER_HINT_ANTHROPIC##, ##PROVIDER_HINT_GOOGLE##, ##PROVIDER_HINT_MISTRAL## | Cross-cutting
 
-See [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] for the full loading mechanism.
-
 ----
 
-**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Next: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]
+**Archived from:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]]
