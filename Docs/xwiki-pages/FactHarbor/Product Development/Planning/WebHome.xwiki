@@ -100,7 +100,7 @@ Add only if needed:
 
 == Status ==
 
-**Current Phase:** Alpha Transition
-**Status:** Core workflow operational — claim analysis, evidence extraction, verdict generation, quality gates, source reliability, and multi-provider LLM support all implemented. Baseline quality test is the single blocker for declaring POC complete and entering Alpha.
-**Version:** v2.10.2
-**Agreed Roadmap:** POC -> Alpha -> Beta -> V1.0 (see [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]])
+**Current Phase:** **Alpha** (POC complete, tagged ##v1.0.0-poc## on 2026-02-19)
+**Status:** ClaimAssessmentBoundary pipeline v1.0 operational. 853 tests passing, build clean. Concept proven.
+**Version:** v2.11.0 (Code) · 3.0.0-cb (Schema)
+**Roadmap:** POC (complete) -> Alpha (current) -> Beta -> V1.0 (see [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]])

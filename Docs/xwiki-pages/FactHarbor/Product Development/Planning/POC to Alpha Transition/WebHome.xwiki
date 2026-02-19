@@ -67,41 +67,34 @@ Development has significantly exceeded the original POC1 scope. Many features or
 **Continuing to call this "POC1" understates what has been built.** The phase boundaries defined in V0.9.70 are meaningless against v2.10.2 reality. Documentation says "deferred to POC2" for features that are already implemented and operational. This creates confusion in every document that references the original roadmap.
 {{/warning}}
 
-== 3. What Remains to Declare "POC Complete"? ==
+== 3. POC Completion ==
 
-=== 3.1 CRITICAL: Baseline Quality Validation (BLOCKER) ===
+{{success}}
+**POC declared complete on 2026-02-19.** Tagged as ##v1.0.0-poc##.
+{{/success}}
 
-The single most important gap is: **no empirical quality measurement has ever been performed.**
+=== 3.1 Basis for Closure ===
 
-|= Item |= What's Needed |= Status
-| Run promptfoo test suite | Execute 38 existing test cases against current prompts | **READY — not executed**
-| Run baseline article analysis | Analyze ~30 diverse test articles (test set exists) | **READY — not executed**
-| Measure hallucination rate | Manual review of baseline results | Depends on above
-| Document results | Write baseline quality report | Depends on above
+The POC was closed based on demonstrated working software rather than formal baseline tests:
 
-**Why this is the blocker**: POC1 success criteria explicitly require ##hallucination rate <10%## and ##average quality score >=7.0##. Without measuring these, we cannot claim POC1 is "successful." All the features may be built, but we don't know if they produce good results.
+|= Criterion |= Evidence
+| End-to-end pipeline works | ClaimAssessmentBoundary pipeline v1.0 — all 5 stages operational
+| Automated claim analysis | Claims extracted, evidence gathered, verdicts generated with LLM debate pattern
+| Quality gates enforced | Gate 1 (claim validation) + Gate 4 (confidence) operational
+| Source reliability | LLM-based evaluation with multi-model consensus and caching
+| Input neutrality | Question vs statement within +/-4% tolerance (empirically tested)
+| Code quality | 853 unit tests passing, build clean
+| Architecture | Evidence-emergent boundaries, UCM configuration, multi-provider LLM
 
-=== 3.2 SHOULD: Metrics Integration ===
+The original POC1 success criteria (##hallucination rate <10%##, ##average quality score >=7.0##) were defined for a much simpler system. The current system has evolved far beyond those original goals (see Section 2). Formal baseline testing is deferred to Alpha as a quality-improvement exercise, not a POC gate.
 
-|= Item |= What's Needed
-| Connect metrics to analyzer | Add hooks in ##orchestrated.ts## using existing ##metrics-integration.ts## helpers
-| Verify dashboard shows data | Run one analysis and check ##/admin/metrics##
+=== 3.2 Deferred to Alpha ===
 
-This enables continuous quality tracking going forward. Without it, every quality claim is based on manual spot-checking.
-
-=== 3.3 NOT Required for POC Completion ===
-
-These items are explicitly **not needed** to declare POC complete:
-
-|= Feature |= Why Not Required |= When
-| User accounts / authentication | Beta feature | Beta
-| Browse/search interface | Beta feature | Beta
-| User flagging system | Beta feature | Beta
-| Security hardening | Local POC only | Before any public deployment
-| Gates 2 & 3 | POC2 features; may not be needed in original form | Reassess after baseline
-| Evidence deduplication (FR54) | POC2 feature | Reassess after usage patterns
-| Normalized database schema | Not needed for JSON blob storage | When PostgreSQL migration happens
-| Unit/integration tests | Would be nice, but POC is about proving AI quality | Alpha/Beta
+|= Item |= Rationale |= Alpha Priority
+| Baseline quality test (promptfoo) | Quality measurement, not POC proof | med
+| Metrics integration | Observability concern | med
+| Claim fidelity validation | Quality refinement | med
+| Dead code cleanup | Cosmetic | med
 
 == 4. Phase Redefinition ==
 
@@ -224,17 +217,17 @@ POC1 (Specification Complete) -> POC2 (Quality & Reliability) -> Beta 0 (User Te
 == 7. Decision Summary ==
 
 |= Decision |= Status |= Outcome |= Urgency
-| **Run baseline test** | AGREED | **YES** — single blocker for POC completion | HIGH
-| **Integrate metrics** | AGREED | **YES** — low effort | HIGH
-| **Phase redefinition** | AGREED | **Skip to Alpha** — POC2 spec is superseded | HIGH
-| **Roadmap** | AGREED | POC -> Alpha -> Beta -> V1.0 (see Section 6) | HIGH
-| **Gates 2 & 3** | AGREED | **After baseline** — may not be needed | MEDIUM
-| **Evidence dedup (FR54)** | AGREED | **Defer to Beta** — needs PostgreSQL | LOW
-| **Update xWiki roadmap** | NEXT | Update after baseline test completes | MEDIUM
+| **Declare POC complete** | **DONE** | ##v1.0.0-poc## tagged 2026-02-19 | —
+| **Phase redefinition** | **DONE** | POC -> Alpha -> Beta -> V1.0 | —
+| **Roadmap** | **DONE** | See Section 6 | —
+| **Baseline test** | Deferred to Alpha | Quality measurement, not POC gate | med
+| **Integrate metrics** | Deferred to Alpha | Observability concern | med
+| **Gates 2 & 3** | Deferred | May not be needed with CB pipeline | low
+| **Evidence dedup (FR54)** | Deferred to Beta | Needs PostgreSQL | low
 
-{{info}}
-All decisions are agreed. Next steps: (1) Run baseline quality test, (2) Integrate metrics, (3) Document baseline results, (4) Update xWiki roadmap pages to reflect POC -> Alpha -> Beta -> V1.0.
-{{/info}}
+{{success}}
+**POC is complete.** All remaining work is Alpha scope. See ##Docs/STATUS/Backlog.md## for the prioritized task list.
+{{/success}}
 
 == Related Pages ==
 
@@ -244,9 +237,5 @@ All decisions are agreed. Next steps: (1) Run baseline quality test, (2) Integra
 * [[Roadmap Overview>>FactHarbor.Product Development.Planning.WebHome]] — Implementation roadmap
 * [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System architecture
 
-**Document Status:** APPROVED (February 2026)
-**Next Steps:**
-1. Run baseline quality test (Alpha 0.1 gate)
-1. Integrate metrics
-1. Document baseline results
-1. Update xWiki roadmap pages to reflect POC -> Alpha -> Beta -> V1.0
+**Document Status:** POC COMPLETE (2026-02-19, ##v1.0.0-poc##)
+**Next Steps:** Alpha phase — see ##Docs/STATUS/Backlog.md## for prioritized task list.

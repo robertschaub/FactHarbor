@@ -2,27 +2,27 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 19, 2026
+**Last Updated**: February 19, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
-**Phase note**: FactHarbor is transitioning from POC to Alpha. During POC/Alpha, **security/cost-control items are tracked as low urgency** (but often **high importance**). Reclassify to **high urgency** before any production/public exposure.
+**Phase note**: **POC is complete** (tagged `v1.0.0-poc`). FactHarbor is now in **Alpha phase**. Security/cost-control items remain **low urgency** during Alpha but are **high importance**. Reclassify to **high urgency** before any production/public exposure.
 
 **See Also**: `Docs/STATUS/Improvement_Recommendations.md` for detailed analysis and implementation guidance.
 
 ---
 
-## ClaimAssessmentBoundary Pipeline — Remaining Work
+## ClaimAssessmentBoundary Pipeline — Alpha Remaining Work
 
-The ClaimAssessmentBoundary pipeline v1.0 is **production-ready**. All 5 stages implemented, 853 tests passing.
+The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 853 tests passing.
 
 **Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
 
 | Step | Description | Domain | Urgency | Status | Notes |
 |------|-------------|--------|---------|--------|-------|
-| **Phase 5i** | **Final cleanup**: V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests) | Cleanup | high | NOT STARTED | [CB_Implementation_Prompts.md](../ARCHIVE/CB_Implementation_Prompts.md) |
-| **Phase 5k** | **UI adaptations**: Admin config panel (24 CB params), coverage matrix + verdictNarrative + qualityGates components, xWiki diagrams | Web UI | high | NOT STARTED | [CB_Implementation_Prompts.md](../ARCHIVE/CB_Implementation_Prompts.md) |
+| **Phase 5i** | **Final cleanup**: V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests) | Cleanup | med | NOT STARTED | Alpha polish |
+| **Phase 5k** | **UI adaptations**: Admin config panel (24 CB params), coverage matrix + verdictNarrative + qualityGates components, xWiki diagrams | Web UI | med | NOT STARTED | Alpha polish |
 | **Phase 5h** | **Test coverage**: Neutrality, performance, adversarial tests for CB pipeline | Testing | med | NOT STARTED | Optional but recommended |
 | **Step 10** | **Define LLM call optimization targets for CB**: Cost/latency/quality targets based on CB's call pattern | Cost / Analyzer | med | NOT STARTED | |
 
@@ -104,28 +104,20 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready**. All 5 stages 
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
-| **Claim Fidelity Phase 4 — Validation**: Run baseline validation scenarios with real LLM calls to confirm Phases 1-3 fix eliminates claim drift. Requires Captain approval before running (real LLM cost). | Analyzer / Quality | high | high | [WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md) Phase 4 |
-| **Schema Validation — Gate 1 rebuild + telemetry + Pass 2 split**: Items #4 (Gate 1 rebuild with proper schema constraints), #5 (telemetry for pass/fail rates), #6 (Pass 2 schema split). Items #1-3 (dead code) covered by "Dead Code Removal" below. | Analyzer / Quality | high | high | [WIP/Schema_Validation_Implementation_Status_2026-02-18.md](../WIP/Schema_Validation_Implementation_Status_2026-02-18.md) |
-| **Code review test fixes**: Fix 10 failing search tests. (1) `search-cache.ts`: add `dbPromise = null` in `closeSearchCacheDb()` to reset module state between tests. (2) `search-brave.test.ts`: replace `instanceof SearchProviderError` with duck-typing `err.name === "SearchProviderError"`. ~1h. | Testing | high | med | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Code Review entry) |
-| **Dead Code Removal**: Remove 879 lines of unused code (7 files: `parallel-verdicts.ts`, `ab-testing.ts`, `pseudoscience.ts`, `normalization-heuristics.ts`, `classification-fallbacks.ts`, `format-fallback-report.ts`, `loadSourceBundle()`). Cleanup: remove from exports, remove npm scripts (`test:ab`, `test:ab:quick`), verify `p-limit` dependency. ~2-4h. | Architecture / Cleanup | high | med | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) Priority 1 |
-| **UCM AutoForm code review**: Schema-driven config UI implementation complete on `feature/ucm-autoform`. Net −462 lines, 100% field coverage vs ~50%. Awaiting code review before merge to main. | Web UI | med | med | [WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md](../WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
-| **AtomicClaim extraction validation**: Validate Phases 1+2 improvements with real LLM calls (target: 3-5 claims vs 6-8 baseline, ~40% cost reduction). Captain approval needed before running. | Analyzer / Quality | med | high | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md) |
-| ~~**Fix stale "Triple-Path" doc references**~~: SUPERSEDED — replaced by CB documentation. | Docs / Cleanup | ~~med~~ n/a | low | Superseded |
-| ~~**Config Migration to UCM**~~: COMPLETE — All 24 CB parameters in UCM. | ~~Analyzer / Config~~ | ~~med~~ done | ~~high~~ | UCM Audit 2026-02-17 |
-| **LLM Text Analysis A/B Testing**: Run promptfoo text-analysis tests and compare heuristic vs LLM modes to validate quality improvements. Test infrastructure ready (26 cases). | Analyzer / Testing | med | high | [Promptfoo Testing](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Tooling/Promptfoo%20Testing/WebHome.xwiki) |
-| **Edge case test coverage**: 15+ tests for ambiguous harm, circular contestation, opinion vs evidence, mixed quality, missing fields. Create `llm-classification-edge-cases.test.ts`. ~4-6h. | Analyzer / Testing | med | high | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #2 |
-| ~~Inverse-input symmetry hardening~~: SUPERSEDED — CB pipeline has no pre-detection context symmetry to test. Input neutrality tested via Phase 5h. | ~~Analyzer~~ | ~~med~~ n/a | ~~high~~ | Superseded by CB |
-| ~~Evidence-driven context refinement guardrails~~: SUPERSEDED — CB pipeline has no context refinement step; boundaries emerge from evidence clustering. | ~~Analyzer~~ | ~~med~~ n/a | ~~high~~ | Superseded by CB |
-| ~~Central-claim evidence coverage pass~~: SUPERSEDED — CB Stage 2 already targets claims with fewest evidence items (claim-driven research loop). | ~~Analyzer / Search~~ | ~~med~~ n/a | ~~high~~ | Implemented in CB Stage 2 |
-| **Parallel verdict generation**: Process claim verdicts in parallel (with concurrency limit). **Note:** CB pipeline will implement this from the start in `verdict-stage.ts`. | Analyzer / Performance | med | high | Improvements #5; CB architecture §8.4 |
-| **Tiered LLM model routing**: Use cheaper models (Haiku) for extraction tasks, premium models (Sonnet) for reasoning. 50-70% cost savings on LLM calls. ✅ **Enabled** (v2.9.0: Haiku 3.5 for extract/understand, Sonnet 4 for verdict/context refinement). | Analyzer / Cost | ~~med~~ done | high | Improvements #3 |
-| **Claim-level caching**: Cache normalized claim verdicts to reuse across analyses. 30-50% cost savings on repeat claims. Requires normalized DB schema. | Analyzer / Cost | med | high | Improvements #4 |
-| **Quality Gate UI display**: Show Gate 1 and Gate 4 statistics and per-item failure reasons in the results UI. Core transparency requirement. | Web UI | med | high | Improvements #6 |
-| ~~Context guidelines note~~: SUPERSEDED — CB uses ClaimAssessmentBoundary terminology; boundaries emerge from evidence, not pre-defined. | ~~Analyzer / Docs~~ | ~~med~~ n/a | ~~med~~ | Superseded by CB |
-| **Classification confidence scoring**: Add `factualBasisConfidence`, `harmPotentialConfidence`, `classificationConfidence` (0-100) to types. Reduce weights for low-confidence; flag high-harm + low-confidence for review. ~3-4h. | Analyzer / Quality | low | med | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #4 |
-| ~~**Anti-hallucination strategy review**~~: SUPERSEDED — Principles implemented in CB pipeline (LLM debate pattern, self-consistency checks, grounding quality in Gate 1). | Analyzer / Quality | ~~low~~ n/a | med | [Anti-Hallucination Strategies](../ARCHIVE/Anti_Hallucination_Strategies.md) |
-| **Doc Audit Phase 2: `opposingEvidenceIds` + `biasIndicator`**: Add `opposingEvidenceIds` to ClaimVerdict (split from misleading `supportingEvidenceIds`). Surface `biasIndicator` from SR cache to FetchedSource + report UI. Update Core Data Model ERD after code changes. | Analyzer / Types | med | med | Phase 2 of prior doc audit initiative |
-| ~~**Doc Audit Phase 3: Target data model alignment**~~: ✅ DONE (2026-02-18) — Replaced "Scenario" with AnalysisContext throughout Specification/Data Model, aligned `likelihood_range` to 7-point scale, corrected source scoring to LLM+Cache. | ~~Docs~~ | ~~low~~ done | ~~low~~ | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Architecture Rework entry) |
+| **Claim Fidelity Phase 4 — Validation**: Run baseline validation scenarios with real LLM calls to confirm Phases 1-3 fix eliminates claim drift. | Analyzer / Quality | med | high | [WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md) Phase 4 |
+| **Schema Validation — Gate 1 rebuild + telemetry + Pass 2 split**: Items #4-6. | Analyzer / Quality | med | high | [WIP/Schema_Validation_Implementation_Status_2026-02-18.md](../WIP/Schema_Validation_Implementation_Status_2026-02-18.md) |
+| **xWiki Architecture Data Model rewrite**: Last Orchestrated holdout. Needs full rewrite to CB entities. | Docs | med | high | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Phase 3E entry) |
+| **Code review test fixes**: Fix 10 failing search tests (~1h). | Testing | med | med | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Code Review entry) |
+| **Dead Code Removal**: 879 lines across 7 files (~2-4h). | Cleanup | med | med | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) Priority 1 |
+| **UCM AutoForm code review**: On `feature/ucm-autoform`, awaiting review before merge. | Web UI | low | med | [WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md](../WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
+| **AtomicClaim extraction validation**: Validate with real LLM calls (target ~40% cost reduction). | Analyzer / Quality | low | high | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md) |
+| **LLM Text Analysis A/B Testing**: Run promptfoo tests (26 cases ready). | Analyzer / Testing | low | med | [Promptfoo Testing](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Tooling/Promptfoo%20Testing/WebHome.xwiki) |
+| **Parallel verdict generation**: Process claim verdicts in parallel in `verdict-stage.ts`. | Analyzer / Performance | low | high | CB architecture §8.4 |
+| **Quality Gate UI display**: Show Gate 1/4 stats and failure reasons in results UI. | Web UI | low | high | Improvements #6 |
+| **Claim-level caching**: Cache verdicts for reuse. Requires normalized DB schema. | Analyzer / Cost | low | med | Improvements #4 |
+| **Doc Audit Phase 2: `opposingEvidenceIds` + `biasIndicator`**: Split from `supportingEvidenceIds`, surface `biasIndicator` in report. | Analyzer / Types | low | med | Prior doc audit initiative |
+| **Classification confidence scoring**: Add confidence fields to types. | Analyzer / Quality | low | low | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #4 |
+| **Edge case test coverage**: 15+ tests for ambiguous scenarios (~4-6h). | Analyzer / Testing | low | med | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #2 |
 
 ---
 

@@ -1,45 +1,58 @@
 = Project Status =
 
-**FactHarbor is an operational fact-analysis platform in active development.**
+**FactHarbor is an operational fact-analysis platform. POC phase is complete.**
 
 ----
 
 == Current Status ==
 
 |= |= |
-| **Version** | v2.10.2 |
-| **Phase** | Alpha Transition |
+| **Version** | v2.11.0 (Code) · 3.0.0-cb (Schema) · ##v1.0.0-poc## (Tag) |
+| **Phase** | **POC Complete** — entering Alpha |
 | **Codebase** | Next.js (UI + AI orchestrator) + ASP.NET Core (API + persistence) |
+| **Tests** | 853 passing (45 test files, all mocked — no LLM API calls) |
+| **Build** | Clean |
+
+== POC Closure (2026-02-19) ==
+
+{{success}}
+**The Proof of Concept is complete.** The ClaimAssessmentBoundary pipeline v1.0 demonstrates end-to-end automated claim analysis: claim extraction, evidence gathering from web sources, evidence-emergent boundary clustering, LLM-based verdicts with debate pattern, and quality-gated aggregation. Tagged as ##v1.0.0-poc##.
+{{/success}}
 
 == What's Operational ==
 
-* **Automated claim analysis** — submit a URL or text, get structured verdicts with evidence
+* **ClaimAssessmentBoundary pipeline** — 5-stage architecture (extract claims, research evidence, cluster boundaries, generate verdicts, aggregate assessment)
+* **LLM debate pattern** — advocate/challenger/reconciliation for verdict quality
 * **Multi-provider AI** — Anthropic, OpenAI, Google, Mistral via Vercel AI SDK with tiered model routing
 * **7-point verdict scale** — TRUE to FALSE with confidence, distinguishing contested from insufficient evidence
-* **Multi-context detection** — identifies and analyzes separate analytical frames independently (legal, scientific, temporal)
 * **Quality gates** — claim validation (Gate 1) and verdict confidence (Gate 4)
 * **Source reliability scoring** — LLM-based evaluation with multi-model consensus and caching
 * **Evidence quality filtering** — probative value assessment, source authority, extraction confidence
+* **Input neutrality** — question vs statement phrasing within +/-4% tolerance
+* **Unified Configuration Management** — runtime-configurable parameters, admin UI, hot-reload
 * **Real-time progress** — Server-Sent Events for live analysis updates
 * **PDF/HTML/text input** — extract and analyze content from URLs or pasted text
+* **Rich HTML report export** — self-contained dark-themed reports
 
 == Development Phases ==
 
 |= Phase |= Status |= Focus
-| **Proof of Concept** | Completed | Core AI workflow, quality gates, multi-provider support
-| **Alpha** | In progress | Baseline quality validation, prompt optimization, confidence calibration
-| **Beta** | Planned | User testing, production hardening, moderation tooling
+| **Proof of Concept** | **Complete** (##v1.0.0-poc##) | Core AI workflow, CB pipeline, quality gates, multi-provider support, UCM
+| **Alpha** | Starting | Cost optimization, quality validation, UI polish, dead code cleanup
+| **Beta** | Planned | User testing, production hardening, security, PostgreSQL migration
 | **V1.0** | Planned | Public launch, API access, continuous quality improvement
 
 == Alpha Priorities ==
 
-1. Run baseline quality test (30 test cases across domains)
-2. Validate v2.8 prompt optimizations against real analysis runs
-3. Connect metrics infrastructure to analyzer pipeline
-4. Surface quality gate decisions in UI
+1. Cost reduction (Batch API, prompt caching, NPO/OSS credits)
+2. Quality validation with real LLM calls (claim fidelity, AtomicClaim extraction)
+3. UI polish (quality gate display, CB admin config, coverage matrix)
+4. Dead code cleanup
+5. Security hardening — before any public deployment
 
 == Links ==
 
 * [[Detailed Roadmap>>FactHarbor.Product Development.Planning.WebHome]] — full phase definitions, success criteria, requirements mapping
+* [[POC to Alpha Transition>>FactHarbor.Product Development.Planning.POC to Alpha Transition.WebHome]] — phase redefinition and transition assessment
 * [[Specification>>FactHarbor.Product Development.Specification.WebHome]] — architecture, data models, requirements
 * [[Known Issues>>https://github.com/robertschaub/FactHarbor]] — bug tracking and limitations
