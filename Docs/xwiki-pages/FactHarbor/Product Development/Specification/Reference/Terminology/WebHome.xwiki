@@ -291,22 +291,24 @@ export interface VerdictNarrative {
 * Geographic: "Jurisdiction J", "Region R", "Multi-national"
 * Temporal: "Period P data", "Year Y baseline", "Historical range"
 
-**Core fields (REQUIRED)**:
-* ##methodology##: REQUIRED — The analytical approach used by the source (e.g., "Standard ISO-X", "Regulatory Framework Y")
-* ##temporal##: REQUIRED — When the source data was collected or applies (e.g., "Data from Period P", "Baseline Year Y")
+**Primary fields (always extracted when available)**:
+* ##methodology##: The analytical approach used by the source (e.g., "Standard ISO-X", "Regulatory Framework Y")
+* ##temporal##: When the source data was collected or applies (e.g., "Data from Period P", "Baseline Year Y")
 
-**Optional fields**:
+**Other fields**:
 * ##boundaries##: What was included/excluded in the analysis (e.g., "Full lifecycle", "Operation phase only")
 * ##geographic##: Geographic scope of the source data (e.g., "Region R", "Country C")
 * ##additionalDimensions##: Domain-specific scope data (e.g., `{ "sample_size": "N=12000", "blinding": "double-blind" }`)
+
+//Note: All fields except ##name## are optional in the TypeScript type (##types.ts:226##). The LLM is instructed to extract ##methodology## and ##temporal## for every evidence item, but extraction is best-effort — ##scopeQuality## on EvidenceItem tracks completeness.//
 
 **Code representation**:
 
 {{code language="typescript"}}
 export interface EvidenceScope {
   name: string;                             // Short label (e.g., "Methodology A", "Framework B")
-  methodology: string;                      // REQUIRED
-  temporal: string;                         // REQUIRED
+  methodology?: string;                     // Optional — extracted when source provides it
+  temporal?: string;                        // Optional — extracted when source provides it
   boundaries?: string;                      // Optional
   geographic?: string;                      // Optional
   sourceType?: SourceType;                  // Optional classification

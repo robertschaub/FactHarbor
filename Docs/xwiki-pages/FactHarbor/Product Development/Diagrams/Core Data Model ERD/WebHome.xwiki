@@ -82,14 +82,16 @@ erDiagram
         string claimBoundaryId FK "Assigned in Stage 3"
         string_array relevantClaimIds "Which claims this relates to"
         string scopeQuality "complete partial incomplete"
+        string sourceType "peer_reviewed_study news_primary etc"
         boolean isDerivative "Cites another source study"
         string derivedFromSourceUrl "Original source URL"
+        boolean derivativeClaimUnverified "Original source not fetched"
     }
 
     EVIDENCE_SCOPE {
         string name "Short label: WTW TTW EU-LCA"
-        string methodology "REQUIRED: ISO 14040 EU RED II etc"
-        string temporal "REQUIRED: Source data time period"
+        string methodology "Optional: ISO 14040 EU RED II etc"
+        string temporal "Optional: Source data time period"
         string boundaries "What is included or excluded"
         string geographic "Source data geography"
         string sourceType "peer_reviewed_study government_report etc"
@@ -120,6 +122,10 @@ erDiagram
         boolean isContested
         string_array supportingEvidenceIds FK
         string_array contradictingEvidenceIds FK
+        json boundaryFindings "Per-boundary signals"
+        json consistencyResult "Self-consistency check"
+        json challengeResponses "Adversarial challenge responses"
+        json triangulationScore "Cross-boundary agreement"
     }
 
     BOUNDARY_FINDING {
@@ -150,7 +156,7 @@ erDiagram
 * MIXED (43-57%, confidence >= 40%) / UNVERIFIED (43-57%, confidence < 40%)
 * LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
 
-**EvidenceScope (mandatory):** Per-evidence metadata describing the methodology and boundaries of the source data. ##methodology## and ##temporal## are required fields. Embedded in EvidenceItem, not a separate stored entity. Extensible via ##additionalDimensions## (Decision D4).
+**EvidenceScope (mandatory):** Per-evidence metadata describing the methodology and boundaries of the source data. All fields except ##name## are optional (##methodology## and ##temporal## are populated when available from the source). Embedded in EvidenceItem, not a separate stored entity. Extensible via ##additionalDimensions## (Decision D4).
 
 **harmPotential (4-level, Decision D9):** ##critical## (1.5x weight) = death/injury allegations, ##high## (1.2x) = serious but not life-threatening, ##medium## (1.0x) = moderate, ##low## (1.0x) = minimal.
 

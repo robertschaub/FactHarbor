@@ -120,20 +120,22 @@ Runs after Stage 4 (Verdict), before Gate 4. Deterministic structural validation
 
 **Non-blocking:** Structural inconsistencies are captured for debugging. They do NOT block the pipeline.
 
-== Gate 4: Confidence Assessment ==
+== Gate 4: Confidence Classification ==
 
-Gate 4 runs after Stage 4 (Verdict), classifying each verdict's confidence into tiers.
+Gate 4 runs after Stage 4 (Verdict). It classifies the **pre-computed** confidence value from each ##CBClaimVerdict## into tiers using simple numeric thresholds. It does NOT calculate confidence — confidence is determined during the verdict stage by the LLM debate pattern.
 
-|= Input |= How Assessed
+|= Confidence Tier |= Threshold |= Action
+| **HIGH** | confidence >= 70 | Publish with full confidence
+| **MEDIUM** | confidence >= 40 and < 70 | Publish with caveats
+| **LOW** | confidence > 0 and < 40 | Flag for review
+| **INSUFFICIENT** | confidence = 0 | Mark as UNVERIFIED
+
+**What determines confidence (during Stage 4, before Gate 4):**
+
+|= Factor |= Influence
 | Evidence count per claim | More evidence = higher confidence
 | Average source quality | Higher ##trackRecordScore## = higher confidence
 | Evidence agreement ratio | Strong agreement in one direction = higher confidence
-| Self-consistency spread | High spread (from Step 2) reduces confidence tier
-
-|= Confidence Tier |= Criteria |= Action
-| **HIGH** | Strong evidence, high agreement, low spread | Publish with full confidence
-| **MEDIUM** | Adequate evidence, some disagreement | Publish with caveats
-| **LOW** | Limited evidence or high disagreement | Flag for review
-| **INSUFFICIENT** | Very limited evidence, cannot determine | Mark as UNVERIFIED
+| Self-consistency spread | High spread (from Step 2) reduces confidence
 
 //Gate 1 statistics (totalClaims, passedOpinion, passedSpecificity, passedFidelity, filteredCount) and Gate 4 statistics (totalVerdicts, highConfidence, mediumConfidence, lowConfidence, insufficient) are recorded in ##QualityGates## and persisted in the analysis result.//

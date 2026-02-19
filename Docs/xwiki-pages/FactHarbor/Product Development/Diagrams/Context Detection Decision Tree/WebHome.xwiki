@@ -6,7 +6,7 @@ flowchart TD
 
     START -->|"Stage 2: RESEARCH"| ES["Extract EvidenceScope<br/>(MANDATORY)"]
 
-    ES --> ESF["EvidenceScope Fields:<br/>- methodology (REQUIRED)<br/>- temporal (REQUIRED)<br/>- boundaries (optional)<br/>- geographic (optional)"]
+    ES --> ESF["EvidenceScope Fields:<br/>- methodology (primary, optional)<br/>- temporal (primary, optional)<br/>- boundaries (optional)<br/>- geographic (optional)"]
 
     ESF --> STORE["Store on EvidenceItem.<br/>evidenceScope"]
 

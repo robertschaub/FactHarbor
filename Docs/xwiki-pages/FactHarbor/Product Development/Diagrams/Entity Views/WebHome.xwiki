@@ -191,9 +191,10 @@ erDiagram
         string category "factual evaluative procedural"
         string centrality "high medium"
         string harmPotential "critical high medium low"
-        boolean isCentral
+        boolean isCentral "Always true (filtered)"
         string claimDirection "supports_thesis contradicts_thesis contextual"
-        json keyEntities
+        string checkWorthiness "high medium"
+        string_array keyEntities "Named entities referenced"
         float specificityScore "0-1"
         string groundingQuality "strong moderate weak none"
         json expectedEvidenceProfile
@@ -231,21 +232,23 @@ erDiagram
         string sourceTitle
         string sourceExcerpt
         string claimDirection "supports contradicts neutral"
+        string sourceAuthority "primary secondary opinion"
+        string evidenceBasis "scientific documented anecdotal theoretical pseudoscientific"
         string probativeValue "high medium low"
         float extractionConfidence "0-100"
+        string sourceType "peer_reviewed_study etc"
         string_array relevantClaimIds
         string claimBoundaryId_FK "Assigned in Stage 3"
         boolean isDerivative
         string derivedFromSourceUrl
         boolean derivativeClaimUnverified
         string scopeQuality "complete partial incomplete"
-        string sourceType "peer_reviewed_study etc"
     }
 
     EVIDENCE_SCOPE {
         string name
-        string methodology "REQUIRED"
-        string temporal "REQUIRED"
+        string methodology "Optional"
+        string temporal "Optional"
         string boundaries
         string geographic
         string sourceType
@@ -278,7 +281,7 @@ erDiagram
 
 {{/mermaid}}
 
-//Stage 2 output: EVIDENCE_ITEMs with mandatory EVIDENCE_SCOPEs from FETCHED_SOURCEs. CB pipeline additions: relevantClaimIds (which claims evidence relates to), claimBoundaryId (assigned in Stage 3), isDerivative/derivedFromSourceUrl (derivative tracking), scopeQuality assessment.//
+//Stage 2 output: EVIDENCE_ITEMs with EVIDENCE_SCOPEs from FETCHED_SOURCEs. CB pipeline additions: relevantClaimIds (which claims evidence relates to), claimBoundaryId (assigned in Stage 3), isDerivative/derivedFromSourceUrl (derivative tracking), scopeQuality assessment.//
 
 === Stage 3: Cluster Boundaries ===
 
@@ -293,18 +296,19 @@ erDiagram
         string name "Human-readable label"
         string shortName "Short label for UI tabs"
         string description
-        string methodology "Dominant methodology"
-        string boundaries "Scope boundaries"
-        string geographic "Geographic scope"
-        string temporal "Temporal scope"
+        string methodology "Dominant methodology (optional)"
+        string boundaries "Scope boundaries (optional)"
+        string geographic "Geographic scope (optional)"
+        string temporal "Temporal scope (optional)"
+        json constituentScopes "EvidenceScope[] composing this boundary"
         float internalCoherence "0-1"
         int evidenceCount
     }
 
     EVIDENCE_SCOPE {
         string name
-        string methodology
-        string temporal
+        string methodology "Optional"
+        string temporal "Optional"
     }
 
     EVIDENCE_ITEM {
@@ -338,6 +342,10 @@ erDiagram
         boolean isContested
         string_array supportingEvidenceIds
         string_array contradictingEvidenceIds
+        json boundaryFindings "BoundaryFinding[]"
+        json consistencyResult "ConsistencyResult"
+        json challengeResponses "ChallengeResponse[]"
+        json triangulationScore "TriangulationScore"
     }
 
     BOUNDARY_FINDING {
@@ -395,6 +403,11 @@ erDiagram
         string verdict "7-point label"
         float confidence "0-100 weighted"
         boolean hasMultipleBoundaries
+        json verdictNarrative "VerdictNarrative"
+        json claimBoundaries "ClaimAssessmentBoundary[]"
+        json claimVerdicts "CBClaimVerdict[]"
+        json coverageMatrix "CoverageMatrix"
+        json qualityGates "QualityGates"
     }
 
     VERDICT_NARRATIVE {
@@ -847,7 +860,7 @@ flowchart TD
 
 |= Entity |= User-Visible Fields |= Internal-Only Fields
 | **CBClaimVerdict** | statement, verdict, confidence, reasoning, isContested, harmPotential | triangulationScore, consistencyResult details, challengeResponses
-| **EvidenceItem** | statement, category, sourceTitle, claimDirection, probativeValue | sourceId, extractionConfidence, scopeQuality, isDerivative, derivedFromSourceUrl
+| **EvidenceItem** | statement, category, sourceTitle, claimDirection, probativeValue | sourceId, extractionConfidence, scopeQuality, sourceAuthority, evidenceBasis, isDerivative, derivedFromSourceUrl
 | **FetchedSource** | url, title, trackRecordScore | fullText, fetchedAt, searchQuery
 | **ClaimBoundary** | name, shortName, description, methodology | internalCoherence, constituentScopes
 | **BoundaryFinding** | truthPercentage, confidence, evidenceDirection | boundaryId (used for cross-referencing)

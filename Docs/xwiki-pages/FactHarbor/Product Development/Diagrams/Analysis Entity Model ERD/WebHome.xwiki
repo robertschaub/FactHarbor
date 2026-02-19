@@ -116,8 +116,8 @@ erDiagram
 
     EVIDENCE_SCOPE {
         string name "Short label"
-        string methodology "REQUIRED"
-        string temporal "REQUIRED"
+        string methodology "Optional"
+        string temporal "Optional"
         string boundaries "Included or excluded"
         string geographic "Source data region"
         string sourceType "peer_reviewed_study etc"
@@ -170,4 +170,4 @@ erDiagram
     }
 {{/mermaid}}
 
-//The complete CB pipeline analysis entity hierarchy. Stage 1 (Extract Claims) produces ##CB_CLAIM_UNDERSTANDING## with ##AtomicClaims## and Gate 1 stats. Stage 2 (Research) gathers ##EVIDENCE_ITEMs## with mandatory ##EVIDENCE_SCOPEs## from ##FETCHED_SOURCEs##. Stage 3 (Cluster) groups ##EVIDENCE_SCOPEs## into ##CLAIM_BOUNDARYs##. Stage 4 (Verdict) generates ##CB_CLAIM_VERDICTs## with per-boundary ##BOUNDARY_FINDINGs##, ##CONSISTENCY_RESULTs## (self-consistency), and ##CHALLENGE_RESPONSEs## (adversarial debate). Stage 5 (Aggregate) produces ##OVERALL_ASSESSMENT## with ##VERDICT_NARRATIVE##, ##COVERAGE_MATRIX##, and ##QUALITY_GATES##. All entities are embedded in the analysis result JSON blob (schema version ##3.0.0-cb##).//
+//The complete CB pipeline analysis entity hierarchy. Stage 1 (Extract Claims) produces ##CB_CLAIM_UNDERSTANDING## with ##AtomicClaims## and Gate 1 stats. Stage 2 (Research) gathers ##EVIDENCE_ITEMs## with ##EVIDENCE_SCOPEs## from ##FETCHED_SOURCEs##. Stage 3 (Cluster) groups ##EVIDENCE_SCOPEs## into ##CLAIM_BOUNDARYs##. Stage 4 (Verdict) generates ##CB_CLAIM_VERDICTs## with per-boundary ##BOUNDARY_FINDINGs##, ##CONSISTENCY_RESULTs## (self-consistency), and ##CHALLENGE_RESPONSEs## (adversarial debate). Stage 5 (Aggregate) produces ##OVERALL_ASSESSMENT## with ##VERDICT_NARRATIVE##, ##COVERAGE_MATRIX##, and ##QUALITY_GATES##. All entities are embedded in the analysis result JSON blob (schema version ##3.0.0-cb##).//

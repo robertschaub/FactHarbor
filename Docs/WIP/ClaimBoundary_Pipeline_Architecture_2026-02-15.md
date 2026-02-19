@@ -38,7 +38,7 @@
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **D4: EvidenceScope Structure** | **Named core + extensible `additionalDimensions`** | Keep `methodology` (required), `temporal` (required), `boundaries` (optional), `geographic` (optional) as stable core. Add `additionalDimensions: Record<string, string>` for domain-specific scope data. |
+| **D4: EvidenceScope Structure** | **Named core + extensible `additionalDimensions`** | Keep `methodology` (optional, populated when available), `temporal` (optional, populated when available), `boundaries` (optional), `geographic` (optional) as stable core. Add `additionalDimensions: Record<string, string>` for domain-specific scope data. **Implementation note:** All fields except `name` are optional in TypeScript types (`types.ts`). The LLM is instructed to extract scope data when present, but extraction is best-effort — `scopeQuality` tracks completeness. |
 | **D5: Qualitative Field Granularity** | **Field-by-field** | `probativeValue` 3, `harmPotential` 4, `centrality` 3, `groundingQuality` 4, `scopeQuality` 3, `specificityScore` continuous. Rule: categorical for LLM classification, continuous for LLM assessment. |
 | **D6: claimDirection "neutral"** | **Rename to "contextual"** | "neutral" was dead code in decision-making. "contextual" signals clear semantics: evidence providing relevant background without directional stance. |
 | **D7: Structured VerdictNarrative** | **Yes — structured type** | `VerdictNarrative` with `headline`, `evidenceBaseSummary`, `keyFinding`, `boundaryDisagreements[]`, `limitations`. LLM-generated (Sonnet, 1 call). |

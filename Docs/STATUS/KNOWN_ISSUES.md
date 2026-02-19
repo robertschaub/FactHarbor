@@ -191,7 +191,7 @@ Manual review of verdicts to ensure evidence citation.
 
 **Description**:
 The ClaimAssessmentBoundary pipeline has its own budget parameters (UCM-configurable):
-- `maxResearchIterations` (default via UCM)
+- `maxTotalIterations` (default via UCM)
 - `contradictionReservedIterations` (default 2)
 - `claimSufficiencyThreshold` (default 3 evidence items per claim)
 

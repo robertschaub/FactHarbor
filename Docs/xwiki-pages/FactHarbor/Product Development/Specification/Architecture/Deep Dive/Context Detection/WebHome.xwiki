@@ -46,7 +46,7 @@ This guide explains:
 
 **FactHarbor ClaimBoundary Pipeline Entities** (use in prompts and code):
 * **AtomicClaim**: Single verifiable assertion extracted from user input
-* **EvidenceItem**: Information extracted from sources (with mandatory EvidenceScope)
+* **EvidenceItem**: Information extracted from sources (with EvidenceScope)
 * **EvidenceScope**: Per-evidence source methodology metadata
 * **ClaimBoundary**: Evidence-emergent grouping of compatible EvidenceScopes
 * **ClaimVerdict**: Per-claim verdict with boundaryFindings[]
@@ -73,9 +73,9 @@ Extract EvidenceScope metadata for EVERY evidence item during Stage 2: RESEARCH:
 1. **Source has system boundaries**: "Full system boundary" vs "Subsystem only"
 1. **Source has geographic scope**: "Jurisdiction J" vs "Region R"
 
-**MANDATORY fields**:
-* ##methodology## (REQUIRED) — The analytical approach used by the source
-* ##temporal## (REQUIRED) — When the source data was collected or applies
+**Primary fields** (always extracted when source provides them; optional in TypeScript type):
+* ##methodology## — The analytical approach used by the source
+* ##temporal## — When the source data was collected or applies
 
 **Optional fields**:
 * ##boundaries## — What was included/excluded in the analysis
@@ -121,8 +121,8 @@ ClaimBoundaries are created AFTER research by clustering compatible EvidenceScop
 For full field definitions see [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]]. Key fields for boundary clustering:
 
 |= Entity |= Field |= Role in Clustering
-| EvidenceScope | ##methodology## | Primary congruence signal (REQUIRED)
-| EvidenceScope | ##temporal## | Primary congruence signal (REQUIRED)
+| EvidenceScope | ##methodology## | Primary congruence signal (when available)
+| EvidenceScope | ##temporal## | Primary congruence signal (when available)
 | EvidenceScope | ##boundaries## | Secondary congruence signal (optional)
 | EvidenceScope | ##geographic## | Secondary congruence signal (optional)
 | EvidenceScope | ##additionalDimensions## | Supplementary congruence context (optional)

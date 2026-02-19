@@ -23,14 +23,14 @@ The ClaimAssessmentBoundary pipeline produces a hierarchy of entities: the input
 | **AtomicClaim** | Single verifiable assertion extracted from user input; the analytical unit | ##types.ts:704## | Receives CBClaimVerdict[]; has centrality, harmPotential, groundingQuality
 | **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes; the top-level analytical frame | ##types.ts:733## | Contains EvidenceItem[] and EvidenceScope[]; referenced by BoundaryFinding[]
 | **CBClaimVerdict** | Per-claim verdict with truth percentage, confidence, reasoning, boundary findings, and challenge responses | ##types.ts:777## | References EvidenceItem[] (supporting + contradicting); contains BoundaryFinding[], ConsistencyResult, ChallengeResponse[]
-| **EvidenceItem** | Extracted statement from a web source with quality metadata (probative value, scope quality, derivative tracking) | ##types.ts:385## | References FetchedSource; assigned to ClaimAssessmentBoundary; has mandatory EvidenceScope
+| **EvidenceItem** | Extracted statement from a web source with quality metadata (probative value, scope quality, derivative tracking) | ##types.ts:385## | References FetchedSource; assigned to ClaimAssessmentBoundary; has EvidenceScope
 | **FetchedSource** | Web source with URL, content, and source reliability score (0.0-1.0 from LLM evaluation) | ##types.ts:447## | Referenced by EvidenceItem[]
 | **OverallAssessment** | Final aggregated result: weighted truth percentage, verdict, confidence, narrative, coverage matrix | ##types.ts:949## | Aggregates CBClaimVerdict[], ClaimAssessmentBoundary[]; has VerdictNarrative, CoverageMatrix, QualityGates
 | **VerdictNarrative** | Structured narrative: headline, evidence base summary, key finding, boundary disagreements, limitations | ##types.ts:878## | Contained by OverallAssessment
 
 === Additional Entities ===
 
-* **EvidenceScope** (##types.ts:226##) — Per-evidence methodology metadata (methodology [REQUIRED], temporal [REQUIRED], boundaries, geographic, sourceType, additionalDimensions). Embedded in EvidenceItem.
+* **EvidenceScope** (##types.ts:226##) — Per-evidence methodology metadata (methodology [optional], temporal [optional], boundaries, geographic, sourceType, additionalDimensions). All fields except ##name## are optional; populated when available from the source. Embedded in EvidenceItem.
 * **BoundaryFinding** (##types.ts:759##) — Per-boundary quantitative signals within a CBClaimVerdict: truthPercentage, confidence, evidenceDirection, evidenceCount.
 * **ConsistencyResult** (##types.ts:800##) — Self-consistency check output: verdict stability across multiple LLM runs (percentages, spread, stable flag).
 * **ChallengeResponse** (##types.ts:838##) — How adversarial challenges were addressed in reconciliation: challengeType, response, verdictAdjusted.

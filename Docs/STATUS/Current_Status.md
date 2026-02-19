@@ -18,7 +18,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - **Two-pass evidence-grounded claim extraction**: Quick scan (Haiku) → preliminary search → evidence-grounded re-extraction (Sonnet)
 - **LLM debate pattern**: Advocate → challenger → reconciliation for each claim verdict (5-step process)
 - **Source triangulation scoring**: Cross-boundary agreement/disagreement with configurable boosts/penalties
-- **Mandatory EvidenceScope**: `methodology` + `temporal` required on all evidence; `additionalDimensions` for domain-specific data
+- **EvidenceScope on all evidence**: `methodology` + `temporal` populated when available (optional in TypeScript types); `additionalDimensions` for domain-specific data
 - **VerdictNarrative**: Structured narrative with headline, keyFinding, boundaryDisagreements, limitations
 - **Coverage matrix**: Claims × boundaries evidence distribution tracking
 - **Quality gates**: Gate 1 (claim validation) + Gate 4 (confidence distribution)
@@ -487,7 +487,7 @@ Complete pipeline implementation replacing the Orchestrated pipeline with eviden
 
 **Pipeline Stages (all operational):**
 1. **Stage 1: Extract Claims** — Two-pass evidence-grounded claim extraction (Haiku + Sonnet) with Gate 1 validation
-2. **Stage 2: Research Evidence** — Claim-driven iteration loop with contradiction search, mandatory EvidenceScope, derivative validation
+2. **Stage 2: Research Evidence** — Claim-driven iteration loop with contradiction search, EvidenceScope extraction, derivative validation
 3. **Stage 3: Cluster Boundaries** — LLM-driven EvidenceScope clustering (Sonnet) with coherence assessment and cap enforcement
 4. **Stage 4: Generate Verdicts** — 5-step LLM debate pattern (advocate → challenger → reconciliation → self-consistency → validation)
 5. **Stage 5: Aggregate Assessment** — Triangulation scoring, weighted aggregation, VerdictNarrative generation, quality gates

@@ -59,7 +59,7 @@ Tasks are routed to appropriate model tiers for cost optimization:
 |= Task Type |= Tier |= Purpose
 | ##understand## | Budget | Claim extraction and classification
 | ##extract_evidence## | Budget | Evidence extraction from sources
-| ##cluster_boundaries## | Standard | EvidenceScope clustering into ClaimAssessmentBoundaries (Stage 3)
+| ##context_refinement## | Standard | EvidenceScope clustering into ClaimAssessmentBoundaries (Stage 3)
 | ##verdict## | Premium | Verdict reasoning (critical quality)
 | ##supplemental## | Standard | Supplemental generation
 | ##summary## | Standard | Summary generation
@@ -83,7 +83,7 @@ Tasks are routed to appropriate model tiers for cost optimization:
 | ##FH_DETERMINISTIC## | true | true = temperature 0, false = default
 | ##modelUnderstand## | claude-haiku-4-5-20251001 | Any model ID (UCM override)
 | ##modelExtractEvidence## | claude-haiku-4-5-20251001 | Any model ID (UCM override)
-| ##modelVerdict## | claude-sonnet-4-5-20250929 | Any model ID (UCM override)
+| ##modelVerdict## | claude-opus-4-6 | Any model ID (UCM override)
 
 == Implementation Status ==
 

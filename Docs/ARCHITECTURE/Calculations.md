@@ -178,8 +178,8 @@ flowchart TD
 - **CONTESTED** = Has actual documented counter-evidence → Reduced weight (genuine uncertainty)
 
 **Implementation (v2.8):**
-- `validateContestation()` in `aggregation.ts`: KeyFactor-level validation (orchestrated pipeline)
-- `detectClaimContestation()` in `aggregation.ts`: Claim-level heuristic (shared)
+- ~~`validateContestation()` in `aggregation.ts`~~: Removed with Orchestrated pipeline (v2.11.0)
+- ~~`detectClaimContestation()` in `aggregation.ts`~~: Removed (v2.11.0). CB pipeline handles contestation via LLM debate (verdict-stage.ts adversarial challenge)
 
 ### Evidence Item Categorization
 
@@ -350,9 +350,9 @@ if (answerTruthPct >= 72 && positiveFactors > effectiveNegatives) {
 
 ### Level 4: Overall Answer
 
-**File**: `apps/web/src/lib/analyzer/orchestrated.ts` (line ~4796)
+**File**: ~~`apps/web/src/lib/analyzer/orchestrated.ts`~~ (removed in v2.11.0 — CB pipeline uses `aggregateAssessment()` in `claimboundary-pipeline.ts`)
 
-Overall answer averages analysis-context answers (de-duplicated):
+Overall answer averages analysis-context answers (de-duplicated) — **legacy Orchestrated logic:**
 
 ```typescript
 const avgTruthPct = Math.round(

@@ -23,12 +23,12 @@ flowchart TB
     end
 
     subgraph Stage2["Stage 2: RESEARCH EVIDENCE"]
-        RESEARCH_LOOP["Research Loop (maxResearchIterations)"]
+        RESEARCH_LOOP["Research Loop (maxTotalIterations)"]
         SUFFICIENCY["Claim Sufficiency Check<br/>claimSufficiencyThreshold (default: 3)"]
         CONTRADICTION["Contradiction Search<br/>Reserved iterations (default: 2)"]
         DECIDE_NEXT["decideNextResearch()<br/>Priority: unsufficient → central → high-harm"]
         SEARCH["[WEB] searchWebWithProvider()"]
-        RELEVANCE["[LLM] assessSearchRelevance()<br/>Primary / secondary / unrelated"]
+        RELEVANCE["[LLM] classifyRelevance()<br/>Primary / secondary / unrelated"]
         FETCH["[WEB] fetchSourceContent()"]
         SR_PREFETCH["[EXT] prefetchSourceReliability()<br/>Batch lookup (async)"]
         EXTRACT["[LLM] extractEvidence()<br/>Per source → EvidenceItem[]"]
@@ -50,18 +50,16 @@ flowchart TB
         SC_CHECK["[LLM] Step 2: Self-Consistency (Sonnet x2)<br/>Re-run at temp=0.3, measure spread"]
         CHALLENGE["[LLM] Step 3: Adversarial Challenge (Sonnet)<br/>Argue against emerging verdicts"]
         RECONCILE["[LLM] Step 4: Reconciliation (Sonnet)<br/>Final verdicts incorporating challenges"]
-        VALIDATE["[LLM] Step 5: Verdict Validation (Haiku x2)<br/>Grounding check + direction check"]
+        VERDICT_VAL["[LLM] Step 5: Verdict Validation (Haiku x2)<br/>Grounding check + direction check"]
         STRUCT_CHECK["Structural Consistency Check<br/>(deterministic)"]
-        TRIANGULATION["Triangulation Scoring<br/>Cross-boundary agreement"]
-        VERDICTS_OUT["CBClaimVerdict[] (with triangulation)"]
+        VERDICTS_OUT["CBClaimVerdict[]"]
     end
 
-    subgraph Stage5["Stage 5: AGGREGATE ASSESSMENT"]
-        WEIGHTED_AVG["calculateWeightedVerdictAverage()<br/>Centrality + harm + triangulation weights"]
-        CONTEST_DETECT["detectClaimContestation()<br/>factualBasis classification"]
-        HARM_DETECT["detectHarmPotential()<br/>4-level: critical/high/medium/low"]
-        NARRATIVE["[LLM] Generate VerdictNarrative<br/>Headline, key finding, limitations"]
-        GATE4["Gate 4: Verdict Confidence<br/>HIGH/MEDIUM/LOW/INSUFFICIENT distribution"]
+    subgraph Stage5["Stage 5: AGGREGATE (aggregateAssessment)"]
+        TRIANG_STEP["computeTriangulationScore()<br/>Cross-boundary agreement per claim"]
+        WEIGHTED_AGG["Weighted Aggregation<br/>Centrality × harm × confidence ×<br/>triangulation × derivative weights"]
+        NARRATIVE["[LLM] generateVerdictNarrative() (Sonnet)<br/>Headline, key finding, limitations"]
+        GATE4["Gate 4: buildQualityGates()<br/>Classify confidence tiers"]
         ENVELOPE["Result Envelope<br/>schemaVersion: 3.0.0-cb"]
     end
 
@@ -100,15 +98,13 @@ flowchart TB
     SELF_CONSIST -->|"disabled"| CHALLENGE
     SC_CHECK --> CHALLENGE
     CHALLENGE --> RECONCILE
-    RECONCILE --> VALIDATE
-    VALIDATE --> STRUCT_CHECK
-    STRUCT_CHECK --> TRIANGULATION
-    TRIANGULATION --> VERDICTS_OUT
+    RECONCILE --> VERDICT_VAL
+    VERDICT_VAL --> STRUCT_CHECK
+    STRUCT_CHECK --> VERDICTS_OUT
 
-    VERDICTS_OUT --> WEIGHTED_AVG
-    WEIGHTED_AVG --> CONTEST_DETECT
-    CONTEST_DETECT --> HARM_DETECT
-    HARM_DETECT --> NARRATIVE
+    VERDICTS_OUT --> TRIANG_STEP
+    TRIANG_STEP --> WEIGHTED_AGG
+    WEIGHTED_AGG --> NARRATIVE
     NARRATIVE --> GATE4
     GATE4 --> ENVELOPE
 
