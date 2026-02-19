@@ -12,7 +12,7 @@ flowchart TB
         L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Tangential claims get weight=0"]
         L5["Layer 5: Opinion-Only Factor Pruning<br/>aggregation.ts<br/>Remove opinion-only keyFactors"]
         L6["Layer 6: Contestation Validation<br/>aggregation.ts<br/>Downgrade opinion-based contestation"]
-        L7["Layer 7: Context-Aware Routing<br/>analysis-contexts.ts<br/>Route to correct analytical context"]
+        L7["Layer 7: Boundary Clustering<br/>claimboundary-pipeline.ts<br/>Stage 3: clusterBoundaries"]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
@@ -26,4 +26,4 @@ flowchart TB
     style L7 fill:#e3f2fd,color:#000
 {{/mermaid}}
 
-//Green = evidence quality filter. Yellow = deterministic enforcement layers. Blue = context-aware routing. Each layer catches issues the previous layers may have missed.//
+//Green = evidence quality filter. Yellow = deterministic enforcement layers. Blue = boundary clustering (Stage 3). Each layer catches issues the previous layers may have missed.//

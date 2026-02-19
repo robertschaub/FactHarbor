@@ -238,9 +238,8 @@ All runtime LLM prompts load from UCM-managed ##.prompt.md## files, compliant wi
 
 == 11. Related Documentation ==
 
-* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Pipeline architecture and shared primitives that consume these prompts
-* [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation methodology driven by prompt outputs
 * [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — CB pipeline (default) and Monolithic Dynamic pipeline showing where each prompt is invoked
+* [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation methodology driven by prompt outputs
 * [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] — Confidence scoring that depends on prompt-extracted evidence quality
 * [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — Architecture overview
 

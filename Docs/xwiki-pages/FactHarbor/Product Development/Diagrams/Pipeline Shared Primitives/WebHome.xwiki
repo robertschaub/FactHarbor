@@ -11,21 +11,20 @@ flowchart TD
     end
 
     subgraph Modules["Shared Analyzer Modules"]
-        CTX["analysis-contexts.ts"]
         AGG["aggregation.ts"]
         CLAIM["claim-decomposition.ts"]
         SR["source-reliability.ts"]
         EF["evidence-filter.ts"]
-        VC["verdict-corrections.ts"]
+        QG["quality-gates.ts"]
     end
 
     subgraph Pipelines["Pipeline Implementations (Isolated)"]
-        ORCH["orchestrated.ts"]
+        CB["claimboundary-pipeline.ts"]
         DYN["monolithic-dynamic.ts"]
     end
 
     Shared --> Pipelines
-    Modules --> ORCH
+    Modules --> CB
     SR --> DYN
     PROV --> DYN
 
@@ -34,4 +33,4 @@ flowchart TD
     style Pipelines fill:#fff3e0,stroke:#e65100,color:#000
 {{/mermaid}}
 
-//Shared primitives and analyzer modules are used by both pipelines. Orchestration logic is isolated per variant — no cross-calls between implementations.//
+//Shared primitives and analyzer modules are used by both pipelines. Pipeline logic is isolated per variant — no cross-calls between implementations.//

@@ -3,14 +3,13 @@
 {{mermaid}}
 flowchart TB
     subgraph Pipelines["Pipeline Variants"]
-        ORCH["Orchestrated"]
+        CB["ClaimAssessmentBoundary"]
         DYN["Dynamic"]
     end
 
     subgraph Analysis["Analysis & Weighting"]
         AGG["aggregation.ts\nVerdict weighting,\ncontestation detection"]
         CLAIM_D["claim-decomposition.ts\nClaim parsing,\nnormalisation"]
-        CONTEXTS["analysis-contexts.ts\nContext detection"]
     end
 
     subgraph Quality["Quality & Filtering"]
@@ -32,10 +31,10 @@ flowchart TB
         BU["budgets.ts\nToken/cost budgets"]
     end
 
-    ORCH --> Analysis
-    ORCH --> Quality
-    ORCH --> Evidence
-    ORCH --> Trust
+    CB --> Analysis
+    CB --> Quality
+    CB --> Evidence
+    CB --> Trust
     DYN --> SR
     DYN --> TS
     DYN --> BU
@@ -47,4 +46,4 @@ flowchart TB
     style Trust fill:#f3e5f5,stroke:#6a1b9a,color:#000
 {{/mermaid}}
 
-//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing, context detection), Quality (evidence filtering, quality gates, verdict corrections), Evidence Processing (normalization, recency assessment, deduplication, context utilities), and Trust (source reliability, truth scale mapping, budget enforcement). The Orchestrated pipeline uses all modules; the Monolithic Dynamic variant uses a subset. Phase 2a (2026-02-12) extracted evidence processing modules from orchestrated.ts, reducing complexity by 493 lines.//
+//Shared modules are grouped by function: Analysis (verdict weighting, claim parsing), Quality (evidence filtering, quality gates, verdict corrections), Evidence Processing (normalization, recency assessment, deduplication, context utilities), and Trust (source reliability, truth scale mapping, budget enforcement). The ClaimAssessmentBoundary pipeline uses all modules; the Monolithic Dynamic variant uses a subset.//

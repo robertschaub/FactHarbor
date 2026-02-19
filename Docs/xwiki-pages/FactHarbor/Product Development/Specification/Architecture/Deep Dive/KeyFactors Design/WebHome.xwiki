@@ -1,14 +1,22 @@
 = KeyFactors Design Decision =
 
+{{warning}}
+**HISTORICAL DESIGN DOCUMENT — Orchestrated Pipeline (v2.6.x era)**
+
+The KeyFactor concept was implemented in the Orchestrated pipeline (##orchestrated.ts##, removed in v2.11.0). It is **not present** in the ClaimAssessmentBoundary pipeline. In the CB pipeline, the equivalent analytical grouping is the ##ClaimAssessmentBoundary## — evidence-emergent groupings of ##EvidenceScopes## that replace the KeyFactor intermediate layer. See [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] for the current architecture.
+
+This document is retained for historical context on the design decisions that shaped the current CB pipeline's approach to claim decomposition.
+{{/warning}}
+
 {{info}}
 **Developer Reference** — Design decisions around KeyFactors: decomposition questions that break down a thesis into verifiable dimensions. Covers entity relationships, data flow, contestation structure, and implementation status.
 
-**Key File**: ##apps/web/src/lib/analyzer/orchestrated.ts## (KeyFactor discovery in Understanding phase)
+**Key File**: ##apps/web/src/lib/analyzer/orchestrated.ts## (removed in v2.11.0 — historical)
 {{/info}}
 
 **Date**: January 2026
 **Version**: 2.6.33
-**Status**: Design Decision Document
+**Status**: Historical Design Decision Document (Orchestrated pipeline — superseded by CB pipeline)
 
 ----
 
@@ -153,12 +161,14 @@ interface KeyFactor {
 
 **factualBasis Rules (v2.8 — Affects Weight Calculation):**
 
-|= Value |= Meaning |= Weight |= Example
-| ##established## | Strong documented counter-evidence | 0.3x | Court transcripts showing bias
-| ##disputed## | Some factual counter-evidence | 0.5x | Conflicting expert opinions
+|= Value |= Meaning |= Weight (v3.1) |= Example
+| ##established## | Strong documented counter-evidence | 0.5x | Court transcripts showing bias
+| ##disputed## | Some factual counter-evidence | 0.7x | Conflicting expert opinions
 | ##opinion## | No factual counter-evidence (DOUBTED) | 1.0x | "Critics say it was unfair"
 | ##alleged## | Accusation without evidence (DOUBTED) | 1.0x | Political statements
 | ##unknown## | Cannot determine | 1.0x | Insufficient information
+
+//Note: Weights above reflect v3.1 contestation defaults in ##aggregation.ts##. The Orchestrated pipeline used 0.3x/0.5x; updated to 0.5x/0.7x in v2.9.0 to avoid double-penalising contested claims.//
 
 **Key Distinction (v2.8):**
 * **DOUBTED** (##opinion##/##alleged##/##unknown##): Political rhetoric without evidence -> Full weight
@@ -207,7 +217,7 @@ interface KeyFactor {
 
 * [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict aggregation including KeyFactor-level verdicts
 * [[Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] — Entity relationships
-* [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] — Pipeline flow where KeyFactors are discovered
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Current CB pipeline (5-stage) and Monolithic Dynamic
 
 ----
 

@@ -36,26 +36,26 @@ The **AI Knowledge Extraction Layer (AKEL)** is FactHarbor's core analysis engin
 
 == Pipeline Variants ==
 
-FactHarbor supports two pipeline variants. The **orchestrated** pipeline is the comprehensive default; the **monolithic dynamic** variant is a fast, lower-cost alternative.
+FactHarbor supports two pipeline variants. The **ClaimAssessmentBoundary** pipeline is the comprehensive default; the **monolithic dynamic** variant is a fast, lower-cost alternative.
 
 {{mermaid}}
 flowchart LR
     INPUT["User Input"] --> DISPATCH{{"Pipeline\nDispatch"}}
 
-    DISPATCH -->|"orchestrated\n(default)"| ORCH["Orchestrated\nMulti-step workflow\nFull quality gates"]
+    DISPATCH -->|"claimboundary\n(default)"| CB["ClaimAssessmentBoundary\n5-stage workflow\nFull quality gates"]
     DISPATCH -->|"monolithic_dynamic"| DYN["Monolithic Dynamic\nSingle LLM call\nFlexible output"]
 
-    ORCH --> RESULT["AnalysisResult\nJSON"]
+    CB --> RESULT["AnalysisResult\nJSON"]
     DYN --> RESULT
 
-    style ORCH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style CB fill:#c8e6c9,stroke:#2e7d32,color:#000
     style DYN fill:#f3e5f5,stroke:#6a1b9a,color:#000
 {{/mermaid}}
 
-//Both variants produce an AnalysisResult JSON output. The orchestrated pipeline is the default and most capable; the monolithic dynamic variant trades depth for speed and flexibility.//
+//Both variants produce an AnalysisResult JSON output. The ClaimAssessmentBoundary pipeline is the default and most capable; the monolithic dynamic variant trades depth for speed and flexibility.//
 
 |= Variant |= Approach |= Quality |= Speed |= Use Case
-| **Orchestrated** | Multi-step workflow with iterative research, quality gates, evidence filtering | Highest | Slower (multiple LLM calls) | Production analysis
+| **ClaimAssessmentBoundary** | 5-stage workflow (extract → research → cluster → verdict → aggregate) with iterative research, quality gates, evidence filtering | Highest | Thorough (multiple LLM calls) | Production analysis
 | **Monolithic Dynamic** | Single LLM tool-loop call, flexible output | Streamlined | Fastest | Fast analysis, second opinion
 
 == Shared Analysis Modules ==
@@ -65,31 +65,28 @@ All pipeline variants share a common set of analysis modules. This ensures consi
 {{include reference="FactHarbor.Product Development.Diagrams.AKEL Shared Modules.WebHome"/}}
 
 |= Module |= Used By |= Purpose
-| ##aggregation.ts## | Orch | Verdict weighting by centrality/harm/evidence quality, contestation validation
-| ##claim-decomposition.ts## | Orch | Claim text parsing and normalisation
-| ##analysis-contexts.ts## | Orch | Heuristic context pre-detection before LLM
-| ##evidence-filter.ts## | Orch | Probative value filtering, false positive rate calculation
-| ##quality-gates.ts## | Orch | Gate 1 (claim validation) and Gate 4 (verdict confidence)
-| ##verdict-corrections.ts## | Orch | Post-hoc verdict direction mismatch corrections
-| ##source-reliability.ts## | Orch, Dyn | LLM-based source credibility evaluation with SQLite cache
-| ##truth-scale.ts## | Dyn | Percentage-to-verdict label mapping (7-point scale)
-| ##budgets.ts## | Orch, Dyn | Token and cost budget tracking and enforcement
+| ##aggregation.ts## | CB | Verdict weighting by centrality/harm/confidence/triangulation, contestation weight reduction
+| ##claim-decomposition.ts## | CB | Claim text parsing and normalisation
+| ##evidence-filter.ts## | CB | Probative value filtering, false positive rate calculation
+| ##quality-gates.ts## | CB | Gate 1 (claim fidelity + specificity) and Gate 4 (verdict confidence)
+| ##source-reliability.ts## | CB, Dyn | LLM-based source credibility evaluation with SQLite cache
+| ##truth-scale.ts## | CB, Dyn | Percentage-to-verdict label mapping (7-point scale)
+| ##budgets.ts## | CB, Dyn | Token and cost budget tracking and enforcement
 
 == Budget Controls ==
 
-The orchestrated pipeline enforces budgets to prevent runaway LLM costs:
+The ClaimAssessmentBoundary pipeline enforces budgets to prevent runaway LLM costs:
 
 |= Budget |= Default |= Purpose
-| Max iterations per context | 5 | Limits research rounds per analysis context
-| Max total tokens | 750,000 | Caps total LLM token consumption across all steps
-| Max total iterations | 20 | Hard limit on total research iterations across all contexts
+| Max research iterations | 3 per boundary | Limits research rounds per ClaimAssessmentBoundary
+| Max total tokens | 750,000 | Caps total LLM token consumption across all stages
+| Max boundaries | UCM-configurable | Hard limit on ClaimAssessmentBoundaries processed in parallel
 
 == Deep Dives ==
 
 For detailed implementation references:
-* [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] — Step-by-step with function names, LLM call points, and budget controls
-* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Invariants, shared primitives, result model, configuration
-* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — Gate 1 and Gate 4 criteria, confidence penalties
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — CB pipeline (5 stages) and Monolithic Dynamic: invariants, shared primitives, result model
+* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — Gate 1 (claim fidelity) and Gate 4 (verdict confidence) criteria, configuration
 
 ----
 

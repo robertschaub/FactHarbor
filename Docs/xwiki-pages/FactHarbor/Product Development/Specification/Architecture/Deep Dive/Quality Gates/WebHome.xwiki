@@ -85,15 +85,27 @@ Filter out non-verifiable claims before research begins, preventing wasted resou
 
 === 3.3 Implementation ===
 
-**File**: ##apps/web/src/lib/analyzer/orchestrated.ts##
-**Function**: Applied during ##understandClaim()## phase
-**Phase**: UNDERSTAND (Phase 1)
+**Files**: ##apps/web/src/lib/analyzer/quality-gates.ts## + ##apps/web/src/lib/analyzer/claimboundary-pipeline.ts##
+**Functions**: ##applyGate1ToClaims()##, ##applyGate1Lite()##, ##validateClaimGate1()##
+**Phase**: Stage 1: ##extractClaims## (CB pipeline)
 
-**Exclusion Process**:
-1. LLM extracts claims and marks each with role and type
-1. Deterministic filter applies Gate 1 criteria
-1. Excluded claims logged with reasons
-1. Valid claims proceed to research phase
+**Validation Process**:
+1. CLAIM_EXTRACTION_PASS2 LLM call extracts and consolidates ##AtomicClaims## with a ##passedFidelity## flag (LLM-assessed claim fidelity — whether the claim is genuinely verifiable)
+1. ##applyGate1ToClaims()## applies deterministic specificity and fidelity filters
+1. Central claims (##isCentral=true##) are kept regardless of filter outcome
+1. Excluded claims logged with reasons; valid claims proceed to research
+
+**Safety Net — Rescue highest-centrality claim** (##claimboundary-pipeline.ts##):
+If Gate 1 would filter ALL claims (leaving an empty pipeline that produces a meaningless default verdict), the highest-centrality claim that passed fidelity is automatically rescued. This prevents silent failures:
+{{code language="typescript"}}
+// Safety net: never filter ALL claims
+if (keptClaims.length === 0 && claims.length > 0) {
+  const rescued = [...claims]
+    .sort(/* prefer fidelity-pass, then by centrality: high → medium → low */)[0];
+  keptClaims.push(rescued);
+  console.warn(`[Stage1] Gate 1: all ${claims.length} claims would be filtered — rescued "${rescued.id}"`);
+}
+{{/code}}
 
 === 3.4 Configuration ===
 
@@ -149,34 +161,20 @@ Ensure verdicts have sufficient supporting evidence before publication, preventi
 
 === 4.3 Implementation ===
 
-**File**: ##apps/web/src/lib/analyzer/orchestrated.ts##
-**Function**: ##validateVerdictGate4()##
-**Phase**: VERDICT GENERATION (Phase 3)
+**File**: ##apps/web/src/lib/analyzer/quality-gates.ts##
+**Phase**: Stage 5: ##aggregateAssessment## (CB pipeline)
 
 **Validation Process**:
 1. Count sources supporting verdict
-1. Count facts extracted from sources
+1. Count evidence items extracted from sources
 1. Measure reasoning length
-1. Assign confidence tier
-1. Apply context scoping for counter-evidence
+1. Assign confidence tier (HIGH/MEDIUM/LOW/INSUFFICIENT)
+1. Apply boundary scoping for counter-evidence
 1. Flag verdicts below threshold
 
-=== 4.4 Context Scoping ===
+=== 4.4 Boundary Scoping ===
 
-Counter-evidence is scoped to relevant analysis contexts:
-
-{{code language="typescript"}}
-// Only count criticism facts that are:
-// 1. In the same context as the verdict, OR
-// 2. Not scoped to any specific context (general criticism)
-const contradictingFactCount = facts.filter(f =>
-  !verdict.supportingEvidenceIds.includes(f.id) &&
-  f.category === "criticism" &&
-  (!f.contextId || f.contextId === verdict.contextId)
-).length;
-{{/code}}
-
-This prevents criticism of one analysis context from penalizing claims about a different analysis context.
+In the CB pipeline, counter-evidence is scoped to the relevant ##ClaimAssessmentBoundary## rather than by legacy ##contextId## fields. EvidenceItems are associated with specific boundaries via the boundary clustering stage (Stage 3), preventing counter-evidence from one boundary from penalising claims in a different boundary.
 
 === 4.5 Central Claim Exception ===
 

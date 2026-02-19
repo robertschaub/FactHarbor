@@ -18,8 +18,8 @@ This section contains detailed implementation references for developers and test
 |= Page |= Description |= Key Files
 | [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] | Gate 1 (claim validation) and Gate 4 (confidence assessment) — criteria, examples, configuration | ##quality-gates.ts##
 | [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] | 7-layer defence strategy, filter rules, category-specific requirements, troubleshooting | ##evidence-filter.ts##, ##provenance-validation.ts##
-| [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] | AnalysisContext and EvidenceScope detection methodology, multi-phase pipeline | ##analysis-contexts.ts##
-| [[Direction Semantics>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Direction Semantics.WebHome]] | Multi-layer direction semantics, scope mismatch problem, LLM-code alignment, counter-claim handling | ##orchestrated.ts##, ##types.ts##
+| [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] | ClaimAssessmentBoundary clustering methodology, multi-boundary scenarios | ##claimboundary-pipeline.ts## (Stage 3)
+| [[Direction Semantics>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Direction Semantics.WebHome]] | Multi-layer direction semantics, scope mismatch problem, LLM-code alignment, counter-claim handling | ##verdict-stage.ts##, ##types.ts##
 
 === Calculations and Scoring ===
 
@@ -32,7 +32,7 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] | Modular prompt composition, provider-specific variants, token optimisation | ##prompts/##
-| [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] | KeyFactor classification and decomposition | ##orchestrated.ts##
+| [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] | KeyFactor classification and decomposition (Orchestrated-era design decision — superseded by ClaimAssessmentBoundary) | //historical//
 | [[Storage Technology>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Storage Technology.WebHome]] | Caching value analysis, Redis/PostgreSQL/Vector DB assessments, cost modelling | ##config-storage.ts##, ##source-reliability-cache.ts##
 | [[Schema Migration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Schema Migration.WebHome]] | Database schema evolution patterns | ##Data/##
 
