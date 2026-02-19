@@ -89,67 +89,6 @@ import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-break
 import { isJobAborted, clearAbortSignal } from "@/lib/job-abort";
 
 // ============================================================================
-// METRICS HELPERS
-// ============================================================================
-
-/**
- * Wrapper for generateText that automatically records LLM call metrics
- */
-async function callLLMWithMetrics<T>(
-  taskType: 'understand' | 'extract_evidence' | 'context_refinement' | 'verdict' | 'supplemental' | 'other',
-  modelInfo: { provider: string; modelName: string },
-  generateFn: () => Promise<{ text: string; usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number } }>,
-  onSuccess?: (result: any) => T
-): Promise<T> {
-  const startTime = Date.now();
-  let success = false;
-  let schemaCompliant = false;
-  let errorMessage: string | undefined;
-  let result: any;
-
-  try {
-    result = await generateFn();
-    success = true;
-    schemaCompliant = true; // Assume compliant if no error
-
-    recordLLMCall({
-      taskType,
-      provider: modelInfo.provider,
-      modelName: modelInfo.modelName,
-      promptTokens: result.usage?.promptTokens ?? 0,
-      completionTokens: result.usage?.completionTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: Date.now() - startTime,
-      success,
-      schemaCompliant,
-      retries: 0,
-      timestamp: new Date(),
-    });
-
-    return onSuccess ? onSuccess(result) : result;
-  } catch (error) {
-    errorMessage = error instanceof Error ? error.message : String(error);
-
-    recordLLMCall({
-      taskType,
-      provider: modelInfo.provider,
-      modelName: modelInfo.modelName,
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      durationMs: Date.now() - startTime,
-      success: false,
-      schemaCompliant: false,
-      retries: 0,
-      errorMessage,
-      timestamp: new Date(),
-    });
-
-    throw error;
-  }
-}
-
-// ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
@@ -218,7 +157,7 @@ export async function runClaimBoundaryAnalysis(
       sources: [],
       searchQueries: [],
       mainIterationsUsed: 0,
-      contradictionIterationsReserved: 2, // UCM default
+      contradictionIterationsReserved: initialPipelineConfig.contradictionReservedIterations ?? 1,
       contradictionIterationsUsed: 0,
       contradictionSourcesFound: 0,
       claimBoundaries: [],
@@ -484,6 +423,7 @@ const Gate1OutputSchema = z.object({
 
 const PreliminaryEvidenceItemSchema = z.object({
   statement: z.string(),
+  sourceUrl: z.string().optional(), // URL of the source this evidence came from
   category: z.string().optional(),
   claimDirection: z.enum(["supports", "contradicts", "contextual"]).optional(),
   evidenceScope: z.object({
@@ -594,7 +534,7 @@ export async function extractClaims(
   );
 
   const filteredClaims = filterByCentrality(
-    pass2.atomicClaims,
+    pass2.atomicClaims as unknown as AtomicClaim[],
     centralityThreshold,
     effectiveMax,
   );
@@ -887,19 +827,23 @@ async function extractPreliminaryEvidence(
 
     const validated = ExtractEvidenceOutputSchema.parse(parsed);
 
-    // Map to PreliminaryEvidenceItem, assigning source URLs
-    return validated.evidenceItems.map((ei) => ({
-      statement: ei.statement,
-      sourceUrl: sources[0]?.url ?? "",
-      sourceTitle: sources[0]?.title ?? "",
-      evidenceScope: ei.evidenceScope ? {
-        methodology: ei.evidenceScope.methodology,
-        temporal: ei.evidenceScope.temporal,
-        geographic: ei.evidenceScope.geographic,
-        boundaries: ei.evidenceScope.boundaries,
-      } : undefined,
-      relevantClaimIds: ei.relevantClaimIds,
-    }));
+    // Map to PreliminaryEvidenceItem, assigning source URLs.
+    // Use LLM-attributed sourceUrl when available; fall back to first source.
+    return validated.evidenceItems.map((ei) => {
+      const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
+      return {
+        statement: ei.statement,
+        sourceUrl: matchedSource?.url ?? "",
+        sourceTitle: matchedSource?.title ?? "",
+        evidenceScope: ei.evidenceScope ? {
+          methodology: ei.evidenceScope.methodology,
+          temporal: ei.evidenceScope.temporal,
+          geographic: ei.evidenceScope.geographic,
+          boundaries: ei.evidenceScope.boundaries,
+        } : undefined,
+        relevantClaimIds: ei.relevantClaimIds,
+      };
+    });
   } catch (err) {
     console.warn("[Stage1] Preliminary evidence extraction failed:", err);
     return [];
@@ -936,9 +880,9 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
       // Fix common claimDirection variants (e.g., "supports" → "supports_thesis")
       if (typeof normalized.claimDirection === "string") {
         const dir = normalized.claimDirection as string;
-        if (dir.includes("support") && !dir.includes("thesis")) {
+        if (dir === "supports") {
           normalized.claimDirection = "supports_thesis";
-        } else if (dir.includes("contradict") && !dir.includes("thesis")) {
+        } else if (dir === "contradicts") {
           normalized.claimDirection = "contradicts_thesis";
         } else if (dir === "neutral" || dir === "unrelated") {
           normalized.claimDirection = "contextual";
@@ -1172,6 +1116,9 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
         if (fallbackModel.modelName !== model.modelName) {
           console.warn(`[Stage1 Pass2] Total refusal after ${maxRetries + 1} attempts with ${model.modelName}. Attempting fallback with ${fallbackModel.modelName}.`);
           try {
+            const fallbackUserContent = retryGuidance
+              ? `${inputText}\n\n---\n${retryGuidance}`
+              : inputText;
             const fallbackResult = await generateText({
               model: fallbackModel.model,
               messages: [
@@ -1182,7 +1129,7 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                     : renderedWithEvidence.content,
                   providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
                 },
-                { role: "user" as const, content: inputText },
+                { role: "user" as const, content: fallbackUserContent },
               ],
               temperature: 0.2,
               output: Output.object({ schema: Pass2OutputSchema }),
@@ -1262,7 +1209,7 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
  * @returns Filtered atomic claims
  */
 export function filterByCentrality(
-  claims: Array<{ centrality: string; [key: string]: unknown }>,
+  claims: AtomicClaim[],
   threshold: "high" | "medium",
   maxClaims: number,
 ): AtomicClaim[] {
@@ -1278,7 +1225,7 @@ export function filterByCentrality(
   });
 
   // Cap at max
-  return filtered.slice(0, maxClaims) as unknown as AtomicClaim[];
+  return filtered.slice(0, maxClaims);
 }
 
 /**
@@ -1527,6 +1474,7 @@ const RelevanceClassificationOutputSchema = z.object({
 // Full evidence extraction schema (Stage 2 uses same EXTRACT_EVIDENCE prompt as Stage 1)
 const Stage2EvidenceItemSchema = z.object({
   statement: z.string(),
+  sourceUrl: z.string().optional(), // URL of the source this evidence came from
   category: z.string(),
   claimDirection: z.enum(["supports", "contradicts", "contextual"]),
   evidenceScope: z.object({
@@ -2217,8 +2165,8 @@ export async function extractResearchEvidence(
     // Map to full EvidenceItem format
     let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
     return validated.evidenceItems.map((ei) => {
-      // TODO: Match source by URL when LLM response includes source attribution
-      const matchedSource = sources[0];
+      // Use LLM-attributed sourceUrl when available; fall back to first source.
+      const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
 
       return {
         id: `EV_${String(idCounter++)}`,
@@ -3008,8 +2956,7 @@ export function buildVerdictStageConfig(
   };
 
   return {
-    selfConsistencyMode:
-      pipelineConfig.selfConsistencyMode === "full" ? "enabled" : "disabled",
+    selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "disabled",
     selfConsistencyTemperature:
       pipelineConfig.selfConsistencyTemperature ?? 0.3,
     stableThreshold: spreadThresholds.stable ?? 5,

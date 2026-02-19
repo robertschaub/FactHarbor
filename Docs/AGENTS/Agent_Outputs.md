@@ -7,6 +7,15 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Senior Developer | Claude Code (Sonnet 4.6) | Code Review Fixes — Wave 2D (misc doc fixes)
+**Task:** Implement D-M2, D-M6, D-H6 from Code_Review_23h_2026-02-19.md
+**Files touched:** `apps/web/src/lib/analyzer/truth-scale.ts`, `apps/web/src/lib/analyzer/types.ts`, `Docs/WIP/Political_Bias_Mitigation_2026-02-19.md`
+**Key decisions:** D-M2: comment tables in both files said `>= 60%` / `< 60%` for MIXED/UNVERIFIED confidence threshold; changed to `>= 40%` / `< 40%` to match actual code (0.40) and the `mixedConfidenceThreshold` default in config-schemas.ts. No logic changed. D-H6: line 15 said 877 (wrong); the table at line 201 already correctly showed 880 (853 base + 27 new = 880); fixed summary line to match. No other occurrences of 877 found. D-M6: verified source — `highHarmMinConfidence` is defined in `CalcConfigSchema` (UCM source of truth) and mirrored into `VerdictStageConfig` via `buildVerdictStageConfig()` which reads `calcConfig.highHarmMinConfidence ?? 50`; added a blockquote implementation note under design decision 2 clarifying this precedence relationship.
+**Open items:** None
+**For next agent:** Wave 2D complete. All three findings from Area 5 (D-M2, D-M6, D-H6) resolved. Remaining code review items in other areas (D-C1/C2 Calculations.md rewrite, D-M1 xWiki variant count, etc.) are unrelated to these files.
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Code Review Fixes — Wave 2C (xWiki targeted fixes)
 **Task:** Implement D-M1, D-M3, D-M4, D-L3 from Code_Review_23h_2026-02-19.md (Area 5: Documentation).
 **Files touched:**

@@ -21,8 +21,8 @@
     },
     "derivativeMultiplier": 0.5,
     "contestationWeights": {
-      "established": 0.3,
-      "disputed": 0.5,
+      "established": 0.5,
+      "disputed": 0.7,
       "opinion": 1
     }
   },
@@ -52,6 +52,10 @@
     "contextMergeThreshold": 0.7
   },
   "mixedConfidenceThreshold": 40,
+  "highHarmMinConfidence": 50,
+  "highHarmFloorLevels": ["critical", "high"],
+  "evidenceBalanceSkewThreshold": 0.8,
+  "evidenceBalanceMinDirectional": 3,
   "selfConsistencySpreadThresholds": {
     "stable": 5,
     "moderate": 12,

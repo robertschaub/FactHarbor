@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (7 files)
+## Active Documents (8 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
@@ -67,6 +67,14 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Low-hanging fruits from Stammbach/Ash EMNLP 2024 paper analysis. Implements C8 (high-harm confidence floor), C1/C16 (configurable debate model tiers), C13 (evidence pool balance detection). 24 new tests, 6 new UCM params. Calibration harness (Action 2) deferred.
 - **Origin:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
 - **Remaining:** Action 2 (political bias calibration harness, ~$5-10 LLM cost, separate session)
+
+### Code Review: 23-Hour Changes (2026-02-19)
+**Status:** ✅ Review Complete — Fixes Pending
+- **Document:** [Code_Review_23h_2026-02-19.md](Code_Review_23h_2026-02-19.md)
+- **Type:** Code Review / Quality Assurance
+- **Scope:** Comprehensive review of ~40 commits (Feb 18-19). 46 findings: 3 CRITICAL, 12 HIGH, 17 MEDIUM, 14 LOW. Covers pipeline code, UCM config, UI/reports, infrastructure, and documentation. Includes prioritized fix plan with model tier recommendations.
+- **Key concerns:** XSS in fallback export, verdict label inconsistency, `Calculations.md` 60% stale, CI/CD injection pattern
+- **Remaining:** Fix implementation per priority table in document
 
 ---
 

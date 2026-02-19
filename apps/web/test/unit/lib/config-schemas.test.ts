@@ -517,7 +517,7 @@ describe("Default Config Values", () => {
     it("has correct budget defaults", () => {
       expect(DEFAULT_PIPELINE_CONFIG.maxIterationsPerContext).toBe(3); // v2.11.1: reduced from 5
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalIterations).toBe(10); // v2.11.1: reduced from 20
-      expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(500000); // v2.11.1: reduced from 750000
+      expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(750000); // Captain decision 2026-02-19: restored to 750000
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
     });
   });

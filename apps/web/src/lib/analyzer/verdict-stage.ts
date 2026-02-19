@@ -45,8 +45,8 @@ import { percentageToClaimVerdict } from "./truth-scale";
  * Verdict stage configuration. All thresholds are UCM-configurable.
  */
 export interface VerdictStageConfig {
-  /** Self-consistency mode: "enabled" | "disabled" */
-  selfConsistencyMode: "enabled" | "disabled";
+  /** Self-consistency mode: "full" | "disabled" (mirrors UCM PipelineConfigSchema) */
+  selfConsistencyMode: "full" | "disabled";
   /** Temperature for self-consistency re-runs (default 0.3, floor 0.1, ceiling 0.7) */
   selfConsistencyTemperature: number;
 
@@ -102,7 +102,7 @@ export interface VerdictStageConfig {
  * Default verdict stage configuration.
  */
 export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
-  selfConsistencyMode: "enabled",
+  selfConsistencyMode: "full",
   selfConsistencyTemperature: 0.3,
   stableThreshold: 5,
   moderateThreshold: 12,
@@ -470,31 +470,31 @@ export async function validateVerdicts(
 ): Promise<CBClaimVerdict[]> {
   const validationTier = config.debateModelTiers.validation;
 
-  // Check A: Grounding validation
-  const groundingResult = await llmCall("VERDICT_GROUNDING_VALIDATION", {
-    verdicts: verdicts.map((v) => ({
-      claimId: v.claimId,
-      reasoning: v.reasoning,
-      supportingEvidenceIds: v.supportingEvidenceIds,
-      contradictingEvidenceIds: v.contradictingEvidenceIds,
-    })),
-    evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
-  }, { tier: validationTier });
-
-  // Check B: Direction validation
-  const directionResult = await llmCall("VERDICT_DIRECTION_VALIDATION", {
-    verdicts: verdicts.map((v) => ({
-      claimId: v.claimId,
-      truthPercentage: v.truthPercentage,
-      supportingEvidenceIds: v.supportingEvidenceIds,
-      contradictingEvidenceIds: v.contradictingEvidenceIds,
-    })),
-    evidencePool: evidence.map((e) => ({
-      id: e.id,
-      statement: e.statement,
-      claimDirection: e.claimDirection,
-    })),
-  }, { tier: validationTier });
+  // Check A + B: Grounding and direction validation (parallel — independent checks)
+  const [groundingResult, directionResult] = await Promise.all([
+    llmCall("VERDICT_GROUNDING_VALIDATION", {
+      verdicts: verdicts.map((v) => ({
+        claimId: v.claimId,
+        reasoning: v.reasoning,
+        supportingEvidenceIds: v.supportingEvidenceIds,
+        contradictingEvidenceIds: v.contradictingEvidenceIds,
+      })),
+      evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
+    }, { tier: validationTier }),
+    llmCall("VERDICT_DIRECTION_VALIDATION", {
+      verdicts: verdicts.map((v) => ({
+        claimId: v.claimId,
+        truthPercentage: v.truthPercentage,
+        supportingEvidenceIds: v.supportingEvidenceIds,
+        contradictingEvidenceIds: v.contradictingEvidenceIds,
+      })),
+      evidencePool: evidence.map((e) => ({
+        id: e.id,
+        statement: e.statement,
+        claimDirection: e.claimDirection,
+      })),
+    }, { tier: validationTier }),
+  ]);
 
   // Parse validation results and log issues (non-blocking per §8.4)
   const groundingResults = groundingResult as Array<Record<string, unknown>> ?? [];
@@ -623,7 +623,7 @@ export function enforceHarmConfidenceFloor(
   const floorLevels = config.highHarmFloorLevels ?? ["critical", "high"];
 
   return verdicts.map((v) => {
-    const isHighHarm = floorLevels.includes(v.harmPotential as any);
+    const isHighHarm = (floorLevels as ReadonlyArray<string>).includes(v.harmPotential);
     if (!isHighHarm || v.confidence >= threshold) return v;
 
     // Already UNVERIFIED — no change needed

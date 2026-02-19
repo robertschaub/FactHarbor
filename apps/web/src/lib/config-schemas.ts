@@ -737,7 +737,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   verdictBatchSize: 5,
   maxIterationsPerContext: 3, // v2.11.1: was 5 - balance cost vs research depth
   maxTotalIterations: 10, // v2.11.1: was 20 - cap deep research loops
-  maxTotalTokens: 500000, // v2.11.1: was 750000 - ~$1.50 max cost at Claude rates
+  maxTotalTokens: 750000, // v2.11.1 reduced to 500000; Captain decision 2026-02-19: 750000
   maxTokensPerCall: 100000,
   enforceBudgets: false,
 

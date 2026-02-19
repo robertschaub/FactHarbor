@@ -2023,7 +2023,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
 
     const result = buildVerdictStageConfig(pipelineConfig, calcConfig);
 
-    expect(result.selfConsistencyMode).toBe("enabled");
+    expect(result.selfConsistencyMode).toBe("full");
     expect(result.selfConsistencyTemperature).toBe(0.25);
     expect(result.stableThreshold).toBe(4);
     expect(result.moderateThreshold).toBe(10);

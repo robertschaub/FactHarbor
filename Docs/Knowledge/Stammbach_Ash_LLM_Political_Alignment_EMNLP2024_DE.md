@@ -45,6 +45,7 @@ Das Paper misst die Qualität der **Standpunkt-Generierung**, nicht die Genauigk
 **Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8)
 Automatisierte Faktenprüfung von Klimabehauptungen. **Mediator-Anwalt-Framework** mit strukturell unabhängigen Anwälten (RAG auf IPCC-Korpus vs. allgemeines GPT-4o). >96% Genauigkeit. Das Hinzufügen eines adversarialen NIPCC-Anwalts erhöhte die Debattenrunden von 1 auf 18 bei umstrittenen Behauptungen — wobei echte Kontroverse korrekt erkannt wurde.
 *Kritischer Vergleich:* Climinator verwendet verschiedene Modelle mit verschiedenen Korpora. FactHarbor verwendet dasselbe Sonnet-Modell für alle Debattenrollen.
+> **[FH 19.02.2026]** Teilweise adressiert. Alle 4 Debattenrollen (advocate, selfConsistency, challenger, reconciler) sind nun per UCM pro Tier konfigurierbar (`debateModelTiers` in PipelineConfig). Admins können verschiedene Tiers pro Rolle zuweisen. Eine Laufzeitwarnung (`all_same_debate_tier`) wird ausgelöst, wenn alle 4 denselben Tier verwenden. Einschränkung: weiterhin auf Anthropic-Modell-Tiers beschränkt (haiku/sonnet) — echte Anbieter-Trennung (z.B. GPT-4o als Challenger) erfordert eine Erweiterung von `LLMCallFn`.
 
 **AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/)
 LLM-gestützte Erkennung faktualer Behauptungen mit dem PoliClaim-Datensatz. Verwendet **3 vordefinierte Argumentationspfade** zur Konsistenzkalibrierung — strukturell verschieden von FactHarbors temperaturbasierter Selbstkonsistenz. Pfadbasierte Konsistenz könnte Verzerrungen erkennen, die Temperaturvariation nicht aufdeckt.
@@ -85,13 +86,16 @@ Postdoc am Princeton CITP. Promotion an der ETH (Frühling 2024) zu datenzentrie
 5. **Eingabeneutralität.** «War X fair?» = «X war fair» (Toleranz ≤4%), mit Testsuite.
 
 **Ehrliche Einschätzung:** Dies sind echte Stärken gegenüber Zero-Shot-LLMs. Aber «gute Prozessarchitektur» ist nicht dasselbe wie «nachgewiesene Ergebnisse bei der Verzerrungsminderung» *(Codex' Kernkritik)*. Ohne Messung auf Ergebnisebene ist die Behauptung «mitigiert» verfrüht.
+> **[FH 19.02.2026]** Weiterhin zutreffend. Wir haben Erkennung (Evidenz-Schieflage), Korrektur (Harm-Konfidenz-Untergrenze) und Konfigurierbarkeit (Debatten-Tiers) ergänzt, aber noch keine empirische Messung. Das Kalibrierungs-Harness (Massnahme 1) bleibt die kritische Lücke. Alle neuen Parameter sind per UCM konfigurierbar mit Config-Load-Fehlerprotokollierung, sodass das System operativ beobachtbar ist.
 
 ### Fünf Lücken mit höchster Priorität (aus 19 von drei Reviewern bewerteten Bedenken)
 
 1. **C10: Keine empirische Verzerrungsmessung** — Kritisch. Höchste Priorität, direkt umsetzbar.
 2. **C9: Selbstkonsistenz belohnt stabile Verzerrung** — Hoch. Illusorische Kontrolle, die falsche Sicherheit vermittelt.
 3. **C8: Nur beratende Validierung** — Hoch. Erkennung ohne Korrektur bei Behauptungen mit hohem Schadenspotenzial.
+> **[FH 19.02.2026]** Geschlossen. `enforceHarmConfidenceFloor()` in verdict-stage stuft Urteile mit niedriger Konfidenz bei hohem Schadenspotenzial auf UNVERIFIED herab. Schwellenwert (`highHarmMinConfidence`, Standard 50) und auslösende Schadensstufen (`highHarmFloorLevels`, Standard ["critical","high"]) sind per UCM konfigurierbar.
 4. **C13: Verzerrung des Evidenzpools** — Hoch. Verzerrungseinspeisung vor jeglicher LLM-Reasoning.
+> **[FH 19.02.2026]** Erkennung implementiert. `assessEvidenceBalance()` läuft nach Stage 2 (Recherche), vor den Urteilen. Gibt eine `evidence_pool_imbalance`-Warnung mit Stichprobengrössen-Kontext aus (z.B. «83%, 5 von 6 gerichteten Evidenzeinträgen»). Schieflage-Schwellenwert und Mindestanzahl gerichteter Einträge sind per UCM konfigurierbar. Rebalancierung (aktive Korrektur) ist noch nicht implementiert — nur Erkennung.
 5. **C17/C18: Prompt Injection + asymmetrische Verweigerung** — Hoch. Neuartige Angriffsvektoren, die politische Verzerrung verstärken.
 
 ---
@@ -103,10 +107,12 @@ Postdoc am Princeton CITP. Promotion an der ETH (Frühling 2024) zu datenzentrie
 1. **Restverzerrung nach architektonischer Mitigation.** «Wie viel verbleibende politische Verzerrung schätzen Sie angesichts unserer Evidenz-zuerst-Architektur mit Widerspruchssuche und Debatte? Reicht Architektur aus, oder ist ein Eingriff auf Modellebene unvermeidlich?»
 
 2. **Single-Model vs. Multi-Model-Debatte.** «Climinator verwendet strukturell verschiedene Anwälte. Wir verwenden dasselbe Sonnet für alle Rollen. Haben Sie qualitativ unterschiedliche Ergebnisse mit struktureller Unabhängigkeit beobachtet? Ist ‹performativer Adversarialismus› ein reales Problem?»
+> **[FH 19.02.2026]** Update für Meeting: Wir unterstützen nun Modell-Tier-Konfiguration pro Rolle und warnen, wenn alle Rollen denselben Tier verwenden. Weiterhin derselbe Anbieter (Anthropic). Die Frage bleibt relevant für anbieterübergreifende Trennung.
 
 3. **Minimal tragfähige Verzerrungsmessung.** «Was ist das kleinste Benchmark-Design, das Modell-Prior-Verzerrung von Evidenzpool-Verzerrung unterscheidet? Wie sieht ein gutes Kalibrierungs-Harness für politische Schieflage aus?»
 
 4. **Diagnostik für Evidenzpool-Verzerrung.** «Ihr KB-Choice-Paper zeigt, dass Domänenüberlappung die Genauigkeit bestimmt. Unsere Websuche wählt zur Laufzeit eine KB. Wie sollten wir erkennen, wenn der Evidenzpool schlecht abgestimmt oder politisch verzerrt ist?»
+> **[FH 19.02.2026]** Update für Meeting: Wir erkennen nun die Richtungs-Schieflage im Evidenzpool nach der Recherche (Verhältnis unterstützend vs. widersprechend mit Stichprobengrössen-Kontext). Die Frage kann sich verschieben von «wie erkennen» zu «wie rebalancieren» und «reicht verhältnisbasierte Erkennung oder brauchen wir Metriken für semantische Diversität?»
 
 ### Falls noch Zeit bleibt
 
@@ -124,11 +130,17 @@ Postdoc am Princeton CITP. Promotion an der ETH (Frühling 2024) zu datenzentrie
 | Priorität | Massnahme | Aufwand | Wirkung |
 |-----------|-----------|---------|---------|
 | **1** | **Kalibrierungs-Harness für politische Verzerrung** — 20-30 ausgewogene Behauptungspaare (gespiegelte Formulierungen, mehrsprachige Varianten), Richtung/Ausmass der Urteilsverzerrung messen | Gering (~1 Tag, ~$5-10) | **Kritisch** — grundlegend |
+|   |   |   | *[FH 19.02.2026] Noch nicht umgesetzt. Genehmigt und budgetiert, auf dedizierte Session verschoben.* |
 | **2** | **Fehlermodi instrumentieren** — Verweigerungs-/Degradationsraten nach Thema, Anbieter, Stage erfassen. C18 (asymmetrische Verweigerung) erkennen | Gering | Hoch — deckt unsichtbare Verzerrung auf |
+|   |   |   | *[FH 19.02.2026] Vorbestehend: Phasen-Metriken (LLM-Aufrufzähler, Latenz, Modell) bereits über `metrics.ts`/`metrics-integration.ts` verdrahtet. Verweigerungs-/Degradationstracking pro Aufruf noch nicht ergänzt.* |
 | **3** | **Validierung bei hohem Schadenspotenzial blockierend machen** — `validateVerdicts()` gibt Urteile unverändert zurück; bei `harmPotential >= "high"` Konfidenz deckeln oder UNVERIFIED erzwingen | Mittel | Hoch — schliesst C8 |
+|   |   |   | *[FH 19.02.2026] **Erledigt.** `enforceHarmConfidenceFloor()` — erzwingt UNVERIFIED bei Konfidenz < Schwellenwert. Schadensstufen und Schwellenwert per UCM konfigurierbar. 9 Unit-Tests.* |
 | **4** | **Challenger-Modell trennen** — anderen Anbieter für VERDICT_CHALLENGER (z.B. GPT-4o, wenn der Anwalt Sonnet ist) | Mittel | Hoch — schliesst C1/C16 |
+|   |   |   | *[FH 19.02.2026] **Teilweise erledigt.** Tier-Konfiguration pro Rolle (`debateModelTiers`) implementiert. Unterstützt haiku/sonnet-Tier-Trennung. Anbieterübergreifende Trennung (GPT-4o vs. Sonnet) erfordert `LLMCallFn`-Erweiterung — als Follow-up markiert. Laufzeitwarnung `all_same_debate_tier` ergänzt.* |
 | **5** | **Diagnostik für Evidenzpool-Balance** — erkennen und melden, wenn der Evidenzpool politisch einseitig ist | Mittel | Mittel-Hoch — schliesst C13 |
+|   |   |   | *[FH 19.02.2026] **Erledigt (Erkennung).** `assessEvidenceBalance()` mit stichprobengrössen-bewussten Warnungen. Schieflage-Schwellenwert und Mindestanzahl gerichteter Einträge per UCM konfigurierbar. Rebalancierung noch nicht implementiert.* |
 | **6** | **Warnung «politisch umstritten» + Bereichsanzeige** — plausiblen Urteilsbereich anzeigen, nicht nur Punktschätzung, bei umstrittenen Behauptungen | Hoch (langfristig) | Hoch — epistemische Ehrlichkeit |
+|   |   |   | *[FH 19.02.2026] Noch nicht begonnen.* |
 
 ---
 

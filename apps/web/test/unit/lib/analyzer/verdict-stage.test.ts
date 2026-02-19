@@ -994,7 +994,7 @@ describe("Configurable debate model tiers", () => {
     const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      selfConsistencyMode: "enabled",
+      selfConsistencyMode: "full",
       debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, selfConsistency: "haiku" },
     };
 
