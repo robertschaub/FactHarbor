@@ -85,14 +85,17 @@ export interface VerdictStageConfig {
    * surface genuine controversy. Using different models for challenger vs
    * advocate tests whether "performative adversarialism" is a real concern.
    *
-   * Default: all "sonnet". Validation (Step 5) always uses "haiku".
+   * Default: debate roles "sonnet", validation "haiku".
    */
   debateModelTiers: {
     advocate: "haiku" | "sonnet";
     selfConsistency: "haiku" | "sonnet";
     challenger: "haiku" | "sonnet";
     reconciler: "haiku" | "sonnet";
+    validation: "haiku" | "sonnet";
   };
+  /** Harm levels that trigger the confidence floor. Default: ["critical", "high"]. */
+  highHarmFloorLevels: Array<"critical" | "high" | "medium" | "low">;
 }
 
 /**
@@ -117,7 +120,9 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
     selfConsistency: "sonnet",
     challenger: "sonnet",
     reconciler: "sonnet",
+    validation: "haiku",
   },
+  highHarmFloorLevels: ["critical", "high"],
 };
 
 // ============================================================================
@@ -181,7 +186,7 @@ export async function runVerdictStage(
   );
 
   // Step 5: Verdict Validation
-  const validatedVerdicts = await validateVerdicts(reconciledVerdicts, evidence, llmCall);
+  const validatedVerdicts = await validateVerdicts(reconciledVerdicts, evidence, llmCall, config);
 
   // Structural Consistency Check (deterministic)
   const structuralWarnings = runStructuralConsistencyCheck(
@@ -461,8 +466,11 @@ export async function validateVerdicts(
   verdicts: CBClaimVerdict[],
   evidence: EvidenceItem[],
   llmCall: LLMCallFn,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<CBClaimVerdict[]> {
-  // Check A: Grounding validation (Haiku)
+  const validationTier = config.debateModelTiers.validation;
+
+  // Check A: Grounding validation
   const groundingResult = await llmCall("VERDICT_GROUNDING_VALIDATION", {
     verdicts: verdicts.map((v) => ({
       claimId: v.claimId,
@@ -471,9 +479,9 @@ export async function validateVerdicts(
       contradictingEvidenceIds: v.contradictingEvidenceIds,
     })),
     evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
-  }, { tier: "haiku" });
+  }, { tier: validationTier });
 
-  // Check B: Direction validation (Haiku)
+  // Check B: Direction validation
   const directionResult = await llmCall("VERDICT_DIRECTION_VALIDATION", {
     verdicts: verdicts.map((v) => ({
       claimId: v.claimId,
@@ -486,7 +494,7 @@ export async function validateVerdicts(
       statement: e.statement,
       claimDirection: e.claimDirection,
     })),
-  }, { tier: "haiku" });
+  }, { tier: validationTier });
 
   // Parse validation results and log issues (non-blocking per §8.4)
   const groundingResults = groundingResult as Array<Record<string, unknown>> ?? [];
@@ -612,8 +620,10 @@ export function enforceHarmConfidenceFloor(
   const threshold = config.highHarmMinConfidence ?? 50;
   if (threshold <= 0) return verdicts; // Disabled
 
+  const floorLevels = config.highHarmFloorLevels ?? ["critical", "high"];
+
   return verdicts.map((v) => {
-    const isHighHarm = v.harmPotential === "critical" || v.harmPotential === "high";
+    const isHighHarm = floorLevels.includes(v.harmPotential as any);
     if (!isHighHarm || v.confidence >= threshold) return v;
 
     // Already UNVERIFIED — no change needed

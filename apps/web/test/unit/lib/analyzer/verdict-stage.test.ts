@@ -939,6 +939,22 @@ describe("enforceHarmConfidenceFloor", () => {
     })];
     expect(enforceHarmConfidenceFloor(belowThreshold, config)[0].verdict).toBe("UNVERIFIED");
   });
+
+  it("should respect UCM-configured highHarmFloorLevels", () => {
+    // Default config: only "critical" and "high" trigger the floor
+    const mediumHarm = [createVerdict({
+      harmPotential: "medium", confidence: 30,
+      truthPercentage: 72, verdict: "MOSTLY-TRUE",
+    })];
+    expect(enforceHarmConfidenceFloor(mediumHarm, config)[0].verdict).toBe("MOSTLY-TRUE");
+
+    // With "medium" added to floor levels: medium-harm now triggers
+    const expandedConfig: VerdictStageConfig = {
+      ...config,
+      highHarmFloorLevels: ["critical", "high", "medium"],
+    };
+    expect(enforceHarmConfidenceFloor(mediumHarm, expandedConfig)[0].verdict).toBe("UNVERIFIED");
+  });
 });
 
 // ============================================================================
@@ -1044,12 +1060,41 @@ describe("Configurable debate model tiers", () => {
     expect(callOptions).toEqual({ tier: "haiku" });
   });
 
-  it("default config should use sonnet for all roles", () => {
+  it("default config should use sonnet for debate roles and haiku for validation", () => {
     expect(DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers).toEqual({
       advocate: "sonnet",
       selfConsistency: "sonnet",
       challenger: "sonnet",
       reconciler: "sonnet",
+      validation: "haiku",
     });
+  });
+
+  it("validateVerdicts should use config.debateModelTiers.validation", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, validation: "sonnet" },
+    };
+
+    await validateVerdicts(verdicts, [createEvidenceItem()], mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(2);
+    const call1Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    const call2Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2];
+    expect(call1Options.tier).toBe("sonnet");
+    expect(call2Options.tier).toBe("sonnet");
   });
 });

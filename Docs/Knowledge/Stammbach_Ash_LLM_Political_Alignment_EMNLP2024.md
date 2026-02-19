@@ -45,6 +45,7 @@ The paper measures **stance generation** quality, not **claim verification** acc
 **Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8)
 Automated climate claim fact-checking. **Mediator-Advocate framework** with structurally independent advocates (RAG on IPCC corpus vs. general GPT-4o). >96% accuracy. Adding adversarial NIPCC advocate increased debate rounds from 1 to 18 on contested claims — correctly detecting genuine controversy.
 *Critical comparison:* Climinator uses different models with different corpora. FactHarbor uses the same Sonnet model for all debate roles.
+> **[FH 2026-02-19]** Partially addressed. All 4 debate roles (advocate, selfConsistency, challenger, reconciler) are now UCM-configurable per-tier (`debateModelTiers` in PipelineConfig). Admins can assign different tiers per role. A runtime warning (`all_same_debate_tier`) fires when all 4 use the same tier. Limitation: still restricted to Anthropic model tiers (haiku/sonnet) — true provider-level separation (e.g., GPT-4o challenger) requires extending `LLMCallFn`.
 
 **AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/)
 LLM-assisted factual claim detection with PoliClaim dataset. Uses **3 predefined reasoning paths** for consistency calibration — structurally different from FactHarbor's temperature-based self-consistency. Path-based consistency could detect bias that temperature variation cannot.
@@ -85,13 +86,16 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 5. **Input neutrality.** "Was X fair?" = "X was fair" (≤4% tolerance), with test suite.
 
 **Honest assessment:** These are real strengths versus zero-shot LLMs. But "good process architecture" is not the same as "demonstrated bias mitigation outcomes" *(Codex's core critique)*. Without outcome-level measurement, claiming "mitigated" is premature.
+> **[FH 2026-02-19]** Still true. We've added detection (evidence skew), correction (harm confidence floor), and configurability (debate tiers), but no empirical measurement yet. The calibration harness (Action 1) remains the critical gap. All new parameters are UCM-configurable with config-load failure logging, so the system is operationally observable.
 
 ### Five highest-priority gaps (from 19 concerns assessed by three reviewers)
 
 1. **C10: No empirical bias measurement** — Critical. Highest priority, directly actionable.
 2. **C9: Self-consistency rewards stable bias** — High. Illusory control providing false assurance.
 3. **C8: Advisory-only validation** — High. Detection without correction on high-harm claims.
+> **[FH 2026-02-19]** Closed. `enforceHarmConfidenceFloor()` in verdict-stage now pushes low-confidence verdicts to UNVERIFIED for high-harm claims. Threshold (`highHarmMinConfidence`, default 50) and which harm levels trigger (`highHarmFloorLevels`, default ["critical","high"]) are UCM-configurable.
 4. **C13: Evidence pool bias** — High. Bias injection before any LLM reasoning.
+> **[FH 2026-02-19]** Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` warning with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented — detection only.
 5. **C17/C18: Prompt injection + refusal asymmetry** — High. Novel attack vectors that amplify political bias.
 
 ---
@@ -103,10 +107,12 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 1. **Residual bias after architectural mitigation.** "Given our evidence-first architecture with contradiction search and debate, how much residual political bias do you estimate remains? Is architecture sufficient, or is model-level intervention unavoidable?"
 
 2. **Single-model vs. multi-model debate.** "Climinator uses structurally different advocates. We use the same Sonnet for all roles. Did you see qualitatively different outcomes with structural independence? Is 'performative adversarialism' a real concern?"
+> **[FH 2026-02-19]** Update for meeting: We now support per-role model tier configuration and warn when all roles use the same tier. Still same provider (Anthropic). Question remains relevant for cross-provider separation.
 
 3. **Minimum viable bias measurement.** "What's the smallest benchmark design that distinguishes model prior bias from evidence-pool bias? What does a good political-skew calibration harness look like?"
 
 4. **Evidence pool bias diagnostics.** "Your KB Choice paper shows domain overlap drives accuracy. Our web search chooses a KB at runtime. How should we detect when the evidence pool is poorly matched or politically skewed?"
+> **[FH 2026-02-19]** Update for meeting: We now detect directional skew in the evidence pool post-research (supporting vs. contradicting ratio with sample-size context). Question can shift from "how to detect" to "how to rebalance" and "is ratio-based detection sufficient or do we need semantic diversity metrics?"
 
 ### If time allows
 
@@ -124,11 +130,17 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 | Priority | Action | Effort | Impact |
 |----------|--------|--------|--------|
 | **1** | **Political bias calibration harness** — 20-30 balanced claim pairs (mirrored framings, multilingual variants), measure verdict skew direction/magnitude | Low (~1 day, ~$5-10) | **Critical** — foundational |
+|   |   |   | *[FH 2026-02-19] Not yet implemented. Approved and budgeted, deferred to dedicated session.* |
 | **2** | **Instrument failure modes** — track refusal/degradation rates by topic, provider, stage. Detect C18 (refusal asymmetry) | Low | High — reveals invisible bias |
+|   |   |   | *[FH 2026-02-19] Pre-existing: phase-level metrics (LLM call count, latency, model) already wired via `metrics.ts`/`metrics-integration.ts`. Per-call refusal/degradation tracking not yet added.* |
 | **3** | **Make validation blocking for high-harm claims** — `validateVerdicts()` returns verdicts unchanged; for `harmPotential >= "high"`, clamp confidence or force UNVERIFIED | Medium | High — closes C8 |
+|   |   |   | *[FH 2026-02-19] **Done.** `enforceHarmConfidenceFloor()` — forces UNVERIFIED when confidence < threshold. Harm levels and threshold UCM-configurable. 9 unit tests.* |
 | **4** | **Separate the challenger model** — different provider for VERDICT_CHALLENGER (e.g., GPT-4o if advocate is Sonnet) | Medium | High — closes C1/C16 |
+|   |   |   | *[FH 2026-02-19] **Partially done.** Per-role tier config (`debateModelTiers`) implemented. Supports haiku/sonnet tier separation. Cross-provider separation (GPT-4o vs Sonnet) requires `LLMCallFn` extension — flagged as follow-up. `all_same_debate_tier` runtime warning added.* |
 | **5** | **Evidence pool balance diagnostics** — detect and report when evidence pool is politically one-sided | Medium | Medium-High — closes C13 |
+|   |   |   | *[FH 2026-02-19] **Done (detection).** `assessEvidenceBalance()` with sample-size-aware warnings. Skew threshold and min directional count UCM-configurable. Rebalancing not yet implemented.* |
 | **6** | **Add "politically contested" warning + range reporting** — show plausible verdict range, not just point estimate, on contested claims | High (long-term) | High — epistemic honesty |
+|   |   |   | *[FH 2026-02-19] Not yet started.* |
 
 ---
 

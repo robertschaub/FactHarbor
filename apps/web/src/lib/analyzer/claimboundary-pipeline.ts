@@ -194,6 +194,19 @@ export async function runClaimBoundaryAnalysis(
   const initialSearchConfig = searchResult.config;
   const initialCalcConfig = calcResult.config;
 
+  // Log config load status — warn on error fallbacks so admins know UCM config was not applied
+  for (const [name, result] of [
+    ["pipeline", pipelineResult],
+    ["search", searchResult],
+    ["calc", calcResult],
+  ] as const) {
+    if (result.contentHash === "__ERROR_FALLBACK__") {
+      console.warn(`[Pipeline] UCM ${name} config load failed — using hardcoded defaults. Admin-configured values were NOT applied.`);
+    } else if (result.fromDefault) {
+      console.log(`[Pipeline] UCM ${name} config: no stored config, using defaults.`);
+    }
+  }
+
   try {
     // Initialize research state
     const state: CBResearchState = {
@@ -241,19 +254,22 @@ export async function runClaimBoundaryAnalysis(
 
     // Evidence pool balance check (C13 — detect directional skew before verdict)
     const skewThreshold = initialCalcConfig.evidenceBalanceSkewThreshold ?? 0.8;
-    const evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold);
+    const minDirectional = initialCalcConfig.evidenceBalanceMinDirectional ?? 3;
+    const evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
     if (evidenceBalance.isSkewed) {
       const direction = evidenceBalance.balanceRatio > 0.5 ? "supporting" : "contradicting";
+      const directional = evidenceBalance.supporting + evidenceBalance.contradicting;
+      const majorityCount = direction === "supporting" ? evidenceBalance.supporting : evidenceBalance.contradicting;
       const majorityPct = Math.round(Math.max(evidenceBalance.balanceRatio, 1 - evidenceBalance.balanceRatio) * 100);
       state.warnings.push({
         type: "evidence_pool_imbalance",
         severity: "warning",
-        message: `Evidence pool is heavily skewed toward ${direction} evidence (${majorityPct}% of directional evidence). ` +
+        message: `Evidence pool is heavily skewed toward ${direction} evidence (${majorityPct}%, ${majorityCount} of ${directional} directional items). ` +
           `${evidenceBalance.supporting} supporting, ${evidenceBalance.contradicting} contradicting, ${evidenceBalance.neutral} neutral out of ${evidenceBalance.total} total.`,
       });
       console.warn(
         `[Pipeline] Evidence pool imbalance detected: ${evidenceBalance.supporting}S/${evidenceBalance.contradicting}C/${evidenceBalance.neutral}N ` +
-        `(${direction}: ${majorityPct}%, threshold: ${Math.round(skewThreshold * 100)}%)`
+        `(${direction}: ${majorityPct}%, ${majorityCount}/${directional} directional, threshold: ${Math.round(skewThreshold * 100)}%)`
       );
     }
 
@@ -271,6 +287,12 @@ export async function runClaimBoundaryAnalysis(
       boundaries,
       state.evidenceItems
     );
+
+    // Check for degenerate debate configuration (C1/C16 — all debate roles same tier)
+    const debateTierWarning = checkDebateTierDiversity(initialPipelineConfig);
+    if (debateTierWarning) {
+      state.warnings.push(debateTierWarning);
+    }
 
     // Stage 4: Verdict
     checkAbortSignal(input.jobId);
@@ -516,6 +538,14 @@ export async function extractClaims(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+
+  // Log config load status for extract stage
+  if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM pipeline config load failed in extractClaims — using hardcoded defaults.`);
+  }
+  if (searchResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM search config load failed in extractClaims — using hardcoded defaults.`);
+  }
 
   const currentDate = new Date().toISOString().split("T")[0];
 
@@ -1537,6 +1567,15 @@ export async function researchEvidence(
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+
+  // Log config load status for research stage
+  if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM pipeline config load failed in researchEvidence — using hardcoded defaults.`);
+  }
+  if (searchResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM search config load failed in researchEvidence — using hardcoded defaults.`);
+  }
+
   const currentDate = new Date().toISOString().split("T")[0];
 
   const claims = state.understanding?.atomicClaims ?? [];
@@ -2306,6 +2345,7 @@ export interface EvidenceBalanceMetrics {
 export function assessEvidenceBalance(
   evidenceItems: EvidenceItem[],
   skewThreshold = 0.8,
+  minDirectional = 3,
 ): EvidenceBalanceMetrics {
   let supporting = 0;
   let contradicting = 0;
@@ -2330,7 +2370,7 @@ export function assessEvidenceBalance(
   // Use max(ratio, 1-ratio) to get majority proportion — avoids floating-point issues with 1-threshold
   const majorityRatio = isNaN(balanceRatio) ? 0 : Math.max(balanceRatio, 1 - balanceRatio);
   // Strict > so that threshold=1.0 disables detection (majorityRatio maxes at 1.0)
-  const isSkewed = !isNaN(balanceRatio) && directional >= 3 && majorityRatio > skewThreshold;
+  const isSkewed = !isNaN(balanceRatio) && directional >= minDirectional && majorityRatio > skewThreshold;
 
   return {
     supporting,
@@ -2339,6 +2379,39 @@ export function assessEvidenceBalance(
     total: evidenceItems.length,
     balanceRatio,
     isSkewed,
+  };
+}
+
+/**
+ * Check whether all 4 configurable debate roles use the same model tier.
+ * Validation tier is excluded — it's a fixed-purpose check, not part of the debate.
+ * Returns an AnalysisWarning if all 4 are identical, null otherwise.
+ */
+export function checkDebateTierDiversity(
+  pipelineConfig: PipelineConfig,
+): AnalysisWarning | null {
+  const tiers = pipelineConfig.debateModelTiers;
+  if (!tiers) return null; // No config → defaults have mixed tiers (sonnet debate + haiku validation)
+
+  const debateRoles = [
+    tiers.advocate ?? "sonnet",
+    tiers.selfConsistency ?? "sonnet",
+    tiers.challenger ?? "sonnet",
+    tiers.reconciler ?? "sonnet",
+  ];
+  const allSame = debateRoles.every((t) => t === debateRoles[0]);
+  if (!allSame) return null;
+
+  const tier = debateRoles[0];
+  console.warn(
+    `[Pipeline] All 4 debate roles configured to same tier "${tier}" — ` +
+    `adversarial challenge may not produce structurally independent perspectives (C1/C16)`
+  );
+  return {
+    type: "all_same_debate_tier",
+    severity: "warning",
+    message: `All 4 debate roles (advocate, selfConsistency, challenger, reconciler) use the same model tier "${tier}". ` +
+      `Structurally independent models improve debate quality — consider mixing tiers for challenger or reconciler.`,
   };
 }
 
@@ -2400,6 +2473,12 @@ export async function clusterBoundaries(
     loadPipelineConfig("default"),
   ]);
   const pipelineConfig = pipelineResult.config;
+
+  // Log config load status for cluster stage
+  if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM pipeline config load failed in clusterBoundaries — using hardcoded defaults.`);
+  }
+
   const currentDate = new Date().toISOString().split("T")[0];
 
   // ------------------------------------------------------------------
@@ -2893,6 +2972,14 @@ export async function generateVerdicts(
   const pipelineConfig = pipelineResult.config;
   const calcConfig = calcResult.config;
 
+  // Log config load status for verdict stage
+  if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM pipeline config load failed in generateVerdicts — using hardcoded defaults.`);
+  }
+  if (calcResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM calc config load failed in generateVerdicts — using hardcoded defaults.`);
+  }
+
   // Build VerdictStageConfig from UCM parameters
   const verdictConfig = buildVerdictStageConfig(pipelineConfig, calcConfig);
 
@@ -2936,7 +3023,9 @@ export function buildVerdictStageConfig(
       selfConsistency: pipelineConfig.debateModelTiers?.selfConsistency ?? "sonnet",
       challenger: pipelineConfig.debateModelTiers?.challenger ?? "sonnet",
       reconciler: pipelineConfig.debateModelTiers?.reconciler ?? "sonnet",
+      validation: pipelineConfig.debateModelTiers?.validation ?? "haiku",
     },
+    highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
   };
 }
 
@@ -3081,6 +3170,14 @@ export async function aggregateAssessment(
   ]);
   const pipelineConfig = pipelineResult.config;
   const calcConfig = calcResult.config;
+
+  // Log config load status for aggregation stage
+  if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM pipeline config load failed in aggregateAssessment — using hardcoded defaults.`);
+  }
+  if (calcResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM calc config load failed in aggregateAssessment — using hardcoded defaults.`);
+  }
 
   const claims = state.understanding?.atomicClaims ?? [];
 

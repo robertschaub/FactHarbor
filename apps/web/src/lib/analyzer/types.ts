@@ -655,7 +655,8 @@ export type AnalysisWarningType =
   | "verdict_partial_recovery"      // Partial JSON recovery from truncated LLM output (some claims recovered, rest fallback)
   | "verdict_batch_retry"           // Verdict generation recovered via batch retry (claims split into smaller batches)
   | "analysis_generation_failed"    // Dynamic analysis LLM call failed after retries — degraded result returned
-  | "evidence_pool_imbalance";      // Evidence pool heavily skewed toward one direction (C13 bias detection)
+  | "evidence_pool_imbalance"       // Evidence pool heavily skewed toward one direction (C13 bias detection)
+  | "all_same_debate_tier";         // All 4 debate roles use the same model tier (C1/C16 degenerate debate risk)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

@@ -46,6 +46,7 @@ import {
   buildQualityGates,
   aggregateAssessment,
   assessEvidenceBalance,
+  checkDebateTierDiversity,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -2815,12 +2816,19 @@ describe("assessEvidenceBalance", () => {
     expect(result.isSkewed).toBe(false);
   });
 
-  it("should not flag skew with fewer than 3 directional items", () => {
+  it("should not flag skew with fewer than minDirectional items (default 3)", () => {
     // Only 2 directional items, both supporting
     const evidence = makeEvidence(["supports", "supports", "neutral"]);
     const result = assessEvidenceBalance(evidence, 0.8);
     expect(result.balanceRatio).toBe(1.0);
     expect(result.isSkewed).toBe(false); // Too few directional items
+  });
+
+  it("should respect UCM-configured minDirectional", () => {
+    // 2 directional items — default minDirectional=3 would NOT flag, but minDirectional=2 SHOULD
+    const evidence = makeEvidence(["supports", "supports", "neutral"]);
+    expect(assessEvidenceBalance(evidence, 0.5, 3).isSkewed).toBe(false); // default: too few
+    expect(assessEvidenceBalance(evidence, 0.5, 2).isSkewed).toBe(true);  // lower min: flags it
   });
 
   it("should handle empty evidence pool", () => {
@@ -2851,5 +2859,87 @@ describe("assessEvidenceBalance", () => {
     const result = assessEvidenceBalance(evidence, 1.0);
     expect(result.balanceRatio).toBe(1.0);
     expect(result.isSkewed).toBe(false);
+  });
+});
+
+// ============================================================================
+// checkDebateTierDiversity (C1/C16 — degenerate debate detection)
+// ============================================================================
+
+describe("checkDebateTierDiversity", () => {
+  it("should return warning when all 4 debate roles use same tier", () => {
+    const config = {
+      debateModelTiers: {
+        advocate: "sonnet" as const,
+        selfConsistency: "sonnet" as const,
+        challenger: "sonnet" as const,
+        reconciler: "sonnet" as const,
+        validation: "haiku" as const, // excluded from check
+      },
+    };
+    const warning = checkDebateTierDiversity(config);
+    expect(warning).not.toBeNull();
+    expect(warning!.type).toBe("all_same_debate_tier");
+    expect(warning!.message).toContain("sonnet");
+  });
+
+  it("should return warning when all 4 debate roles are haiku", () => {
+    const config = {
+      debateModelTiers: {
+        advocate: "haiku" as const,
+        selfConsistency: "haiku" as const,
+        challenger: "haiku" as const,
+        reconciler: "haiku" as const,
+        validation: "sonnet" as const,
+      },
+    };
+    const warning = checkDebateTierDiversity(config);
+    expect(warning).not.toBeNull();
+    expect(warning!.message).toContain("haiku");
+  });
+
+  it("should return null when debate roles have mixed tiers", () => {
+    const config = {
+      debateModelTiers: {
+        advocate: "sonnet" as const,
+        selfConsistency: "sonnet" as const,
+        challenger: "haiku" as const,
+        reconciler: "sonnet" as const,
+        validation: "haiku" as const,
+      },
+    };
+    const warning = checkDebateTierDiversity(config);
+    expect(warning).toBeNull();
+  });
+
+  it("should return null when no debateModelTiers configured (defaults are mixed)", () => {
+    const config = {};
+    const warning = checkDebateTierDiversity(config);
+    expect(warning).toBeNull();
+  });
+
+  it("should ignore validation tier — all debate sonnet + validation sonnet still triggers", () => {
+    const config = {
+      debateModelTiers: {
+        advocate: "sonnet" as const,
+        selfConsistency: "sonnet" as const,
+        challenger: "sonnet" as const,
+        reconciler: "sonnet" as const,
+        validation: "sonnet" as const, // same as debate, but irrelevant
+      },
+    };
+    const warning = checkDebateTierDiversity(config);
+    expect(warning).not.toBeNull();
+  });
+
+  it("should use defaults for missing debate tier fields", () => {
+    // Only challenger set to haiku, rest default to sonnet → mixed → no warning
+    const config = {
+      debateModelTiers: {
+        challenger: "haiku" as const,
+      },
+    };
+    const warning = checkDebateTierDiversity(config as any);
+    expect(warning).toBeNull();
   });
 });

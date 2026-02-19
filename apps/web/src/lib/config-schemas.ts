@@ -420,8 +420,9 @@ export const PipelineConfigSchema = z.object({
     selfConsistency: z.enum(["haiku", "sonnet"]).optional(),
     challenger: z.enum(["haiku", "sonnet"]).optional(),
     reconciler: z.enum(["haiku", "sonnet"]).optional(),
+    validation: z.enum(["haiku", "sonnet"]).optional(),
   }).optional()
-    .describe("Model tier overrides for each debate role (default: all sonnet). Provider-level separation requires extending LLMCallFn."),
+    .describe("Model tier overrides for each debate role (default: debate roles sonnet, validation haiku). Provider-level separation requires extending LLMCallFn."),
 
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
@@ -1119,6 +1120,22 @@ export const CalcConfigSchema = z.object({
    * Addresses C13 (evidence pool bias) from political bias analysis.
    */
   evidenceBalanceSkewThreshold: z.number().min(0.5).max(1).optional(),
+
+  /**
+   * Minimum directional evidence items (supporting + contradicting) required
+   * before evidence balance skew detection activates.
+   * Below this count, skew is statistically meaningless.
+   * Default 3.
+   */
+  evidenceBalanceMinDirectional: z.number().int().min(1).max(20).optional(),
+
+  /**
+   * Harm levels that trigger the high-harm confidence floor.
+   * Claims with harmPotential matching any of these levels AND confidence below
+   * highHarmMinConfidence will be downgraded to UNVERIFIED.
+   * Default: ["critical", "high"].
+   */
+  highHarmFloorLevels: z.array(z.enum(["critical", "high", "medium", "low"])).min(1).max(4).optional(),
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
@@ -1261,6 +1278,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   },
   highHarmMinConfidence: 50,
   evidenceBalanceSkewThreshold: 0.8,
+  evidenceBalanceMinDirectional: 3,
+  highHarmFloorLevels: ["critical", "high"],
 };
 
 // ============================================================================

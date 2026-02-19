@@ -178,10 +178,13 @@ New UCM-configurable parameters added:
 |-----------|--------|---------|----------|
 | `highHarmMinConfidence` | CalcConfig | 50 | `CalcConfigSchema` |
 | `evidenceBalanceSkewThreshold` | CalcConfig | 0.8 | `CalcConfigSchema` |
+| `evidenceBalanceMinDirectional` | CalcConfig | 3 | `CalcConfigSchema` |
+| `highHarmFloorLevels` | CalcConfig | ["critical", "high"] | `CalcConfigSchema` |
 | `debateModelTiers.advocate` | PipelineConfig | "sonnet" | `PipelineConfigSchema` |
 | `debateModelTiers.selfConsistency` | PipelineConfig | "sonnet" | `PipelineConfigSchema` |
 | `debateModelTiers.challenger` | PipelineConfig | "sonnet" | `PipelineConfigSchema` |
 | `debateModelTiers.reconciler` | PipelineConfig | "sonnet" | `PipelineConfigSchema` |
+| `debateModelTiers.validation` | PipelineConfig | "haiku" | `PipelineConfigSchema` |
 
 All defaults preserve existing behavior — no behavior change without explicit UCM configuration.
 
@@ -194,7 +197,8 @@ All defaults preserve existing behavior — no behavior change without explicit 
 | 3 — Harm confidence floor | 9 | All harm levels, threshold boundary, disable path, mixed verdicts |
 | 4 — Debate model tiers | 5 | Each role's tier passthrough, default config |
 | 5 — Evidence balance | 10 | Balanced/skewed/neutral/empty pools, custom thresholds, floating-point edge case |
-| **Total** | **24** | **877 tests passing (was 853)** |
+| UCM promotion | 3 | Validation tier passthrough, highHarmFloorLevels with "medium", minDirectional config |
+| **Total** | **27** | **880 tests passing (was 853)** |
 
 ---
 
