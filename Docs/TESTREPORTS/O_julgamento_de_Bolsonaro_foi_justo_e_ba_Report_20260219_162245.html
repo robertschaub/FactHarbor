@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactHarbor Report — O julgamento de Bolsonaro foi justo e baseado na legislação brasileira?</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: c72bea3c09414c1a81d081bb59b1a087</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-19 09:22 UTC</div>
+      <div>Completed: 2026-02-19 09:31 UTC</div>
+      <div>Duration: ~8 min 21 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">O julgamento de Bolsonaro foi justo e baseado na legislação brasileira?</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; —</span>
+    <span class="chip chip-gray">&#128269; Google-CSE</span>
+    <span class="chip chip-gray">— LLM calls</span>
+    <span class="chip chip-gray">12 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 62 evidence items · 15 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-t">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge t-color">MOSTLY-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">A análise demonstra convergência substancial entre todas as fronteiras analíticas: os julgamentos aplicaram legislação b…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value t-color">82%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:82%;background:#22543d"></div></div>
+      </div>
+      <div class="meter">
+        <div class="meter-value" style="color:#a0aec0">78%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:78%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">A análise demonstra convergência substancial entre todas as fronteiras analíticas: os julgamentos aplicaram legislação brasileira vigente (Lei da Ficha Limpa, Lei nº 14.197/2021 sobre crimes contra a democracia, Código Penal) por tribunais constitucionalmente competentes (TSE para matéria eleitoral, STF para crimes contra o Estado Democrático). A fundamentação jurídica foi respaldada por análise acadêmica especializada, investigação criminal com provas documentais e jurisprudência consolidada. Não há divergência significativa entre as fronteiras quanto à base legal dos julgamentos, embora persistam lacunas metodológicas sobre procedimentos probatórios específicos e detalhes processuais que impedem uma verificação completa.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">O julgamento de Bolsonaro foi substancialmente baseado na legislação brasileira, com aplicação de normas eleitorais, penais e constitucionais por tribunais superiores competentes.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">28 itens de evidência provenientes de 5 fronteiras analíticas distintas, abrangendo julgamentos colegiados do TSE e STF, legislação eleitoral e penal federal, análise jurídica acadêmica especializada, investigação criminal da Polícia Federal e jurisprudência constitucional.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">A análise demonstra convergência substancial entre todas as fronteiras analíticas: os julgamentos aplicaram legislação brasileira vigente (Lei da Ficha Limpa, Lei nº 14.197/2021 sobre crimes contra a democracia, Código Penal) por tribunais constitucionalmente competentes (TSE para matéria eleitoral, STF para crimes contra o Estado Democrático). A fundamentação jurídica foi respaldada por análise acadêmica especializada, investigação criminal com provas documentais e jurisprudência consolidada. Não há divergência significativa entre as fronteiras quanto à base legal dos julgamentos, embora persistam lacunas metodológicas sobre procedimentos probatórios específicos e detalhes processuais que impedem uma verificação completa.</div>
+    </div>
+    
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">A análise não pôde determinar detalhes específicos sobre procedimentos probatórios internos, metodologia completa de coleta e validação de provas digitais pela Polícia Federal, nem acessar a íntegra de todos os autos processuais para verificação independente. Faltam informações sobre eventuais recursos pendentes ou desdobramentos processuais posteriores aos julgamentos analisados. A ausência de especificação metodológica detalhada em alguns processos judiciais limita a avaliação completa da aplicação procedimental da legislação.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_02</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">O julgamento de Bolsonaro foi baseado na legislação brasileira</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">82%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter">
+          <div class="small-meter-val" style="color:#a0aec0">78%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Julgamentos colegiados do TSE e STF</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">96%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">95%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">11 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:96%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Análise de legislação eleitoral federal e competência judicial</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">94%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">6 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:94%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Análise de legislação penal sobre crimes contra a democracia</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">98%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">98%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:98%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Análise jurídica especializada acadêmica</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">7 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:90%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_08 · Investigação criminal e denúncia da Polícia Federal</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">92%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:92%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Jurisprudência do STF em casos de tentativa de golpe</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">93%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:93%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(8 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">A afirmação de que o julgamento de Bolsonaro foi baseado na legislação brasileira permanece substancialmente verdadeira, mas com ressalvas metodológicas e lacunas probatórias significativas que reduzem a confiança inicial.
+
+**RESPOSTAS AOS DESAFIOS:**
+
+**1. Inconsistência jurisprudencial sobre foro privilegiado (HIGH):** PARCIALMENTE ACEITO. A evidência EV_1771496745207 documenta que o STF &#39;oscilou bastante&#39; sobre foro privilegiado, mudando entendimento &#39;em cinco ocasiões desde 1964&#39;. Isso demonstra instabilidade jurisprudencial real. Contudo, a decisão majoritária (EV_1771496704034) aplicou interpretação baseada em precedente específico, ainda que contestável. A aplicação de legislação brasileira ocorreu, mas com previsibilidade jurídica comprometida. **Ajuste: -8% truthPercentage, -10% confidence.**
+
+**2. Irretroatividade da Lei nº 14.197/2021 (HIGH):** ACEITO COMO LACUNA CRÍTICA. A ausência de evidência sobre aplicação temporal é grave. EV_1771496802270 confirma vigência em dezembro/2021, mas não há documentação de como a lei foi aplicada a atos anteriores sem violar nullum crimen sine lege praevia. Esta é uma omissão fundamental que impede verificar conformidade plena com princípios constitucionais brasileiros. **Ajuste: -5% truthPercentage, -8% confidence.**
+
+**3. Críticas metodológicas acadêmicas (MEDIUM):** PARCIALMENTE ACEITO. As críticas de Serrano (PUC-SP) e Vilhena (FGV) sobre &#39;distorção do sentido da norma&#39; (EV_1771496745208) e &#39;baixo grau de fundamentação técnica&#39; (EV_1771496745207) não negam que legislação brasileira foi citada, mas questionam a qualidade interpretativa. Isso afeta a dimensão &#39;corretamente baseado&#39; versus &#39;meramente citado&#39;. A distinção é relevante: aplicação formal de leis não equivale necessariamente a aplicação metodologicamente rigorosa. **Ajuste: -3% truthPercentage, -2% confidence.**
+
+**4. Dosimetria de pena (MEDIUM):** ACEITO COMO LACUNA PROBATÓRIA. A condenação a 27 anos (EV_030) versus pena legal de 4-12 anos (EV_1771496802274) exige fundamentação detalhada conforme artigos 59 e 68 do Código Penal. A ausência dessa evidência impede verificar se a legislação processual penal foi integralmente observada. Contudo, isso pode refletir limitação do corpus de evidências, não necessariamente falha judicial. **Ajuste: -2% truthPercentage, sem ajuste de confidence (lacuna documental, não contradição).**
+
+**5. Independência judicial - Alexandre de Moraes (MEDIUM):** REJEITADO. Embora Moraes tenha atuado no TSE e STF (EV_1771496704030, EV_027), são competências jurisdicionais distintas estabelecidas constitucionalmente. TSE julga matéria eleitoral (inelegibilidade), STF julga crimes comuns de ex-presidentes. A legislação brasileira (Constituição Federal, artigos 102 e 121) prevê essas competências separadas. Não há evidência de que a defesa suscitou suspeição formal, o que seria obrigatório se houvesse fundamento legal (CPP, art. 95). A participação em tribunais diferentes sobre matérias distintas não configura violação per se da legislação sobre imparcialidade. **Sem ajuste.**
+
+**6. Elementos típicos do crime - violência (HIGH):** PARCIALMENTE ACEITO. A definição legal de golpe de Estado (EV_1771496802274) inclui &#39;violência ou grave ameaça&#39;. A classificação da argumentação defensiva como &#39;neutral&#39; (EV_1771496704032) sem análise de mérito é problemática. Contudo, &#39;grave ameaça&#39; é alternativa jurídica à violência física. A ausência de evidência sobre demonstração específica desses elementos enfraquece a verificação de aplicação correta da tipificação penal. **Ajuste: -3% truthPercentage, -4% confidence.**
+
+**7. Prazos processuais (LOW):** ACEITO COMO LACUNA MENOR. A ausência de evidência sobre observância de prazos do CPP (arts. 46, 800+) é relevante, mas menos crítica que questões de mérito. Prazos processuais são frequentemente objeto de prorrogações legais em casos complexos. A menção a &#39;relatório de mais de 800 páginas&#39; (EV_1771496802271) sugere complexidade que justificaria dilações. **Ajuste: -1% truthPercentage, sem ajuste de confidence.**
+
+**8. Especificidade de precedentes (MEDIUM):** ACEITO COMO FRAGILIDADE METODOLÓGICA. A referência genérica a &#39;dezenas de pessoas&#39; condenadas (EV_1771496802272) sem citação específica de casos impede verificar consistência jurisprudencial conforme exigido pelo CPC art. 489. Isso enfraquece a demonstração de aplicação sistemática da legislação. **Ajuste: -3% truthPercentage, -2% confidence.**
+
+**SÍNTESE RECONCILIADA:**
+
+A base factual permanece sólida: legislação brasileira específica foi formalmente aplicada (LC 64/1990, CP arts. 359-L/M, CF). Contudo, os desafios revelam:
+- **Lacunas probatórias críticas:** irretroatividade temporal, dosimetria de pena, demonstração de elementos típicos
+- **Fragilidades metodológicas:** instabilidade jurisprudencial documentada, críticas acadêmicas sobre qualidade interpretativa, falta de especificidade em precedentes
+- **Distinção conceitual:** &#39;baseado em legislação&#39; pode significar (a) citação formal de leis ou (b) aplicação metodologicamente rigorosa e constitucionalmente válida. As evidências sustentam fortemente (a), mas com ressalvas sobre (b).
+
+A convergência de evidências oficiais mantém a afirmação substancialmente verdadeira, mas a confiança é reduzida pela impossibilidade de verificar aspectos procedimentais e interpretativos fundamentais. A ausência de análise sobre irretroatividade é particularmente grave, pois toca princípio constitucional basilar.
+
+**NOTA DE CONSISTÊNCIA:** Não foi realizada avaliação de auto-consistência (assessed: false), portanto não há dados sobre estabilidade do veredicto em múltiplas execuções. Isso adiciona incerteza metodológica ao processo de reconciliação.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Desafio sobre inconsistência jurisprudencial de foro privilegiado parcialmente aceito. Evidência EV_1771496745207 documenta oscilação histórica do STF, comprometendo previsibilidade. Contudo, decisão aplicou precedente específico baseado em legislação constitucional, ainda que contestável. Redução de truthPercentage e confidence reflete essa instabilidade documentada.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Lacuna crítica sobre irretroatividade da Lei 14.197/2021 aceita integralmente. Ausência de evidência sobre aplicação temporal a atos pré-dezembro/2021 impede verificar conformidade com princípio constitucional nullum crimen sine lege praevia. Ajuste significativo em truthPercentage e confidence devido à gravidade desta omissão.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Críticas acadêmicas sobre qualidade interpretativa (Serrano/Vilhena) parcialmente aceitas. Distinguem-se &#39;citação formal&#39; de &#39;aplicação metodologicamente rigorosa&#39;. Evidências sustentam a primeira, mas especialistas questionam a segunda. Ajuste moderado reflete essa distinção conceitual.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Ausência de fundamentação sobre dosimetria de pena (27 anos vs. 4-12 anos legais) aceita como lacuna probatória. Impede verificar observância integral do CPP arts. 59 e 68. Ajuste em truthPercentage, mas não em confidence, pois pode refletir limitação documental do corpus.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Desafio sobre participação de Moraes no TSE e STF rejeitado. Competências jurisdicionais distintas estabelecidas constitucionalmente (CF arts. 102, 121). Ausência de suscitação formal de suspeição pela defesa indica inexistência de fundamento legal. Participação em tribunais diferentes sobre matérias distintas não viola legislação sobre imparcialidade per se.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Desafio sobre demonstração de elementos típicos (violência/grave ameaça) parcialmente aceito. Definição legal inclui alternativa &#39;grave ameaça&#39;, mas ausência de evidência sobre demonstração específica enfraquece verificação de tipificação correta. Classificação de argumentação defensiva como &#39;neutral&#39; sem análise de mérito é problemática.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Lacuna sobre prazos processuais aceita como menor. Ausência de evidência sobre observância do CPP é relevante, mas complexidade do caso (relatório 800+ páginas) sugere justificativa para dilações legais. Ajuste mínimo em truthPercentage.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">Fragilidade sobre especificidade de precedentes aceita. Referência genérica a &#39;dezenas de pessoas&#39; sem citação específica impede verificar consistência jurisprudencial conforme CPC art. 489. Enfraquece demonstração de aplicação sistemática da legislação.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_07<br><span style="font-weight:400;font-size:10px">Legislação penal - crimes democracia</span></th><th>CB_08<br><span style="font-weight:400;font-size:10px">Investigação PF</span></th><th>CB_09<br><span style="font-weight:400;font-size:10px">Jurisprudência STF - golpe</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">TSE - Julgamento Aije</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">Legislação eleitoral</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Análise acadêmica</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_02 — O julgamento de Bolsonaro foi </td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-high">11</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-high">7</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Análise de legislação penal brasileira sobre crimes contra a democracia</span><span class="ba-ev-count">36 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Análise de legislação brasileira oficial publicada no Diário Oficial da União</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Brasil</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Lei de 2021</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.920</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Análise de legislação penal brasileira oficial publicada no Diário Oficial da União, especificamente sobre crimes contra o Estado Democrático de Direito (Lei nº 14.197/2021)</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_08</span><span class="ba-name">Investigação criminal e denúncia da Polícia Federal</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Investigação criminal com coleta de provas digitais e telefônicas</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Brasil</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Investigação de eventos de 8 de janeiro de 2023, denúncia em fevereiro de 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.900</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Análise de denúncia criminal e investigação conduzida pela Polícia Federal com coleta de provas digitais e telefônicas relacionadas a tentativa de golpe de Estado</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">Jurisprudência do STF em casos de tentativa de golpe de Estado</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Análise de jurisprudência do STF</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Brasil</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Casos julgados após 8 de janeiro de 2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Análise de jurisprudência do Supremo Tribunal Federal em casos julgados de tentativa de golpe de Estado após os eventos de 8 de janeiro de 2023</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Julgamentos colegiados do Tribunal Superior Eleitoral (TSE) - Ação de Investigação Judicial Eleitoral + Julgamento criminal no Supremo Tribunal Federal (STF) - Primeira Turma</span><span class="ba-ev-count">11 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Julgamento colegiado com análise jurídica e aplicação de lei eleitoral brasileira</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Brasil</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">22-30 de junho de 2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Decisões judiciais colegiadas do Tribunal Superior Eleitoral em ação de investigação judicial eleitoral, com aplicação da Lei Complementar nº 64/1990 (Lei da Ficha Limpa) e análise de abuso de poder político; Julgamento colegiado da Primeira Turma do STF em ação penal por crimes contra a democracia, com aplicação do Código Penal Brasileiro e análise constitucional de direitos processuais</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Análise de legislação eleitoral federal brasileira + Análise jurisprudencial sobre competência e foro privilegiado no STF</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Análise de texto legislativo federal e decisões em controle concentrado de constitucionalidade</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Brasil</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1990-2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.865</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Análise de texto legislativo federal brasileiro sobre inelegibilidade e decisões do STF sobre constitucionalidade da legislação eleitoral; Análise de jurisprudência, resoluções internas e interpretação constitucional sobre competência judicial, foro privilegiado e princípio do juiz natural no Supremo Tribunal Federal</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Análise jurídica especializada acadêmica sobre legislação penal e constitucional + Processos judiciais em tribunais superiores brasileiros</span><span class="ba-ev-count">7 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Análise jurídica especializada acadêmica</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Brasil</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.775</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Análise jurídica especializada por professores e doutores em direito de instituições acadêmicas brasileiras sobre interpretação de legislação penal, constitucional e processual penal; Ações judiciais e processos em andamento no Supremo Tribunal Federal e Tribunal Superior Eleitoral, sem especificação metodológica detalhada</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">62 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(20 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704026</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O Tribunal Superior Eleitoral (TSE) declarou a inelegibilidade de Jair Bolsonaro por oito anos com base no artigo 22 da Lei Complementar nº 64/1990 (Lei de Inelegibilidade), particularmente em condutas que caracterizem desvio ou abuso de poder ou utilização indevida dos veículos ou meios de comunicação.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704027</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O ministro Floriano de Azevedo Marques destacou que o enquadramento jurídico está focado no artigo 22 da Lei Complementar nº 64/1990 (Lei de Inelegibilidade), ressaltando que &#39;apurada essa conduta abusiva, a Justiça Eleitoral aplicará a sanção de inelegibilidade para as eleições que se realizarem nos oito anos subsequentes à eleição que se verificou&#39;.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704028</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O ministro Benedito Gonçalves, relator da Ação de Investigação Judicial Eleitoral (Aije), fundamentou seu voto na legislação eleitoral brasileira, destacando que o abuso de poder político se caracteriza como ato do agente público praticado mediante desvio de finalidade, com a intenção de causar interferência no processo eleitoral, conforme definido na lei.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704029</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O julgamento de Bolsonaro no Supremo Tribunal Federal pela tentativa de golpe de Estado foi baseado em crimes previstos na legislação brasileira: organização criminosa armada, tentativa de abolição violenta do Estado Democrático de Direito, golpe de Estado, dano qualificado e deterioração de patrimônio tombado.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704030</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O ministro Alexandre de Moraes, relator da Ação Penal 2668, fundamentou seu voto na Constituição Federal e na legislação penal brasileira, afirmando que &#39;a ação penal se baseou nas provas apresentadas pela Polícia Federal, com respeito ao contraditório, à ampla defesa e ao devido processo legal&#39;.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704031</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A condenação de Bolsonaro no STF resultou em inelegibilidade calculada com base na Lei da Ficha Limpa, que estabelece que quem é condenado por decisão judicial colegiada fica impedido de disputar eleições pelo prazo de oito anos após o cumprimento da pena.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496721308</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A Lei Complementar nº 64/1990 foi declarada constitucional pelo Supremo Tribunal Federal em decisão de 16 de fevereiro de 2012 nas ADCs nº 29 e 30, confirmando a validade das hipóteses de inelegibilidade instituídas pelas alíneas c, d, f, g, h, j, m, n, o, p e q introduzidas pela Lei Complementar nº 135/2010.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp64.htm" target="_blank">Lcp64</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745202</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A maioria dos ministros da Primeira Turma do STF entende que, com base em resolução de 2023 do tribunal, apenas presidentes em exercício devem ser julgados diretamente no plenário, e como Bolsonaro não está mais no cargo, ele deveria ser julgado pela turma com base nessa resolução.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745203</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A competência do STF é inquestionável, porque de acordo com a Constituição e o princípio do juiz natural, a competência é fixada no momento da consumação do crime, e o foro por prerrogativa de função permanece mesmo após a autoridade deixar o cargo quando os crimes foram cometidos durante o mandato.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745204</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O professor Oscar Vilhena Vieira, diretor da Escola de Direito da FGV, argumenta que há uma distorção do sentido da norma no voto de Fux, pois o crime de tentativa de golpe de Estado se consuma pela tentativa e não necessita ser consumado, conforme previsto na legislação brasileira.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745205</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O professor Pedro Estevam Serrano destaca que a lei brasileira tenta se antecipar à conclusão do golpe porque, uma vez consumado, o crime não poderia mais ser punido, e que o sistema democrático não suporta o cometimento de um crime de golpe de Estado.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496780241</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O ministro Floriano de Azevedo Marques enquadrou juridicamente a conduta analisada no artigo 22 da Lei Complementar nº 64/1990 (Lei de Inelegibilidade), particularmente em condutas que caracterizem desvio ou abuso de poder ou utilização indevida dos veículos ou meios de comunicação.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/com-o-placar-de-3x1-pela-inelegibilidade-de-bolsonaro-tse-suspende-julgamento" target="_blank">Com o placar de 3 a 1 pela inelegibilidade de Bolsonaro, TSE suspende julgamento — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496780242</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O relator ministro Benedito Gonçalves votou pela inelegibilidade de Bolsonaro por oito anos a partir das Eleições 2022, fundamentando-se na Lei Complementar nº 64/1990 (Lei de Inelegibilidade).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/com-o-placar-de-3x1-pela-inelegibilidade-de-bolsonaro-tse-suspende-julgamento" target="_blank">Com o placar de 3 a 1 pela inelegibilidade de Bolsonaro, TSE suspende julgamento — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496780243</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O ministro André Ramos Tavares votou pela inelegibilidade de Bolsonaro, fundamentando sua decisão na análise do uso indevido dos meios de comunicação conforme previsto na legislação eleitoral brasileira.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/com-o-placar-de-3x1-pela-inelegibilidade-de-bolsonaro-tse-suspende-julgamento" target="_blank">Com o placar de 3 a 1 pela inelegibilidade de Bolsonaro, TSE suspende julgamento — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496780244</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O Tribunal Superior Eleitoral julgou a ação de investigação contra Bolsonaro ajuizada pelo Partido Democrático Trabalhista (PDT), analisando condutas de abuso de poder político e uso indevido dos meios de comunicação conforme a legislação eleitoral brasileira.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/com-o-placar-de-3x1-pela-inelegibilidade-de-bolsonaro-tse-suspende-julgamento" target="_blank">Com o placar de 3 a 1 pela inelegibilidade de Bolsonaro, TSE suspende julgamento — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496802270</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Lei nº 14.197, de 1º de setembro de 2021, acrescenta o Título XII na Parte Especial do Código Penal, relativo aos crimes contra o Estado Democrático de Direito, incluindo artigos como 359-L (abolição violenta do Estado Democrático de Direito), 359-M (golpe de Estado) e 359-K (espionagem), que definem penas de reclusão para esses crimes.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm" target="_blank">L14197</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496802271</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A denúncia contra Bolsonaro acusa-o de liderar uma tentativa de golpe de Estado, crime previsto no artigo 359-M do Código Penal, e a investigação da Polícia Federal apresenta relatório de mais de 800 páginas com elementos como mensagens eletrônicas, conversas, documentos e monitoramento de estações rádio base de celular.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_08</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm" target="_blank">L14197</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496802272</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Dezenas de pessoas sem foro privilegiado já foram processadas e condenadas no STF por tentativa de golpe de Estado devido ao envolvimento nos atos de 8 de janeiro de 2023, com base no entendimento de que esses crimes tratam de ataques ao próprio STF e ao Estado Democrático de Direito.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm" target="_blank">L14197</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496802273</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Segundo jurista Aury Lopes Jr., a denúncia contra Bolsonaro descreve claramente o fato, é coerente e lógica, com indícios razoáveis de autoria e materialidade dos crimes previstos na legislação penal brasileira, sendo suficiente para iniciar um processo criminal.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm" target="_blank">L14197</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496802274</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">O artigo 359-M do Código Penal define como crime &#39;tentar depor, por meio de violência ou grave ameaça, o governo legitimamente constituído&#39; com pena de reclusão de 4 a 12 anos, além da pena correspondente à violência.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm" target="_blank">L14197</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(2 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745207</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">O professor Pedro Estevam Serrano avaliou que o voto de Fux esteve &#39;desconectado&#39; dos autos e desconsiderou o conceito de &#39;tentativa de golpe de Estado&#39; conforme definido na legislação brasileira, afirmando que o voto teve &#39;baixo grau de fundamentação técnica&#39;.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745208</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">O professor Oscar Vilhena Vieira argumenta que o ministro Fux colocou como premissa que o crime de golpe de Estado só ocorreria se o Estado de Direito tivesse sido abolido, o que não é o que a legislação brasileira prevê.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(40 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bolsonaro declarou esperar um julgamento justo e sem revanchismo do Tribunal Superior Eleitoral (TSE)</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O ministro Floriano de Azevedo Marques votou pela procedência da ação de inelegibilidade, condenando Bolsonaro por abuso de poder político e utilização indevida dos meios de comunicação, argumentando que a reunião com embaixadores foi organizada de forma apressada e caracterizava comportamento de campanha eleitoral</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O ministro Raul Araújo votou pela improcedência da ação contra Bolsonaro, entendendo que a reunião não teve gravidade suficiente para gerar condenação à inelegibilidade</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O ministro Luiz Fux questionou a competência do STF para julgar Bolsonaro, argumentando que ele não deveria ser julgado pelo Supremo, mas sim por um juiz de primeira instância, porque não ocupa atualmente cargo com prerrogativa de foro privilegiado</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A maioria dos ministros da 1ª Turma do STF entendeu que Bolsonaro deveria ser julgado no STF porque as acusações dizem respeito a atos cometidos quando era presidente e contra o Estado Democrático de Direito, e alguns crimes foram praticados contra o próprio Supremo</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O senador Hamilton Mourão, vice-presidente de Bolsonaro, defende que o julgamento no STF não é &#39;apenas um simples processo jurídico&#39;, mas uma &#39;vingança política&#39;</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O comentarista Caio Coppolla questiona a justiça do julgamento, argumentando que é injusto que um homem seja julgado pela suposta vítima de seus crimes, que um ex-presidente sem cargo público seja julgado por tribunal reservado a autoridades, e que seja julgado por antigos aliados de seu maior opositor</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O advogado José Eduardo Cardozo argumenta que não há vingança no julgamento, apontando que as decisões são tomadas em conjunto por múltiplos órgãos autônomos (STF, Polícia Federal e Ministério Público)</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2023-06/bolsonaro-diz-esperar-julgamento-justo-e-sem-revanchismo-do-tse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O senador Hamilton Mourão defende que o julgamento no STF do núcleo 1 do plano de golpe de Estado não é &#39;apenas um simples processo jurídico&#39;, mas uma &#39;vingança política&#39;.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O comentarista José Eduardo Cardozo entende que não há vingança no julgamento de Bolsonaro, argumentando que as decisões do STF são tomadas em conjunto pelos pares da Turma, e que a investigação foi conduzida pela Polícia Federal como órgão autônomo e independente, com endosso do Ministério Público.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O comentarista Caio Coppolla questiona a justiça do processo, argumentando que não é justo que um homem seja julgado pela suposta vítima de seus crimes, que um homem sem cargo público seja julgado por tribunal reservado a autoridades, e que seja julgado por antigos aliados de seu maior opositor.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O ministro Luiz Fux questionou em seu voto a competência do STF para julgar o ex-presidente Jair Bolsonaro, argumentando que Bolsonaro não deveria ser julgado pelo Supremo, mas sim por um juiz de 1ª instância, porque não ocupa atualmente cargo com prerrogativa de foro privilegiado.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A maioria dos ministros da 1ª Turma do STF entendeu que Bolsonaro deveria ser julgado no STF porque as acusações da Procuradoria-Geral da República dizem respeito a atos que ele teria cometido quando ainda era presidente e contra o Estado Democrático de Direito, e alguns dos crimes em análise foram praticados contra o próprio Supremo.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O STF decidiu em março de 2025 (julgamento do Habeas Corpus 232.627/DF) que &#39;a prerrogativa de foro para julgamento de crimes praticados no cargo e em razão das funções subsiste mesmo após o afastamento do cargo&#39;, com aplicação imediata aos processos em curso.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O advogado Pierpaolo Bottini, professor do Departamento de Direito Penal da Faculdade de Direito da USP, afirma que o regimento do Supremo diz que os atos praticados contra o Supremo, dentro do Supremo, são de competência, apuração e julgamento do próprio Supremo.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O advogado Renato Vieira explica que os crimes atribuídos a Bolsonaro teriam ocorrido durante seu mandato como presidente, enquanto os crimes pelos quais Lula foi acusado ocorreram fora de seu mandato, o que justifica a diferença de competência entre os dois casos.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A advogada Mariane de Matos Aquino afirma que o Supremo já oscilou bastante em relação a quem tem ou não a prerrogativa de foro depois que deixa o cargo, tendo mudado esse entendimento em cinco ocasiões desde 1964.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/" target="_blank">https://www.cnnbrasil.com.br/politica/o-grande-debate-julgamento-de-bolsonaro-e-vinganca-politica-ou-justica/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O Tribunal Superior Eleitoral (TSE) declarou a inelegibilidade de Jair Bolsonaro por oito anos com base na prática de abuso de poder político e uso indevido dos meios de comunicação, conforme reconhecido por maioria de votos (5 a 2).</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O enquadramento jurídico da decisão está focado no artigo 22 da Lei Complementar nº 64/1990 (Lei de Inelegibilidade), particularmente em condutas que caracterizem desvio ou abuso de poder ou utilização indevida dos veículos ou meios de comunicação.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O ministro Floriano de Azevedo Marques destacou que o enquadramento jurídico está focado no artigo 22 da Lei Complementar nº 64/1990, ressaltando que &#39;apurada essa conduta abusiva, a Justiça Eleitoral aplicará a sanção de inelegibilidade para as eleições que se realizarem nos oito anos subsequentes à eleição que se verificou&#39;.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O relator ministro Benedito Gonçalves ressaltou que o abuso de poder político se caracteriza como ato do agente público praticado mediante desvio de finalidade, com a intenção de causar interferência no processo eleitoral, conforme definido na legislação eleitoral brasileira.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_022</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Lei nº 13.844, de 18 de junho de 2019, estabelece a organização básica dos órgãos da Presidência da República e dos Ministérios, alterando e revogando diversas leis anteriores.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/L13844.htm" target="_blank">https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/L13844.htm</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_023</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O Tribunal Superior Eleitoral (TSE) declarou a inelegibilidade do ex-presidente Jair Bolsonaro por oito anos, por maioria de votos (5 a 2), reconhecendo a prática de abuso de poder político e uso indevido dos meios de comunicação durante reunião com embaixadores estrangeiros no dia 18 de julho de 2022.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_024</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A Primeira Turma do Supremo Tribunal Federal (STF) condenou o ex-presidente Jair Bolsonaro por tentativa de golpe de Estado e outros quatro crimes (organização criminosa armada, tentativa de abolição violenta do Estado Democrático de Direito, dano qualificado pela violência e grave ameaça, e deterioração de patrimônio tombado), por maioria de votos (4 a 1).</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_025</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bolsonaro foi condenado a 27 anos e três meses de prisão em 11 de setembro de 2025 pelo Supremo Tribunal Federal por fazer parte de uma organização criminosa armada e outras acusações relacionadas a um plano de golpe para anular sua derrota nas eleições de 2022.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_026</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Quatro dos cinco juízes do painel do STF votaram a favor da condenação de Bolsonaro, com a ministra Cármen Lúcia afirmando que o ex-presidente agiu &#39;com o objetivo de corroer a democracia e as instituições&#39;.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_027</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O julgamento do TSE foi encerrado na tarde de 30 de junho de 2023 com a proclamação do resultado pelo presidente da Corte, ministro Alexandre de Moraes, após votação sobre a inelegibilidade de Bolsonaro.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_028</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bolsonaro deve recorrer da sentença de condenação do STF, indicando que o processo judicial ainda está em fase de recursos.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_029</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Por unanimidade, os ministros da Primeira Turma do Supremo Tribunal Federal (STF) decidiram manter a condenação ex-presidente Jair Bolsonaro e mais seis réus na ação penal da trama golpista, com placar de 4 votos a 0.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_030</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bolsonaro foi condenado a 27 anos e três meses de prisão na ação penal da trama golpista.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_031</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Por maioria de votos (5 a 2), o Plenário do Tribunal Superior Eleitoral (TSE) declarou a inelegibilidade do ex-presidente Jair Bolsonaro por oito anos, contados a partir das Eleições 2022.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_032</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A 1ª Turma do STF retomou o julgamento do ex-presidente Bolsonaro e mais sete réus em 10 de setembro de 2025, com acusações de liderar organização criminosa armada, tentativa de abolição violenta do Estado Democrático de Direito, golpe de Estado, dano contra patrimônio da União e deterioração de patrimônio tombado.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_033</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">No dia 11 de setembro de 2025, o placar pela condenação de Bolsonaro foi de 4 votos a 1 na Primeira Turma do STF.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_034</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A competência para julgar Bolsonaro pelo STF foi mantida porque os crimes atribuídos teriam ocorrido durante seu mandato como presidente da República, e a prerrogativa de foro para julgamento de crimes praticados no cargo subsiste mesmo após o afastamento do cargo.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-11/por-unanimidade-stf-mantem-condenacao-de-bolsonaro-e-aliados</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496704032</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O advogado de Bolsonaro argumentou que a lei que criminaliza atos contra a democracia estabelece que deve haver atos violentos para que seja configurado o crime, demonstrando que a defesa baseou suas argumentações na legislação brasileira.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496721307</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Lei Complementar nº 64, de 18 de maio de 1990 estabelece casos de inelegibilidade de acordo com o art. 14, § 9º da Constituição Federal, incluindo condenações criminais com sentença transitada em julgado ou proferida por órgão judicial colegiado por crimes contra a administração pública, patrimônio público e outros delitos especificados, com prazo de 8 (oito) anos de inelegibilidade.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp64.htm" target="_blank">Lcp64</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496721309</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O Tribunal Superior Eleitoral rejeitou pedido de cassação da chapa Bolsonaro-Mourão por disparos em massa via WhatsApp, indicando que a análise de condutas eleitorais foi realizada conforme legislação eleitoral brasileira.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp64.htm" target="_blank">Lcp64</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496745206</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">O ministro Luiz Fux argumentou que, como Bolsonaro não tem foro privilegiado porque não ocupa mais o cargo, o caso deveria ser analisado na primeira instância da Justiça comum, citando que &#39;a prerrogativa de foro deixa de existir quando os cargos foram encerrados antes da ação penal&#39;.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496760871</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bolsonaro foi condenado a 27 anos e 3 meses por golpe de Estado em processo criminal que correu no Supremo Tribunal Federal</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/portuguese/articles/c5yep55xgqno" target="_blank">Lei Magnitsky: na véspera de reunião na ONU, Trump sanciona equipe de Moraes e nomes do TSE que tornaram Bolsonaro inelegível - BBC News Brasil</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771496760872</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Benedito Gonçalves, ex-ministro do Tribunal Superior Eleitoral (TSE), foi relator da ação que deixou Bolsonaro inelegível</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/portuguese/articles/c5yep55xgqno" target="_blank">Lei Magnitsky: na véspera de reunião na ONU, Trump sanciona equipe de Moraes e nomes do TSE que tornaram Bolsonaro inelegível - BBC News Brasil</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">15 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Por maioria de votos, TSE declara Bolsonaro inelegível por 8 anos — Tribunal Superior Eleitoral</span></div>
+        <div class="source-url"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fundamentação legal decisão Bolsonaro TSE STF</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Supremo Tribunal Federal</span></div>
+        <div class="source-url"><a href="https://noticias.stf.jus.br/postsnoticias/ap-2668-relator-vota-pela-condenacao-de-todos-os-reus-do-nucleo-1/" target="_blank">https://noticias.stf.jus.br/postsnoticias/ap-2668-relator-vota-pela-condenacao-de-todos-os-reus-do-nucleo-1/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fundamentação legal decisão Bolsonaro TSE STF</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Julgamento de Bolsonaro no STF: o que aconteceu na primeira semana - BBC News Brasil</span></div>
+        <div class="source-url"><a href="https://www.bbc.com/portuguese/articles/c99me8984vlo" target="_blank">https://www.bbc.com/portuguese/articles/c99me8984vlo</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fundamentação legal decisão Bolsonaro TSE STF</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Bolsonaro pode ficar inelegível até 2060 após condenação | Agência Brasil</span></div>
+        <div class="source-url"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/bolsonaro-pode-ficar-inelegivel-ate-2060-apos-condenacao" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/bolsonaro-pode-ficar-inelegivel-ate-2060-apos-condenacao</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fundamentação legal decisão Bolsonaro TSE STF</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Lcp64</span></div>
+        <div class="source-url"><a href="https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp64.htm" target="_blank">https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp64.htm</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Lei Complementar 64/1990 artigos aplicados julgamento Bolsonaro</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Lei das Inelegibilidades — Tribunal Regional Eleitoral de Santa Catarina</span></div>
+        <div class="source-url"><a href="https://www.tre-sc.jus.br/legislacao/lei-de-inelegibilidade" target="_blank">https://www.tre-sc.jus.br/legislacao/lei-de-inelegibilidade</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Lei Complementar 64/1990 artigos aplicados julgamento Bolsonaro</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">TSE veda oficialmente uso de disparos em massa nas eleições</span></div>
+        <div class="source-url"><a href="https://www.conjur.com.br/2021-dez-15/tse-veda-oficialmente-uso-disparos-massa-eleicoes/" target="_blank">https://www.conjur.com.br/2021-dez-15/tse-veda-oficialmente-uso-disparos-massa-eleicoes/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Lei Complementar 64/1990 artigos aplicados julgamento Bolsonaro</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Fux foi contraditório e seletivo nas provas do golpe, dizem juristas | Agência Brasil</span></div>
+        <div class="source-url"><a href="https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas" target="_blank">https://agenciabrasil.ebc.com.br/justica/noticia/2025-09/fux-foi-contraditorio-e-seletivo-nas-provas-do-golpe-dizem-juristas</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: votos ministros Bolsonaro fundamentação jurídica constituição</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Voto de Fux abre caminho para defesa de Bolsonaro anular processo? - BBC News Brasil</span></div>
+        <div class="source-url"><a href="https://www.bbc.com/portuguese/articles/c5yj660vzp3o" target="_blank">https://www.bbc.com/portuguese/articles/c5yj660vzp3o</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: votos ministros Bolsonaro fundamentação jurídica constituição</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Lei Magnitsky: na véspera de reunião na ONU, Trump sanciona equipe de Moraes e nomes do TSE que tornaram Bolsonaro inelegível - BBC News Brasil</span></div>
+        <div class="source-url"><a href="https://www.bbc.com/portuguese/articles/c5yep55xgqno" target="_blank">https://www.bbc.com/portuguese/articles/c5yep55xgqno</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fundamentação legal decisão Bolsonaro TSE STF legislação</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Com o placar de 3 a 1 pela inelegibilidade de Bolsonaro, TSE suspende julgamento — Tribunal Superior Eleitoral</span></div>
+        <div class="source-url"><a href="https://www.tse.jus.br/comunicacao/noticias/2023/Junho/com-o-placar-de-3x1-pela-inelegibilidade-de-bolsonaro-tse-suspende-julgamento" target="_blank">https://www.tse.jus.br/comunicacao/noticias/2023/Junho/com-o-placar-de-3x1-pela-inelegibilidade-de-bolsonaro-tse-suspende-julgamento</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: votos ministros Bolsonaro Lei Complementar 64/1990 inelegibilidade</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Rejeição de contas prescrita pode gerar inelegibilidade, diz TSE</span></div>
+        <div class="source-url"><a href="https://www.conjur.com.br/2025-abr-01/rejeicao-de-contas-prescrita-pode-gerar-inelegibilidade-confirma-tse/" target="_blank">https://www.conjur.com.br/2025-abr-01/rejeicao-de-contas-prescrita-pode-gerar-inelegibilidade-confirma-tse/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: votos ministros Bolsonaro Lei Complementar 64/1990 inelegibilidade</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">L14197</span></div>
+        <div class="source-url"><a href="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm" target="_blank">https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: críticas jurídicas julgamento Bolsonaro violação legislação brasileira</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Bolsonaro não deveria ser julgado por Moraes e nem mesmo pelo STF, afirma jurista - BBC News Brasil</span></div>
+        <div class="source-url"><a href="https://www.bbc.com/portuguese/articles/cvgw3j0z7d9o" target="_blank">https://www.bbc.com/portuguese/articles/cvgw3j0z7d9o</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: críticas jurídicas julgamento Bolsonaro violação legislação brasileira</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Os 13 atropelos jurídicos do STF no julgamento de Bolsonaro</span></div>
+        <div class="source-url"><a href="https://www.gazetadopovo.com.br/ideias/atropelos-juridicos-pavimentam-conndenacao-bolsonaro/" target="_blank">https://www.gazetadopovo.com.br/ideias/atropelos-juridicos-pavimentam-conndenacao-bolsonaro/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: críticas jurídicas julgamento Bolsonaro violação legislação brasileira</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">12 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>julgamento Bolsonaro justo</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>O julgamento de Bolsonaro foi justo.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>julgamento Bolsonaro legislação brasileira</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>O julgamento de Bolsonaro foi baseado na legislação brasileira.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Bolsonaro julgamento condenação</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Bolsonaro foi julgado.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>fundamentação legal decisão Bolsonaro TSE STF</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Lei Complementar 64/1990 artigos aplicados julgamento Bolsonaro</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>votos ministros Bolsonaro fundamentação jurídica constituição</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>fundamentação legal decisão Bolsonaro TSE STF legislação</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>votos ministros Bolsonaro Lei Complementar 64/1990 inelegibilidade</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>críticas jurídicas julgamento Bolsonaro violação legislação brasileira</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">62</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">15</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">12</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">—</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.0.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.0.0-cb · Generated 2026-02-19 15:22 UTC
+  <br>Job c72bea3c09414c1a81d081bb59b1a087 · — · anthropic
+</div>
+</div>
+</body>
+</html>
