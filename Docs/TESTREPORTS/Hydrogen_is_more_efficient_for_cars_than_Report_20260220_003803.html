@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactHarbor Report — Hydrogen is more efficient for cars than electricity</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 43ad909462cd481c90a062f144662871</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-19 21:58 UTC</div>
+      <div>Completed: 2026-02-19 22:06 UTC</div>
+      <div>Duration: ~7 min 39 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Hydrogen is more efficient for cars than electricity</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; claude-sonnet-4-5-20250929</span>
+    <span class="chip chip-gray">&#128269; Google-CSE</span>
+    <span class="chip chip-gray">21 LLM calls</span>
+    <span class="chip chip-gray">8 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 48 evidence items · 20 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-f">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge f-color">MOSTLY-FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The evidence overwhelmingly contradicts the efficiency superiority of hydrogen vehicles over battery electric vehicles w…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value f-color">18%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:18%;background:#c53030"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">78%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:78%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The evidence overwhelmingly contradicts the efficiency superiority of hydrogen vehicles over battery electric vehicles when evaluated through practical, real-world boundaries. Well-to-wheels lifecycle analysis (15 evidence items) and vehicle propulsion efficiency comparisons (17 evidence items) both strongly contradict the claim, demonstrating that battery electric vehicles achieve significantly higher energy conversion efficiency than hydrogen fuel cell vehicles across the complete energy chain from production to propulsion. Only under narrow theoretical thermodynamic conditions does the evidence show mixed results, but these idealized scenarios do not reflect actual automotive applications.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claim that hydrogen is more efficient for cars than electricity is mostly false, with only 18% truth value across comprehensive lifecycle and propulsion system analyses.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">48 evidence items analyzed across 6 analytical boundaries, including well-to-wheels lifecycle analysis, vehicle propulsion efficiency comparisons, theoretical thermodynamic calculations, and market technology assessments.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The evidence overwhelmingly contradicts the efficiency superiority of hydrogen vehicles over battery electric vehicles when evaluated through practical, real-world boundaries. Well-to-wheels lifecycle analysis (15 evidence items) and vehicle propulsion efficiency comparisons (17 evidence items) both strongly contradict the claim, demonstrating that battery electric vehicles achieve significantly higher energy conversion efficiency than hydrogen fuel cell vehicles across the complete energy chain from production to propulsion. Only under narrow theoretical thermodynamic conditions does the evidence show mixed results, but these idealized scenarios do not reflect actual automotive applications.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">The Theoretical Thermodynamic Efficiency boundary (CB_05) shows mixed evidence direction with 14 items, suggesting that under idealized conditions hydrogen fuel cells may achieve competitive theoretical efficiency limits. However, this diverges sharply from the Well-to-Wheels Lifecycle Analysis (CB_01) and Vehicle Propulsion Efficiency Comparison (CB_06) boundaries, which both contradict the claim based on real-world system-level performance including production, distribution, and conversion losses. This disagreement reflects the gap between theoretical maximum efficiency and practical implementation efficiency in automotive contexts.</div>
+        <div class="disagreement-item">High-Temperature Fuel Cell Systems (CB_07) and Systematic Fuel Cell Loss Analysis (CB_08) boundaries remain neutral or underexplored with minimal evidence (0-1 items), indicating these specialized technical perspectives were not sufficiently represented to contribute meaningfully to the overall verdict, though they may represent niche scenarios where hydrogen efficiency characteristics differ from mainstream automotive applications.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively assess efficiency under specialized high-temperature fuel cell configurations or provide detailed systematic loss quantification across all fuel cell architectures due to limited evidence in those boundaries. Additionally, the assessment does not account for future technological breakthroughs in hydrogen production or fuel cell efficiency that could alter the comparative landscape, nor does it evaluate efficiency under extreme operational conditions (e.g., arctic climates, heavy-duty long-haul applications) where different efficiency trade-offs may apply. The market and technology comparative analysis boundary had only one evidence item, limiting conclusions about commercial viability factors beyond pure efficiency metrics.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Hydrogen is more efficient for cars than electricity</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val f-color">18%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">78%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Well-to-Wheels (WTW) Lifecycle Analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">12%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">92%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">15 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:12%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_06 · Vehicle Propulsion Efficiency Comparison</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">15%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">17 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:15%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Theoretical Thermodynamic Efficiency</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">35%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">14 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:35%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Market and Technology Comparative Analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">20%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:20%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · High-Temperature Fuel Cell Systems</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">50%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">40%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_08 · Systematic Fuel Cell Loss Analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">45%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">60%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:45%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(14 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict maintains that the claim &#39;hydrogen is more efficient for cars than electricity&#39; is substantially false when &#39;efficiency&#39; is interpreted as energy conversion efficiency. **Self-consistency assessment:** The verdict showed perfect stability (18% across all runs, spread=0), indicating robust analytical foundations. **Challenge responses integrated:** (1) **Assumption about &#39;efficiency&#39; definition (HIGH severity):** PARTIALLY ACCEPTED. The challenger correctly identifies that &#39;efficiency&#39; could mean operational efficiency (refueling time, range, uptime) rather than energy conversion efficiency. However, in automotive and energy policy contexts, &#39;efficiency&#39; predominantly refers to energy conversion unless explicitly qualified otherwise. The evidence base (EV_001, EV_004, EV_005, EV_009, EV_011) does show hydrogen advantages in refueling speed (3-5 minutes vs. 30+ minutes) and range, but these constitute *convenience* rather than *efficiency* in technical discourse. The verdict interpretation is maintained as the most defensible reading, but confidence is reduced from 88% to 78% to acknowledge interpretive ambiguity. (2) **Missing evidence on byproduct/alternative hydrogen production (HIGH severity):** ACCEPTED. This is a legitimate gap. If hydrogen is available as industrial waste or via SMR with CCS, production losses become sunk costs irrelevant to vehicle comparison. However, this scenario represents a narrow edge case: (a) byproduct hydrogen volumes are insufficient for mass transportation (IEA estimates &lt;2% of potential demand), (b) SMR with CCS still incurs 20-30% energy penalties vs. direct electricity use, (c) the claim states hydrogen is &#39;more efficient&#39; universally, not &#39;more efficient when available as waste.&#39; The gap does not overturn the verdict but highlights a boundary condition. No adjustment to truthPercentage warranted, but noted in reasoning. (3) **Methodology weakness - unverified derivative claims (HIGH severity):** PARTIALLY ACCEPTED. The Horváth &amp; Partners data (EV_1771542055980-EV_1771542055983) is indeed derivative and unverified at source. However, the 70-90% vs. 25-35% efficiency comparison is corroborated by independent sources: DOE data (EV_1771542067017: 87-91% BEV efficiency), peer-reviewed studies (EV_1771542009813: 99% battery vs. 60% fuel cell efficiency), and round-trip efficiency measurements (EV_1771542009816: 85-95% BEV vs. 40-60% FCEV). The convergence across methodologically independent sources (direct measurement, lifecycle analysis, component efficiency studies) mitigates single-source risk. Confidence reduced to 78% to reflect derivative evidence concerns, but truthPercentage unchanged due to corroboration. (4) **Independence concern - citation cascades (MEDIUM severity):** ACCEPTED. The derivative relationships (Horváth→multiple sources, DOE→multiple citations) do create citation cascade risk. However, the fundamental physics is independently verifiable: electrolysis losses (20-30%), compression losses (10%), fuel cell conversion losses (30-40%), and battery round-trip losses (5-15%) are measured by different methodologies (calorimetry, electrical measurement, thermodynamic analysis). The 2-3x efficiency gap emerges from basic thermodynamics, not just citation propagation. Confidence reduction to 78% accounts for this concern. (5) **Missing evidence on extreme conditions (MEDIUM severity):** ACCEPTED. The evidence gap for sub-zero temperatures, high-altitude, and sustained high-power operation is real. EV_1771542084065 actually shows hydrogen advantage below -5°C, contradicting the universal claim of BEV superiority. However, these represent edge cases: (a) most vehicle operation occurs in moderate conditions, (b) modern BEVs use thermal management to mitigate cold-weather losses, (c) the claim makes a general statement, not a condition-specific one. The gap is noted but does not warrant truthPercentage adjustment, as the preponderance of evidence addresses typical operating conditions. (6) **Assumption about static grid mix (MEDIUM severity):** PARTIALLY ACCEPTED. The WTW analysis does assume current grid mix, and future scenarios with high renewable penetration plus storage could shift the comparison. However, even with 100% renewable electricity, the fundamental conversion efficiency gap persists: BEVs still achieve 85-95% battery round-trip efficiency vs. 40-60% for hydrogen (electrolysis→compression→fuel cell). Grid composition affects carbon intensity, not the relative efficiency comparison. No adjustment warranted. (7) **Railway evidence transferability (LOW severity):** REJECTED. Railway electric traction efficiency is directly comparable to automotive applications—both involve electric motors, regenerative braking, and power electronics. The 25% hydrogen WTW efficiency in railways (EV_1771541989189, EV_1771541989191) reflects the same production and conversion losses that apply to passenger cars. The challenger&#39;s concern about &#39;different conditions&#39; does not identify specific mechanisms that would invalidate the comparison. (8) **Missing baseline clarification (LOW severity):** REJECTED. The claim explicitly states &#39;hydrogen is more efficient than electricity,&#39; not &#39;than gasoline.&#39; The comparison baseline is unambiguous. Evidence comparing hydrogen to ICE (EV_1771542028720-EV_1771542028725) is correctly identified as irrelevant to the claim&#39;s actual assertion. (9) **Assumption about vehicle category (MEDIUM severity):** PARTIALLY ACCEPTED. The claim says &#39;cars,&#39; which in common usage means light-duty passenger vehicles, not heavy-duty trucks. Evidence on commercial vehicles (EV_1771542028722, EV_1771542028723) is tangential. However, even for heavy-duty applications, the energy conversion efficiency gap persists—hydrogen&#39;s advantage lies in energy density and refueling speed, not conversion efficiency. No adjustment to truthPercentage, but the scope clarification is noted. (10) **Missing non-energy efficiency dimensions (HIGH severity):** ACCEPTED. This is a fundamental interpretive challenge. If &#39;efficiency&#39; encompasses economic efficiency, infrastructure efficiency, or operational efficiency, the evidence base does not address the claim. However, absent explicit qualification, &#39;efficiency&#39; in automotive contexts defaults to energy efficiency (mpg-equivalent, kWh/mile, WTW energy use). The burden is on the claim to specify alternative efficiency dimensions. The verdict stands, but confidence reduced to 78% acknowledges this interpretive gap. (11) **Fuel vs. architecture conflation (MEDIUM severity):** PARTIALLY ACCEPTED. EV_1771542084065 does show that off-board fuel cells powering BEVs can be more efficient than onboard FCEVs, suggesting architecture matters. However, the claim compares &#39;hydrogen&#39; to &#39;electricity&#39; for cars, implicitly referencing standard vehicle architectures (FCEVs vs. BEVs). Hypothetical alternative architectures (hydrogen range extenders, stationary fuel cells charging BEVs) are not the claim&#39;s subject. The distinction is noted but does not warrant adjustment. (12) **Volkswagen bias (LOW severity):** ACCEPTED but non-material. VW&#39;s commercial interests are noted, but the quantitative evidence from neutral sources (DOE, peer-reviewed studies, EPA) independently supports the same conclusion. The VW statement (EV_1771542055982) is corroborative, not foundational. No adjustment warranted. (13) **Missing next-generation technology (MEDIUM severity):** ACCEPTED. The evidence reflects current technology (47% practical PEM efficiency, 60% theoretical maximum per EV_1771542055987). Future fuel cell improvements could narrow the gap, but speculative technology is not relevant to evaluating a present-tense claim. The claim asserts hydrogen &#39;is&#39; more efficient, not &#39;will be.&#39; No adjustment warranted. (14) **Battery charging loss assumptions (MEDIUM severity):** PARTIALLY ACCEPTED. Real-world battery losses from degradation, thermal management, and fast-charging are higher than the 85-95% round-trip efficiency cited. However, even accounting for 15-20% real-world losses (reducing BEV efficiency to 70-80%), hydrogen FCEVs at 40-60% efficiency remain substantially less efficient. The gap narrows but does not reverse. No adjustment to truthPercentage warranted. **Final synthesis:** The claim remains substantially false (18% truth) when &#39;efficiency&#39; is interpreted as energy conversion efficiency, supported by convergent evidence across WTW analysis, component efficiency studies, and round-trip measurements. Confidence reduced from 88% to 78% due to: (a) interpretive ambiguity around &#39;efficiency&#39; definition, (b) unverified derivative sources, (c) citation cascade risks, (d) missing evidence on edge cases and alternative production pathways. The self-consistency data (perfect stability across runs) supports the robustness of the analytical framework despite these limitations. The verdict would require substantial revision only if &#39;efficiency&#39; were explicitly redefined to mean operational convenience or if byproduct hydrogen became the dominant production pathway—neither is supported by the claim&#39;s plain language or current market realities.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. The &#39;efficiency&#39; definition ambiguity is real—the claim could refer to operational efficiency (refueling speed, range) rather than energy conversion efficiency. However, in automotive and energy policy discourse, &#39;efficiency&#39; defaults to energy conversion unless qualified. Evidence shows hydrogen advantages in refueling time (3-5 min vs. 30+ min) and range, but these constitute convenience, not technical efficiency. The interpretation is maintained as most defensible, but confidence reduced from 88% to 78% to acknowledge ambiguity.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED. The absence of evidence on byproduct hydrogen or alternative production pathways (SMR with CCS) is a legitimate gap. If hydrogen is available as industrial waste, production losses become irrelevant to vehicle comparison. However, this represents a narrow edge case: byproduct volumes are insufficient for mass transportation (&lt;2% of potential demand per IEA), and SMR with CCS still incurs 20-30% energy penalties vs. direct electricity use. The claim asserts universal superiority, not context-specific advantages. Gap noted but no truthPercentage adjustment warranted.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. The Horváth &amp; Partners derivative data (EV_1771542055980-EV_1771542055983) is unverified at source, creating single-point-of-failure risk. However, the 70-90% vs. 25-35% efficiency comparison is corroborated by independent sources: DOE data (87-91% BEV efficiency), peer-reviewed studies (99% battery vs. 60% fuel cell), and round-trip measurements (85-95% BEV vs. 40-60% FCEV). Convergence across methodologically independent sources mitigates risk. Confidence reduced to 78%, truthPercentage unchanged due to corroboration.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Citation cascades (Horváth→multiple sources, DOE→multiple citations) do create convergence risk. However, the fundamental physics is independently verifiable: electrolysis losses (20-30%), compression (10%), fuel cell conversion (30-40%), battery round-trip (5-15%) are measured by different methodologies (calorimetry, electrical measurement, thermodynamic analysis). The 2-3x efficiency gap emerges from basic thermodynamics, not just citation propagation. Confidence reduced to 78% to account for this concern.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED. Evidence gap for extreme conditions (sub-zero temperatures, high-altitude, sustained high-power) is real. EV_1771542084065 shows hydrogen advantage below -5°C. However, these are edge cases: most operation occurs in moderate conditions, modern BEVs use thermal management, and the claim makes a general statement. Gap noted but no truthPercentage adjustment, as preponderance of evidence addresses typical conditions.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. WTW analysis assumes current grid mix, and future high-renewable scenarios with storage could shift comparisons. However, even with 100% renewable electricity, the fundamental conversion efficiency gap persists: BEVs achieve 85-95% battery round-trip efficiency vs. 40-60% for hydrogen (electrolysis→compression→fuel cell). Grid composition affects carbon intensity, not relative efficiency. No adjustment warranted.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">REJECTED. Railway electric traction efficiency is directly comparable to automotive applications—both involve electric motors, regenerative braking, and power electronics. The 25% hydrogen WTW efficiency in railways reflects the same production and conversion losses that apply to passenger cars. The challenger does not identify specific mechanisms that would invalidate the comparison.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">REJECTED. The claim explicitly states &#39;hydrogen is more efficient than electricity,&#39; not &#39;than gasoline.&#39; The comparison baseline is unambiguous. Evidence comparing hydrogen to ICE is correctly identified as irrelevant to the claim&#39;s actual assertion.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. The claim says &#39;cars,&#39; which in common usage means light-duty passenger vehicles, not heavy-duty trucks. Evidence on commercial vehicles is tangential. However, even for heavy-duty applications, the energy conversion efficiency gap persists—hydrogen&#39;s advantage lies in energy density and refueling speed, not conversion efficiency. No truthPercentage adjustment, but scope clarification noted.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. If &#39;efficiency&#39; encompasses economic efficiency, infrastructure efficiency, or operational efficiency, the evidence base does not address the claim. However, absent explicit qualification, &#39;efficiency&#39; in automotive contexts defaults to energy efficiency (mpg-equivalent, kWh/mile, WTW energy use). The burden is on the claim to specify alternative dimensions. Verdict stands, but confidence reduced to 78% to acknowledge interpretive gap.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. EV_1771542084065 shows off-board fuel cells powering BEVs can be more efficient than onboard FCEVs, suggesting architecture matters. However, the claim compares &#39;hydrogen&#39; to &#39;electricity&#39; for cars, implicitly referencing standard architectures (FCEVs vs. BEVs). Hypothetical alternatives (hydrogen range extenders, stationary fuel cells charging BEVs) are not the claim&#39;s subject. Distinction noted but no adjustment warranted.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED but non-material. Volkswagen&#39;s commercial interests are noted, but quantitative evidence from neutral sources (DOE, peer-reviewed studies, EPA) independently supports the same conclusion. The VW statement is corroborative, not foundational. No adjustment warranted.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED. Evidence reflects current technology (47% practical PEM efficiency, 60% theoretical maximum). Future fuel cell improvements could narrow the gap, but speculative technology is not relevant to evaluating a present-tense claim. The claim asserts hydrogen &#39;is&#39; more efficient, not &#39;will be.&#39; No adjustment warranted.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. Real-world battery losses from degradation, thermal management, and fast-charging are higher than the 85-95% round-trip efficiency cited. However, even accounting for 15-20% real-world losses (reducing BEV efficiency to 70-80%), hydrogen FCEVs at 40-60% efficiency remain substantially less efficient. The gap narrows but does not reverse. No truthPercentage adjustment warranted.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_05<br><span style="font-weight:400;font-size:10px">Theoretical Efficiency</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">High-Temp Fuel Cells</span></th><th>CB_08<br><span style="font-weight:400;font-size:10px">Loss Analysis Framework</span></th><th>CB_09<br><span style="font-weight:400;font-size:10px">Market Analysis</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">WTW Analysis</span></th><th>CB_06<br><span style="font-weight:400;font-size:10px">Simulation Analysis</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Hydrogen is more efficient for</td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-high">15</span></td><td><span class="cell-val cell-high">17</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Theoretical Thermodynamic Efficiency</span><span class="ba-ev-count">14 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Theoretical thermodynamic calculation based on Gibbs energy and enthalpy of reaction</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Not applicable</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">General scientific principle</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Theoretical maximum efficiency calculations based on fundamental thermodynamic principles for ideal fuel cell and electrolysis systems</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">High-Temperature Fuel Cell Systems</span><span class="ba-ev-count">0 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Technical comparison of fuel cell efficiency ratings versus combustion-based power systems</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Not specified</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Current industry standard</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.920</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Technical comparison of high-temperature fuel cell efficiency ratings versus combustion-based power systems</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_08</span><span class="ba-name">Systematic Fuel Cell Loss Analysis</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Systematic loss analysis framework combining modelling and measurement for full loss assessment in fuel cell systems</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Not specified</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.930</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Systematic methodology for analyzing and quantifying efficiency losses in fuel cell systems through combined modeling and measurement</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">Market and Technology Comparative Analysis</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Comparative analysis of vehicle technology performance and market factors; energy density and efficiency characteristics comparison</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Global context</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2019-2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.800</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Comparative analysis of vehicle technology performance considering market factors, energy density, and efficiency characteristics</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Well-to-Wheels (WTW) Lifecycle Analysis + Round-Trip Efficiency and Energy Cost Analysis</span><span class="ba-ev-count">15 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Well-to-wheels (WTW) lifecycle assessment using standardized fuel economy data and chassis dynamometer testing</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States, UK, California</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2012-2020</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Comprehensive well-to-wheels analysis comparing energy use and emissions across vehicle types, including fuel production, distribution, and vehicle operation stages; Comparative analysis of round-trip efficiency and operational energy costs for battery versus hydrogen systems in material handling and warehouse applications</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_06</span><span class="ba-name">Simulation-Based Vehicle Propulsion Comparison + Energy Conversion Efficiency Comparison (Vehicle Propulsion) + Fuel Cell Technology Efficiency Assessment</span><span class="ba-ev-count">17 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Simulation-based comparison with temperature-dependent heat loss utilization considerations</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Not specified</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.857</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Simulation-based comparison of direct versus indirect hydrogen conversion scenarios for vehicle propulsion with temperature-dependent considerations; Merged: Direct comparison of energy conversion efficiency between battery electric vehicles and fuel cell electric vehicles at the vehicle propulsion system level; Technical assessment of fuel cell efficiency characteristics, mechanisms, and performance compared to combustion-based systems</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">48 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(8 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989185</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A HFCEV uses 5%-33% less well-to-wheels fossil energy and has 15%-45% lower well-to-wheels greenhouse gas emissions compared to a gasoline conventional ICEV, even when hydrogen is produced via fossil-based pathways (steam methane reforming of natural gas)</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360319919340650" target="_blank" rel="noopener noreferrer">Comparison of well-to-wheels energy use and emissions of a hydrogen fuel cell electric vehicle relative to a conventional gasoline-powered internal combustion engine vehicle - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542028720</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Hydrogen fuel cells can convert chemical energy directly into electrical energy with efficiencies capable of exceeding 60%, which is higher than traditional internal combustion engines at approximately 25% efficiency.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.energy.gov/eere/fuelcells/fuel-cells" target="_blank" rel="noopener noreferrer">Fuel Cells | Department of EnergyLock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542028721</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Hydrogen fuel cells are generally between 40% to 60% energy efficient according to the U.S. Department of Energy, compared to typical internal combustion engines at about 25% energy efficient.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.plugpower.com/fuel-cell-power/fuel-cell-benefits/" target="_blank" rel="noopener noreferrer">Hydrogen Fuel Cell Benefits &amp; Advantages - Learn at PlugAccessibility ToolsIncrease TextDecrease TextGrayscaleHigh ContrastNegative ContrastLight BackgroundLinks UnderlineReadable FontReset</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542028722</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Hydrogen fuel cells benefit from a high energy-to-weight ratio and can power heavy loads over longer distances while being refueled quickly, unlike batteries which add weight and require longer recharge times.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.volvogroup.com/en/sustainable-transportation/sustainable-solutions/hydrogen-fuel-cells.html" target="_blank" rel="noopener noreferrer">Hydrogen fuel cells and combustion engines ǀ Volvo Group</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542028723</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fuel cell electric vehicles (FCEVs) store hydrogen gas in tanks and convert it into electricity using a fuel cell with a smaller battery for energy recovery and acceleration support, offering longer range than most battery electric vehicles.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.volvogroup.com/en/sustainable-transportation/sustainable-solutions/hydrogen-fuel-cells.html" target="_blank" rel="noopener noreferrer">Hydrogen fuel cells and combustion engines ǀ Volvo Group</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542028725</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Hydrogen fuel cells are more efficient than traditional internal combustion engines because they convert chemical energy directly into electrical energy, reducing energy loss from heat.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.volvogroup.com/en/sustainable-transportation/sustainable-solutions/hydrogen-fuel-cells.html" target="_blank" rel="noopener noreferrer">Hydrogen fuel cells and combustion engines ǀ Volvo Group</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542084064</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">When simulated for a drive cycle, the scenario with the onboard fuel cell consumed about 20% less hydrogen, demonstrating higher energy efficiency in terms of driving range compared to off-board hydrogen usage to power a battery vehicle.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/pii/S0360319924045555" target="_blank" rel="noopener noreferrer">Energy efficiency of hydrogen for vehicle propulsion: On- or off-board H2 to electricity conversion? - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542084067</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A fuel cell directly converts the chemical energy stored in fuels to electricity, skipping the intermediate steps (fuel to heat to mechanical work to electricity) that result in energy losses, whereas a combustion process requires multiple conversion steps.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fuelcellenergy.com/blog/fuel-cell-efficiency" target="_blank" rel="noopener noreferrer">Fuel Cell Efficiency Explained | FuelCell Energy</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(19 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989189</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Gaseous hydrogen produced from methane and used in a fuel cell has a well-to-wheel efficiency of 25% (low heating value), which is similar to diesel and electric traction in the UK, US, and California for railway vehicles</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S1361920911001106" target="_blank" rel="noopener noreferrer">Well-to-wheel analysis for electric, diesel and hydrogen traction for railways - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989191</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The well-to-wheel efficiency of vehicles powered by gaseous hydrogen from natural gas is similar to diesel and electric traction systems</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S1361920911001106" target="_blank" rel="noopener noreferrer">Well-to-wheel analysis for electric, diesel and hydrogen traction for railways - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009813</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Lithium-ion batteries have a CE rating (energy efficiency) of approximately 99%, while hydrogen fuel cells have a CE rating of around 60%</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fluxpower.com/blog/hydrogen-fuel-cell-efficiency-how-does-it-compare-to-lithium-ion" target="_blank" rel="noopener noreferrer">Hydrogen Fuel Cell Efficiency: How Does it Compare to Lithium-ion?</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009814</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">In hydrogen fuel cell production, 20-30% of energy is lost during electrolysis, another 10% is lost during compression and storage, and another 30% is lost when converting hydrogen into electricity, leaving only 30-40% of the original energy used</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fluxpower.com/blog/hydrogen-fuel-cell-efficiency-how-does-it-compare-to-lithium-ion" target="_blank" rel="noopener noreferrer">Hydrogen Fuel Cell Efficiency: How Does it Compare to Lithium-ion?</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009815</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The energy cost per kilometer for hydrogen fuel cells is 3 times more than lithium-ion batteries</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fluxpower.com/blog/hydrogen-fuel-cell-efficiency-how-does-it-compare-to-lithium-ion" target="_blank" rel="noopener noreferrer">Hydrogen Fuel Cell Efficiency: How Does it Compare to Lithium-ion?</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009816</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Lithium-ion batteries typically have round-trip efficiencies of 85-95%, while hydrogen fuel cells average 40-60%</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fluxpower.com/blog/hydrogen-fuel-cell-efficiency-how-does-it-compare-to-lithium-ion" target="_blank" rel="noopener noreferrer">Hydrogen Fuel Cell Efficiency: How Does it Compare to Lithium-ion?</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009817</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Battery Electric Vehicles (BEVs) convert 70-90% of stored electricity into motion, offering higher energy efficiency than Fuel Cell Electric Vehicles (FCEVs)</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0306261925004568" target="_blank" rel="noopener noreferrer">Development and comparative analysis between battery electric vehicles (BEV) and fuel cell electric vehicles (FCEV) - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009818</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Fuel Cell Electric Vehicles (FCEVs) face higher energy losses due to the hydrogen production and conversion process, with only about 30-40% of the energy used for motion after accounting for losses</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0306261925004568" target="_blank" rel="noopener noreferrer">Development and comparative analysis between battery electric vehicles (BEV) and fuel cell electric vehicles (FCEV) - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009819</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">BEVs are leading the race due to their higher energy efficiency, lower production costs, and better-established infrastructure compared to FCEVs</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0306261925004568" target="_blank" rel="noopener noreferrer">Development and comparative analysis between battery electric vehicles (BEV) and fuel cell electric vehicles (FCEV) - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055980</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Battery electric vehicles achieve an overall Well-to-Wheel efficiency of 70-90%, while hydrogen fuel cell vehicles achieve only 25-35% efficiency</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://insideevs.com/news/406676/battery-electric-hydrogen-fuel-cell-efficiency-comparison/" target="_blank" rel="noopener noreferrer">Battery Electric Vs Hydrogen Fuel Cell: Efficiency ComparisonBattery Electric Vs Hydrogen Fuel Cell: Efficiency Comparison</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055981</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">A hydrogen-powered car requires 2-3 times more electricity to drive the same distance as a battery-powered car due to efficiency losses during hydrogen production (45% lost in electrolysis) and conversion (55% lost when converting hydrogen to electricity in the vehicle)</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://insideevs.com/news/406676/battery-electric-hydrogen-fuel-cell-efficiency-comparison/" target="_blank" rel="noopener noreferrer">Battery Electric Vs Hydrogen Fuel Cell: Efficiency ComparisonBattery Electric Vs Hydrogen Fuel Cell: Efficiency Comparison</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055982</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Volkswagen concluded that &#39;everything speaks in favor of the battery and practically nothing speaks in favor of hydrogen&#39; for passenger cars, with hydrogen fuel cell technology being &#39;very inefficient – both in terms of efficiency and operating costs&#39;</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://insideevs.com/news/406676/battery-electric-hydrogen-fuel-cell-efficiency-comparison/" target="_blank" rel="noopener noreferrer">Battery Electric Vs Hydrogen Fuel Cell: Efficiency ComparisonBattery Electric Vs Hydrogen Fuel Cell: Efficiency Comparison</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055983</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Battery-powered electric cars lose only 8% of energy during transport before storage in batteries and 18% during conversion to drive the motor, achieving 70-80% overall efficiency</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://insideevs.com/news/406676/battery-electric-hydrogen-fuel-cell-efficiency-comparison/" target="_blank" rel="noopener noreferrer">Battery Electric Vs Hydrogen Fuel Cell: Efficiency ComparisonBattery Electric Vs Hydrogen Fuel Cell: Efficiency Comparison</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055986</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Hydrogen production through electrolysis loses 30% of energy from renewable sources (or 18% with PEM electrolysis), and hydrogen compression to 680 atm requires 13% of the hydrogen&#39;s total energy content, with additional 10-40% losses during transport and storage</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://c2e2.unepccc.org/wp-content/uploads/sites/3/2019/09/analysis-of-hydrogen-fuel-cell-and-battery.pdf" target="_blank" rel="noopener noreferrer">analysis of hydrogen fuel cell and battery</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055987</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Fuel cell technology has potential efficiency of 60% (with most remaining energy lost as heat), though practical PEM fuel cell efficiency is approximately 47%</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://c2e2.unepccc.org/wp-content/uploads/sites/3/2019/09/analysis-of-hydrogen-fuel-cell-and-battery.pdf" target="_blank" rel="noopener noreferrer">analysis of hydrogen fuel cell and battery</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055988</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Battery electric vehicles have transmission and distribution losses of 6% (EU average) and charging infrastructure losses of 1%, resulting in overall efficiency advantages over hydrogen</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://c2e2.unepccc.org/wp-content/uploads/sites/3/2019/09/analysis-of-hydrogen-fuel-cell-and-battery.pdf" target="_blank" rel="noopener noreferrer">analysis of hydrogen fuel cell and battery</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542067017</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Electric vehicles use approximately 87%-91% of the energy from the battery and regenerative braking to propel the vehicle, while gasoline vehicles only convert about 16-25% of the energy from gasoline into movement.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.epa.gov/greenvehicles/electric-vehicle-myths" target="_blank" rel="noopener noreferrer">Electric Vehicle Myths | US EPALockPrimary navigationOpen Sidenav MenuClose Sidenav Menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menu</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542067018</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Electric vehicles typically have a smaller carbon footprint than gasoline cars and are far more efficient when it comes to energy use, even when accounting for the electricity used for charging.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.epa.gov/greenvehicles/electric-vehicle-myths" target="_blank" rel="noopener noreferrer">Electric Vehicle Myths | US EPALockPrimary navigationOpen Sidenav MenuClose Sidenav Menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menu</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542084065</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">For outside temperatures of −5 °C or higher, the system composed of the battery electric vehicle fueled with electricity from the off-board fuel cell was shown to be more energy-efficient than the onboard fuel cell system.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/pii/S0360319924045555" target="_blank" rel="noopener noreferrer">Energy efficiency of hydrogen for vehicle propulsion: On- or off-board H2 to electricity conversion? - ScienceDirectScienceDirect</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(21 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen cars can be refueled in much less time compared to electric vehicles, which would be beneficial for long haul vehicles and general usability.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/unpopularopinion/comments/109d7og/hydrogen_cars_make_more_sense_than_electric/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/unpopularopinion/comments/109d7og/hydrogen_cars_make_more_sense_than_electric/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen-powered cars are at a disadvantage in efficiency due to the complex processes of converting hydrogen gas into electricity to operate the vehicle. In FCEVs, energy is converted from chemical energy to electrical energy, leading to greater inefficiency with hydrogen vehicles compared to BEVs.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bacancysystems.com/blog/hydrogen-vs-electric-cars" target="_blank" rel="noopener noreferrer">https://bacancysystems.com/blog/hydrogen-vs-electric-cars</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Electric cars are quite energy efficient compared to hydrogen-powered cars, which have greater inefficiency due to complex energy conversion processes.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bacancysystems.com/blog/hydrogen-vs-electric-cars" target="_blank" rel="noopener noreferrer">https://bacancysystems.com/blog/hydrogen-vs-electric-cars</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen cars offer a distant range of 400 to 600 miles depending on tank size, while electric vehicles have a driving range of 150 to 375 miles.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bacancysystems.com/blog/hydrogen-vs-electric-cars" target="_blank" rel="noopener noreferrer">https://bacancysystems.com/blog/hydrogen-vs-electric-cars</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen cars require only a few minutes to refuel, while electric cars require significantly longer charging times.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bacancysystems.com/blog/hydrogen-vs-electric-cars" target="_blank" rel="noopener noreferrer">https://bacancysystems.com/blog/hydrogen-vs-electric-cars</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Building a battery for electric vehicles is technically better for the environment compared to hydrogen car production, though hydrogen cars are more expensive and have fewer charging stations.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/AskEngineers/comments/1h53nsf/could_hydrogen_cars_be_better_than_evs_someday/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/AskEngineers/comments/1h53nsf/could_hydrogen_cars_be_better_than_evs_someday/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fuel cell electric vehicles are more efficient than conventional internal combustion engine vehicles</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://afdc.energy.gov/vehicles/fuel-cell" target="_blank" rel="noopener noreferrer">https://afdc.energy.gov/vehicles/fuel-cell</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fuel cells are approximately 2.5 times more efficient than gasoline engines</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://driveclean.ca.gov/hydrogen-fueling" target="_blank" rel="noopener noreferrer">https://driveclean.ca.gov/hydrogen-fueling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen cars can be refueled in much less time (3-5 minutes) compared to electric vehicles, which would be beneficial for long haul vehicles and general usability</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://driveclean.ca.gov/hydrogen-fueling" target="_blank" rel="noopener noreferrer">https://driveclean.ca.gov/hydrogen-fueling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen cars use a much smaller amount of lithium compared to conventional battery electric vehicles</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/unpopularopinion/comments/109d7og/hydrogen_cars_make_more_sense_than_electric/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/unpopularopinion/comments/109d7og/hydrogen_cars_make_more_sense_than_electric/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fuel cell electric vehicles have a driving range of more than 300 miles on a full tank of hydrogen</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://afdc.energy.gov/vehicles/fuel-cell" target="_blank" rel="noopener noreferrer">https://afdc.energy.gov/vehicles/fuel-cell</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Overall greenhouse gas emissions from fuel cells are much lower (at least half) compared to gasoline powered engines regardless of hydrogen production method</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://driveclean.ca.gov/hydrogen-fueling" target="_blank" rel="noopener noreferrer">https://driveclean.ca.gov/hydrogen-fueling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989184</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A hydrogen fuel cell electric vehicle (HFCEV) has higher energy conversion efficiency compared to gasoline conventional internal combustion engine vehicles (ICEVs) during operation</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360319919340650" target="_blank" rel="noopener noreferrer">Comparison of well-to-wheels energy use and emissions of a hydrogen fuel cell electric vehicle relative to a conventional gasoline-powered internal combustion engine vehicle - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989186</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Well-to-wheels results for hydrogen fuel cell vehicles are sensitive to the source of electricity used for hydrogen compression or liquefaction</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360319919340650" target="_blank" rel="noopener noreferrer">Comparison of well-to-wheels energy use and emissions of a hydrogen fuel cell electric vehicle relative to a conventional gasoline-powered internal combustion engine vehicle - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989187</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">All-electric vehicles and plug-in hybrid electric vehicles (PHEVs) running only on electricity have zero tailpipe emissions, but electricity production may generate emissions depending on the energy source used for electricity generation</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://afdc.energy.gov/vehicles/electric-emissions" target="_blank" rel="noopener noreferrer">Alternative Fuels Data Center: Emissions from Electric Vehicles</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989188</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In geographic areas that use relatively low-polluting energy sources for electricity generation, all-electric vehicles and PHEVs typically have a larger life cycle emissions advantage over similar conventional vehicles running on gasoline or diesel compared to areas with higher-emissions electricity</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://afdc.energy.gov/vehicles/electric-emissions" target="_blank" rel="noopener noreferrer">Alternative Fuels Data Center: Emissions from Electric Vehicles</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771541989190</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A reduction of about 19% in CO2 emissions is achieved when hydrogen gas is used in a fuel cell compared to diesel traction, and a 3% reduction compared to US electricity for railway vehicles</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S1361920911001106" target="_blank" rel="noopener noreferrer">Well-to-wheel analysis for electric, diesel and hydrogen traction for railways - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542009820</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">An ideal fuel cell operating at 25°C with hydrogen and oxygen inputs can produce a theoretical maximum of 237.129 kJ per gram mol of water, while an ideal electrolysis unit requires a theoretical minimum input of 237.129 kJ per gram mol of water consumed</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Energy_conversion_efficiency" target="_blank" rel="noopener noreferrer">Energy conversion efficiency - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542055985</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hydrogen fuel cell vehicles have advantages in energy density (40,000 Wh/kg for hydrogen vs 260 Wh/kg for lithium-ion batteries) and refueling time, but face efficiency challenges in production and conversion</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://c2e2.unepccc.org/wp-content/uploads/sites/3/2019/09/analysis-of-hydrogen-fuel-cell-and-battery.pdf" target="_blank" rel="noopener noreferrer">analysis of hydrogen fuel cell and battery</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542084066</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">High temperature fuel cells (such as carbonate fuel cells) can reach more than 60 percent efficiency and outperform similar-sized conventional energy sources like combustion engines and gas turbines.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fuelcellenergy.com/blog/fuel-cell-efficiency" target="_blank" rel="noopener noreferrer">Fuel Cell Efficiency Explained | FuelCell Energy</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542084068</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A systematic methodology for analyzing efficiency losses in fuel cell systems identifies distinct loss categories including entropy generation, electrochemical activation overpotentials, membrane-associated losses, ohmic resistance, and gas transport limitations, with substantial opportunities for enhancing overall performance of PEM fuel cell systems.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_08</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/pii/S0378775325016404" target="_blank" rel="noopener noreferrer">From theory to operation: A systematic loss analysis framework for fuel cell systems - ScienceDirectScienceDirect</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">20 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Comparison of well-to-wheels energy use and emissions of a hydrogen fuel cell electric vehicle relative to a conventional gasoline-powered internal combustion engine vehicle - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360319919340650" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/abs/pii/S0360319919340650</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs electric vehicles</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Alternative Fuels Data Center: Emissions from Electric Vehicles</span></div>
+        <div class="source-url"><a href="https://afdc.energy.gov/vehicles/electric-emissions" target="_blank" rel="noopener noreferrer">https://afdc.energy.gov/vehicles/electric-emissions</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs electric vehicles</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Well-to-wheel analysis for electric, diesel and hydrogen traction for railways - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/abs/pii/S1361920911001106" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/abs/pii/S1361920911001106</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs electric vehicles</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/electricvehicles/comments/hcmjla/hfc_vs_bev_efficiency_comparison_by_volkswagen/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/electricvehicles/comments/hcmjla/hfc_vs_bev_efficiency_comparison_by_volkswagen/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs electric vehicles</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Hydrogen Fuel Cell Efficiency: How Does it Compare to Lithium-ion?</span></div>
+        <div class="source-url"><a href="https://www.fluxpower.com/blog/hydrogen-fuel-cell-efficiency-how-does-it-compare-to-lithium-ion" target="_blank" rel="noopener noreferrer">https://www.fluxpower.com/blog/hydrogen-fuel-cell-efficiency-how-does-it-compare-to-lithium-ion</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen car energy conversion losses efficiency percentage</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Development and comparative analysis between battery electric vehicles (BEV) and fuel cell electric vehicles (FCEV) - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0306261925004568" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/abs/pii/S0306261925004568</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen car energy conversion losses efficiency percentage</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Energy conversion efficiency - Wikipedia</span></div>
+        <div class="source-url"><a href="https://en.wikipedia.org/wiki/Energy_conversion_efficiency" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Energy_conversion_efficiency</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen car energy conversion losses efficiency percentage</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/askscience/comments/qd0psu/is_the_conversion_efficiency_from_fuel_to/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/askscience/comments/qd0psu/is_the_conversion_efficiency_from_fuel_to/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen car energy conversion losses efficiency percentage</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/Renewable/comments/z2f849/electric_vehicle_battery_vs_hydrogen_fuel_cell/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/Renewable/comments/z2f849/electric_vehicle_battery_vs_hydrogen_fuel_cell/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: electric vehicle efficiency advantages over hydrogen fuel cells</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Hydrogen fuel cells and combustion engines ǀ Volvo Group</span></div>
+        <div class="source-url"><a href="https://www.volvogroup.com/en/sustainable-transportation/sustainable-solutions/hydrogen-fuel-cells.html" target="_blank" rel="noopener noreferrer">https://www.volvogroup.com/en/sustainable-transportation/sustainable-solutions/hydrogen-fuel-cells.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: electric vehicle efficiency advantages over hydrogen fuel cells</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/EnergyStorage/comments/12gwfwi/hydrogen_fuel_cells_inefficient/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/EnergyStorage/comments/12gwfwi/hydrogen_fuel_cells_inefficient/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: electric vehicle efficiency advantages over hydrogen fuel cells</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Fuel Cells | Department of EnergyLock</span></div>
+        <div class="source-url"><a href="https://www.energy.gov/eere/fuelcells/fuel-cells" target="_blank" rel="noopener noreferrer">https://www.energy.gov/eere/fuelcells/fuel-cells</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: electric vehicle efficiency advantages over hydrogen fuel cells</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Hydrogen Fuel Cell Benefits &amp; Advantages - Learn at PlugAccessibility ToolsIncrease TextDecrease TextGrayscaleHigh ContrastNegative ContrastLight BackgroundLinks UnderlineReadable FontReset</span></div>
+        <div class="source-url"><a href="https://www.plugpower.com/fuel-cell-power/fuel-cell-benefits/" target="_blank" rel="noopener noreferrer">https://www.plugpower.com/fuel-cell-power/fuel-cell-benefits/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: electric vehicle efficiency advantages over hydrogen fuel cells</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Battery Electric Vs Hydrogen Fuel Cell: Efficiency ComparisonBattery Electric Vs Hydrogen Fuel Cell: Efficiency Comparison</span></div>
+        <div class="source-url"><a href="https://insideevs.com/news/406676/battery-electric-hydrogen-fuel-cell-efficiency-comparison/" target="_blank" rel="noopener noreferrer">https://insideevs.com/news/406676/battery-electric-hydrogen-fuel-cell-efficiency-comparison/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs battery electric</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Energy analysis of electric vehicles using batteries or fuel cells through well-to-wheel driving cycle simulations - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0378775308018934" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/abs/pii/S0378775308018934</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs battery electric</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_016</span><span class="source-title">analysis of hydrogen fuel cell and battery</span></div>
+        <div class="source-url"><a href="https://c2e2.unepccc.org/wp-content/uploads/sites/3/2019/09/analysis-of-hydrogen-fuel-cell-and-battery.pdf" target="_blank" rel="noopener noreferrer">https://c2e2.unepccc.org/wp-content/uploads/sites/3/2019/09/analysis-of-hydrogen-fuel-cell-and-battery.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell well-to-wheel efficiency vs battery electric</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_017</span><span class="source-title">Electric Vehicle Myths | US EPALockPrimary navigationOpen Sidenav MenuClose Sidenav Menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menuexpand or collapse the child menu</span></div>
+        <div class="source-url"><a href="https://www.epa.gov/greenvehicles/electric-vehicle-myths" target="_blank" rel="noopener noreferrer">https://www.epa.gov/greenvehicles/electric-vehicle-myths</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: electric vehicle energy efficiency percentage battery vs hydrogen</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_018</span><span class="source-title">Energy efficiency of hydrogen for vehicle propulsion: On- or off-board H2 to electricity conversion? - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/pii/S0360319924045555" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/pii/S0360319924045555</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell energy conversion losses inefficiency</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_019</span><span class="source-title">Fuel Cell Efficiency Explained | FuelCell Energy</span></div>
+        <div class="source-url"><a href="https://www.fuelcellenergy.com/blog/fuel-cell-efficiency" target="_blank" rel="noopener noreferrer">https://www.fuelcellenergy.com/blog/fuel-cell-efficiency</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell energy conversion losses inefficiency</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_020</span><span class="source-title">From theory to operation: A systematic loss analysis framework for fuel cell systems - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/pii/S0378775325016404" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/pii/S0378775325016404</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: hydrogen fuel cell energy conversion losses inefficiency</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">8 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>hydrogen vs electricity car efficiency</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Hydrogen is more efficient than electricity for powering cars.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>hydrogen fuel cell well-to-wheel efficiency vs electric vehicles</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>hydrogen car energy conversion losses efficiency percentage</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>electric vehicle efficiency advantages over hydrogen fuel cells</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>hydrogen fuel cell well-to-wheel efficiency vs battery electric</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>electric vehicle energy efficiency percentage battery vs hydrogen</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>hydrogen fuel cell energy conversion losses inefficiency</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">48</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">20</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">8</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">21</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.0.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.0.0-cb · Generated 2026-02-19 23:38 UTC
+  <br>Job 43ad909462cd481c90a062f144662871 · claude-sonnet-4-5-20250929 · anthropic
+</div>
+</div>
+</body>
+</html>
