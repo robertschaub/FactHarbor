@@ -8,7 +8,7 @@
 | **Job orchestration** | Implemented | API stores job + events in SQLite; Web runner updates via internal endpoints; SSE endpoint for live events
 | **Quality Gates (POC)** | Partially implemented | Analyzer applies Gate 1 (claim validation) and Gate 4 (verdict confidence); gate stats included in result JSON; display of per-item gate reasons still missing in UI/report
 | **Source reliability** | Implemented | LLM-powered Source Reliability Service with sequential refinement (Claude + OpenAI), SQLite cache, multi-language support; sources store trackRecordScore/category; configured via UCM
-| **Evidence model** | Partial | Claims + extracted evidence + verdicts exist in result JSON; KeyFactors implemented; AnalysisContext embedded in result JSON (not separate table)
+| **Evidence model** | Partial | Claims + extracted evidence + verdicts exist in result JSON; ClaimAssessmentBoundaries embedded in result JSON (not separate table)
 | **KeyFactors** | Implemented | Discovered in Understanding, emergent and optional, claim-to-factor mapping via ##keyFactorId##, aggregated from claim verdicts, displayed in reports (aggregation fixed 2026-01-06)
 | **AuthN/AuthZ & rate limiting** | Missing | Public UI and endpoints are open; admin test endpoints are unauthenticated; CORS is permissive in API
 | **Persistence (normalized)** | Missing | API persists job metadata + JSON/markdown results; no normalized tables for claims/evidence/sources/verdicts
@@ -183,7 +183,7 @@ See Calculations.md (see Calculations.md in local docs) for detailed verdict cal
 **Data Model:**
 * Normalized database tables for claims/evidence/sources/verdicts
 * Provenance chain tracking
-* Normalized AnalysisContext persistence
+* Normalized ClaimAssessmentBoundary persistence
 
 ----
 

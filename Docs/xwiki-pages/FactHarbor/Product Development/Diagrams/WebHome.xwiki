@@ -72,7 +72,7 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 * [[Evidence Defence in Depth>>FactHarbor.Product Development.Diagrams.Evidence Defence in Depth.WebHome]] — 6-layer defence model
 * [[Evidence Quality Filtering Pipeline>>FactHarbor.Product Development.Diagrams.Evidence Quality Filtering Pipeline.WebHome]] — 7-layer filtering pipeline
 * [[Context Detection Phases>>FactHarbor.Product Development.Diagrams.Context Detection Phases.WebHome]] — Multi-phase context detection
-* [[Context Detection Decision Tree>>FactHarbor.Product Development.Diagrams.Context Detection Decision Tree.WebHome]] — AnalysisContext vs EvidenceScope decision tree
+* [[Context Detection Decision Tree>>FactHarbor.Product Development.Diagrams.Context Detection Decision Tree.WebHome]] — ~~AnalysisContext~~ vs EvidenceScope decision tree (historical — Orchestrated era)
 * [[Doubted vs Contested Flow>>FactHarbor.Product Development.Diagrams.Doubted vs Contested Flow.WebHome]] — Counter-evidence weight reduction flow
 
 == Source Reliability ==

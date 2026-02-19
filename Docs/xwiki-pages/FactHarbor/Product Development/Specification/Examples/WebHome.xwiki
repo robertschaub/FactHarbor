@@ -413,8 +413,7 @@ Based on the current implementation (v2.10.2), the following summarizes what AKE
 == Fully Automated (current POC) ==
 
 * Claim extraction and decomposition (text → sub-claims with roles and centrality)
-* AnalysisContext detection (heuristic + LLM hybrid)
-* KeyFactor discovery (decomposition questions per claim)
+* ClaimAssessmentBoundary clustering (evidence-emergent, Stage 3)
 * Evidence extraction with source attribution and probative value scoring
 * Source reliability scoring (LLM + Cache architecture)
 * 7-layer evidence quality defense (provenance, tangential pruning, contestation validation)

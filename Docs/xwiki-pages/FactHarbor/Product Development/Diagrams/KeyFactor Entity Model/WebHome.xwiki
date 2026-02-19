@@ -1,9 +1,13 @@
 = KeyFactor Entity Model =
 
-{{info}}
-KeyFactors are decomposition questions discovered during the Understand phase and assessed during the Verdict phase. Definitions (KEY_FACTOR_DEF) live in ClaimUnderstanding; verdicts (KEY_FACTOR_VERDICT) live inside each AnalysisContextAnswer. Contestation fields are embedded in KEY_FACTOR_VERDICT — there is no separate Contestation entity.
+{{warning}}
+**HISTORICAL — Orchestrated Pipeline (removed v2.11.0)**
 
-Updated 2026-02-11 per ##types.ts## interfaces: ##ClaimUnderstanding.keyFactors##, ##KeyFactor##, ##FactorAnalysis##, ##AnalysisContextAnswer##.
+##CLAIM_UNDERSTANDING##, ##SUB_CLAIM##, ##KEY_FACTOR_DEF##, ##KEY_FACTOR_VERDICT##, and ##CONTEXT_ANSWER## are Orchestrated pipeline entities that no longer exist in the codebase. The ClaimAssessmentBoundary pipeline replaced them with ##AtomicClaim##, ##EvidenceScope##, and ##ClaimAssessmentBoundary##. This diagram is retained for historical reference only.
+{{/warning}}
+
+{{info}}
+**Historical reference** — KeyFactors were decomposition questions discovered during the Understand phase (Orchestrated pipeline, removed v2.11.0). Updated 2026-02-11 per ##types.ts## interfaces: ##ClaimUnderstanding.keyFactors##, ##KeyFactor##, ##FactorAnalysis##, ##AnalysisContextAnswer##.
 {{/info}}
 
 {{mermaid}}

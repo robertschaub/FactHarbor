@@ -209,7 +209,7 @@ Truth: 82%
 
 **Unified Naming**:
 * Use "Verdict" everywhere (not "Overall Verdict" or "Article Verdict")
-* Use "Contexts" (AnalysisContexts) instead of "Context-by-Context Analysis" or "Scope-by-Scope Analysis"
+* Use "Boundaries" (ClaimAssessmentBoundaries) instead of "Boundary-by-Boundary Analysis" or "Scope-by-Scope Analysis"
 * Use "Confidence" (not "Conf" or "Certainty")
 
 === Multi-Context Display ===

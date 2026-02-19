@@ -59,7 +59,7 @@ Tasks are routed to appropriate model tiers for cost optimization:
 |= Task Type |= Tier |= Purpose
 | ##understand## | Budget | Claim extraction and classification
 | ##extract_evidence## | Budget | Evidence extraction from sources
-| ##context_refinement## | Standard | AnalysisContext refinement
+| ~~##context_refinement##~~ | ~~Standard~~ | ~~AnalysisContext refinement~~ (Orchestrated pipeline — removed v2.11.0)
 | ##verdict## | Premium | Verdict reasoning (critical quality)
 | ##supplemental## | Standard | Supplemental generation
 | ##summary## | Standard | Summary generation

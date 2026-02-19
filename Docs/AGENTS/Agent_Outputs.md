@@ -7,6 +7,39 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3E — AnalysisContext Tier 4 Sweep
+**Task:** Fix ~20 Tier 4 xWiki pages where Orchestrated pipeline terminology (AnalysisContext, KeyFactor, SubClaim, ContextAnswer) appeared implied as current.
+**Files touched:** 17 xwiki-pages modified. Key files: `WebHome.xwiki` (root), `Specification/WebHome.xwiki`, `Specification/Automation/WebHome.xwiki`, `Requirements/WebHome.xwiki`, `Specification/Examples/WebHome.xwiki`, `Specification/Workflows/WebHome.xwiki`, `Specification/Implementation Status and Quality/WebHome.xwiki`, `DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`, `DevOps/Subsystems and Components/LLM Configuration/WebHome.xwiki`, `Specification/AI Knowledge Extraction Layer (AKEL)/WebHome.xwiki` [in prior session], `Diagrams/WebHome.xwiki`, `Diagrams/Core Data Model ERD/WebHome.xwiki`, `Diagrams/KeyFactor Entity Model/WebHome.xwiki`, `Diagrams/Claim and Scenario Lifecycle (Overview)/WebHome.xwiki`, `Diagrams/Claim and Scenario Workflow/WebHome.xwiki`, `Diagrams/Analysis Entity Model ERD/WebHome.xwiki`, `Diagrams/Entity Views/WebHome.xwiki`, `Diagrams/LLM Abstraction Architecture/WebHome.xwiki`.
+**Key decisions:** Two fix strategies used: (1) Surgical replacement — swap Orchestrated terms for CB equivalents in pages presenting current behavior; (2) Warning block — prepend `{{warning}}` STALE block to diagram/ERD pages that are entirely Orchestrated-era and too large to rewrite in scope. Pages correctly left as-is: POC pages, pages already marked historical, CB Pipeline Detail (hit was in "removed" column), Specification/Data Model (intentional target spec), Context Detection (already uses strikethrough). Data Model conflict verified: `bc29c4f` is NOT in git history for `Architecture/Data Model/WebHome.xwiki`; erDiagram shows pure Orchestrated entities; the Feb 18 Agent_Outputs "Major rewrite" claim was incorrect — this file is a genuine gap needing dedicated rewrite.
+**Open items:** `Specification/Architecture/Data Model/WebHome.xwiki` — 6 hits, all Orchestrated entities presented as current architecture — needs dedicated rewrite (Captain decision on when/how). `Diagrams/Entity Views/WebHome.xwiki` and `Diagrams/Analysis Entity Model ERD/WebHome.xwiki` — `{{warning}}` blocks added but full ERD rewrites deferred.
+**Warnings:** Entity Views is 825 lines with Orchestrated entities throughout all 5 views — the warning block marks it stale but the content is not yet updated to CB entities. Any reader using it for implementation guidance will see removed entities.
+**For next agent:** Phase 3E is committed. Phase 3F next: XAR rebuild (`python Docs/xwiki-pages/scripts/fulltree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar`). After that, the Captain needs to decide on `Architecture/Data Model` rewrite scope — it's the last significant Orchestrated holdout in the Specification section.
+**Learnings:** Appended to Role_Learnings.md? No (pattern learnings already captured in prior Phase 3 sessions).
+
+---
+
+### 2026-02-19 | Senior Developer | Codex (GPT-5) | Pass2 Soft-Refusal Recovery Hardening
+**Task:** Investigate and fix recurring ClaimBoundary Stage 1 Pass 2 failures for German input (`Die SRG hat einen "Rechtsdrall"`), without masking report-quality risks.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/prompts/claimboundary.prompt.md`.
+**Key decisions:** Restored and completed model fallback flow (verdict-tier → understand-tier on total soft refusal), enforced the same Pass2 quality gate on fallback output (no silent acceptance), and surfaced soft-refusal/fallback recovery as `analysisWarnings` (`structured_output_failure`) via pipeline state warnings.
+**Open items:** Fallback path did not trigger in the latest live run (retry guidance recovered before fallback). Need additional production observations to confirm fallback activation frequency and quality impact.
+**Warnings:** Live run succeeded but still produced a soft-refusal warning and Gate 1 rescue logs; this indicates partial robustness improvement, not full elimination of model caution behavior. Direct local function runs emit metrics persistence 404 because no API job row exists.
+**For next agent:** If soft refusals remain frequent in production, add telemetry rollup for `stage1_pass2` warning details (`model`, `attempt`, `degradedPath`) and evaluate whether retry count should be UCM-configurable.
+**Learnings:** Appended to Role_Learnings.md? No.
+
+---
+
+### 2026-02-19 | LLM Expert + Senior Developer | Claude Code (Sonnet 4.6) + Claude Opus 4.6 | Pass 2 Schema Validation & Soft Refusal Fix
+**Task:** Fix Stage 1 Pass 2 failures — schema validation (`NoObjectGeneratedError`) and content-policy soft refusal for politically sensitive inputs.
+**Files touched:** `claimboundary-pipeline.ts` (commits `f397244`, `b8a1477`), `types.ts` (earlier session).
+**Key decisions:** `.catch()` defaults on all Pass2 schema fields (JSON Schema unchanged), quality gate with empty-field detection, total refusal detection with fact-checking retry framing, model fallback approach (stashed, not committed).
+**Open items:** Sonnet still soft-refuses for "Die SRG hat einen Rechtsdrall" even with fact-checking framing in user message. Model fallback to Haiku (stashed, `git stash pop`) and/or system prompt change needed.
+**Warnings:** Stashed code not build-verified. The assistant+user exchange pattern was tried and reverted (untested with tool calling). User message fact-checking framing carries insufficient weight to override content policy.
+**For next agent:** See full handoff at `Docs/AGENTS/Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Pass2_Soft_Refusal.md`. Entry point: `runPass2()` in `claimboundary-pipeline.ts` ~line 918. Quick test: submit "Die SRG hat einen 'Rechtsdrall'" via ClaimBoundary pipeline.
+**Learnings:** Appended to Role_Learnings.md? Yes — see below.
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3D — CB terminology sweep + AKEL Pipeline §1 fix
 **Task:** Fix AKEL Pipeline §1 step-by-step (Orchestrated 5-step → CB 5-stage), fix terminology/schema pages with AnalysisContext as primary/current term, assess Data Model pages.
 **Files touched:** AKEL Pipeline, Terminology Catalog, LLM Schema Mapping, Provider-Specific Formatting, FAQ (xwiki) — commit `3fbac41`. Also staged the Orchestrated Pipeline Detail deletion (left uncommitted from Phase 3B).

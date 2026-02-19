@@ -145,7 +145,7 @@ This admin interface will:
 FactHarbor uses **provider-specific prompt variants** to optimize performance across different LLMs. Each provider has unique strengths and preferred prompt structures:
 
 |= Provider |= Format |= Strengths |= Optimizations
-| **Anthropic Claude** | XML-structured | Nuanced reasoning, AnalysisContext detection | XML tags, thinking blocks, prefill technique
+| **Anthropic Claude** | XML-structured | Nuanced reasoning, boundary clustering | XML tags, thinking blocks, prefill technique
 | **OpenAI GPT-4** | Markdown | General purpose, schema adherence | Clear headings, numbered lists, code blocks
 | **Google Gemini** | Example-heavy | Long context, visual formatting | Emojis, bullets, repetition, multiple examples
 | **Mistral** | Formal academic | Cost-effective, bilingual | Explicit reasoning chains, French examples

@@ -69,9 +69,9 @@ FactHarbor structures reasoning into transparent, inspectable steps:
 Data in FactHarbor flows through a structured, auditable process:
 
 * **Submission:** Registered users submit text or URLs; the system normalises the input.
-* **Context Detection:** AI identifies AnalysisContexts and KeyFactors; the pipeline researches each independently.
+* **Evidence Research:** AI extracts AtomicClaims and iteratively researches evidence per claim.
 * **Evidence Handling:** Evidence is retrieved, assessed for quality, and linked.
-* **Verdict Creation:** Drafting reasoning and likelihoods for each AnalysisContext.
+* **Verdict Creation:** Generating per-boundary, per-claim verdicts via structured debate.
 * **Public Presentation:** The evidence landscape — multi-perspective results with full provenance — is published for users to explore.
 
 == Explore FactHarbor ==

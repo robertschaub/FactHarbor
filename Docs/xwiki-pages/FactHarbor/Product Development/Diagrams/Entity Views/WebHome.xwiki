@@ -1,9 +1,15 @@
+{{warning}}
+**STALE — Orchestrated Pipeline Era (v2.10.x)**
+
+This multi-view reference was created for the Orchestrated pipeline. The Overview, Analysis Result (Understanding Phase), Verdict Phase, and UI-Visible views show ##ANALYSIS_CONTEXT##, ##SUB_CLAIM##, ##KEY_FACTOR##, ##CONTEXT_ANSWER##, and ##CLAIM_UNDERSTANDING## entities — all removed in v2.11.0. The Runtime Process section references ##ContextSimilarityResult## and ##orchestrated.ts## (removed). The Target Database section lists ##analysis_contexts## as a planned table — this is superseded by ##ClaimAssessmentBoundary## in the CB pipeline. Entities that remain current: ##EVIDENCE_ITEM##, ##EVIDENCE_SCOPE##, ##FETCHED_SOURCE##, ##QUALITY_GATES##, ##TWO_PANEL_SUMMARY##, and infrastructure entities (##JOB##, ##CONFIG##, ##SOURCE_RELIABILITY##).
+{{/warning}}
+
 {{info}}
 **Multi-View Entity Reference** — Five complementary ERD views of the FactHarbor entity landscape. Each view highlights a different aspect: overview, analysis result, target database, runtime processing, and UI visibility.
 
 **Source of truth**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/api/Data/Entities.cs##, ##config-schemas.ts##
 
-Created 2026-02-10. Updated 2026-02-11.
+Created 2026-02-10. Updated 2026-02-11. **Note: Orchestrated-era entities shown throughout — requires CB pipeline rewrite.**
 {{/info}}
 
 = Entity Views =

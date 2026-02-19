@@ -75,7 +75,7 @@ FactHarbor delegates complex reasoning and analysis tasks to Large Language Mode
 * For each claim independently:
  * Find supporting and contradicting evidence
  * Identify authoritative sources
- * Detect AnalysisContexts
+ * Cluster EvidenceScopes into ClaimAssessmentBoundaries
 * Validation: Check evidence quality and source validity
 * Error containment: Issues in one claim don't affect others
 
@@ -98,7 +98,7 @@ FactHarbor delegates complex reasoning and analysis tasks to Large Language Mode
 All complex cognitive tasks are delegated to LLMs:
 * **Claim Extraction**: Understanding context, identifying distinct claims
 * **Evidence Finding**: Analyzing sources, assessing relevance
-* **AnalysisContext Detection**: Identifying bounded analytical frames and KeyFactors
+* **Evidence Boundary Clustering**: Grouping compatible EvidenceScopes into ClaimAssessmentBoundaries
 * **Source Evaluation**: Assessing reliability and authority
 * **Verdict Generation**: Synthesizing evidence into conclusions
 * **Risk Assessment**: Evaluating potential impact

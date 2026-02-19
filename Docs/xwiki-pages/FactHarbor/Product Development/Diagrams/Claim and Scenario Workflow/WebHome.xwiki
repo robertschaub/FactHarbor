@@ -1,5 +1,11 @@
+{{warning}}
+**STALE — Orchestrated Pipeline Era (v2.10.x)**
+
+This workflow diagram was created for the Orchestrated pipeline. It shows ##DetectContexts## and ##KeyFactors## steps in Step 1 — these were removed in v2.11.0. The ClaimAssessmentBoundary pipeline replaced them: AtomicClaims are extracted in Stage 1; ClaimAssessmentBoundaries emerge from evidence clustering in Stage 3. The "KeyFactors (Replaces Scenarios)" section below is historical. See [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]] for current architecture.
+{{/warning}}
+
 {{info}}
-**Current Implementation (v2.10.2)** — The pipeline uses **AnalysisContexts** (bounded analytical frames) and **KeyFactors** (decomposition questions with contestation tracking), discovered during the understanding phase.
+**Historical Reference (v2.10.x)** — This diagram shows the Orchestrated-era pipeline. Step 1 used **AnalysisContexts** (bounded analytical frames) and **KeyFactors** (decomposition questions). Both were removed in v2.11.0.
 {{/info}}
 
 = Claim Analysis Workflow =

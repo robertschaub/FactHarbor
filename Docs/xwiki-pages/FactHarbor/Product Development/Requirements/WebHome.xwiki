@@ -38,7 +38,7 @@ FactHarbor uses four roles.
 
 **Can**:
 * Browse and search claims
-* View AnalysisContexts, evidence, verdicts, and confidence scores
+* View ClaimAssessmentBoundaries, evidence, verdicts, and confidence scores
 * Use filters, search, and visualization tools
 
 **Cannot**:

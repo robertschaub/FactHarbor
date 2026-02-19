@@ -1,4 +1,14 @@
-= Analysis Entity Model ERD =
+{{warning}}
+**STALE — Orchestrated Pipeline Era (v2.10.x)**
+
+This ERD was created for the Orchestrated pipeline. It shows ##CLAIM_UNDERSTANDING##, ##ANALYSIS_CONTEXT##, ##KEY_FACTOR_DEF##, ##SUB_CLAIM##, and ##CONTEXT_ANSWER## as current entities — these were all removed in v2.11.0. The ClaimAssessmentBoundary pipeline replaced them with ##AtomicClaim## and ##ClaimAssessmentBoundary##. This diagram requires a dedicated rewrite. See [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]] for current architecture.
+{{/warning}}
+
+{{info}}
+**Historical Reference (Orchestrated-era, v2.10.x — superseded by CB pipeline v2.11.0)**. ##EVIDENCE_ITEM## and ##EVIDENCE_SCOPE## entities remain current; all other entities in this diagram are removed.
+{{/info}}
+
+= Analysis Entity Model ERD (Historical) =
 
 {{mermaid}}
 erDiagram

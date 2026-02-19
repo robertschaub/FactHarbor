@@ -23,7 +23,7 @@ Modern society faces a deep informational crisis:
 FactHarbor introduces structure, transparency, and evidence-based reasoning. It provides:
 
 * Automated claim extraction and evidence research.
-* Multiple analytical perspectives (AnalysisContexts) for ambiguous claims.
+* Multiple analytical perspectives (ClaimAssessmentBoundaries) for ambiguous claims.
 * Transparent assumptions, definitions, and boundaries.
 * Full evidence provenance — every verdict traceable to sources.
 * Structured verdicts on a 7-point evidence scale (well-supported → refuted).
@@ -32,10 +32,9 @@ FactHarbor introduces structure, transparency, and evidence-based reasoning. It 
 == 3. Core Concepts ==
 
 * **Claim**: A statement needing structured verification.
-* **AnalysisContext**: A bounded analytical frame (legal, methodological, temporal) requiring a separate verdict.
-* **KeyFactor**: A decomposition question that breaks a claim into verifiable dimensions.
+* **ClaimAssessmentBoundary**: An evidence-emergent grouping of compatible EvidenceScopes — yielding a separate verdict per boundary.
 * **EvidenceItem**: A piece of evidence extracted from a source, with provenance and reliability scoring.
-* **Verdict**: An evidence-based rating on a 7-point scale, per claim and per AnalysisContext.
+* **Verdict**: An evidence-based rating on a 7-point scale, per claim and per ClaimAssessmentBoundary.
 * **AKEL**: The AI Knowledge Extraction Layer — FactHarbor's automated analysis engine.
 * **UCM**: Unified Configuration Management — versioned system configuration that controls analysis behaviour.
 * **Content States**: Published (passed quality gates, visible to all) or Hidden (moderated due to policy violations).
