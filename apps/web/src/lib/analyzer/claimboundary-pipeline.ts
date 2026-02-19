@@ -384,8 +384,8 @@ const Pass1OutputSchema = z.object({
 // the JSON schema sent to the LLM still shows correct enum values.
 // See: Docs/WIP/LLM_Expert_Review_Schema_Validation.md
 const Pass2AtomicClaimSchema = z.object({
-  id: z.string(),
-  statement: z.string(),
+  id: z.string().catch(""),
+  statement: z.string().catch(""),
   category: z.enum(["factual", "evaluative", "procedural"]).catch("factual"),
   centrality: z.enum(["high", "medium", "low"]).catch("low"),
   harmPotential: z.enum(["critical", "high", "medium", "low"]).catch("low"),
@@ -402,16 +402,17 @@ const Pass2AtomicClaimSchema = z.object({
   }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [] }),
 });
 
+// Pass2OutputSchema: All fields use .catch() defaults to prevent AI SDK NoObjectGeneratedError.
+// The JSON Schema sent to the LLM is unaffected (.catch() only acts during safeParse).
+// Quality-critical fields (.catch("") / .catch([])) are checked explicitly after parsing
+// in the quality gate below — empty defaults trigger Zod-aware retry with specific feedback.
 const Pass2OutputSchema = z.object({
-  // Required quality-critical fields — null here means LLM failed to understand input.
-  // Keep strict: validation failure on these should trigger retry.
-  impliedClaim: z.string(),
-  backgroundDetails: z.string(),
-  articleThesis: z.string(),
-  atomicClaims: z.array(Pass2AtomicClaimSchema),
-  // Metadata/structural fields — calling code already nullchecks these with ?? fallbacks
-  // (distinctEvents ?? [], riskTier ?? "B"). Using .nullish() instead of .optional() so
-  // Claude's null outputs pass Zod without hiding quality issues in the analysis proper.
+  // Quality-critical fields — .catch("") prevents SDK throw; quality gate validates content.
+  impliedClaim: z.string().catch(""),
+  backgroundDetails: z.string().catch(""),
+  articleThesis: z.string().catch(""),
+  atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
+  // Metadata/structural fields — calling code already nullchecks with ?? fallbacks.
   distinctEvents: z.array(z.object({
     name: z.string(),
     date: z.string(),
@@ -945,12 +946,20 @@ export async function runPass2(
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);
 
-  // Retry logic for schema validation failures
+  // Retry logic with quality validation and Zod-aware feedback.
+  // Schema uses .catch() defaults so AI SDK never throws NoObjectGeneratedError.
+  // Quality gate below detects when .catch() masked a real LLM failure.
   const maxRetries = 2;
   let lastError: Error | null = null;
+  let retryGuidance: string | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      // On retry, append specific error feedback so the LLM knows what to fix.
+      const userContent = attempt > 0 && retryGuidance
+        ? `${inputText}\n\n---\nRETRY GUIDANCE (attempt ${attempt + 1}): ${retryGuidance}`
+        : inputText;
+
       const result = await generateText({
         model: model.model,
         messages: [
@@ -959,7 +968,7 @@ export async function runPass2(
             content: rendered.content,
             providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
           },
-          { role: "user", content: inputText },
+          { role: "user", content: userContent },
         ],
         temperature: 0.15 + (attempt * 0.05), // Slightly increase temperature on retry
         output: Output.object({ schema: Pass2OutputSchema }),
@@ -977,6 +986,31 @@ export async function runPass2(
       const normalized = normalizePass2Output(parsed as Record<string, unknown>);
 
       const validated = Pass2OutputSchema.parse(normalized);
+
+      // Quality gate: .catch() defaults may have masked LLM failures for null fields.
+      // Check that quality-critical fields contain substantive content.
+      const qualityIssues: string[] = [];
+      if (!validated.impliedClaim || validated.impliedClaim.trim() === "") {
+        qualityIssues.push("impliedClaim is empty — must contain the central claim derived from user input");
+      }
+      if (!validated.articleThesis || validated.articleThesis.trim() === "") {
+        qualityIssues.push("articleThesis is empty — must summarize the thesis being examined");
+      }
+      if (!validated.backgroundDetails || validated.backgroundDetails.trim() === "") {
+        qualityIssues.push("backgroundDetails is empty — must provide context for understanding the claims");
+      }
+      // Filter claims with empty statements (LLM returned null → .catch("") kicked in)
+      validated.atomicClaims = validated.atomicClaims.filter(
+        c => c.statement && c.statement.trim() !== ""
+      );
+      if (validated.atomicClaims.length === 0) {
+        qualityIssues.push("atomicClaims has no claims with substantive statements — must extract at least one verifiable claim");
+      }
+
+      if (qualityIssues.length > 0) {
+        retryGuidance = `Your previous output had empty or null required fields:\n${qualityIssues.map(q => `- ${q}`).join("\n")}\nAll required fields must contain substantive content. Do not return null or empty values for these fields. Respond in the language appropriate for the input.`;
+        throw new Error(`Quality validation: ${qualityIssues.join("; ")}`);
+      }
 
       // Ensure all claims have sequential IDs if the LLM didn't provide them
       validated.atomicClaims.forEach((claim, idx) => {
@@ -997,9 +1031,16 @@ export async function runPass2(
       if (err instanceof z.ZodError) {
         const fieldErrors = err.issues.map(i => `  ${i.path.join(".")}: ${i.message} (code: ${i.code})`);
         console.error(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} — Zod validation failed:\n${fieldErrors.join("\n")}`);
-      } else {
-        console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${(err as Error).message}`);
+        retryGuidance = `Your output had schema validation errors:\n${fieldErrors.join("\n")}\nPlease ensure all required fields are present with correct types. Do not use null for string or array fields.`;
+      } else if (!retryGuidance) {
+        // Build generic guidance if not already set by quality gate
+        const msg = (err as Error).message || "";
+        if (msg.includes("No object generated") || msg.includes("did not match schema")) {
+          retryGuidance = "Your previous response did not produce valid structured output. Ensure ALL required fields are present with correct types (strings, arrays, enums). Do not use null values.";
+        }
       }
+
+      console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${(err as Error).message}`);
 
       // If this is the last attempt, throw with detailed error
       if (attempt === maxRetries) {
