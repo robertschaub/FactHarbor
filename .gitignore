@@ -122,3 +122,8 @@ gh-pages-build/
 artifacts/
 
 /apps/web/NUL
+
+/apps/web/build-err.txt
+/apps/web/build-out.txt
+/build-latest.txt
+/test-latest.txt

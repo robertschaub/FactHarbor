@@ -57,7 +57,7 @@ flowchart LR
 |= Page |= What You'll Learn
 | [[System Design>>FactHarbor.Product Development.Specification.Architecture.System Design.WebHome]] | Two-service architecture, request lifecycle, technology stack, inter-service communication
 | [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] | 5-step analysis flow, pipeline variants, shared analysis modules
-| [[Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] | Complete entity model (10 entities from ClaimUnderstanding to ArticleAnalysis), quality gate and configuration entities, 7-point verdict scale, job lifecycle
+| [[Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] | Complete entity model (CB pipeline: CBClaimUnderstanding, AtomicClaim, ClaimAssessmentBoundary, CBClaimVerdict, OverallAssessment, VerdictNarrative, etc.), quality gate and configuration entities, 7-point verdict scale, job lifecycle
 | [[External Dependencies>>FactHarbor.Product Development.Specification.Architecture.External Dependencies.WebHome]] | LLM providers and model tiering, search providers, provider health monitoring
 | [[Storage and Configuration>>FactHarbor.Product Development.Specification.Architecture.Storage and Configuration.WebHome]] | Three-database architecture, UCM configuration management, storage evolution roadmap
 | [[Quality and Trust>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust.WebHome]] | Quality gates, evidence filtering, source reliability, confidence calibration
@@ -67,7 +67,7 @@ flowchart LR
 
 | [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Role-based navigation to detailed implementation references
 
-Includes: Orchestrated Pipeline internals, Pipeline Variants (Twin-Path), Quality Gates Reference, Context Detection, Evidence Quality Filtering, Source Reliability System, Calculations and Verdicts, Prompt Architecture, Confidence Calibration.
+Includes: ClaimAssessmentBoundary Pipeline internals, Pipeline Variants, Quality Gates Reference, Boundary Clustering, Evidence Quality Filtering, Source Reliability System, Calculations and Verdicts, Prompt Architecture, Confidence Calibration.
 
 === Future Architecture ===
 

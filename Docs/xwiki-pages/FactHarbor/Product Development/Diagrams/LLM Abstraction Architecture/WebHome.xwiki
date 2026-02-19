@@ -10,7 +10,7 @@ Updated 2026-02-12 — Restored from Outdated after source-code verification.
 
 graph TB
     subgraph Pipelines["Pipeline Implementations"]
-        ORCH["Orchestrated<br/>orchestrated.ts"]
+        CB["ClaimAssessmentBoundary<br/>claimboundary-pipeline.ts"]
         DYN["Monolithic Dynamic<br/>monolithic-dynamic.ts"]
     end
 
@@ -34,7 +34,7 @@ graph TB
         UCM["UCM Overrides<br/>modelUnderstand, modelVerdict, ..."]
     end
 
-    ORCH --> ROUTE
+    CB --> ROUTE
     DYN --> ROUTE
     ROUTE --> SDK
     SDK --> ANT
@@ -59,7 +59,7 @@ Tasks are routed to appropriate model tiers for cost optimization:
 |= Task Type |= Tier |= Purpose
 | ##understand## | Budget | Claim extraction and classification
 | ##extract_evidence## | Budget | Evidence extraction from sources
-| ~~##context_refinement##~~ | ~~Standard~~ | ~~AnalysisContext refinement~~ (Orchestrated pipeline — removed v2.11.0)
+| ##cluster_boundaries## | Standard | EvidenceScope clustering into ClaimAssessmentBoundaries (Stage 3)
 | ##verdict## | Premium | Verdict reasoning (critical quality)
 | ##supplemental## | Standard | Supplemental generation
 | ##summary## | Standard | Summary generation

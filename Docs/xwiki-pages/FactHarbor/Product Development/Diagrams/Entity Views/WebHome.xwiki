@@ -1,15 +1,9 @@
-{{warning}}
-**STALE — Orchestrated Pipeline Era (v2.10.x)**
-
-This multi-view reference was created for the Orchestrated pipeline. The Overview, Analysis Result (Understanding Phase), Verdict Phase, and UI-Visible views show ##ANALYSIS_CONTEXT##, ##SUB_CLAIM##, ##KEY_FACTOR##, ##CONTEXT_ANSWER##, and ##CLAIM_UNDERSTANDING## entities — all removed in v2.11.0. The Runtime Process section references ##ContextSimilarityResult## and ##orchestrated.ts## (removed). The Target Database section lists ##analysis_contexts## as a planned table — this is superseded by ##ClaimAssessmentBoundary## in the CB pipeline. Entities that remain current: ##EVIDENCE_ITEM##, ##EVIDENCE_SCOPE##, ##FETCHED_SOURCE##, ##QUALITY_GATES##, ##TWO_PANEL_SUMMARY##, and infrastructure entities (##JOB##, ##CONFIG##, ##SOURCE_RELIABILITY##).
-{{/warning}}
-
 {{info}}
-**Multi-View Entity Reference** — Five complementary ERD views of the FactHarbor entity landscape. Each view highlights a different aspect: overview, analysis result, target database, runtime processing, and UI visibility.
+**Multi-View Entity Reference (CB Pipeline v2.11.0+)** — Five complementary ERD views of the FactHarbor entity landscape. Each view highlights a different aspect: overview, analysis result, target database, runtime processing, and UI visibility.
 
 **Source of truth**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/api/Data/Entities.cs##, ##config-schemas.ts##
 
-Created 2026-02-10. Updated 2026-02-11. **Note: Orchestrated-era entities shown throughout — requires CB pipeline rewrite.**
+Updated 2026-02-19 per CB pipeline interfaces in ##types.ts##.
 {{/info}}
 
 = Entity Views =
@@ -49,24 +43,26 @@ erDiagram
     JOB ||--o{ JOB_EVENT : logs
     JOB }o--|| CONFIG_SNAPSHOT : uses
 
-    ANALYSIS_RESULT ||--|| CLAIM_UNDERSTANDING : contains
-    ANALYSIS_RESULT ||--o{ CLAIM_VERDICT : contains
-    ANALYSIS_RESULT ||--|| ARTICLE_ANALYSIS : aggregates
+    ANALYSIS_RESULT ||--|| CB_CLAIM_UNDERSTANDING : contains
+    ANALYSIS_RESULT ||--o{ CB_CLAIM_VERDICT : contains
+    ANALYSIS_RESULT ||--|| OVERALL_ASSESSMENT : aggregates
     ANALYSIS_RESULT ||--o{ EVIDENCE_ITEM : contains
     ANALYSIS_RESULT ||--o{ FETCHED_SOURCE : contains
+    ANALYSIS_RESULT ||--o{ CLAIM_BOUNDARY : contains
     ANALYSIS_RESULT ||--|| QUALITY_GATES : validated_by
     ANALYSIS_RESULT ||--|| TWO_PANEL_SUMMARY : summarized_as
 
-    CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : detects
-    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : decomposes_into
-    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR : discovers
+    CB_CLAIM_UNDERSTANDING ||--o{ ATOMIC_CLAIM : extracts
 
-    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
-    CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : evaluated_in
+    ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : receives
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : cites
+    CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : contains
+    BOUNDARY_FINDING }o--|| CLAIM_BOUNDARY : per_boundary
     EVIDENCE_ITEM }o--|| FETCHED_SOURCE : extracted_from
+    EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : assigned_to
 
-    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : per_context
-    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : answers
+    OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : has
+    OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : has
 
     JOB {
         string jobId_PK
@@ -75,38 +71,40 @@ erDiagram
     }
 
     ANALYSIS_RESULT {
-        string schemaVersion
+        string schemaVersion "3.0.0-cb"
         json meta
     }
 
-    CLAIM_UNDERSTANDING {
+    CB_CLAIM_UNDERSTANDING {
         string detectedInputType
         string articleThesis
         string riskTier
     }
 
-    SUB_CLAIM {
+    ATOMIC_CLAIM {
         string id_PK
-        string text
+        string statement
         string centrality
+        string harmPotential
     }
 
-    ANALYSIS_CONTEXT {
+    CLAIM_BOUNDARY {
         string id_PK
         string name
-        string status
+        string shortName
     }
 
-    KEY_FACTOR {
-        string question
-        string supports
-    }
-
-    CLAIM_VERDICT {
+    CB_CLAIM_VERDICT {
         string claimId_PK
         int truthPercentage
         int confidence
         string verdict
+    }
+
+    BOUNDARY_FINDING {
+        string boundaryId_FK
+        int truthPercentage
+        string evidenceDirection
     }
 
     EVIDENCE_ITEM {
@@ -121,16 +119,19 @@ erDiagram
         float trackRecordScore
     }
 
-    ARTICLE_ANALYSIS {
-        int articleTruthPercentage
-        string articleVerdict
-        boolean isPseudoscience
+    OVERALL_ASSESSMENT {
+        int truthPercentage
+        string verdict
+        int confidence
     }
 
-    CONTEXT_ANSWER {
-        string contextId_FK
-        int truthPercentage
-        string shortAnswer
+    VERDICT_NARRATIVE {
+        string headline
+        string keyFinding
+    }
+
+    COVERAGE_MATRIX {
+        json claims_x_boundaries
     }
 
     QUALITY_GATES {
@@ -158,111 +159,97 @@ erDiagram
 
 {{/mermaid}}
 
-//Overview: JOB produces an ANALYSIS_RESULT containing decomposed claims (CLAIM_UNDERSTANDING), per-claim verdicts (CLAIM_VERDICT) supported by evidence (EVIDENCE_ITEM) from web sources (FETCHED_SOURCE), aggregated into an overall analysis (ARTICLE_ANALYSIS) with per-context answers (CONTEXT_ANSWER). Quality validation (QUALITY_GATES) and a user-facing summary (TWO_PANEL_SUMMARY) complete the result. Runtime entities (ResearchState, BudgetTracker, MetricsCollector, LLM text analysis types) exist during processing only and are not shown here — see [[Runtime Process View>>||anchor="HRuntimeProcessEntities"]].//
+//Overview: JOB produces an ANALYSIS_RESULT containing decomposed claims (CB_CLAIM_UNDERSTANDING with ATOMIC_CLAIMs), per-claim verdicts (CB_CLAIM_VERDICT with per-boundary BOUNDARY_FINDINGs) supported by evidence (EVIDENCE_ITEM) from web sources (FETCHED_SOURCE), grouped into evidence-emergent CLAIM_BOUNDARYs, and aggregated into an OVERALL_ASSESSMENT with VERDICT_NARRATIVE and COVERAGE_MATRIX. Quality validation (QUALITY_GATES) and a user-facing summary (TWO_PANEL_SUMMARY) complete the result.//
 
 ----
 
 == Analysis Result Entities ==
 
-Everything persisted in the ##resultJson## blob at the end of an analysis. This is the complete entity model inside the JSON. Grouped by pipeline phase.
+Everything persisted in the ##resultJson## blob at the end of an analysis. This is the complete entity model inside the JSON. Grouped by pipeline stage.
 
-=== Understanding Phase ===
+=== Stage 1: Extract Claims ===
 
 {{mermaid}}
 
 erDiagram
-    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : decomposes_into
-    CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : detects
-    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR_DEF : discovers
+    CB_CLAIM_UNDERSTANDING ||--o{ ATOMIC_CLAIM : extracts
+    CB_CLAIM_UNDERSTANDING ||--|| GATE_1_STATS : produces
 
-    SUB_CLAIM }o--o| ANALYSIS_CONTEXT : scoped_to
-    SUB_CLAIM }o--o| KEY_FACTOR_DEF : addresses
-
-    CLAIM_UNDERSTANDING {
+    CB_CLAIM_UNDERSTANDING {
         string detectedInputType
         string impliedClaim
         string articleThesis
         string backgroundDetails
         string riskTier
-        boolean requiresSeparateAnalysis
         json distinctEvents
-        json legalFrameworks
-        json researchQuestions
+        json preliminaryEvidence
     }
 
-    SUB_CLAIM {
-        string id_PK
-        string text
-        string type
-        string claimRole
-        string centrality
-        string harmPotential
+    ATOMIC_CLAIM {
+        string id_PK "AC_01 AC_02"
+        string statement
+        string category "factual evaluative procedural"
+        string centrality "high medium"
+        string harmPotential "critical high medium low"
         boolean isCentral
-        string contextId_FK
-        string keyFactorId_FK
-        json dependsOn
+        string claimDirection "supports_thesis contradicts_thesis contextual"
         json keyEntities
-        string checkWorthiness
+        float specificityScore "0-1"
+        string groundingQuality "strong moderate weak none"
+        json expectedEvidenceProfile
     }
 
-    ANALYSIS_CONTEXT {
-        string id_PK
-        string name
-        string shortName
-        string subject
-        string temporal
-        string status
-        string outcome
-        string assessedStatement
-        json metadata
-    }
-
-    KEY_FACTOR_DEF {
-        string id_PK
-        string question
-        string factor
-        string category
+    GATE_1_STATS {
+        int totalClaims
+        int passedOpinion
+        int passedSpecificity
+        int passedFidelity
+        int filteredCount
+        boolean overallPass
     }
 
 {{/mermaid}}
 
-//Understanding phase: Input is decomposed into SUB_CLAIMs scoped to detected ANALYSIS_CONTEXTs with KEY_FACTOR definitions. The CLAIM_UNDERSTANDING container captures the overall input interpretation.//
+//Stage 1 output: CB_CLAIM_UNDERSTANDING with ATOMIC_CLAIMs (replacing Orchestrated SUB_CLAIMs). Each claim has centrality, harmPotential (4-level), groundingQuality, and specificityScore. Gate 1 stats include passedFidelity (claim-to-input fidelity check).//
 
-=== Research Phase ===
+=== Stage 2: Research ===
 
 {{mermaid}}
 
 erDiagram
     EVIDENCE_ITEM }o--|| FETCHED_SOURCE : extracted_from
-    EVIDENCE_ITEM ||--o| EVIDENCE_SCOPE : has_scope
+    EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE : has_scope
 
     SEARCH_QUERY ||--o{ FETCHED_SOURCE : found
-    RESEARCH_ITERATION ||--o{ SEARCH_QUERY : performed
 
     EVIDENCE_ITEM {
-        string id_PK
+        string id_PK "EV_001 EV_002"
         string statement
-        string category
+        string category "statistic expert_quote event legal_provision etc"
         string sourceId_FK
         string sourceUrl
         string sourceTitle
         string sourceExcerpt
-        string contextId_FK
-        string claimDirection
-        string probativeValue
-        string sourceAuthority
-        string evidenceBasis
-        int extractionConfidence
-        boolean fromOppositeClaimSearch
+        string claimDirection "supports contradicts neutral"
+        string probativeValue "high medium low"
+        float extractionConfidence "0-100"
+        string_array relevantClaimIds
+        string claimBoundaryId_FK "Assigned in Stage 3"
+        boolean isDerivative
+        string derivedFromSourceUrl
+        boolean derivativeClaimUnverified
+        string scopeQuality "complete partial incomplete"
+        string sourceType "peer_reviewed_study etc"
     }
 
     EVIDENCE_SCOPE {
         string name
-        string methodology
+        string methodology "REQUIRED"
+        string temporal "REQUIRED"
         string boundaries
         string geographic
-        string temporal
         string sourceType
+        map additionalDimensions
     }
 
     FETCHED_SOURCE {
@@ -270,7 +257,7 @@ erDiagram
         string url
         string title
         string fullText
-        float trackRecordScore
+        float trackRecordScore "0.0-1.0"
         float trackRecordConfidence
         boolean trackRecordConsensus
         string category
@@ -289,138 +276,163 @@ erDiagram
         string error
     }
 
-    RESEARCH_ITERATION {
-        int number
-        string focus
-        json queries
-        int sourcesFound
-        int evidenceItemsExtracted
-    }
-
 {{/mermaid}}
 
-//Research phase: SEARCH_QUERYs are executed in RESEARCH_ITERATIONs, finding FETCHED_SOURCEs from which EVIDENCE_ITEMs are extracted. Each evidence item may have an EVIDENCE_SCOPE capturing the source document's methodology and boundaries.//
+//Stage 2 output: EVIDENCE_ITEMs with mandatory EVIDENCE_SCOPEs from FETCHED_SOURCEs. CB pipeline additions: relevantClaimIds (which claims evidence relates to), claimBoundaryId (assigned in Stage 3), isDerivative/derivedFromSourceUrl (derivative tracking), scopeQuality assessment.//
 
-=== Verdict and Aggregation Phase ===
+=== Stage 3: Cluster Boundaries ===
 
 {{mermaid}}
 
 erDiagram
-    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
-    CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : evaluated_in
-    CLAIM_VERDICT }o--o| KEY_FACTOR_DEF : addresses
+    CLAIM_BOUNDARY ||--o{ EVIDENCE_SCOPE : "composed of"
+    EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : "assigned to"
 
-    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : per_context
-    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : answers
-    CONTEXT_ANSWER ||--o{ KEY_FACTOR_VERDICT : contains
-
-    KEY_FACTOR_VERDICT ||--o| FACTOR_ANALYSIS : aggregated_in
-
-    CLAIM_VERDICT {
-        string claimId_PK
-        string claimText
-        int truthPercentage
-        int confidence
-        string verdict
-        string riskTier
-        string reasoning
-        json supportingEvidenceIds
-        string contextId_FK
-        string keyFactorId_FK
-        boolean isCentral
-        string centrality
-        string harmPotential
-        string thesisRelevance
-        boolean isContested
-        string contestedBy
-        string factualBasis
-        boolean isCounterClaim
-        json evidenceQuality
+    CLAIM_BOUNDARY {
+        string id_PK "CB_01 CB_02"
+        string name "Human-readable label"
+        string shortName "Short label for UI tabs"
+        string description
+        string methodology "Dominant methodology"
+        string boundaries "Scope boundaries"
+        string geographic "Geographic scope"
+        string temporal "Temporal scope"
+        float internalCoherence "0-1"
+        int evidenceCount
     }
 
-    ARTICLE_ANALYSIS {
-        string inputType
-        int articleTruthPercentage
-        int articleVerdict
-        string articleVerdictReason
-        string articleVerdictReliability
-        boolean hasMultipleContexts
-        boolean isPseudoscience
-        json claimPattern
-        json logicalFallacies
+    EVIDENCE_SCOPE {
+        string name
+        string methodology
+        string temporal
     }
 
-    CONTEXT_ANSWER {
-        string contextId_FK
-        string contextName
-        number answer
-        int truthPercentage
-        int confidence
-        string shortAnswer
-    }
-
-    KEY_FACTOR_VERDICT {
-        string factor
-        string supports
-        string explanation
-        boolean isContested
-        string contestedBy
-        string contestationReason
-        string factualBasis
-    }
-
-    FACTOR_ANALYSIS {
-        int positiveFactors
-        int negativeFactors
-        int neutralFactors
-        int contestedNegatives
-        string verdictExplanation
+    EVIDENCE_ITEM {
+        string claimBoundaryId_FK
     }
 
 {{/mermaid}}
 
-//Verdict phase: CLAIM_VERDICTs reference supporting EVIDENCE_ITEMs and are scoped to ANALYSIS_CONTEXTs. ARTICLE_ANALYSIS aggregates all verdicts. CONTEXT_ANSWERs provide per-context verdicts with KEY_FACTOR_VERDICTs and FACTOR_ANALYSIS.//
+//Stage 3 output: CLAIM_BOUNDARYs emerge from clustering compatible EVIDENCE_SCOPEs. Each boundary has internal coherence and count. Evidence items are assigned to their boundary.//
 
-=== Quality and Output ===
+=== Stage 4: Verdict (LLM Debate) ===
 
 {{mermaid}}
 
 erDiagram
-    QUALITY_GATES ||--o| GATE1_STATS : claim_validation
-    QUALITY_GATES ||--o| GATE4_STATS : verdict_confidence
-    QUALITY_GATES ||--o| QUALITY_SUMMARY : summarizes
+    CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : contains
+    CB_CLAIM_VERDICT ||--|| CONSISTENCY_RESULT : has
+    CB_CLAIM_VERDICT ||--o{ CHALLENGE_RESPONSE : has
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites supporting"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites contradicting"
+    CB_CLAIM_VERDICT ||--|| TRIANGULATION_SCORE : has
+
+    CB_CLAIM_VERDICT {
+        string id_PK
+        string claimId_FK
+        float truthPercentage "0-100"
+        string verdict "7-point label"
+        float confidence "0-100"
+        string reasoning "Includes challenge responses"
+        string harmPotential "critical high medium low"
+        boolean isContested
+        string_array supportingEvidenceIds
+        string_array contradictingEvidenceIds
+    }
+
+    BOUNDARY_FINDING {
+        string boundaryId_FK
+        string boundaryName
+        float truthPercentage "Per-boundary 0-100"
+        float confidence "Per-boundary 0-100"
+        string evidenceDirection "supports contradicts mixed neutral"
+        int evidenceCount
+    }
+
+    CONSISTENCY_RESULT {
+        string claimId_FK
+        float_array percentages
+        float average
+        float spread
+        boolean stable
+        boolean assessed "false if disabled"
+    }
+
+    CHALLENGE_RESPONSE {
+        string challengeType "assumption missing_evidence methodology_weakness independence_concern"
+        string response
+        boolean verdictAdjusted
+    }
+
+    TRIANGULATION_SCORE {
+        int boundaryCount
+        int supporting
+        int contradicting
+        string level "strong moderate weak conflicted"
+        float factor "Weight adjustment"
+    }
+
+{{/mermaid}}
+
+//Stage 4 output: CB_CLAIM_VERDICTs via 5-step LLM debate (Advocate → Self-Consistency → Adversarial Challenge → Reconciliation → Validation). Each verdict includes per-boundary BOUNDARY_FINDINGs, CONSISTENCY_RESULT (self-consistency spread), CHALLENGE_RESPONSEs (addressed challenges), and TRIANGULATION_SCORE (cross-boundary agreement).//
+
+=== Stage 5: Aggregate + Quality ===
+
+{{mermaid}}
+
+erDiagram
+    OVERALL_ASSESSMENT ||--o{ CB_CLAIM_VERDICT : aggregates
+    OVERALL_ASSESSMENT ||--o{ CLAIM_BOUNDARY : presents
+    OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : has
+    OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : has
+    OVERALL_ASSESSMENT ||--|| QUALITY_GATES : has
+
+    QUALITY_GATES ||--|| GATE1_STATS : claim_validation
+    QUALITY_GATES ||--|| GATE4_STATS : verdict_confidence
+
+    OVERALL_ASSESSMENT {
+        float truthPercentage "0-100 weighted"
+        string verdict "7-point label"
+        float confidence "0-100 weighted"
+        boolean hasMultipleBoundaries
+    }
+
+    VERDICT_NARRATIVE {
+        string headline
+        string evidenceBaseSummary
+        string keyFinding
+        string_array boundaryDisagreements
+        string limitations
+    }
+
+    COVERAGE_MATRIX {
+        string_array claims "Rows"
+        string_array boundaries "Columns"
+        int_array_array counts "Evidence per cell"
+    }
 
     QUALITY_GATES {
         boolean passed
     }
 
     GATE1_STATS {
-        int total
-        int passed
-        int filtered
-        int centralKept
+        int totalClaims
+        int passedClaims
+        int filteredClaims
+        int passedFidelity
     }
 
     GATE4_STATS {
-        int total
-        int publishable
+        int totalVerdicts
         int highConfidence
         int mediumConfidence
         int lowConfidence
         int insufficient
-        int centralKept
-    }
-
-    QUALITY_SUMMARY {
-        int totalEvidenceItems
-        int totalSources
-        int searchesPerformed
-        boolean contradictionSearchPerformed
     }
 
     ANALYSIS_WARNING {
         string type
-        string severity
+        string severity "error warning info"
         string message
         json details
     }
@@ -435,12 +447,11 @@ erDiagram
         int confidence
         json categories
         json matchedPatterns
-        json debunkIndicatorsFound
     }
 
 {{/mermaid}}
 
-//Quality and output: QUALITY_GATES track claim validation (GATE1) and verdict confidence (GATE4). ANALYSIS_WARNINGs surface quality issues. TWO_PANEL_SUMMARY provides the user-facing narrative. PSEUDOSCIENCE_ANALYSIS flags pseudoscientific content.//
+//Stage 5 output: OVERALL_ASSESSMENT aggregates CB_CLAIM_VERDICTs with weighted averaging (centrality, harm, confidence, triangulation, derivative). VERDICT_NARRATIVE provides structured summary. COVERAGE_MATRIX maps claims to boundaries. QUALITY_GATES summarize Gate 1 (claim validation) and Gate 4 (verdict confidence). TWO_PANEL_SUMMARY and PSEUDOSCIENCE_ANALYSIS complete the result.//
 
 ----
 
@@ -457,15 +468,16 @@ erDiagram
     CONFIG_USAGE }o--|| CONFIG_BLOBS : references
     CONFIG_ACTIVE }o--|| CONFIG_BLOBS : points_to
 
-    JOBS ||--o{ CLAIM_VERDICTS : produces
+    JOBS ||--o{ ATOMIC_CLAIMS : produces
+    JOBS ||--o{ CB_CLAIM_VERDICTS : produces
     JOBS ||--o{ EVIDENCE_ITEMS : produces
     JOBS ||--o{ FETCHED_SOURCES : produces
-    JOBS ||--o{ ANALYSIS_CONTEXTS : produces
+    JOBS ||--o{ CLAIM_BOUNDARIES : produces
 
-    CLAIM_VERDICTS }o--o{ EVIDENCE_ITEMS : supported_by
-    CLAIM_VERDICTS }o--o| ANALYSIS_CONTEXTS : scoped_to
+    CB_CLAIM_VERDICTS }o--o{ EVIDENCE_ITEMS : supported_by
+    CB_CLAIM_VERDICTS }o--|| ATOMIC_CLAIMS : for_claim
     EVIDENCE_ITEMS }o--|| FETCHED_SOURCES : from
-    EVIDENCE_ITEMS }o--o| ANALYSIS_CONTEXTS : scoped_to
+    EVIDENCE_ITEMS }o--o| CLAIM_BOUNDARIES : assigned_to
     FETCHED_SOURCES }o--o| SOURCE_RELIABILITY : cached_score
 
     USERS ||--o{ FLAGS : reports
@@ -530,21 +542,31 @@ erDiagram
         int ttl_days
     }
 
-    CLAIM_VERDICTS {
-        string claimId_PK
+    ATOMIC_CLAIMS {
+        string id_PK "AC_01"
         string jobId_FK
-        string claimText
-        string type
+        string statement
+        string category
+        string centrality
+        string harmPotential "critical high medium low"
+        float specificityScore
+        string groundingQuality
+    }
+
+    CB_CLAIM_VERDICTS {
+        string id_PK
+        string jobId_FK
+        string claimId_FK
         int truthPercentage
         int confidence
         string verdict
         string reasoning
         json supportingEvidenceIds
-        string contextId_FK
-        string keyFactorId
-        boolean isContested
-        string factualBasis
-        json evidence_summary_CACHE
+        json contradictingEvidenceIds
+        json boundaryFindings
+        json consistencyResult
+        json challengeResponses
+        json triangulationScore
     }
 
     EVIDENCE_ITEMS {
@@ -554,10 +576,11 @@ erDiagram
         string category
         string sourceId_FK
         string probativeValue
-        string sourceAuthority
-        string evidenceBasis
         string claimDirection
-        int extractionConfidence
+        string claimBoundaryId_FK
+        json relevantClaimIds
+        boolean isDerivative
+        string scopeQuality
     }
 
     FETCHED_SOURCES {
@@ -571,17 +594,15 @@ erDiagram
         datetime fetchedAt
     }
 
-    ANALYSIS_CONTEXTS {
-        string id_PK
+    CLAIM_BOUNDARIES {
+        string id_PK "CB_01"
         string jobId_FK
         string name
         string shortName
-        string subject
-        string temporal
-        string status
-        string outcome
-        string assessedStatement
-        json metadata_JSONB
+        string description
+        string methodology
+        float internalCoherence
+        int evidenceCount
     }
 
     USERS {
@@ -622,10 +643,11 @@ erDiagram
 | ##config_active## | Exists | Next.js better-sqlite3 | Activation pointers
 | ##config_usage## | Exists | Next.js better-sqlite3 | Per-job config snapshots
 | ##source_reliability## | Exists | Next.js better-sqlite3 | LLM-evaluated cache (90-day TTL)
-| ##claim_verdicts## | **Target** | PostgreSQL | Normalised from JSON blob
-| ##evidence_items## | **Target** | PostgreSQL | Normalised from JSON blob
+| ##atomic_claims## | **Target** | PostgreSQL | Normalised from JSON blob (replaces Orchestrated ##claim_verdicts## scope)
+| ##cb_claim_verdicts## | **Target** | PostgreSQL | Normalised from JSON blob (includes boundary findings, consistency, challenges)
+| ##evidence_items## | **Target** | PostgreSQL | Normalised from JSON blob (includes claimBoundaryId, derivative flags)
 | ##fetched_sources## | **Target** | PostgreSQL | Normalised from JSON blob
-| ##analysis_contexts## | **Target** | PostgreSQL | Normalised from JSON blob
+| ##claim_boundaries## | **Target** | PostgreSQL | Normalised from JSON blob (replaces Orchestrated ##analysis_contexts##)
 | ##users## | **Planned** | PostgreSQL | Not yet implemented (Alpha phase)
 | ##flags## | **Planned** | PostgreSQL | Not yet implemented (Alpha phase)
 | ##quality_metrics## | **Planned** | PostgreSQL | Not yet implemented (time-series)
@@ -641,59 +663,64 @@ Entities that exist only during pipeline execution. These are transient — they
 {{mermaid}}
 
 flowchart TD
-    subgraph Understand["UNDERSTAND Phase"]
+    subgraph Extract["EXTRACT CLAIMS (Stage 1)"]
         ICR["InputClassificationResult\nisComparative, isCompound\nclaimType, complexity"]
-        G1M["Gate1Metric\nclaims filtered stats"]
+        G1M["Gate 1 Validation\nclaims filtered, fidelity check"]
     end
 
-    subgraph Research["RESEARCH Phase"]
-        RS["ResearchState\n(main mutable container)\nunderstanding, evidenceItems\nsources, searchQueries, llmCalls"]
-        RD["ResearchDecision\ncomplete, focus, queries\ntargetContextId"]
+    subgraph Research["RESEARCH (Stage 2)"]
+        RS["CBResearchState\n(main mutable container)\nunderstanding, evidenceItems\nsources, searchQueries, llmCalls\nmainIterationsUsed, contradictionIterations"]
+        RD["ResearchDecision\ncomplete, focus, queries"]
         EQR["EvidenceQualityResult\nqualityAssessment, issues\nreasoning (per evidence)"]
         PV["ProvenanceValidation\nURL validation, excerpt check"]
         BT["BudgetTracker\ntokens, iterations\nllmCalls, budgetExceeded"]
     end
 
-    subgraph Refine["CONTEXT REFINE Phase"]
-        CSR["ContextSimilarityResult\nsimilarity score, shouldMerge\ncanonicalName, phaseBucket"]
+    subgraph Cluster["CLUSTER BOUNDARIES (Stage 3)"]
+        SCOPE_CLUSTER["Scope Clustering\nEvidenceScope compatibility\nmerge vs separate decision"]
     end
 
-    subgraph Verdict["VERDICT Phase"]
-        VVR["VerdictValidationResult\nisInverted, polarity\nharmPotential, contestation"]
-        G4M["Gate4Metric\nconfidence distribution"]
+    subgraph Verdict["VERDICT (Stage 4)"]
+        ADV["Advocate Verdict\ninitial per-claim verdicts"]
+        SC["Self-Consistency Check\ntemp=0.3, spread measurement"]
+        CHAL["Adversarial Challenge\nchallenge points per claim"]
+        REC["Reconciliation\nfinal verdicts"]
+        VV["Verdict Validation\ngrounding + direction checks"]
+        G4M["Gate 4 Assessment\nconfidence distribution"]
     end
 
     subgraph Metrics["METRICS (Full Pipeline)"]
         MC["MetricsCollector\naccumulates all telemetry"]
         LCM["LLMCallMetric\ntokens, duration, success"]
         SQM["SearchQueryMetric\nquery, provider, duration"]
-        FT["FallbackTracker\nclassification failures"]
     end
 
-    ICR -->|"data flows into"| CU["ClaimUnderstanding\n(STORED in result)"]
+    ICR -->|"data flows into"| CU["CBClaimUnderstanding\n(STORED in result)"]
     G1M -->|"summary"| QG["gate1Stats\n(STORED in result)"]
     EQR -->|"filters"| EI["EvidenceItems\n(STORED in result)"]
     PV -->|"filters"| EI
-    CSR -->|"merges"| AC["AnalysisContexts\n(STORED in result)"]
-    VVR -->|"corrects"| CV["ClaimVerdicts\n(STORED in result)"]
+    SCOPE_CLUSTER -->|"creates"| CB["ClaimBoundaries\n(STORED in result)"]
+    ADV -->|"initial"| VERD["CBClaimVerdicts\n(STORED in result)"]
+    SC -->|"consistency"| VERD
+    CHAL -->|"challenges"| VERD
+    REC -->|"final"| VERD
+    VV -->|"validates"| VERD
     G4M -->|"summary"| QG4["gate4Stats\n(STORED in result)"]
     BT -->|"summary"| BS["meta.budgetStats\n(STORED in result)"]
     RD -->|"discarded"| DISC["Discarded"]
     MC -->|"sent to API"| AM["AnalysisMetrics\n(STORED in separate DB)"]
     LCM --> MC
     SQM --> MC
-    FT -->|"if non-empty"| CF["classificationFallbacks\n(STORED in result)"]
     RS -->|"fields flow into"| RES["resultJson fields\n(STORED in result)"]
 
     style CU fill:#c8e6c9,stroke:#2e7d32,color:#000
     style QG fill:#fff9c4,stroke:#f9a825,color:#000
     style EI fill:#fff3e0,stroke:#e65100,color:#000
-    style AC fill:#e1bee7,stroke:#7b1fa2,color:#000
-    style CV fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style CB fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style VERD fill:#c8e6c9,stroke:#2e7d32,color:#000
     style QG4 fill:#fff9c4,stroke:#f9a825,color:#000
     style BS fill:#e3f2fd,stroke:#1565c0,color:#000
     style AM fill:#e3f2fd,stroke:#1565c0,color:#000
-    style CF fill:#fff9c4,stroke:#f9a825,color:#000
     style RES fill:#c8e6c9,stroke:#2e7d32,color:#000
     style DISC fill:#f5f5f5,stroke:#9e9e9e,color:#666
 
@@ -704,35 +731,36 @@ flowchart TD
     style EQR fill:#f5f5f5,stroke:#9e9e9e,color:#000
     style PV fill:#f5f5f5,stroke:#9e9e9e,color:#000
     style BT fill:#f5f5f5,stroke:#9e9e9e,color:#000
-    style CSR fill:#f5f5f5,stroke:#9e9e9e,color:#000
-    style VVR fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style SCOPE_CLUSTER fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style ADV fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style SC fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style CHAL fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style REC fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style VV fill:#f5f5f5,stroke:#9e9e9e,color:#000
     style G4M fill:#f5f5f5,stroke:#9e9e9e,color:#000
     style MC fill:#f5f5f5,stroke:#9e9e9e,color:#000
     style LCM fill:#f5f5f5,stroke:#9e9e9e,color:#000
     style SQM fill:#f5f5f5,stroke:#9e9e9e,color:#000
-    style FT fill:#f5f5f5,stroke:#9e9e9e,color:#000
 
 {{/mermaid}}
 
-//Grey boxes = transient runtime entities. Colored boxes = stored destinations. Arrows show how runtime data flows into (or is discarded from) the final result. Source files: ##text-analysis-types.ts##, ##metrics.ts##, ##budgets.ts##, ##orchestrated.ts##.//
+//Grey boxes = transient runtime entities. Colored boxes = stored destinations. Arrows show how runtime data flows into (or is discarded from) the final result. Source files: ##types.ts##, ##metrics.ts##, ##budgets.ts##, ##claimboundary-pipeline.ts##, ##verdict-stage.ts##.//
 
 === Runtime Entity Reference ===
 
 |= Entity |= Source File |= Lifecycle |= Destination
-| ##ResearchState## | ##orchestrated.ts## | Full pipeline | Container — fields distributed into resultJson
+| ##CBResearchState## | ##types.ts:922## | Full pipeline | Container — fields distributed into resultJson
 | ##BudgetTracker## | ##budgets.ts## | Full pipeline | ##meta.budgetStats##
-| ##FallbackTracker## | ##orchestrated.ts## | Full pipeline | ##classificationFallbacks## (if non-empty)
-| ##ResearchDecision## | ##types.ts## | Per iteration | Discarded after use
-| ##InputClassificationResult## | ##text-analysis-types.ts## | Understand phase | Data flows into ##ClaimUnderstanding##
+| ##ResearchDecision## | ##types.ts:599## | Per iteration | Discarded after use
+| ##InputClassificationResult## | ##text-analysis-types.ts## | Extract phase | Data flows into ##CBClaimUnderstanding##
 | ##EvidenceQualityResult## | ##text-analysis-types.ts## | Research phase | Filters ##EvidenceItems## (pass/fail)
-| ##ContextSimilarityResult## | ##text-analysis-types.ts## | Refine phase | Merges ##AnalysisContexts##
-| ##VerdictValidationResult## | ##text-analysis-types.ts## | Verdict phase | Corrects ##ClaimVerdicts##
+| ##VerdictValidationResult## | ##types.ts:121## | Verdict phase | Advisory checks on ##CBClaimVerdicts##
 | ##MetricsCollector## | ##metrics.ts## | Full pipeline | ##AnalysisMetrics## (separate DB)
 | ##LLMCallMetric## | ##metrics.ts## | Per LLM call | Aggregated in ##MetricsCollector##
 | ##SearchQueryMetric## | ##metrics.ts## | Per search call | Aggregated in ##MetricsCollector##
-| ##ProvenanceValidation## | ##orchestrated.ts## | Research phase | Filters evidence (pass/fail)
-| ##Gate1Metric## | ##metrics.ts## | Understand phase | ##gate1Stats## in ##QualityGates##
-| ##Gate4Metric## | ##metrics.ts## | Verdict phase | ##gate4Stats## in ##QualityGates##
+| ##ProvenanceValidation## | ##evidence-filter.ts## | Research phase | Filters evidence (pass/fail)
+| ##ChallengeDocument## | ##types.ts:814## | Verdict Step 3 | Challenge points consumed by Reconciliation (Step 4)
+| ##ConsistencyResult## | ##types.ts:800## | Verdict Step 2 | Stored in ##CBClaimVerdict.consistencyResult##
 
 ----
 
@@ -743,25 +771,25 @@ Entities and fields that surface to users in the browser. Grouped by UI page.
 {{mermaid}}
 
 flowchart TD
-    subgraph JobsList["/jobs — Jobs List Page"]
+    subgraph JobsList["/jobs - Jobs List Page"]
         JL_JOB["JOB\nstatus, progress\ninputPreview\npipelineVariant\ncreatedUtc"]
     end
 
-    subgraph JobDetail["/jobs/[id] — Job Detail Page"]
+    subgraph JobDetail["/jobs/id - Job Detail Page"]
 
         subgraph VerdictBanner["Verdict Banner"]
-            JD_AA["ARTICLE_ANALYSIS\narticleTruthPercentage\narticleVerdict\nclaimPattern\nisPseudoscience"]
+            JD_OA["OVERALL_ASSESSMENT\ntruthPercentage, verdict\nconfidence"]
+            JD_VN["VERDICT_NARRATIVE\nheadline, keyFinding\nlimitations"]
             JD_TPS["TWO_PANEL_SUMMARY\narticleSummary\nfactharborAnalysis"]
         end
 
-        subgraph ContextSection["Context Verdicts"]
-            JD_CTX["ANALYSIS_CONTEXT\nname, subject\ntemporal, outcome"]
-            JD_CA["CONTEXT_ANSWER\ntruthPercentage, confidence\nshortAnswer"]
-            JD_KF["KEY_FACTOR\nfactor, supports\nexplanation, isContested"]
+        subgraph BoundarySection["ClaimAssessmentBoundary Tabs"]
+            JD_CB["CLAIM_BOUNDARY\nname, shortName\nmethodology, temporal"]
+            JD_BF["BOUNDARY_FINDING\ntruthPercentage, confidence\nevidenceDirection"]
         end
 
         subgraph ClaimsSection["Claims Analyzed"]
-            JD_CV["CLAIM_VERDICT\nclaimText, verdict\nconfidence, reasoning\nisCentral, isContested"]
+            JD_CV["CB_CLAIM_VERDICT\nstatement, verdict\nconfidence, reasoning\nharmPotential, isContested"]
         end
 
         subgraph EvidenceSection["Evidence Panel"]
@@ -774,7 +802,7 @@ flowchart TD
         end
 
         subgraph QualitySection["Quality Panel"]
-            JD_QG["QUALITY_GATES\npassed, gate1Stats\ngate4Stats, summary"]
+            JD_QG["QUALITY_GATES\npassed, gate1Stats\ngate4Stats"]
             JD_AW["ANALYSIS_WARNING\ntype, severity\nmessage"]
         end
 
@@ -783,7 +811,7 @@ flowchart TD
         end
     end
 
-    subgraph Admin["/admin — Admin Pages"]
+    subgraph Admin["/admin - Admin Pages"]
         AD_HEALTH["Provider Health\nstate, consecutiveFailures"]
         AD_METRICS["ANALYSIS_METRICS\navgDuration, avgCost\ngate1PassRate\ngate4HighConfidenceRate"]
         AD_CONFIG["CONFIG_SNAPSHOT\npipelineConfig\nsearchConfig"]
@@ -792,15 +820,14 @@ flowchart TD
     JL_JOB -->|"click job"| JobDetail
     JD_CV -->|"references"| JD_EI
     JD_EI -->|"from"| JD_FS
-    JD_CTX -->|"verdict"| JD_CA
-    JD_CA -->|"factors"| JD_KF
+    JD_CB -->|"findings"| JD_BF
 
     style JL_JOB fill:#e3f2fd,stroke:#1565c0,color:#000
-    style JD_AA fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style JD_OA fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style JD_VN fill:#c8e6c9,stroke:#2e7d32,color:#000
     style JD_TPS fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style JD_CTX fill:#e1bee7,stroke:#7b1fa2,color:#000
-    style JD_CA fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style JD_KF fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style JD_CB fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style JD_BF fill:#e1bee7,stroke:#7b1fa2,color:#000
     style JD_CV fill:#c8e6c9,stroke:#2e7d32,color:#000
     style JD_EI fill:#fff3e0,stroke:#e65100,color:#000
     style JD_ES fill:#fff3e0,stroke:#e65100,color:#000
@@ -814,15 +841,16 @@ flowchart TD
 
 {{/mermaid}}
 
-//UI visibility: The Jobs list shows minimal JOB metadata. The Job detail page renders the full analysis result across multiple sections. Admin pages show operational data (provider health, aggregated metrics, config snapshots). Entities not shown here (e.g., ResearchState, BudgetTracker) are internal processing entities never rendered in UI.//
+//UI visibility: The Jobs list shows minimal JOB metadata. The Job detail page renders the full analysis result across multiple sections: verdict banner (OVERALL_ASSESSMENT + VERDICT_NARRATIVE), ClaimAssessmentBoundary tabs with BOUNDARY_FINDINGs, claims with CB_CLAIM_VERDICTs, evidence panel, sources, quality gates, and search queries. Admin pages show operational data (provider health, aggregated metrics, config snapshots).//
 
 === What Users See vs. What's Internal ===
 
 |= Entity |= User-Visible Fields |= Internal-Only Fields
-| **ClaimVerdict** | claimText, verdict, confidence, reasoning, isContested | riskTier, evidenceWeight, startOffset, endOffset, highlightColor
-| **EvidenceItem** | statement, category, sourceTitle, claimDirection, probativeValue | sourceId, extractionConfidence, isContestedClaim, claimSource
+| **CBClaimVerdict** | statement, verdict, confidence, reasoning, isContested, harmPotential | triangulationScore, consistencyResult details, challengeResponses
+| **EvidenceItem** | statement, category, sourceTitle, claimDirection, probativeValue | sourceId, extractionConfidence, scopeQuality, isDerivative, derivedFromSourceUrl
 | **FetchedSource** | url, title, trackRecordScore | fullText, fetchedAt, searchQuery
-| **AnalysisContext** | name, subject, temporal, outcome | id, metadata (partial — domain-specific fields shown contextually)
+| **ClaimBoundary** | name, shortName, description, methodology | internalCoherence, constituentScopes
+| **BoundaryFinding** | truthPercentage, confidence, evidenceDirection | boundaryId (used for cross-referencing)
 | **QualityGates** | passed, gate1Stats (counts), gate4Stats (counts) | Individual ClaimValidationResult, VerdictValidationResult per claim
 
 ----

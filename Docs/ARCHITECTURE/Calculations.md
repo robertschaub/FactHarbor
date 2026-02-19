@@ -16,8 +16,8 @@ FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. Th
 | **TRUE** | 86-100% | - | Strong support, no credible counter-evidence |
 | **MOSTLY-TRUE** | 72-85% | - | Mostly supported, minor gaps |
 | **LEANING-TRUE** | 58-71% | - | Mixed evidence, leans positive |
-| **MIXED** | 43-57% | >= 60% | Evidence on both sides, roughly equal |
-| **UNVERIFIED** | 43-57% | < 60% | Insufficient evidence to judge |
+| **MIXED** | 43-57% | >= 40% | Evidence on both sides, roughly equal |
+| **UNVERIFIED** | 43-57% | < 40% | Insufficient evidence to judge |
 | **LEANING-FALSE** | 29-42% | - | More counter-evidence than support |
 | **MOSTLY-FALSE** | 15-28% | - | Strong counter-evidence |
 | **FALSE** | 0-14% | - | Direct contradiction |
@@ -34,7 +34,7 @@ FactHarbor uses a symmetric 7-point scale with truth percentages from 0-100%. Th
 **Function**: `percentageToClaimVerdict` (line 138)
 ```typescript
 // Confidence threshold to distinguish MIXED from UNVERIFIED (UCM-configurable)
-const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 60;
+const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 40;
 
 export function percentageToClaimVerdict(
   truthPercentage: number,

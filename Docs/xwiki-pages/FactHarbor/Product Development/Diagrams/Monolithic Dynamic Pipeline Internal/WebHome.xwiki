@@ -1,5 +1,5 @@
 {{info}}
-**Fast Alternative Pipeline** — Flexible output structure not bound to canonical schema. File: ##apps/web/src/lib/analyzer/monolithic-dynamic.ts##. Streamlined analysis at lower cost, complementing the Orchestrated pipeline. Updated 2026-02-12 from source code.
+**Fast Alternative Pipeline** — Flexible output structure not bound to canonical schema. File: ##apps/web/src/lib/analyzer/monolithic-dynamic.ts##. Streamlined analysis at lower cost, complementing the ClaimAssessmentBoundary pipeline. Updated 2026-02-19.
 {{/info}}
 
 = Monolithic Dynamic Pipeline Internal Flow =

@@ -27,6 +27,7 @@ import {
   validateVerdicts,
   runStructuralConsistencyCheck,
   classifyConfidence,
+  enforceHarmConfidenceFloor,
   getSpreadMultiplier,
   applySpreadAdjustment,
   runVerdictStage,
@@ -768,5 +769,287 @@ describe("classifyConfidence (Gate 4)", () => {
 
     const result = classifyConfidence(verdicts);
     expect(result).toEqual(verdicts);
+  });
+});
+
+// ============================================================================
+// ENFORCE HARM CONFIDENCE FLOOR (C8 — Stammbach/Ash bias mitigation)
+// ============================================================================
+
+describe("enforceHarmConfidenceFloor", () => {
+  /** Helper to create a verdict with specific harm/confidence */
+  function createVerdict(
+    overrides: Partial<CBClaimVerdict> = {},
+  ): CBClaimVerdict {
+    return {
+      id: "CV_AC_01",
+      claimId: "AC_01",
+      truthPercentage: 75,
+      verdict: "MOSTLY-TRUE",
+      confidence: 80,
+      reasoning: "Test reasoning",
+      harmPotential: "medium",
+      isContested: false,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+      boundaryFindings: [],
+      consistencyResult: {
+        claimId: "AC_01", percentages: [], average: 0, spread: 0,
+        stable: true, assessed: false,
+      },
+      challengeResponses: [],
+      triangulationScore: {
+        boundaryCount: 0, supporting: 0, contradicting: 0,
+        level: "weak", factor: 1.0,
+      },
+      ...overrides,
+    };
+  }
+
+  const config: VerdictStageConfig = {
+    ...DEFAULT_VERDICT_STAGE_CONFIG,
+    highHarmMinConfidence: 50,
+  };
+
+  it("should downgrade high-harm claim with low confidence to UNVERIFIED", () => {
+    const verdicts = [createVerdict({
+      harmPotential: "high",
+      confidence: 30,
+      truthPercentage: 72,
+      verdict: "MOSTLY-TRUE",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("UNVERIFIED");
+    // Original truthPercentage and confidence preserved for transparency
+    expect(result[0].truthPercentage).toBe(72);
+    expect(result[0].confidence).toBe(30);
+  });
+
+  it("should downgrade critical-harm claim with low confidence to UNVERIFIED", () => {
+    const verdicts = [createVerdict({
+      harmPotential: "critical",
+      confidence: 45,
+      truthPercentage: 85,
+      verdict: "MOSTLY-TRUE",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("UNVERIFIED");
+  });
+
+  it("should NOT downgrade high-harm claim with sufficient confidence", () => {
+    const verdicts = [createVerdict({
+      harmPotential: "high",
+      confidence: 60,
+      truthPercentage: 72,
+      verdict: "MOSTLY-TRUE",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
+  });
+
+  it("should NOT affect medium-harm claims regardless of confidence", () => {
+    const verdicts = [createVerdict({
+      harmPotential: "medium",
+      confidence: 20,
+      truthPercentage: 72,
+      verdict: "MOSTLY-TRUE",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
+  });
+
+  it("should NOT affect low-harm claims regardless of confidence", () => {
+    const verdicts = [createVerdict({
+      harmPotential: "low",
+      confidence: 10,
+      truthPercentage: 90,
+      verdict: "TRUE",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("TRUE");
+  });
+
+  it("should leave already-UNVERIFIED verdicts unchanged", () => {
+    const verdicts = [createVerdict({
+      harmPotential: "critical",
+      confidence: 20,
+      truthPercentage: 50,
+      verdict: "UNVERIFIED",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("UNVERIFIED");
+  });
+
+  it("should be disabled when threshold is 0", () => {
+    const disabledConfig = { ...config, highHarmMinConfidence: 0 };
+    const verdicts = [createVerdict({
+      harmPotential: "critical",
+      confidence: 10,
+      truthPercentage: 90,
+      verdict: "TRUE",
+    })];
+
+    const result = enforceHarmConfidenceFloor(verdicts, disabledConfig);
+    expect(result[0].verdict).toBe("TRUE");
+  });
+
+  it("should handle mixed verdicts (some high-harm, some not)", () => {
+    const verdicts = [
+      createVerdict({
+        id: "CV_01", claimId: "AC_01",
+        harmPotential: "high", confidence: 30,
+        truthPercentage: 80, verdict: "MOSTLY-TRUE",
+      }),
+      createVerdict({
+        id: "CV_02", claimId: "AC_02",
+        harmPotential: "medium", confidence: 30,
+        truthPercentage: 80, verdict: "MOSTLY-TRUE",
+      }),
+      createVerdict({
+        id: "CV_03", claimId: "AC_03",
+        harmPotential: "high", confidence: 70,
+        truthPercentage: 80, verdict: "MOSTLY-TRUE",
+      }),
+    ];
+
+    const result = enforceHarmConfidenceFloor(verdicts, config);
+    expect(result[0].verdict).toBe("UNVERIFIED");    // high-harm, low confidence
+    expect(result[1].verdict).toBe("MOSTLY-TRUE");   // medium-harm, not affected
+    expect(result[2].verdict).toBe("MOSTLY-TRUE");   // high-harm, sufficient confidence
+  });
+
+  it("should use the exact threshold boundary correctly", () => {
+    // Confidence exactly at threshold — should NOT be downgraded
+    const atThreshold = [createVerdict({
+      harmPotential: "high", confidence: 50,
+      truthPercentage: 72, verdict: "MOSTLY-TRUE",
+    })];
+    expect(enforceHarmConfidenceFloor(atThreshold, config)[0].verdict).toBe("MOSTLY-TRUE");
+
+    // Confidence one below threshold — SHOULD be downgraded
+    const belowThreshold = [createVerdict({
+      harmPotential: "high", confidence: 49,
+      truthPercentage: 72, verdict: "MOSTLY-TRUE",
+    })];
+    expect(enforceHarmConfidenceFloor(belowThreshold, config)[0].verdict).toBe("UNVERIFIED");
+  });
+});
+
+// ============================================================================
+// CONFIGURABLE DEBATE MODEL TIERS (Stammbach/Ash C1/C16)
+// ============================================================================
+
+describe("Configurable debate model tiers", () => {
+  const claims = [createAtomicClaim()];
+  const evidence = [createEvidenceItem()];
+  const boundaries = [createClaimBoundary()];
+  const coverageMatrix = buildCoverageMatrix(claims, evidence, boundaries);
+
+  it("advocateVerdict should use config.debateModelTiers.advocate", async () => {
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, advocate: "haiku" },
+    };
+
+    await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions).toEqual({ tier: "haiku" });
+  });
+
+  it("selfConsistencyCheck should use config.debateModelTiers.selfConsistency", async () => {
+    const advocateVerdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      selfConsistencyMode: "enabled",
+      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, selfConsistency: "haiku" },
+    };
+
+    await selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, mockLLM, config);
+
+    // selfConsistencyCheck makes 2 parallel calls
+    expect(mockLLM).toHaveBeenCalledTimes(2);
+    const call1Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    const call2Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2];
+    expect(call1Options.tier).toBe("haiku");
+    expect(call2Options.tier).toBe("haiku");
+  });
+
+  it("adversarialChallenge should use config.debateModelTiers.challenger", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, challenger: "haiku" },
+    };
+
+    await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions).toEqual({ tier: "haiku" });
+  });
+
+  it("reconcileVerdicts should use config.debateModelTiers.reconciler", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const challengeDoc = { challenges: [{ claimId: "AC_01", challengePoints: [] }] };
+    const consistencyResults: ConsistencyResult[] = [
+      { claimId: "AC_01", percentages: [75, 73, 77], average: 75, spread: 4, stable: true, assessed: true },
+    ];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{ claimId: "AC_01", truthPercentage: 72, confidence: 78, reasoning: "Reconciled" }],
+    });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, reconciler: "haiku" },
+    };
+
+    await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions).toEqual({ tier: "haiku" });
+  });
+
+  it("default config should use sonnet for all roles", () => {
+    expect(DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers).toEqual({
+      advocate: "sonnet",
+      selfConsistency: "sonnet",
+      challenger: "sonnet",
+      reconciler: "sonnet",
+    });
   });
 });

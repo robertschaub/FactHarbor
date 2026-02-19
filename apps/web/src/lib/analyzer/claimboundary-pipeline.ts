@@ -185,12 +185,14 @@ export async function runClaimBoundaryAnalysis(
   }
 
   // Load configs once at start to capture provider metadata
-  const [pipelineResult, searchResult] = await Promise.all([
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default"),
     loadSearchConfig("default"),
+    loadCalcConfig("default"),
   ]);
   const initialPipelineConfig = pipelineResult.config;
   const initialSearchConfig = searchResult.config;
+  const initialCalcConfig = calcResult.config;
 
   try {
     // Initialize research state
@@ -236,6 +238,24 @@ export async function runClaimBoundaryAnalysis(
     startPhase("research");
     await researchEvidence(state, input.jobId);
     endPhase("research");
+
+    // Evidence pool balance check (C13 — detect directional skew before verdict)
+    const skewThreshold = initialCalcConfig.evidenceBalanceSkewThreshold ?? 0.8;
+    const evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold);
+    if (evidenceBalance.isSkewed) {
+      const direction = evidenceBalance.balanceRatio > 0.5 ? "supporting" : "contradicting";
+      const majorityPct = Math.round(Math.max(evidenceBalance.balanceRatio, 1 - evidenceBalance.balanceRatio) * 100);
+      state.warnings.push({
+        type: "evidence_pool_imbalance",
+        severity: "warning",
+        message: `Evidence pool is heavily skewed toward ${direction} evidence (${majorityPct}% of directional evidence). ` +
+          `${evidenceBalance.supporting} supporting, ${evidenceBalance.contradicting} contradicting, ${evidenceBalance.neutral} neutral out of ${evidenceBalance.total} total.`,
+      });
+      console.warn(
+        `[Pipeline] Evidence pool imbalance detected: ${evidenceBalance.supporting}S/${evidenceBalance.contradicting}C/${evidenceBalance.neutral}N ` +
+        `(${direction}: ${majorityPct}%, threshold: ${Math.round(skewThreshold * 100)}%)`
+      );
+    }
 
     // Stage 3: Cluster Boundaries
     checkAbortSignal(input.jobId);
@@ -312,6 +332,14 @@ export async function runClaimBoundaryAnalysis(
         mainIterationsUsed: state.mainIterationsUsed,
         contradictionIterationsUsed: state.contradictionIterationsUsed,
         contradictionSourcesFound: state.contradictionSourcesFound,
+        evidenceBalance: {
+          supporting: evidenceBalance.supporting,
+          contradicting: evidenceBalance.contradicting,
+          neutral: evidenceBalance.neutral,
+          total: evidenceBalance.total,
+          balanceRatio: isNaN(evidenceBalance.balanceRatio) ? null : Math.round(evidenceBalance.balanceRatio * 100) / 100,
+          isSkewed: evidenceBalance.isSkewed,
+        },
       },
       // Core assessment data
       truthPercentage: assessment.truthPercentage,
@@ -2250,6 +2278,71 @@ function mapSourceType(sourceType?: string): SourceType | undefined {
 }
 
 // ============================================================================
+// EVIDENCE POOL BALANCE (C13 — Stammbach/Ash bias detection)
+// ============================================================================
+
+/**
+ * Evidence balance metrics for the evidence pool.
+ * Measures the directional skew of evidence items.
+ */
+export interface EvidenceBalanceMetrics {
+  supporting: number;
+  contradicting: number;
+  neutral: number;
+  total: number;
+  /** Ratio of supporting / (supporting + contradicting). 0.5 = balanced, >0.8 or <0.2 = skewed. NaN if no directional evidence. */
+  balanceRatio: number;
+  isSkewed: boolean;
+}
+
+/**
+ * Assess directional balance of the evidence pool.
+ * Returns metrics and whether the pool is skewed beyond the configured threshold.
+ *
+ * @param evidenceItems - All evidence items from research stage
+ * @param skewThreshold - Ratio above which (or below 1-threshold) the pool is considered skewed (default 0.8)
+ * @returns EvidenceBalanceMetrics
+ */
+export function assessEvidenceBalance(
+  evidenceItems: EvidenceItem[],
+  skewThreshold = 0.8,
+): EvidenceBalanceMetrics {
+  let supporting = 0;
+  let contradicting = 0;
+  let neutral = 0;
+
+  for (const item of evidenceItems) {
+    switch (item.claimDirection) {
+      case "supports":
+        supporting++;
+        break;
+      case "contradicts":
+        contradicting++;
+        break;
+      default:
+        neutral++;
+        break;
+    }
+  }
+
+  const directional = supporting + contradicting;
+  const balanceRatio = directional > 0 ? supporting / directional : NaN;
+  // Use max(ratio, 1-ratio) to get majority proportion — avoids floating-point issues with 1-threshold
+  const majorityRatio = isNaN(balanceRatio) ? 0 : Math.max(balanceRatio, 1 - balanceRatio);
+  // Strict > so that threshold=1.0 disables detection (majorityRatio maxes at 1.0)
+  const isSkewed = !isNaN(balanceRatio) && directional >= 3 && majorityRatio > skewThreshold;
+
+  return {
+    supporting,
+    contradicting,
+    neutral,
+    total: evidenceItems.length,
+    balanceRatio,
+    isSkewed,
+  };
+}
+
+// ============================================================================
 // STAGE 3: CLUSTER BOUNDARIES (§8.3)
 // ============================================================================
 
@@ -2837,6 +2930,13 @@ export function buildVerdictStageConfig(
     unstableThreshold: spreadThresholds.unstable ?? 20,
     spreadMultipliers: DEFAULT_VERDICT_STAGE_CONFIG.spreadMultipliers,
     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
+    highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
+    debateModelTiers: {
+      advocate: pipelineConfig.debateModelTiers?.advocate ?? "sonnet",
+      selfConsistency: pipelineConfig.debateModelTiers?.selfConsistency ?? "sonnet",
+      challenger: pipelineConfig.debateModelTiers?.challenger ?? "sonnet",
+      reconciler: pipelineConfig.debateModelTiers?.reconciler ?? "sonnet",
+    },
   };
 }
 

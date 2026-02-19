@@ -1,7 +1,9 @@
 = ClaimAssessmentBoundary Pipeline Detail =
 
 {{info}}
-**Current Architecture (v2.11.0+):** The ClaimAssessmentBoundary pipeline is the production default pipeline. See the [[architecture document>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]] for detailed specifications.
+**Current Architecture (v2.11.0+):** The ClaimAssessmentBoundary pipeline is the production default pipeline. Source: ##claimboundary-pipeline.ts## and ##verdict-stage.ts##. For architecture reference, see [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]].
+
+Updated 2026-02-19 — Stage 4 verdict steps corrected to match ##verdict-stage.ts## implementation.
 {{/info}}
 
 {{mermaid}}
@@ -42,16 +44,16 @@ flowchart TB
         BOUNDARIES_OUT["ClaimAssessmentBoundary[]<br/>CoverageMatrix"]
     end
 
-    subgraph Stage4["Stage 4: VERDICT (5-step debate pattern)"]
-        DEBATE_INTRO["Step 1: Introduce Question<br/>Present claim + evidence base"]
-        CASE_FOR["Step 2: Case For<br/>Supporting evidence synthesis"]
-        CASE_AGAINST["Step 3: Case Against<br/>Contradicting evidence synthesis"]
-        CHALLENGE["Step 4: Challenge Weak Evidence<br/>Methodological critique"]
-        SYNTHESIS["Step 5: Synthesis<br/>Final verdict (0-100% + confidence)"]
+    subgraph Stage4["Stage 4: VERDICT (verdict-stage.ts)"]
+        ADVOCATE["[LLM] Step 1: Advocate Verdict (Sonnet)<br/>Initial verdicts for all claims<br/>with per-boundary signals"]
         SELF_CONSIST{"selfConsistencyMode?"}
-        SC_CHECK["Self-Consistency Check<br/>Re-run with temperature=0.3<br/>Check spread against thresholds"]
+        SC_CHECK["[LLM] Step 2: Self-Consistency (Sonnet x2)<br/>Re-run at temp=0.3, measure spread"]
+        CHALLENGE["[LLM] Step 3: Adversarial Challenge (Sonnet)<br/>Argue against emerging verdicts"]
+        RECONCILE["[LLM] Step 4: Reconciliation (Sonnet)<br/>Final verdicts incorporating challenges"]
+        VALIDATE["[LLM] Step 5: Verdict Validation (Haiku x2)<br/>Grounding check + direction check"]
+        STRUCT_CHECK["Structural Consistency Check<br/>(deterministic)"]
         TRIANGULATION["Triangulation Scoring<br/>Cross-boundary agreement"]
-        VERDICTS_OUT["ClaimVerdict[] (with triangulation)"]
+        VERDICTS_OUT["CBClaimVerdict[] (with triangulation)"]
     end
 
     subgraph Stage5["Stage 5: AGGREGATE ASSESSMENT"]
@@ -92,15 +94,15 @@ flowchart TB
     MERGE -->|"no"| ASSIGN
     ASSIGN --> BOUNDARIES_OUT
 
-    BOUNDARIES_OUT --> DEBATE_INTRO
-    DEBATE_INTRO --> CASE_FOR
-    CASE_FOR --> CASE_AGAINST
-    CASE_AGAINST --> CHALLENGE
-    CHALLENGE --> SYNTHESIS
-    SYNTHESIS --> SELF_CONSIST
+    BOUNDARIES_OUT --> ADVOCATE
+    ADVOCATE --> SELF_CONSIST
     SELF_CONSIST -->|"enabled"| SC_CHECK
-    SELF_CONSIST -->|"disabled"| TRIANGULATION
-    SC_CHECK --> TRIANGULATION
+    SELF_CONSIST -->|"disabled"| CHALLENGE
+    SC_CHECK --> CHALLENGE
+    CHALLENGE --> RECONCILE
+    RECONCILE --> VALIDATE
+    VALIDATE --> STRUCT_CHECK
+    STRUCT_CHECK --> TRIANGULATION
     TRIANGULATION --> VERDICTS_OUT
 
     VERDICTS_OUT --> WEIGHTED_AVG
@@ -120,7 +122,7 @@ flowchart TB
 == Key Features ==
 
 * **Evidence-emergent boundaries:** ClaimAssessmentBoundaries emerge from evidence clustering (Stage 3), not pre-detected
-* **5-step debate pattern:** Each verdict goes through structured debate (introduce → case for → case against → challenge → synthesis)
+* **5-step LLM debate:** Each verdict goes through structured debate (advocate → self-consistency → adversarial challenge → reconciliation → validation). Steps 2+3 run in parallel.
 * **Self-consistency checking:** Optional re-run with temperature variance to detect unstable verdicts (stable/moderate/unstable spread thresholds)
 * **Triangulation scoring:** Cross-boundary agreement assessment (strong/moderate/weak/conflicted levels)
 * **Quality gates:** Gate 1 (claim validation) and Gate 4 (verdict confidence distribution) are mandatory checkpoints
@@ -137,9 +139,101 @@ flowchart TB
 | **Budget control** | Per-context iteration limits | Claim sufficiency + reserved contradiction iterations |
 | **Schema version** | 2.x or 3.0.0 | 3.0.0-cb |
 
+== Sequence Diagram ==
+
+Component interaction during a full ClaimAssessmentBoundary pipeline analysis.
+
+{{mermaid}}
+sequenceDiagram
+    participant UI as Client/UI
+    participant API as API (ASP.NET)
+    participant Runner as Runner (Next.js)
+    participant Pipeline as CB Pipeline
+    participant LLM as LLM Service
+    participant Search as Web Search
+    participant SR as Source Reliability
+
+    UI->>API: POST /api/jobs (create job)
+    API->>Runner: POST /api/internal/run-job
+    Runner->>Pipeline: runClaimBoundaryAnalysis(jobId)
+
+    Note over Pipeline: Stage 1: EXTRACT CLAIMS
+    Pipeline->>LLM: Pass 1: extractAtomicClaims (Haiku)
+    LLM-->>Pipeline: AtomicClaim[] (rough)
+    Pipeline->>Search: preliminarySearch (thesis + top claims)
+    Search-->>Pipeline: SearchResult[]
+    Pipeline->>LLM: extractPreliminaryEvidence (Haiku)
+    LLM-->>Pipeline: EvidenceItem[] + EvidenceScope[]
+    Pipeline->>LLM: Pass 2: groundedClaimExtraction (Sonnet)
+    LLM-->>Pipeline: AtomicClaim[] (refined)
+    Pipeline->>LLM: Gate 1: validateClaims (Haiku)
+    LLM-->>Pipeline: Gate1Result
+
+    Note over Pipeline: Stage 2: RESEARCH
+    loop For each research iteration
+        Pipeline->>LLM: generateSearchQueries (Haiku)
+        Pipeline->>Search: execute(queries)
+        Search-->>Pipeline: SearchResult[]
+        Pipeline->>LLM: classifyRelevance (Haiku)
+        Pipeline->>Pipeline: fetchSources(relevantUrls)
+        Pipeline->>SR: prefetchSourceReliability(urls)
+        Pipeline->>LLM: extractEvidence (Haiku)
+        LLM-->>Pipeline: EvidenceItem[] + EvidenceScope[]
+        Pipeline->>API: updateProgress(jobId, %)
+    end
+
+    Note over Pipeline: Stage 3: CLUSTER BOUNDARIES
+    Pipeline->>LLM: clusterEvidenceScopes (Sonnet)
+    LLM-->>Pipeline: ClaimAssessmentBoundary[] + assignments
+
+    Note over Pipeline: Stage 4: VERDICT (verdict-stage.ts)
+    Pipeline->>LLM: Step 1: Advocate Verdict (Sonnet)
+    LLM-->>Pipeline: CBClaimVerdict[] (initial)
+    par Steps 2+3 (parallel)
+        Pipeline->>LLM: Step 2: Self-Consistency (Sonnet x2, temp=0.3)
+        LLM-->>Pipeline: ConsistencyResult[]
+    and
+        Pipeline->>LLM: Step 3: Adversarial Challenge (Sonnet)
+        LLM-->>Pipeline: ChallengeDocument
+    end
+    Pipeline->>LLM: Step 4: Reconciliation (Sonnet)
+    LLM-->>Pipeline: CBClaimVerdict[] (final)
+    Pipeline->>LLM: Step 5a: Grounding Validation (Haiku)
+    Pipeline->>LLM: Step 5b: Direction Validation (Haiku)
+
+    Note over Pipeline: Stage 5: AGGREGATE
+    Pipeline->>Pipeline: computeCoverageMatrix + triangulation
+    Pipeline->>Pipeline: weightedAggregation
+    Pipeline->>LLM: generateVerdictNarrative (Sonnet)
+    LLM-->>Pipeline: VerdictNarrative
+    Pipeline->>API: submitResults(jobId, report)
+    API-->>UI: Job complete
+{{/mermaid}}
+
+== LLM Call Budget ==
+
+|= Stage |= LLM Calls |= Model Tier |= Purpose
+| Pass 1 Extraction | 1 | Haiku | Quick rough claim scan
+| Pass 1 Evidence | 1-3 | Haiku | Extract evidence from preliminary sources
+| Pass 2 Extraction | 1 | Sonnet | Evidence-grounded claim extraction
+| Gate 1 Validation | 1 | Haiku | Factual + specificity + fidelity check
+| Research Queries | N (per claim per iteration) | Haiku | Search query generation
+| Relevance Classification | N (per search result batch) | Haiku | Classify search result relevance
+| Evidence Extraction | N (per relevant source) | Haiku | Extract evidence + EvidenceScope
+| Boundary Clustering | 1 | Sonnet | Cluster EvidenceScopes into boundaries
+| Step 1: Advocate | 1 | Sonnet | Initial per-claim verdicts
+| Step 2: Self-Consistency | 0 or 2 | Sonnet | Verdict stability (if enabled)
+| Step 3: Challenge | 1 | Sonnet | Adversarial challenge document
+| Step 4: Reconciliation | 1 | Sonnet | Final verdicts with challenge responses
+| Step 5: Validation | 2 | Haiku | Grounding + direction checks (advisory)
+| VerdictNarrative | 1 | Sonnet | Structured narrative generation
+
+//Typical total: 20-45 LLM calls per analysis (varies by claim count, research iterations, and self-consistency mode).//
+
 == Related Documentation ==
 
-* [[ClaimBoundary Pipeline Architecture>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]] — Full specification (§8.1-§8.6)
+* [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] — Architecture reference (pipeline variants, shared modules, budget controls)
 * [[Pipeline Variant Dispatch>>FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — How pipelines are selected
-* [[System Architecture>>FactHarbor.Product Development.Diagrams.System Architecture.WebHome]] — Overall system overview
 * [[Quality Gates Flow>>FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome]] — Gate 1 and Gate 4 details
+* [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] — Entity relationships
+* [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]] — Multi-view entity reference

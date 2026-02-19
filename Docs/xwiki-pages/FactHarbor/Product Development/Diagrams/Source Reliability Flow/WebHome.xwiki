@@ -3,7 +3,7 @@
 {{mermaid}}
 sequenceDiagram
     participant User
-    participant Analyzer as orchestrated.ts
+    participant Analyzer as claimboundary-pipeline.ts
     participant Prefetch as prefetchSourceReliability()
     participant Cache as source-reliability.db
     participant LLM as LLM Endpoint
@@ -43,7 +43,7 @@ sequenceDiagram
     end
 
     Note over User,Weight: PHASE 3: Evidence Weighting (after verdicts)
-    Analyzer->>Weight: applyEvidenceWeighting(verdicts, facts, sources)
+    Analyzer->>Weight: applyEvidenceWeighting(verdicts, evidence, sources)
     Weight->>Weight: Calculate avg source score per verdict
     Weight->>Weight: Adjust truthPercentage and confidence
     Weight-->>Analyzer: Weighted verdicts

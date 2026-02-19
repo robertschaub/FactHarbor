@@ -65,6 +65,34 @@ export interface VerdictStageConfig {
 
   /** Mixed/Unverified confidence threshold (UCM, default 40) */
   mixedConfidenceThreshold: number;
+
+  /**
+   * Minimum confidence required for high-harm claims (harmPotential "critical" or "high")
+   * before a definitive verdict is issued. Claims below this threshold are downgraded
+   * to UNVERIFIED regardless of truth percentage.
+   *
+   * Addresses C8 (advisory-only validation) from Stammbach/Ash political bias analysis.
+   * Default 50. Set to 0 to disable.
+   */
+  highHarmMinConfidence: number;
+
+  /**
+   * Per-role model tier for the verdict debate pattern.
+   * Allows using different models for different debate roles to reduce
+   * single-model bias (C1/C16 from Stammbach/Ash political bias analysis).
+   *
+   * The Climinator paper (Ash group) shows structurally independent advocates
+   * surface genuine controversy. Using different models for challenger vs
+   * advocate tests whether "performative adversarialism" is a real concern.
+   *
+   * Default: all "sonnet". Validation (Step 5) always uses "haiku".
+   */
+  debateModelTiers: {
+    advocate: "haiku" | "sonnet";
+    selfConsistency: "haiku" | "sonnet";
+    challenger: "haiku" | "sonnet";
+    reconciler: "haiku" | "sonnet";
+  };
 }
 
 /**
@@ -83,6 +111,13 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
     highlyUnstable: 0.4,
   },
   mixedConfidenceThreshold: 40,
+  highHarmMinConfidence: 50,
+  debateModelTiers: {
+    advocate: "sonnet",
+    selfConsistency: "sonnet",
+    challenger: "sonnet",
+    reconciler: "sonnet",
+  },
 };
 
 // ============================================================================
@@ -137,7 +172,7 @@ export async function runVerdictStage(
   // Steps 2 & 3: Run in parallel
   const [consistencyResults, challengeDoc] = await Promise.all([
     selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config),
-    adversarialChallenge(advocateVerdicts, evidence, boundaries, llmCall),
+    adversarialChallenge(advocateVerdicts, evidence, boundaries, llmCall, config),
   ]);
 
   // Step 4: Reconciliation
@@ -156,8 +191,11 @@ export async function runVerdictStage(
     console.warn("[VerdictStage] Structural consistency warnings:", structuralWarnings);
   }
 
+  // Step 5b: High-harm confidence floor (C8 — Stammbach/Ash bias mitigation)
+  const harmEnforcedVerdicts = enforceHarmConfidenceFloor(validatedVerdicts, config);
+
   // Gate 4: Confidence classification
-  const finalVerdicts = classifyConfidence(validatedVerdicts);
+  const finalVerdicts = classifyConfidence(harmEnforcedVerdicts);
 
   return finalVerdicts;
 }
@@ -194,7 +232,7 @@ export async function advocateVerdict(
       boundaries: coverageMatrix.boundaries,
       counts: coverageMatrix.counts,
     },
-  }, { tier: "sonnet" });
+  }, { tier: config.debateModelTiers.advocate });
 
   // Parse LLM result into CBClaimVerdict[]
   const rawVerdicts = result as Array<Record<string, unknown>>;
@@ -283,8 +321,8 @@ export async function selfConsistencyCheck(
   };
 
   const [run2, run3] = await Promise.all([
-    llmCall("VERDICT_ADVOCATE", input, { tier: "sonnet", temperature }),
-    llmCall("VERDICT_ADVOCATE", input, { tier: "sonnet", temperature }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature }),
   ]);
 
   const run2Verdicts = run2 as Array<Record<string, unknown>>;
@@ -325,6 +363,7 @@ export async function adversarialChallenge(
   evidence: EvidenceItem[],
   boundaries: ClaimAssessmentBoundary[],
   llmCall: LLMCallFn,
+  config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<ChallengeDocument> {
   const result = await llmCall("VERDICT_CHALLENGER", {
     claimVerdicts: advocateVerdicts.map((v) => ({
@@ -338,7 +377,7 @@ export async function adversarialChallenge(
     })),
     evidenceItems: evidence,
     claimBoundaries: boundaries,
-  }, { tier: "sonnet" });
+  }, { tier: config.debateModelTiers.challenger });
 
   return parseChallengeDocument(result);
 }
@@ -372,7 +411,7 @@ export async function reconcileVerdicts(
     })),
     challenges: challengeDoc.challenges,
     consistencyResults,
-  }, { tier: "sonnet" });
+  }, { tier: config.debateModelTiers.reconciler });
 
   const rawReconciled = result as Array<Record<string, unknown>>;
 
@@ -543,6 +582,53 @@ export function runStructuralConsistencyCheck(
   }
 
   return warnings;
+}
+
+// ============================================================================
+// HIGH-HARM CONFIDENCE FLOOR (C8 — Stammbach/Ash bias mitigation)
+// ============================================================================
+
+/**
+ * Enforce minimum confidence for high-harm claims.
+ *
+ * Claims with harmPotential "critical" or "high" that fall below the
+ * configured minimum confidence are downgraded to UNVERIFIED. This prevents
+ * low-evidence definitive verdicts on potentially harmful topics.
+ *
+ * Rationale: A claim like "Treatment X cures disease Y" scored at 72%
+ * (MOSTLY-TRUE) with only 25% confidence is epistemically dangerous —
+ * it gives a definitive-sounding verdict without sufficient evidentiary
+ * backing. For high-harm claims, insufficient confidence should yield
+ * UNVERIFIED rather than a misleading directional verdict.
+ *
+ * @param verdicts - Verdicts from the debate pipeline
+ * @param config - Verdict stage configuration (highHarmMinConfidence threshold)
+ * @returns Verdicts with high-harm low-confidence claims downgraded to UNVERIFIED
+ */
+export function enforceHarmConfidenceFloor(
+  verdicts: CBClaimVerdict[],
+  config: VerdictStageConfig,
+): CBClaimVerdict[] {
+  const threshold = config.highHarmMinConfidence ?? 50;
+  if (threshold <= 0) return verdicts; // Disabled
+
+  return verdicts.map((v) => {
+    const isHighHarm = v.harmPotential === "critical" || v.harmPotential === "high";
+    if (!isHighHarm || v.confidence >= threshold) return v;
+
+    // Already UNVERIFIED — no change needed
+    if (v.verdict === "UNVERIFIED") return v;
+
+    console.warn(
+      `[VerdictStage] High-harm claim ${v.claimId} (harmPotential=${v.harmPotential}) ` +
+      `has confidence ${v.confidence}% < threshold ${threshold}% — downgrading to UNVERIFIED`
+    );
+
+    return {
+      ...v,
+      verdict: "UNVERIFIED" as ClaimVerdict7Point,
+    };
+  });
 }
 
 // ============================================================================

@@ -43,7 +43,7 @@ FactHarbor uses a **two-service architecture**: a Next.js web application (UI + 
 |= Area |= Responsibility |= Key Files
 | **UI Pages** | Analysis submission, job results, admin dashboard | ##src/app/analyze/##, ##src/app/jobs/##, ##src/app/admin/##
 | **Proxy API Routes** | Forward requests to .NET API | ##src/app/api/fh/##
-| **AKEL Pipeline** | Full fact-checking analysis (Understand → Research → Verdict → Report) | ##src/lib/analyzer/orchestrated.ts##
+| **AKEL Pipeline** | Full fact-checking analysis (Understand → Research → Verdict → Report) | ##src/lib/analyzer/claimboundary-pipeline.ts##
 | **Shared Modules** | Evidence filtering, aggregation, quality gates, source reliability | ##src/lib/analyzer/*.ts##
 | **Configuration (UCM)** | Runtime config management with versioning and validation | ##src/lib/config-*.ts##
 | **Provider Health** | Circuit breaker per provider, auto-pause, webhook notifications | ##src/lib/provider-health.ts##

@@ -1,169 +1,173 @@
-{{warning}}
-**STALE — Orchestrated Pipeline Era (v2.10.x)**
-
-This ERD was created for the Orchestrated pipeline. It shows ##CLAIM_UNDERSTANDING##, ##ANALYSIS_CONTEXT##, ##KEY_FACTOR_DEF##, ##SUB_CLAIM##, and ##CONTEXT_ANSWER## as current entities — these were all removed in v2.11.0. The ClaimAssessmentBoundary pipeline replaced them with ##AtomicClaim## and ##ClaimAssessmentBoundary##. This diagram requires a dedicated rewrite. See [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]] for current architecture.
-{{/warning}}
-
 {{info}}
-**Historical Reference (Orchestrated-era, v2.10.x — superseded by CB pipeline v2.11.0)**. ##EVIDENCE_ITEM## and ##EVIDENCE_SCOPE## entities remain current; all other entities in this diagram are removed.
+**Current Implementation (CB Pipeline v2.11.0+)** — The complete analysis entity hierarchy from input through verdict to overall assessment. Source of truth: ##apps/web/src/lib/analyzer/types.ts## (CB pipeline interfaces).
+
+Updated 2026-02-19. Replaces Orchestrated-era entities (CLAIM_UNDERSTANDING, ANALYSIS_CONTEXT, SUB_CLAIM, KEY_FACTOR_DEF, CONTEXT_ANSWER — all removed in v2.11.0).
 {{/info}}
 
-= Analysis Entity Model ERD (Historical) =
+= Analysis Entity Model (CB Pipeline) =
 
 {{mermaid}}
 erDiagram
-    CLAIM_UNDERSTANDING ||--o{ ANALYSIS_CONTEXT : "detects"
-    CLAIM_UNDERSTANDING ||--o{ KEY_FACTOR_DEF : "discovers"
-    CLAIM_UNDERSTANDING ||--o{ SUB_CLAIM : "decomposes into"
+    CB_CLAIM_UNDERSTANDING ||--o{ ATOMIC_CLAIM : "extracts"
+    CB_CLAIM_UNDERSTANDING ||--|| GATE_1_STATS : "produces"
 
-    SUB_CLAIM }o--o| ANALYSIS_CONTEXT : "scoped to"
-    SUB_CLAIM }o--o| KEY_FACTOR_DEF : "addresses"
+    ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : "receives"
 
-    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "supported by"
-    CLAIM_VERDICT }o--o| ANALYSIS_CONTEXT : "evaluated in"
-    CLAIM_VERDICT }o--o| KEY_FACTOR_DEF : "addresses"
+    CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : "contains"
+    CB_CLAIM_VERDICT ||--|| CONSISTENCY_RESULT : "has"
+    CB_CLAIM_VERDICT ||--o{ CHALLENGE_RESPONSE : "has"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites"
 
     EVIDENCE_ITEM }o--|| FETCHED_SOURCE : "from"
-    EVIDENCE_ITEM ||--o| EVIDENCE_SCOPE : "has scope"
+    EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE : "has scope"
 
-    ARTICLE_ANALYSIS ||--o{ CLAIM_VERDICT : "aggregates"
-    ARTICLE_ANALYSIS ||--o{ CONTEXT_ANSWER : "per context"
-    CONTEXT_ANSWER }o--|| ANALYSIS_CONTEXT : "answers"
-    CONTEXT_ANSWER ||--o{ KEY_FACTOR_VERDICT : "contains"
-    CONTEXT_ANSWER ||--o| FACTOR_ANALYSIS : "summarises"
+    EVIDENCE_SCOPE }o--|| CLAIM_BOUNDARY : "clusters into"
+    EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : "assigned to"
 
-    CLAIM_UNDERSTANDING {
+    BOUNDARY_FINDING }o--|| CLAIM_BOUNDARY : "per boundary"
+
+    OVERALL_ASSESSMENT ||--o{ CB_CLAIM_VERDICT : "aggregates"
+    OVERALL_ASSESSMENT ||--o{ CLAIM_BOUNDARY : "presents"
+    OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : "has"
+    OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : "has"
+    OVERALL_ASSESSMENT ||--|| QUALITY_GATES : "has"
+
+    CB_CLAIM_UNDERSTANDING {
         string detectedInputType "claim or article"
-        string impliedClaim "Main assertion"
+        string impliedClaim "LLM-extracted thesis"
         string articleThesis "Article thesis"
         string backgroundDetails "Broader frame"
         string riskTier "A B or C"
+        json distinctEvents "Name date description"
     }
 
-    ANALYSIS_CONTEXT {
-        string id PK "CTX_xxx"
-        string name "Full name"
-        string shortName "Short label"
-        string subject "What is analysed"
-        string temporal "Time period"
-        string status "concluded ongoing pending unknown"
-        string outcome "Result or conclusion"
-        string assessedStatement "What is assessed"
-        json metadata "Domain-specific details"
-    }
-
-    KEY_FACTOR_DEF {
-        string id PK "KF_xxx"
-        string question "Decomposition question"
-        string factor "Short label"
-        string category "procedural evidential methodological factual evaluative"
-    }
-
-    KEY_FACTOR_VERDICT {
-        string factor "Short label"
-        string supports "yes no neutral"
-        string explanation "Reasoning"
-        boolean isContested
-        string contestedBy "Who or what contests"
-        string contestationReason "Why contested"
-        string factualBasis "established disputed opinion unknown"
-    }
-
-    FACTOR_ANALYSIS {
-        number positiveFactors
-        number negativeFactors
-        number neutralFactors
-        number contestedNegatives
-        string verdictExplanation
-    }
-
-    SUB_CLAIM {
-        string id PK "SC1 C1 etc"
-        string text "Claim statement"
-        string type "legal procedural factual evaluative"
-        string claimRole "core attribution source timing"
-        boolean isCentral "Central claim flag"
-        string centrality "high medium low"
-        string harmPotential "high medium low"
-        string checkWorthiness "high medium low"
-        string_array dependsOn "Claim IDs"
+    ATOMIC_CLAIM {
+        string id PK "AC_01 AC_02"
+        string statement "Verifiable assertion"
+        string category "factual evaluative procedural"
+        string centrality "high medium"
+        string harmPotential "critical high medium low"
+        boolean isCentral "Always true (filtered)"
+        string claimDirection "supports_thesis contradicts_thesis contextual"
         string_array keyEntities "Named entities"
-        string contextId FK "Linked AnalysisContext"
-        string keyFactorId FK "Linked KeyFactor"
-        string approximatePosition "Position in source"
+        float specificityScore "0-1"
+        string groundingQuality "strong moderate weak none"
+        json expectedEvidenceProfile "methodologies metrics sourceTypes"
     }
 
-    CLAIM_VERDICT {
-        string claimId PK "Claim identifier"
-        int truthPercentage "0-100 calibrated"
-        int confidence "0-100"
+    GATE_1_STATS {
+        int totalClaims
+        int passedOpinion
+        int passedSpecificity
+        int passedFidelity "Fidelity to original input"
+        int filteredCount
+        boolean overallPass
+    }
+
+    CB_CLAIM_VERDICT {
+        string id PK
+        string claimId FK
+        float truthPercentage "0-100"
         string verdict "7-point scale label"
-        string riskTier "A B or C"
-        string reasoning "Explanation"
-        string_array supportingEvidenceIds "Evidence IDs"
-        string contextId FK "Linked AnalysisContext"
-        string keyFactorId FK "Linked KeyFactor"
-        boolean isCounterClaim "Inverts for aggregation"
+        float confidence "0-100"
+        string reasoning "Includes challenge responses"
+        string harmPotential "critical high medium low"
+        boolean isContested
+        string_array supportingEvidenceIds FK
+        string_array contradictingEvidenceIds FK
+    }
+
+    BOUNDARY_FINDING {
+        string boundaryId FK
+        string boundaryName
+        float truthPercentage "Per-boundary 0-100"
+        float confidence "Per-boundary 0-100"
+        string evidenceDirection "supports contradicts mixed neutral"
+        int evidenceCount
+    }
+
+    CONSISTENCY_RESULT {
+        string claimId FK
+        float_array percentages "Truth pct from each run"
+        float average
+        float spread "max minus min"
+        boolean stable "spread below threshold"
+        boolean assessed "false if skipped"
+    }
+
+    CHALLENGE_RESPONSE {
+        string challengeType "assumption missing_evidence methodology_weakness independence_concern"
+        string response "Reconciler response"
+        boolean verdictAdjusted "Whether verdict changed"
     }
 
     EVIDENCE_ITEM {
-        string id PK "S1-E1 format"
+        string id PK "EV_001 EV_002"
         string statement "Extracted evidence text"
-        string category "legal_provision statistic event etc"
-        string specificity "high medium"
-        string sourceId FK "Linked FetchedSource"
-        string sourceUrl "Source URL"
-        string sourceTitle "Source title"
-        string sourceExcerpt "Original text excerpt"
+        string category "statistic expert_quote event legal_provision etc"
+        string sourceId FK
+        string sourceUrl
         string claimDirection "supports contradicts neutral"
-        string contextId FK "Linked AnalysisContext"
         string probativeValue "high medium low"
-        string sourceAuthority "primary secondary opinion"
-        string evidenceBasis "scientific documented anecdotal etc"
-        number extractionConfidence "0-100"
+        string claimBoundaryId FK "Assigned in Stage 3"
+        string_array relevantClaimIds "Related claims"
+        boolean isDerivative "Cites another source study"
     }
 
     EVIDENCE_SCOPE {
         string name "Short label"
-        string methodology "Standard referenced"
+        string methodology "REQUIRED"
+        string temporal "REQUIRED"
         string boundaries "Included or excluded"
         string geographic "Source data region"
-        string temporal "Source data period"
         string sourceType "peer_reviewed_study etc"
+        map additionalDimensions "Domain-specific"
     }
 
     FETCHED_SOURCE {
-        string id PK "S1 S2 etc"
-        string url "Full URL"
-        string title "Page title"
-        string fullText "Retrieved content"
-        float trackRecordScore "0.0-1.0 reliability"
-        float trackRecordConfidence "0.0-1.0 eval confidence"
-        boolean trackRecordConsensus "Multi-model consensus"
-        string category "Source category"
-        boolean fetchSuccess "Content retrieval success"
-        string fetchedAt "When fetched"
-        string searchQuery "Query that found source"
+        string id PK
+        string url
+        string title
+        float trackRecordScore "0.0-1.0"
+        boolean fetchSuccess
     }
 
-    CONTEXT_ANSWER {
-        string contextId FK "CTX_xxx"
-        string contextName "Full name"
-        number answer "Truth percentage raw"
-        number truthPercentage "0-100 for display"
-        number confidence "0-100"
-        string shortAnswer "Brief answer"
+    CLAIM_BOUNDARY {
+        string id PK "CB_01 CB_02"
+        string name "Human-readable label"
+        string shortName "Short label for UI"
+        string description
+        string methodology "Dominant methodology"
+        float internalCoherence "0-1"
+        int evidenceCount
     }
 
-    ARTICLE_ANALYSIS {
-        number articleTruthPercentage "0-100 calibrated"
-        number articleVerdict "7-point scale number"
-        string articleVerdictReason "Overall explanation"
-        string articleVerdictReliability "high or low"
-        boolean hasMultipleContexts "Distinct contexts flag"
-        json claimPattern "supported uncertain refuted counts"
-        boolean isPseudoscience "Pseudoscience detected"
+    VERDICT_NARRATIVE {
+        string headline "One sentence finding"
+        string evidenceBaseSummary "Quantitative summary"
+        string keyFinding "Main synthesis 2-3 sentences"
+        string_array boundaryDisagreements "Where boundaries diverge"
+        string limitations "What could not be determined"
+    }
+
+    COVERAGE_MATRIX {
+        string_array claims "Claim IDs (rows)"
+        string_array boundaries "Boundary IDs (columns)"
+        int_array_array counts "Evidence count per cell"
+    }
+
+    QUALITY_GATES {
+        boolean passed "Overall pass"
+        json gate1Stats "Claim validation stats"
+        json gate4Stats "Confidence assessment stats"
+    }
+
+    OVERALL_ASSESSMENT {
+        float truthPercentage "0-100 weighted"
+        string verdict "7-point scale label"
+        float confidence "0-100 weighted"
+        boolean hasMultipleBoundaries
     }
 {{/mermaid}}
 
-//The complete analysis entity chain. Step 1 (Understand) produces CLAIM_UNDERSTANDING with detected ANALYSIS_CONTEXTs, KEY_FACTOR_DEFs, and SUB_CLAIMs. Step 2 (Research) gathers EVIDENCE_ITEMs (with optional EVIDENCE_SCOPEs) from FETCHED_SOURCEs. Steps 3-5 generate CLAIM_VERDICTs per claim, CONTEXT_ANSWERs (with KEY_FACTOR_VERDICTs and FACTOR_ANALYSIS) per context, and an overall ARTICLE_ANALYSIS. All entities are embedded in the analysis result JSON blob — not separate database tables.//
+//The complete CB pipeline analysis entity hierarchy. Stage 1 (Extract Claims) produces ##CB_CLAIM_UNDERSTANDING## with ##AtomicClaims## and Gate 1 stats. Stage 2 (Research) gathers ##EVIDENCE_ITEMs## with mandatory ##EVIDENCE_SCOPEs## from ##FETCHED_SOURCEs##. Stage 3 (Cluster) groups ##EVIDENCE_SCOPEs## into ##CLAIM_BOUNDARYs##. Stage 4 (Verdict) generates ##CB_CLAIM_VERDICTs## with per-boundary ##BOUNDARY_FINDINGs##, ##CONSISTENCY_RESULTs## (self-consistency), and ##CHALLENGE_RESPONSEs## (adversarial debate). Stage 5 (Aggregate) produces ##OVERALL_ASSESSMENT## with ##VERDICT_NARRATIVE##, ##COVERAGE_MATRIX##, and ##QUALITY_GATES##. All entities are embedded in the analysis result JSON blob (schema version ##3.0.0-cb##).//

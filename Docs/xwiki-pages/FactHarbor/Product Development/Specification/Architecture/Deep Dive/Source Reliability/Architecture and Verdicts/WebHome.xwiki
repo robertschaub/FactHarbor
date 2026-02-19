@@ -12,7 +12,7 @@ The Source Reliability system uses a **two-phase pattern** to avoid async operat
 
 ==== The Problem ====
 
-The FactHarbor analyzer (##orchestrated.ts##) is a complex synchronous pipeline. Adding ##await## calls mid-pipeline for source reliability lookups would require major refactoring, complicate error handling, and risk introducing race conditions.
+The FactHarbor analyzer (##claimboundary-pipeline.ts##) is a complex synchronous pipeline. Adding ##await## calls mid-pipeline for source reliability lookups would require major refactoring, complicate error handling, and risk introducing race conditions.
 
 ==== The Solution: Two-Phase Pattern ====
 

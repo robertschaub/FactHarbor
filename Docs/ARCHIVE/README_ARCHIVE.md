@@ -216,6 +216,16 @@ The following documents had valuable content extracted and merged into active do
 
 ---
 
+### Phase 9 Pipeline Quality (2026-02-19) — Superseded by CB Pipeline
+
+**Description**: Phase 9 work was abandoned when the ClaimAssessmentBoundary pipeline replaced the Orchestrated architecture in v2.11.0. The issues Phase 9 targeted (context explosion, budget starvation) no longer apply under the CB design.
+
+**Files**:
+1. `Phase9_Pipeline_Status_and_Plan_2026-02-15.md` — Phase 9a validation results and Phase 9b plan (SUPERSEDED — CB pipeline solved the underlying AnalysisContext issues)
+2. `Phase9_Research_Loop_Proposal_2026-02-15.md` — Research loop redesign proposal (SUPERSEDED — never implemented; CB pipeline uses claims-driven research)
+
+---
+
 ## Archive Policy
 
 ### When to Archive

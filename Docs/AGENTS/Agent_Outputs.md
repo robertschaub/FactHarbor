@@ -7,6 +7,21 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Lead Architect | Claude Opus 4.6 | Political Bias Mitigation — Stammbach/Ash Low-Hanging Fruits
+**Task:** Investigate and implement low-hanging fruits from Stammbach/Ash EMNLP 2024 paper analysis (19 concerns, 6 recommendations).
+**Files touched:** `verdict-stage.ts`, `claimboundary-pipeline.ts`, `config-schemas.ts`, `types.ts` + 2 test files (+616 lines, 24 new tests).
+**Key decisions:** Harm confidence floor as standalone function (not modify validateVerdicts); debate tiers limited to haiku/sonnet (LLMCallFn constraint); evidence balance uses majority-ratio to avoid FP issues; CalcConfig now loaded at pipeline start.
+**Open items:** Action 2 (calibration harness, ~$5-10 LLM cost) deferred. Full provider separation for challenger model deferred (requires LLMCallFn extension).
+**For next agent:** WIP doc at `Docs/WIP/Political_Bias_Mitigation_2026-02-19.md` has review checklist. All 6 new UCM params default to no-behavior-change. 877 tests green.
+
+---
+
+### 2026-02-19 | Lead Architect | Claude Opus 4.6 | xWiki CB Pipeline Documentation Update
+**Task:** Update 15 xWiki architecture/diagram pages to reflect ClaimAssessmentBoundary pipeline (v2.11.0+). Full rewrites of 3 foundation ERDs + Entity Views, expanded Quality Gates Flow, fixed CB Pipeline Detail verdict steps, corrected stale orchestrated.ts references across 5 additional pages.
+**See:** `Docs/AGENTS/Handoffs/2026-02-19_Lead_Architect_xWiki_CB_Pipeline_Documentation_Update.md`
+
+---
+
 ### 2026-02-19 | LLM Expert | Claude Opus 4.6 + Claude Sonnet 4.6 + GPT-5.3 Codex | Meeting Prep — Stammbach/Ash EMNLP 2024 + FactHarbor Bias Analysis
 **Task:** Prepare comprehensive meeting document for Elliott Ash (ETH Zurich). Review EMNLP 2024 paper, survey Ash's full research portfolio (11 papers), analyze FactHarbor's bias mitigation posture with three independent AI reviewers, produce consolidated meeting-ready document.
 **Files touched:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md` (created, iterated 8+ times, final consolidated version). Deleted after merge: `Sonnet_Review_Stammbach_Ash_Paper.md`, `GPT53_Review_Stammbach_Ash_Paper.md`, `GPT53_Review_Prompt.md`, `Docs/WIP/Paper_Review_*.md`.
@@ -416,3 +431,41 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 **Open items:** None. Convention is ready for use by all agents.
 
 **For next agent:** This convention is now active. After completing any non-trivial task, append your output here (Standard tier) or create a file in `Docs/AGENTS/Handoffs/` (Significant tier). See AGENTS.md § Agent Output Convention for the template.
+
+---
+### 2026-02-19 | Lead Developer | Codex (GPT-5) | Review — Political_Bias_Mitigation_2026-02-19
+**Task:** Review `Docs/WIP/Political_Bias_Mitigation_2026-02-19.md` against the referenced implementation and tests; validate checklist items and identify risks/regressions.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Performed a code-first review on the 6 referenced files plus related config-loading paths.
+- Verified test/build claims directly: safe suite and targeted suites pass; web build is green.
+- Logged two material correctness issues (imbalance percentage messaging and threshold-disable contract mismatch) plus one run-level config consistency risk.
+**Open items:**
+- Decide expected behavior for `evidenceBalanceSkewThreshold = 1.0` (true disable vs "flag only 100% one-sided").
+- Decide whether to enforce single-run config snapshot consistency across stages (pass config through state/job snapshot).
+- If calibration harness proceeds, approve budget and fixture design before implementation.
+**Warnings:**
+- Current warning text can underreport contradicting-side skew percentage (direction and percentage can disagree).
+- Docs/comments/tests currently conflict on the semantics of threshold `1.0`.
+**For next agent:**
+- Start with `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` around imbalance warning construction and `assessEvidenceBalance`.
+- Align contract text in `apps/web/src/lib/config-schemas.ts` and tests in `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` to the chosen threshold behavior.
+- If snapshot consistency is chosen, thread one resolved config object from pipeline entry through Stage 4/5 helpers.
+**Learnings:** No new role learnings appended.
+
+---
+### 2026-02-19 | Lead Developer | Codex (GPT-5) | Re-Verification — Political Bias Mitigation Post-Review Fixes
+**Task:** Verify that all three prior review findings were addressed in code, tests, and WIP documentation.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed contradicting-side warning now reports majority-side percentage (`majorityPct`).
+- Confirmed `evidenceBalanceSkewThreshold=1.0` disable semantics now use strict `>` and tests/docs were updated consistently.
+- Confirmed config consistency risk is now documented as a low-severity known issue with a backlog-oriented mitigation approach.
+- Re-ran full safe test suite and web build for independent validation.
+**Open items:**
+- Optional future refactor: single per-job config snapshot threading across all pipeline stages.
+**Warnings:**
+- Strict `>` changes boundary semantics: exactly 80% majority no longer triggers at threshold `0.8` (documented and intentional).
+**For next agent:**
+- If product wants inclusive threshold behavior at 80% while preserving `1.0` disable, add an explicit disable flag instead of overloading threshold semantics.
+**Learnings:** No new role learnings appended.

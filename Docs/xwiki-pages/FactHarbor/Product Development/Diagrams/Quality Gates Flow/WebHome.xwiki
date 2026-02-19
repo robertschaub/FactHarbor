@@ -1,37 +1,139 @@
+{{info}}
+**Current Implementation (CB Pipeline v2.11.0+)** — Quality gates in the ClaimAssessmentBoundary pipeline. Gate 1 validates claims after extraction (Stage 1), Structural Consistency Check runs after verdict (Stage 4), and Gate 4 assesses verdict confidence before aggregation (Stage 5).
+
+Updated 2026-02-19 per ##claimboundary-pipeline.ts## and ##quality-gates.ts##.
+{{/info}}
+
 = Quality Gates Flow =
+
+== Overview ==
 
 {{mermaid}}
 flowchart TB
-    subgraph Input["Step 1: Understand"]
-        CLAIMS["Extracted Claims"]
+    subgraph Stage1["Stage 1: EXTRACT CLAIMS"]
+        CLAIMS["AtomicClaims extracted\n(Pass 1 + Pass 2)"]
         GATE1{{"Gate 1\nClaim Validation"}}
-        PASS1["Factual claims\nproceed to research"]
-        FAIL1["Opinions, predictions,\nnon-factual filtered out"]
+        PASS1["Validated claims\nproceed to research"]
+        FAIL1["Filtered claims\n(opinion, prediction, vague, infidelity)"]
+        RESCUE{{"Safety Net\nAll filtered?"}}
+        RESCUED["Rescue highest-centrality\nclaim (prevent empty pipeline)"]
     end
 
-    subgraph Research["Step 2: Research"]
-        EVIDENCE["Evidence gathered\nfrom web sources"]
+    subgraph Stage23["Stage 2-3: RESEARCH + CLUSTER"]
+        EVIDENCE["Evidence gathered\nand clustered into\nClaimAssessmentBoundaries"]
     end
 
-    subgraph Verdict["Step 3: Verdict"]
-        VERDICTS["Claim verdicts\ngenerated"]
+    subgraph Stage4["Stage 4: VERDICT"]
+        VERDICTS["CBClaimVerdicts\ngenerated via LLM debate"]
+        STRUCT{{"Structural\nConsistency Check"}}
+        STRUCT_WARN["Warnings logged\n(non-blocking)"]
         GATE4{{"Gate 4\nConfidence Assessment"}}
-        HIGH["HIGH / MEDIUM\nconfidence — publish"]
-        LOW["LOW confidence —\nflag for review"]
-        INSUF["INSUFFICIENT —\nmore research needed"]
+        HIGH["HIGH / MEDIUM\nconfidence"]
+        LOW["LOW confidence\nflagged for review"]
+        INSUF["INSUFFICIENT\nevidence lacking"]
     end
 
     CLAIMS --> GATE1
     GATE1 -->|"Pass"| PASS1
     GATE1 -->|"Fail"| FAIL1
-    PASS1 --> EVIDENCE --> VERDICTS --> GATE4
+    GATE1 --> RESCUE
+    RESCUE -->|"Yes: all filtered"| RESCUED
+    RESCUED --> PASS1
+    RESCUE -->|"No: some passed"| PASS1
+    PASS1 --> EVIDENCE
+    EVIDENCE --> VERDICTS
+    VERDICTS --> STRUCT
+    STRUCT -->|"Warnings"| STRUCT_WARN
+    STRUCT --> GATE4
     GATE4 -->|"HIGH/MEDIUM"| HIGH
     GATE4 -->|"LOW"| LOW
     GATE4 -->|"INSUFFICIENT"| INSUF
 
-    style Input fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style Research fill:#e3f2fd,stroke:#1565c0,color:#000
-    style Verdict fill:#fff9c4,stroke:#f9a825,color:#000
+    style Stage1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Stage23 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Stage4 fill:#fff9c4,stroke:#f9a825,color:#000
 {{/mermaid}}
 
-//Quality gates in the AKEL pipeline: Gate 1 filters non-factual claims before research, Gate 4 assesses verdict confidence based on evidence count, source quality, and agreement.//
+//Quality gates in the ClaimAssessmentBoundary pipeline: Gate 1 filters non-verifiable and evidence-contaminated claims before research, Structural Consistency Check validates verdict integrity (non-blocking), Gate 4 assesses verdict confidence based on evidence count, source quality, agreement, and self-consistency spread.//
+
+== Gate 1: Claim Validation (Detail) ==
+
+Gate 1 runs after Stage 1 (Extract Claims) to filter non-verifiable or unfaithful claims before research.
+
+{{mermaid}}
+flowchart TD
+    INPUT["AtomicClaim\nfrom Pass 2"] --> FIDELITY{{"passedFidelity?\n(Claim matches\noriginal input meaning)"}}
+
+    FIDELITY -->|"No"| FILTERED["FILTERED\n(evidence-contaminated)"]
+    FIDELITY -->|"Yes"| OPINION{{"Opinion or\nprediction?"}}
+
+    OPINION -->|"Yes"| FILTERED2["FILTERED\n(not verifiable)"]
+    OPINION -->|"No"| SPEC{{"specificityScore\n>= 0.6?"}}
+
+    SPEC -->|"Yes"| GROUNDING["Check groundingQuality"]
+    SPEC -->|"No, centrality=high"| RETRY["Decomposition Retry\n(LLM splits into 2-3\nspecific sub-claims)"]
+    SPEC -->|"No, centrality=medium"| FILTERED3["FILTERED\n(too vague, not central)"]
+
+    RETRY --> SPEC2{{"Retry claims\nspecific enough?"}}
+    SPEC2 -->|"Yes"| GROUNDING
+    SPEC2 -->|"No"| FILTERED3
+
+    GROUNDING --> GQ_STRONG["strong: Pass"]
+    GROUNDING --> GQ_MODERATE["moderate: Pass"]
+    GROUNDING --> GQ_WEAK["weak: Pass with flag"]
+    GROUNDING --> GQ_NONE["none: Pass with flag"]
+
+    GQ_STRONG --> PASSED["PASSED\n(proceed to research)"]
+    GQ_MODERATE --> PASSED
+    GQ_WEAK --> PASSED
+    GQ_NONE --> PASSED
+
+    style FILTERED fill:#ffcdd2,stroke:#c62828,color:#000
+    style FILTERED2 fill:#ffcdd2,stroke:#c62828,color:#000
+    style FILTERED3 fill:#ffcdd2,stroke:#c62828,color:#000
+    style PASSED fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style RETRY fill:#fff3e0,stroke:#e65100,color:#000
+{{/mermaid}}
+
+=== Gate 1 Checks ===
+
+|= Check |= Field |= Criteria |= Action on Failure
+| **Fidelity** | ##passedFidelity## | Claim must be derivable from original input text, not evidence-contaminated | Filtered out
+| **Factuality** | ##isFactual## | Not pure opinion or prediction (unless in article thesis) | Filtered out
+| **Specificity** | ##specificityScore## | Score >= 0.6 (researchable independently) | Decomposition retry (if high centrality) or filtered (if medium)
+| **Grounding Quality** | ##groundingQuality## | 4-level: strong, moderate, weak, none | Pass with monitoring flag (weak/none); all levels pass
+
+=== Safety Net ===
+
+If **all claims** are filtered by Gate 1 (would result in empty pipeline), the safety net rescues the highest-centrality claim to prevent a completely empty analysis. This ensures the pipeline always produces a result.
+
+== Structural Consistency Check ==
+
+Runs after Stage 4 (Verdict), before Gate 4. Deterministic structural validation only — no semantic interpretation (per AGENTS.md LLM Intelligence rule).
+
+|= Check |= What It Validates |= On Failure
+| Evidence ID validity | All evidence IDs referenced in verdicts exist in the evidence pool | Warning logged
+| Boundary ID validity | All boundary IDs in ##boundaryFindings## are valid ClaimBoundary IDs | Warning logged
+| Truth percentage range | Truth percentage within 0-100 range | Warning logged
+| Label-band matching | Verdict label matches truth percentage band (7-point scale mapping) | Warning logged
+| Coverage completeness | Every claim has >= 1 evidence item or is flagged | Warning logged
+
+**Non-blocking:** Structural inconsistencies are captured for debugging. They do NOT block the pipeline.
+
+== Gate 4: Confidence Assessment ==
+
+Gate 4 runs after Stage 4 (Verdict), classifying each verdict's confidence into tiers.
+
+|= Input |= How Assessed
+| Evidence count per claim | More evidence = higher confidence
+| Average source quality | Higher ##trackRecordScore## = higher confidence
+| Evidence agreement ratio | Strong agreement in one direction = higher confidence
+| Self-consistency spread | High spread (from Step 2) reduces confidence tier
+
+|= Confidence Tier |= Criteria |= Action
+| **HIGH** | Strong evidence, high agreement, low spread | Publish with full confidence
+| **MEDIUM** | Adequate evidence, some disagreement | Publish with caveats
+| **LOW** | Limited evidence or high disagreement | Flag for review
+| **INSUFFICIENT** | Very limited evidence, cannot determine | Mark as UNVERIFIED
+
+//Gate 1 statistics (totalClaims, passedOpinion, passedSpecificity, passedFidelity, filteredCount) and Gate 4 statistics (totalVerdicts, highConfidence, mediumConfidence, lowConfidence, insufficient) are recorded in ##QualityGates## and persisted in the analysis result.//

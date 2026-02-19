@@ -415,6 +415,13 @@ export const PipelineConfigSchema = z.object({
     .describe("Self-consistency check mode for ClaimBoundary verdicts (default: full)"),
   selfConsistencyTemperature: z.number().min(0.1).max(0.7).optional()
     .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.3)"),
+  debateModelTiers: z.object({
+    advocate: z.enum(["haiku", "sonnet"]).optional(),
+    selfConsistency: z.enum(["haiku", "sonnet"]).optional(),
+    challenger: z.enum(["haiku", "sonnet"]).optional(),
+    reconciler: z.enum(["haiku", "sonnet"]).optional(),
+  }).optional()
+    .describe("Model tier overrides for each debate role (default: all sonnet). Provider-level separation requires extending LLMCallFn."),
 
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
@@ -1092,6 +1099,26 @@ export const CalcConfigSchema = z.object({
     /** Minimum grounding ratio before maximum penalty applies (0-1) */
     floorRatio: z.number().min(0).max(1),
   }).optional(),
+
+  /**
+   * Minimum confidence required for high-harm claims before a definitive verdict
+   * is issued. Claims with harmPotential "critical" or "high" that fall below this
+   * threshold are downgraded to UNVERIFIED.
+   *
+   * Addresses C8 (advisory-only validation) from political bias analysis.
+   * Default 50 — high-harm claims need at least 50% confidence for a definitive verdict.
+   */
+  highHarmMinConfidence: z.number().int().min(0).max(100).optional(),
+
+  /**
+   * Evidence pool balance skew threshold (0.0–1.0).
+   * If the ratio of supporting/(supporting+contradicting) evidence exceeds this
+   * threshold (or falls below 1-threshold), a warning is emitted.
+   * Default 0.8 — warns when >80% of directional evidence points one way.
+   * Set to 1.0 to disable.
+   * Addresses C13 (evidence pool bias) from political bias analysis.
+   */
+  evidenceBalanceSkewThreshold: z.number().min(0.5).max(1).optional(),
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
@@ -1232,6 +1259,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     reductionFactor: 0.3,
     floorRatio: 0.1,
   },
+  highHarmMinConfidence: 50,
+  evidenceBalanceSkewThreshold: 0.8,
 };
 
 // ============================================================================

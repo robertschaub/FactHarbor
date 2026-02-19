@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-19 (POC Closure Consolidation)
-**Status**: 7 active files — Alpha forward-looking work only
+**Last Updated**: 2026-02-19 (Stammbach/Ash bias mitigation)
+**Status**: 8 active files — Alpha forward-looking work only
 
 ---
 
@@ -59,6 +59,14 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [Runtime_Issues_Analysis_2026-02-17.md](Runtime_Issues_Analysis_2026-02-17.md)
 - **Type:** Architecture Analysis / Infrastructure
 - **Scope:** Post-CB v1.0 runtime issues — provider saturation, queue behavior, structural weaknesses. Input for Alpha architectural planning.
+
+### Political Bias Mitigation — Stammbach/Ash (2026-02-19)
+**Status:** 🔧 Implementation Complete (4/5 actions) — Pending Review
+- **Document:** [Political_Bias_Mitigation_2026-02-19.md](Political_Bias_Mitigation_2026-02-19.md)
+- **Type:** Pipeline Quality / Bias Mitigation
+- **Scope:** Low-hanging fruits from Stammbach/Ash EMNLP 2024 paper analysis. Implements C8 (high-harm confidence floor), C1/C16 (configurable debate model tiers), C13 (evidence pool balance detection). 24 new tests, 6 new UCM params. Calibration harness (Action 2) deferred.
+- **Origin:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
+- **Remaining:** Action 2 (political bias calibration harness, ~$5-10 LLM cost, separate session)
 
 ---
 

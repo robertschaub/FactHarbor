@@ -3,7 +3,7 @@
 {{mermaid}}
 flowchart TB
     subgraph analysis [FactHarbor Analysis Pipeline]
-        AN[orchestrated.ts<br/>Analyzer]
+        AN[claimboundary-pipeline.ts<br/>Analyzer]
         PF[prefetchSourceReliability<br/>Batch Prefetch]
         SR[source-reliability.ts<br/>Sync Lookup + Weighting]
     end

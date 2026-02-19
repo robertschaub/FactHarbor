@@ -8,9 +8,9 @@ flowchart TB
 
     subgraph HARD["Hard Enforcement"]
         L2["Layer 2: Provenance Validation<br/>provenance-validation.ts<br/>Reject synthetic/LLM-generated content"]
-        L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential claims with 0 facts"]
+        L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential claims with 0 evidence"]
         L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Tangential claims get weight=0"]
-        L5["Layer 5: Opinion-Only Factor Pruning<br/>aggregation.ts<br/>Remove opinion-only keyFactors"]
+        L5["Layer 5: Contestation Basis Pruning<br/>aggregation.ts<br/>Remove opinion-based contestations"]
         L6["Layer 6: Contestation Validation<br/>aggregation.ts<br/>Downgrade opinion-based contestation"]
         L7["Layer 7: Boundary Clustering<br/>claimboundary-pipeline.ts<br/>Stage 3: clusterBoundaries"]
     end

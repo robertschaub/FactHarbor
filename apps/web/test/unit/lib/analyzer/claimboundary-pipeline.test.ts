@@ -45,6 +45,7 @@ import {
   generateVerdictNarrative,
   buildQualityGates,
   aggregateAssessment,
+  assessEvidenceBalance,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -2747,5 +2748,108 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
 
     expect(result.hasMultipleBoundaries).toBe(true);
+  });
+});
+
+// ============================================================================
+// EVIDENCE POOL BALANCE (C13 — Stammbach/Ash bias detection)
+// ============================================================================
+
+describe("assessEvidenceBalance", () => {
+  function makeEvidence(directions: Array<"supports" | "contradicts" | "neutral" | undefined>) {
+    return directions.map((dir, i) => ({
+      id: `EV_${i + 1}`,
+      statement: `Evidence ${i + 1}`,
+      claimDirection: dir,
+    })) as any[];
+  }
+
+  it("should compute balanced ratio for even split", () => {
+    const evidence = makeEvidence(["supports", "contradicts", "supports", "contradicts"]);
+    const result = assessEvidenceBalance(evidence);
+    expect(result.supporting).toBe(2);
+    expect(result.contradicting).toBe(2);
+    expect(result.neutral).toBe(0);
+    expect(result.balanceRatio).toBe(0.5);
+    expect(result.isSkewed).toBe(false);
+  });
+
+  it("should detect skewed pool (mostly supporting)", () => {
+    // 5 supporting, 1 contradicting = 5/6 ≈ 0.833 ratio → majority 83% > 80% threshold
+    const evidence = makeEvidence(["supports", "supports", "supports", "supports", "supports", "contradicts"]);
+    const result = assessEvidenceBalance(evidence, 0.8);
+    expect(result.supporting).toBe(5);
+    expect(result.contradicting).toBe(1);
+    expect(result.isSkewed).toBe(true);
+  });
+
+  it("should detect skewed pool (mostly contradicting)", () => {
+    // 5 contradicting, 1 supporting = ratio 1/6 ≈ 0.167 → majority 83% > 80% threshold
+    const evidence = makeEvidence(["contradicts", "contradicts", "contradicts", "contradicts", "contradicts", "supports"]);
+    const result = assessEvidenceBalance(evidence, 0.8);
+    expect(result.isSkewed).toBe(true);
+  });
+
+  it("should not flag as skewed at exact threshold boundary (strict >)", () => {
+    // 4 supporting, 1 contradicting = 0.8 majority ratio — exactly at threshold, NOT skewed
+    const evidence = makeEvidence(["supports", "supports", "supports", "supports", "contradicts"]);
+    const result = assessEvidenceBalance(evidence, 0.8);
+    expect(result.balanceRatio).toBe(0.8);
+    expect(result.isSkewed).toBe(false);
+  });
+
+  it("should treat neutral and undefined as neutral", () => {
+    const evidence = makeEvidence(["supports", "neutral", undefined, "contradicts"]);
+    const result = assessEvidenceBalance(evidence);
+    expect(result.supporting).toBe(1);
+    expect(result.contradicting).toBe(1);
+    expect(result.neutral).toBe(2);
+    expect(result.total).toBe(4);
+    expect(result.balanceRatio).toBe(0.5);
+  });
+
+  it("should return NaN ratio for all-neutral evidence", () => {
+    const evidence = makeEvidence(["neutral", "neutral", "neutral"]);
+    const result = assessEvidenceBalance(evidence);
+    expect(result.balanceRatio).toBeNaN();
+    expect(result.isSkewed).toBe(false);
+  });
+
+  it("should not flag skew with fewer than 3 directional items", () => {
+    // Only 2 directional items, both supporting
+    const evidence = makeEvidence(["supports", "supports", "neutral"]);
+    const result = assessEvidenceBalance(evidence, 0.8);
+    expect(result.balanceRatio).toBe(1.0);
+    expect(result.isSkewed).toBe(false); // Too few directional items
+  });
+
+  it("should handle empty evidence pool", () => {
+    const result = assessEvidenceBalance([]);
+    expect(result.total).toBe(0);
+    expect(result.supporting).toBe(0);
+    expect(result.contradicting).toBe(0);
+    expect(result.balanceRatio).toBeNaN();
+    expect(result.isSkewed).toBe(false);
+  });
+
+  it("should respect custom threshold", () => {
+    // 8 supporting, 2 contradicting = 0.8 majority ratio
+    const evidence = makeEvidence([
+      "supports", "supports", "supports", "supports", "supports", "supports", "supports", "supports",
+      "contradicts", "contradicts",
+    ]);
+    // With default 0.8 threshold (strict >): 0.8 > 0.8 is false → not skewed
+    expect(assessEvidenceBalance(evidence, 0.8).isSkewed).toBe(false);
+    // With stricter 0.7 threshold: 0.8 > 0.7 → skewed
+    expect(assessEvidenceBalance(evidence, 0.7).isSkewed).toBe(true);
+  });
+
+  it("should disable skew detection when threshold is 1.0", () => {
+    // All supporting — maximally skewed, but threshold=1.0 disables detection
+    // Uses strict > comparison: 1.0 > 1.0 is false → not flagged
+    const evidence = makeEvidence(["supports", "supports", "supports", "supports"]);
+    const result = assessEvidenceBalance(evidence, 1.0);
+    expect(result.balanceRatio).toBe(1.0);
+    expect(result.isSkewed).toBe(false);
   });
 });

@@ -110,7 +110,7 @@ The LLM evaluation prompt includes the current date and temporal guidance:
 Source Reliability is integrated into both pipelines:
 
 |= Pipeline |= File |= Status |= Implementation
-| **Orchestrated** | ##orchestrated.ts## | Full | Prefetch + lookup + evidence weighting
+| **ClaimAssessmentBoundary** | ##claimboundary-pipeline.ts## | Full | Prefetch + lookup + evidence weighting
 | **Monolithic Dynamic** | ##monolithic-dynamic.ts## | Full | Prefetch + lookup + verdict adjustment
 
 All pipelines follow the same pattern:

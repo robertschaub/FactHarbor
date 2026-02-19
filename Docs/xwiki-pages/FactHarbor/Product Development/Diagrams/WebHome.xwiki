@@ -36,10 +36,10 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 * [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] — Core entities overview
 * [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]] — Overview, Result, Target DB, Runtime, UI views
 * [[Job Lifecycle ERD>>FactHarbor.Product Development.Diagrams.Job Lifecycle ERD.WebHome]] — Job and event entity model
-* [[KeyFactor Entity Model>>FactHarbor.Product Development.Diagrams.KeyFactor Entity Model.WebHome]] — KeyFactor entity relationships
-* [[KeyFactor Data Flow>>FactHarbor.Product Development.Diagrams.KeyFactor Data Flow.WebHome]] — KeyFactor data through pipeline phases
-* [[KeyFactor Claim Mapping>>FactHarbor.Product Development.Diagrams.KeyFactor Claim Mapping.WebHome]] — KeyFactor-to-claim relationship graph
-* [[KeyFactor Hierarchy>>FactHarbor.Product Development.Diagrams.KeyFactor Hierarchy.WebHome]] — Thesis → KeyFactors → Claims decomposition
+* [[KeyFactor Entity Model>>FactHarbor.Product Development.Diagrams.KeyFactor Entity Model.WebHome]] — KeyFactor entity relationships (historical — Orchestrated era)
+* [[KeyFactor Data Flow>>FactHarbor.Product Development.Diagrams.KeyFactor Data Flow.WebHome]] — KeyFactor data through pipeline phases (historical — Orchestrated era)
+* [[KeyFactor Claim Mapping>>FactHarbor.Product Development.Diagrams.KeyFactor Claim Mapping.WebHome]] — KeyFactor-to-claim relationship graph (historical — Orchestrated era)
+* [[KeyFactor Hierarchy>>FactHarbor.Product Development.Diagrams.KeyFactor Hierarchy.WebHome]] — Thesis → KeyFactors → Claims decomposition (historical — Orchestrated era)
 * [[Verdict Scale>>FactHarbor.Product Development.Diagrams.Verdict Scale.WebHome]] — 7-point verdict scale (TRUE to FALSE)
 * [[Audit Trail ERD>>FactHarbor.Product Development.Diagrams.Audit Trail ERD.WebHome]] — Job and UCM audit trail entities
 
@@ -50,7 +50,7 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 
 == Pipelines ==
 
-* [[Orchestrated Pipeline Detail>>FactHarbor.Product Development.Diagrams.Orchestrated Pipeline Detail.WebHome]] — Comprehensive 5-step with LLM calls
+* [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]] — 5-stage pipeline with LLM debate pattern, sequence diagram, budget table
 * [[Monolithic Dynamic Pipeline Internal>>FactHarbor.Product Development.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] — Internal Monolithic Dynamic execution flow
 * [[Pipeline Shared Primitives>>FactHarbor.Product Development.Diagrams.Pipeline Shared Primitives.WebHome]] — Shared primitives architecture
 * [[Pipeline Variant Dispatch>>FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — Analysis dispatch and convergence flow
