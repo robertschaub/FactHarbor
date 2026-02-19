@@ -38,6 +38,13 @@ import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
 
+// Module-level helper — browser-safe (client component, only called from event handlers)
+function escapeHtml(str: string): string {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 type Job = {
   jobId: string;
   status: string;
@@ -538,13 +545,6 @@ export default function JobPage() {
     return () => { document.title = "FactHarbor Alpha"; };
   }, [job, twoPanelSummary]);
 
-  // Helper: Escape HTML entities to prevent XSS
-  const escapeHtml = (str: string): string => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  };
-
   // Export functions
   const handlePrint = () => {
     window.print();
@@ -553,34 +553,42 @@ export default function JobPage() {
   const handleExportHTML = () => {
     // Rich HTML report for ClaimAssessmentBoundary pipeline results
     if (isCBSchema && result && job) {
-      const html = generateHtmlReport({
-        job: {
-          jobId: job.jobId,
-          status: job.status,
-          inputValue: job.inputValue,
-          createdUtc: job.createdUtc,
-          updatedUtc: job.updatedUtc,
-        },
-        result,
-        claimVerdicts,
-        claimBoundaries,
-        evidenceItems,
-        sources,
-        searchQueries,
-        qualityGates,
-      });
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = generateFilename('Report', 'html');
-      a.click();
-      URL.revokeObjectURL(url);
+      try {
+        const html = generateHtmlReport({
+          job: {
+            jobId: job.jobId,
+            status: job.status,
+            inputValue: job.inputValue,
+            createdUtc: job.createdUtc,
+            updatedUtc: job.updatedUtc,
+          },
+          result,
+          claimVerdicts,
+          claimBoundaries,
+          evidenceItems,
+          sources,
+          searchQueries,
+          qualityGates,
+        });
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = generateFilename('Report', 'html');
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        toast.error("Report generation failed. Try again or use the print option.");
+        console.error("generateHtmlReport error:", err);
+      }
       return;
     }
 
     // Fallback: simple HTML export for non-CB results
-    const content = reportRef.current?.innerHTML || report;
+    // R-C1: sanitize fallback content — do not inject raw markdown/innerHTML directly
+    const rawContent = report || "";
+    const content = reportRef.current?.innerHTML ||
+      `<pre style="white-space:pre-wrap">${rawContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
     const generatedAt = getDisplayDateTime();
     const analysisId = result?.meta?.analysisId || 'N/A';
     const shortName = getShortName();

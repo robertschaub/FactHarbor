@@ -74,7 +74,7 @@ const V_STYLES: Record<string, VStyle> = {
   "MOSTLY-TRUE":  { cls: "verdict-t",   color: "t-color",   fill: "#22543d" },
   "LEANING-TRUE": { cls: "verdict-lt",  color: "lt-color",  fill: "#276749" },
   MIXED:          { cls: "verdict-inc",  color: "inc-color", fill: "#553c9a" },
-  UNVERIFIED:     { cls: "verdict-inc",  color: "inc-color", fill: "#553c9a" },
+  UNVERIFIED:     { cls: "verdict-unv",  color: "unv-color", fill: "#7b2d00" },
   "LEANING-FALSE":{ cls: "verdict-lf",  color: "lf-color",  fill: "#c05621" },
   "MOSTLY-FALSE": { cls: "verdict-f",   color: "f-color",   fill: "#c53030" },
   FALSE:          { cls: "verdict-f",    color: "f-color",   fill: "#c53030" },
@@ -85,11 +85,16 @@ function vs(verdict: string): VStyle {
   return V_STYLES[verdict] || DEFAULT_VS;
 }
 
-function verdictFromPct(pct: number): string {
+function sanitizeUrl(url: unknown): string {
+  const s = String(url ?? "");
+  return s.startsWith("http:") || s.startsWith("https:") ? s : "";
+}
+
+function verdictFromPct(pct: number, confidence?: number): string {
   if (pct >= 86) return "TRUE";
   if (pct >= 72) return "MOSTLY-TRUE";
   if (pct >= 58) return "LEANING-TRUE";
-  if (pct >= 43) return "MIXED";
+  if (pct >= 43) return (confidence !== undefined && confidence < 40) ? "UNVERIFIED" : "MIXED";
   if (pct >= 29) return "LEANING-FALSE";
   if (pct >= 15) return "MOSTLY-FALSE";
   return "FALSE";
@@ -125,10 +130,10 @@ function cellClass(count: number): string {
 function challengeBadge(cr: any): { cls: string; label: string } {
   const resp = String(cr.response || "").toLowerCase();
   if (cr.verdictAdjusted) {
-    if (resp.includes("partially")) return { cls: "ch-part", label: "PARTIALLY ACCEPTED &middot; verdict adjusted" };
-    return { cls: "ch-yes", label: "ACCEPTED &middot; verdict adjusted" };
+    if (resp.includes("partially")) return { cls: "ch-part", label: "PARTIALLY ACCEPTED \u00B7 verdict adjusted" };
+    return { cls: "ch-yes", label: "ACCEPTED \u00B7 verdict adjusted" };
   }
-  if (resp.includes("minimal impact")) return { cls: "ch-no", label: "ACCEPTED &mdash; minimal impact" };
+  if (resp.includes("minimal impact")) return { cls: "ch-no", label: "ACCEPTED \u2014 minimal impact" };
   return { cls: "ch-no", label: "REJECTED" };
 }
 
@@ -158,6 +163,8 @@ a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
 .verdict-lt{background:#0a1a0a;border-color:#276749}
 .verdict-t{background:#061a06;border-color:#22543d}
 .verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
 .verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
 .verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
@@ -339,7 +346,7 @@ function buildVerdictBanner(input: HtmlReportInput): string {
   const { result, claimVerdicts } = input;
   const truthPct = norm(result?.truthPercentage ?? claimVerdicts[0]?.truthPercentage);
   const conf = norm(result?.confidence ?? claimVerdicts[0]?.confidence);
-  const verdict = result?.overallVerdict || claimVerdicts[0]?.verdict || verdictFromPct(truthPct);
+  const verdict = result?.overallVerdict || claimVerdicts[0]?.verdict || verdictFromPct(truthPct, conf);
   const v = vs(verdict);
   const narrative = result?.verdictNarrative;
   const keyFinding = narrative?.keyFinding || "";
@@ -414,7 +421,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
     const ac = atomicClaims.find((a: any) => a.id === cv.claimId) || {};
     const tp = norm(cv.truthPercentage);
     const conf = norm(cv.confidence);
-    const verdict = cv.verdict || verdictFromPct(tp);
+    const verdict = cv.verdict || verdictFromPct(tp, conf);
     const v = vs(verdict);
     const bfs = cv.boundaryFindings || [];
     const challenges = cv.challengeResponses || [];
@@ -464,7 +471,7 @@ function buildBoundaryFindingsGrid(findings: any[]): string {
           const tp = norm(bf.truthPercentage);
           const conf = norm(bf.confidence);
           const dir = bf.evidenceDirection || "neutral";
-          const verdictStr = verdictFromPct(tp);
+          const verdictStr = verdictFromPct(tp, conf);
           const dirColor = dir === "mixed" ? 'style="color:#f6ad55"' :
                            dir === "contradicts" ? 'style="color:#fc8181"' :
                            dir === "supports" ? 'style="color:#68d391"' :
@@ -609,7 +616,7 @@ function buildEvidenceGroup(label: string, items: any[], direction: string, open
             ${ev.probativeValue ? `<span class="ev-tag">probative: ${esc(ev.probativeValue)}</span>` : ""}
             ${ev.claimBoundaryId ? `<span class="ev-tag">${esc(ev.claimBoundaryId)}</span>` : ""}
           </div>
-          ${ev.sourceUrl ? `<div class="ev-source-link"><a href="${esc(ev.sourceUrl)}" target="_blank">${esc(ev.sourceTitle || ev.sourceUrl)}</a></div>` : ""}
+          ${ev.sourceUrl ? `<div class="ev-source-link"><a href="${esc(sanitizeUrl(ev.sourceUrl))}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceTitle || ev.sourceUrl)}</a></div>` : ""}
         </div>`).join("\n        ")}
       </div>
     </details>`;
@@ -622,7 +629,7 @@ function buildPreliminaryEvidence(items: any[]): string {
         ${items.map((ev: any) => `<div class="ev-item" style="border-color:#2d3748;background:#0f1117;opacity:.7">
           <div class="ev-item-head"><span class="ev-id">${esc(ev.id || "")}</span><span class="ev-dir-badge ev-neu">preliminary</span></div>
           <div class="ev-statement" style="color:#a0aec0">${esc(ev.statement || "")}</div>
-          ${ev.sourceUrl ? `<div class="ev-source-link"><a href="${esc(ev.sourceUrl)}" target="_blank">${esc(ev.sourceTitle || ev.sourceUrl)}</a></div>` : ""}
+          ${ev.sourceUrl ? `<div class="ev-source-link"><a href="${esc(sanitizeUrl(ev.sourceUrl))}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceTitle || ev.sourceUrl)}</a></div>` : ""}
         </div>`).join("\n        ")}
       </div>
     </details>`;
@@ -642,7 +649,7 @@ function buildSourcesSection(sources: any[]): string {
     <div class="source-list">
       ${sources.map((s: any, i: number) => `<div class="source-item">
         <div class="source-head"><span class="source-id">S_${String(i + 1).padStart(3, "0")}</span><span class="source-title">${esc(s.title || "Untitled")}</span></div>
-        ${s.url ? `<div class="source-url"><a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></div>` : ""}
+        ${s.url ? `<div class="source-url"><a href="${esc(sanitizeUrl(s.url))}" target="_blank" rel="noopener noreferrer">${esc(s.url)}</a></div>` : ""}
         <div class="source-tags">
           ${s.category ? `<span class="ev-tag">${esc(s.category)}</span>` : ""}
           <span class="ev-tag">${s.fetchSuccess !== false ? "fetched ✓" : "fetch failed"}</span>
