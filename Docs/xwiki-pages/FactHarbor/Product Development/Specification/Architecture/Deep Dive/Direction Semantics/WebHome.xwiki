@@ -3,11 +3,11 @@
 {{info}}
 **Developer Reference** — This page documents the multi-layer direction semantics in FactHarbor's analysis pipeline. Understanding these semantics is critical for maintaining LLM-code alignment and avoiding direction confusion bugs.
 
-**Key Files**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/web/src/lib/analyzer/orchestrated.ts##, ##apps/web/prompts/orchestrated.prompt.md##
+**Key Files**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/web/src/lib/analyzer/verdict-stage.ts##, ##apps/web/prompts/claimboundary.prompt.md##
 {{/info}}
 
-**Version**: 2.6.41+ (auto-correct enabled 2026-02-13)
-**Status**: Operational (Step 4 LLM-based validation + Phase 2 semantic hardening + auto-correct with LLM suggestedPct)
+**Version**: 2.11.0 (ClaimAssessmentBoundary pipeline, 2026-02-19)
+**Status**: Operational (Stage 4 advisory LLM validation — grounding + direction; no auto-correct in CB pipeline)
 
 ----
 
@@ -137,13 +137,13 @@ interface EvidenceItem {
 }
 {{/code}}
 
-**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## EXTRACT_EVIDENCE section
+**Prompt Definition**: ##apps/web/prompts/claimboundary.prompt.md## EXTRACT_EVIDENCE section
 
 {{code}}
 For EVERY extracted evidence item, evaluate claimDirection:
-- "supports": This evidence item provides evidence that SUPPORTS the user's claim being TRUE
-- "contradicts": This evidence item provides evidence that CONTRADICTS the user's claim
-- "neutral": This evidence item is contextual/background information
+- "supports_thesis": This evidence item provides evidence that SUPPORTS the user's claim being TRUE
+- "contradicts_thesis": This evidence item provides evidence that CONTRADICTS the user's claim
+- "contextual": This evidence item is contextual/background information
 
 CRITICAL: claimDirection is ALWAYS relative to the ORIGINAL USER CLAIM, not sub-claims.
 {{/code}}
@@ -159,7 +159,7 @@ interface SubClaim {
 }
 {{/code}}
 
-**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## UNDERSTAND section
+**Prompt Definition**: ##apps/web/prompts/claimboundary.prompt.md## CLAIM_EXTRACTION_PASS2 section
 
 {{code}}
 isCounterClaim = true when the claim evaluates the OPPOSITE position:
@@ -170,43 +170,35 @@ WHY THIS MATTERS: Counter-claims have their verdicts INVERTED during aggregation
 
 === 5.3 Verdict Direction Validation ===
 
-**Version**: v2.6.41+ (Step 4)
+**Version**: v2.11.0 (ClaimAssessmentBoundary pipeline, Stage 4)
 
-**File**: ##apps/web/src/lib/analyzer/orchestrated.ts:3741##
+**File**: ##apps/web/src/lib/analyzer/verdict-stage.ts:421## (##validateVerdicts##)
 
-The validation uses **LLM-based per-claim semantic evaluation** instead of comparing ##claimDirection## counters:
+The CB pipeline runs **two advisory LLM checks** as part of Stage 4 verdict generation — both are non-blocking. Verdicts are returned unchanged regardless of validation findings:
 
 {{code language="typescript"}}
-// Function: batchDirectionValidationLLM
-// Location: orchestrated.ts:3741
-async function batchDirectionValidationLLM(
-  inputs: Array<{
-    claimText: string;
-    verdictPct: number;
-    evidenceStatements: string[];  // Array of evidence statement strings
-  }>,
-): Promise<DirectionValidationBatchResult> {
-  // Returns: { results: [...] | null, degraded: boolean }
-  // LLM evaluates each sub-claim + evidence + verdict triple semantically
-  // This resolves the scope mismatch
+// verdict-stage.ts:421
+export async function validateVerdicts(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  llmCall: LLMCallFn,
+): Promise<CBClaimVerdict[]> {
+  // Check A: Grounding validation (Haiku)
+  // Prompt: VERDICT_GROUNDING_VALIDATION
+  // Checks: reasoning ↔ evidence alignment
+  const groundingResult = await llmCall("VERDICT_GROUNDING_VALIDATION", { ... }, { tier: "haiku" });
+
+  // Check B: Direction validation (Haiku)
+  // Prompt: VERDICT_DIRECTION_VALIDATION
+  // Checks: verdict % direction vs evidence direction
+  const directionResult = await llmCall("VERDICT_DIRECTION_VALIDATION", { ... }, { tier: "haiku" });
+
+  // Validation is advisory — verdicts are returned unchanged
+  return verdicts;
 }
 {{/code}}
 
-**Return Type**:
-
-{{code language="typescript"}}
-interface DirectionValidationBatchResult {
-  results: Array<{
-    aligned: boolean;
-    expectedDirection?: "high" | "low";
-    suggestedPct?: number;  // LLM-provided corrected percentage (0-100)
-    reason?: string
-  }> | null;
-  degraded: boolean;  // true if LLM call failed, results may be null
-}
-{{/code}}
-
-**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER section
+**Prompt Definition**: ##apps/web/prompts/claimboundary.prompt.md## VERDICT_DIRECTION_VALIDATION section
 
 {{code}}
 For each verdict:
@@ -220,74 +212,57 @@ A verdict is MISALIGNED if:
 - Evidence mostly contradicts the sub-claim BUT verdict is above 72%
 - Note: Contestation or dispute about interpretation does NOT make a factual claim false
 
-Semantic hardening (2026-02-13):
+Semantic rules:
 - Requirement evidence vs outcome evidence must be interpreted explicitly
 - Verification mechanisms (peer review/audit/independent checks) count as corroboration
 - Thesis-critical qualifiers ("without", "requires", "only if", temporal scope) must be preserved
 - Interpretation dispute lowers confidence but does not invert factual direction by itself
 {{/code}}
 
-**Critical**: "ignore direction labels — assess meaning directly" — This resolves the scope mismatch by having the LLM evaluate the sub-claim directly, not via original-claim direction.
+**Critical**: "ignore direction labels — assess meaning directly" — This resolves the scope mismatch by having the LLM evaluate the sub-claim directly, not via original-claim direction labels.
 
-=== 5.4 Auto-Correct Status ===
+=== 5.4 Validation Mode — Advisory Only ===
 
-**Auto-correct is ENABLED** (LLM-powered correction with suggestedPct):
+**Direction validation in the CB pipeline is advisory. No auto-correct.**
 
 {{code language="typescript"}}
-// File: apps/web/src/lib/analyzer/orchestrated.ts
-// Lines: 8354, 8960, 9697 (three verdict generation paths)
-const {
-  validatedVerdicts: directionValidatedVerdicts,
-  mismatches: verdictMismatches,
-  warnings: verdictDirectionWarnings,
-  degraded: directionValidationDegraded,
-} = await validateVerdictDirections(
-  weightedClaimVerdicts,
-  state.evidenceItems,
-  { autoCorrect: true }  // ENABLED: LLM provides suggestedPct; capped fallback if missing
-);
+// verdict-stage.ts — validation issues are logged but do not modify verdicts
+for (const dr of directionResults) {
+  if (dr.directionValid === false) {
+    console.warn(`[VerdictStage] Direction issue for claim ${dr.claimId}:`, dr.issues);
+  }
+}
+// Verdicts are returned unchanged — validation is advisory (§8.4)
+return verdicts;
 {{/code}}
 
-**Correction strategy** (2026-02-13):
-1. **Primary**: LLM provides ##suggestedPct## in the direction validation response — used directly as the corrected percentage. The LLM evaluates evidence strength, not just direction, so the correction magnitude is semantically calibrated.
-2. **Fallback** (if LLM omits ##suggestedPct##): Capped inversion formula — ##max(55, min(75, 100 - verdictPct))## for "high", ##max(25, min(45, 100 - verdictPct))## for "low". This bounds corrections to a moderate range regardless of original verdict magnitude.
+**Design rationale**: The CB pipeline uses a 5-step LLM debate pattern (Advocate → Challenger → Reconciliation → Grounding Validation → Direction Validation). By the time direction validation runs, the verdict has already been through adversarial challenge and reconciliation. Direction validation is a final sanity check — mismatch issues are logged for monitoring, not corrected automatically.
 
-**Why the old formula was unsafe**: The previous formula ##max(65, 100 - verdictPct)## could produce 90-point swings (e.g., 5% → 95%) from a binary direction signal. The LLM-provided ##suggestedPct## resolves this by letting the same LLM that detects the mismatch also assess the magnitude.
+**Note on the Orchestrated pipeline**: The removed Orchestrated pipeline had auto-correct enabled (##suggestedPct## from LLM, capped fallback formula). The CB pipeline deliberately removed auto-correct in favour of the debate pattern producing a more reliable initial verdict.
 
-=== 5.5 Degraded Mode Behavior ===
+=== 5.5 Validation Failure Behavior ===
 
-When the LLM validation call fails, the system enters **degraded mode**:
+If the VERDICT_DIRECTION_VALIDATION or VERDICT_GROUNDING_VALIDATION LLM calls fail, issues are emitted as ##console.warn## and the pipeline continues:
 
 {{code language="typescript"}}
-// batchDirectionValidationLLM returns on failure:
-return { results: null, degraded: true };
-
-// validateVerdictDirections handles degraded mode:
-if (llmBatch.degraded || !llmBatch.results) {
-  // Emit warning
-  state.analysisWarnings.push({
-    type: "direction_validation_degraded",
-    severity: "warning",
-    message: "Direction validation LLM failed; using fallback assessment"
-  });
-  // Return verdicts unchanged with degraded: true
-  return { validatedVerdicts, mismatches: [], warnings, degraded: true };
+// verdict-stage.ts — non-blocking validation
+for (const gr of groundingResults) {
+  if (gr.groundingValid === false) {
+    console.warn(`[VerdictStage] Grounding issue for claim ${gr.claimId}:`, gr.issues);
+  }
 }
 {{/code}}
 
-**Operational Impact**:
-- In degraded mode, verdicts are NOT validated for direction alignment
-- A warning is emitted for monitoring
-- Manual review may be needed for affected analyses
+**Operational impact**: A validation failure (LLM call error or parse failure) does not affect verdict output. The pipeline completes normally. Monitor server logs for ##[VerdictStage]## warnings.
 
 === 5.6 Qualifier Preservation in Claim Decomposition (2026-02-13) ===
 
 Direction consistency depends on preserving thesis-critical qualifiers from understanding to verdict validation.
 
-Prompt contract additions in ##orchestrated.prompt.md##:
-- ##UNDERSTAND##: "QUALIFIER PRESERVATION (CRITICAL)" block requires preserving negation/modality/independence/temporal qualifiers in atomic claims.
-- ##SUPPLEMENTAL_CLAIMS##: Explicit rule to preserve thesis-critical qualifiers when generating additional claims.
-- ##VERDICT_DIRECTION_VALIDATION_BATCH_USER##: Semantic interpretation rules and abstract examples to prevent implication inversion.
+Prompt contract in ##claimboundary.prompt.md##:
+- ##CLAIM_EXTRACTION_PASS2##: "QUALIFIER PRESERVATION (CRITICAL)" block requires preserving negation/modality/independence/temporal qualifiers in atomic claims.
+- ##CLAIM_VALIDATION##: Gate 1 validation checks fidelity of extracted claims to original user input — prevents qualifier loss.
+- ##VERDICT_DIRECTION_VALIDATION##: Semantic interpretation rules to prevent implication inversion.
 
 **Why this matters**:
 - If qualifiers are dropped (for example "without independent corroboration"), direction-validation mismatch warnings can become false positives.
@@ -320,7 +295,7 @@ interface EvidenceItem {
 }
 {{/code}}
 
-**Prompt Definition**: ##apps/web/prompts/orchestrated.prompt.md## VERDICT section
+**Prompt Definition**: ##apps/web/prompts/claimboundary.prompt.md## VERDICT_RECONCILIATION section
 
 {{code}}
 CONTESTED ≠ FALSE:
@@ -413,17 +388,15 @@ if (supportCount > contradictCount && verdictPct < 43) {
 
 **Correct approach** (use LLM semantic validation):
 {{code language="typescript"}}
-// ✅ CORRECT: LLM evaluates sub-claim + evidence semantically
-const llmInputs = candidates.map((c) => ({
-  claimText: c.verdict.claimText || c.verdict.claimId,
-  verdictPct: c.verdict.truthPercentage,
-  evidenceStatements: c.linkedEvidence.map((e) => e.statement),  // string[]
-}));
-const llmBatch = await batchDirectionValidationLLM(llmInputs);
-// Result includes semantic assessment, ignoring direction label scope issues
+// ✅ CORRECT: LLM evaluates sub-claim + evidence semantically (verdict-stage.ts:421)
+// The CB pipeline runs VERDICT_DIRECTION_VALIDATION with:
+// - Full evidence pool (id, statement, claimDirection)
+// - Verdict truth percentages per claim
+// - LLM assesses meaning directly, ignoring direction label scope issues
+await validateVerdicts(verdicts, evidence, llmCall);
 {{/code}}
 
-**Current status**: Auto-correct is **ENABLED** with LLM-provided ##suggestedPct##. See ##orchestrated.ts:8354,8960,9697##. The LLM evaluates each sub-claim semantically (correct approach above) and provides both direction and magnitude. A capped fallback formula is used if the LLM omits ##suggestedPct##.
+**Current status**: Direction validation in the CB pipeline is **advisory** (non-blocking). The 5-step LLM debate pattern (Advocate → Challenger → Reconciliation) produces reliable initial verdicts; direction validation is a final logging check. No auto-correct. See ##verdict-stage.ts:421##.
 {{/warning}}
 
 ----
@@ -461,16 +434,16 @@ interface DirectionMismatchWarning {
 To ensure LLM-code alignment:
 
 |= Check |= Code Location |= Prompt Location
-| ##claimDirection## defined relative to original claim | ##types.ts:500## | ##orchestrated.prompt.md## EXTRACT_EVIDENCE
-| Counter-claim direction semantics | ##types.ts:586## (isCounterClaim) | ##orchestrated.prompt.md## UNDERSTAND
-| Qualifier preservation for decomposition | N/A (prompt contract) | ##orchestrated.prompt.md## UNDERSTAND + SUPPLEMENTAL_CLAIMS
-| Evidence-to-verdict mapping | ##orchestrated.ts:validateVerdictDirections## | ##orchestrated.prompt.md## VERDICT
-| Auto-correct enabled with LLM suggestedPct | ##orchestrated.ts:8354,8960,9697## | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
-| Contestation ≠ False | ##types.ts:339-341,494## | ##orchestrated.prompt.md## VERDICT
-| LLM per-claim validation | ##orchestrated.ts:3741## (batchDirectionValidationLLM) | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
-| Semantic interpretation rules for direction | ##orchestrated.ts:batchDirectionValidationLLM## | ##orchestrated.prompt.md## VERDICT_DIRECTION_VALIDATION_BATCH_USER
-| Contestation fields separate from direction | ##types.ts## (isContestedClaim, contestedBy) | ##orchestrated.prompt.md## VERDICT
-| Degraded mode handling | ##orchestrated.ts:validateVerdictDirections## | N/A (code-only)
+| ##claimDirection## defined relative to original claim | ##types.ts:711## (CBEvidenceItem) | ##claimboundary.prompt.md## EXTRACT_EVIDENCE
+| Counter-claim direction semantics | ##types.ts:514## (isCounterClaim); inverted in ##aggregation.ts:132## | ##claimboundary.prompt.md## CLAIM_EXTRACTION_PASS2
+| Qualifier preservation for decomposition | N/A (prompt contract) | ##claimboundary.prompt.md## CLAIM_EXTRACTION_PASS2 + CLAIM_VALIDATION
+| Evidence-to-verdict mapping (advisory) | ##verdict-stage.ts:421## (validateVerdicts) | ##claimboundary.prompt.md## VERDICT_DIRECTION_VALIDATION
+| Auto-correct: N/A — advisory validation only | ##verdict-stage.ts:468## (verdicts returned unchanged) | N/A
+| Contestation ≠ False | ##types.ts:269-275## (factualBasis), ##types.ts:407## (isContestedClaim) | ##claimboundary.prompt.md## VERDICT_RECONCILIATION
+| LLM per-claim direction validation | ##verdict-stage.ts:438## (VERDICT_DIRECTION_VALIDATION call) | ##claimboundary.prompt.md## VERDICT_DIRECTION_VALIDATION
+| Semantic interpretation rules for direction | ##verdict-stage.ts:421## | ##claimboundary.prompt.md## VERDICT_DIRECTION_VALIDATION
+| Contestation fields separate from direction | ##types.ts:407## (isContestedClaim, contestedBy) | ##claimboundary.prompt.md## VERDICT_RECONCILIATION
+| Validation failure handling | ##verdict-stage.ts:456-466## (console.warn, non-blocking) | N/A (code-only)
 
 ----
 
@@ -491,8 +464,8 @@ To ensure LLM-code alignment:
 * [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] -- Verdict scale, aggregation, counter-evidence handling
 * [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] -- Gate 1 (claim validation) and Gate 4 (confidence assessment)
 * [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] -- 7-layer evidence filtering strategy
-* [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] -- AnalysisContext detection, multi-context handling
-* [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] -- Full 5-step pipeline flow
+* [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] -- ClaimAssessmentBoundary and EvidenceScope detection methodology
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] -- ClaimAssessmentBoundary vs Monolithic Dynamic pipeline overview
 
 ----
 
