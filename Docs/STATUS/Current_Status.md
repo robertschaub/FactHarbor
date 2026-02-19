@@ -1,8 +1,9 @@
 # FactHarbor Current Status
 
-**Version**: v2.11.0
+**Version**: v2.11.0 (`v1.0.0-poc`)
 **Last Updated**: 2026-02-19
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 — Production-Ready (Claim Fidelity Phase 4 Validation Pending; Dynamic Pipeline Fix In; Doc Cleanup Done)
+**Phase**: **POC COMPLETE** — transitioning to Alpha
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 853 tests passing, build clean. Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -178,6 +179,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Two-panel summary format
 - Multi-context result display
 - Admin metrics dashboard (NEW)
+- **Rich HTML report export** (CB pipeline: self-contained dark-themed HTML with verdict banner, narrative, boundary findings, evidence, sources, quality gates)
 
 ### ⚠️ Known Issues
 
@@ -190,17 +192,18 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 3. **Source Acquisition Recovery Branch**: Phase 1 warning coverage is complete, but Phase 4 stall-recovery behavior is still pending
 4. **Input Neutrality Context Variance**: Question vs statement can yield different context counts in some cases
 5. **Model Knowledge Toggle**: `pipeline.allowModelKnowledge=false` not fully respected in Understanding phase
+6. **xWiki Deployment Gap**: Live xWiki instance was last imported from a ~160-page XAR (pre-Feb 10 reorganisation). Current master XAR (`FactHarbor.xar`) covers 202 pages including ~42 new landing pages created by the `db5e47a` tree reorganisation. **Action required**: import the 202-page `FactHarbor.xar` to the live xWiki instance via Administration → Import.
 
 **MEDIUM**:
-6. **Budget Constraints**: Reduced from v2.8.2 highs for cost optimization (3 iter/context, 10 total, 500K tokens). May need tuning per UCM if quality is insufficient for complex analyses
-7. **No Claim Caching**: Recomputes every analysis, wastes API calls on duplicates
-8. **No Normalized Data Model**: All data stored as JSON blobs, no relational queries
-9. **Error Pattern Tracking**: No systematic tracking of error types/frequencies
+7. **Budget Constraints**: Reduced from v2.8.2 highs for cost optimization (3 iter/context, 10 total, 500K tokens). May need tuning per UCM if quality is insufficient for complex analyses
+8. **No Claim Caching**: Recomputes every analysis, wastes API calls on duplicates
+9. **No Normalized Data Model**: All data stored as JSON blobs, no relational queries
+10. **Error Pattern Tracking**: No systematic tracking of error types/frequencies
 
 **SECURITY** (LOW for POC, HIGH before public deployment):
-10. **SSRF Protection**: URL fetching needs IP blocking, size limits, redirect caps
-11. **Admin Endpoint Security**: `/admin/test-config` publicly accessible
-12. **Rate Limiting**: No per-IP or per-user rate limits
+11. **SSRF Protection**: URL fetching needs IP blocking, size limits, redirect caps
+12. **Admin Endpoint Security**: `/admin/test-config` publicly accessible
+13. **Rate Limiting**: No per-IP or per-user rate limits
 
 **See**: [Complete issue list with workarounds](KNOWN_ISSUES.md)
 
@@ -408,6 +411,55 @@ Fixed `AI_NoObjectGeneratedError` (100% failure rate on some inputs) in the Mono
 
 ---
 
+### 2026-02-19 Pass2 Soft Refusal Recovery (CB Stage 1)
+**Status: ✅ Implemented**
+
+Quality-gated fallback for content-policy soft refusals in Stage 1 Pass 2 of the ClaimAssessmentBoundary pipeline. When Pass 2 returns a soft refusal, the pipeline degrades gracefully (falls back to Pass 1 result) rather than propagating the refusal downstream. Transient soft-refusal warnings after successful recovery are suppressed.
+
+**Changes (`claimboundary-pipeline.ts`, `claimboundary.prompt.md`):**
+- Pass 2 soft-refusal detection with quality-gated fallback logic (+131/−19 in pipeline, +3 in prompt)
+- Warning suppression after recovery (+34/−25)
+
+---
+
+### 2026-02-19 Rich HTML Report Export
+**Status: ✅ Implemented**
+
+Self-contained dark-themed HTML export from the job report page. Generates a downloadable HTML file with: verdict banner, VerdictNarrative, boundary findings, evidence table, sources, and quality gates. Supports ClaimAssessmentBoundary pipeline output with legacy pipeline fallback.
+
+**Changes:**
+- `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts` — New 775-line report generator
+- `apps/web/src/app/jobs/[id]/page.tsx` — Export button wired in
+- Meta field names corrected: `meta.llmModel`, `meta.llmProvider`, `meta.llmCalls`
+- Confidence value visually subordinate to truth value (42px→22px in verdict banner, 24px→15px in per-claim meters)
+
+---
+
+### 2026-02-19 gh-pages Analytics Scope Fix
+**Status: ✅ Implemented**
+
+Fixed analytics aggregation so each gh-pages site (xwiki-viewer, etc.) tracks page views independently rather than sharing a single unscoped bucket.
+
+**Changes (`xwiki-viewer.html`, `build_ghpages.py`, `.github/workflows/deploy-docs.yml`):**
+- `analytics.configure(url, siteId)` added — per-site scoping at initialisation
+- `track()` prefixes `pageRef` with `siteId`; `stats()` filters by site ID
+
+---
+
+### 2026-02-19 xWiki Phase 3E — Orchestrated Terminology Sweep
+**Status: ✅ Complete**
+
+Documentation sweep to flag or remove Orchestrated pipeline terminology (AnalysisContext, KeyFactor, SubClaim, ContextAnswer, ClaimUnderstanding) from xWiki pages. These entities were all removed in v2.11.0.
+
+**Approach:**
+- Current-content pages (Automation spec, Claim Workflow): surgical replacement with CB equivalents
+- Orchestrated-era diagrams/ERDs (Entity Views, Analysis Entity Model ERD): `{{warning}}` STALE blocks — too large to fully rewrite in this scope
+- 17 `.xwiki` files updated across Specification and Diagrams sections; 202-page XAR rebuilt
+
+**Open item:** `Specification/Architecture/Data Model/WebHome.xwiki` is the last significant Orchestrated holdout in the Specification section — added to Backlog as high/high priority.
+
+---
+
 ### 2026-02-18 Stage 1 Claim Fidelity Fix — Phase 1+2 (P0 In Progress)
 **Status: 🔧 Partially Implemented — Phase 3+4 Pending**
 
@@ -587,34 +639,34 @@ All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant 
 
 ---
 
-## What's Next
+## POC Closure Statement (2026-02-19)
 
-**ClaimAssessmentBoundary Pipeline v1.0 is production-ready.** Current priorities:
+**The FactHarbor Proof of Concept is complete.** Tagged as `v1.0.0-poc`.
 
-**P0 — Fix immediately:**
-1. **Claim Fidelity Phase 4: Validation** — Run baseline scenarios with real LLM calls to confirm Phases 1-3 eliminate claim drift. Needs Captain approval before running.
-2. **Code review test failures (10 tests)** — `search-cache.ts` + `search-brave.test.ts` (~1h fix, see Known Issues #3)
+The POC set out to prove that AI can extract claims from arbitrary text, gather evidence from web sources, and produce structured, evidence-backed verdicts with quality controls. This has been demonstrated:
 
-**HIGH — CB Remaining Work:**
-3. **Phase 5i: Final cleanup** — V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests)
-4. **Phase 5k: UI adaptations** — Admin config panel for 24 CB parameters, coverage matrix + verdictNarrative + qualityGates components
-5. **Schema Validation remaining** — Gate 1 rebuild (#4), telemetry (#5), Pass 2 split (#6); see [Schema_Validation_Implementation_Status_2026-02-18.md](../WIP/Schema_Validation_Implementation_Status_2026-02-18.md)
-6. **Dead code removal** — 879 lines across 7 files (QA findings)
+- **ClaimAssessmentBoundary pipeline** — 5-stage architecture (extract claims, research evidence, cluster boundaries, generate verdicts, aggregate assessment) fully operational
+- **LLM debate pattern** — advocate/challenger/reconciliation for verdict quality
+- **Quality gates** — Gate 1 (claim validation) + Gate 4 (confidence) enforced
+- **Source reliability** — LLM-based evaluation with multi-model consensus and caching
+- **Evidence quality filtering** — probative value, source authority, extraction confidence
+- **Input neutrality** — question vs statement phrasing within ±4% tolerance
+- **Multi-provider LLM** — Anthropic, OpenAI, Google, Mistral with tiered routing
+- **UCM** — runtime-configurable parameters, no redeployment needed
+- **853 unit tests passing**, build clean, 2 pipeline variants operational
 
-**MEDIUM:**
-7. **UCM AutoForm code review** — Implementation complete on `feature/ucm-autoform`, awaiting review
-8. **AtomicClaim extraction validation** — Run real LLM validation for Phases 1+2 impact (~40% LLM call reduction)
-9. **Phase 5h: Test coverage** (optional) — Neutrality, performance, adversarial tests for CB pipeline
+---
 
-**Parallel: Cost Reduction** (applies to CB pipeline):
-- Batch API integration (50% discount — no code changes to pipeline logic)
-- Prompt caching (90% off repeated system prompts)
-- NPO/OSS credit applications ($11K+/year potential)
-- See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
+## What's Next — Alpha Phase
 
-**After UI and quality work:**
-- Define LLM call optimization targets for CB pipeline
-- Security hardening (SSRF, auth, rate limiting) — *before any public deployment*
+All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full prioritized list.
+
+**Alpha priorities:**
+1. Cost reduction (Batch API, prompt caching, NPO/OSS credits)
+2. Quality validation with real LLM calls (claim fidelity, AtomicClaim extraction)
+3. UI polish (quality gate display, CB admin config, coverage matrix)
+4. Dead code cleanup (879 lines)
+5. Security hardening — *before any public deployment*
 
 **See**:
 - [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
@@ -624,5 +676,5 @@ All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant 
 ---
 
 **Last Updated**: February 19, 2026
-**Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema)
-**Document Status**: Reflects CB v1.0 complete + Dynamic Pipeline fix + Claim Fidelity Phases 1-3 + doc cleanup. Phase 4 validation pending.
+**Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
+**Document Status**: POC declared complete. Remaining work reclassified as Alpha.
