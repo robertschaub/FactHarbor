@@ -7,6 +7,15 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3A xWiki Triage + Phase 2C ARCHITECTURE edits + Phase 2D WIP audit
+**Task:** (A) Phase 2C: Update 3 ARCHITECTURE/ .md files for v2.11.0 (orchestrated refs, new CB pipeline refs). (B) Phase 2D targeted WIP audit: 3 files checked; flagged uncommitted claim fidelity gap fixes. (C) Phase 3A: Grep scan all xWiki pages, produce prioritised work plan.
+**Files touched:** `Docs/ARCHITECTURE/Calculations.md`, `Docs/ARCHITECTURE/Evidence_Quality_Filtering.md`, `Docs/ARCHITECTURE/Prompt_Architecture.md`, `Docs/WIP/README.md` (claim fidelity status), `Docs/AGENTS/Handoffs/2026-02-19_Technical_Writer_Phase3A_xWiki_Triage.md` (created).
+**Key decisions:** Phase 3A triage complete — see handoff. Commits: `0945e3f` (arch), `73a53df` (wip). **IMPORTANT**: LLM Expert claim fidelity gap fixes (3 prompt changes + Gate 1 safety net) and Phase 3 evidence compression code are NOT committed — flagged in WIP README.
+**Open items:** Phase 3B (Tier 1 xWiki rewrites: Direction Semantics, Calculations and Verdicts, Prompt Architecture + archive Orchestrated Pipeline Detail diagram), Phase 3C–3F.
+**For next agent:** See `Docs/AGENTS/Handoffs/2026-02-19_Technical_Writer_Phase3A_xWiki_Triage.md` for full triage with file-by-file priority. Start with 3B: archive the Orchestrated Pipeline Detail diagram, then rewrite Direction Semantics (21 orchestrated hits, CB equivalents documented in handoff).
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Documentation Cleanup — Historical Content Archival
 
 **Task:** Archive all historical `.md` and `.xwiki` content that does not document current implementation, future plans, or retained decisions. Split mixed pages.
