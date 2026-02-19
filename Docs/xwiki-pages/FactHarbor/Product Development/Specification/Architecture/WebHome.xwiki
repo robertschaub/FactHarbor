@@ -86,8 +86,8 @@ Includes: ClaimAssessmentBoundary Pipeline internals, Pipeline Variants, Quality
 == Project Status ==
 
 |= Phase |= Status |= Description
-| **POC** | Current | Single-instance deployment, SQLite storage, core AKEL pipeline with 3 variants, 800+ unit tests
-| **Alpha** | Planned | User accounts, PostgreSQL migration, quality gate closure
+| **Alpha** | Current | Single-instance deployment, SQLite storage, core AKEL pipeline with 2 variants, 800+ unit tests
+| **Alpha+** | Planned | User accounts, PostgreSQL migration, quality gate closure
 | **Beta** | Planned | Multi-instance, monitoring, Shadow Mode (self-learning prompt optimisation)
 | **V1.0** | Vision | Federation (multi-instance sync), full automation, public API
 

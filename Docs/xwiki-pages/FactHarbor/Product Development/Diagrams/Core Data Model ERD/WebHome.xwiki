@@ -13,7 +13,7 @@ erDiagram
     ATOMIC_CLAIM ||--o{ SEARCH_QUERY : "generates"
     SEARCH_QUERY }o--o{ FETCHED_SOURCE : "discovers"
     FETCHED_SOURCE ||--o{ EVIDENCE_ITEM : "yields"
-    EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE : "has"
+    EVIDENCE_ITEM |o--o| EVIDENCE_SCOPE : "has"
     EVIDENCE_SCOPE }o--|| CLAIM_BOUNDARY : "clusters into"
     EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : "assigned to"
     ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : "receives"
@@ -156,7 +156,7 @@ erDiagram
 * MIXED (43-57%, confidence >= 40%) / UNVERIFIED (43-57%, confidence < 40%)
 * LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
 
-**EvidenceScope (mandatory):** Per-evidence metadata describing the methodology and boundaries of the source data. All fields except ##name## are optional (##methodology## and ##temporal## are populated when available from the source). Embedded in EvidenceItem, not a separate stored entity. Extensible via ##additionalDimensions## (Decision D4).
+**EvidenceScope (optional):** Per-evidence metadata describing the methodology and boundaries of the source data. All fields except ##name## are optional (##methodology## and ##temporal## are populated when available from the source). Embedded in EvidenceItem, not a separate stored entity. Extensible via ##additionalDimensions## (Decision D4).
 
 **harmPotential (4-level, Decision D9):** ##critical## (1.5x weight) = death/injury allegations, ##high## (1.2x) = serious but not life-threatening, ##medium## (1.0x) = moderate, ##low## (1.0x) = minimal.
 
