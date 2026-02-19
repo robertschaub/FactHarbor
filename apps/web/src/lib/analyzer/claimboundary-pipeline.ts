@@ -403,17 +403,22 @@ const Pass2AtomicClaimSchema = z.object({
 });
 
 const Pass2OutputSchema = z.object({
+  // Required quality-critical fields — null here means LLM failed to understand input.
+  // Keep strict: validation failure on these should trigger retry.
   impliedClaim: z.string(),
   backgroundDetails: z.string(),
   articleThesis: z.string(),
   atomicClaims: z.array(Pass2AtomicClaimSchema),
+  // Metadata/structural fields — calling code already nullchecks these with ?? fallbacks
+  // (distinctEvents ?? [], riskTier ?? "B"). Using .nullish() instead of .optional() so
+  // Claude's null outputs pass Zod without hiding quality issues in the analysis proper.
   distinctEvents: z.array(z.object({
     name: z.string(),
     date: z.string(),
     description: z.string(),
-  })).optional(),
-  riskTier: z.enum(["A", "B", "C"]).optional(),
-  retainedEvidence: z.array(z.string()).optional(),
+  })).nullish(),
+  riskTier: z.enum(["A", "B", "C"]).nullish(),
+  retainedEvidence: z.array(z.string()).nullish(),
 });
 
 const Gate1OutputSchema = z.object({
