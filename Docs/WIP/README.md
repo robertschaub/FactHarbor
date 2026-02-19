@@ -119,10 +119,10 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Post-CB v1.0 runtime issues — provider saturation, queue behavior, structural weaknesses. Input for architectural planning.
 
 ### UCM Configuration Audit (2026-02-17)
-**Status:** ⚠️ Gaps Identified — CB config parameters not in UCM schema
+**Status:** ✅ Gaps Resolved — All 24 CB parameters added to UCM (2026-02-17)
 - **Document:** [UCM_Configuration_Audit_2026-02-17.md](UCM_Configuration_Audit_2026-02-17.md)
-- **Type:** Configuration / Audit
-- **Scope:** Audit of UCM completeness for CB pipeline config — identifies missing parameters (centralityThreshold, maxAtomicClaims, etc.)
+- **Type:** Configuration / Audit (historical reference — audit findings implemented)
+- **Scope:** Audit of UCM completeness for CB pipeline config — all identified missing parameters (centralityThreshold, maxAtomicClaims, etc.) added in v2.11.0
 
 ---
 
