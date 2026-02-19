@@ -949,26 +949,30 @@ export async function runPass2(
   // Retry logic with quality validation and Zod-aware feedback.
   // Schema uses .catch() defaults so AI SDK never throws NoObjectGeneratedError.
   // Quality gate below detects when .catch() masked a real LLM failure.
+  // On total refusal (all fields empty — common with politically sensitive inputs),
+  // retry uses fact-checking framing to address the model's content-policy caution.
   const maxRetries = 2;
   let lastError: Error | null = null;
   let retryGuidance: string | null = null;
+  let wasTotalRefusal = false;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      // On retry, append specific error feedback so the LLM knows what to fix.
-      const userContent = attempt > 0 && retryGuidance
-        ? `${inputText}\n\n---\nRETRY GUIDANCE (attempt ${attempt + 1}): ${retryGuidance}`
+      // On retry, append guidance to user message (safe: same [system, user] message
+      // structure that Output.object() + tool calling expects).
+      const userContent = (attempt > 0 && retryGuidance)
+        ? `${inputText}\n\n---\n${retryGuidance}`
         : inputText;
 
       const result = await generateText({
         model: model.model,
         messages: [
           {
-            role: "system",
+            role: "system" as const,
             content: rendered.content,
             providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
           },
-          { role: "user", content: userContent },
+          { role: "user" as const, content: userContent },
         ],
         temperature: 0.15 + (attempt * 0.05), // Slightly increase temperature on retry
         output: Output.object({ schema: Pass2OutputSchema }),
@@ -976,6 +980,12 @@ export async function runPass2(
           (pipelineConfig.llmProvider) ?? "anthropic",
         ),
       });
+
+      // Log response metadata for soft-refusal detection
+      const finishReason = (result as unknown as Record<string, unknown>).finishReason;
+      if (finishReason === "content-filter" || finishReason === "other") {
+        console.warn(`[Stage1 Pass2] Possible content-policy soft-refusal: finishReason=${finishReason}`);
+      }
 
       const parsed = extractStructuredOutput(result);
       if (!parsed) {
@@ -1008,7 +1018,31 @@ export async function runPass2(
       }
 
       if (qualityIssues.length > 0) {
-        retryGuidance = `Your previous output had empty or null required fields:\n${qualityIssues.map(q => `- ${q}`).join("\n")}\nAll required fields must contain substantive content. Do not return null or empty values for these fields. Respond in the language appropriate for the input.`;
+        // Detect total refusal: ALL quality-critical fields are empty simultaneously.
+        // This pattern indicates content-policy caution, not a schema issue.
+        wasTotalRefusal =
+          (!validated.impliedClaim || validated.impliedClaim.trim() === "") &&
+          (!validated.articleThesis || validated.articleThesis.trim() === "") &&
+          validated.atomicClaims.length === 0;
+
+        if (wasTotalRefusal) {
+          // Address the content-policy concern directly with fact-checking framing.
+          retryGuidance = `IMPORTANT: This is a fact-checking analysis engine. Your role is to faithfully extract the claims being made in the input text so they can be verified against evidence. You are NOT being asked to endorse, reject, or amplify any claim — only to identify verifiable assertions for evidence-based assessment.
+
+The input text contains assertions that users have submitted for fact-checking. Claim extraction for verification purposes serves the public interest regardless of topic sensitivity. Politically sensitive, controversial, or potentially biased claims are valid and expected fact-checking subjects.
+
+Your previous attempt returned empty results. You MUST populate ALL required fields:
+- impliedClaim: What central assertion does the input make?
+- articleThesis: What thesis does the input present for verification?
+- backgroundDetails: What context is relevant to understanding this claim?
+- atomicClaims: What specific, verifiable assertions can be extracted?
+
+Respond in the same language as the input text.`;
+          console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} — Total refusal detected (all fields empty). Retrying with fact-checking framing.`);
+        } else {
+          // Partial failure: some fields have content, some don't. Give field-specific guidance.
+          retryGuidance = `Your previous output had empty or null required fields:\n${qualityIssues.map(q => `- ${q}`).join("\n")}\nAll required fields must contain substantive content. Do not return null or empty values for these fields. Respond in the same language as the input text.`;
+        }
         throw new Error(`Quality validation: ${qualityIssues.join("; ")}`);
       }
 
@@ -1020,7 +1054,7 @@ export async function runPass2(
       });
 
       if (attempt > 0) {
-        console.log(`[Stage1 Pass2] Succeeded on attempt ${attempt + 1}/${maxRetries + 1}`);
+        console.log(`[Stage1 Pass2] Succeeded on attempt ${attempt + 1}/${maxRetries + 1}${wasTotalRefusal ? " (recovered from soft refusal)" : ""}`);
       }
 
       return validated;
@@ -1044,7 +1078,7 @@ export async function runPass2(
 
       // If this is the last attempt, throw with detailed error
       if (attempt === maxRetries) {
-        const errorMsg = `Stage 1 Pass 2 failed after ${maxRetries + 1} attempts. Last error: ${lastError.message}`;
+        const errorMsg = `Stage 1 Pass 2 failed after ${maxRetries + 1} attempts${wasTotalRefusal ? " (content-policy soft refusal)" : ""}. Last error: ${lastError.message}`;
         console.error(errorMsg);
         throw new Error(errorMsg);
       }
