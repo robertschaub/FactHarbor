@@ -364,6 +364,7 @@ Given a claim and source content, extract evidence items with full metadata incl
 - `evidenceScope`: **REQUIRED** — methodology, temporal bounds, geographic/system boundaries
 - `probativeValue`: Quality assessment ("high", "medium", "low")
 - `sourceType`: Source classification (peer_reviewed_study, news_primary, government_report, etc.)
+- `sourceUrl`: The URL of the source this evidence came from (copy exactly from the source header)
 - `isDerivative`: **boolean** — true if this evidence cites another source's underlying study rather than presenting independent findings
 - `derivedFromSourceUrl`: **string (optional)** — URL of the original source if `isDerivative` is true
 - `relevantClaimIds`: Array of claim IDs this evidence relates to
@@ -372,6 +373,7 @@ Given a claim and source content, extract evidence items with full metadata incl
 
 - Do not assume any particular language. Extract evidence in the source's original language.
 - **EvidenceScope is MANDATORY**: Every item must have `methodology`, `temporal` fields populated. Geographic/system boundaries if applicable.
+- **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
 - `claimDirection`:
@@ -406,6 +408,7 @@ Return a JSON object:
   "evidenceItems": [
     {
       "statement": "string — the evidence assertion",
+      "sourceUrl": "https://example.com/source-url",
       "category": "string — evidence type",
       "claimDirection": "supports",
       "evidenceScope": {
