@@ -2128,7 +2128,7 @@ function applySortToTree(items, path, sorts){
 // Analytics — Privacy-preserving page view tracking
 // =================================================================
 const Analytics = (function(){
-  let EP = '';
+  let EP = '', SITE = '';
 
   function vid(){
     let id = localStorage.getItem('fh_vid');
@@ -2144,18 +2144,26 @@ const Analytics = (function(){
 
   function track(pageRef){
     if(!EP) return;
+    const p = SITE ? SITE+':'+pageRef : pageRef;
     fetch(EP+'/track',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({p:pageRef,id:vid()})}).catch(()=>{});
+      body:JSON.stringify({p,id:vid()})}).catch(()=>{});
   }
 
   async function stats(){
     if(!EP) return null;
-    try{ const r=await fetch(EP+'/stats'); return r.ok?await r.json():null; }
-    catch{ return null; }
+    try{
+      const r=await fetch(EP+'/stats');
+      if(!r.ok) return null;
+      const all=await r.json();
+      if(!SITE) return all;
+      const pfx=SITE+':';
+      return all.filter(e=>e.p.startsWith(pfx)).map(e=>({...e,p:e.p.slice(pfx.length)}));
+    }catch{ return null; }
   }
 
-  function configure(url){
+  function configure(url, siteId){
     EP=(url||'').replace(/\/+$/,'');
+    SITE=siteId||'';
     const btn=document.getElementById('btnStats');
     if(btn) btn.style.display=EP?'':'none';
   }

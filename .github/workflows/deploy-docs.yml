@@ -25,7 +25,7 @@ jobs:
         run: |
           ANALYTICS_FLAG=""
           if [ -n "${{ secrets.DOCS_ANALYTICS_URL }}" ]; then
-            ANALYTICS_FLAG="--analytics-url ${{ secrets.DOCS_ANALYTICS_URL }}"
+            ANALYTICS_FLAG="--analytics-url ${{ secrets.DOCS_ANALYTICS_URL }} --site-id FH"
           fi
           python Docs/xwiki-pages/scripts/build_ghpages.py $ANALYTICS_FLAG
 
