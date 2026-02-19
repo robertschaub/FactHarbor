@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactHarbor Report — Statements from the current US federal government can be trusted.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 33bdd177c0bc47dc9de3144b6daf4c45</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-19 22:02 UTC</div>
+      <div>Completed: 2026-02-19 22:09 UTC</div>
+      <div>Duration: ~7 min 33 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Statements from the current US federal government can be trusted.</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; claude-sonnet-4-5-20250929</span>
+    <span class="chip chip-gray">&#128269; Google-CSE</span>
+    <span class="chip chip-gray">22 LLM calls</span>
+    <span class="chip chip-gray">10 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 50 evidence items · 14 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-lf">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge lf-color">LEANING-FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">While systematic fact-checking confirms extensive patterns of false or misleading statements by political leaders, the d…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value lf-color">35%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:35%;background:#c05621"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">68%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:68%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">While systematic fact-checking confirms extensive patterns of false or misleading statements by political leaders, the direct causal link to declining institutional trust remains difficult to establish. Public trust in federal government institutions shows complex, multi-decade trends influenced by numerous factors beyond individual political rhetoric, with some surveys indicating stable or context-dependent trust levels even amid documented patterns of misinformation. The psychological research on repetition effects and the documented volume of false claims provide partial support, but broader historical and survey data reveal that institutional trust dynamics operate through mechanisms more nuanced than simple cause-and-effect relationships with political statements.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claim that repeated false statements by political leaders erode public trust in government institutions receives limited support, with evidence showing a more complex relationship between political rhetoric and institutional confidence.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">47 evidence items analyzed across 6 distinct analytical perspectives, including psychological research, nationally representative surveys, historical trend analysis, systematic fact-checking databases, regulatory documentation, and health agency trust tracking.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">While systematic fact-checking confirms extensive patterns of false or misleading statements by political leaders, the direct causal link to declining institutional trust remains difficult to establish. Public trust in federal government institutions shows complex, multi-decade trends influenced by numerous factors beyond individual political rhetoric, with some surveys indicating stable or context-dependent trust levels even amid documented patterns of misinformation. The psychological research on repetition effects and the documented volume of false claims provide partial support, but broader historical and survey data reveal that institutional trust dynamics operate through mechanisms more nuanced than simple cause-and-effect relationships with political statements.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Nationally representative surveys on federal government trust (CB_05) directly contradict the claim, showing trust patterns that don&#39;t align with simple erosion narratives, while psychological research and public opinion surveys (CB_03) show mixed effects of statement repetition. Systematic fact-checking databases (CB_09, CB_13) strongly document the prevalence of false statements but contradict the assumed trust-erosion outcome. FDA regulatory procedures and multi-decade Pew surveys (CB_11) present mixed evidence on whether institutional competence and trust have actually declined in response to political rhetoric. Only historical trend analysis (CB_07) partially supports long-term trust decline, but cannot isolate political statements as the primary causal factor among multiple competing explanations spanning six decades.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively establish causality between specific political statements and measured changes in institutional trust due to the multifactorial nature of public opinion formation. Evidence gaps include: lack of controlled experimental data isolating the effect of political rhetoric from other trust-influencing factors (economic conditions, policy outcomes, media environment, partisan polarization); insufficient longitudinal data tracking individual-level trust changes in response to specific false claims; and limited evidence directly measuring the mechanisms by which repeated false statements translate into institutional distrust versus other competing explanations for trust trends. The 68% confidence reflects these causal inference limitations despite strong documentation of both false statements and trust measurement.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Statements from the current US federal government can be trusted.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val lf-color">35%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">68%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Psychological research on statement repetition effects + Public opinion surveys</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">25%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:25%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Nationally representative surveys on federal government trust (2024-2025)</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">15%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">95%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">10 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:15%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Historical trend analysis + Government agency fact-checking</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:30%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Systematic fact-checking of presidential statements + Election integrity research</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">8%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">95%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:8%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_11 · FDA regulatory procedures + Pew multi-decade trust surveys</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">20%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">7 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:20%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_13 · Health agency trust polls + Fact-checking + Immigration-crime claims analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">12%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">95%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">17 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:12%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(10 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict requires substantial adjustment from the advocate&#39;s initial 18% truth rating. **Self-consistency note:** The verdict was perfectly stable across runs (18/18/18, spread=0), indicating the advocate&#39;s methodology was internally consistent—but this stability does not validate the underlying assumptions challenged.
+
+**Critical adjustments based on challenges:**
+
+1. **SCOPE CONFLATION (Challenge 1 &amp; 9 - HIGH severity, ACCEPTED):** The most fundamental flaw is treating Trump&#39;s personal false claims as representative of &#39;the federal government&#39; as a whole. Evidence shows Trump made 30,573 false claims over 4 years (~21/day, EV_1771542264112), but the federal government issues thousands of statements daily across hundreds of agencies. The advocate&#39;s 18% rating mathematically implies 82% of ALL federal statements are false, which is unsupported. Evidence shows 49% trust civil servants (EV_1771542233725) versus 23-33% trusting &#39;the government&#39; generally (EV_1771542233723/726), indicating public perception distinguishes political from administrative communications. The advocate collapsed this distinction. **Verdict adjusted upward** to reflect that presidential/political statements (heavily documented as unreliable) are not representative of technical/regulatory communications (minimally examined).
+
+2. **MASSIVE COVERAGE GAPS (Challenges 2, 4, 7, 10 - HIGH/MEDIUM severity, ACCEPTED):** The evidence base is catastrophically skewed toward political rhetoric and away from the vast majority of federal communications. Missing entirely: systematic accuracy analysis of FDA drug approvals, CDC surveillance reports, NOAA forecasts, BLS statistics, Census data, routine agency press releases, scientific publications, regulatory notices. The supporting evidence (EV_1771542264109-110, EV_1771542277148-150) documents that regulatory *procedures* exist but provides zero data on output accuracy. If 90% of federal statements are routine technical communications, the current evidence examines primarily the other 10%. **Verdict adjusted upward** because absence of evidence of falsity in technical domains cannot be treated as evidence of falsity.
+
+3. **TEMPORAL MISMATCH (Challenge 4 - MEDIUM severity, PARTIALLY ACCEPTED):** Most evidence is retrospective (Trump&#39;s first term 2017-2021), while the claim asks about &#39;current&#39; government. Some 2025 fact-checks exist (EV_1771542212514-527) but systematic analysis of second-term patterns is absent. This reduces confidence rather than adjusting truth percentage, as we cannot assume patterns changed dramatically, but cannot confirm they remained identical.
+
+4. **TRUST ≠ TRUTHFULNESS (Challenge 6 - MEDIUM severity, ACCEPTED):** The advocate treated public trust surveys as direct evidence of statement accuracy, but trust is influenced by corruption perceptions (EV_1771542233724: 67% view government as corrupt), incompetence perceptions (EV_1771542233728: 66% view as incompetent), partisan identity, media coverage, and policy disagreement. Low trust may reflect factors other than statement falsity. This challenge doesn&#39;t change the truth percentage significantly (the fact-checking evidence remains valid) but reduces confidence in using trust as a truthfulness proxy.
+
+5. **METHODOLOGY CONCERNS (Challenges 3, 5, 8 - HIGH/MEDIUM severity, PARTIALLY ACCEPTED):** The Washington Post&#39;s 30,573 &#39;false or misleading&#39; claims (EV_1771542264112) lacks methodological transparency—&#39;misleading&#39; may include technically accurate statements with spin, not just objectively false claims. Multiple evidence items are derivative with unverified claims (EV_1771542212518/522/523/524/529), potentially overstating evidence strength. Marshall Project&#39;s selection of 13 claims from 350,000+ statements (EV_1771542212527) lacks denominator data. These weaken confidence in the magnitude of falsity but don&#39;t invalidate that substantial false claims occurred.
+
+6. **MISSING CORRECTION ANALYSIS (Challenge 7 - LOW severity, NOTED):** No evidence on whether agencies issue corrections, which could affect trustworthiness assessment. This is a minor gap given the scale of documented false claims.
+
+**Synthesis:** The advocate&#39;s verdict was methodologically consistent (perfect stability) but built on flawed assumptions. The evidence *does* establish that political communications from the Trump administration contained systematic false claims at high volume, and that public trust in federal government is historically low. However, extrapolating this to &#39;the federal government&#39; as a whole—encompassing technical, scientific, regulatory, and administrative communications across hundreds of agencies—is unjustified by the evidence base. The adjusted 35% truth rating reflects: (a) political/presidential statements have low reliability (well-documented); (b) technical/regulatory communications likely have higher reliability (procedures exist, agency-specific trust is higher, but systematic accuracy data is absent); (c) the claim&#39;s scope ambiguity (&#39;the federal government&#39;) requires weighting both domains, but evidence only thoroughly examines one. Confidence reduced to 68% due to coverage gaps, temporal mismatch, and methodological limitations. The claim remains contested because reasonable interpretations differ on whether &#39;federal government statements&#39; primarily means political communications (where evidence supports low trust) or includes all government communications (where evidence is insufficient).</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge 1 (scope conflation) is ACCEPTED. The advocate treated Trump&#39;s false claims as representative of the entire federal government without justification. Evidence shows public distinguishes between political figures and civil servants (49% vs 23-33% trust). The 18% rating implies 82% of all federal statements are false, which is mathematically inconsistent with the evidence that documents primarily presidential/political false claims while the government issues thousands of daily statements across agencies.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge 2 (coverage gap on technical communications) is ACCEPTED. The evidence base lacks systematic accuracy analysis of the vast majority of federal communications: scientific publications, regulatory notices, statistical releases, technical reports. The supporting evidence documents procedures exist but not output accuracy. This massive gap cannot be ignored when assessing &#39;the federal government&#39; broadly.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge 3 (Washington Post methodology) is PARTIALLY ACCEPTED. The lack of transparency about what constitutes &#39;misleading&#39; versus objectively false is a valid concern that reduces confidence in the magnitude of falsity. However, even if some portion of 30,573 claims are &#39;misleading&#39; rather than false, the scale suggests substantial unreliability in political communications. This weakens confidence but doesn&#39;t invalidate the core finding.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge 4 (temporal mismatch) is PARTIALLY ACCEPTED. Most evidence covers 2017-2021, while claim asks about &#39;current&#39; government. Some 2025 evidence exists but systematic second-term analysis is absent. This reduces confidence rather than adjusting truth percentage, as we cannot assume patterns changed but cannot confirm stability.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge 5 (derivative evidence) is ACCEPTED as a confidence-reducing factor. Multiple evidence items are journalist interpretations of underlying data with unverified derivative claims (EV_1771542212518/522/523/524/529). This means fewer independent verification sources than the evidence count suggests, reducing confidence in the precise magnitude of findings.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge 6 (trust ≠ truthfulness) is ACCEPTED. The advocate conflated public trust surveys with actual statement accuracy. Trust is influenced by corruption perceptions, incompetence, partisan identity, and other factors beyond statement truthfulness. This doesn&#39;t invalidate the fact-checking evidence but reduces confidence in using trust surveys as direct truthfulness measures.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge 7 (correction rates) is NOTED but not verdict-adjusting. The absence of correction/retraction analysis is a gap, but given the scale of documented false claims and the evidence that many were repeated hundreds of times (EV_1771542212527), correction practices would need to be extraordinarily robust to materially change the assessment. This is a minor gap.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge 8 (Marshall Project selection) is PARTIALLY ACCEPTED. The lack of denominator data (were these 13 claims the only ones repeated 500+ times, or selected from a larger set?) and methodological details weakens confidence in representativeness. However, the finding that all 13 analyzed claims were false/misleading remains valid evidence, just with uncertain generalizability.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge 9 (mathematical inconsistency) is ACCEPTED and overlaps with Challenge 1. The 18% rating is mathematically unjustified given that Trump&#39;s ~21 false claims/day represent a tiny fraction of total federal government daily communications. This is the same scope conflation issue and drives the primary verdict adjustment.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge 10 (inter-agency variation) is ACCEPTED. The evidence treats &#39;the federal government&#39; as monolithic when trust data shows meaningful variation (FDA 53%, CDC 61%, general government 23%). The absence of comparative accuracy analysis across agencies, statement types, and domains is a significant gap that prevents precise assessment of the full government&#39;s trustworthiness.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_03<br><span style="font-weight:400;font-size:10px">Repetition psychology</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Gov trust surveys 2025</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">Historical trust trends</span></th><th>CB_09<br><span style="font-weight:400;font-size:10px">Presidential fact-checking</span></th><th>CB_11<br><span style="font-weight:400;font-size:10px">FDA regulatory framework</span></th><th>CB_13<br><span style="font-weight:400;font-size:10px">Health agency trust polls</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Statements from the current US</td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-high">10</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-high">7</span></td><td><span class="cell-val cell-high">17</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Psychological research on statement repetition effects + Public opinion surveys on immigration and crime perceptions</span><span class="ba-ev-count">10 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Review of psychological research on statement repetition and perceived truthfulness</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">General research (not geographically bounded)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">General research finding</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: General psychological research findings on how repeated exposure to statements affects perceived truthfulness, applied to understanding the impact of Trump&#39;s repeated claims.; Survey research measuring American public opinion on the relationship between immigration and crime, tracking changes in perception over time.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Nationally representative surveys on federal government trust and perceptions (2025) + Nationally representative surveys on federal government trust and perceptions (2024)</span><span class="ba-ev-count">10 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Nationally representative survey of 800 U.S. adults</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">March 31-April 6, 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Nationally representative surveys of 800 U.S. adults measuring trust in federal government, perceptions of corruption, wastefulness, competence, transparency, and government impact. Conducted in Spring 2025.; Nationally representative surveys of 800 U.S. adults measuring trust in federal government, perceptions of transparency, competence, wastefulness, and government impact. Conducted in Spring 2024.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Historical trend analysis of federal government trust + Government agency fact-checking and rebuttals</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Historical trend analysis</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1960s to 2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Long-term historical analysis tracking federal government trust trends from the 1960s to 2024, documenting the decline in public trust over decades.; Official government agency statements fact-checking congressional reports and correcting claims about agency operations and access records.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">Systematic fact-checking of presidential statements + Election integrity research and noncitizen voting analysis</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Systematic fact-checking and cataloguing of public statements by The Washington Post Fact Checker team</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Full presidential term (January 2017 - January 2021)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Comprehensive systematic cataloguing and fact-checking of all presidential public statements throughout Trump&#39;s first term by The Washington Post Fact Checker team.; Survey research of local election officials and analysis of election data to assess the prevalence of noncitizen voting and journalistic fact-checking of related political claims.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_11</span><span class="ba-name">FDA regulatory procedures and authority documentation + Pew Research Center surveys on federal government trust (multi-decade)</span><span class="ba-ev-count">7 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">FDA regulatory procedure for health hazard evaluation; FDA classification system for medical device recalls; documentation of FDA regulatory authority under federal law</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Ongoing regulatory practice and authority</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Documentation of FDA regulatory procedures, classification systems, and legal authority for medical device recalls under federal law and regulations.; Pew Research Center survey research on federal government trust, fairness, and problem-solving capacity spanning multiple decades and specific survey years (2018, 2022, 2024).</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_13</span><span class="ba-name">KFF tracking polls on trust in health agencies + Fact-checking of specific administration claims against official data and records + Systematic analysis of Trump&#39;s immigration-crime claims using text analysis and peer-reviewed research</span><span class="ba-ev-count">17 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">KFF Tracking Poll on Health Information and Trust conducted online and by telephone among a nationally representative sample of 1,310 U.S. adults</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">January 7-14, 2025 (compared to June 2023 and 2023)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.938</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: KFF Tracking Poll on Health Information and Trust measuring public trust in FDA, CDC, and state/local public health officials through nationally representative telephone and online surveys.; Merged: Systematic verification of specific factual claims made by Trump administration officials against official government data, historical records, and documented evidence. Includes claims about drug pricing, election data, economic growth, WHO guidance, manufacturing spending, trade deficits, and homicide rates.; Large-scale text analysis of Trump&#39;s public statements combined with peer-reviewed criminological research to assess repeated claims about immigrant criminality. Includes analysis of 350,000+ statements, case-by-case examination of cited examples, and comparison with academic research on immigrant crime rates.</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">50 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(5 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542264109</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">DHS released a statement fact-checking U.S. Senator Jon Ossoff&#39;s report titled &#39;The Abuse of Pregnant Women &amp; Children in U.S. Immigration Detention,&#39; claiming Senator Ossoff&#39;s allegations of subprime conditions have been debunked time and time again by DHS.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dhs.gov/news/2025/08/07/dhs-debunks-georgia-senators-false-allegations-about-ice-detention-centers" target="_blank" rel="noopener noreferrer">DHS Debunks Georgia Senator’s False Allegations About ICE Detention Centers | Homeland SecurityLock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542264110</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">DHS stated that Senator Ossoff has never been denied a tour or access to an ICE facility, and the Senator&#39;s staff have been afforded tours to multiple locations with no concerns or complaints raised to facility staff during visits.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dhs.gov/news/2025/08/07/dhs-debunks-georgia-senators-false-allegations-about-ice-detention-centers" target="_blank" rel="noopener noreferrer">DHS Debunks Georgia Senator’s False Allegations About ICE Detention Centers | Homeland SecurityLock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542277148</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The FDA conducts health hazard evaluations for recalled products that are supported as completely as possible by scientific documentation and/or statements from individuals making the health hazard determination.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fda.gov/medical-devices/postmarket-requirements-devices/recalls-corrections-and-removals-devices" target="_blank" rel="noopener noreferrer">Recalls, Corrections and Removals (Devices) | FDA</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542277149</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The FDA assigns recall classifications (Class I, II, or III) based on a systematic assessment of health hazard factors including disease/injury occurrence, affected population segments, seriousness of hazard, likelihood of occurrence, and consequences.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fda.gov/medical-devices/postmarket-requirements-devices/recalls-corrections-and-removals-devices" target="_blank" rel="noopener noreferrer">Recalls, Corrections and Removals (Devices) | FDA</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542277150</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The FDA has legal authority to issue mandatory device recalls under 21 CFR 810 when manufacturers or importers fail to voluntarily recall devices that pose a risk to health.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fda.gov/medical-devices/postmarket-requirements-devices/recalls-corrections-and-removals-devices" target="_blank" rel="noopener noreferrer">Recalls, Corrections and Removals (Devices) | FDA</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(32 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212514</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">President Donald Trump claimed Americans are paying &#39;the lowest price anywhere in the world for drugs&#39; thanks to administration negotiations with pharmaceutical companies, but there is no evidence Trump&#39;s deals have led to broad decreases in drug prices, nor is it certain they will in the future.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212515</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump and Elon Musk amplified a false and long-ago debunked claim that Pennsylvania sent out 1,823,148 mail-in ballots but received back around 2.5 million mail-in ballots in the 2020 election.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212516</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump claimed the U.S. economy grew at rates that were &#39;numbers unheard of&#39; or figures the U.S. &#39;never had&#39; before, but in the second and third quarters of 2025, growth rates were not unprecedented—the U.S. had experienced faster growth rates in the past two years.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212517</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump administration officials misleadingly claimed that the WHO &#39;pushed&#39; or &#39;promoted&#39; lockdowns during the COVID-19 pandemic, but the WHO did not explicitly recommend lockdowns, although it recognized that measures might be needed in some cases.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212518</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump has repeatedly boasted that &#39;factory construction&#39; is up 41%, but spending to build, expand and rehabilitate manufacturing sites in the U.S. has declined since President Trump took office, according to U.S. Census Bureau data.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212519</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">President Donald Trump and other top administration officials made inaccurate or unsupported statements within hours of deaths of two U.S. citizens during protests against an immigration crackdown in Minneapolis, departing from how previous presidents responded in similar situations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212520</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Federal health officials claimed they are correcting past guidance that created a &#39;generation of kids low in protein&#39; and that Americans should get &#39;dramatically&#39; more protein, but while some individuals may benefit from more protein, Americans are not generally protein-deficient.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212521</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump claimed he has &#39;slashed our trade deficit by 77%&#39; through a selective comparison that compares the monthly trade deficit in January 2025 to the deficit nine months later in October, when the actual cumulative U.S. trade deficit in goods and services through his first full 10 months in office was down only 3.9% from the same period in 2024.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212522</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump said Washington, D.C.&#39;s homicide rate is &#39;41 per 100,000. No.1 that we can find anywhere in the world,&#39; but the chart he displayed showed 2023 data, and in 2023, at least 49 other cities in the world had higher homicide rates than Washington, D.C.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pbs.org/newshour/politics/fact-checking-trumps-claims-about-homicides-in-d-c" target="_blank" rel="noopener noreferrer">Fact-checking Trump&#39;s claims about homicides in DC | PBS News</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212523</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump did not mention that the homicide rate data he cited was from 2023, and since then, the district&#39;s homicide rate has fallen considerably—from 39.4 per 100,000 in 2023 to 27.3 per 100,000 in 2024, with further declines in 2025.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pbs.org/newshour/politics/fact-checking-trumps-claims-about-homicides-in-d-c" target="_blank" rel="noopener noreferrer">Fact-checking Trump&#39;s claims about homicides in DC | PBS News</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212524</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump has repeatedly claimed that unauthorized immigrants are criminals, coming from jails and mental institutions (made 560+ times), but immigration in the U.S. is strongly associated with lower crime, with a 2017 study finding immigrants are &#39;less likely to offend than native born Americans.&#39;</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212525</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump has claimed that millions of immigrants crossing the southern U.S. border were intentionally released from overseas jails, prisons and asylums, especially in countries like Venezuela, but these claims have been routinely debunked by journalists, researchers and fact-checkers, and Trump&#39;s campaign has not been able to corroborate the claims.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212526</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trump has highlighted individual cases of undocumented immigrants committing violent crimes (including Jose Garcia-Zarate, Lakin Riley, Jocelyn Nungaray, Rachel Morin, and Marilyn Pharis) as evidence of an immigrant crime wave, but multiple studies have shown there is no crime wave and documented and undocumented immigrants commit fewer crimes than native-born Americans.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212527</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The Marshall Project used text analysis to identify 13 major claims about immigration in over 350,000 of Trump&#39;s public statements, with some claims made 500 times or more, and found that all of them are untrue or deeply misleading.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233723</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Only 33% of Americans trust the federal government, while 47% do not and 13% are neutral, according to a nationally representative survey conducted in spring 2025.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/" target="_blank" rel="noopener noreferrer">The State of Public Trust in Government 2025 • Partnership for Public Service</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233724</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Two-thirds of Americans (67%) say the federal government is &#39;corrupt&#39;, compared with only 22% who do not agree.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/" target="_blank" rel="noopener noreferrer">The State of Public Trust in Government 2025 • Partnership for Public Service</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233726</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Only 23% of Americans trust the federal government, down from 35% in 2022, according to a nationally representative survey of 800 adults conducted in spring 2024.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">Public Trust in Government 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233727</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Only 15% of Americans believe the government is transparent, down from 21% in 2022.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">Public Trust in Government 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233728</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">66% of Americans believe the federal government is incompetent, up 10 percentage points from 2022.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">Public Trust in Government 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233729</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trust in government has been in decline since the 1960s, with recent years seeing distrust in both government and politicians reach near record levels.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">Public Trust in Government 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233730</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">85% of the public agree the federal government is &#39;wasteful&#39;, up 15 percentage points from 2022.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">Public Trust in Government 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233731</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Only 31% of Americans say the impact of the federal government on the U.S. is positive, down from 42% in 2022, while 66% say the impact is negative.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">Public Trust in Government 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233732</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">More Americans say the federal government has a negative impact on the country (45%) than a positive one (42%), according to a 2025 survey.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/" target="_blank" rel="noopener noreferrer">The State of Public Trust in Government 2025 • Partnership for Public Service</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233733</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Sixty-one percent of Americans agree the federal government is &#39;wasteful&#39;, compared with 24% who do not, according to a 2025 survey.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/" target="_blank" rel="noopener noreferrer">The State of Public Trust in Government 2025 • Partnership for Public Service</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542264112</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The Washington Post Fact Checker team documented that President Donald Trump made 30,573 false or misleading claims during his presidency, averaging about 21 erroneous claims per day, with the rate increasing over time from 6 claims per day in his first year to 39 claims per day in his final year.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://docs.house.gov/meetings/FD/FD00/20240515/117301/HHRG-118-FD00-20240515-SD003.pdf" target="_blank" rel="noopener noreferrer">HHRG 118 FD00 20240515 SD003</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542264114</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">NPR reported that former President Donald Trump and other Republicans have been repeating the false narrative that Democrats are purposefully letting migrants into the country so they will vote, with no evidence for the claim.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.npr.org/2024/10/12/nx-s1-5147789/voting-election-2024-noncitizen-fact-check-trump" target="_blank" rel="noopener noreferrer">Fact checking false claims about noncitizen voting : NPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300828</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Only 22% of U.S. adults said they trust the federal government to do the right thing just about always or most of the time in a spring 2024 Center survey.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pew.org/en/trend/archive/fall-2024/americans-deepening-mistrust-of-institutions" target="_blank" rel="noopener noreferrer">Americans&#39; Deepening Mistrust of Institutions | The Pew Charitable Trusts</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300829</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trust in the federal government has been low for decades, with measures bottoming out at around 30% in the late 1970s and never approaching the original high point of over 70% from the late 1950s since then.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pew.org/en/trend/archive/fall-2024/americans-deepening-mistrust-of-institutions" target="_blank" rel="noopener noreferrer">Americans&#39; Deepening Mistrust of Institutions | The Pew Charitable Trusts</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300830</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">In a 2022 Center survey, majorities said the federal government unfairly benefits some people over others, doesn&#39;t respond to the needs of ordinary Americans, and isn&#39;t adequately careful with taxpayer money.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pew.org/en/trend/archive/fall-2024/americans-deepening-mistrust-of-institutions" target="_blank" rel="noopener noreferrer">Americans&#39; Deepening Mistrust of Institutions | The Pew Charitable Trusts</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300832</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Just over half (53%) of the public now says they trust the Food and Drug Administration (FDA) to make the right recommendations on health issues at least &#39;a fair amount,&#39; down from nearly two-thirds (65%) in June 2023.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.kff.org/health-information-trust/poll-trust-in-public-health-agencies-and-vaccines-falls-amid-republican-skepticism/" target="_blank" rel="noopener noreferrer">Poll: Trust in Public Health Agencies and Vaccines Falls Amid Republican Skepticism | KFF</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300833</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Trust in health recommendations from the Centers for Disease Control and Prevention (CDC) dipped from 66% in 2023 to 61% in January 2025.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.kff.org/health-information-trust/poll-trust-in-public-health-agencies-and-vaccines-falls-amid-republican-skepticism/" target="_blank" rel="noopener noreferrer">Poll: Trust in Public Health Agencies and Vaccines Falls Amid Republican Skepticism | KFF</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300834</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The share of Americans who say they trust their state and local public health officials fell from 64% in 2023 to 54% in January 2025.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.kff.org/health-information-trust/poll-trust-in-public-health-agencies-and-vaccines-falls-amid-republican-skepticism/" target="_blank" rel="noopener noreferrer">Poll: Trust in Public Health Agencies and Vaccines Falls Amid Republican Skepticism | KFF</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(13 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Public trust in government has been tracked and measured by Pew Research Center from 1958 to 2025, indicating ongoing concern about government truthfulness and reliability.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Executive Order 14110 acknowledges that irresponsible AI use could exacerbate societal harms such as fraud, discrimination, bias, and disinformation, indicating federal government recognition of the potential for false or misleading information in government operations.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.federalregister.gov/documents/2023/11/01/2023-24283/safe-secure-and-trustworthy-development-and-use-of-artificial-intelligence" target="_blank" rel="noopener noreferrer">https://www.federalregister.gov/documents/2023/11/01/2023-24283/safe-secure-and-trustworthy-development-and-use-of-artificial-intelligence</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The FTC requires that manufacturers and marketers making unqualified Made in USA claims must have a &#39;reasonable basis&#39; to support the claim, meaning they need competent and reliable evidence to back up their assertions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ftc.gov/business-guidance/resources/complying-made-usa-standard" target="_blank" rel="noopener noreferrer">https://www.ftc.gov/business-guidance/resources/complying-made-usa-standard</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The FTC is charged with preventing deception and unfairness in the marketplace and has the power to bring law enforcement actions against false or misleading claims.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ftc.gov/business-guidance/resources/complying-made-usa-standard" target="_blank" rel="noopener noreferrer">https://www.ftc.gov/business-guidance/resources/complying-made-usa-standard</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The White House Executive Order on AI policy states that State laws requiring AI models to alter their truthful outputs would be subject to challenge and preemption, and the FTC is directed to issue a policy statement on how such laws requiring alterations to truthful outputs are deceptive acts or practices.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.whitehouse.gov/presidential-actions/2025/12/eliminating-state-law-obstruction-of-national-artificial-intelligence-policy/" target="_blank" rel="noopener noreferrer">https://www.whitehouse.gov/presidential-actions/2025/12/eliminating-state-law-obstruction-of-national-artificial-intelligence-policy/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The FDA regulates cannabis and cannabis-derived products under the FD&amp;C Act and issues warning letters to companies illegally selling products with false or misleading claims about CBD and THC content.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fda.gov/news-events/public-health-focus/fda-regulation-cannabis-and-cannabis-derived-products-including-cannabidiol-cbd" target="_blank" rel="noopener noreferrer">https://www.fda.gov/news-events/public-health-focus/fda-regulation-cannabis-and-cannabis-derived-products-including-cannabidiol-cbd</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Fair Credit Reporting Act (Title VI of the Consumer Credit Protection Act) establishes legal requirements for consumer reporting agencies and companies providing information to them, including duties to investigate disputed information and notify consumers of adverse actions based on reports.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ftc.gov/legal-library/browse/statutes/fair-credit-reporting-act" target="_blank" rel="noopener noreferrer">https://www.ftc.gov/legal-library/browse/statutes/fair-credit-reporting-act</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Supplemental Nutrition Assistance Program (SNAP) provides food benefits to low-income families to supplement their grocery budget, with various program components including employment and training initiatives, fraud prevention measures, and food restriction waivers implemented by the Food and Nutrition Service.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program" target="_blank" rel="noopener noreferrer">https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212528</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Research has shown that as someone hears a statement more times, it feels more true, and millions of Americans and people worldwide have heard Trump&#39;s false or misleading immigration claims.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542212529</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A 2023 Pew survey found that Trump&#39;s oft-repeated assertion that immigrants make crime worse is shared by around half of Americans, a number relatively consistent with when Pew started asking the question nearly a quarter-century ago, despite research showing immigrants commit fewer crimes.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542233725</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Forty-nine percent of Americans say they trust civil servants compared with only 23% who say they do not.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/" target="_blank" rel="noopener noreferrer">The State of Public Trust in Government 2025 • Partnership for Public Service</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542264113</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">NPR reported that available data shows noncitizen voting is incredibly rare, with the Brennan Center for Justice finding just 30 cases of suspected noncitizens voting out of 23.5 million votes cast (0.0001%) in 42 jurisdictions with high immigrant populations after the 2016 election.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.npr.org/2024/10/12/nx-s1-5147789/voting-election-2024-noncitizen-fact-check-trump" target="_blank" rel="noopener noreferrer">Fact checking false claims about noncitizen voting : NPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771542300831</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">About 2 in 3 U.S. adults agreed that a low level of trust in the government makes it harder to solve the nation&#39;s problems.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pew.org/en/trend/archive/fall-2024/americans-deepening-mistrust-of-institutions" target="_blank" rel="noopener noreferrer">Americans&#39; Deepening Mistrust of Institutions | The Pew Charitable Trusts</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">14 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">FactCheck.org - A Project of The Annenberg Public Policy CenterFacebookTwitterTumblrClose</span></div>
+        <div class="source-url"><a href="https://www.factcheck.org/" target="_blank" rel="noopener noreferrer">https://www.factcheck.org/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-check US federal government statements accuracy 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Can Americans Tell Factual From Opinion Statements in the News?</span></div>
+        <div class="source-url"><a href="https://www.pewresearch.org/journalism/2018/06/18/distinguishing-between-factual-and-opinion-statements-in-the-news/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/journalism/2018/06/18/distinguishing-between-factual-and-opinion-statements-in-the-news/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-check US federal government statements accuracy 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Fact-checking Trump&#39;s claims about homicides in DC | PBS News</span></div>
+        <div class="source-url"><a href="https://www.pbs.org/newshour/politics/fact-checking-trumps-claims-about-homicides-in-d-c" target="_blank" rel="noopener noreferrer">https://www.pbs.org/newshour/politics/fact-checking-trumps-claims-about-homicides-in-d-c</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-check US federal government statements accuracy 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Fact-checking Trump’s Quotes About Immigrants | The Marshall ProjectMenu iconThe Marshall ProjectMagnifying glassArrowFacebookEmailPrintArrow</span></div>
+        <div class="source-url"><a href="https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants" target="_blank" rel="noopener noreferrer">https://www.themarshallproject.org/2024/10/21/fact-check-12000-trump-statements-immigrants</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-check US federal government statements accuracy 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Public Trust in Government: 1958-2025 | Pew Research Center</span></div>
+        <div class="source-url"><a href="https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: public trust federal government polling survey data</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">The State of Public Trust in Government 2025 • Partnership for Public Service</span></div>
+        <div class="source-url"><a href="https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/" target="_blank" rel="noopener noreferrer">https://ourpublicservice.org/publications/the-state-of-public-trust-in-government-2025/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: public trust federal government polling survey data</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Public Trust in Government 2024</span></div>
+        <div class="source-url"><a href="https://ourpublicservice.org/publications/state-of-trust-in-government-2024/" target="_blank" rel="noopener noreferrer">https://ourpublicservice.org/publications/state-of-trust-in-government-2024/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: public trust federal government polling survey data</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Confidence in Institutions | Gallup Historical Trends</span></div>
+        <div class="source-url"><a href="https://news.gallup.com/poll/1597/confidence-institutions.aspx" target="_blank" rel="noopener noreferrer">https://news.gallup.com/poll/1597/confidence-institutions.aspx</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: public trust federal government polling survey data</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">DHS Debunks Georgia Senator’s False Allegations About ICE Detention Centers | Homeland SecurityLock</span></div>
+        <div class="source-url"><a href="https://www.dhs.gov/news/2025/08/07/dhs-debunks-georgia-senators-false-allegations-about-ice-detention-centers" target="_blank" rel="noopener noreferrer">https://www.dhs.gov/news/2025/08/07/dhs-debunks-georgia-senators-false-allegations-about-ice-detention-centers</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: US government false statements fact-check analysis 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Fact checking false claims about noncitizen voting : NPR</span></div>
+        <div class="source-url"><a href="https://www.npr.org/2024/10/12/nx-s1-5147789/voting-election-2024-noncitizen-fact-check-trump" target="_blank" rel="noopener noreferrer">https://www.npr.org/2024/10/12/nx-s1-5147789/voting-election-2024-noncitizen-fact-check-trump</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: US government false statements fact-check analysis 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">HHRG 118 FD00 20240515 SD003</span></div>
+        <div class="source-url"><a href="https://docs.house.gov/meetings/FD/FD00/20240515/117301/HHRG-118-FD00-20240515-SD003.pdf" target="_blank" rel="noopener noreferrer">https://docs.house.gov/meetings/FD/FD00/20240515/117301/HHRG-118-FD00-20240515-SD003.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: US government false statements fact-check analysis 2024</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Recalls, Corrections and Removals (Devices) | FDA</span></div>
+        <div class="source-url"><a href="https://www.fda.gov/medical-devices/postmarket-requirements-devices/recalls-corrections-and-removals-devices" target="_blank" rel="noopener noreferrer">https://www.fda.gov/medical-devices/postmarket-requirements-devices/recalls-corrections-and-removals-devices</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: federal government corrections retractions accountability record</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Americans&#39; Deepening Mistrust of Institutions | The Pew Charitable Trusts</span></div>
+        <div class="source-url"><a href="https://www.pew.org/en/trend/archive/fall-2024/americans-deepening-mistrust-of-institutions" target="_blank" rel="noopener noreferrer">https://www.pew.org/en/trend/archive/fall-2024/americans-deepening-mistrust-of-institutions</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: public trust federal government polling survey decline</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Poll: Trust in Public Health Agencies and Vaccines Falls Amid Republican Skepticism | KFF</span></div>
+        <div class="source-url"><a href="https://www.kff.org/health-information-trust/poll-trust-in-public-health-agencies-and-vaccines-falls-amid-republican-skepticism/" target="_blank" rel="noopener noreferrer">https://www.kff.org/health-information-trust/poll-trust-in-public-health-agencies-and-vaccines-falls-amid-republican-skepticism/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: public trust federal government polling survey decline</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">10 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>US federal government credibility trustworthiness</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>The current US federal government makes truthful statements.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>government official statements accuracy</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Public statements from current US government officials are reliable.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>fact-check US federal government statements accuracy 2024</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>public trust federal government polling survey data</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>government false statements corrections retractions accountability</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>US government false statements fact-check analysis 2024</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>federal government corrections retractions accountability record</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>public trust federal government polling survey decline</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">50</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">14</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">10</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">22</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.0.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.0.0-cb · Generated 2026-02-19 23:12 UTC
+  <br>Job 33bdd177c0bc47dc9de3144b6daf4c45 · claude-sonnet-4-5-20250929 · anthropic
+</div>
+</div>
+</body>
+</html>
