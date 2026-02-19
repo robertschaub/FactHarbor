@@ -32,7 +32,7 @@ A separate TypeScript prompt composition system (##buildPrompt()## in ##prompt-b
 
 {{code language="none"}}
 apps/web/prompts/
-+-- orchestrated.prompt.md          # Orchestrated pipeline prompts (40+ sections)
++-- claimboundary.prompt.md         # ClaimAssessmentBoundary pipeline prompts (13 sections)
 +-- monolithic-dynamic.prompt.md    # Monolithic Dynamic pipeline prompts (7 sections)
 +-- source-reliability.prompt.md    # Source reliability evaluation prompts
 +-- text-analysis/                  # LLM text analysis pipeline prompts
@@ -86,35 +86,32 @@ const rendered = await loadAndRenderSection("monolithic-dynamic", section, {});
 
 == 4. Pipeline Prompt Sections ==
 
-=== 4.1 Orchestrated Pipeline ===
+=== 4.1 ClaimAssessmentBoundary Pipeline ===
 
-**File**: ##apps/web/prompts/orchestrated.prompt.md##
+**File**: ##apps/web/prompts/claimboundary.prompt.md## (13 sections, pipeline: "claimboundary", version: 1.0.0)
 
-Contains 40+ named sections covering every LLM call point. Key section groups:
+Each section covers exactly one LLM call point. Sections are mapped to the 5 pipeline stages:
 
-|= Section Group |= Key Sections |= Pipeline Phase
-| **Understand** | ##UNDERSTAND##, ##UNDERSTAND_USER##, ##UNDERSTAND_JSON_FALLBACK_SYSTEM##, ##UNDERSTAND_STRUCTURED_RETRY_SYSTEM## | Step 1
-| **Supplemental** | ##SUPPLEMENTAL_CLAIMS##, ##SUPPLEMENTAL_CONTEXTS##, ##OUTCOME_CLAIMS##, ##OUTCOME_ENRICH_SYSTEM##, ##OUTCOME_ENRICH_USER## | Step 1 (post-Gate 1)
-| **Context Refinement** | ##CONTEXT_REFINEMENT##, ##CONTEXT_REFINEMENT_CANDIDATES_BLOCK##, ##CONTEXT_REFINEMENT_USER## | Post-Research
-| **Evidence Extraction** | ##EXTRACT_EVIDENCE##, ##EXTRACT_EVIDENCE_USER##, ##EXTRACT_EVIDENCE_HIGH_IMPACT_FILTER_USER## | Step 2
-| **Search Relevance** | ##SEARCH_RELEVANCE_MODE_STRICT##, ##SEARCH_RELEVANCE_MODE_MODERATE##, ##SEARCH_RELEVANCE_MODE_RELAXED##, ##SEARCH_RELEVANCE_BATCH_SYSTEM##, ##SEARCH_RELEVANCE_BATCH_USER## | Step 2
-| **Grounding** | ##GROUNDED_SEARCH_REQUEST##, ##GROUNDING_KEY_TERMS_BATCH_USER##, ##GROUNDING_ADJUDICATION_BATCH_USER## | Step 2-3
-| **Verdict** | ##VERDICT##, ##VERDICT_USER##, ##VERDICT_BREVITY_RULES##, ##VERDICT_DIRECTION_VALIDATION_BATCH_USER## | Step 3
-| **Claim Verdicts** | ##CLAIM_VERDICTS##, ##CLAIM_VERDICTS_USER##, ##CLAIM_VERDICTS_KEY_FACTORS_APPEND##, ##CLAIM_VERDICTS_EVIDENCE_QUALITY_APPEND## | Step 3
-| **Knowledge Config** | ##KNOWLEDGE_RECENCY_GUIDANCE##, ##KNOWLEDGE_INSTRUCTION_ALLOW_MODEL##, ##KNOWLEDGE_INSTRUCTION_EVIDENCE_ONLY## | Cross-cutting
-| **Provider Hints** | ##PROVIDER_HINT_OPENAI##, ##PROVIDER_HINT_ANTHROPIC##, ##PROVIDER_HINT_GOOGLE##, ##PROVIDER_HINT_MISTRAL## | Cross-cutting
-| **Similarity** | ##TEXT_SIMILARITY_BATCH_USER##, ##CONTEXT_SIMILARITY_USER##, ##ANALYSIS_CONTEXT_DETECTION_SYSTEM##, ##ANALYSIS_CONTEXT_DETECTION_USER## | Multiple
+|= Section |= Purpose |= Stage |= Model Tier
+| ##CLAIM_EXTRACTION_PASS1## | Initial atomic claim extraction from user input | Stage 1: ##extractClaims## | Haiku
+| ##CLAIM_EXTRACTION_PASS2## | Claim consolidation, dependency analysis, counter-claim tagging | Stage 1: ##extractClaims## | Haiku
+| ##CLAIM_VALIDATION## | Gate 1: filter opinions, predictions, unanswerable claims | Stage 1: ##extractClaims## | Haiku
+| ##GENERATE_QUERIES## | Generate research queries per ##AtomicClaim## | Stage 2: ##researchEvidence## | Haiku
+| ##RELEVANCE_CLASSIFICATION## | Assess search result relevance to each claim | Stage 2: ##researchEvidence## | Haiku
+| ##EXTRACT_EVIDENCE## | Extract ##EvidenceItems## from fetched source content | Stage 2: ##researchEvidence## | Haiku
+| ##BOUNDARY_CLUSTERING## | Cluster ##EvidenceScopes## into ##ClaimAssessmentBoundaries## | Stage 3: ##clusterBoundaries## | Haiku
+| ##VERDICT_ADVOCATE## | Construct pro-thesis verdict for a boundary | Stage 4: ##generateVerdicts## | Sonnet
+| ##VERDICT_CHALLENGER## | Identify counter-evidence and weaknesses in Advocate verdict | Stage 4: ##generateVerdicts## | Sonnet
+| ##VERDICT_RECONCILIATION## | Synthesize Advocate/Challenger into final verdict + confidence | Stage 4: ##generateVerdicts## | Sonnet
+| ##VERDICT_GROUNDING_VALIDATION## | Advisory: verify verdict reasoning traces back to evidence | Stage 4: ##generateVerdicts## | Haiku
+| ##VERDICT_DIRECTION_VALIDATION## | Advisory: verify ##claimDirection## alignment with verdict | Stage 4: ##generateVerdicts## | Haiku
+| ##VERDICT_NARRATIVE## | Generate human-readable verdict narrative | Stage 5: ##aggregateAssessment## | Sonnet
 
-==== Search Relevance Modes ====
+The Advocate → Challenger → Reconciliation pattern in Stage 4 is the CB pipeline's core design: reliable initial verdicts emerge from structured debate, eliminating the need for post-hoc auto-correction.
 
-The ##assessSearchRelevanceBatch()## function dynamically selects one of three relevance mode sections based on search constraints:
-
-|= Mode |= Section |= Trigger
-| **Strict** | ##SEARCH_RELEVANCE_MODE_STRICT## | ##requireContextMatch## + ##strictInstitutionMatch##
-| **Moderate** | ##SEARCH_RELEVANCE_MODE_MODERATE## | ##requireContextMatch## only
-| **Relaxed** | ##SEARCH_RELEVANCE_MODE_RELAXED## | Neither constraint set
-
-The mode content is injected as ##$~{MODE_INSTRUCTIONS}## into the ##SEARCH_RELEVANCE_BATCH_SYSTEM## prompt. This allows admin-tuning of relevance thresholds without code changes.
+{{info}}
+**Note**: ##orchestrated.prompt.md## (40+ sections) was removed in v2.11.0 alongside the Orchestrated pipeline. Archive available at ##Docs/xwiki-pages-ARCHIVE/...##.
+{{/info}}
 
 === 4.2 Monolithic Dynamic Pipeline ===
 
@@ -141,7 +138,7 @@ Provider-specific structured output guidance is embedded as named sections in ea
 | **Google (Gemini)** | ##STRUCTURED_OUTPUT_GOOGLE## | Length enforcement, no explanatory text outside JSON
 | **Mistral** | ##STRUCTURED_OUTPUT_MISTRAL## | Validation checklist format, field type verification
 
-The orchestrated pipeline uses per-provider hint sections (##PROVIDER_HINT_ANTHROPIC##, etc.) appended to specific prompts for provider-aware formatting guidance.
+The ##claimboundary.prompt.md## and ##monolithic-dynamic.prompt.md## files each contain ##STRUCTURED_OUTPUT_<PROVIDER>## sections for provider-specific output guidance.
 
 ----
 
@@ -184,8 +181,7 @@ The ##isBudgetModel()## function identifies fast-tier models (Haiku, Mini, Flash
 
 == 8. Adding a New Provider ==
 
-1. Add a ##STRUCTURED_OUTPUT_NEWPROVIDER## section to the relevant ##.prompt.md## files
-1. Add a ##PROVIDER_HINT_NEWPROVIDER## section to ##orchestrated.prompt.md##
+1. Add a ##STRUCTURED_OUTPUT_NEWPROVIDER## section to ##claimboundary.prompt.md## and ##monolithic-dynamic.prompt.md##
 1. Update ##detectProvider()## in ##prompt-builder.ts## to recognize new model IDs
 1. Update ##isBudgetModel()## if the provider has fast-tier models
 1. Test with ##prompt-optimization.test.ts## and ##monolithic-dynamic-prompt.test.ts##
@@ -212,11 +208,20 @@ The ##isBudgetModel()## function identifies fast-tier models (Haiku, Mini, Flash
 
 == 10. Changelog ==
 
+=== v2.11.0: ClaimAssessmentBoundary Pipeline (Feb 17, 2026) ===
+
+##claimboundary.prompt.md## (13 sections) introduced as the primary runtime prompt file.
+
+* ##orchestrated.prompt.md## (40+ sections) removed alongside the Orchestrated pipeline
+* CB pipeline uses 5-stage structure: extractClaims → researchEvidence → clusterBoundaries → generateVerdicts → aggregateAssessment
+* Verdict generation uses Advocate/Challenger/Reconciliation debate pattern (3 Sonnet calls)
+* Advisory validation sections (##VERDICT_GROUNDING_VALIDATION##, ##VERDICT_DIRECTION_VALIDATION##) added — non-blocking, Haiku tier
+
 === v2.8.2: Prompt Externalization to UCM (Feb 13, 2026) ===
 
-All runtime LLM prompts now load from UCM-managed ##.prompt.md## files, compliant with AGENTS.md String Usage Boundary.
+All runtime LLM prompts load from UCM-managed ##.prompt.md## files, compliant with AGENTS.md String Usage Boundary.
 
-* Orchestrated search relevance mode instructions moved from inline code to prompt file sections (##SEARCH_RELEVANCE_MODE_STRICT/MODERATE/RELAXED##)
+* Search relevance mode instructions moved from inline code to prompt file sections
 * Monolithic-dynamic system prompts moved from ##buildPrompt()## to ##loadAndRenderSection()##
 * 4 provider-specific structured output sections added to ##monolithic-dynamic.prompt.md##
 * TypeScript prompt modules retained for testing harness only
@@ -235,7 +240,7 @@ All runtime LLM prompts now load from UCM-managed ##.prompt.md## files, complian
 
 * [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Pipeline architecture and shared primitives that consume these prompts
 * [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation methodology driven by prompt outputs
-* [[Orchestrated Pipeline>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Orchestrated Pipeline.WebHome]] — AKEL pipeline flow showing where each prompt task type is invoked
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — CB pipeline (default) and Monolithic Dynamic pipeline showing where each prompt is invoked
 * [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] — Confidence scoring that depends on prompt-extracted evidence quality
 * [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — Architecture overview
 
