@@ -4,6 +4,19 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-19 | Technical Writer | Claude Code | Wave 4B — xWiki MIXED threshold + XAR rebuild
+**Task:** Fix MIXED confidence threshold (60%→40%) in Calculations and Verdicts xWiki page; rebuild XAR.
+**Files touched:**
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Calculations and Verdicts/WebHome.xwiki` — changed `>= 60%` → `>= 40%` and `< 60%` → `< 40%` in the verdict scale table (MIXED/UNVERIFIED rows only)
+- `Docs/xwiki-export/FactHarbor_19.Feb.26_00.00.xar` — rebuilt XAR (202 pages, 690 KB)
+- `Docs/xwiki-export/README.md` — updated current XAR entry
+**Key decisions:** Only changed the two confidence threshold references in the verdict scale table. Left unchanged: `Medium (60%)` example in truthFromBand table (input example, not a threshold), and `59.5% -> 60%` in SR impact example (a calculated output, not a threshold). Verified correct value of 40 against `apps/web/src/lib/analyzer/truth-scale.ts` (DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 40) and `apps/web/src/lib/config-schemas.ts` (mixedConfidenceThreshold UCM default = 40).
+**Open items:** None
+**Warnings:** Verify no other xWiki pages have the stale 60% threshold (search for "60%" in xwiki-pages/ directory filtered to confidence threshold contexts).
+**For next agent:** All code review findings addressed. Wave 4 complete.
+**Learnings:** No
+
+---
 ### 2026-02-19 | Captain Deputy | Claude Code (Sonnet 4.6) | Code Review Waves 2A/2B/3A/3B
 **Task:** Implement code review fixes from Code_Review_23h_2026-02-19.md — Waves 2A (pipeline code), 2B (UCM config), 3A (fallback retry), 3B (evidence attribution).
 **Files touched:**
