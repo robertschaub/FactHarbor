@@ -421,15 +421,15 @@ export interface ClaimUnderstanding {
 |= Category |= factualBasis |= Weight Multiplier |= Example
 | **DOUBTED** | ##"opinion"## | 1.0x (full) | "Government says trial was unfair" (no specifics)
 | **DOUBTED** | ##"alleged"## | 1.0x (full) | "Critics claim bias" (no evidence cited)
-| **CONTESTED** | ##"disputed"## | 0.5x (reduced) | "Defense presented conflicting expert testimony"
-| **CONTESTED** | ##"established"## | 0.3x (heavily reduced) | "Audit found violation of Regulation 47(b)"
+| **CONTESTED** | ##"disputed"## | 0.7x (reduced) | "Defense presented conflicting expert testimony"
+| **CONTESTED** | ##"established"## | 0.5x (reduced) | "Audit found violation of Regulation 47(b)"
 
-**Weight calculation** (in ##getClaimWeight()##):
+**Weight calculation** (in ##getClaimWeight()##, v3.1 — updated in v2.9.0):
 
 {{code language="typescript"}}
 if (claim.isContested) {
-  if (basis === "established") weight *= 0.3;  // Strong counter-evidence
-  else if (basis === "disputed") weight *= 0.5; // Some counter-evidence
+  if (basis === "established") weight *= 0.5;  // Strong counter-evidence (updated v2.9.0: was 0.3x)
+  else if (basis === "disputed") weight *= 0.7; // Some counter-evidence (updated v2.9.0: was 0.5x)
   // "opinion"/"alleged"/"unknown" -> full weight (just doubted)
 }
 {{/code}}
@@ -444,28 +444,34 @@ if (claim.isContested) {
 
 == Terminology Mapping Tables ==
 
-=== Table 1: Primary Entities (v3.1) ===
+=== Table 1: Primary Entities (v4.0.0-cb) ===
 
-|= Concept |= TypeScript Name |= JSON Field |= Prompt Term |= UI Label |= Database Column
-| Top-level analytical frame | ##AnalysisContext## | ##analysisContexts## | "AnalysisContext" | "Contexts" | ##ResultJson.analysisContexts##
-| Per-evidence source metadata | ##EvidenceScope## | ##evidenceScope## | "evidenceScope" | (not displayed separately) | ##ResultJson.evidenceItems[].evidenceScope##
-| Narrative background | (string) | ##backgroundDetails## | "Background" | "Background" | ##ResultJson.understanding.backgroundDetails##
-| Evidence item | ##EvidenceItem## | ##evidenceItems## | "EvidenceItem" | "Evidence" | ##ResultJson.evidenceItems##
+|= Concept |= TypeScript Name (CB) |= JSON Field |= Prompt Term |= Formerly (Orchestrated — removed)
+| Top-level analytical frame | ##ClaimAssessmentBoundary## | ##claimBoundaries## | "ClaimBoundary" | ~~##AnalysisContext## / ##analysisContexts##~~
+| Atomic verifiable assertion | ##AtomicClaim## | ##atomicClaims## | "AtomicClaim" | ~~##SubClaim##~~
+| Per-evidence source metadata | ##EvidenceScope## | ##evidenceScope## | "EvidenceScope" | ##EvidenceScope## (unchanged)
+| Evidence item | ##EvidenceItem## | ##evidenceItems## | "EvidenceItem" | ##EvidenceItem## (unchanged)
+| Per-boundary verdict component | ##BoundaryFinding## | ##boundaryFindings## | "BoundaryFinding" | (new in CB)
+| Per-claim verdict | ##CBClaimVerdict## | ##claimVerdicts## | "ClaimVerdict" | ~~##ClaimVerdict##~~ (restructured)
+| Narrative background | (string) | ##backgroundDetails## | "Background" | ##backgroundDetails## (unchanged)
 
-=== Table 2: Reference Fields (v3.1) ===
+=== Table 2: Reference Fields (v4.0.0-cb) ===
 
 |= Field Purpose |= TypeScript Field |= JSON Field |= Prompt Term |= Valid Values
-| Evidence -> AnalysisContext | ##contextId?: string## | ##contextId## | "contextId" | Must match ##AnalysisContext.id##
-| Claim -> AnalysisContext | ##contextId?: string## | ##contextId## | "contextId" | Must match ##AnalysisContext.id##
-| Verdict -> AnalysisContext | ##contextId: string## | ##contextId## | "contextId" | Must match ##AnalysisContext.id##
-| Supporting evidence | ##supportingEvidenceIds## | ##supportingEvidenceIds## | "supportingEvidenceIds" | Array of E-prefix IDs
+| Evidence → ClaimAssessmentBoundary | ##claimBoundaryId?: string## | ##claimBoundaryId## | "claimBoundaryId" | Must match ##ClaimAssessmentBoundary.id##
+| Claim → relevant evidence | ##relevantClaimIds: string[]## | ##relevantClaimIds## | "relevantClaimIds" | Array of AC-prefix IDs
+| Supporting evidence | ##supportingEvidenceIds## | ##supportingEvidenceIds## | "supportingEvidenceIds" | Array of EV-prefix IDs
+
+{{warning}}
+**Removed reference fields** (Orchestrated pipeline — do not use in new code):
+~~##contextId##~~ (claim/evidence → AnalysisContext — removed), ~~##analysisContexts##~~ (top-level context array — removed), ~~##claimAssessments##~~ (renamed to ##claimVerdicts##)
+{{/warning}}
 
 === Table 3: Special Constants ===
 
-|= Constant |= Value |= Meaning |= When to Use
-| ##UNSCOPED_ID## | ##"CTX_UNSCOPED"## | Evidence doesn't map to any detected context | When evidence is general/background
-| ##CTX_MAIN## | ##"CTX_MAIN"## | Fallback context for single-context analysis | When no distinct contexts detected
-| ##CTX_GENERAL## | ##"CTX_GENERAL"## | General context (cross-cutting) | When evidence applies to all contexts
+{{info}}
+**Orchestrated-era constants removed**: ~~##CTX_UNSCOPED##~~, ~~##CTX_MAIN##~~, ~~##CTX_GENERAL##~~ no longer exist in the CB pipeline. ClaimAssessmentBoundaries emerge from evidence clustering and do not use fixed fallback constants.
+{{/info}}
 
 ----
 
@@ -474,10 +480,10 @@ if (claim.isContested) {
 === In TypeScript Code ===
 
 {{code language="typescript"}}
-// CORRECT (v3.1)
-import { AnalysisContext, EvidenceScope, EvidenceItem } from './types';
+// CORRECT (v4.0-cb)
+import { AtomicClaim, ClaimAssessmentBoundary, EvidenceScope, EvidenceItem } from './types';
 
-function processContexts(contexts: AnalysisContext[]) {
+function processBoundaries(boundaries: ClaimAssessmentBoundary[]) {
   // ...
 }
 
@@ -485,107 +491,115 @@ function processEvidence(items: EvidenceItem[]) {
   // ...
 }
 
-// REMOVED in v3.0 - do not use:
-// ExtractedFact (use EvidenceItem)
-// DistinctProceeding (use AnalysisContext)
+// REMOVED in v4.0-cb - do not use:
+// AnalysisContext    → use ClaimAssessmentBoundary
+// SubClaim           → use AtomicClaim
+// ContextAnswer      → removed (no equivalent in CB)
+// ExtractedFact      → use EvidenceItem (removed in v3.0)
 {{/code}}
 
 === In JSON Schema (Zod) ===
 
 {{code language="typescript"}}
-// CORRECT (v3.1 field names)
+// CORRECT (v4.0-cb field names)
 const schema = z.object({
-  analysisContexts: z.array(AnalysisContextSchema),
-  backgroundDetails: z.string(),
+  atomicClaims: z.array(AtomicClaimSchema),
+  claimBoundaries: z.array(ClaimAssessmentBoundarySchema),
   evidenceItems: z.array(EvidenceItemSchema),
+  backgroundDetails: z.string(),
 });
 {{/code}}
 
 === In LLM Prompts ===
 
 {{code language="typescript"}}
-// CORRECT (v3.1 terminology)
+// CORRECT (v4.0-cb terminology)
 const prompt = `
 ## TERMINOLOGY
 
-**AnalysisContext**: Top-level bounded analytical frame (stored as analysisContexts)
+**AtomicClaim**: Single verifiable assertion extracted from user input (stored as atomicClaims)
 **EvidenceScope**: Per-evidence source metadata (stored as evidenceItem.evidenceScope)
-**Background**: Narrative background (stored as backgroundDetails)
-**EvidenceItem**: Individual evidence with id (E1, E2...) and statement
+**ClaimBoundary**: Evidence-emergent grouping of compatible EvidenceScopes (stored as claimBoundaries)
+**EvidenceItem**: Individual evidence with id (EV-prefix) and statement
 
-Your task: Identify AnalysisContexts from evidence...
+Your task: Extract AtomicClaims from user input...
 `;
 
-// AVOID (legacy terms)
-const prompt = `Identify scopes from evidence...`;  // Which "scope"?
+// AVOID (Orchestrated-era terms — pipeline removed)
+const prompt = `Identify AnalysisContexts from evidence...`;  // Orchestrated-only concept
 const prompt = `Extract facts...`;  // Use "evidence" not "facts"
 {{/code}}
 
 === In UI/Documentation ===
 
 {{code language="typescript"}}
-// CORRECT
-<h2>Analysis Contexts</h2>
-<p>This analysis involves 2 distinct analytical frames:</p>
+// CORRECT (v4.0-cb)
+<h2>Claim Boundaries</h2>
+<p>This analysis identified 2 evidence-emergent boundaries:</p>
 
 <BackgroundBanner backgroundDetails={background} />
 
-// REMOVED in v3.0:
-// <ArticleFrameBanner articleFrame={...} />
+// REMOVED in v4.0-cb:
+// <h2>Analysis Contexts</h2>  → use "Claim Boundaries"
+// <ArticleFrameBanner articleFrame={...} />  → removed
 {{/code}}
 
 ----
 
-== Internal Task Names (v3.1) ==
+== Pipeline Stage Functions (v4.0.0-cb) ==
 
-|= Task Name |= Description |= Used In
-| ##extract_evidence## | Extract evidence items from sources | llm.ts, model-tiering.ts
-| ##context_refinement## | Refine AnalysisContext assignments | llm.ts, model-tiering.ts
-| ##understand## | Initial claim understanding | llm.ts, model-tiering.ts
-| ##verdict## | Generate verdicts | llm.ts, model-tiering.ts
+|= Stage Function |= Description |= Pipeline Module
+| ##extractClaims## | Two-pass LLM claim extraction (PASS1 → PASS2); Gate 1 application | ##claimboundary-pipeline.ts## Stage 1
+| ##researchEvidence## | Iterative web research: query generation, fetch, EvidenceItem extraction | ##claimboundary-pipeline.ts## Stage 2
+| ##clusterBoundaries## | LLM clustering of EvidenceScopes into ClaimAssessmentBoundaries | ##claimboundary-pipeline.ts## Stage 3
+| ##generateVerdicts## | Advocate → Challenger → Reconciliation debate per boundary | ##verdict-stage.ts## Stage 4
+| ##aggregateAssessment## | Gate 4, weighted aggregation, VerdictNarrative generation | ##claimboundary-pipeline.ts## Stage 5
 
-**Note:** Legacy task names ##extract_facts## and ##scope_refinement## were renamed in v3.1.
+{{warning}}
+**Removed Orchestrated task names** (do not use): ~~##extract_evidence##~~, ~~##context_refinement##~~, ~~##understand##~~, ~~##verdict##~~ — these are Orchestrated pipeline function names, not CB stages. Also removed: ~~##extract_facts##~~, ~~##scope_refinement##~~ (pre-v3.0 names).
+{{/warning}}
 
 ----
 
-== Config Field Names (v3.1) ==
+== Config Field Names (CB Pipeline) ==
+
+{{warning}}
+**Orchestrated-era config fields removed**: ~~##contextDetectionMethod##~~, ~~##contextDetectionEnabled##~~, ~~##contextDetectionMinConfidence##~~, ~~##contextDetectionMaxContexts##~~, ~~##contextDedupThreshold##~~ no longer exist. These were part of the removed Orchestrated pipeline's context detection system.
+{{/warning}}
+
+Current CB pipeline config fields (UCM-managed — see [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] and [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]):
 
 |= Config Field |= Description |= Default
-| ##contextDetectionMethod## | Method for detecting contexts | ##"heuristic"##
-| ##contextDetectionEnabled## | Enable context detection | ##true##
-| ##contextDetectionMinConfidence## | Minimum confidence threshold | ##0.7##
-| ##contextDetectionMaxContexts## | Maximum contexts to detect | ##5##
-| ##contextDedupThreshold## | Threshold for deduplication | ##0.85##
-
-**Note:** Legacy field names ##scopeDetection*## and ##scopeDedup*## were renamed in v3.0.
+| ##gate1Enabled## | Enable Gate 1 claim validation | ##true##
+| ##gate1KeepCentralClaims## | Always keep ##isCentral## claims through Gate 1 | ##true##
+| ##gate4Enabled## | Enable Gate 4 verdict confidence assessment | ##true##
+| ##maxResearchIterations## | Max research rounds per ClaimAssessmentBoundary | ##3##
+| ##maxTotalTokens## | Token budget cap across all pipeline stages | ##750000##
 
 ----
 
 == Decision Trees ==
 
-=== "Should I create a new AnalysisContext?" ===
+=== "Should I create a ClaimAssessmentBoundary?" ===
+
+ClaimBoundaries are **NOT manually created** — they emerge from EvidenceScope clustering during Stage 3 (##clusterBoundaries##). The decision below applies to the LLM's clustering logic:
 
 {{code}}
-START: Do the facts involve distinct analytical frames?
+START: Can these EvidenceScopes be compared directly for the same claim?
   |
-  +-- YES -> Are the methodologies/boundaries INCOMPATIBLE?
-  |   |
-  |   +-- YES -> CREATE separate AnalysisContexts
-  |   |   Example: WTW vs TTW (different system boundaries)
-  |   |
-  |   +-- NO -> SINGLE AnalysisContext
-  |       Example: Multiple studies using same WTW methodology
+  +-- YES -> Same ClaimBoundary (compatible methodology, temporal, geographic)
+  |   Example: Multiple sources using the same analytical framework
   |
-  +-- NO -> Are they different LEGAL proceedings analyzing different matters?
+  +-- NO -> Are they incompatible in methodology, temporal, or geographic scope?
       |
-      +-- YES -> CREATE separate AnalysisContexts
-      |   Example: TSE electoral case vs STF criminal case
+      +-- YES -> Separate ClaimBoundaries
+      |   Example: Studies using different analytical frameworks
       |
-      +-- NO -> SINGLE AnalysisContext
-          Example: Different viewpoints on same legal case
+      +-- NO -> Same ClaimBoundary with noted caveats
+          Example: Minor reporting period differences within same framework
 {{/code}}
 
-=== "Is this an EvidenceScope or AnalysisContext?" ===
+=== "Is this an EvidenceScope or backgroundDetails?" ===
 
 {{code}}
 START: Where does this information come from?
@@ -594,15 +608,9 @@ START: Where does this information come from?
   |   Example: "Study used ISO 14040 methodology"
   |   Attach to evidenceItem.evidenceScope
   |
-  +-- FROM INPUT/USER -> AnalysisContext?
-      |
-      +-- Does it define a DISTINCT analytical frame?
-          |
-          +-- YES -> AnalysisContext
-          |   Example: "Compare US EPA vs EU REACH"
-          |
-          +-- NO -> backgroundDetails
-              Example: "Article is written as opinion piece"
+  +-- FROM USER INPUT / ARTICLE FRAMING -> backgroundDetails
+      Example: "Article is written as opinion piece"
+      Store as backgroundDetails string (NOT a ClaimAssessmentBoundary)
 {{/code}}
 
 ----
@@ -622,95 +630,97 @@ function getScope(id: string) { ... }
 
 {{code language="typescript"}}
 // Explicit
-function getAnalysisContext(id: string): AnalysisContext { ... }
+function getClaimAssessmentBoundary(id: string): ClaimAssessmentBoundary { ... }
 function getEvidenceScope(evidence: EvidenceItem): EvidenceScope | null { ... }
 {{/code}}
 
-=== Pitfall 2: Conflating backgroundDetails with AnalysisContext ===
+=== Pitfall 2: Conflating backgroundDetails with ClaimAssessmentBoundary ===
 
-**Problem**:
+**Problem** (creates spurious boundaries):
 
 {{code language="json"}}
 {
-  "analysisContexts": [
+  "claimBoundaries": [
     { "name": "Article frames as conspiracy theory" }
   ]
 }
 {{/code}}
 
-**Solution**:
+**Solution** (background → string field, boundaries → evidence-emergent):
 
 {{code language="json"}}
 {
   "backgroundDetails": "Article frames as conspiracy theory",
-  "analysisContexts": [
-    { "name": "Central Bank Policy Analysis" }
+  "claimBoundaries": [
+    { "name": "Peer-reviewed study evidence (Framework A)" }
   ]
 }
 {{/code}}
 
 === Pitfall 3: Using Legacy Field Names ===
 
-**Problem** (v3.0+ will fail):
+**Problem** (v4.0-cb schema will reject):
 
 {{code language="typescript"}}
-const facts = result.facts;  // REMOVED
-const context = understanding.analysisContext;  // RENAMED
+const facts = result.facts;               // REMOVED (v3.x)
+const ctx = understanding.analysisContext; // REMOVED (v4.0)
+const ctxs = result.analysisContexts;      // REMOVED (v4.0)
 {{/code}}
 
 **Solution**:
 
 {{code language="typescript"}}
-const evidenceItems = result.evidenceItems;  // v3.1
-const background = understanding.backgroundDetails;  // v3.1
+const evidenceItems = result.evidenceItems;    // v4.0-cb
+const background = result.backgroundDetails;   // v4.0-cb
+const boundaries = result.claimBoundaries;     // v4.0-cb
 {{/code}}
 
 ----
 
 == Validation Checklist ==
 
-Use this checklist when reviewing code that involves contexts/evidence:
+Use this checklist when reviewing code that involves claims/evidence/boundaries:
 
-* Is "scope" qualified as AnalysisContext or EvidenceScope?
-* Do JSON field names use v3.1 names (##analysisContexts##, ##evidenceItems##, ##backgroundDetails##)?
-* Does prompt include terminology glossary header?
-* Are ##contextId## values validated against ##analysisContexts[]##?
+* Is "scope" qualified as ##ClaimAssessmentBoundary## or ##EvidenceScope##?
+* Do JSON field names use v4.0-cb names (##atomicClaims##, ##claimBoundaries##, ##evidenceItems##, ##backgroundDetails##)?
+* Does prompt include terminology glossary header with CB term definitions?
+* Are ##claimBoundaryId## values validated against ##claimBoundaries[]##?
 * Are fallbacks logged (not silent)?
-* Does EvidenceScope capture source methodology (not create new AnalysisContexts)?
-* Is backgroundDetails separate from AnalysisContexts?
-* Are evidence IDs using E-prefix (##E1, E2, E3...##)?
+* Does ##EvidenceScope## capture source methodology (not artificially create new ##ClaimAssessmentBoundaries##)?
+* Is ##backgroundDetails## separate from ##claimBoundaries##?
+* Are evidence IDs using EV-prefix (##EV_001, EV_002, EV_003...##)?
 
 ----
 
 == FAQ ==
 
-**Q: When should I use EvidenceScope vs AnalysisContext?**
+**Q: When should I use EvidenceScope vs ClaimAssessmentBoundary?**
 
-A: If the information describes **how a source document computed its data** (methodology, boundaries), it's EvidenceScope. If it describes **a distinct analytical frame requiring separate verdicts**, it's AnalysisContext.
+A: If the information describes **how a source document computed its data** (methodology, temporal bounds, geographic scope), it's ##EvidenceScope## — attached to an evidence item. ##ClaimAssessmentBoundary## is NOT manually assigned; it emerges from Stage 3 clustering of compatible EvidenceScopes. You never "create" a ClaimBoundary in code — the LLM creates them.
 
-**Q: What's the difference between CTX_UNSCOPED and CTX_GENERAL?**
+**Q: Can an evidence item have BOTH claimBoundaryId AND evidenceScope?**
 
-A: ##CTX_UNSCOPED## means the evidence doesn't map to any detected context (background info). ##CTX_GENERAL## means the evidence applies across all contexts (cross-cutting evidence). In practice, both are grouped together in display.
+A: Yes. ##claimBoundaryId## says **which ClaimAssessmentBoundary the evidence belongs to** (assigned during Stage 3 clustering), while ##evidenceScope## says **how the source computed the data** (assigned during Stage 2 extraction). They serve orthogonal purposes.
 
-**Q: Can an evidence item have BOTH contextId AND evidenceScope?**
+**Q: Should prompts say "ClaimBoundary", "ClaimAssessmentBoundary", or "Boundary"?**
 
-A: Yes! ##contextId## says **which AnalysisContext the evidence supports**, while ##evidenceScope## says **how the source computed the data**. They're orthogonal concepts.
+A: Use "ClaimBoundary" for schema-facing precision (matches JSON field prefix), "ClaimAssessmentBoundary" for full clarity in documentation. "Boundary" is acceptable shorthand in prompts where context is clear. **NEVER use "AnalysisContext"** in new code or prompts — that term is from the removed Orchestrated pipeline.
 
-**Q: Should prompts say "AnalysisContext", "Context", or "Framework"?**
+**Q: What if the LLM produces zero ClaimBoundaries during Stage 3?**
 
-A: Use "AnalysisContext" for precision or "context" for brevity. **NEVER use "framework"** when referring to the architectural concept of ##AnalysisContext##. The term "framework" is reserved for descriptive English phrases like "regulatory frameworks".
+A: This indicates no compatible EvidenceScopes were clustered. The pipeline has a safety net: if Stage 3 produces zero actionable boundaries, the highest-centrality claim is rescued to prevent silent empty results. First check research quality (Stage 2) and verify the ##BOUNDARY_CLUSTERING## prompt is receiving evidence items.
 
 ----
 
 == Related Documentation ==
 
-* v2-to-v3-migration-guide.md - Migration guide for v3.0/v3.1
-* AGENTS.md - High-level rules for context detection
-* types.ts - TypeScript interface definitions
-* Pipeline Variants documentation - Pipeline design (see [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]])
+* [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] — Runtime UCM prompt system for CB pipeline
+* [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] — Pipeline design, stage configuration, CB invariants
+* AGENTS.md — High-level rules for terminology and code standards
+* ##types.ts## — TypeScript interface definitions (AtomicClaim, ClaimAssessmentBoundary, EvidenceScope, EvidenceItem)
 
 ----
 
 **Document Maintainer**: Lead Developer
-**Last Reviewed**: 2026-02-04 (Updated for v3.1)
+**Last Reviewed**: 2026-02-19 (Updated for v4.0.0-cb ClaimAssessmentBoundary pipeline)
 **Next Review**: 2026-05 (or after next major version)

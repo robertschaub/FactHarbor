@@ -1,37 +1,66 @@
 = LLM Schema Mapping Reference =
 
-**Version**: 3.1.0
+**Version**: 3.1.0 (Orchestrated pipeline — historical reference)
 **Date**: 2026-02-07
 **Purpose**: Complete mapping of TypeScript -> LLM Prompts -> JSON Schemas
 **Audience**: Prompt Engineers, LLM System Developers
+
+{{warning}}
+**HISTORICAL REFERENCE — Orchestrated Pipeline (removed in v2.11.0)**
+
+This document describes the LLM schema mappings for the removed Orchestrated pipeline (UNDERSTAND → EXTRACT_EVIDENCE → CONTEXT_REFINEMENT → VERDICT phases). These phases, their Zod schemas, and their references to ##orchestrated.ts## no longer exist in the codebase.
+
+**For the current ClaimAssessmentBoundary (CB) pipeline:**
+* Runtime prompts: ##apps/web/prompts/claimboundary.prompt.md## (13 sections — CLAIM_EXTRACTION_PASS1/2, GENERATE_QUERIES, EXTRACT_EVIDENCE, BOUNDARY_CLUSTERING, VERDICT_ADVOCATE/CHALLENGER/RECONCILIATION, etc.)
+* Zod schemas: inline schema objects in ##apps/web/src/lib/analyzer/claimboundary-pipeline.ts## (one per stage)
+* Types: ##apps/web/src/lib/analyzer/types.ts## (##AtomicClaim##, ##ClaimAssessmentBoundary##, ##EvidenceScope##, ##EvidenceItem##, ##CBClaimVerdict##, ##CBAnalysisResult##)
+* Stage reference: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]
+{{/warning}}
 
 ----
 
 == Overview ==
 
-This document maps how FactHarbor's TypeScript objects are presented to LLMs (via prompts) and how LLM outputs are validated (via Zod schemas). Use this as the authoritative reference when writing or updating prompts.
+This document maps how FactHarbor's TypeScript objects are presented to LLMs (via prompts) and how LLM outputs are validated (via Zod schemas). The **Master Mapping Table** below reflects the current CB pipeline. The phase-by-phase sections are retained as historical reference for the removed Orchestrated pipeline.
 
 ----
 
 == Master Mapping Table ==
 
-|= TypeScript Type |= Prompt Term |= LLM Output Field |= Zod Schema
-| ##AnalysisContext## | "AnalysisContext" or "Context" | ##analysisContexts## | ##AnalysisContextSchema##
-| ##EvidenceScope## | "EvidenceScope" or "Scope" | ##evidenceScope## | ##EvidenceScopeSchema##
-| ##EvidenceItem## | "Evidence" | ##evidenceItems## | ##EvidenceItemSchema##
-| ##ContextAnswer## | "Verdict" | (embedded in result) | ##ContextAnswerSchema##
+=== Current (CB Pipeline — v4.0.0-cb) ===
 
-> **CRITICAL TERMINOLOGY**: "Scope" refers to ##EvidenceScope## (per-evidence metadata), NOT ##AnalysisContext##. Use "Context" for top-level analytical frames.
+|= TypeScript Type |= Prompt Term |= LLM Output Field |= Zod Schema Location
+| ##AtomicClaim## | "AtomicClaim" | ##atomicClaims## | ##claimboundary-pipeline.ts## (Stage 1 schema)
+| ##ClaimAssessmentBoundary## | "ClaimBoundary" | ##claimBoundaries## | ##claimboundary-pipeline.ts## (Stage 3 schema)
+| ##EvidenceScope## | "EvidenceScope" or "Scope" | ##evidenceScope## | ##types.ts## (##EvidenceScopeSchema##)
+| ##EvidenceItem## | "Evidence" or "EvidenceItem" | ##evidenceItems## | ##claimboundary-pipeline.ts## (Stage 2 schema)
+| ##CBClaimVerdict## | "ClaimVerdict" | ##claimVerdicts## | ##verdict-stage.ts## (verdict schema)
+| ##CBAnalysisResult## | "AnalysisResult" | (top-level result) | ##claimboundary-pipeline.ts## (result schema)
+
+> **CRITICAL TERMINOLOGY**: "Scope" refers to ##EvidenceScope## (per-evidence metadata). "ClaimBoundary" or "ClaimAssessmentBoundary" refers to the evidence-emergent grouping. **NEVER use "AnalysisContext" or "Context"** for the top-level frame in CB pipeline code or prompts — those are removed Orchestrated concepts.
+
+=== Removed (Orchestrated Pipeline — no longer exists) ===
+
+|= TypeScript Type |= Formerly Used As |= Replacement
+| ~~##AnalysisContext##~~ | Top-level analytical frame | ##ClaimAssessmentBoundary##
+| ~~##ContextAnswer##~~ | Per-context verdict | (no equivalent — CB uses weighted aggregation)
+| ~~##SubClaim##~~ | Atomic claim unit | ##AtomicClaim##
 
 {{warning}}
-**v3.0 Breaking Change (February 2026):** All legacy JSON field names have been removed from the codebase. Legacy names (##distinctProceedings##, ##relatedProceedingId##, ##proceedingId##, ##supportingFactIds##, ##facts##, etc.) are **no longer accepted** by Zod schemas. Only the migration script (##apps/api/scripts/migrate-terminology-v2.7.ts##) handles old→new field renaming when reading historical job data from the database.
+**v4.0 Breaking Change (February 2026):** ##AnalysisContext##, ##ContextAnswer##, ##analysisContexts##, ##contextId## are no longer in the codebase. Legacy Orchestrated field names (##distinctProceedings##, ##relatedProceedingId##, ##proceedingId##, ##supportingFactIds##, ##facts##, ##claims##) were removed in v3.0.
 {{/warning}}
 
 ----
 
-== Phase-by-Phase Mappings ==
+== Phase-by-Phase Mappings (Orchestrated Pipeline — Historical) ==
 
-=== UNDERSTAND Phase ===
+{{warning}}
+**All sections below describe the removed Orchestrated pipeline.** The phases (UNDERSTAND, EXTRACT_EVIDENCE, CONTEXT_REFINEMENT, VERDICT), their schemas, and their references to ##orchestrated.ts## no longer exist. Retained for historical reference only.
+
+The CB pipeline's equivalent stages are: ##extractClaims## → ##researchEvidence## → ##clusterBoundaries## → ##generateVerdicts## → ##aggregateAssessment##. For current schemas, read ##claimboundary-pipeline.ts## and ##verdict-stage.ts## directly.
+{{/warning}}
+
+=== UNDERSTAND Phase (Orchestrated — removed) ===
 
 **Purpose**: Extract claims and detect preliminary AnalysisContexts
 
@@ -258,8 +287,8 @@ This document maps how FactHarbor's TypeScript objects are presented to LLMs (vi
 * ##isContested##: Whether there is opposition to this factor
 * ##contestedBy##: Who opposes (e.g., "opposition party", "industry group")
 * ##factualBasis##: Type of opposition evidence
-** ##established## = Strong documented counter-evidence (weight: 0.3x)
-** ##disputed## = Some factual counter-evidence (weight: 0.5x)
+** ##established## = Strong documented counter-evidence (weight: 0.5x in v3.1; was 0.3x in Orchestrated)
+** ##disputed## = Some factual counter-evidence (weight: 0.7x in v3.1; was 0.5x in Orchestrated)
 ** ##opinion##/##alleged##/##unknown## = DOUBTED, no evidence (weight: 1.0x)
 
 See [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]] for "Doubted vs Contested" distinction.
@@ -270,21 +299,25 @@ See [[Terminology>>FactHarbor.Product Development.Specification.Reference.Termin
 
 == Terminology Bridges (Prompt <-> Code) ==
 
-=== AnalysisContext Bridges ===
+=== ClaimAssessmentBoundary Bridges (CB — current) ===
 
 |= Layer |= Term |= Notes
-| Prompt | "AnalysisContext" or "Context" | Primary prompt term (NEVER "Scope")
-| LLM Output | ##analysisContexts## | JSON field name (v3.1)
-| TypeScript | ##AnalysisContext## | Interface name
-| Database | (embedded in ResultJson) | Stored as JSON blob
+| Prompt | "ClaimBoundary" or "ClaimAssessmentBoundary" | Primary prompt term for top-level frame (NEVER "AnalysisContext")
+| LLM Output | ##claimBoundaries## | JSON field name (v4.0-cb)
+| TypeScript | ##ClaimAssessmentBoundary## | Interface name (##types.ts##)
+| Database | (embedded in CBAnalysisResult JSON) | Stored as JSON blob
 
-=== EvidenceScope Bridges ===
+=== EvidenceScope Bridges (unchanged) ===
 
 |= Layer |= Term |= Notes
-| Prompt | "EvidenceScope" or "Scope" | Per-evidence metadata (NOT an AnalysisContext)
+| Prompt | "EvidenceScope" or "Scope" | Per-evidence metadata (NOT a ClaimAssessmentBoundary)
 | LLM Output | ##evidenceScope## | Consistent across versions
-| TypeScript | ##EvidenceScope## | Interface name
+| TypeScript | ##EvidenceScope## | Interface name (##types.ts##)
 | Database | (embedded in evidence item objects) | Part of ResultJson
+
+=== Removed: AnalysisContext Bridges (Orchestrated — do not use) ===
+
+~~Prompt: "AnalysisContext" / LLM Output: ##analysisContexts## / TypeScript: ##AnalysisContext##~~ — removed in v4.0-cb.
 
 ----
 
@@ -341,11 +374,12 @@ graph TD
 // WRONG: "Scope" means EvidenceScope (per-evidence metadata), not AnalysisContext
 {{/code}}
 
-**Correct** (Clear terminology):
+**Correct** (Clear CB terminology):
 
 {{code}}
-"Identify AnalysisContexts (or Contexts)..."
+"Identify ClaimBoundaries (or ClaimAssessmentBoundaries)..."
 // "Scope" reserved for EvidenceScope (per-evidence source methodology)
+// NEVER use "AnalysisContext" — that concept is from the removed Orchestrated pipeline
 {{/code}}
 
 === Pitfall 3: Missing Glossary ===
@@ -354,27 +388,29 @@ graph TD
 
 {{code}}
 "Extract the scopes from evidence."
-// Ambiguous: Does "scope" mean AnalysisContext or EvidenceScope?
+// Ambiguous: Does "scope" mean ClaimAssessmentBoundary or EvidenceScope?
 {{/code}}
 
 **Correct** (Explicit glossary with CRITICAL distinction):
 
 {{code}}
 ## TERMINOLOGY (CRITICAL)
-- **AnalysisContext** (or "Context"): Top-level analytical frame requiring separate verdict
-- **EvidenceScope** (or "Scope"): Per-evidence source methodology metadata (NOT an AnalysisContext)
+- **AtomicClaim**: Single verifiable assertion extracted from user input (stored as atomicClaims)
+- **ClaimBoundary** (or "ClaimAssessmentBoundary"): Evidence-emergent grouping of compatible EvidenceScopes (stored as claimBoundaries)
+- **EvidenceScope** (or "Scope"): Per-evidence source methodology metadata (NOT a ClaimBoundary)
 {{/code}}
 
 ----
 
 == Testing Checklist ==
 
-When updating prompts or schemas:
+When updating CB pipeline prompts or schemas:
 
-* Prompt terminology matches Zod field names exactly
-* Glossary section present in all base prompts
-* Provider-specific variants use same core terms
-* Example outputs in prompts match schema structure
+* Prompt terminology uses CB terms: ##AtomicClaim##, ##ClaimBoundary##, ##EvidenceScope##, ##EvidenceItem## (not ##AnalysisContext##, ##SubClaim##, ##ContextAnswer##)
+* Prompt field names match CB Zod schema field names (##atomicClaims##, ##claimBoundaries##, ##evidenceItems##)
+* Glossary section present in all base prompts with CB term definitions
+* Provider-specific sections in ##claimboundary.prompt.md## use same core terms
+* Example outputs in prompts match CB schema structure
 * Validation errors are descriptive (mention expected vs actual field names)
 * Documentation updated (this file, [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]])
 

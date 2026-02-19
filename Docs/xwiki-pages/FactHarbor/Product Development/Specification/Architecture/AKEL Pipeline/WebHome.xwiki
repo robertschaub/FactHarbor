@@ -1,6 +1,6 @@
 = AKEL Pipeline =
 
-The **AI Knowledge Extraction Layer (AKEL)** is FactHarbor's core analysis engine. It takes an article or claim as input and produces a structured verdict report through a 5-step process: Understand, Research, Verdict, Summary, and Report.
+The **AI Knowledge Extraction Layer (AKEL)** is FactHarbor's core analysis engine. It takes an article or claim as input and produces a structured verdict report through the ClaimAssessmentBoundary pipeline's 5-stage workflow: ##extractClaims → researchEvidence → clusterBoundaries → generateVerdicts → aggregateAssessment##.
 
 == Pipeline Overview ==
 
@@ -8,31 +8,32 @@ The **AI Knowledge Extraction Layer (AKEL)** is FactHarbor's core analysis engin
 
 === Step-by-Step ===
 
-**Step 1: Understand** — Analyses the input to determine what needs checking.
-* Detects input type: question, statement, or article
-* Extracts individual claims with dependency chains
-* Identifies analysis contexts (bounded analytical frames for multi-perspective topics)
-* Assigns risk tiers (A=high, B=medium, C=low) to guide research depth
-* Applies **Gate 1** (Claim Validation): filters opinions, predictions, and non-factual statements
+**Stage 1: ##extractClaims##** — Extracts ##AtomicClaims## from user input.
+* Two-pass LLM extraction: initial pass (##CLAIM_EXTRACTION_PASS1##) then consolidation and deduplication (##CLAIM_EXTRACTION_PASS2##)
+* Sets ##passedFidelity## flag per claim (LLM-assessed verifiability)
+* Applies **Gate 1** (Claim Validation): filters opinions, predictions, and non-verifiable claims
+* Safety net: rescues highest-centrality claim if all claims would be filtered
 
-**Step 2: Research** — Iteratively searches the web for evidence.
-* Generates targeted search queries based on claims and gaps
+**Stage 2: ##researchEvidence##** — Iteratively searches the web for evidence per claim.
+* Generates targeted search queries per ##AtomicClaim## (##GENERATE_QUERIES##)
 * Fetches and parses source content (HTML via cheerio, PDF via pdf2json)
-* Extracts evidence items from each source (statements, statistics, expert quotes)
+* Classifies search result relevance and extracts ##EvidenceItems## from source content
 * Applies evidence quality filtering (probative value, deduplication, provenance)
-* Repeats until research is complete or iteration/token budget is exhausted (default: 5 iterations, 750K tokens)
+* Iterates per ##ClaimAssessmentBoundary## (up to 3 rounds) until research complete or token budget exhausted (750K tokens)
 
-**Step 3: Verdict** — Evaluates each claim against the evidence.
-* Generates per-claim verdicts on the 7-point scale (TRUE → FALSE)
-* Propagates dependency failures (if prerequisite claim fails, dependent claims inherit)
-* Aggregates claim verdicts into an overall article verdict using weighted averages (centrality, harm potential, evidence quality, source reliability)
+**Stage 3: ##clusterBoundaries##** — Groups evidence into ##ClaimAssessmentBoundaries##.
+* LLM clusters compatible ##EvidenceScopes## into evidence groupings (##BOUNDARY_CLUSTERING##)
+* Boundaries emerge from evidence — not predefined analytical templates
+
+**Stage 4: ##generateVerdicts##** — Generates per-claim verdicts via structured debate.
+* Advocate → Challenger → Reconciliation pattern (3 Sonnet calls per boundary)
+* Advisory validation: grounding check and direction check (Haiku, non-blocking)
+* Produces ##CBClaimVerdicts## with confidence scores and evidence citations
+
+**Stage 5: ##aggregateAssessment##** — Aggregates verdicts and produces the final result.
 * Applies **Gate 4** (Confidence Assessment): flags low-confidence verdicts
-
-**Step 4: Summary** — Structures results for presentation.
-* Builds a two-panel summary (Overview + Key Findings)
-
-**Step 5: Report** — Generates the final output.
-* Produces a markdown report with all sections: Summary, Claims, Sources, Verdict
+* Weighted aggregation of ##CBClaimVerdicts## (centrality, harm potential, confidence, triangulation)
+* Generates verdict narrative and final ##AnalysisResult##
 
 == Pipeline Variants ==
 

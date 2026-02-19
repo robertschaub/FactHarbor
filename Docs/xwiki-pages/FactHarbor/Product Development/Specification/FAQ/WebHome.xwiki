@@ -75,8 +75,8 @@ This is exactly what FactHarbor is designed for:
  ** Consumption level (1 cup/day? 5 cups/day?)
  ** Time horizon (short-term? long-term?)
 **Evidence Landscape**:
-* Shows all AnalysisContexts and their verdicts side-by-side
-* Users see *why* interpretations differ
+* Shows all ClaimAssessmentBoundaries and their verdicts side-by-side
+* Users see *why* interpretations differ (different evidence clusters, methodologies, temporal scopes)
 * No forced consensus when legitimate disagreement exists
 **Explicit Assumptions**:
 * Every scenario states its assumptions clearly
@@ -152,9 +152,9 @@ FactHarbor is designed for evolving knowledge:
 2. AKEL extracts claims
 3. Checks for existing duplicates
 4. Normalizes claim text
-5. Assigns risk tier
-6. Detects AnalysisContexts and KeyFactors
-7. Runs quality gates
+5. Assigns risk tier (centrality, harm potential)
+6. Extracts AtomicClaims, researches evidence, clusters ClaimAssessmentBoundaries
+7. Runs quality gates (Gate 1: claim validation, Gate 4: verdict confidence)
 8. Publishes as AI-Generated if passes
 == 8. What are "risk tiers" and why do they matter? ==
 Risk tiers determine review requirements and publication workflow:
@@ -202,19 +202,19 @@ Risk tiers determine review requirements and publication workflow:
 * Untrusted nodes → manual only
 == 10. Can experts disagree in FactHarbor? ==
 **Yes - and that's a feature, not a bug**:
-**Multiple Scenarios**:
-* AKEL detects multiple AnalysisContexts with different assumptions
-* Each AnalysisContext gets its own verdict
-* Users see *why* assessments differ (different definitions, boundaries, evidence weighting)
-**Multiple AnalysisContexts**:
-* Same claim, different analytical frames
-* All context verdicts visible with methodology
-* No forced consensus
+**Multiple Evidence Perspectives**:
+* AKEL clusters evidence into ClaimAssessmentBoundaries based on EvidenceScope compatibility
+* Each ClaimAssessmentBoundary may yield a different per-boundary verdict
+* Users see *why* assessments differ (different methodologies, temporal scopes, evidence weighting)
+**Multiple ClaimAssessmentBoundaries**:
+* Same claim, different evidence clusters (evidence-emergent, not predefined)
+* All boundary verdicts visible with methodology
+* No forced consensus when evidence genuinely conflicts
 **Transparency**:
-* AnalysisContext reasoning documented
-* Assumptions stated explicitly
+* ClaimAssessmentBoundary reasoning documented (via Advocate/Challenger/Reconciliation debate)
+* Evidence sources and methodology stated explicitly
 * Evidence chains traceable
-* Users can evaluate competing expert opinions
+* Users can evaluate how different evidence clusters reach different conclusions
 **Federation**:
 * Different nodes can have different expert conclusions
 * Cross-node branching allowed

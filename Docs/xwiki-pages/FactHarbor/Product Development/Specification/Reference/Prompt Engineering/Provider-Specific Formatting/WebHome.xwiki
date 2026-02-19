@@ -75,9 +75,13 @@ See Prompt Architecture v2.8.0 for detailed changes.
 
 == 2. Architecture Overview ==
 
+{{info}}
+**Testing Harness Only** — The ##prompt-builder.ts## system and the TypeScript prompt modules under ##apps/web/src/lib/analyzer/prompts/## are used exclusively by the testing harness (##prompt-testing.ts##). **Production runtime uses ##loadAndRenderSection()## from UCM-managed ##.prompt.md## files** (see [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]]). The composition strategy documented on this page applies to the testing harness only.
+{{/info}}
+
 === Prompt Builder Module ===
 
-**Location**: ##apps/web/src/lib/analyzer/prompts/prompt-builder.ts##
+**Location**: ##apps/web/src/lib/analyzer/prompts/prompt-builder.ts## (testing harness)
 
 **Supported Providers**:
 * **Anthropic** (Claude Sonnet 4, Sonnet 3.5, Haiku 3.5)
@@ -87,14 +91,15 @@ See Prompt Architecture v2.8.0 for detailed changes.
 
 === Task Types ===
 
-Prompts are composed for 7 task types:
-1. **understand** - Initial claim understanding and decomposition
+Prompts are composed for the following task types in the testing harness:
 1. **extract_evidence** - Evidence extraction from sources
 1. **verdict** - Claim evaluation and verdict assignment
-1. **context_refinement** - AnalysisContext boundary detection
 1. **dynamic_plan** - Dynamic analysis planning (monolithic mode)
 1. **dynamic_analysis** - Dynamic analysis execution (monolithic mode)
-1. **orchestrated_understand** - Combined understanding (orchestrated mode)
+
+{{warning}}
+**Removed task types** (Orchestrated pipeline — no longer exist): ~~**understand**~~, ~~**context_refinement**~~ (AnalysisContext boundary detection), ~~**orchestrated_understand**~~ — these task types were part of the removed Orchestrated pipeline.
+{{/warning}}
 
 === Composition Layers ===
 
@@ -123,7 +128,7 @@ Prompts are composed for 7 task types:
 * **Format-only variants** - Content guidance stays in base prompts
 * **Output structure hints** - JSON validity and empty-string rules
 * **Nuanced reasoning** - Trust Claude's judgment on complex assessments
-* **AnalysisContext detection** - Strong at detecting implicit context boundaries
+* **Boundary clustering** - Strong at clustering EvidenceScopes into ClaimAssessmentBoundaries
 
 **Example Optimization**:
 
@@ -327,16 +332,18 @@ interface EvidenceItem {
 **Directory**: ##apps/web/src/lib/analyzer/prompts/base/##
 
 **Files**:
-* ##understand-base.ts## - Core understanding logic
 * ##extract-evidence-base.ts## - Evidence extraction rules
-* ##verdict-base.ts## - Verdict evaluation criteria
-* ##context-refinement-base.ts## - AnalysisContext boundary detection
+* ##verdict-base.ts## - Verdict evaluation criteria (testing harness)
+
+{{warning}}
+**Removed base prompt files** (Orchestrated pipeline): ~~##understand-base.ts##~~, ~~##context-refinement-base.ts##~~ — these files were for the removed Orchestrated pipeline.
+{{/warning}}
 
 **Content**:
 * Task requirements
 * JSON schema definitions
 * Universal rules (Ground Realism, quality gates)
-* Terminology guidance (EvidenceItem, AnalysisContext)
+* Terminology guidance (EvidenceItem, EvidenceScope, ClaimBoundary)
 
 === Provider Variants (Format Layer) ===
 
@@ -426,7 +433,7 @@ const premium = `
 ## REASONING APPROACH (Premium)
 Use your full capabilities to:
 1. Deeply analyze input for implicit claims
-2. Detect subtle AnalysisContext boundaries
+2. Cluster EvidenceScopes into ClaimAssessmentBoundaries
 3. Generate comprehensive search queries (up to 12)
 4. Extract all relevant evidence (no artificial limits)
 `;
@@ -520,7 +527,7 @@ state that evidence is insufficient rather than using model knowledge.
 | **Examples Heavy** | Moderate | Good | Excellent | Moderate
 | **Nuanced Reasoning** | Excellent | Excellent | Good | Good
 | **Schema Adherence** | Excellent | Excellent | Good | Moderate
-| **AnalysisContext Detection** | Excellent | Good | Moderate | Moderate
+| **Boundary Clustering** | Excellent | Good | Moderate | Moderate
 | **Attribution Separation** | Excellent | Good | Moderate | Moderate
 
 **Legend**:
