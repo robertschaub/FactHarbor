@@ -8,8 +8,8 @@
  * | 86-100%  | True          | +3    |            |
  * | 72-85%   | Mostly True   | +2    |            |
  * | 58-71%   | Leaning True  | +1    |            |
- * | 43-57%   | Mixed         |  0    | >= 60%     |
- * | 43-57%   | Unverified    |  0    | < 60%      |
+ * | 43-57%   | Mixed         |  0    | >= 40%     |
+ * | 43-57%   | Unverified    |  0    | < 40%      |
  * | 29-42%   | Leaning False | -1    |            |
  * | 15-28%   | Mostly False  | -2    |            |
  * | 0-14%    | False         | -3    |            |

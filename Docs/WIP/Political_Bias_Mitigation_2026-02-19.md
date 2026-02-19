@@ -12,7 +12,7 @@
 
 The Stammbach/Ash EMNLP 2024 paper analysis (3-model review: Opus + Sonnet + GPT-5.3 Codex) identified 19 concerns (C1–C19) and 6 prioritized recommendations. This document reports the implementation of the 4 lowest-effort code actions. One measurement action (calibration harness) remains.
 
-**Test results:** 877 tests passing (was 853), build green. All changes are additive and non-breaking.
+**Test results:** 880 tests passing (was 853), build green. All changes are additive and non-breaking.
 
 **Code changes:** 6 files, +616 lines (production + tests).
 
@@ -53,6 +53,9 @@ New function `enforceHarmConfidenceFloor()` inserted between validation (Step 5)
 
 1. **Standalone function, not modification to `validateVerdicts()`** — keeps validation advisory (per existing design) and adds enforcement as a separate, testable step
 2. **Threshold in CalcConfig (UCM)** — tunable at runtime without redeployment (default: 50%)
+
+   > **Implementation note:** `highHarmMinConfidence` is dual-defined — it exists in both `CalcConfigSchema` (the UCM source of truth) and `VerdictStageConfig` (the runtime interface consumed by `verdict-stage.ts`). At runtime, `buildVerdictStageConfig()` in `claimboundary-pipeline.ts` reads the value from `calcConfig.highHarmMinConfidence` and writes it into `VerdictStageConfig.highHarmMinConfidence`; the CalcConfig value therefore always takes precedence. `VerdictStageConfig` is a downstream consumer, not an independent source.
+
 3. **Any truth% affected** — unlike the truth-scale UNVERIFIED band (43–57% truth), this applies at any truth% when harm is high and confidence is low. A "MOSTLY-TRUE at 30% confidence on a high-harm claim" becomes UNVERIFIED.
 4. **Threshold=0 disables** — escape hatch for testing or specific use cases
 
