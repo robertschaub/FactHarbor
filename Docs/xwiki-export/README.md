@@ -6,15 +6,17 @@ This folder contains dated XAR snapshots for import into xWiki.
 
 | File | Size | Contents |
 |------|------|----------|
-| `FactHarbor_08.Feb.26_22.19.xar` | 581 KB | Full FactHarbor tree (150 pages) |
+| `FactHarbor_19.Feb.26_00.00.xar` | 690 KB | Full FactHarbor tree (202 pages) |
 
-**Changes since last XAR (16:55):**
-- Terminology audit — aligned xWiki docs with source code
-- Diagram fixes — updated to match current implementation
-- Navigation improvements — cross-references and breadcrumbs
-- Large pages split into subpages (Architecture Overview, Source Reliability, API-and-Schemas)
-- All cross-links validated (566 references, 0 broken)
-- Conversion scripts renamed for consistency
+**Changes since last XAR (08.Feb.26):**
+- Fixed MIXED confidence threshold in Calculations and Verdicts page: `>= 60%` → `>= 40%`, `< 60%` → `< 40%`
+- Verified against `apps/web/src/lib/analyzer/truth-scale.ts` and `apps/web/src/lib/config-schemas.ts` (UCM default: 40)
+
+## Previous XAR Package
+
+| File | Size | Contents |
+|------|------|----------|
+| `FactHarbor_08.Feb.26_22.19.xar` | 581 KB | Full FactHarbor tree (150 pages) |
 
 **Naming convention:** `FactHarbor_DD.Mon.YY_HH.MM.xar` (date + time of build)
 
