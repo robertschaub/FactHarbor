@@ -52,11 +52,11 @@ For completed work, historical documents, and reference materials, see:
 - **Pending:** Manual validation with real LLM calls (Captain approval needed)
 
 ### Claim Fidelity Fix (2026-02-18)
-**Status:** 🔧 Phase 1+2 Implemented — Phase 3 + Validation Pending
+**Status:** 🔧 Phase 1+2 Committed — LLM Expert Gap Fixes + Phase 3 NOT Committed — Phase 4 Pending
 - **Document:** [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
 - **Type:** Pipeline Quality / P0 Bug Fix
-- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence instead of user input (claim drift). Phase 1 (prompt hardening) + Phase 2 (Gate 1 `passedFidelity` check) implemented by Codex.
-- **Remaining:** Phase 3 (evidence payload compression) + Phase 4 (validation against baseline scenarios with real LLM calls)
+- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence instead of user input (claim drift). Phase 1 (prompt hardening) + Phase 2 (Gate 1 `passedFidelity` check) committed in `8d66ee7` by Codex. LLM Expert (Feb 19) added 3 prompt gap fixes (Pass 2 opening framing, schema descriptions, Gate 1 opinion check refinement) + Gate 1 safety net — **these changes are not committed** (see Agent_Outputs.md 2026-02-19 LLM Expert entry). Phase 3 (evidence payload compression, 120-char topicSignal) applied by Lead Architect but also **not committed**.
+- **Remaining:** LLM Expert prompt gap fixes (need commit) + Phase 3 code (need commit) + Phase 4 (validation against baseline scenarios with real LLM calls)
 - **Handoff:** [Handoffs/2026-02-18_Lead_Developer_Claim_Fidelity.md](../AGENTS/Handoffs/2026-02-18_Lead_Developer_Claim_Fidelity.md)
 
 ### Schema Validation Fix Initiative (2026-02-18)
