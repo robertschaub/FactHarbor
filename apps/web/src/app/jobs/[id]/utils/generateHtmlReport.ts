@@ -301,7 +301,7 @@ function buildHeader(input: HtmlReportInput): string {
   const understanding = result?.understanding;
   const inputType = understanding?.detectedInputType || "claim";
 
-  const llmCalls = meta.llmCallCount ?? meta.totalLlmCalls ?? "—";
+  const llmCalls = meta.llmCalls ?? meta.llmCallCount ?? meta.totalLlmCalls ?? "—";
   const totalSearches = searchQueries.length || result?.researchStats?.totalSearches || 0;
   const claimCount = (result?.atomicClaims || result?.understanding?.atomicClaims || []).length || claimVerdicts.length;
   const boundaryCount = claimBoundaries.length;
@@ -325,7 +325,7 @@ function buildHeader(input: HtmlReportInput): string {
   <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">${esc(inputType)}</strong></div>
   <div class="pipeline-meta">
     <span class="chip chip-blue">&#127891; ${esc(meta.pipeline || "claimboundary")} pipeline</span>
-    <span class="chip chip-gray">&#129302; ${esc(meta.model || "—")}</span>
+    <span class="chip chip-gray">&#129302; ${esc(meta.llmModel || meta.model || "—")}</span>
     ${meta.searchProviders ? `<span class="chip chip-gray">&#128269; ${esc(Array.isArray(meta.searchProviders) ? meta.searchProviders.join(" &amp; ") : meta.searchProviders)}</span>` : ""}
     <span class="chip chip-gray">${esc(llmCalls)} LLM calls</span>
     <span class="chip chip-gray">${esc(totalSearches)} searches</span>
@@ -724,7 +724,7 @@ function buildQualityGatesSection(qualityGates: any, meta: any, input: HtmlRepor
       <div class="gate-card">
         <div class="gate-title">Pipeline Execution</div>
         <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">${esc(input.job.status)}</span></div>
-        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">${meta?.llmCallCount ?? meta?.totalLlmCalls ?? "—"}</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">${meta?.llmCalls ?? meta?.llmCallCount ?? "—"}</span></div>
         <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">${esc(meta?.schemaVersion || "—")}</span></div>
       </div>
     </div>
@@ -739,7 +739,7 @@ function buildFooter(meta: any, jobId: string): string {
 
   return `<div class="footer">
   FactHarbor Alpha · ${esc(meta?.pipeline || "claimboundary")} pipeline ${esc(meta?.schemaVersion || "")} · Generated ${ts}
-  <br>Job ${esc(jobId)} · ${esc(meta?.model || "—")} · ${esc(meta?.provider || "anthropic")}
+  <br>Job ${esc(jobId)} · ${esc(meta?.llmModel || meta?.model || "—")} · ${esc(meta?.llmProvider || meta?.provider || "anthropic")}
 </div>`;
 }
 
