@@ -1,8 +1,8 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-02-18
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 — Production-Ready (Claim Fidelity P0 Fix In Progress)
+**Last Updated**: 2026-02-19
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 — Production-Ready (Claim Fidelity Phase 4 Validation Pending; Dynamic Pipeline Fix In; Doc Cleanup Done)
 
 ---
 
@@ -25,7 +25,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - **Derivative evidence tracking**: Identifies and weights derivative sources
 
 **Design document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
-**Execution tracking:** [CB_Execution_State.md](../WIP/CB_Execution_State.md)
+**Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
 
 **All phases complete:**
 1. ✅ **Step 0: Rules Audit** — Governance docs updated
@@ -105,7 +105,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 **LLM Text Analysis Pipeline (v2.9+):**
 - **Four Analysis Points**: Input Classification, Evidence Quality, Context Similarity, Verdict Validation
 - **LLM-Only Contract**: All analysis points are always LLM-driven (no hybrid/heuristic fallback)
-- **Multi-Pipeline Support**: Works across Orchestrated and Monolithic Dynamic pipelines
+- **Multi-Pipeline Support**: Works across ClaimAssessmentBoundary and Monolithic Dynamic pipelines
 - **Telemetry**: Built-in metrics for success rates, latency
 - **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
 - **Prompt Files**: Located in `apps/web/prompts/text-analysis/` with README documentation
@@ -115,7 +115,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - `scopes.ts`: Context detection (`detectScopes()`, `formatDetectedScopesHint()`)
 - `aggregation.ts`: Verdict weighting (`validateContestation()`, `detectClaimContestation()`, `detectHarmPotential()`)
 - `claim-decomposition.ts`: Claim parsing utilities
-- Consistent behavior across orchestrated and dynamic pipelines
+- Consistent behavior across ClaimAssessmentBoundary and Monolithic Dynamic pipelines
 
 **Code Quality & Refactoring (Phase 2a Complete - 2026-02-12):**
 - ✅ **Evidence Processor Module Extraction**: 3 new modules created (705 lines)
@@ -184,6 +184,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 **CRITICAL**:
 1. ~~**Prompt Optimizations Never Validated**~~: ✅ **RESOLVED** (v2.10.2) - Lead Dev code review complete, format-only principle verified, backward compatibility confirmed.
 2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
+3. **10 search test failures** (introduced in code review sprint Feb 18): `search-cache.test.ts` — `closeSearchCacheDb()` doesn't reset `dbPromise`; `search-brave.test.ts` — `instanceof SearchProviderError` fails across module resets. Fix: `dbPromise = null` in close function; duck-typing `err.name === "SearchProviderError"` in brave tests. ~1h.
 
 **HIGH**:
 3. **Source Acquisition Recovery Branch**: Phase 1 warning coverage is complete, but Phase 4 stall-recovery behavior is still pending
@@ -375,6 +376,38 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 
 ## Recent Changes
 
+### 2026-02-19 Monolithic Dynamic Pipeline Schema Fix
+**Status: ✅ Implemented**
+
+Fixed `AI_NoObjectGeneratedError` (100% failure rate on some inputs) in the Monolithic Dynamic pipeline.
+
+**Root causes:**
+- `searchQueries` field was required in the Zod schema but never mentioned in the analysis prompt → LLM omits it → Zod rejects
+- `additionalInsights: z.object({})` rejected `null` values returned by the LLM
+
+**Changes (`monolithic-dynamic.ts`, `types.ts`):**
+- `searchQueries` removed from schema (field not needed; LLM never generates it)
+- `additionalInsights` relaxed to `z.any().optional()`
+- Existing `schema-retry.ts` module wired in (was dead code for this pipeline): 1 Zod-aware retry before degradation
+- Graceful degradation: schema failure after retry returns partial result with `"analysis_generation_failed"` warning instead of throwing
+- `"analysis_generation_failed"` added to `AnalysisWarningType`
+
+**Open items:** `maxOutputTokens` ceiling; schema unification with CB; prompt framing for sensitive content (needs Captain approval). See [Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Dynamic_Pipeline_Fix.md](../AGENTS/Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Dynamic_Pipeline_Fix.md).
+
+---
+
+### 2026-02-19 Documentation Cleanup — Phase 1 Historical Archival
+**Status: ✅ Complete**
+
+- Archived Orchestrated Pipeline xwiki page (pipeline removed in v2.11.0, ~18,400 lines)
+- Extracted Orchestrated-era sections from Pipeline Variants xwiki → `WebHome_arch.xwiki`
+- Updated Pipeline Variants live page: ClaimAssessmentBoundary as current default throughout
+- Updated Deep Dive Index: removed Orchestrated Pipeline row and role path links
+- Archived `Current_Status.md` changelog entries v2.10.2 and earlier → `ARCHIVE/STATUS/Current_Status_arch.md`
+- Archived `Documentation_Updates_2026-02-03.md` (references files that no longer exist)
+
+---
+
 ### 2026-02-18 Stage 1 Claim Fidelity Fix — Phase 1+2 (P0 In Progress)
 **Status: 🔧 Partially Implemented — Phase 3+4 Pending**
 
@@ -408,7 +441,7 @@ Complete pipeline implementation replacing the Orchestrated pipeline with eviden
 5. **Stage 5: Aggregate Assessment** — Triangulation scoring, weighted aggregation, VerdictNarrative generation, quality gates
 
 **Key metrics:**
-- 817 unit tests passing (42 test files)
+- 853 unit tests passing (45 test files, as of 2026-02-18 code review sprint)
 - ~18,400 lines of legacy code removed (orchestrated.ts + AC infrastructure)
 - 24 UCM-configurable parameters for pipeline tuning
 - Schema version: 3.0.0-cb
@@ -556,11 +589,22 @@ All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant 
 
 ## What's Next
 
-**ClaimAssessmentBoundary Pipeline v1.0 is production-ready.** Next priorities:
+**ClaimAssessmentBoundary Pipeline v1.0 is production-ready.** Current priorities:
 
-1. **Phase 5i: Final cleanup** — Resolve V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests)
-2. **Phase 5k: UI adaptations** — Admin config panel for 24 CB parameters, enhanced results display (coverage matrix, verdictNarrative, qualityGates components)
-3. **Phase 5h: Test coverage expansion** (optional) — Neutrality, performance, and adversarial tests for CB pipeline
+**P0 — Fix immediately:**
+1. **Claim Fidelity Phase 4: Validation** — Run baseline scenarios with real LLM calls to confirm Phases 1-3 eliminate claim drift. Needs Captain approval before running.
+2. **Code review test failures (10 tests)** — `search-cache.ts` + `search-brave.test.ts` (~1h fix, see Known Issues #3)
+
+**HIGH — CB Remaining Work:**
+3. **Phase 5i: Final cleanup** — V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests)
+4. **Phase 5k: UI adaptations** — Admin config panel for 24 CB parameters, coverage matrix + verdictNarrative + qualityGates components
+5. **Schema Validation remaining** — Gate 1 rebuild (#4), telemetry (#5), Pass 2 split (#6); see [Schema_Validation_Implementation_Status_2026-02-18.md](../WIP/Schema_Validation_Implementation_Status_2026-02-18.md)
+6. **Dead code removal** — 879 lines across 7 files (QA findings)
+
+**MEDIUM:**
+7. **UCM AutoForm code review** — Implementation complete on `feature/ucm-autoform`, awaiting review
+8. **AtomicClaim extraction validation** — Run real LLM validation for Phases 1+2 impact (~40% LLM call reduction)
+9. **Phase 5h: Test coverage** (optional) — Neutrality, performance, adversarial tests for CB pipeline
 
 **Parallel: Cost Reduction** (applies to CB pipeline):
 - Batch API integration (50% discount — no code changes to pipeline logic)
@@ -568,10 +612,9 @@ All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant 
 - NPO/OSS credit applications ($11K+/year potential)
 - See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
 
-**After UI work:**
+**After UI and quality work:**
 - Define LLM call optimization targets for CB pipeline
 - Security hardening (SSRF, auth, rate limiting) — *before any public deployment*
-- Dead code removal (879 lines unused code from QA findings)
 
 **See**:
 - [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
@@ -580,6 +623,6 @@ All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant 
 
 ---
 
-**Last Updated**: February 17, 2026
+**Last Updated**: February 19, 2026
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema)
-**Document Status**: Reflects ClaimAssessmentBoundary pipeline v1.0 implementation complete + all prior changes
+**Document Status**: Reflects CB v1.0 complete + Dynamic Pipeline fix + Claim Fidelity Phases 1-3 + doc cleanup. Phase 4 validation pending.
