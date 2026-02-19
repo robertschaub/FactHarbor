@@ -114,6 +114,35 @@ The following documents had valuable content extracted and merged into active do
 
 ---
 
+### WIP Consolidation (2026-02-19) — POC Closure
+
+**Description**: WIP cleaned down to forward-looking Alpha work only. All completed assessments, delivered plans, and resolved audits archived. The FactHarbor POC is declared complete (`v1.0.0-poc`).
+
+**Completed assessments and audits** (DONE — findings implemented or decisions made):
+1. `UCM_Configuration_Audit_2026-02-17.md` — All 24 CB pipeline parameters added to UCM (✅ 2026-02-17)
+2. `UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md` — Design complete, feature on `feature/ucm-autoform` awaiting code review (Backlog item remains)
+
+**Schema validation analysis group** (emergency fixes implemented; remaining items tracked in Backlog):
+3. `LLM_Schema_Validation_Failures_Analysis.md` — Root cause analysis for Pass 2 validation failures
+4. `LLM_Expert_Review_Schema_Validation.md` — 9 prioritized LLM Expert recommendations
+5. `Lead_Architect_Schema_Assessment_2026-02-18.md` — Architectural decisions and Gate 1 finding
+6. `Schema_Validation_Fix_Multi_Agent_Plan.md` — Multi-agent 4-phase implementation plan
+7. `Schema_Validation_Implementation_Status_2026-02-18.md` — Status tracker (remaining: Gate 1 rebuild #4, telemetry #5, Pass 2 split #6 — see Backlog)
+
+**Code quality** (findings tracked in Backlog):
+8. `QA_Review_Findings_2026-02-12.md` — Priority 1: 879 lines dead code across 7 files; Priority 2: config migration to UCM (Backlog item "Dead Code Removal" remains)
+
+**Future research** (design complete, far-future work — tracked in Backlog Future Research):
+9. `Shadow_Mode_Architecture.md` — Self-learning prompt optimisation system (requires 3+ months production data)
+10. `Vector_DB_Assessment.md` — Vector DB assessment; recommendation: stay SQLite-only initially
+
+**Architecture decisions made — defer agreed**:
+11. `Storage_DB_Caching_Strategy.md` — Database/caching strategy; decisions deferred to Alpha (SQLite stays, PostgreSQL migration timing TBD)
+
+**Remaining WIP (kept forward-looking):** `ClaimBoundary_Pipeline_Architecture_2026-02-15.md` (definitive reference), `Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md` (Phases 3+4 pending), `API_Cost_Reduction_Strategy_2026-02-13.md` (Alpha priority), `TestTuning_Mode_Design/UI_2026-02-17.md` (Alpha feature), `Runtime_Issues_Analysis_2026-02-17.md` (Alpha input).
+
+---
+
 ### Post-CB Implementation Consolidation (2026-02-18)
 
 **Description**: Documents archived after CB pipeline v1.0 completion and code review sprint. CB implementation is fully operational (all stages, 853 tests). Code review sprint (45 findings) and search hardening features are complete and committed.

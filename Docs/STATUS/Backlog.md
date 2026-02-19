@@ -44,9 +44,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 |---|---|---|---|
 | ✅ **Documentation cleanup**: Archived Orchestrated Pipeline xwiki page, pre-Feb-13 changelog, stale `Documentation_Updates_2026-02-03.md`. Updated Pipeline Variants + Deep Dive Index xwiki pages for CB as current default. | Docs | 2026-02-19 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) |
 | ✅ **Dynamic Pipeline schema fix**: Fixed `AI_NoObjectGeneratedError` in Monolithic Dynamic pipeline — `searchQueries` and `additionalInsights` relaxed to optional, retry wired, graceful degradation fallback added. | Analyzer / Quality | 2026-02-19 | [Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Dynamic_Pipeline_Fix.md](../AGENTS/Handoffs/2026-02-19_LLM_Expert_Senior_Dev_Dynamic_Pipeline_Fix.md) |
-| ✅ **Claim Fidelity Fix Phases 1-3**: Gate 1 `passedFidelity` check, Pass 2 prompt anchoring to user input, safety-net rescue, evidence payload compression. Phase 4 (baseline validation) pending. | Analyzer / Quality | 2026-02-18 | [Handoffs/2026-02-18_Lead_Architect_Fidelity_Metrics.md](../AGENTS/Handoffs/2026-02-18_Lead_Architect_Fidelity_Metrics.md) |
+| ✅ **Claim Fidelity Fix Phases 1+2**: Gate 1 `passedFidelity` check, Pass 2 prompt anchoring to user input, safety-net rescue. Phase 3 (evidence payload compression) and Phase 4 (baseline validation) still pending. | Analyzer / Quality | 2026-02-18 | [Handoffs/2026-02-18_Lead_Architect_Fidelity_Metrics.md](../AGENTS/Handoffs/2026-02-18_Lead_Architect_Fidelity_Metrics.md) |
 | ✅ **Code Review Sprint (5 phases, 45 findings)**: New shared `auth.ts` (timingSafeEqual), `job-abort.ts` (globalThis), search hardening (cache + multi-provider + circuit breaker). Residuals: 10 test failures + auth migration sweep (see active backlog). | Architecture / Quality | 2026-02-18 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) |
-| ✅ **AtomicClaim extraction Phases 1+2**: Prompt improvements + Gate 1 active filtering + dynamic max claims. Target ~40% reduction in LLM calls. Phase 3 validation with real LLM calls pending. | Analyzer / Cost | 2026-02-18 | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md) |
+| ✅ **AtomicClaim extraction Phases 1+2**: Prompt improvements + Gate 1 active filtering + dynamic max claims. Target ~40% reduction in LLM calls. Phase 3 validation with real LLM calls pending. | Analyzer / Cost | 2026-02-18 | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../ARCHIVE/AtomicClaim_Extraction_Improvements_2026-02-17.md) |
 | ✅ **Job cancel/delete**: Users can cancel running jobs and delete completed/failed jobs from the UI and API. | Web UI | 2026-02-18 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) |
 | ✅ **JSON tree view**: Interactive expand/collapse + copy-to-clipboard for JSON tab on job detail page (`react-json-view-lite`). | Web UI | 2026-02-18 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) |
 | ✅ **Architecture docs + ERD rework**: Data model ERDs verified against `types.ts` (10 entities, 28 mismatches fixed). Specification/Data Model updated as compatible future target with CB terminology throughout. | Docs | 2026-02-18 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) |
@@ -59,7 +59,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | ✅ **CB Phase 5f: Integration test**: 3 end-to-end scenarios with schema validation. | Testing | 2026-02-17 | [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md) |
 | ✅ **CB Phase 5f2: Rename**: ClaimBoundary → ClaimAssessmentBoundary (partial: types/docs/UI, internal IDs unchanged). 18 files. | Refactoring | 2026-02-17 | [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md) |
 | ✅ **CB Phase 5g: Documentation**: Status, governance, and architecture docs updated for v1.0 completion. | Docs | 2026-02-17 | [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md) |
-| ✅ **UCM Config for CB**: All 24 CB parameters added to UCM schemas with defaults. | Config | 2026-02-17 | [UCM Audit](../WIP/UCM_Configuration_Audit_2026-02-17.md) |
+| ✅ **UCM Config for CB**: All 24 CB parameters added to UCM schemas with defaults. | Config | 2026-02-17 | [UCM Audit](../ARCHIVE/UCM_Configuration_Audit_2026-02-17.md) |
 
 ### Previously Completed (February 16, 2026)
 
@@ -105,12 +105,12 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
 | **Claim Fidelity Phase 4 — Validation**: Run baseline validation scenarios with real LLM calls to confirm Phases 1-3 fix eliminates claim drift. | Analyzer / Quality | med | high | [WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md) Phase 4 |
-| **Schema Validation — Gate 1 rebuild + telemetry + Pass 2 split**: Items #4-6. | Analyzer / Quality | med | high | [WIP/Schema_Validation_Implementation_Status_2026-02-18.md](../WIP/Schema_Validation_Implementation_Status_2026-02-18.md) |
+| **Schema Validation — Gate 1 rebuild + telemetry + Pass 2 split**: Items #4-6. | Analyzer / Quality | med | high | [WIP/Schema_Validation_Implementation_Status_2026-02-18.md](../ARCHIVE/Schema_Validation_Implementation_Status_2026-02-18.md) |
 | **xWiki Architecture Data Model rewrite**: Last Orchestrated holdout. Needs full rewrite to CB entities. | Docs | med | high | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Phase 3E entry) |
 | **Code review test fixes**: Fix 10 failing search tests (~1h). | Testing | med | med | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Code Review entry) |
-| **Dead Code Removal**: 879 lines across 7 files (~2-4h). | Cleanup | med | med | [QA Review](../WIP/QA_Review_Findings_2026-02-12.md) Priority 1 |
-| **UCM AutoForm code review**: On `feature/ucm-autoform`, awaiting review before merge. | Web UI | low | med | [WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md](../WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
-| **AtomicClaim extraction validation**: Validate with real LLM calls (target ~40% cost reduction). | Analyzer / Quality | low | high | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md) |
+| **Dead Code Removal**: 879 lines across 7 files (~2-4h). | Cleanup | med | med | [QA Review](../ARCHIVE/QA_Review_Findings_2026-02-12.md) Priority 1 |
+| **UCM AutoForm code review**: On `feature/ucm-autoform`, awaiting review before merge. | Web UI | low | med | [WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md](../ARCHIVE/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
+| **AtomicClaim extraction validation**: Validate with real LLM calls (target ~40% cost reduction). | Analyzer / Quality | low | high | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../ARCHIVE/AtomicClaim_Extraction_Improvements_2026-02-17.md) |
 | **LLM Text Analysis A/B Testing**: Run promptfoo tests (26 cases ready). | Analyzer / Testing | low | med | [Promptfoo Testing](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Tooling/Promptfoo%20Testing/WebHome.xwiki) |
 | **Parallel verdict generation**: Process claim verdicts in parallel in `verdict-stage.ts`. | Analyzer / Performance | low | high | CB architecture §8.4 |
 | **Quality Gate UI display**: Show Gate 1/4 stats and failure reasons in results UI. | Web UI | low | high | Improvements #6 |
@@ -182,8 +182,8 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Status | Reference |
 |---|---|---|---|
-| **Shadow Mode: Self-learning prompt optimization**: Observe LLM behavior across thousands of cases, detect inconsistencies, propose prompt improvements, A/B test variations. Requires 3+ months production data. | Analyzer / LLM | Design complete | [Shadow Mode Architecture](../WIP/Shadow_Mode_Architecture.md) |
-| **Vector database integration**: Optional embeddings store for similarity detection and clustering beyond text-hash matches. Deferred pending evidence of need. | Architecture / Data | Assessment complete | [Vector DB Assessment](../WIP/Vector_DB_Assessment.md) |
+| **Shadow Mode: Self-learning prompt optimization**: Observe LLM behavior across thousands of cases, detect inconsistencies, propose prompt improvements, A/B test variations. Requires 3+ months production data. | Analyzer / LLM | Design complete | [Shadow Mode Architecture](../ARCHIVE/Shadow_Mode_Architecture.md) |
+| **Vector database integration**: Optional embeddings store for similarity detection and clustering beyond text-hash matches. Deferred pending evidence of need. | Architecture / Data | Assessment complete | [Vector DB Assessment](../ARCHIVE/Vector_DB_Assessment.md) |
 
 ---
 
