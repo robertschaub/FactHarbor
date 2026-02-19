@@ -1107,7 +1107,7 @@ async function renderPreview(){
           href = `https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
         }
         const icon = ext === 'html' || ext === 'htm' ? '📊' : ext === 'pdf' ? '📄' : ext === 'json' ? '📋' : '📁';
-        h += `<tr><td>${icon} <a href="${parser.esc(href)}" target="_blank" rel="noopener">${parser.esc(f.name)}</a></td><td>${typeLabel}</td><td>${sizeKB}</td></tr>`;
+        h += `<tr><td>${icon} <a href="${parser.esc(href)}" target="_blank" rel="noopener">${parser.esc(f.name)}</a></td><td>${esc(typeLabel)}</td><td>${esc(sizeKB)}</td></tr>`;
       }
       h += '</tbody></table>';
       h += `<div class="github-files-footer"><a href="https://github.com/${parser.esc(repo)}/tree/main/${parser.esc(ghPath)}" target="_blank" rel="noopener">View on GitHub</a></div>`;
@@ -2257,9 +2257,9 @@ async function loadAnalytics(){
     html+='<th>#</th><th>Page</th><th style="text-align:right">Views</th><th style="text-align:right">Visitors</th>';
     html+='</tr></thead><tbody>';
     data.forEach((d,i)=>{
-      const click=pageIndex[d.p]?' onclick="toggleAnalytics();loadPage(\''+d.p.replace(/'/g,"\\'")+'\')"':'';
+      const click=pageIndex[d.p]?' onclick="toggleAnalytics();loadPage(\''+escAttr(d.p)+'\')"':'';
       html+='<tr><td class="num">'+(i+1)+'</td>';
-      html+='<td class="pg"'+click+' title="'+d.p+'">'+d.p+'</td>';
+      html+='<td class="pg"'+click+' title="'+esc(d.p)+'">'+esc(d.p)+'</td>';
       html+='<td class="num">'+d.v+'</td>';
       html+='<td class="num">'+d.u+'</td></tr>';
     });

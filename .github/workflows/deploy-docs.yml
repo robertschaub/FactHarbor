@@ -22,10 +22,12 @@ jobs:
           python-version: '3.12'
 
       - name: Build gh-pages
+        env:
+          ANALYTICS_URL: ${{ secrets.DOCS_ANALYTICS_URL }}
         run: |
           ANALYTICS_FLAG=""
-          if [ -n "${{ secrets.DOCS_ANALYTICS_URL }}" ]; then
-            ANALYTICS_FLAG="--analytics-url ${{ secrets.DOCS_ANALYTICS_URL }} --site-id FH"
+          if [ -n "$ANALYTICS_URL" ]; then
+            ANALYTICS_FLAG="--analytics-url $ANALYTICS_URL --site-id FH"
           fi
           python Docs/xwiki-pages/scripts/build_ghpages.py $ANALYTICS_FLAG
 
