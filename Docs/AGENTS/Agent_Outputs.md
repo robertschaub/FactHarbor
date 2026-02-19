@@ -7,6 +7,17 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | LLM Expert | Claude Opus 4.6 + Claude Sonnet 4.6 + GPT-5.3 Codex | Meeting Prep — Stammbach/Ash EMNLP 2024 + FactHarbor Bias Analysis
+**Task:** Prepare comprehensive meeting document for Elliott Ash (ETH Zurich). Review EMNLP 2024 paper, survey Ash's full research portfolio (11 papers), analyze FactHarbor's bias mitigation posture with three independent AI reviewers, produce consolidated meeting-ready document.
+**Files touched:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md` (created, iterated 8+ times, final consolidated version). Deleted after merge: `Sonnet_Review_Stammbach_Ash_Paper.md`, `GPT53_Review_Stammbach_Ash_Paper.md`, `GPT53_Review_Prompt.md`, `Docs/WIP/Paper_Review_*.md`.
+**Key decisions:** Three-model independent review (Opus initial + Sonnet adversarial + Codex cross-model). 19 concerns identified (C1-C19). Codex's "measurement before redesign" principle adopted as strategic framing. Final doc condensed from 711 to 178 lines for meeting use.
+**Open items:** Political bias calibration harness (Recommendation #1) — not yet implemented. Meeting outcome may inform priority.
+**Warnings:** Document asserts FactHarbor strengths (evidence-first, contradiction search) but Codex correctly noted: "good process architecture ≠ demonstrated bias mitigation outcomes." All "mitigated" claims are design-intent, not measured.
+**For next agent:** Single document at `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`. If implementing recommendations, start with #1 (calibration harness) and #2 (refusal telemetry) before architecture changes.
+**Learnings:** Appended to Role_Learnings.md? Yes — see LLM Expert section.
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3E — AnalysisContext Tier 4 Sweep
 **Task:** Fix ~20 Tier 4 xWiki pages where Orchestrated pipeline terminology (AnalysisContext, KeyFactor, SubClaim, ContextAnswer) appeared implied as current.
 **Files touched:** 17 xwiki-pages modified. Key files: `WebHome.xwiki` (root), `Specification/WebHome.xwiki`, `Specification/Automation/WebHome.xwiki`, `Requirements/WebHome.xwiki`, `Specification/Examples/WebHome.xwiki`, `Specification/Workflows/WebHome.xwiki`, `Specification/Implementation Status and Quality/WebHome.xwiki`, `DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`, `DevOps/Subsystems and Components/LLM Configuration/WebHome.xwiki`, `Specification/AI Knowledge Extraction Layer (AKEL)/WebHome.xwiki` [in prior session], `Diagrams/WebHome.xwiki`, `Diagrams/Core Data Model ERD/WebHome.xwiki`, `Diagrams/KeyFactor Entity Model/WebHome.xwiki`, `Diagrams/Claim and Scenario Lifecycle (Overview)/WebHome.xwiki`, `Diagrams/Claim and Scenario Workflow/WebHome.xwiki`, `Diagrams/Analysis Entity Model ERD/WebHome.xwiki`, `Diagrams/Entity Views/WebHome.xwiki`, `Diagrams/LLM Abstraction Architecture/WebHome.xwiki`.
