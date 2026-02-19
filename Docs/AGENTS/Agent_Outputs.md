@@ -7,6 +7,22 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3D — CB terminology sweep + AKEL Pipeline §1 fix
+**Task:** Fix AKEL Pipeline §1 step-by-step (Orchestrated 5-step → CB 5-stage), fix terminology/schema pages with AnalysisContext as primary/current term, assess Data Model pages.
+**Files touched:** AKEL Pipeline, Terminology Catalog, LLM Schema Mapping, Provider-Specific Formatting, FAQ (xwiki) — commit `3fbac41`. Also staged the Orchestrated Pipeline Detail deletion (left uncommitted from Phase 3B).
+**Key decisions:**
+- AKEL Pipeline §1: replaced "Step 1: Understand ... Step 5: Report" with CB stages (`extractClaims → researchEvidence → clusterBoundaries → generateVerdicts → aggregateAssessment`); updated intro line.
+- Terminology Catalog: fixed §4 contestation weights (0.3x/0.5x → 0.5x/0.7x per v3.1); replaced entire legacy "Terminology Mapping Tables" bottom section (~270 lines) with CB-accurate equivalent — Table 1 shows ClaimAssessmentBoundary as primary entity (AnalysisContext in "Formerly" column), Table 2 uses claimBoundaryId, CTX_* constants removed, Quick Reference code uses CB types, Pipeline Stage Functions replaces Orchestrated task names, Validation Checklist and FAQ use CB terminology.
+- LLM Schema Mapping: added `{{warning}}` banner marking as Orchestrated-era historical reference; replaced Master Mapping Table with CB entities (AtomicClaim, ClaimAssessmentBoundary, CBClaimVerdict); added `{{warning}}` before phase sections; updated Terminology Bridges to show ClaimAssessmentBoundary as primary; fixed contestation weights; updated Pitfalls and Testing Checklist.
+- Provider-Specific Formatting: added testing-harness note (`prompt-builder.ts` is not production); removed Orchestrated task types from list (understand, context_refinement, orchestrated_understand); updated Anthropic strengths, base prompts list, provider matrix ("AnalysisContext Detection" → "Boundary Clustering").
+- FAQ: Q3 updated to "ClaimAssessmentBoundaries", Q7 workflow steps updated to CB stages, Q10 "Multiple AnalysisContexts" → "Multiple ClaimAssessmentBoundaries".
+- Data Model assessment: Architecture Data Model (`/Specification/Architecture/Data Model/`) is entirely Orchestrated-era entities (SubClaim, AnalysisContext, KeyFactor, ContextAnswer). Needs full CB-entity rewrite — flagged for Phase 3E or dedicated phase. Target Data Model (`/Specification/Data Model/`) AnalysisContext references are intentional future PostgreSQL design specs — left as-is.
+**Open items:** Phase 3E (~20 Tier 4 batch files, 1-2 hits each); Phase 3F (XAR rebuild after 3E commits); Architecture Data Model full rewrite (Orchestrated entities → CB entities). Captain-level decision pending: Architecture Data Model is a major page — include in 3E or separate dedicated phase?
+**Warnings:** Architecture Data Model is the most stale page in the xwiki tree — it still shows SubClaim, AnalysisContext, ContextAnswer, ClaimUnderstanding as if they're current entities. Readers following links from the Architecture overview to this page will see completely wrong entity model. High-value catch.
+**For next agent:** Phase 3E scope: ~20 Tier 4 files with 1-2 AnalysisContext/orchestrated hits each. Only fix where Orchestrated pipeline is implied to be current — skip POC pages, `_sort` metadata, confirmed-historical pages. Phase 3F: run `python Docs/xwiki-pages/scripts/fulltree_to_xar.py Docs/xwiki-pages --output FactHarbor.xar` after 3E commits.
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3C — Dead refs + Quality Gates + KeyFactors
 **Task:** Fix `analysis-contexts.ts` dead refs (5 files), add Quality Gates + KeyFactors Design to this pass per Captain direction.
 **Files touched:** Evidence Quality Filtering Pipeline, Pipeline Shared Primitives, AKEL Shared Modules (diagrams), AKEL Pipeline, Deep Dive Index, Quality Gates, KeyFactors Design, Prompt Architecture — commit `2667997`.
