@@ -3,6 +3,32 @@
 Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
+---
+### 2026-02-19 | Captain Deputy | Claude Code (Sonnet 4.6) | Code Review Waves 2A/2B/3A/3B
+**Task:** Implement code review fixes from Code_Review_23h_2026-02-19.md — Waves 2A (pipeline code), 2B (UCM config), 3A (fallback retry), 3B (evidence attribution).
+**Files touched:**
+- `apps/web/src/lib/analyzer/verdict-stage.ts` — P-H3, D-L4, P-M8
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — D-L4 adapter, P-M2, P-M4, P-M7, P-L3, P-H2, P-H1
+- `apps/web/configs/pipeline.default.json` — U-M2, U-L5
+- `apps/web/configs/calculation.default.json` — U-L1, U-L3
+- `apps/web/src/lib/config-schemas.ts` — U-L2
+- Test files: `verdict-stage.test.ts`, `claimboundary-pipeline.test.ts`, `config-schemas.test.ts`
+**Key decisions:**
+- D-L4: Aligned `VerdictStageConfig.selfConsistencyMode` type from `"enabled"|"disabled"` → `"full"|"disabled"` to match UCM schema; removed the "full"→"enabled" adapter in `buildVerdictStageConfig()`. This is a breaking change to the type contract — any external consumers of VerdictStageConfig would need updating.
+- P-L3: Changed `filterByCentrality()` to accept `AtomicClaim[]` directly; moved the single `as unknown as` cast to the call site where Zod output meets the AtomicClaim boundary.
+- U-L5: Enabled self-consistency in pipeline.default.json (`"disabled"` → `"full"`). This affects production analysis cost/latency — monitor after deployment.
+- U-L2: Restored `maxTotalTokens` default from 500k to 750k per Captain decision ("JSON wins").
+**Open items:**
+- Wave 4 (low-priority): P-M1, P-M5, P-L2, I-L4, P-L7 — observability/robustness improvements, not yet implemented.
+- XAR rebuild needed after all xWiki wave edits complete (Agent 2C noted next step).
+- Step 2B (Current_Status.md) still incomplete — missing gh-pages analytics, Rich HTML export, Pass2 soft refusal recovery items.
+- Architecture Data Model xWiki rewrite still in Backlog (high/high).
+**Warnings:**
+- Enabling `selfConsistencyMode: "full"` in pipeline.default.json increases LLM calls per analysis (adds a self-consistency verification pass). Monitor cost and latency after first production run.
+- P-H1 sourceUrl fix adds fields to both extraction Zod schemas — the LLM will now see `sourceUrl` in the JSON schema it's given, but prompt templates (EXTRACT_EVIDENCE in `apps/web/prompts/claimboundary/`) do NOT yet instruct the LLM to populate it. Attribution will still fall back to `sources[0]` until prompts are updated.
+- Background agents a0575f7 (Calculations.md), a565b2d (xWiki D-M1/M3/M4/L3), a92412c (D-M2/M6/H6) all completed successfully — see their individual outputs in this file above.
+**For next agent:** Remaining code review items are Wave 4 low-priority (see Code_Review_23h_2026-02-19.md §Wave 4). Priority recommendation: update EXTRACT_EVIDENCE prompt to explicitly instruct the LLM to set `sourceUrl` per source it cites (P-H1 follow-up). Then commit is `692f798`.
+
 Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
