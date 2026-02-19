@@ -7,6 +7,52 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Code Review Fixes — Wave 2C (xWiki targeted fixes)
+**Task:** Implement D-M1, D-M3, D-M4, D-L3 from Code_Review_23h_2026-02-19.md (Area 5: Documentation).
+**Files touched:**
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/WebHome.xwiki`
+- `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/Core Data Model ERD/WebHome.xwiki`
+**Key decisions:**
+- D-M1: Changed "3 variants" to "2 variants" in Project Status table (Orchestrated removed, Canonical removed — CB + Monolithic Dynamic remain).
+- D-L3: Changed "POC | Current" to "Alpha | Current" in Project Status table. The formerly "Alpha | Planned" row renamed to "Alpha+ | Planned" to avoid duplicate phase labels after the fix.
+- D-M3: Changed "EvidenceScope (mandatory)" to "EvidenceScope (optional)" in Key Implementation Notes. Verified against `types.ts` line 419: `evidenceScope?: EvidenceScope` — the `?` confirms optional.
+- D-M4: Changed ERD cardinality `EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE` to `EVIDENCE_ITEM |o--o| EVIDENCE_SCOPE` (zero-or-one on both sides, matching the optional field in types.ts).
+**Open items:** None — all 4 fixes are targeted and self-contained.
+**For next agent:** Wave 2C complete. XAR rebuild needed after all xWiki edits across all waves are done (Wave 4). Remaining documentation issues (D-C1, D-C2, D-H1 through D-H7) relate to Calculations.md — handled in Wave 1C.
+
+---
+
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Code Review Fixes — Wave 1C (Calculations.md rewrite)
+**Task:** Rewrite Docs/ARCHITECTURE/Calculations.md to fix D-C1, D-C2, D-H1, D-H2, D-H3, D-H4, D-H5, D-H7, D-M5, D-M8, D-L1 from Code_Review_23h_2026-02-19.md
+**Files touched:** `Docs/ARCHITECTURE/Calculations.md`
+**Key decisions:** Verified all facts directly against source code before writing. Organized into 10 sections going deeper than the xWiki counterpart on code-level detail. Included actual `aggregateAssessment()` code from `claimboundary-pipeline.ts` for the weight formula. Added concrete numerical example for the 3-level aggregation. Noted the stale 60% comment in `truth-scale.ts` and `types.ts` vs the actual 40% threshold in `DEFAULT_MIXED_CONFIDENCE_THRESHOLD`. Kept the `truthFromBand` function section from the old doc (still accurate, not stale). Removed the Level 2 "Key Factors" and Level 3 "ClaimAssessmentBoundary Answers" sections entirely (D-C2); the CB pipeline goes directly from claim verdicts to weighted average. Preserved dependency handling and pseudoscience/benchmark guard sections (clearly labeled as Orchestrated-removed, which was already accurate in the old doc).
+**Open items:** D-M2 (fix stale code comments in `truth-scale.ts:11-12` and `types.ts:67-68` saying 60% instead of 40%) is a separate task — those are source code comments, not doc changes. D-H6 (Political_Bias_Mitigation.md test count inconsistency) not in scope.
+**Warnings:** The xWiki counterpart (`Calculations and Verdicts/WebHome.xwiki`) still shows ">= 60%" for MIXED confidence threshold in line 22 of the table — this is also stale (actual threshold is 40%). The xWiki page itself needs a targeted fix (Wave 2C). Also confirmed: `getClaimWeight()` in `aggregation.ts` handles contestation multipliers; `aggregateAssessment()` in `claimboundary-pipeline.ts` handles the full weight formula including triangulation and derivative factors — these are two separate steps, both in use.
+**For next agent:** Wave 1C complete. Calculations.md is now CB-accurate. Wave 2C will handle xWiki targeted fixes (separate files).
+
+---
+
+### 2026-02-19 | Senior Developer | Claude Code (Sonnet 4.6) | Code Review Fixes — Wave 1B (Security: CI/CD + xwiki-viewer)
+**Task:** Implement I-MH1, I-M2, I-L2 from Code_Review_23h_2026-02-19.md (Area 4: Infrastructure security fixes).
+**Files touched:** `.github/workflows/deploy-docs.yml`, `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html`
+**Key decisions:**
+- I-MH1: Applied `env:` binding pattern — `ANALYTICS_URL: ${{ secrets.DOCS_ANALYTICS_URL }}` bound in `env:` block, all shell references changed from `${{ secrets.* }}` to `$ANALYTICS_URL`. This is the only secret in shell `run:` blocks in this file.
+- I-M2: Used `escAttr(d.p)` for the JS onclick string (handles backslash + single-quote escaping correctly for JS string context) and `esc(d.p)` for `title` attribute and text content. Both `esc()` and `escAttr()` were already defined in the file (lines 2073-2074).
+- I-L2: Wrapped `typeLabel` and `sizeKB` with existing `esc()` function in the github-files table row template. Practically unexploitable (derived from file extensions/sizes) but consistent with the file's XSS defense pattern.
+**Open items:** Remaining code review findings (46 total, 43 not yet addressed). Next priority items per the review: R-C1 (XSS in fallback HTML export, `page.tsx`), R-H1 (`verdictFromPct` MIXED/UNVERIFIED inconsistency), R-H3 (`javascript:` URI protection), P-H3 (`as any` cast).
+**Warnings:** The `esc()` function in xwiki-viewer.html does NOT escape single quotes (only `&`, `<`, `>`, `"`). This is intentional — single-quote context is handled by `escAttr()`. Do not replace `escAttr()` calls with `esc()` in JS string attribute contexts. The analytics overlay (`loadAnalytics()`) uses `escAttr()` for the onclick JS string — this is correct and more thorough than the previous manual `d.p.replace(/'/g,"'")` which missed backslash escaping.
+**For next agent:** Wave 1B complete. These two files are not touched by any other Wave. Next wave should address `page.tsx` (R-C1, R-H3) and `generateHtmlReport.ts` (R-H1, R-H2, R-H3, R-L1, R-L2) and `verdict-stage.ts` (P-H3).
+
+### 2026-02-19 | Code Reviewer + Senior Developer | Claude Opus 4.6 | Comprehensive 23-Hour Code Review
+**Task:** Review all source code, UCM configurations, and documentation changed in the last 23 hours (~40 commits, Feb 18-19). Identify issues, propose fixes, document findings.
+**Files touched:** `Docs/WIP/Code_Review_23h_2026-02-19.md` (created — 46-finding review report), `Docs/WIP/README.md` (updated).
+**Key decisions:** Used 5 parallel review agents (pipeline, UCM, UI/reports, infrastructure, docs) for comprehensive coverage. Classified 5 systematic patterns. Provided model-tier-aware fix priority matrix.
+**Open items:** All 46 fixes pending implementation. Top priorities: XSS in fallback export (R-C1), verdict label inconsistency (R-H1), CI/CD injection (I-MH1), Calculations.md rewrite (D-C1/C2).
+**Warnings:** `Calculations.md` is ~60% stale (Orchestrated content). Default JSON files have drifted from code defaults (11 orphaned fields, value mismatches). MIXED/UNVERIFIED distinction inconsistently applied across UI, reports, and code comments.
+**For next agent:** Full report at `Docs/WIP/Code_Review_23h_2026-02-19.md` with fix priority table and model tier recommendations per work package. Immediate fixes are small-effort Sonnet-tier tasks. `Calculations.md` rewrite is a Tech Writer task using xWiki `Calculations and Verdicts/WebHome.xwiki` as the accurate reference.
+
+---
+
 ### 2026-02-19 | Lead Architect | Claude Opus 4.6 | Political Bias Mitigation — Stammbach/Ash Low-Hanging Fruits
 **Task:** Investigate and implement low-hanging fruits from Stammbach/Ash EMNLP 2024 paper analysis (19 concerns, 6 recommendations).
 **Files touched:** `verdict-stage.ts`, `claimboundary-pipeline.ts`, `config-schemas.ts`, `types.ts` + 2 test files (+616 lines, 24 new tests).
