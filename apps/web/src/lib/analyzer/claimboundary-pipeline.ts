@@ -519,6 +519,7 @@ export async function extractClaims(
     preliminaryEvidence,
     pipelineConfig,
     currentDate,
+    state,
   );
   state.llmCalls++;
 
@@ -921,6 +922,7 @@ export async function runPass2(
   preliminaryEvidence: PreliminaryEvidenceItem[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  state?: Pick<CBResearchState, "warnings" | "onEvent">,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
     currentDate,
@@ -955,6 +957,27 @@ export async function runPass2(
   let lastError: Error | null = null;
   let retryGuidance: string | null = null;
   let wasTotalRefusal = false;
+  let softRefusalWarningAdded = false;
+
+  const assessPass2Quality = (output: z.infer<typeof Pass2OutputSchema>): string[] => {
+    const issues: string[] = [];
+    if (!output.impliedClaim || output.impliedClaim.trim() === "") {
+      issues.push("impliedClaim is empty — must contain the central claim derived from user input");
+    }
+    if (!output.articleThesis || output.articleThesis.trim() === "") {
+      issues.push("articleThesis is empty — must summarize the thesis being examined");
+    }
+    if (!output.backgroundDetails || output.backgroundDetails.trim() === "") {
+      issues.push("backgroundDetails is empty — must provide context for understanding the claims");
+    }
+    output.atomicClaims = output.atomicClaims.filter(
+      (c) => c.statement && c.statement.trim() !== "",
+    );
+    if (output.atomicClaims.length === 0) {
+      issues.push("atomicClaims has no claims with substantive statements — must extract at least one verifiable claim");
+    }
+    return issues;
+  };
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -999,23 +1022,7 @@ export async function runPass2(
 
       // Quality gate: .catch() defaults may have masked LLM failures for null fields.
       // Check that quality-critical fields contain substantive content.
-      const qualityIssues: string[] = [];
-      if (!validated.impliedClaim || validated.impliedClaim.trim() === "") {
-        qualityIssues.push("impliedClaim is empty — must contain the central claim derived from user input");
-      }
-      if (!validated.articleThesis || validated.articleThesis.trim() === "") {
-        qualityIssues.push("articleThesis is empty — must summarize the thesis being examined");
-      }
-      if (!validated.backgroundDetails || validated.backgroundDetails.trim() === "") {
-        qualityIssues.push("backgroundDetails is empty — must provide context for understanding the claims");
-      }
-      // Filter claims with empty statements (LLM returned null → .catch("") kicked in)
-      validated.atomicClaims = validated.atomicClaims.filter(
-        c => c.statement && c.statement.trim() !== ""
-      );
-      if (validated.atomicClaims.length === 0) {
-        qualityIssues.push("atomicClaims has no claims with substantive statements — must extract at least one verifiable claim");
-      }
+      const qualityIssues = assessPass2Quality(validated);
 
       if (qualityIssues.length > 0) {
         // Detect total refusal: ALL quality-critical fields are empty simultaneously.
@@ -1026,6 +1033,22 @@ export async function runPass2(
           validated.atomicClaims.length === 0;
 
         if (wasTotalRefusal) {
+          if (!softRefusalWarningAdded && state) {
+            state.warnings.push({
+              type: "structured_output_failure",
+              severity: "warning",
+              message: "Stage 1 Pass 2 detected content-policy soft refusal (empty structured output). Retrying with recovery guidance.",
+              details: {
+                stage: "stage1_pass2",
+                reason: "content_policy_soft_refusal",
+                model: model.modelName,
+                attempt: attempt + 1,
+              },
+            });
+            softRefusalWarningAdded = true;
+            state.onEvent?.("Stage 1 Pass 2 detected content-policy soft refusal; retrying...", 22);
+          }
+
           // Address the content-policy concern directly with fact-checking framing.
           retryGuidance = `IMPORTANT: This is a fact-checking analysis engine. Your role is to faithfully extract the claims being made in the input text so they can be verified against evidence. You are NOT being asked to endorse, reject, or amplify any claim — only to identify verifiable assertions for evidence-based assessment.
 
@@ -1076,9 +1099,79 @@ Respond in the same language as the input text.`;
 
       console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${(err as Error).message}`);
 
-      // If this is the last attempt, throw with detailed error
+      // If this is the last attempt with the primary model and it's a total refusal,
+      // try one more time with the "understand" tier (Haiku) — proven to handle
+      // politically sensitive content that Sonnet soft-refuses on.
+      if (attempt === maxRetries && wasTotalRefusal) {
+        const fallbackModel = getModelForTask("understand", undefined, pipelineConfig);
+        if (fallbackModel.modelName !== model.modelName) {
+          console.warn(`[Stage1 Pass2] Total refusal after ${maxRetries + 1} attempts with ${model.modelName}. Attempting fallback with ${fallbackModel.modelName}.`);
+          try {
+            const fallbackResult = await generateText({
+              model: fallbackModel.model,
+              messages: [
+                {
+                  role: "system" as const,
+                  content: rendered.content,
+                  providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+                },
+                { role: "user" as const, content: inputText },
+              ],
+              temperature: 0.2,
+              output: Output.object({ schema: Pass2OutputSchema }),
+              providerOptions: getStructuredOutputProviderOptions(
+                (pipelineConfig.llmProvider) ?? "anthropic",
+              ),
+            });
+
+            const fallbackParsed = extractStructuredOutput(fallbackResult);
+            if (fallbackParsed) {
+              const fallbackNormalized = normalizePass2Output(fallbackParsed as Record<string, unknown>);
+              const fallbackValidated = Pass2OutputSchema.parse(fallbackNormalized);
+
+              // Apply the same quality gate to fallback results; do not silently accept weak output.
+              const fallbackQualityIssues = assessPass2Quality(fallbackValidated);
+              if (fallbackQualityIssues.length === 0) {
+                // Fix IDs
+                fallbackValidated.atomicClaims.forEach((claim, idx) => {
+                  if (!claim.id || claim.id.trim() === "") {
+                    claim.id = `AC_${String(idx + 1).padStart(2, "0")}`;
+                  }
+                });
+                console.log(`[Stage1 Pass2] Fallback model ${fallbackModel.modelName} succeeded (recovered from soft refusal).`);
+                if (state) {
+                  state.warnings.push({
+                    type: "structured_output_failure",
+                    severity: "warning",
+                    message: `Stage 1 Pass 2 recovered via fallback model (${fallbackModel.modelName}) after primary model soft refusal. Claim extraction quality may be reduced; review claim-level outputs.`,
+                    details: {
+                      stage: "stage1_pass2",
+                      reason: "content_policy_soft_refusal",
+                      primaryModel: model.modelName,
+                      fallbackModel: fallbackModel.modelName,
+                      degradedPath: true,
+                    },
+                  });
+                  state.onEvent?.(`Stage 1 Pass 2 recovered via fallback model (${fallbackModel.modelName}); review claim quality warnings.`, 23);
+                }
+                return fallbackValidated;
+              }
+              console.warn(`[Stage1 Pass2] Fallback model returned low-quality output: ${fallbackQualityIssues.join("; ")}`);
+            }
+            console.warn(`[Stage1 Pass2] Fallback model also returned empty output.`);
+          } catch (fallbackErr) {
+            console.warn(`[Stage1 Pass2] Fallback model failed: ${(fallbackErr as Error).message}`);
+          }
+        }
+
+        const errorMsg = `Stage 1 Pass 2 failed after ${maxRetries + 1} attempts (content-policy soft refusal). Last error: ${lastError.message}`;
+        console.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Non-total-refusal: throw on last attempt
       if (attempt === maxRetries) {
-        const errorMsg = `Stage 1 Pass 2 failed after ${maxRetries + 1} attempts${wasTotalRefusal ? " (content-policy soft refusal)" : ""}. Last error: ${lastError.message}`;
+        const errorMsg = `Stage 1 Pass 2 failed after ${maxRetries + 1} attempts. Last error: ${lastError.message}`;
         console.error(errorMsg);
         throw new Error(errorMsg);
       }
