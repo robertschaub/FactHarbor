@@ -7,6 +7,19 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 ---
 
+### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3C — Dead refs + Quality Gates + KeyFactors
+**Task:** Fix `analysis-contexts.ts` dead refs (5 files), add Quality Gates + KeyFactors Design to this pass per Captain direction.
+**Files touched:** Evidence Quality Filtering Pipeline, Pipeline Shared Primitives, AKEL Shared Modules (diagrams), AKEL Pipeline, Deep Dive Index, Quality Gates, KeyFactors Design, Prompt Architecture — commit `2667997`.
+**Key decisions:**
+- `analysis-contexts.ts` replaced with `claimboundary-pipeline.ts` (Stage 3: `clusterBoundaries`) in all diagram/table references.
+- Quality Gates: Gate 1 now documents `quality-gates.ts` + `passedFidelity` LLM field + safety net (rescue highest-centrality claim if all would be filtered, `claimboundary-pipeline.ts:1247`). Gate 4 moved from `orchestrated.ts` to `quality-gates.ts`. Context scoping updated from `contextId` (Orchestrated) to boundary scoping (CB).
+- KeyFactors Design: `{{warning}}` banner added (Orchestrated-era, superseded by ClaimAssessmentBoundary). Contestation weights updated from 0.3x/0.5x → 0.5x/0.7x (v3.1).
+- Prompt Architecture: Deduplicated Pipeline Variants link in §11.
+**Open items:** Phase 3D (6 terminology/schema pages), 3E (~20 Tier 4 batch), 3F (XAR rebuild).
+**Warnings:** AKEL Pipeline §1 still describes "5-step pipeline" as "Understand/Research/Verdict/Summary/Report" (Orchestrated era). CB stages are extract/research/cluster/verdict/aggregate. Consider updating §1 step-by-step description in Phase 3D.
+
+---
+
 ### 2026-02-19 | Technical Writer | Claude Code (Sonnet 4.6) | Phase 3B — xWiki Tier 1 Rewrites Complete
 **Task:** Rewrite the 3 Tier 1 xWiki pages (Direction Semantics, Calculations and Verdicts, Prompt Architecture) for the CB pipeline, and archive the Orchestrated Pipeline Detail diagram.
 **Files touched:**
