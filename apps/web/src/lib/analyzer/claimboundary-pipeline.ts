@@ -924,11 +924,9 @@ export async function runPass2(
   currentDate: string,
   state?: Pick<CBResearchState, "warnings" | "onEvent">,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
-  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
-    currentDate,
-    analysisInput: inputText,
-    preliminaryEvidence: JSON.stringify(
-      preliminaryEvidence.map((pe) => ({
+  const buildPreliminaryEvidencePayload = (items: PreliminaryEvidenceItem[]): string =>
+    JSON.stringify(
+      items.map((pe) => ({
         // Truncate evidence to topic-level signals only (reduce contamination risk).
         // Full statements give the LLM too much factual detail to import into claims.
         topicSignal: pe.statement.length > 120
@@ -939,12 +937,27 @@ export async function runPass2(
       })),
       null,
       2,
-    ),
+    );
+
+  const renderedWithEvidence = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
+    currentDate,
+    analysisInput: inputText,
+    preliminaryEvidence: buildPreliminaryEvidencePayload(preliminaryEvidence),
     atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
   });
-  if (!rendered) {
+  if (!renderedWithEvidence) {
     throw new Error("Stage 1 Pass 2: Failed to load CLAIM_EXTRACTION_PASS2 prompt section");
   }
+
+  // Soft-refusal mitigation: keep a pre-rendered input-only prompt variant for retries.
+  // If the model refuses with evidence context, retrying with no preliminary evidence
+  // often avoids policy over-triggering while preserving claim fidelity to user input.
+  const renderedWithoutEvidence = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
+    currentDate,
+    analysisInput: inputText,
+    preliminaryEvidence: "[]",
+    atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
+  }) ?? renderedWithEvidence;
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);
 
@@ -957,7 +970,7 @@ export async function runPass2(
   let lastError: Error | null = null;
   let retryGuidance: string | null = null;
   let wasTotalRefusal = false;
-  let softRefusalWarningAdded = false;
+  let retryWithoutPreliminaryEvidence = false;
 
   const assessPass2Quality = (output: z.infer<typeof Pass2OutputSchema>): string[] => {
     const issues: string[] = [];
@@ -986,13 +999,16 @@ export async function runPass2(
       const userContent = (attempt > 0 && retryGuidance)
         ? `${inputText}\n\n---\n${retryGuidance}`
         : inputText;
+      const activeSystemPrompt = retryWithoutPreliminaryEvidence
+        ? renderedWithoutEvidence.content
+        : renderedWithEvidence.content;
 
       const result = await generateText({
         model: model.model,
         messages: [
           {
             role: "system" as const,
-            content: rendered.content,
+            content: activeSystemPrompt,
             providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
           },
           { role: "user" as const, content: userContent },
@@ -1033,20 +1049,9 @@ export async function runPass2(
           validated.atomicClaims.length === 0;
 
         if (wasTotalRefusal) {
-          if (!softRefusalWarningAdded && state) {
-            state.warnings.push({
-              type: "structured_output_failure",
-              severity: "warning",
-              message: "Stage 1 Pass 2 detected content-policy soft refusal (empty structured output). Retrying with recovery guidance.",
-              details: {
-                stage: "stage1_pass2",
-                reason: "content_policy_soft_refusal",
-                model: model.modelName,
-                attempt: attempt + 1,
-              },
-            });
-            softRefusalWarningAdded = true;
-            state.onEvent?.("Stage 1 Pass 2 detected content-policy soft refusal; retrying...", 22);
+          if (!retryWithoutPreliminaryEvidence && preliminaryEvidence.length > 0) {
+            retryWithoutPreliminaryEvidence = true;
+            state?.onEvent?.("Stage 1 Pass 2 retry: reducing preliminary-evidence context after soft refusal...", 22);
           }
 
           // Address the content-policy concern directly with fact-checking framing.
@@ -1060,7 +1065,9 @@ Your previous attempt returned empty results. You MUST populate ALL required fie
 - backgroundDetails: What context is relevant to understanding this claim?
 - atomicClaims: What specific, verifiable assertions can be extracted?
 
-Respond in the same language as the input text.`;
+Respond in the same language as the input text.
+
+If prior evidence context was too sensitive, focus strictly on extracting claims from the user's input text while preserving fidelity.`;
           console.warn(`[Stage1 Pass2] Attempt ${attempt + 1}/${maxRetries + 1} — Total refusal detected (all fields empty). Retrying with fact-checking framing.`);
         } else {
           // Partial failure: some fields have content, some don't. Give field-specific guidance.
@@ -1112,7 +1119,9 @@ Respond in the same language as the input text.`;
               messages: [
                 {
                   role: "system" as const,
-                  content: rendered.content,
+                  content: retryWithoutPreliminaryEvidence
+                    ? renderedWithoutEvidence.content
+                    : renderedWithEvidence.content,
                   providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
                 },
                 { role: "user" as const, content: inputText },
