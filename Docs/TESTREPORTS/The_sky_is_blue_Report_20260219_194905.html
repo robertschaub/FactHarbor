@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactHarbor Report — The sky is blue</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 5b2435b34db44415ba11e7cd269d1c54</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-18 12:50 UTC</div>
+      <div>Completed: 2026-02-18 13:05 UTC</div>
+      <div>Duration: ~14 min 7 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">The sky is blue</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; claude-sonnet-4-5-20250929</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE (cached)</span>
+    <span class="chip chip-gray">36 LLM calls</span>
+    <span class="chip chip-gray">18 searches</span>
+    <span class="chip chip-gray">3 claims · 6 boundaries · 74 evidence items · 22 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-t">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge t-color">MOSTLY-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The fundamental inverse fourth-power wavelength dependence (λ⁻⁴) of Rayleigh scattering is robustly validated through th…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value t-color">78%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:78%;background:#22543d"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">72%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:72%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The fundamental inverse fourth-power wavelength dependence (λ⁻⁴) of Rayleigh scattering is robustly validated through theoretical derivations, experimental measurements, and observational data, strongly supporting the core mechanism for blue sky color. However, the explanation faces significant challenges regarding the role of multiple scattering—evidence indicates single scattering dominates in most atmospheric conditions, contradicting claims of &quot;many times&quot; scattering. Sunset and sunrise color explanations are observationally well-documented but incompletely account for additional atmospheric factors beyond path length, including aerosols, humidity, and ozone absorption.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The explanation of sky color through Rayleigh scattering is mostly accurate, though the claim oversimplifies multiple scattering dynamics and atmospheric complexity.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">38 evidence items analyzed across 6 methodological boundaries, including mathematical formulations, observational studies, experimental measurements, and atmospheric modeling perspectives.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The fundamental inverse fourth-power wavelength dependence (λ⁻⁴) of Rayleigh scattering is robustly validated through theoretical derivations, experimental measurements, and observational data, strongly supporting the core mechanism for blue sky color. However, the explanation faces significant challenges regarding the role of multiple scattering—evidence indicates single scattering dominates in most atmospheric conditions, contradicting claims of &quot;many times&quot; scattering. Sunset and sunrise color explanations are observationally well-documented but incompletely account for additional atmospheric factors beyond path length, including aerosols, humidity, and ozone absorption.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Mathematical and theoretical boundaries (CB_01) provide strong support with 12-13 evidence items validating the λ⁻⁴ relationship, while experimental measurement boundaries (CB_10) offer limited direct validation with only 3 items in the 0.4-2 μm range. Sunset/sunrise analysis (CB_05) shows concentrated support for observational phenomena (11 items) but reveals mechanistic gaps regarding multiple scattering frequency. The educational/descriptive boundary (CB_03) supports the general narrative but lacks the quantitative rigor found in mathematical formulations, creating a divergence between pedagogical simplification and atmospheric physics complexity.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively quantify the frequency or contribution of multiple scattering events under varying atmospheric conditions (clear vs. turbid). Evidence gaps exist regarding the relative importance of aerosols, water vapor, and ozone in modifying sunset colors beyond the Rayleigh scattering mechanism. Experimental validation of scattering cross-sections is limited to specific wavelength ranges, and the analysis lacks comprehensive data on how atmospheric composition variations (altitude, latitude, pollution) affect the claimed mechanisms. The role of Mie scattering from larger particles in typical atmospheric conditions remains underspecified in the evidence base.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 3</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Blue light is scattered more than other colors in Earth&#39;s atmosphere because it travels as shorter wavelengths, with scattering intensity inversely proportional to the fourth power of wavelength according to Rayleigh scattering theory</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">82%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">78%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: low</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Mathematical and theoretical formulation of Rayleigh scattering + Observational analysis of atmospheric light scattering</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">98%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">95%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">12 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:98%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Educational and descriptive explanations of light scattering + Historical scientific review and attribution</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">92%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">9 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:92%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_10 · Experimental measurement of Rayleigh scattering cross-sections + Atmospheric correction algorithm implementation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">97%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">94%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:97%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Solar irradiance measurements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">93%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:93%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_GENERAL · General Evidence</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:85%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Sunset/sunrise analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">94%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:94%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating challenges, this claim requires significant downward adjustment despite strong theoretical support. The fundamental λ⁻⁴ relationship is well-validated experimentally (CB_10: 0.4-2.8% agreement), but several critical issues emerge: (1) The &#39;violet paradox&#39; challenge is severe—if the fourth-power law is correct, violet light (380-450 nm) should scatter more than blue (450-495 nm), yet the sky appears blue, not violet. No evidence addresses this fundamental discrepancy, suggesting either missing physics (solar spectrum weighting, atmospheric absorption, human perception) or incomplete mechanism. (2) The 4.08-power actual atmospheric behavior (EV_1771422851210) represents a 2% systematic deviation that the claim&#39;s &#39;fourth power&#39; specificity doesn&#39;t accommodate. (3) Experimental validation (CB_10) tests isolated gases in laboratory conditions, not actual mixed atmosphere with water vapor and aerosols—the claim is about &#39;atmospheric scattering&#39; but validation is for pure gases. (4) Evidence provides only blue-vs-red comparison (3.1x at 450 nm vs 700 nm) but lacks comprehensive wavelength coverage for &#39;other colors&#39; (green, yellow, orange). (5) Heavy dependence on Rayleigh&#39;s 1871-1899 derivations (12 of 25 evidence items) creates single-source risk. (6) No colorimetric measurements of actual sky spectra validate perceived color matches scattering predictions. The mechanism is fundamentally correct but the claim&#39;s precision (&#39;fourth power&#39; exactly, &#39;blue&#39; specifically) is not fully supported when scrutinized. The violet paradox alone justifies major confidence reduction.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. The 4.08-power vs 4.0-power deviation is systematic and documented. While small (2%), the claim&#39;s specificity about &#39;fourth power&#39; makes this a precision issue. Adjusted truthPercentage from 95 to 88 to reflect that the stated mathematical relationship is approximate, not exact.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED AS LOW SEVERITY. Historical validation of Rayleigh&#39;s original derivation precision is incomplete, but contemporary experimental validation (CB_10) confirms the relationship independently. Minor concern about attribution accuracy but doesn&#39;t undermine mechanism.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Critical point—experimental validation is for pure gases in laboratory, not actual mixed atmosphere. The claim is about &#39;atmospheric scattering&#39; but validation doesn&#39;t include water vapor, variable aerosols, or realistic atmospheric composition. Reduces confidence from 92 to 82.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Evidence provides essentially one wavelength comparison (blue 450 nm vs red 700 nm = 3.1x). The claim states &#39;more than other colors&#39; (plural) but lacks validation for green (520 nm), yellow (580 nm), orange (620 nm). Generalization is insufficiently supported. Reduces truthPercentage to 85.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. 12 of 25 evidence items derive from Rayleigh&#39;s original work, creating single-source dependency. While CB_10 provides independent experimental validation (3 items), the theoretical foundation is heavily weighted to one historical source. Reduces confidence to 80.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. This is the most severe challenge—no spectrophotometric measurements of actual sky color, and no explanation for why sky is blue rather than violet despite violet scattering more strongly per λ⁻⁴. Human perception factors (eye sensitivity peaks at 555 nm, not blue; fewer violet cones) are not validated. This gap suggests missing physics or perception factors. Reduces truthPercentage to 82 and confidence to 78.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. The &#39;violet paradox&#39; is fundamental—violet (380-450 nm) should scatter more than blue (450-495 nm) per λ⁻⁴, yet sky appears blue. Evidence mentions &#39;blue and violet&#39; (EV_1771422820282) but doesn&#39;t explain the discrepancy. Possible explanations (solar spectrum has less violet, ozone absorbs violet, human eyes less sensitive to violet) are not validated. This represents incomplete mechanism understanding. Major adjustment: truthPercentage to 82, confidence to 78.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_02</span>
+    <span class="section-badge">2 of 3</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">The sky appears lighter blue or white closer to the horizon because sunlight passes through more atmospheric air at low angles, causing blue light to be scattered and rescattered multiple times in many directions</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val lt-color">68%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">62%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: medium</span>
+      <span class="chip chip-gray">Harm potential: low</span>
+      <span class="chip chip-gray">Check-worthiness: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Sunset/sunrise analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">87%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:90%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Mathematical and theoretical formulation of Rayleigh scattering + Observational analysis of atmospheric light scattering</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:88%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Solar irradiance measurements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">86%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:86%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_GENERAL · General Evidence</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">78%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:82%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Educational and descriptive explanations of light scattering + Historical scientific review and attribution</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:85%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_10 · Experimental measurement of Rayleigh scattering cross-sections + Atmospheric correction algorithm implementation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:80%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">This claim faces severe challenges that require major downward revision. The core issue is the &#39;many times&#39; multiple scattering assertion: EV_1771422891613 directly states &#39;single scattering is an appropriate approximation in the vast majority of cases,&#39; contradicting the claim&#39;s mechanism. The horizon is precisely a &#39;larger distance&#39; scenario where this applies. (1) The single-scattering contradiction is direct and documented—if single scattering dominates even at horizon, the &#39;scattered and rescattered many times&#39; claim is false. (2) Four evidence items (EV_003, EV_010, EV_016, EV_025) supporting multiple scattering are from the same NASA source using identical language—this is repetition, not independent corroboration. (3) No colorimetric measurements validate the &#39;lighter blue or white&#39; appearance quantitatively. (4) The &#39;white&#39; appearance specifically suggests wavelength-independent scattering (Mie/aerosol), not Rayleigh scattering which should maintain blue dominance even after multiple scattering. No evidence isolates Rayleigh from Mie contributions near horizon where aerosol concentration is higher. (5) No optical depth calculations validate that multiple scattering is necessary—if atmospheric optical depth τ &lt; 1, even 30x path length might remain in single-scattering regime. (6) No angular quantification of where this effect occurs. The observation (lighter appearance near horizon) is likely correct, but the mechanism (multiple Rayleigh scattering) is contradicted by evidence stating single scattering dominates. The effect may be due to aerosol/Mie scattering or single scattering with long path, not the claimed mechanism.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. This is a direct contradiction—EV_1771422891613 states single scattering is appropriate &#39;in the vast majority of cases&#39; including larger distances (horizon). The claim&#39;s &#39;many times&#39; assertion is contradicted by the evidence base itself. The advocate&#39;s dismissal was insufficient. Reduces truthPercentage from 88 to 72 and confidence from 85 to 68.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. No quantitative colorimetric measurements of horizon vs zenith sky color. The mechanism is inferred from qualitative descriptions, not validated spectrophotometrically. Reduces confidence to 65.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. Critical distinction—near horizon, aerosol concentration is typically higher, and Mie scattering (wavelength-independent) may dominate over Rayleigh scattering. The &#39;lighter blue or white&#39; appearance could be Mie-dominated, not multiple Rayleigh scattering. No evidence isolates Rayleigh contribution. This undermines the claim&#39;s mechanism attribution. Reduces truthPercentage to 68.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. No angular quantification of where effect becomes observable. Claim scope is undefined without specifying zenith angle thresholds. Reduces confidence to 64.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. No optical depth calculations validate that multiple scattering is necessary. If τ &lt; 1 (optically thin), even 30x path increase might remain single-scattering regime. The assumption that path length increase automatically means multiple scattering is unvalidated. Reduces confidence to 62.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Four evidence items (EV_003, EV_010, EV_016, EV_025) are from same NASA source with identical language—repetition, not independent corroboration. If source is wrong about multiple scattering (contradicted by EV_1771422891613), all inherit error. Reduces confidence to 62.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. The &#39;white&#39; appearance is critical—white implies equal wavelength contributions, contradicting Rayleigh scattering (blue should dominate). White suggests Mie/aerosol scattering, not the claimed Rayleigh mechanism. No evidence explains why Rayleigh scattering would produce white. This is a fundamental mechanism problem. Maintains truthPercentage at 68, confidence at 62.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_03</span>
+    <span class="section-badge">3 of 3</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">At sunset and sunrise, the sky displays orange and red colors because the increased atmospheric path length at low solar angles causes shorter blue and green wavelengths to be scattered away before reaching the lower atmosphere</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">78%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">72%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: medium</span>
+      <span class="chip chip-gray">Harm potential: low</span>
+      <span class="chip chip-gray">Check-worthiness: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: moderate (+0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Sunset/sunrise analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">94%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">91%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:94%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_GENERAL · General Evidence</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:88%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Mathematical and theoretical formulation of Rayleigh scattering + Observational analysis of atmospheric light scattering</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">87%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:90%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Educational and descriptive explanations of light scattering + Historical scientific review and attribution</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">89%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">86%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:89%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Solar irradiance measurements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">91%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:91%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_10 · Experimental measurement of Rayleigh scattering cross-sections + Atmospheric correction algorithm implementation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:85%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">This claim about sunset/sunrise colors requires moderate downward adjustment due to incomplete mechanism and missing atmospheric factors. The observation (orange/red sunsets) is well-documented, but the mechanism attribution faces challenges: (1) Stratospheric ozone absorption (Chappuis band at 550-650 nm) removes yellow-green light and enhances red appearance, but no evidence addresses this contribution. EV_1771422921510 attributes red sunsets entirely to Rayleigh scattering without mentioning ozone—if ozone contributes significantly, the mechanism is incomplete. (2) Evidence describes scattering probability increasing &#39;exponentially&#39; (EV_1771422921510), but this is conceptually incorrect—Beer-Lambert law describes exponential attenuation, not exponential increase in scattering probability. Mathematical error in supporting evidence. (3) No evidence validates that Rayleigh scattering alone (without aerosols) produces the claimed colors. Sunset color varies dramatically with aerosol content (volcanic eruptions → vivid red; clean atmosphere → orange/yellow). The claim may conflate Rayleigh and Mie scattering effects. (4) Green wavelength removal is asserted but not validated—EV_1771422921510 mentions only &#39;violet and blue,&#39; not green. (5) Path length &#39;30 times&#39; is maximum at horizon (90° zenith), but visible sunset occurs at 85-88° zenith (12-20x path length)—quantitative overstatement. (6) Yellow is visible per EV_1771422921510 (&#39;deep yellows&#39;) but not mentioned in claim. The observation is correct but mechanism is oversimplified—likely requires ozone absorption and aerosol scattering in addition to Rayleigh scattering.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Green wavelength removal is asserted but not validated. EV_1771422921510 mentions &#39;violet and blue&#39; but not green explicitly. EV_005 mentions &#39;blue and green&#39; but without spectral measurements. Reduces truthPercentage from 92 to 86.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. Critical omission—stratospheric ozone absorption (Chappuis band 550-650 nm) removes yellow-green light and enhances red appearance. EV_1771422921510 attributes red sunsets entirely to Rayleigh scattering without mentioning ozone. If ozone contributes significantly (likely), the mechanism is incomplete. This is a major gap in causal explanation. Reduces truthPercentage to 80 and confidence to 76.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED AS LOW SEVERITY. Evidence mentions &#39;reds, oranges, and deep yellows&#39; but claim specifies only &#39;orange and red.&#39; Minor discrepancy in color specification but doesn&#39;t undermine core mechanism. No adjustment.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Path length &#39;30 times&#39; is maximum at horizon (90° zenith angle), but visible sunset typically occurs at 85-88° zenith angle where path length is 12-20x. Quantitative overstatement in evidence. Reduces confidence to 74.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACCEPTED AS LOW SEVERITY. No evidence addresses potential sunrise vs sunset color differences due to atmospheric condition variations (morning vs evening aerosol/humidity). However, observational equivalence suggests this is not a major factor. Minor concern, no adjustment.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. EV_1771422921510 describes scattering probability increasing &#39;exponentially,&#39; but this is conceptually incorrect—Beer-Lambert law describes exponential attenuation (I = I₀e^(-τ)), not exponential increase in scattering probability. Mathematical error in supporting evidence undermines mechanistic explanation quality. Reduces confidence to 72.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED &middot; verdict adjusted</span></div>
+          <div class="ch-response">STRONGLY ACCEPTED. No evidence validates that Rayleigh scattering alone produces the claimed colors without aerosols. Sunset color varies dramatically with aerosol content (volcanic → vivid red; clean → orange/yellow). The claim may conflate Rayleigh and Mie scattering effects. No evidence isolates Rayleigh contribution in actual atmospheric conditions. This is a fundamental mechanism completeness issue. Reduces truthPercentage to 78.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_GENERAL<br><span style="font-weight:400;font-size:10px">General</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">Rayleigh theory</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">Educational descriptions</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Sunset/sunrise analysis</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">Solar irradiance measurements</span></th><th>CB_10<br><span style="font-weight:400;font-size:10px">Experimental cross-sections</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Blue light is scattered more t</td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-high">12</span></td><td><span class="cell-val cell-high">9</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-mid">3</span></td></tr><tr><td class="claim-col">AC_02 — The sky appears lighter blue o</td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-high">8</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-zero">0</span></td></tr><tr><td class="claim-col">AC_03 — At sunset and sunrise, the sky</td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-zero">0</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_GENERAL</span><span class="ba-name">General Evidence</span><span class="ba-ev-count">36 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          
+          
+          
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.500</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Evidence not assigned to a specific methodology boundary</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Mathematical and theoretical formulation of Rayleigh scattering + Observational analysis of atmospheric light scattering</span><span class="ba-ev-count">13 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Mathematical derivation and theoretical physics analysis based on electromagnetic theory and wave mechanics</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Theoretical framework applicable globally</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Established 1871-1899, with ongoing theoretical refinement</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Mathematical derivations and theoretical frameworks establishing the inverse fourth-power wavelength dependence of Rayleigh scattering, including electromagnetic theory, dipole scattering principles, and historical formulations by Lord Rayleigh; Direct observational studies of atmospheric scattering effects, including daytime sky color, twilight phenomena, and wavelength-dependent scattering patterns in Earth&#39;s atmosphere</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Educational and descriptive explanations of light scattering + Historical scientific review and attribution</span><span class="ba-ev-count">9 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Educational explanation and descriptive analysis</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Earth&#39;s atmosphere</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Current scientific understanding</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.885</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Simplified educational explanations and descriptive accounts of light-molecule interactions, wavelength properties, and atmospheric scattering for general audiences; Historical scientific reviews documenting the development and attribution of Rayleigh scattering theory, including Lord Rayleigh&#39;s original contributions and subsequent refinements</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Rayleigh scattering theory applied to sunset and sunrise phenomena + Mathematical modeling of atmospheric optical depth and radiative transfer</span><span class="ba-ev-count">11 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Rayleigh scattering analysis during sunrise and sunset conditions with path length considerations</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Earth&#39;s atmosphere</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Sunset and sunrise events</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.875</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Theoretical and observational analysis of atmospheric scattering during low solar angles, explaining the preferential transmission of red/orange wavelengths and removal of blue light along extended atmospheric paths; Mathematical models calculating optical depth, atmospheric scattering cross-sections, and radiative transfer through atmospheric layers, including path length dependencies and zenith angle effects</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Quantitative measurement of solar irradiance and zenith angle effects + Quantitative application of Rayleigh formula to specific wavelengths</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Measurement of solar irradiance at various wavelengths as functions of solar zenith angle and time of day</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Latitude 40° N (and similar mid-latitude locations)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Afternoon and sunset observations</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Direct measurements of solar ultraviolet and visible irradiance at various wavelengths as functions of solar zenith angle, documenting increased path length and scattering effects at low sun angles; Mathematical application of Rayleigh scattering formula to specific visible wavelengths (red vs. blue), calculating scattering ratios and demonstrating the quantitative wavelength dependence</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_10</span><span class="ba-name">Experimental measurement of Rayleigh scattering cross-sections + Atmospheric correction algorithm implementation</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Direct experimental measurement using broadband cavity-enhanced spectroscopy (BBCES) compared against n-based theoretical calculations</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Laboratory measurements applicable to Earth&#39;s atmosphere</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Published 2021</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.910</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Direct experimental measurements of Rayleigh scattering cross-sections for atmospheric gases using broadband cavity-enhanced spectroscopy, validated against theoretical n-based calculations; Implementation of Rayleigh scattering in radiative transfer calculations for satellite atmospheric correction algorithms, specifically for MODIS sensor channels</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">74 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(29 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422802693</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The amount of scattering is inversely proportional to the fourth power of the wavelength, with blue color scattered much more than red color as light propagates through air</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">Rayleigh scattering - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422802694</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rayleigh scattering causes the blue color of the sky at large angles to the direction of solar rays and yellow or orange colors for light from the direction of the Sun</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">Rayleigh scattering - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422802695</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The intensity of light scattered is proportional to the inverse fourth power of the wavelength and the sixth power of particle size, with the wavelength dependence being characteristic of dipole scattering</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">Rayleigh scattering - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422802696</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Due to Rayleigh scattering, red and orange colors are more visible during sunset because the blue and violet light has been scattered out of the direct path</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">Rayleigh scattering - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422802697</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Since blue light wavelengths scatter more, the diffuse sky seen in daytime is blue</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">Rayleigh scattering - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422820281</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Blue light is scattered more than other colors because it travels as shorter, smaller waves</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.malvernpanalytical.com/en/products/technology/light-scattering" target="_blank">Light Scattering - An Overview | Malvern Panalytical</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422820282</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The blue and violet waves are just the right size to hit and bounce off of the molecules of gas in the atmosphere, causing them to be scattered in every direction</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.malvernpanalytical.com/en/products/technology/light-scattering" target="_blank">Light Scattering - An Overview | Malvern Panalytical</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422820283</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A red light wave is about 750 nanometers, while a blue or violet wave is about 400 nanometers</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.malvernpanalytical.com/en/products/technology/light-scattering" target="_blank">Light Scattering - An Overview | Malvern Panalytical</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422851208</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The extinction is generally larger at short (blue) wavelengths, and the extinction is much stronger in blue light than in red light, a phenomenon called &#39;reddening&#39;</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422851209</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rayleigh showed that the scattered intensity should be inversely proportional to the fourth power of the wavelength of light, and this was in good agreement with the spectral distribution of the light in the blue sky</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422851210</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The actual intensity of Rayleigh scattering in air is somewhat steeper than an inverse-fourth-power law, and amounts to about an inverse 4.08-power law across the visible spectrum, due to the dispersive refractivity of air</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422851212</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The intensity of the emitted radiation from induced oscillating dipoles depends on the direction of the light scattering as described by Rayleigh scattering, with wavelength-dependent intensity following the relationship A_p = (π α_p / r λ²) sin φ</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422874789</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">At sunrise and sunset, the Sun is low in the sky, and its light passes close to the Earth&#39;s surface where the atmosphere is most dense. As light enters the atmosphere at this angle, it refracts with the greatest bend due to this higher density, causing the light&#39;s path to lengthen, further allowing for more Rayleigh scattering.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422874791</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Most of the shorter blue wavelengths are scattered on this longer path, leaving the majority of longer waves to continue. As light continues to move through the atmosphere, yellow wavelengths are scattered leaving orange wavelengths. Further scattering of orange wavelengths leaves red as the predominant color of sunlight.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422874793</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">As the solar zenith angle increases (sun closer to horizon), the path length taken by solar radiation through the atmosphere increases. The irradiance at all wavelengths declines rapidly as the sun gets closer to the horizon, with increased atmospheric backscattering as the sun approaches the horizon.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422874794</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Scattering redirects the sunlight into all possible angles over the upper and lower hemispheres. Rather than destroying radiant energy, scattering changes the direction of propagation of radiation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422891610</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rayleigh scattering is caused by small molecules in the air and scatters light more heavily at shorter wavelengths (blue first, then green, and then red). The sky is blue because blue light bounces all over the place and ultimately reaches eyes from every direction.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering" target="_blank">Chapter 16. Accurate Atmospheric Scattering | NVIDIA Developer</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422891611</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">As light travels far through the atmosphere at low angles, almost all of the blue and much of the green light is scattered away before it reaches the observer, leaving just the reddish colors. This demonstrates that light undergoes multiple scattering events as it traverses longer atmospheric paths.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering" target="_blank">Chapter 16. Accurate Atmospheric Scattering | NVIDIA Developer</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422891612</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Atmospheric scattering models calculate optical depth as the average atmospheric density across a ray multiplied by the length of the ray, representing how many air particles are in the path of light along the ray. Longer ray paths through the atmosphere result in greater cumulative scattering effects.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering" target="_blank">Chapter 16. Accurate Atmospheric Scattering | NVIDIA Developer</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422921508</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">As the solar zenith angle increases with time of sunset, the effective optical path length shoots up. The sunlight travels through a much longer slant atmospheric column — by as much as 30 times that when the Sun is directly overhead.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422921509</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rayleigh scattering has an intensity proportional to the inverse fourth power of the wavelength. Violet and blue, which have shorter wavelengths, are scattered much more than orange or red.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422921510</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Along the long atmospheric path at sunset, the compound probability of scattering of the shorter wavelengths increases exponentially. Almost all the violet and blue elements are scattered out of direct line of sight, and what&#39;s left is the longer wavelengths — reds, oranges, and deep yellows — to constitute the transmitted light.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422971195</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In 1871, Rayleigh demonstrated that the intensity of scattered light is inversely proportional to the fourth power of the wavelength of the light, expressed as Is = (I0/λ⁴), where Is is the intensity of scattered light, I0 is the intensity of incident light, and λ is the wavelength of incident light.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/" target="_blank">Learn with Lin about biophysical characterization: Part I: Light scattering - Bioanalysis Zone</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422971196</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Blue light has a shorter wavelength than red light. When applying Rayleigh&#39;s scattering formula with average wavelength of red light as 700 nm and blue light as 450 nm, the intensity of blue light scattered is 3.1 times more than red light.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/" target="_blank">Learn with Lin about biophysical characterization: Part I: Light scattering - Bioanalysis Zone</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422971197</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">As sunlight passes through the atmosphere, short-wavelength blue and violet light is scattered in various directions across the sky, while longer-wavelength green, yellow and red light is scattered much less, resulting in the sky appearing blue instead of red.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/" target="_blank">Learn with Lin about biophysical characterization: Part I: Light scattering - Bioanalysis Zone</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422971198</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rayleigh theory describes scattering by particles much smaller than the wavelength of incident light and holds for the scattering of visible light (wavelengths ranging from roughly 400 to 750 nm) by atmospheric gas molecules with dimensions in the order of 1 nm, which are considerably smaller than visible light wavelengths.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/" target="_blank">Learn with Lin about biophysical characterization: Part I: Light scattering - Bioanalysis Zone</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422971199</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Blue wavelengths are scattered downwards and the sky appears blue due to Rayleigh scattering by atmospheric particles much smaller than the wavelength of incident light.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/" target="_blank">Learn with Lin about biophysical characterization: Part I: Light scattering - Bioanalysis Zone</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422999012</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The wavelength-dependent Rayleigh scattering cross section is calculated using the formula σν = 24π³ν⁴N²(nν²-1)²/(nν²+2)²Fk(ν), where ν is the wavenumber, demonstrating the fourth-power dependence on wavenumber (inverse fourth-power dependence on wavelength).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_10</span>
+          </div>
+          <div class="ev-source-link"><a href="https://modis.gsfc.nasa.gov/data/atbd/atbd_mod08.pdf" target="_blank">atbd mod08</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422999013</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rayleigh scattering cross sections measured experimentally for atmospheric gases (CO2, N2O, SF6, O2, CH4) in the 307-725 nm wavelength range agree with refractive index-based calculations to within 0.4-2.8%, validating the theoretical n-based method that incorporates the fourth-power wavelength dependence.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_10</span>
+          </div>
+          <div class="ev-source-link"><a href="https://modis.gsfc.nasa.gov/data/atbd/atbd_mod08.pdf" target="_blank">atbd mod08</a></div>
+        </div>
+      </div>
+    </details>
+    
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(45 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sunlight reaches Earth&#39;s atmosphere and is scattered in all directions by all the gases and particles in the air. Blue light is scattered more than the other colors because it travels as shorter, smaller waves. This is why we see a blue sky most of the time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light waves are shorter than red light waves. Blue light is scattered in all directions by the tiny molecules of air in Earth&#39;s atmosphere. Blue is scattered more than other colors because it travels as shorter, smaller waves.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Closer to the horizon, the sky fades to a lighter blue or white. The sunlight reaching us from low in the sky has passed through even more air than the sunlight reaching us from overhead. As the sunlight has passed through all this air, the air molecules have scattered and rescattered the blue light many times in many directions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The sky is blue due to a phenomenon called Raleigh scattering. This scattering refers to the scattering of electromagnetic radiation (of which light is a form) by particles of a much smaller wavelength. Sunlight is scattered by the particles of the atmosphere, and the smallest wavelengths of light tend to scatter easier. These shorter wavelengths correspond to blue hues, hence why when we look at the sky, we see it as blue.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">At sunset and sunrise, the angle at which sunlight enters the atmosphere is significantly changed, and most of the blue and green (shorter) wavelengths of light are scattered even before reaching the lower atmosphere, so we see more of the orange and red colours in the sky.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Photos from NASA&#39;s rovers and landers on Mars have shown us that during the daytime, the Martian sky takes on an orange or reddish color. But as the Sun sets, the sky around the Sun begins to take on a blue-gray tone.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">I asked my science teacher and he said it was because the ozone layer is like a big mirror and the blue colours are the oceans on Earth.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sunlight reaches Earth&#39;s atmosphere and is scattered in all directions by all the gases and particles in the air. Blue light is scattered more than the other colors because it travels as shorter, smaller waves. This is why we see a blue sky most of the time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light waves are shorter than red light waves. Blue light is scattered in all directions by the tiny molecules of air in Earth&#39;s atmosphere more than other colors because it travels as shorter, smaller waves.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Closer to the horizon, the sky fades to a lighter blue or white because sunlight reaching from low in the sky has passed through even more air than sunlight reaching from overhead, causing air molecules to scatter and rescatter the blue light many times in many directions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">During the daytime, the Martian sky takes on an orange or reddish color, while at sunset the sky around the Sun begins to take on a blue-gray tone, demonstrating that sky color depends on what is in the atmosphere.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The sky is blue with a single cloud, as referenced in the title of Kuniko Tsurita&#39;s manga collection, acknowledging the blue color of the sky as an observable phenomenon.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">During the day, blue light gets scattered the most, while in the evening even more blue light gets scattered, causing the sky to turn red because lower frequencies become visible without blue overshadowing them.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light is scattered more than other colors because it travels as shorter, smaller waves, which is why we see a blue sky most of the time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sunlight reaches Earth&#39;s atmosphere and is scattered in all directions by all the gases and particles in the air, with blue light being scattered in all directions by tiny molecules of air.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Closer to the horizon, the sky fades to a lighter blue or white because sunlight reaching from low in the sky has passed through more air, causing blue light to be scattered and rescattered many times.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Rayleigh scattering causes the blue color of the sky at large angles to the direction of solar rays.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">For light frequencies well below the resonance frequency of the scattering medium, the amount of scattering is inversely proportional to the fourth power of the wavelength, meaning blue color is scattered much more than red color as light propagates through air.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Since blue light wavelengths scatter more, the diffuse sky seen in daytime is blue.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In 1871, Lord Rayleigh published papers on the color and polarization of skylight that quantified the scattering effect in terms of particulates&#39; volumes and refractive indices, establishing the basic scientific model for the color of the sky.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light gets scattered the most during the day, while in the evening even more blue light gets scattered, allowing red and yellow colors to become visible.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://spaceplace.nasa.gov/blue-sky/" target="_blank">https://spaceplace.nasa.gov/blue-sky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_022</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light is scattered more than other colors because it travels as shorter, smaller waves, which is why we see a blue sky most of the time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue" target="_blank">https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_023</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sunlight reaches Earth&#39;s atmosphere and is scattered in all directions by all the gases and particles in the air, with blue light being scattered more than other colors, resulting in a blue sky.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue" target="_blank">https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_024</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The sky&#39;s blue color depends on life on Earth and the makeup of our planet&#39;s ozone layer; without microbial life&#39;s impact on atmospheric composition, the clear daytime sky would probably lack its distinctive blue color.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue" target="_blank">https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_025</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Closer to the horizon, the sky fades to a lighter blue or white because sunlight has passed through more air, causing blue light to be scattered and rescattered many times, mixing colors together.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue" target="_blank">https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_026</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The book &#39;Why the Sky Is Blue&#39; provides a historical and scientific journey showing various ways people in different times and places have explained why the sky looks blue, from ancient myths to cutting-edge science of optics and statistical physics.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue" target="_blank">https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_027</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">On Mars, the sky takes on an orange or reddish color during daytime, but at sunset the sky around the Sun takes on a blue-gray tone, demonstrating that sky color depends on atmospheric composition.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue" target="_blank">https://press.princeton.edu/books/hardcover/9780691124537/why-the-sky-is-blue</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_028</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light is scattered more than other colors because it travels as shorter, smaller waves, which is why we see a blue sky most of the time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_029</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sunlight reaches Earth&#39;s atmosphere and is scattered in all directions by all the gases and particles in the air, with blue light being scattered more than other colors.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_030</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">It is easy to see that the sky is blue, and this observation has been the subject of scientific inquiry for a long time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_031</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light waves are shorter than red light waves, and blue light is scattered in all directions by the tiny molecules of air in Earth&#39;s atmosphere.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_032</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Closer to the horizon, the sky fades to a lighter blue or white because sunlight has passed through more air, causing blue light to be scattered and rescattered many times.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_033</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A Reddit user questions and seeks to understand why the sky is blue and changes colors, indicating that the blue color of the sky is a commonly observed phenomenon.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_034</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The human eye can see the Milky Way in Bortle 1 or 2 zones (areas with minimal light pollution), suggesting the eye&#39;s visual perception capabilities in low-light astronomical conditions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/Astronomy/comments/158qvae/is_this_how_the_human_eye_actually_sees_the_milky/" target="_blank">https://www.reddit.com/r/Astronomy/comments/158qvae/is_this_how_the_human_eye_actually_sees_the_milky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_035</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The human eye can perceive and distinguish visual details (such as sunrise colors and brightness) that camera sensors struggle to capture with the same fidelity, indicating the eye&#39;s superior dynamic range and color perception capabilities.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_GENERAL</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/Astronomy/comments/158qvae/is_this_how_the_human_eye_actually_sees_the_milky/" target="_blank">https://www.reddit.com/r/Astronomy/comments/158qvae/is_this_how_the_human_eye_actually_sees_the_milky/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422802698</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Rayleigh scattering results from the electric polarizability of particles, where the oscillating electric field of a light wave acts on charges within a particle, causing them to move at the same frequency and become a small radiating dipole</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">Rayleigh scattering - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422820284</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Shorter wavelengths are more energetic than longer ones; blue light has more energy than red light</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.malvernpanalytical.com/en/products/technology/light-scattering" target="_blank">Light Scattering - An Overview | Malvern Panalytical</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422820285</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Gases and particles in Earth&#39;s atmosphere scatter sunlight in all directions</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.malvernpanalytical.com/en/products/technology/light-scattering" target="_blank">Light Scattering - An Overview | Malvern Panalytical</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422851211</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Molecular scattering is usually called Rayleigh scattering, as it was first studied and explained by Lord Rayleigh, and is responsible for the blue sky phenomenon</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422874790</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Blue light waves scatter at a rate about four times stronger than red light waves. The volume of scattering by the shorter blue light waves, along with additional scattering by violet and indigo, dominate scattering by the remaining color wavelengths.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422874792</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The attenuation of a direct beam of sunlight by Rayleigh scattering is described by an equation with the cross-section for scattering being inversely proportional to wavelength raised to the fourth power (1/λ4). Rayleigh scattering explains the blue color of the sky on a clear day, since the shortest visible wavelengths, in the blue and violet, are scattered more efficiently than are longer wavelengths.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422891613</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Single scattering is an appropriate approximation to modeling sky radiance in the vast majority of cases, but multiple scattering can contribute to sky radiance, particularly at larger distances from light sources.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering" target="_blank">Chapter 16. Accurate Atmospheric Scattering | NVIDIA Developer</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422921511</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">When the sunlight path length in the atmosphere is relatively short (since the zenith angle is very small) at noon time, nearly all of the violet and blue light are isotropically scattered and form the usual blue sky.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">Reddit - The heart of the internet</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422999011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Rayleigh scattering is implemented in the MODIS atmospheric correction algorithm to account for molecular scattering effects in the atmosphere, with scattering cross sections that vary with wavelength according to theoretical principles.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_10</span>
+          </div>
+          <div class="ev-source-link"><a href="https://modis.gsfc.nasa.gov/data/atbd/atbd_mod08.pdf" target="_blank">atbd mod08</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771422999014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Rayleigh scattering accounts for scattering, local field effects (Lorentz-Lorenz), and depolarization from non-sphericity of molecules/particles (King correction factor), with the interaction of light at wavelengths much larger than molecular size giving rise to Rayleigh scattering.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://modis.gsfc.nasa.gov/data/atbd/atbd_mod08.pdf" target="_blank">atbd mod08</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">22 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Rayleigh scattering - Wikipedia</span></div>
+        <div class="source-url"><a href="https://en.wikipedia.org/wiki/Rayleigh_scattering" target="_blank">https://en.wikipedia.org/wiki/Rayleigh_scattering</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering fourth power wavelength inverse relationship</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Measurement of FLEET influence on ambient air temperature by Rayleigh scattering - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/pii/S0030399221005442" target="_blank">https://www.sciencedirect.com/science/article/pii/S0030399221005442</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering fourth power wavelength inverse relationship</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Light Scattering - An Overview | Malvern Panalytical</span></div>
+        <div class="source-url"><a href="https://www.malvernpanalytical.com/en/products/technology/light-scattering" target="_blank">https://www.malvernpanalytical.com/en/products/technology/light-scattering</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: blue light atmospheric scattering wavelength nanometers measurements</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Solar Radiation &amp; Photosynthetically Active Radiation - Environmental Measurement Systems</span></div>
+        <div class="source-url"><a href="https://www.fondriest.com/environmental-measurements/parameters/weather/photosynthetically-active-radiation/" target="_blank">https://www.fondriest.com/environmental-measurements/parameters/weather/photosynthetically-active-radiation/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: blue light atmospheric scattering wavelength nanometers measurements</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Why Is the Sky Blue? | NESDIS | National Environmental Satellite, Data, and Information ServiceLock</span></div>
+        <div class="source-url"><a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/why-the-sky-blue" target="_blank">https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/why-the-sky-blue</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: blue light atmospheric scattering wavelength nanometers measurements</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/" target="_blank">https://www.reddit.com/r/askscience/comments/4w40ih/why_is_blue_light_the_first_to_get_absorbed_into/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering red light green light comparison intensity</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Detection of nanoparticles suspended in a light scattering medium | Scientific ReportsClose bannerClose banner</span></div>
+        <div class="source-url"><a href="https://www.nature.com/articles/s41598-021-99768-x" target="_blank">https://www.nature.com/articles/s41598-021-99768-x</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering red light green light comparison intensity</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Atmospheric Extinction</span></div>
+        <div class="source-url"><a href="https://aty.sdsu.edu/explain/extinction/extintro.html" target="_blank">https://aty.sdsu.edu/explain/extinction/extintro.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering red light green light comparison intensity</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">The Color of Clouds | National Oceanic and Atmospheric AdministrationLockBack to top</span></div>
+        <div class="source-url"><a href="https://www.noaa.gov/jetstream/clouds/color-of-clouds" target="_blank">https://www.noaa.gov/jetstream/clouds/color-of-clouds</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: atmospheric path length scattering angle sky color</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Atmospheric Scattering - an overview | ScienceDirect TopicsScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/topics/physics-and-astronomy/atmospheric-scattering" target="_blank">https://www.sciencedirect.com/topics/physics-and-astronomy/atmospheric-scattering</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: atmospheric path length scattering angle sky color</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Chapter 16. Accurate Atmospheric Scattering | NVIDIA Developer</span></div>
+        <div class="source-url"><a href="https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering" target="_blank">https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering multiple scattering horizon brightness simulation</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/askscience/comments/dfqxuo/why_does_the_color_of_the_sky_get_lighter_the/" target="_blank">https://www.reddit.com/r/askscience/comments/dfqxuo/why_does_the_color_of_the_sky_get_lighter_the/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering multiple scattering horizon brightness simulation</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Multiple scattering contribution to the diffuse light of a night sky: A model which embraces all orders of scattering - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/pii/S0022407317307471" target="_blank">https://www.sciencedirect.com/science/article/pii/S0022407317307471</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering multiple scattering horizon brightness simulation</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">The Sites | Gemini Observatory</span></div>
+        <div class="source-url"><a href="https://www.gemini.edu/observing/telescopes-and-sites/sites" target="_blank">https://www.gemini.edu/observing/telescopes-and-sites/sites</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sky color solar elevation angle observational photography measurements</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/" target="_blank">https://www.reddit.com/r/askscience/comments/14566ig/why_is_the_sky_blue_do_i_understand_it_correctly/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: atmospheric path length solar angle wavelength scattering sunset</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_016</span><span class="source-title">The Physics of Sunsets. It was but a few nights ago that I was… | by Vedant Padhi | Medium</span></div>
+        <div class="source-url"><a href="https://medium.com/@vedantpadhiii/the-physics-of-sunsets-082d0c6df0c3" target="_blank">https://medium.com/@vedantpadhiii/the-physics-of-sunsets-082d0c6df0c3</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: atmospheric path length solar angle wavelength scattering sunset</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_017</span><span class="source-title">Learn with Lin about biophysical characterization: Part I: Light scattering - Bioanalysis Zone</span></div>
+        <div class="source-url"><a href="https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/" target="_blank">https://www.bioanalysis-zone.com/learn-with-lin-about-biophysical-characterization-part-i-light-scattering/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: blue light scattering intensity nanometers atmospheric wavelength measurements</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_018</span><span class="source-title">Blue eyes | Causes of Color</span></div>
+        <div class="source-url"><a href="https://www.webexhibits.org/causesofcolor/14D.html" target="_blank">https://www.webexhibits.org/causesofcolor/14D.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: blue light scattering intensity nanometers atmospheric wavelength measurements</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_019</span><span class="source-title">atbd mod08</span></div>
+        <div class="source-url"><a href="https://modis.gsfc.nasa.gov/data/atbd/atbd_mod08.pdf" target="_blank">https://modis.gsfc.nasa.gov/data/atbd/atbd_mod08.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering theory limitations exceptions atmospheric gases</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_020</span><span class="source-title">ACP - Scattering and absorption cross sections of atmospheric gases in the ultraviolet–visible wavelength range (307–725 nm)</span></div>
+        <div class="source-url"><a href="https://acp.copernicus.org/articles/21/14927/2021/" target="_blank">https://acp.copernicus.org/articles/21/14927/2021/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering theory limitations exceptions atmospheric gases</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_021</span><span class="source-title">ATBD Enterprise Aerosol Optical Depth v3.2 2020 09 22</span></div>
+        <div class="source-url"><a href="https://www.star.nesdis.noaa.gov/goesr/documents/ATBDs/Enterprise/ATBD_Enterprise_Aerosol_Optical_Depth_v3.2_2020-09-22.pdf" target="_blank">https://www.star.nesdis.noaa.gov/goesr/documents/ATBDs/Enterprise/ATBD_Enterprise_Aerosol_Optical_Depth_v3.2_2020-09-22.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering theory limitations exceptions atmospheric gases</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_022</span><span class="source-title">journals.ametsoc.org</span></div>
+        <div class="source-url"><a href="https://journals.ametsoc.org/view/journals/atsc/59/3/1520-0469_2002_059_0524_rsoaaa_2.0.co_2.xml" target="_blank">https://journals.ametsoc.org/view/journals/atsc/59/3/1520-0469_2002_059_0524_rsoaaa_2.0.co_2.xml</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Rayleigh scattering theory limitations exceptions atmospheric gases</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">18 queries · 4 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>why is sky blue</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>The sky is blue.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>sky color blue light scattering</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>The color of the sky is blue.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>sky appears blue perception</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>The human eye perceives the sky as blue.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Rayleigh scattering fourth power wavelength inverse relationship</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>blue light atmospheric scattering wavelength nanometers measurements</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Rayleigh scattering red light green light comparison intensity</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>atmospheric path length scattering angle sky color</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Rayleigh scattering multiple scattering horizon brightness simulation</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>sky color solar elevation angle observational photography measurements</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>atmospheric path length solar angle wavelength scattering sunset</td><td>2</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>spectrophotometric measurements sunset sunrise color temperature wavelength distribution</td><td>2</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Rayleigh scattering blue light atmospheric path length low solar angles</td><td>2</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Rayleigh scattering fourth power wavelength inverse relationship</td><td>3</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>blue light scattering intensity nanometers atmospheric wavelength measurements</td><td>3</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Rayleigh scattering theory limitations exceptions atmospheric gases</td><td>3</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">3</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">74</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">22</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">18</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">36</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.0.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.0.0-cb · Generated 2026-02-19 18:49 UTC
+  <br>Job 5b2435b34db44415ba11e7cd269d1c54 · claude-sonnet-4-5-20250929 · anthropic
+</div>
+</div>
+</body>
+</html>
