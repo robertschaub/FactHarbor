@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import "./globals.css";
 import styles from "./layout.module.css";
 import { LayoutClientShell } from "@/components/LayoutClientShell";
+
+export const metadata: Metadata = {
+  title: "FactHarbor",
+  description: "Evidence-based claim analysis",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
