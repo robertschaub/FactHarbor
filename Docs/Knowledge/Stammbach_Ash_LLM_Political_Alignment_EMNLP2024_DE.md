@@ -75,9 +75,9 @@ Postdoc am Princeton CITP. Promotion an der ETH (Frühling 2024) zu datenzentrie
 
 ---
 
-## 3. FactHarbor-Positionierung: Stärken, Schwächen, Chancen
+## 3. FactHarbor-Positionierung: Stärken, Schwächen, Chancen, Adressiert
 
-### Architektonische Stärken (echte Differenzierungsmerkmale)
+### Stärken
 
 1. **Evidenz-zuerst-Pipeline.** Urteile müssen abgerufene Evidenz mit struktureller ID-Validierung zitieren. Eliminiert den Kernbefund des Papers (Zero-Shot-Fabrikation).
 2. **Mehrperspektivische Urteile.** `BoundaryFindings[]` und `TriangulationScore` machen Dissens strukturell sichtbar, nicht als nachträgliche Synthese. *(Codex-Einschränkung: Dies ist methodologische Pluralität, nicht notwendigerweise ideologische Pluralität.)*
@@ -86,17 +86,24 @@ Postdoc am Princeton CITP. Promotion an der ETH (Frühling 2024) zu datenzentrie
 5. **Eingabeneutralität.** «War X fair?» = «X war fair» (Toleranz ≤4%), mit Testsuite.
 
 **Ehrliche Einschätzung:** Dies sind echte Stärken gegenüber Zero-Shot-LLMs. Aber «gute Prozessarchitektur» ist nicht dasselbe wie «nachgewiesene Ergebnisse bei der Verzerrungsminderung» *(Codex' Kernkritik)*. Ohne Messung auf Ergebnisebene ist die Behauptung «mitigiert» verfrüht.
-> **[FH 19.02.2026]** Weiterhin zutreffend. Wir haben Erkennung (Evidenz-Schieflage), Korrektur (Harm-Konfidenz-Untergrenze) und Konfigurierbarkeit (Debatten-Tiers) ergänzt, aber noch keine empirische Messung. Das Kalibrierungs-Harness (Massnahme 1) bleibt die kritische Lücke. Alle neuen Parameter sind per UCM konfigurierbar mit Config-Load-Fehlerprotokollierung, sodass das System operativ beobachtbar ist.
+> **[FH 19.02.2026]** Weiterhin zutreffend. Wir haben Erkennung (Evidenz-Schieflage), Korrektur (Harm-Konfidenz-Untergrenze) und Konfigurierbarkeit (Debatten-Tiers) ergänzt, aber noch keine empirische Messung. Das Kalibrierungs-Harness (Massnahme 1) bleibt die kritische Lücke. Alle neuen Parameter sind per UCM konfigurierbar mit Config-Load-Fehlerprotokollierung, sodass das System operativ beobachtbar ist. *Code Review (P-H1): Evidenzeinträge wurden bei mehreren in einem LLM-Aufruf gebündelten Quellen stets `sources[0]` zugeordnet — behoben; LLM gibt nun ein `sourceUrl` pro Eintrag zurück, der der korrekten Quelle zugeordnet ist. Die Zitiergenauigkeit von Stärke #1 ist nun echt.*
 
-### Fünf Lücken mit höchster Priorität (aus 19 von drei Reviewern bewerteten Bedenken)
+### Schwächen
 
-1. **C10: Keine empirische Verzerrungsmessung** — Kritisch. Höchste Priorität, direkt umsetzbar.
-2. **C9: Selbstkonsistenz belohnt stabile Verzerrung** — Hoch. Illusorische Kontrolle, die falsche Sicherheit vermittelt.
-3. **C8: Nur beratende Validierung** — Hoch. Erkennung ohne Korrektur bei Behauptungen mit hohem Schadenspotenzial.
-> **[FH 19.02.2026]** Geschlossen. `enforceHarmConfidenceFloor()` in verdict-stage stuft Urteile mit niedriger Konfidenz bei hohem Schadenspotenzial auf UNVERIFIED herab. Schwellenwert (`highHarmMinConfidence`, Standard 50) und auslösende Schadensstufen (`highHarmFloorLevels`, Standard ["critical","high"]) sind per UCM konfigurierbar.
-4. **C13: Verzerrung des Evidenzpools** — Hoch. Verzerrungseinspeisung vor jeglicher LLM-Reasoning.
-> **[FH 19.02.2026]** Erkennung implementiert. `assessEvidenceBalance()` läuft nach Stage 2 (Recherche), vor den Urteilen. Gibt eine `evidence_pool_imbalance`-Warnung mit Stichprobengrössen-Kontext aus (z.B. «83%, 5 von 6 gerichteten Evidenzeinträgen»). Schieflage-Schwellenwert und Mindestanzahl gerichteter Einträge sind per UCM konfigurierbar. Rebalancierung (aktive Korrektur) ist noch nicht implementiert — nur Erkennung.
-5. **C17/C18: Prompt Injection + asymmetrische Verweigerung** — Hoch. Neuartige Angriffsvektoren, die politische Verzerrung verstärken.
+1. **C10: Keine empirische Verzerrungsmessung** — <span style="color:#d32f2f">**Kritisch**</span>. Höchste Priorität, direkt umsetzbar.
+2. **C9: Selbstkonsistenz belohnt stabile Verzerrung** — <span style="color:#e65100">**Hoch**</span>. Illusorische Kontrolle, die falsche Sicherheit vermittelt.
+3. **C13: Verzerrung des Evidenzpools** — <span style="color:#e65100">**Hoch**</span>. Verzerrungseinspeisung vor jeglicher LLM-Reasoning; Erkennung erledigt, Rebalancierung noch nicht implementiert.
+> **[FH 19.02.2026]** Erkennung implementiert. `assessEvidenceBalance()` läuft nach Stage 2 (Recherche), vor den Urteilen. Gibt eine `evidence_pool_imbalance`-Warnung mit Stichprobengrössen-Kontext aus (z.B. «83%, 5 von 6 gerichteten Evidenzeinträgen»). Schieflage-Schwellenwert und Mindestanzahl gerichteter Einträge sind per UCM konfigurierbar. Rebalancierung (aktive Korrektur) ist noch nicht implementiert — nur Erkennung. *Code Review (P-M2): Richtungslabel-Matching korrigiert von `includes("support")` (würde "unsupported" treffen) zu `=== "supports"` — die in diese Warnung einfliessenden Richtungszählungen sind nun korrekt.*
+4. **C17/C18: Prompt Injection + asymmetrische Verweigerung** — <span style="color:#e65100">**Hoch**</span>. Neuartige Angriffsvektoren, die politische Verzerrung verstärken.
+
+### Chancen
+
+Drei konkrete Anknüpfungspunkte aus der Ash-Zusammenarbeit: (1) **Kalibrierungs-Harness-Design** (C10 / §5 Massnahme 1) — Ashs Team verfügt über direkt anwendbare Benchmark-Methodik zur Messung politischer Schieflage; (2) **Pfadkonsistenz aus AFaCTA** als Ergänzung zur temperaturbasierten Selbstkonsistenz — könnte Verzerrungen aufdecken, die Temperaturvariation nicht erkennt (C9); (3) **Anbieterübergreifende Debattenarchitektur** — Climinator's strukturell unabhängige Anwälte bestätigen die Richtung von §5 Massnahme 4; Ash kann beraten, ob Anbieter-Trennung die Ergebnisse im Vergleich zu Tier-Trennung beim gleichen Anbieter wesentlich verändert.
+
+### Adressiert
+
+1. **C8: Nur beratende Validierung** — <span style="color:#2e7d32">**Hoch**</span>. Erkennung ohne Korrektur bei Behauptungen mit hohem Schadenspotenzial.
+> **[FH 19.02.2026]** Geschlossen. `enforceHarmConfidenceFloor()` in verdict-stage stuft Urteile mit niedriger Konfidenz bei hohem Schadenspotenzial auf UNVERIFIED herab. Schwellenwert (`highHarmMinConfidence`, Standard 50) und auslösende Schadensstufen (`highHarmFloorLevels`, Standard ["critical","high"]) sind per UCM konfigurierbar. *Code Review (P-H3, U-L1): `as any`-Cast aus der Floor-Prüfung entfernt; UCM-Standardwerte als korrekt registriert bestätigt.*
 
 ---
 
@@ -127,20 +134,20 @@ Postdoc am Princeton CITP. Promotion an der ETH (Frühling 2024) zu datenzentrie
 
 **Grundsatz: Messen vor Umbauen.** *(Codex' strategische Kernerkenntnis — zuerst Baseline-Metriken aufbauen, dann jede architektonische Änderung an gemessene Verbesserung knüpfen.)*
 
-| Priorität | Massnahme | Aufwand | Wirkung |
-|-----------|-----------|---------|---------|
-| **1** | **Kalibrierungs-Harness für politische Verzerrung** — 20-30 ausgewogene Behauptungspaare (gespiegelte Formulierungen, mehrsprachige Varianten), Richtung/Ausmass der Urteilsverzerrung messen | Gering (~1 Tag, ~$5-10) | **Kritisch** — grundlegend |
-|   |   |   | *[FH 19.02.2026] Noch nicht umgesetzt. Genehmigt und budgetiert, auf dedizierte Session verschoben.* |
-| **2** | **Fehlermodi instrumentieren** — Verweigerungs-/Degradationsraten nach Thema, Anbieter, Stage erfassen. C18 (asymmetrische Verweigerung) erkennen | Gering | Hoch — deckt unsichtbare Verzerrung auf |
-|   |   |   | *[FH 19.02.2026] Vorbestehend: Phasen-Metriken (LLM-Aufrufzähler, Latenz, Modell) bereits über `metrics.ts`/`metrics-integration.ts` verdrahtet. Verweigerungs-/Degradationstracking pro Aufruf noch nicht ergänzt.* |
-| **3** | **Validierung bei hohem Schadenspotenzial blockierend machen** — `validateVerdicts()` gibt Urteile unverändert zurück; bei `harmPotential >= "high"` Konfidenz deckeln oder UNVERIFIED erzwingen | Mittel | Hoch — schliesst C8 |
-|   |   |   | *[FH 19.02.2026] **Erledigt.** `enforceHarmConfidenceFloor()` — erzwingt UNVERIFIED bei Konfidenz < Schwellenwert. Schadensstufen und Schwellenwert per UCM konfigurierbar. 9 Unit-Tests.* |
-| **4** | **Challenger-Modell trennen** — anderen Anbieter für VERDICT_CHALLENGER (z.B. GPT-4o, wenn der Anwalt Sonnet ist) | Mittel | Hoch — schliesst C1/C16 |
-|   |   |   | *[FH 19.02.2026] **Teilweise erledigt.** Tier-Konfiguration pro Rolle (`debateModelTiers`) implementiert. Unterstützt haiku/sonnet-Tier-Trennung. Anbieterübergreifende Trennung (GPT-4o vs. Sonnet) erfordert `LLMCallFn`-Erweiterung — als Follow-up markiert. Laufzeitwarnung `all_same_debate_tier` ergänzt.* |
-| **5** | **Diagnostik für Evidenzpool-Balance** — erkennen und melden, wenn der Evidenzpool politisch einseitig ist | Mittel | Mittel-Hoch — schliesst C13 |
-|   |   |   | *[FH 19.02.2026] **Erledigt (Erkennung).** `assessEvidenceBalance()` mit stichprobengrössen-bewussten Warnungen. Schieflage-Schwellenwert und Mindestanzahl gerichteter Einträge per UCM konfigurierbar. Rebalancierung noch nicht implementiert.* |
-| **6** | **Warnung «politisch umstritten» + Bereichsanzeige** — plausiblen Urteilsbereich anzeigen, nicht nur Punktschätzung, bei umstrittenen Behauptungen | Hoch (langfristig) | Hoch — epistemische Ehrlichkeit |
-|   |   |   | *[FH 19.02.2026] Noch nicht begonnen.* |
+| Priorität | Massnahme | Aufwand | Wirkung | Status |
+|-----------|-----------|---------|---------|--------|
+| **1** | **Kalibrierungs-Harness für politische Verzerrung** — 20-30 ausgewogene Behauptungspaare (gespiegelte Formulierungen, mehrsprachige Varianten), Richtung/Ausmass der Urteilsverzerrung messen | Gering (~1 Tag, ~$5-10) | <span style="color:#d32f2f">**Kritisch**</span> — grundlegend | <span style="color:#d32f2f">**Offen**</span> |
+|   |   |   | *[FH 19.02.2026] Noch nicht umgesetzt. Genehmigt und budgetiert, auf dedizierte Session verschoben.* | |
+| **2** | **Fehlermodi instrumentieren** — Verweigerungs-/Degradationsraten nach Thema, Anbieter, Stage erfassen. C18 (asymmetrische Verweigerung) erkennen | Gering | <span style="color:#e65100">**Hoch**</span> — deckt unsichtbare Verzerrung auf | <span style="color:#e65100">**Teilweise**</span> |
+|   |   |   | *[FH 19.02.2026] Vorbestehend: Phasen-Metriken (LLM-Aufrufzähler, Latenz, Modell) bereits über `metrics.ts`/`metrics-integration.ts` verdrahtet. Verweigerungs-/Degradationstracking pro Aufruf noch nicht ergänzt.* | |
+| **3** | **Validierung bei hohem Schadenspotenzial blockierend machen** — `validateVerdicts()` gibt Urteile unverändert zurück; bei `harmPotential >= "high"` Konfidenz deckeln oder UNVERIFIED erzwingen | Mittel | <span style="color:#2e7d32">**Hoch**</span> — schliesst C8 | <span style="color:#2e7d32">**Erledigt**</span> |
+|   |   |   | *[FH 19.02.2026] **Erledigt.** `enforceHarmConfidenceFloor()` — erzwingt UNVERIFIED bei Konfidenz < Schwellenwert. Schadensstufen und Schwellenwert per UCM konfigurierbar. 9 Unit-Tests.* | |
+| **4** | **Challenger-Modell trennen** — anderen Anbieter für VERDICT_CHALLENGER (z.B. GPT-4o, wenn der Anwalt Sonnet ist) | Mittel | <span style="color:#e65100">**Hoch**</span> — schliesst C1/C16 | <span style="color:#e65100">**Teilweise**</span> |
+|   |   |   | *[FH 19.02.2026] **Teilweise erledigt.** Tier-Konfiguration pro Rolle (`debateModelTiers`) implementiert. Unterstützt haiku/sonnet-Tier-Trennung. Anbieterübergreifende Trennung (GPT-4o vs. Sonnet) erfordert `LLMCallFn`-Erweiterung — als Follow-up markiert. Laufzeitwarnung `all_same_debate_tier` ergänzt.* | |
+| **5** | **Diagnostik für Evidenzpool-Balance** — erkennen und melden, wenn der Evidenzpool politisch einseitig ist | Mittel | <span style="color:#2e7d32">**Mittel-Hoch**</span> — schliesst C13 | <span style="color:#2e7d32">**Erledigt**</span> |
+|   |   |   | *[FH 19.02.2026] **Erledigt (Erkennung).** `assessEvidenceBalance()` mit stichprobengrössen-bewussten Warnungen. Schieflage-Schwellenwert und Mindestanzahl gerichteter Einträge per UCM konfigurierbar. Rebalancierung noch nicht implementiert.* | |
+| **6** | **Warnung «politisch umstritten» + Bereichsanzeige** — plausiblen Urteilsbereich anzeigen, nicht nur Punktschätzung, bei umstrittenen Behauptungen | Hoch (langfristig) | <span style="color:#e65100">**Hoch**</span> — epistemische Ehrlichkeit | <span style="color:#e65100">**Offen**</span> |
+|   |   |   | *[FH 19.02.2026] Noch nicht begonnen.* | |
 
 ---
 

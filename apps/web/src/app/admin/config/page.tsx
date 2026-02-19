@@ -216,7 +216,7 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
   aggregation: {
     centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
     harmPotentialMultiplier: 1.5,
-    contestationWeights: { established: 0.3, disputed: 0.5, opinion: 1.0 },
+    contestationWeights: { established: 0.5, disputed: 0.7, opinion: 1.0 },
   },
   sourceReliability: {
     confidenceThreshold: 0.8,

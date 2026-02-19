@@ -75,9 +75,9 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 
 ---
 
-## 3. FactHarbor Position: Strengths, Weaknesses, Opportunities
+## 3. FactHarbor Position: Strengths, Weaknesses, Opportunities, Addressed
 
-### Architectural Strengths (genuine differentiators)
+### Strengths
 
 1. **Evidence-first pipeline.** Verdicts must cite fetched evidence with structural ID validation. Eliminates the paper's core finding (zero-shot fabrication).
 2. **Multi-perspective verdicts.** `BoundaryFindings[]` and `TriangulationScore` surface disagreement structurally, not as post-hoc synthesis. *(Codex caveat: this is methodological plurality, not necessarily ideological plurality.)*
@@ -86,17 +86,24 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 5. **Input neutrality.** "Was X fair?" = "X was fair" (≤4% tolerance), with test suite.
 
 **Honest assessment:** These are real strengths versus zero-shot LLMs. But "good process architecture" is not the same as "demonstrated bias mitigation outcomes" *(Codex's core critique)*. Without outcome-level measurement, claiming "mitigated" is premature.
-> **[FH 2026-02-19]** Still true. We've added detection (evidence skew), correction (harm confidence floor), and configurability (debate tiers), but no empirical measurement yet. The calibration harness (Action 1) remains the critical gap. All new parameters are UCM-configurable with config-load failure logging, so the system is operationally observable.
+> **[FH 2026-02-19]** Still true. We've added detection (evidence skew), correction (harm confidence floor), and configurability (debate tiers), but no empirical measurement yet. The calibration harness (Action 1) remains the critical gap. All new parameters are UCM-configurable with config-load failure logging, so the system is operationally observable. *Code review (P-H1): evidence items were always attributed to `sources[0]` when multiple sources were batched into one LLM call — fixed; LLM now returns a `sourceUrl` per item matched to the correct source. Strength #1 citation accuracy is now genuine.*
 
-### Five highest-priority gaps (from 19 concerns assessed by three reviewers)
+### Weaknesses
 
-1. **C10: No empirical bias measurement** — Critical. Highest priority, directly actionable.
-2. **C9: Self-consistency rewards stable bias** — High. Illusory control providing false assurance.
-3. **C8: Advisory-only validation** — High. Detection without correction on high-harm claims.
-> **[FH 2026-02-19]** Closed. `enforceHarmConfidenceFloor()` in verdict-stage now pushes low-confidence verdicts to UNVERIFIED for high-harm claims. Threshold (`highHarmMinConfidence`, default 50) and which harm levels trigger (`highHarmFloorLevels`, default ["critical","high"]) are UCM-configurable.
-4. **C13: Evidence pool bias** — High. Bias injection before any LLM reasoning.
-> **[FH 2026-02-19]** Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` warning with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented — detection only.
-5. **C17/C18: Prompt injection + refusal asymmetry** — High. Novel attack vectors that amplify political bias.
+1. **C10: No empirical bias measurement** — <span style="color:#d32f2f">**Critical**</span>. Highest priority, directly actionable.
+2. **C9: Self-consistency rewards stable bias** — <span style="color:#e65100">**High**</span>. Illusory control providing false assurance.
+3. **C13: Evidence pool bias** — <span style="color:#e65100">**High**</span>. Bias injection before any LLM reasoning; detection done but rebalancing not yet implemented.
+> **[FH 2026-02-19]** Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` warning with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented — detection only. *Code review (P-M2): direction label matching fixed from `includes("support")` (would match "unsupported") to `=== "supports"` — directional counts fed into this warning are now correct.*
+4. **C17/C18: Prompt injection + refusal asymmetry** — <span style="color:#e65100">**High**</span>. Novel attack vectors that amplify political bias.
+
+### Opportunities
+
+Three concrete openings from the Ash collaboration: (1) **Calibration harness design** (C10 / §5 Action 1) — Ash's team has directly applicable benchmark methodology for measuring political skew; (2) **Path-consistency from AFaCTA** as a supplement to temperature-based self-consistency — could surface bias that temperature variation cannot detect (C9); (3) **Cross-provider debate architecture** — Climinator's structurally independent advocates validate the §5 Action 4 direction; Ash can advise on whether provider-level separation materially changes outcomes vs. same-provider tier separation.
+
+### Addressed
+
+1. **C8: Advisory-only validation** — <span style="color:#2e7d32">**High**</span>. Detection without correction on high-harm claims.
+> **[FH 2026-02-19]** Closed. `enforceHarmConfidenceFloor()` in verdict-stage now pushes low-confidence verdicts to UNVERIFIED for high-harm claims. Threshold (`highHarmMinConfidence`, default 50) and which harm levels trigger (`highHarmFloorLevels`, default ["critical","high"]) are UCM-configurable. *Code review (P-H3, U-L1): `as any` cast removed from the floor check; UCM defaults confirmed correctly registered.*
 
 ---
 
@@ -127,20 +134,20 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 
 **Principle: Measure before redesign.** *(Codex's key strategic insight — build baseline metrics first, then tie every architectural change to measured improvement.)*
 
-| Priority | Action | Effort | Impact |
-|----------|--------|--------|--------|
-| **1** | **Political bias calibration harness** — 20-30 balanced claim pairs (mirrored framings, multilingual variants), measure verdict skew direction/magnitude | Low (~1 day, ~$5-10) | **Critical** — foundational |
-|   |   |   | *[FH 2026-02-19] Not yet implemented. Approved and budgeted, deferred to dedicated session.* |
-| **2** | **Instrument failure modes** — track refusal/degradation rates by topic, provider, stage. Detect C18 (refusal asymmetry) | Low | High — reveals invisible bias |
-|   |   |   | *[FH 2026-02-19] Pre-existing: phase-level metrics (LLM call count, latency, model) already wired via `metrics.ts`/`metrics-integration.ts`. Per-call refusal/degradation tracking not yet added.* |
-| **3** | **Make validation blocking for high-harm claims** — `validateVerdicts()` returns verdicts unchanged; for `harmPotential >= "high"`, clamp confidence or force UNVERIFIED | Medium | High — closes C8 |
-|   |   |   | *[FH 2026-02-19] **Done.** `enforceHarmConfidenceFloor()` — forces UNVERIFIED when confidence < threshold. Harm levels and threshold UCM-configurable. 9 unit tests.* |
-| **4** | **Separate the challenger model** — different provider for VERDICT_CHALLENGER (e.g., GPT-4o if advocate is Sonnet) | Medium | High — closes C1/C16 |
-|   |   |   | *[FH 2026-02-19] **Partially done.** Per-role tier config (`debateModelTiers`) implemented. Supports haiku/sonnet tier separation. Cross-provider separation (GPT-4o vs Sonnet) requires `LLMCallFn` extension — flagged as follow-up. `all_same_debate_tier` runtime warning added.* |
-| **5** | **Evidence pool balance diagnostics** — detect and report when evidence pool is politically one-sided | Medium | Medium-High — closes C13 |
-|   |   |   | *[FH 2026-02-19] **Done (detection).** `assessEvidenceBalance()` with sample-size-aware warnings. Skew threshold and min directional count UCM-configurable. Rebalancing not yet implemented.* |
-| **6** | **Add "politically contested" warning + range reporting** — show plausible verdict range, not just point estimate, on contested claims | High (long-term) | High — epistemic honesty |
-|   |   |   | *[FH 2026-02-19] Not yet started.* |
+| Priority | Action | Effort | Impact | Status |
+|----------|--------|--------|--------|--------|
+| **1** | **Political bias calibration harness** — 20-30 balanced claim pairs (mirrored framings, multilingual variants), measure verdict skew direction/magnitude | Low (~1 day, ~$5-10) | <span style="color:#d32f2f">**Critical**</span> — foundational | <span style="color:#d32f2f">**Open**</span> |
+|   |   |   | *[FH 2026-02-19] Not yet implemented. Approved and budgeted, deferred to dedicated session.* | |
+| **2** | **Instrument failure modes** — track refusal/degradation rates by topic, provider, stage. Detect C18 (refusal asymmetry) | Low | <span style="color:#e65100">**High**</span> — reveals invisible bias | <span style="color:#e65100">**Partial**</span> |
+|   |   |   | *[FH 2026-02-19] Pre-existing: phase-level metrics (LLM call count, latency, model) already wired via `metrics.ts`/`metrics-integration.ts`. Per-call refusal/degradation tracking not yet added.* | |
+| **3** | **Make validation blocking for high-harm claims** — `validateVerdicts()` returns verdicts unchanged; for `harmPotential >= "high"`, clamp confidence or force UNVERIFIED | Medium | <span style="color:#2e7d32">**High**</span> — closes C8 | <span style="color:#2e7d32">**Done**</span> |
+|   |   |   | *[FH 2026-02-19] **Done.** `enforceHarmConfidenceFloor()` — forces UNVERIFIED when confidence < threshold. Harm levels and threshold UCM-configurable. 9 unit tests.* | |
+| **4** | **Separate the challenger model** — different provider for VERDICT_CHALLENGER (e.g., GPT-4o if advocate is Sonnet) | Medium | <span style="color:#e65100">**High**</span> — closes C1/C16 | <span style="color:#e65100">**Partial**</span> |
+|   |   |   | *[FH 2026-02-19] **Partially done.** Per-role tier config (`debateModelTiers`) implemented. Supports haiku/sonnet tier separation. Cross-provider separation (GPT-4o vs Sonnet) requires `LLMCallFn` extension — flagged as follow-up. `all_same_debate_tier` runtime warning added.* | |
+| **5** | **Evidence pool balance diagnostics** — detect and report when evidence pool is politically one-sided | Medium | <span style="color:#2e7d32">**Medium-High**</span> — closes C13 | <span style="color:#2e7d32">**Done**</span> |
+|   |   |   | *[FH 2026-02-19] **Done (detection).** `assessEvidenceBalance()` with sample-size-aware warnings. Skew threshold and min directional count UCM-configurable. Rebalancing not yet implemented.* | |
+| **6** | **Add "politically contested" warning + range reporting** — show plausible verdict range, not just point estimate, on contested claims | High (long-term) | <span style="color:#e65100">**High**</span> — epistemic honesty | <span style="color:#e65100">**Open**</span> |
+|   |   |   | *[FH 2026-02-19] Not yet started.* | |
 
 ---
 
