@@ -36,6 +36,7 @@ import type {
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
+import type { LLMProviderType } from "@/lib/config-schemas";
 
 // ============================================================================
 // CONFIGURATION (UCM-configurable thresholds)
@@ -94,6 +95,26 @@ export interface VerdictStageConfig {
     reconciler: "haiku" | "sonnet";
     validation: "haiku" | "sonnet";
   };
+
+  /**
+   * Per-role LLM provider overrides for cross-provider debate.
+   * Enables structurally independent debate by routing different roles
+   * to different providers (e.g., advocate on Anthropic, challenger on OpenAI).
+   *
+   * Addresses C1/C16 from Stammbach/Ash: same-model debate can become
+   * performative adversarialism. Cross-provider separation follows
+   * Climinator's structurally independent advocate pattern.
+   *
+   * Default: all undefined (inherit global llmProvider).
+   */
+  debateModelProviders: {
+    advocate?: LLMProviderType;
+    selfConsistency?: LLMProviderType;
+    challenger?: LLMProviderType;
+    reconciler?: LLMProviderType;
+    validation?: LLMProviderType;
+  };
+
   /** Harm levels that trigger the confidence floor. Default: ["critical", "high"]. */
   highHarmFloorLevels: Array<"critical" | "high" | "medium" | "low">;
 }
@@ -122,6 +143,7 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
     reconciler: "sonnet",
     validation: "haiku",
   },
+  debateModelProviders: {},
   highHarmFloorLevels: ["critical", "high"],
 };
 
@@ -141,7 +163,14 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
 export type LLMCallFn = (
   promptKey: string,
   input: Record<string, unknown>,
-  options?: { tier?: "sonnet" | "haiku"; temperature?: number }
+  options?: {
+    tier?: "sonnet" | "haiku";
+    temperature?: number;
+    /** Override the LLM provider for this call (e.g., "openai" when global is "anthropic"). */
+    providerOverride?: LLMProviderType;
+    /** Override the specific model name for this call (e.g., "gpt-4.1"). */
+    modelOverride?: string;
+  }
 ) => Promise<unknown>;
 
 // ============================================================================
@@ -237,7 +266,7 @@ export async function advocateVerdict(
       boundaries: coverageMatrix.boundaries,
       counts: coverageMatrix.counts,
     },
-  }, { tier: config.debateModelTiers.advocate });
+  }, { tier: config.debateModelTiers.advocate, providerOverride: config.debateModelProviders.advocate });
 
   // Parse LLM result into CBClaimVerdict[]
   const rawVerdicts = result as Array<Record<string, unknown>>;
@@ -326,8 +355,8 @@ export async function selfConsistencyCheck(
   };
 
   const [run2, run3] = await Promise.all([
-    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature }),
-    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency }),
   ]);
 
   const run2Verdicts = run2 as Array<Record<string, unknown>>;
@@ -382,7 +411,7 @@ export async function adversarialChallenge(
     })),
     evidenceItems: evidence,
     claimBoundaries: boundaries,
-  }, { tier: config.debateModelTiers.challenger });
+  }, { tier: config.debateModelTiers.challenger, providerOverride: config.debateModelProviders.challenger });
 
   return parseChallengeDocument(result);
 }
@@ -416,7 +445,7 @@ export async function reconcileVerdicts(
     })),
     challenges: challengeDoc.challenges,
     consistencyResults,
-  }, { tier: config.debateModelTiers.reconciler });
+  }, { tier: config.debateModelTiers.reconciler, providerOverride: config.debateModelProviders.reconciler });
 
   const rawReconciled = result as Array<Record<string, unknown>>;
 
@@ -469,6 +498,7 @@ export async function validateVerdicts(
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<CBClaimVerdict[]> {
   const validationTier = config.debateModelTiers.validation;
+  const validationProvider = config.debateModelProviders.validation;
 
   // Check A + B: Grounding and direction validation (parallel — independent checks)
   const [groundingResult, directionResult] = await Promise.all([
@@ -480,7 +510,7 @@ export async function validateVerdicts(
         contradictingEvidenceIds: v.contradictingEvidenceIds,
       })),
       evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
-    }, { tier: validationTier }),
+    }, { tier: validationTier, providerOverride: validationProvider }),
     llmCall("VERDICT_DIRECTION_VALIDATION", {
       verdicts: verdicts.map((v) => ({
         claimId: v.claimId,
@@ -493,7 +523,7 @@ export async function validateVerdicts(
         statement: e.statement,
         claimDirection: e.claimDirection,
       })),
-    }, { tier: validationTier }),
+    }, { tier: validationTier, providerOverride: validationProvider }),
   ]);
 
   // Parse validation results and log issues (non-blocking per §8.4)

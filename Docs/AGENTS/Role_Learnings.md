@@ -140,6 +140,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** `assessTextSimilarityBatch()` is reused across context dedup, evidence dedup, frame signal detection, anchor recovery, and now Phase 4b context remap — 14+ call sites. Any prompt or behavioral change to `TEXT_SIMILARITY_BATCH_USER` affects all of these. Always regression-test broadly when modifying this function or its prompt. The 200-char truncation per text is safe for context descriptions (typically <150 chars) but could clip long evidence statements in other call sites.
 **Files:** `apps/web/src/lib/analyzer/orchestrated.ts` (assessTextSimilarityBatch, line 1995), `apps/web/prompts/orchestrated.prompt.md` (TEXT_SIMILARITY_BATCH_USER)
 
+### 2026-02-20 — Profile presets must define explicit provider intent for intent-stability
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** When debate profiles used `providers: {}` (empty), profile semantics depended on the global `llmProvider` — changing `llmProvider` from `anthropic` to `openai` would silently change what all profile-resolved debate roles used. Fix: profiles must populate all 5 provider fields explicitly. This also simplifies the diversity check: with all providers explicit, no sentinel/global-comparison logic is needed for profile-resolved configs. The sentinel is only needed for the no-profile backward-compatible path where providers are truly `undefined` (inherit global).
+**Files:** `apps/web/src/lib/config-schemas.ts` (DEBATE_PROFILES), `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (checkDebateTierDiversity)
+
+### 2026-02-20 — Runtime warning emission requires a collector pattern when LLMCallFn contract is fixed
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** useful-pattern
+**Learning:** `LLMCallFn` returns `Promise<unknown>` — no room for side-channel data like warnings. To surface runtime events (e.g., provider fallback) into `resultJson.analysisWarnings`, pass an `AnalysisWarning[]` array to the factory (`createProductionLLMCall`) by closure. The factory's inner function appends to it. The pipeline threads `state.warnings` through `generateVerdicts` → factory. This avoids changing the `LLMCallFn` contract or verdict-stage's interface while still surfacing structured warnings in the analysis output.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (createProductionLLMCall, generateVerdicts)
+
 ## Product Strategist
 
 _(No entries yet)_

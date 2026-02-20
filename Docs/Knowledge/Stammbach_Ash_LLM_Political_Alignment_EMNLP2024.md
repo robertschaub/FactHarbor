@@ -45,7 +45,7 @@ The paper measures **stance generation** quality, not **claim verification** acc
 **Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8)
 Automated climate claim fact-checking. **Mediator-Advocate framework** with structurally independent advocates (RAG on IPCC corpus vs. general GPT-4o). >96% accuracy. Adding adversarial NIPCC advocate increased debate rounds from 1 to 18 on contested claims — correctly detecting genuine controversy.
 *Critical comparison:* Climinator uses different models with different corpora. FactHarbor uses the same Sonnet model for all debate roles.
-> **[FH 2026-02-19]** Partially addressed. All 4 debate roles (advocate, selfConsistency, challenger, reconciler) are now UCM-configurable per-tier (`debateModelTiers` in PipelineConfig). Admins can assign different tiers per role. A runtime warning (`all_same_debate_tier`) fires when all 4 use the same tier. Limitation: still restricted to Anthropic model tiers (haiku/sonnet) — true provider-level separation (e.g., GPT-4o challenger) requires extending `LLMCallFn`.
+> **[FH 2026-02-20]** Partially addressed. Debate role routing now supports provider-level separation via UCM (`debateProfile`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Profiles include `cross-provider` (OpenAI challenger) and `max-diversity` (OpenAI challenger + Google self-consistency). Runtime warnings now include `debate_provider_fallback` in analysis JSON when provider credentials are missing. Remaining before closure: one final correction pass for profile-provider independence from global `llmProvider` and a diversity warning edge case.
 
 **AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/)
 LLM-assisted factual claim detection with PoliClaim dataset. Uses **3 predefined reasoning paths** for consistency calibration — structurally different from FactHarbor's temperature-based self-consistency. Path-based consistency could detect bias that temperature variation cannot.
@@ -145,7 +145,7 @@ Three concrete openings from the Ash collaboration: (1) **Calibration harness de
 | **3** | **Make validation blocking for high-harm claims** — `validateVerdicts()` returns verdicts unchanged; for `harmPotential >= "high"`, clamp confidence or force UNVERIFIED | Medium | 🟢 **High** — closes C8 | 🟢 **Done** |
 |   |   |   | *[FH 2026-02-19] **Done.** `enforceHarmConfidenceFloor()` — forces UNVERIFIED when confidence < threshold. Harm levels and threshold UCM-configurable. 9 unit tests.* | |
 | **4** | **Separate the challenger model** — different provider for VERDICT_CHALLENGER (e.g., GPT-4o if advocate is Sonnet) | Medium | 🟠 **High** — closes C1/C16 | 🟠 **Partial** |
-|   |   |   | *[FH 2026-02-19] **Partially done.** Per-role tier config (`debateModelTiers`) implemented. Supports haiku/sonnet tier separation. Cross-provider separation (GPT-4o vs Sonnet) requires `LLMCallFn` extension — flagged as follow-up. `all_same_debate_tier` runtime warning added.* | |
+|   |   |   | *[FH 2026-02-20] **Partially done (advanced).** `LLMCallFn` now supports per-role provider override, with UCM presets (`debateProfile`) and explicit per-role provider config (`debateModelProviders`). Cross-provider challenger routing is implemented. Fallback provider events are surfaced in `analysisWarnings` (`debate_provider_fallback`). Pending final hardening: make profile semantics independent of global `llmProvider` and fix one provider-diversity warning edge case before marking Done.* | |
 | **5** | **Evidence pool balance diagnostics** — detect and report when evidence pool is politically one-sided | Medium | 🟢 **Medium-High** — closes C13 | 🟢 **Done** |
 |   |   |   | *[FH 2026-02-19] **Done (detection).** `assessEvidenceBalance()` with sample-size-aware warnings. Skew threshold and min directional count UCM-configurable. Rebalancing not yet implemented.* | |
 | **6** | **Add "politically contested" warning + range reporting** — show plausible verdict range, not just point estimate, on contested claims | High (long-term) | 🟠 **High** — epistemic honesty | 🟠 **Open** |
@@ -170,4 +170,3 @@ Three concrete openings from the Ash collaboration: (1) **Calibration harness de
 ### People
 - Elliott Ash: [elliottash.com](https://elliottash.com/) | [ETH Zurich](https://lawecon.ethz.ch/group/professors/ash.html)
 - Dominik Stammbach: [Princeton CITP](https://citp.princeton.edu/people/dominik-stammbach/) | [Personal site](https://dominik-stammbach.github.io/)
-

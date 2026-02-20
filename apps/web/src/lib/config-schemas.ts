@@ -415,6 +415,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Self-consistency check mode for ClaimBoundary verdicts (default: full)"),
   selfConsistencyTemperature: z.number().min(0.1).max(0.7).optional()
     .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.3)"),
+  debateProfile: z.enum(["baseline", "tier-split", "cross-provider", "max-diversity"]).optional()
+    .describe("Selects a preset debate model configuration. Explicit debateModelTiers/debateModelProviders override profile defaults. " +
+      "baseline: all same provider+tier (default). tier-split: challenger uses haiku. " +
+      "cross-provider: challenger on OpenAI. max-diversity: challenger on OpenAI + selfConsistency on Google."),
   debateModelTiers: z.object({
     advocate: z.enum(["haiku", "sonnet"]).optional(),
     selfConsistency: z.enum(["haiku", "sonnet"]).optional(),
@@ -422,7 +426,15 @@ export const PipelineConfigSchema = z.object({
     reconciler: z.enum(["haiku", "sonnet"]).optional(),
     validation: z.enum(["haiku", "sonnet"]).optional(),
   }).optional()
-    .describe("Model tier overrides for each debate role (default: debate roles sonnet, validation haiku). Provider-level separation requires extending LLMCallFn."),
+    .describe("Model tier overrides for each debate role (default: debate roles sonnet, validation haiku). Overrides debateProfile values."),
+  debateModelProviders: z.object({
+    advocate: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+    selfConsistency: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+    challenger: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+    reconciler: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+    validation: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+  }).optional()
+    .describe("Per-role LLM provider overrides for cross-provider debate (default: inherit global llmProvider). Overrides debateProfile values."),
 
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
@@ -651,6 +663,60 @@ export const PipelineConfigSchema = z.object({
 });
 
 export type PipelineConfig = z.infer<typeof PipelineConfigSchema>;
+
+/** LLM provider identifiers used in pipeline and debate configuration. */
+export type LLMProviderType = "anthropic" | "openai" | "google" | "mistral";
+
+export type DebateProfile = "baseline" | "tier-split" | "cross-provider" | "max-diversity";
+
+/**
+ * Debate profile preset definitions.
+ * Each profile defines tier + provider overrides for debate roles.
+ * Explicit debateModelTiers/debateModelProviders in the config override these.
+ *
+ * | Profile          | Diversity Source       | Cost Impact | Credential Requirement   |
+ * |------------------|------------------------|-------------|--------------------------|
+ * | baseline         | None (same model)      | Baseline    | Anthropic only           |
+ * | tier-split       | Tier (haiku challenger) | Lower       | Anthropic only           |
+ * | cross-provider   | Provider (OpenAI chall.)| Similar     | Anthropic + OpenAI       |
+ * | max-diversity    | Provider (OAI+Google)  | Similar     | Anthropic + OpenAI + Google |
+ */
+/** Per-role provider overrides shape, typed to valid LLM providers. */
+export type DebateProviderOverrides = {
+  advocate?: LLMProviderType;
+  selfConsistency?: LLMProviderType;
+  challenger?: LLMProviderType;
+  reconciler?: LLMProviderType;
+  validation?: LLMProviderType;
+};
+
+/**
+ * Debate profile presets. Each defines explicit tiers AND provider intent.
+ * Provider fields are always populated so semantics are independent of the
+ * global `llmProvider` setting. Explicit `debateModelProviders` in the
+ * pipeline config still override these profile defaults.
+ */
+export const DEBATE_PROFILES: Record<DebateProfile, {
+  tiers: { advocate: "haiku" | "sonnet"; selfConsistency: "haiku" | "sonnet"; challenger: "haiku" | "sonnet"; reconciler: "haiku" | "sonnet"; validation: "haiku" | "sonnet" };
+  providers: DebateProviderOverrides;
+}> = {
+  "baseline": {
+    tiers: { advocate: "sonnet", selfConsistency: "sonnet", challenger: "sonnet", reconciler: "sonnet", validation: "haiku" },
+    providers: { advocate: "anthropic", selfConsistency: "anthropic", challenger: "anthropic", reconciler: "anthropic", validation: "anthropic" },
+  },
+  "tier-split": {
+    tiers: { advocate: "sonnet", selfConsistency: "sonnet", challenger: "haiku", reconciler: "sonnet", validation: "haiku" },
+    providers: { advocate: "anthropic", selfConsistency: "anthropic", challenger: "anthropic", reconciler: "anthropic", validation: "anthropic" },
+  },
+  "cross-provider": {
+    tiers: { advocate: "sonnet", selfConsistency: "sonnet", challenger: "sonnet", reconciler: "sonnet", validation: "haiku" },
+    providers: { advocate: "anthropic", selfConsistency: "anthropic", challenger: "openai", reconciler: "anthropic", validation: "anthropic" },
+  },
+  "max-diversity": {
+    tiers: { advocate: "sonnet", selfConsistency: "sonnet", challenger: "sonnet", reconciler: "sonnet", validation: "haiku" },
+    providers: { advocate: "anthropic", selfConsistency: "google", challenger: "openai", reconciler: "anthropic", validation: "anthropic" },
+  },
+};
 
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection

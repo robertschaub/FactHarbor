@@ -66,7 +66,8 @@ import { loadAndRenderSection } from "./prompt-loader";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
-import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
+import { DEBATE_PROFILES } from "@/lib/config-schemas";
+import type { PipelineConfig, SearchConfig, CalcConfig, DebateProfile, LLMProviderType } from "@/lib/config-schemas";
 
 // Metrics integration
 import {
@@ -227,10 +228,19 @@ export async function runClaimBoundaryAnalysis(
       state.evidenceItems
     );
 
+    // Build resolved verdict config early so diversity + credential checks use it
+    const resolvedVerdictConfig = buildVerdictStageConfig(initialPipelineConfig, initialCalcConfig);
+
     // Check for degenerate debate configuration (C1/C16 — all debate roles same tier)
-    const debateTierWarning = checkDebateTierDiversity(initialPipelineConfig);
+    const debateTierWarning = checkDebateTierDiversity(resolvedVerdictConfig);
     if (debateTierWarning) {
       state.warnings.push(debateTierWarning);
+    }
+
+    // Check for missing provider credentials on debate role overrides
+    const providerFallbackWarnings = checkDebateProviderCredentials(resolvedVerdictConfig);
+    for (const w of providerFallbackWarnings) {
+      state.warnings.push(w);
     }
 
     // Stage 4: Verdict
@@ -241,7 +251,9 @@ export async function runClaimBoundaryAnalysis(
       understanding.atomicClaims,
       state.evidenceItems,
       boundaries,
-      coverageMatrix
+      coverageMatrix,
+      undefined, // llmCall — use production default
+      state.warnings,
     );
     endPhase("verdict");
 
@@ -2334,26 +2346,53 @@ export function assessEvidenceBalance(
 }
 
 /**
- * Check whether all 4 configurable debate roles use the same model tier.
+ * Check whether all 4 configurable debate roles lack structural independence.
  * Validation tier is excluded — it's a fixed-purpose check, not part of the debate.
- * Returns an AnalysisWarning if all 4 are identical, null otherwise.
+ *
+ * Accepts a resolved VerdictStageConfig (with profile + explicit overrides already applied)
+ * so that warnings are correct regardless of whether config came from a debateProfile,
+ * explicit overrides, or hardcoded defaults.
+ *
+ * Structural independence exists when at least one of:
+ *   - Tier diversity: not all 4 debate roles use the same tier
+ *   - Provider diversity: not all 4 effective providers are identical
+ *
+ * Roles without an explicit provider use `undefined`, meaning "inherit global".
+ * Two `undefined` values are considered the same provider (both inherit global).
+ * An explicit `"anthropic"` is considered different from `undefined` even if the
+ * global happens to be anthropic — because the resolved config captures intent,
+ * and profiles always set explicit providers when they intend a specific one.
+ *
+ * Returns an AnalysisWarning if degenerate (all same tier + all same provider), null otherwise.
  */
 export function checkDebateTierDiversity(
-  pipelineConfig: PipelineConfig,
+  verdictConfig: VerdictStageConfig,
 ): AnalysisWarning | null {
-  const tiers = pipelineConfig.debateModelTiers;
-  if (!tiers) return null; // No config → defaults have mixed tiers (sonnet debate + haiku validation)
+  const tiers = verdictConfig.debateModelTiers;
 
-  const debateRoles = [
+  const debateRoleTiers = [
     tiers.advocate ?? "sonnet",
     tiers.selfConsistency ?? "sonnet",
     tiers.challenger ?? "sonnet",
     tiers.reconciler ?? "sonnet",
   ];
-  const allSame = debateRoles.every((t) => t === debateRoles[0]);
-  if (!allSame) return null;
+  const allSameTier = debateRoleTiers.every((t) => t === debateRoleTiers[0]);
+  if (!allSameTier) return null;
 
-  const tier = debateRoles[0];
+  // Check provider diversity. Uses a sentinel for undefined (= "inherit global")
+  // so that two undefined values are treated as equal but distinct from named providers.
+  const providers = verdictConfig.debateModelProviders;
+  const INHERIT_GLOBAL = "__inherit_global__";
+  const roleProviders = [
+    providers?.advocate ?? INHERIT_GLOBAL,
+    providers?.selfConsistency ?? INHERIT_GLOBAL,
+    providers?.challenger ?? INHERIT_GLOBAL,
+    providers?.reconciler ?? INHERIT_GLOBAL,
+  ];
+  const hasProviderDiversity = !roleProviders.every((p) => p === roleProviders[0]);
+  if (hasProviderDiversity) return null;
+
+  const tier = debateRoleTiers[0];
   console.warn(
     `[Pipeline] All 4 debate roles configured to same tier "${tier}" — ` +
     `adversarial challenge may not produce structurally independent perspectives (C1/C16)`
@@ -2364,6 +2403,37 @@ export function checkDebateTierDiversity(
     message: `All 4 debate roles (advocate, selfConsistency, challenger, reconciler) use the same model tier "${tier}". ` +
       `Structurally independent models improve debate quality — consider mixing tiers for challenger or reconciler.`,
   };
+}
+
+/**
+ * Pre-flight check for provider credentials on debate role overrides.
+ * Returns AnalysisWarning[] for any role whose provider override lacks credentials.
+ * Called at the pipeline level so warnings are surfaced in the analysis output.
+ */
+export function checkDebateProviderCredentials(
+  verdictConfig: VerdictStageConfig,
+): AnalysisWarning[] {
+  const warnings: AnalysisWarning[] = [];
+  const providers = verdictConfig.debateModelProviders;
+  if (!providers) return warnings;
+
+  const roleNames: (keyof typeof providers)[] = [
+    "advocate", "selfConsistency", "challenger", "reconciler", "validation",
+  ];
+
+  for (const role of roleNames) {
+    const provider = providers[role];
+    if (provider && !hasProviderCredentials(provider)) {
+      warnings.push({
+        type: "debate_provider_fallback",
+        severity: "warning",
+        message: `Debate role "${role}" configured for provider "${provider}" but no credentials found. Will fall back to global provider at runtime.`,
+        details: { role, configuredProvider: provider },
+      });
+    }
+  }
+
+  return warnings;
 }
 
 // ============================================================================
@@ -2912,6 +2982,7 @@ export async function generateVerdicts(
   boundaries: ClaimAssessmentBoundary[],
   coverageMatrix: CoverageMatrix,
   llmCall?: LLMCallFn,
+  warnings?: AnalysisWarning[],
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -2932,8 +3003,9 @@ export async function generateVerdicts(
   // Build VerdictStageConfig from UCM parameters
   const verdictConfig = buildVerdictStageConfig(pipelineConfig, calcConfig);
 
-  // Production LLM call wiring — use injected or create from UCM
-  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig);
+  // Production LLM call wiring — use injected or create from UCM.
+  // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
+  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings);
 
   return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig);
 }
@@ -2945,6 +3017,11 @@ export async function generateVerdicts(
 /**
  * Build VerdictStageConfig from UCM pipeline and calculation configs.
  * Maps UCM config field names to VerdictStageConfig structure.
+ *
+ * Resolution order for tiers and providers:
+ *   1. Explicit debateModelTiers / debateModelProviders (per-field overrides)
+ *   2. debateProfile preset (named combination)
+ *   3. Hardcoded defaults (sonnet for debate, haiku for validation, no provider override)
  */
 export function buildVerdictStageConfig(
   pipelineConfig: PipelineConfig,
@@ -2955,6 +3032,18 @@ export function buildVerdictStageConfig(
     moderate: 12,
     unstable: 20,
   };
+
+  // Resolve debate profile base (if set)
+  const profileName = pipelineConfig.debateProfile as DebateProfile | undefined;
+  const profile = profileName ? DEBATE_PROFILES[profileName] : undefined;
+
+  // Tiers: explicit > profile > defaults
+  const profileTiers = profile?.tiers;
+  const explicitTiers = pipelineConfig.debateModelTiers;
+
+  // Providers: explicit > profile > defaults (empty)
+  const profileProviders = profile?.providers;
+  const explicitProviders = pipelineConfig.debateModelProviders;
 
   return {
     selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "disabled",
@@ -2967,26 +3056,65 @@ export function buildVerdictStageConfig(
     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
     highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
     debateModelTiers: {
-      advocate: pipelineConfig.debateModelTiers?.advocate ?? "sonnet",
-      selfConsistency: pipelineConfig.debateModelTiers?.selfConsistency ?? "sonnet",
-      challenger: pipelineConfig.debateModelTiers?.challenger ?? "sonnet",
-      reconciler: pipelineConfig.debateModelTiers?.reconciler ?? "sonnet",
-      validation: pipelineConfig.debateModelTiers?.validation ?? "haiku",
+      advocate: explicitTiers?.advocate ?? profileTiers?.advocate ?? "sonnet",
+      selfConsistency: explicitTiers?.selfConsistency ?? profileTiers?.selfConsistency ?? "sonnet",
+      challenger: explicitTiers?.challenger ?? profileTiers?.challenger ?? "sonnet",
+      reconciler: explicitTiers?.reconciler ?? profileTiers?.reconciler ?? "sonnet",
+      validation: explicitTiers?.validation ?? profileTiers?.validation ?? "haiku",
+    },
+    debateModelProviders: {
+      advocate: explicitProviders?.advocate ?? profileProviders?.advocate,
+      selfConsistency: explicitProviders?.selfConsistency ?? profileProviders?.selfConsistency,
+      challenger: explicitProviders?.challenger ?? profileProviders?.challenger,
+      reconciler: explicitProviders?.reconciler ?? profileProviders?.reconciler,
+      validation: explicitProviders?.validation ?? profileProviders?.validation,
     },
     highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
   };
 }
 
 /**
+ * Environment variable names per provider for credential pre-check.
+ * Used by the fail-open fallback in createProductionLLMCall.
+ */
+const PROVIDER_API_KEY_ENV: Record<LLMProviderType, string[]> = {
+  anthropic: ["ANTHROPIC_API_KEY"],
+  openai: ["OPENAI_API_KEY"],
+  google: ["GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"],
+  mistral: ["MISTRAL_API_KEY"],
+};
+
+/**
+ * Check whether a provider has credentials available in the environment.
+ */
+function hasProviderCredentials(provider: LLMProviderType): boolean {
+  const envKeys = PROVIDER_API_KEY_ENV[provider];
+  if (!envKeys) return false;
+  return envKeys.some((key) => !!process.env[key]);
+}
+
+/**
  * Create a production LLM call function for verdict-stage.
  * Loads prompts from UCM, uses AI SDK for structured output.
  * Each call loads the prompt section, selects the model by tier, and parses the JSON result.
+ *
+ * Supports per-role provider overrides via options.providerOverride.
+ * Fail-open policy: if the overridden provider lacks credentials, falls back to global provider
+ * with a console warning and appends a "debate_provider_fallback" AnalysisWarning to the
+ * optional warnings collector (flows to resultJson.analysisWarnings).
+ *
+ * @param pipelineConfig - Pipeline configuration with global provider settings
+ * @param warnings - Optional array to collect AnalysisWarning objects. Passed from the
+ *   pipeline's state.warnings so fallback events surface in resultJson.analysisWarnings.
  */
-export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCallFn {
+export function createProductionLLMCall(
+  pipelineConfig: PipelineConfig,
+  warnings?: AnalysisWarning[],
+): LLMCallFn {
   return async (
     promptKey: string,
     input: Record<string, unknown>,
-    options?: { tier?: "sonnet" | "haiku"; temperature?: number },
+    options?: { tier?: "sonnet" | "haiku"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string },
   ): Promise<unknown> => {
     const startTime = Date.now();
 
@@ -3000,12 +3128,30 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
       throw new Error(`Stage 4: Failed to load prompt section "${promptKey}"`);
     }
 
-    // 2. Select model based on tier
+    // 2. Resolve provider — apply per-role override with credential pre-check
+    let effectiveProviderOverride = options?.providerOverride;
+    if (effectiveProviderOverride && !hasProviderCredentials(effectiveProviderOverride)) {
+      const globalProvider = pipelineConfig.llmProvider ?? "anthropic";
+      console.warn(
+        `[Pipeline] Provider override "${effectiveProviderOverride}" for prompt "${promptKey}" ` +
+        `has no credentials — falling back to global provider "${globalProvider}"`
+      );
+      // Emit structured warning into pipeline's warning collector
+      warnings?.push({
+        type: "debate_provider_fallback",
+        severity: "warning",
+        message: `Provider override "${effectiveProviderOverride}" for "${promptKey}" lacks credentials. Fell back to global provider "${globalProvider}".`,
+        details: { promptKey, configuredProvider: effectiveProviderOverride, fallbackProvider: globalProvider },
+      });
+      effectiveProviderOverride = undefined;
+    }
+
+    // 3. Select model based on tier + resolved provider
     const tier = options?.tier ?? "sonnet";
     const taskKey: ModelTask = tier === "sonnet" ? "verdict" : "understand";
-    const model = getModelForTask(taskKey, undefined, pipelineConfig);
+    const model = getModelForTask(taskKey, effectiveProviderOverride, pipelineConfig);
 
-    // 3. Call AI SDK
+    // 4. Call AI SDK
     let result: any;
     let success = false;
     let errorMessage: string | undefined;
@@ -3017,7 +3163,7 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
           {
             role: "system",
             content: rendered.content,
-            providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+            providerOptions: getPromptCachingOptions(model.provider),
           },
           {
             role: "user",
@@ -3027,18 +3173,16 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
           },
         ],
         temperature: options?.temperature ?? 0.0,
-        providerOptions: getStructuredOutputProviderOptions(
-          pipelineConfig.llmProvider ?? "anthropic",
-        ),
+        providerOptions: getStructuredOutputProviderOptions(model.provider),
       });
       success = true;
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : String(error);
 
-      // Record failed LLM call
+      // Record failed LLM call with actual resolved provider
       recordLLMCall({
         taskType: 'verdict',
-        provider: pipelineConfig.llmProvider ?? "anthropic",
+        provider: model.provider,
         modelName: model.modelName,
         promptTokens: 0,
         completionTokens: 0,
@@ -3054,10 +3198,10 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
       throw error;
     }
 
-    // Record successful LLM call
+    // Record successful LLM call with actual resolved provider
     recordLLMCall({
       taskType: 'verdict',
-      provider: pipelineConfig.llmProvider ?? "anthropic",
+      provider: model.provider,
       modelName: model.modelName,
       promptTokens: result.usage?.promptTokens ?? 0,
       completionTokens: result.usage?.completionTokens ?? 0,
@@ -3069,7 +3213,7 @@ export function createProductionLLMCall(pipelineConfig: PipelineConfig): LLMCall
       timestamp: new Date(),
     });
 
-    // 4. Parse result as JSON
+    // 5. Parse result as JSON
     const text = result.text?.trim();
     if (!text) {
       throw new Error(`Stage 4: LLM returned empty response for prompt "${promptKey}"`);

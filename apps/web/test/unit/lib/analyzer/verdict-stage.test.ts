@@ -1098,3 +1098,152 @@ describe("Configurable debate model tiers", () => {
     expect(call2Options.tier).toBe("sonnet");
   });
 });
+
+// ============================================================================
+// CROSS-PROVIDER DEBATE MODEL PROVIDERS (Climinator-style, C1/C16)
+// ============================================================================
+
+describe("Cross-provider debate model providers", () => {
+  const claims = [createAtomicClaim()];
+  const evidence = [createEvidenceItem()];
+  const boundaries = [createClaimBoundary()];
+  const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+  it("advocateVerdict should pass providerOverride from config.debateModelProviders.advocate", async () => {
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelProviders: { advocate: "openai" },
+    };
+
+    await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.providerOverride).toBe("openai");
+  });
+
+  it("adversarialChallenge should pass providerOverride from config.debateModelProviders.challenger", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelProviders: { challenger: "openai" },
+    };
+
+    await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.providerOverride).toBe("openai");
+  });
+
+  it("selfConsistencyCheck should pass providerOverride from config.debateModelProviders.selfConsistency", async () => {
+    const advocateVerdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      selfConsistencyMode: "full",
+      debateModelProviders: { selfConsistency: "google" },
+    };
+
+    await selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(2);
+    const call1Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    const call2Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2];
+    expect(call1Options.providerOverride).toBe("google");
+    expect(call2Options.providerOverride).toBe("google");
+  });
+
+  it("reconcileVerdicts should pass providerOverride from config.debateModelProviders.reconciler", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const challengeDoc = { challenges: [{ claimId: "AC_01", challengePoints: [] }] };
+    const consistencyResults: ConsistencyResult[] = [
+      { claimId: "AC_01", percentages: [75, 73, 77], average: 75, spread: 4, stable: true, assessed: true },
+    ];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{ claimId: "AC_01", truthPercentage: 72, confidence: 78, reasoning: "Reconciled" }],
+    });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelProviders: { reconciler: "mistral" },
+    };
+
+    await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.providerOverride).toBe("mistral");
+  });
+
+  it("validateVerdicts should pass providerOverride from config.debateModelProviders.validation", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelProviders: { validation: "openai" },
+    };
+
+    await validateVerdicts(verdicts, [createEvidenceItem()], mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(2);
+    const call1Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    const call2Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2];
+    expect(call1Options.providerOverride).toBe("openai");
+    expect(call2Options.providerOverride).toBe("openai");
+  });
+
+  it("should not pass providerOverride when debateModelProviders is empty", async () => {
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelProviders: {},
+    };
+
+    await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.providerOverride).toBeUndefined();
+  });
+
+  it("default config should have empty debateModelProviders", () => {
+    expect(DEFAULT_VERDICT_STAGE_CONFIG.debateModelProviders).toEqual({});
+  });
+});

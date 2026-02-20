@@ -4,6 +4,65 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-20 | LLM Expert (Senior Developer execution) | Claude Code (Opus 4.6) | Debate Profile Presets — Follow-up Fixes
+**Task:** Intent-stable profile semantics, runtime fallback warning emission into `resultJson.analysisWarnings`, diversity check correctness, type tightening.
+**Files touched:** `config-schemas.ts`, `claimboundary-pipeline.ts`, `claimboundary-pipeline.test.ts` (3 files, ~8 net new tests).
+**Key decisions:** Profiles now define all 5 providers explicitly (independent of global `llmProvider`). Runtime fallback emits `debate_provider_fallback` AnalysisWarning via collector pattern. Diversity check uses `"__inherit_global__"` sentinel. `generateVerdicts` accepts optional `warnings` array.
+**Open items:** Baseline profile intentionally triggers `all_same_debate_tier` warning.
+**For next agent:** See full handoff at `Docs/AGENTS/Handoffs/2026-02-20_LLM_Expert_Debate_Profile_FollowUp_Fixes.md`.
+**Verification:** 918 tests passing (8 net new), build clean.
+
+---
+### 2026-02-20 | LLM Expert (Senior Developer execution) | Claude Code (Opus 4.6) | Debate Profile Presets
+**Task:** Add selectable debate profile presets to UCM so admins can switch between meaningful debate configurations with a single field.
+**Files touched:**
+- `apps/web/src/lib/config-schemas.ts` — Added `debateProfile` enum field (`baseline`, `tier-split`, `cross-provider`, `max-diversity`), added `DEBATE_PROFILES` constant with preset tier+provider combinations, exported `DebateProfile` type
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Updated `buildVerdictStageConfig()` with 3-level resolution: explicit fields > profile preset > hardcoded defaults. Imported `DEBATE_PROFILES`.
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 7 new tests: each profile resolves correctly, explicit overrides take precedence over profile, backward compatibility without profile
+
+**Key decisions:**
+- **Four profiles defined:** `baseline` (all same, default), `tier-split` (challenger=haiku, cheapest diversity), `cross-provider` (challenger=openai, true structural independence), `max-diversity` (challenger=openai + selfConsistency=google)
+- **Override precedence:** Explicit `debateModelTiers`/`debateModelProviders` fields override profile presets, which override hardcoded defaults. This means admins can select a profile and then tweak individual roles.
+- **No migration needed:** `debateProfile` is optional, defaults to undefined (= `baseline` behavior). Existing configs are unchanged.
+
+**Open items:** None — this is a standalone enhancement.
+**For next agent:** To use: set `"debateProfile": "cross-provider"` in UCM Pipeline Config. Requires `OPENAI_API_KEY` env var. Run calibration harness to compare bias metrics vs `baseline`.
+
+**Verification:** 906 tests passing (7 new), build clean.
+
+---
+### 2026-02-20 | LLM Expert (Senior Developer execution) | Claude Code (Opus 4.6) | Cross-Provider Challenger Separation
+**Task:** Implement cross-provider verdict debate routing per `Docs/WIP/Cross_Provider_Challenger_Separation_2026-02-20.md` — Phases 1-3 (Config, Routing, Tests).
+**Files touched:**
+- `apps/web/src/lib/config-schemas.ts` — Added `debateModelProviders` to PipelineConfigSchema
+- `apps/web/src/lib/analyzer/verdict-stage.ts` — Extended `LLMCallFn` type (providerOverride, modelOverride), added `debateModelProviders` to `VerdictStageConfig`, wired providerOverride in all 5 step call sites
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Updated `buildVerdictStageConfig()` to wire provider overrides, rewrote `createProductionLLMCall()` with credential pre-check and fail-open fallback, updated `checkDebateTierDiversity()` to suppress warning when provider diversity exists, metrics now record actual resolved provider/model
+- `apps/web/src/lib/analyzer/types.ts` — Added `debate_provider_fallback` warning type
+- `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts` — 8 new tests for cross-provider debate wiring
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 6 new tests for buildVerdictStageConfig providers, createProductionLLMCall provider override + fallback, checkDebateTierDiversity provider diversity
+
+**Key decisions:**
+- **Fail-open fallback policy:** Credential pre-check via env var lookup (`PROVIDER_API_KEY_ENV` map). If override provider lacks credentials, falls back to global provider with console.warn. No runtime retry — fallback happens before the LLM call, not after a failure.
+- **Metrics attribution:** Changed from `pipelineConfig.llmProvider` to `model.provider` (resolved model's actual provider), so metrics accurately reflect which provider/model was used per call.
+- **Provider-specific SDK options:** `getPromptCachingOptions()` and `getStructuredOutputProviderOptions()` now use the resolved `model.provider` instead of global `pipelineConfig.llmProvider`, ensuring correct SDK behavior per provider.
+- **Tier diversity warning suppression:** `checkDebateTierDiversity()` now skips the `all_same_debate_tier` warning when `debateModelProviders` introduces provider diversity — cross-provider separation provides structural independence even with the same tier.
+
+**Open items:**
+- Phase 4 (Rollout): First real cross-provider run pending. Suggested config: `{ "debateModelProviders": { "challenger": "openai" } }`.
+- `modelOverride` is typed but not yet wired in `createProductionLLMCall` (plan Review Question #2: "provider-only first?"). Ready for v2.
+- No admin UI for debateModelProviders yet (UCM config editing via API works).
+
+**Warnings:**
+- Cross-provider runs will have different JSON formatting behaviors (Anthropic vs OpenAI tool mode, output style). The existing centralized JSON parsing in `createProductionLLMCall` handles markdown code block extraction, but edge cases may emerge.
+- Cost/latency variance between providers is not yet instrumented beyond per-call metrics.
+
+**For next agent:** The implementation covers Phases 1-3 of the plan. Phase 4 (Rollout) requires setting `debateModelProviders.challenger: "openai"` in UCM config and running the calibration harness (`npm -w apps/web run test:calibration`) to compare cross-provider vs same-provider bias metrics. The calibration harness (built earlier today) already supports A/B comparison.
+
+**Learnings:** Appended to Role_Learnings.md? No — no novel gotchas encountered beyond what's already documented.
+
+**Verification:** 899 tests passing (13 new), build clean.
+
+---
 
 ### 2026-02-20 | Lead Architect | Claude Opus 4.6 | Political Bias Calibration Harness — Design, Implementation, Review Coordination
 **Task:** Design, implement (Phases 1-3), and coordinate architect review of the political bias calibration harness (Concern C10, Recommendation #1 from Stammbach/Ash EMNLP 2024 review).
