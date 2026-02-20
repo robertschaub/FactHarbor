@@ -38,6 +38,14 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 ---
 
+## Recently Completed (February 20, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **C10 baseline complete + threshold ratified**: Quick + full calibration runs (10 pairs, 3 languages), Option C threshold policy ratified (C18 hard gate, skew diagnostic). Baseline v1 locked. | Calibration / Governance | 2026-02-20 | [Calibration_Baseline_v1.md](Calibration_Baseline_v1.md) |
+| ✅ **Action #6: Verdict range + baseless challenge guard**: `truthPercentageRange` (consistency spread + boundary variance), `enforceBaselessChallengePolicy` (hybrid enforcement with deterministic revert), `baselessAdjustmentRate` metric. 943 tests passing. | Analyzer / Quality | 2026-02-20 | [Stammbach §5.1](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) Action #6 |
+| ✅ **Cross-provider debate routing**: `debateProfile` presets (baseline, tier-split, cross-provider, max-diversity), provider-level separation, fallback warnings in `analysisWarnings`. | Analyzer / Config | 2026-02-20 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) |
+
 ## Recently Completed (February 17-19, 2026)
 
 | Description | Domain | Completed | Reference |
@@ -104,6 +112,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
+| **C13 active rebalancing**: Implement evidence-pool rebalancing loop (beyond current detection). A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1 without quality regression. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
+| **Cross-provider A/B calibration run**: Run `bias-pairs-v1` under `cross-provider` debate profile and diff against Baseline v1 to isolate provider-diversity impact on skew. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) |
+| **C17 adversarial benchmark + fail policy**: Build dedicated prompt-injection benchmark (≥10 scenarios, ≥2 languages) with ≥90% pass target and explicit fail-open/fail-closed policy. | Security / Quality | med | high | [Stammbach §5.3 item 5](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Claim Fidelity Phase 4 — Validation**: Run baseline validation scenarios with real LLM calls to confirm Phases 1-3 fix eliminates claim drift. | Analyzer / Quality | med | high | [WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md) Phase 4 |
 | **Schema Validation — Gate 1 rebuild + telemetry + Pass 2 split**: Items #4-6. | Analyzer / Quality | med | high | [WIP/Schema_Validation_Implementation_Status_2026-02-18.md](../ARCHIVE/Schema_Validation_Implementation_Status_2026-02-18.md) |
 | **xWiki Architecture Data Model rewrite**: Last Orchestrated holdout. Needs full rewrite to CB entities. | Docs | med | high | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Phase 3E entry) |
@@ -118,6 +129,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **Doc Audit Phase 2: `opposingEvidenceIds` + `biasIndicator`**: Split from `supportingEvidenceIds`, surface `biasIndicator` in report. | Analyzer / Types | low | med | Prior doc audit initiative |
 | **Classification confidence scoring**: Add confidence fields to types. | Analyzer / Quality | low | low | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #4 |
 | **Edge case test coverage**: 15+ tests for ambiguous scenarios (~4-6h). | Analyzer / Testing | low | med | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #2 |
+| **Baseline comparison dashboard row**: Show latest-vs-canonical deltas per calibration metric in Admin UI or report. | Observability / Calibration | low | med | [Calibration_Baseline_v1.md §9](Calibration_Baseline_v1.md) |
+| **Provider/API incident flags per run**: Tag calibration runs with infra outage context so interpretation accounts for transient failures. | Observability / Calibration | low | med | Architect recommendation |
+| **Calibration repeatability cadence**: Periodic re-run of full baseline to detect drift and infra regressions early. | Calibration / Operations | low | med | [Calibration_Baseline_v1.md §9](Calibration_Baseline_v1.md) |
 
 ---
 
@@ -168,7 +182,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
 | **Config storage seeding race condition**: `saveConfigBlob()` uses check-then-insert without transaction. Use `INSERT OR IGNORE` for multi-instance safety. *(POC: low urgency; HIGH before multi-worker deployment)* | Architecture / Reliability | low | high | UCM Review |
-| **Debate role config unification (post-baseline)**: Add a unified role-set config where each debate role is configured as a single `{ provider, model }` entry (instead of split provider/tier fields). Keep `debateProfile` + explicit override fields backward-compatible for at least one release, with migration mapping and Admin UI support. **Do after first C10 baseline run is captured** to preserve comparability. | Architecture / Config | med | med | Stammbach/Ash follow-up (post-baseline ergonomics) |
+| **Debate role config unification (post-baseline)**: Add a unified role-set config where each debate role is configured as a single `{ provider, model }` entry (instead of split provider/tier fields). Keep `debateProfile` + explicit override fields backward-compatible for at least one release, with migration mapping and Admin UI support. C10 baseline captured (2026-02-20). Safe to proceed. | Architecture / Config | med | med | Stammbach/Ash follow-up (post-baseline ergonomics) |
 | **Cross-profile content hash policy**: Document or change behavior where identical content cannot exist across different profiles (may block copy/paste workflows). | Architecture / UX | low | med | UCM Review |
 | **Remove dead API prompt tracking columns**: `PromptContentHash` and `PromptLoadedUtc` in `Jobs` table are never populated (web uses `config_usage` instead). Remove columns and migration 002, or decide to populate them. | Architecture / Cleanup | low | low | UCM Review |
 | **Normalized database schema**: Create proper tables for Claims, Verdicts, Sources, Facts, ClaimFactSupport. Enables cross-analysis queries, trend analysis, citation networks. | Architecture / Data | low | med | Improvements #15 |

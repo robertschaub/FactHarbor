@@ -3,7 +3,7 @@
 **Version**: v2.11.0 (`v1.0.0-poc`)
 **Last Updated**: 2026-02-20
 **Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 886 tests passing, build clean. Political bias calibration harness implemented (Phases 1-3). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 943 tests passing, build clean. Political bias calibration Baseline v1 locked and threshold ratified. Action #6 (verdict range + baseless challenge guard) complete. Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -381,8 +381,21 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 
 ## Recent Changes
 
+### 2026-02-20 C10 Calibration Baseline v1 — Locked and Ratified
+**Status: ✅ CLOSED**
+
+Calibration Baseline v1 locked with two canonical runs (quick: 3 English pairs, full: 10 pairs in en/de/fr). Threshold policy ratified: Option C — C18 (`failureModeBiasCount=0`) as hard gate, verdict skew as diagnostic with escalation triggers. Key findings: French pairs near-zero skew (2.0pp), evidence-pool asymmetry dominates (8/10), extraction bias zero, C18 clean (0/10). See [Calibration_Baseline_v1.md](Calibration_Baseline_v1.md).
+
+### 2026-02-20 Action #6: Verdict Range + Baseless Challenge Guard
+**Status: ✅ Implemented**
+
+- **Verdict range reporting**: `truthPercentageRange` computed from self-consistency spread, optionally widened by boundary variance (weight=0.0 default). Displayed in UI + HTML report.
+- **Baseless challenge guard**: `enforceBaselessChallengePolicy()` — hybrid enforcement with deterministic post-check revert. `validateChallengeEvidence()` — structural ID check before reconciliation. `baselessAdjustmentRate` metric surfaced as structured warning.
+- **Challenge point IDs**: Explicit `ChallengePoint.id` field (format `CP_{claimId}_{index}`) replaces implicit convention.
+- 943 tests passing, build clean. Commit: `d9a91f5`.
+
 ### 2026-02-20 Political Bias Calibration Harness (Phases 1-3)
-**Status: ✅ Implemented — Pending First Run**
+**Status: ✅ Implemented**
 
 Reusable harness for measuring directional political bias through mirrored claim pairs. Addresses Concern C10 (Critical) from the Stammbach/Ash EMNLP 2024 paper review.
 
