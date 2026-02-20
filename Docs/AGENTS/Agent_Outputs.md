@@ -695,3 +695,22 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 - First empirical run should use `npm -w apps/web run test:calibration` (quick mode). Use `test:calibration:full` only after baseline expectations are agreed.
 - If A/B UI report is needed, implement dedicated comparison rendering in `report-generator.ts` using `compareCalibrationRuns()` output.
 **Learnings:** No new role learnings appended.
+
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | Collaboration Plan — Cross-Provider Challenger Separation
+**Task:** Write a collaboration/review-ready implementation plan for Action #4 follow-up: separate challenger model provider for verdict debate roles.
+**Files touched:** `Docs/WIP/Cross_Provider_Challenger_Separation_2026-02-20.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Proposed incremental architecture (no rewrite): add per-role provider overrides (`debateModelProviders`) while preserving existing per-role tiering.
+- Preserved backward compatibility by making all new fields optional and inheriting global provider defaults.
+- Defined phased delivery (config/types -> runtime wiring -> tests -> staged rollout) with acceptance criteria and risks.
+- Added explicit review questions around fallback policy, model override scope, and deterministic-mode guardrails.
+**Open items:**
+- Captain decision needed: fail-open vs fail-closed behavior when overridden provider credentials are missing.
+- Implementation and verification not executed in this step (design/handoff only).
+**Warnings:**
+- Mixed-provider behavior may increase schema/tool-calling variance; rollout should start challenger-only.
+**For next agent:**
+- Use `Docs/WIP/Cross_Provider_Challenger_Separation_2026-02-20.md` as canonical implementation spec.
+- Start in `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, then tests.
+**Learnings:** No new role learnings appended.

@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-20 (Calibration harness design + implementation)
-**Status**: 9 active files — Alpha forward-looking work only
+**Last Updated**: 2026-02-20 (Added cross-provider challenger separation plan)
+**Status**: 10 active files — Alpha forward-looking work only
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (9 files)
+## Active Documents (10 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
@@ -85,6 +85,14 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Comprehensive review of ~40 commits (Feb 18-19). 46 findings: 3 CRITICAL, 12 HIGH, 17 MEDIUM, 14 LOW. Covers pipeline code, UCM config, UI/reports, infrastructure, and documentation. Includes prioritized fix plan with model tier recommendations.
 - **Key concerns:** XSS in fallback export, verdict label inconsistency, `Calculations.md` 60% stale, CI/CD injection pattern
 - **Remaining:** Fix implementation per priority table in document
+
+### Cross-Provider Challenger Separation (2026-02-20)
+**Status:** 🧭 Proposal — Ready for implementation review
+- **Document:** [Cross_Provider_Challenger_Separation_2026-02-20.md](Cross_Provider_Challenger_Separation_2026-02-20.md)
+- **Type:** Pipeline Quality / Debate Architecture
+- **Scope:** Extend verdict-stage routing from per-role model tier to per-role model provider, enabling challenger on a different provider (e.g., OpenAI) while advocate remains on default provider (e.g., Anthropic).
+- **Origin:** Action #4 follow-up in `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
+- **Remaining:** Captain approval on fallback policy + implementation pass + calibration A/B validation
 
 ---
 
