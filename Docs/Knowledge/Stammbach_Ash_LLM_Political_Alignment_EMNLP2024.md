@@ -46,7 +46,7 @@ The paper measures **stance generation** quality, not **claim verification** acc
 Automated climate claim fact-checking. **Mediator-Advocate framework** with structurally independent advocates (RAG on IPCC corpus vs. general GPT-4o). >96% accuracy. Adding adversarial NIPCC advocate increased debate rounds from 1 to 18 on contested claims — correctly detecting genuine controversy.
 *Critical comparison:* Climinator uses different models with different corpora. FactHarbor uses the same Sonnet model for all debate roles.
 
-**Status (2026-02-20):** Addressed. Debate role routing supports provider-level separation via UCM (`debateProfile`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Four profiles: `baseline` (all Anthropic), `tier-split` (Haiku challenger), `cross-provider` (OpenAI challenger), `max-diversity` (OpenAI challenger + Google self-consistency). Profile semantics are independent of global `llmProvider` — all profiles define explicit provider intent for all 5 roles. Runtime fallback warnings (`debate_provider_fallback`) surface in `analysisWarnings` JSON. Diversity warning (`checkDebateTierDiversity`) correctly evaluates resolved config using `__inherit_global__` sentinel. 918 tests passing.
+**Status (2026-02-20):** Addressed. Debate role routing supports provider-level separation via UCM (`debateProfile`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Four profiles: `baseline` (all Anthropic), `tier-split` (Haiku challenger), `cross-provider` (OpenAI challenger), `max-diversity` (OpenAI challenger + Google self-consistency). Profile semantics are independent of global `llmProvider` — all profiles define explicit provider intent for all 5 roles. Runtime fallback warnings (`debate_provider_fallback`) surface in `analysisWarnings` JSON. Diversity warning (`checkDebateTierDiversity`) correctly evaluates resolved config using `__inherit_global__` sentinel. Latest handoff reports clean build and full test pass.
 
 **AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/)
 LLM-assisted factual claim detection with PoliClaim dataset. Uses **3 predefined reasoning paths** for consistency calibration — structurally different from FactHarbor's temperature-based self-consistency. Path-based consistency could detect bias that temperature variation cannot.
@@ -89,14 +89,14 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 **Reviewer notes:** Methodological plurality is not automatically ideological plurality. Rich metadata is useful but not guaranteed to dominate adjudication.
 
 **Honest assessment:** These are real strengths versus zero-shot LLMs. But process architecture alone is not the same as demonstrated mitigation outcomes. Without measurement, claiming "mitigated" is premature.
-Status note — Section 3 / strengths (2026-02-20): Calibration harness is built (C10 closed). We now have detection (evidence skew), correction (harm confidence floor), configurability (debate tiers), and measurement (10 mirrored pairs with A/B diff support). First empirical run is still pending.
+Status note — Section 3 / strengths (2026-02-20): Calibration harness is built (C10 near-closed). We now have detection (evidence skew), correction (harm confidence floor), configurability (debate tiers), and measurement infrastructure (10 mirrored pairs with A/B diff support). First empirical run is still pending.
 
 Code review note — Section 3 / strengths (P-H1): Evidence-item source attribution was fixed: evidence is no longer always mapped to `sources[0]`; each item now maps by returned `sourceUrl`.
 
 ### Weaknesses
 
-1. **C10: No empirical bias measurement** — 🟢 **Closed** (harness built, pending first run). Highest priority, directly actionable.
-Status note — C10 (2026-02-20): Calibration harness implemented. 10 mirrored claim pairs, directional skew metrics, HTML reports, A/B diff engine. First empirical run pending (~$3-6).
+1. **C10: No empirical bias measurement** — 🟡 **Near-closed** (harness implemented; first empirical baseline run still pending).
+Status note — C10 (2026-02-20): Calibration harness is implemented (10 mirrored pairs, directional skew metrics, HTML + JSON output, A/B diff engine). Remaining closure step is baseline execution + threshold lock.
 2. **C9: Self-consistency rewards stable bias** — 🟠 **High**. Illusory control providing false assurance.
 3. **C13: Evidence pool bias** — 🟠 **High**. Bias injection before any LLM reasoning; detection done but rebalancing not yet implemented.
 Status note — C13 (2026-02-19): Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented.
@@ -148,22 +148,43 @@ Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check
 
 ## 5. Actionable Recommendations (priority order)
 
-**Principle: Measure before redesign.** *(Codex's key strategic insight — build baseline metrics first, then tie every architectural change to measured improvement.)*
+**Principle: Measure before redesign.** Baseline first, then ship corrective controls tied to measured deltas.
 
-| Priority | Action | Effort | Impact | Status |
-|----------|--------|--------|--------|--------|
-| **1** | **Political bias calibration harness** — 10 mirrored claim pairs (5 domains, 3 languages), measure verdict skew direction/magnitude, HTML reports, A/B comparison | Low (~1 day, ~$5-10) | 🔴 **Critical** — foundational | 🟢 **Done** |
-|   |   |   | *[FH 2026-02-20] Implemented. 6 library files (`src/lib/calibration/`), 10 fixture pairs, vitest entry. Reviewed by Codex — targeted adjustments applied. Pending: first empirical run (~$3-6). See `Docs/WIP/Calibration_Harness_Design_2026-02-20.md`.* | |
-| **2** | **Instrument failure modes** — track refusal/degradation rates by topic, provider, stage. Detect C18 (refusal asymmetry) | Low | 🟠 **High** — reveals invisible bias | 🟢 **Done** |
-|   |   |   | *[FH 2026-02-20] Implemented in two layers. (1) Calibration harness now computes refusal/degradation rates per side, asymmetry deltas, and aggregates by domain/provider/stage with HTML + JSON output for C18 detection. (2) Core analysis metrics now persist `failureModes` telemetry (`refusalEvents`, `degradationEvents`, rates per 100 LLM calls, and `byProvider`/`byStage`/`byTopic` counters), and `/api/fh/metrics/summary` plus Admin Metrics dashboard surface these aggregates.* | |
-| **3** | **Make validation blocking for high-harm claims** — `validateVerdicts()` returns verdicts unchanged; for `harmPotential >= "high"`, clamp confidence or force UNVERIFIED | Medium | 🟢 **High** — closes C8 | 🟢 **Done** |
-|   |   |   | *[FH 2026-02-19] **Done.** `enforceHarmConfidenceFloor()` — forces UNVERIFIED when confidence < threshold. Harm levels and threshold UCM-configurable. 9 unit tests.* | |
-| **4** | **Separate the challenger model** — different provider for VERDICT_CHALLENGER (e.g., GPT-4o if advocate is Sonnet) | Medium | 🟠 **High** — closes C1/C16 | 🟢 **Done** |
-|   |   |   | *[FH 2026-02-20] **Done.** `LLMCallFn` supports per-role provider override, with UCM presets (`debateProfile`) and explicit per-role provider config (`debateModelProviders`). Four profiles with explicit provider intent independent of global `llmProvider`. Cross-provider challenger routing operational. Runtime fallback warnings surfaced in `analysisWarnings` (`debate_provider_fallback`). Diversity warning (`checkDebateTierDiversity`) evaluates resolved config correctly. 918 tests, build clean.* | |
-| **5** | **Evidence pool balance diagnostics** — detect and report when evidence pool is politically one-sided | Medium | 🟢 **Medium-High** — closes C13 | 🟢 **Done** |
-|   |   |   | *[FH 2026-02-19] **Done (detection).** `assessEvidenceBalance()` with sample-size-aware warnings. Skew threshold and min directional count UCM-configurable. Rebalancing not yet implemented.* | |
-| **6** | **Add "politically contested" warning + range reporting** — show plausible verdict range, not just point estimate, on contested claims | High (long-term) | 🟠 **High** — epistemic honesty | 🟠 **Partial** |
-|   |   |   | *[FH 2026-02-20] **Partially implemented.** Contestation detection: `isContested`/`factualBasis` classification in verdict prompts, doubted vs. contested distinction, UCM-configurable `contestationWeights` (opinion=1.0 no penalty, disputed=0.7, established=0.5). Self-consistency spread: 3-run stability measurement with UCM-configurable spread→confidence multipliers. Evidence imbalance: detection + warning. **Missing:** (a) verdict range reporting — `consistencyResult.percentages` data exists but only reduces confidence, not surfaced as plausible range; (b) debate-stage guard — no algorithmic backstop preventing baseless challenger objections from softening verdicts (LLM reconciler trusted only). New AGENTS.md rule "Evidence-weighted contestation" codifies intent. See plan for remaining implementation.* | |
+### 5.1 Current state snapshot (implementation vs. closure)
+
+| Concern | Current status | What is implemented | What is missing for closure |
+|---------|----------------|---------------------|-----------------------------|
+| **C10** Empirical bias measurement | 🟡 Near-closed | Calibration harness, mirrored pairs, skew metrics, HTML/JSON, A/B diff | First baseline run + threshold lock + governance decision |
+| **C18** Refusal asymmetry instrumentation | 🟢 Closed (instrumented) | `failureModes` telemetry in runtime + calibration outputs, Admin metrics surfacing | Ongoing monitoring only |
+| **C9** Stable-bias risk in self-consistency | 🟠 Partial | 3-run temperature spread + confidence penalties | Path-consistency benchmark and rollout criteria |
+| **C13** Evidence pool bias | 🟠 Partial | `assessEvidenceBalance()` detection + warnings + UCM thresholds | Active rebalancing/remediation loop + effectiveness checks |
+| **C17** Prompt injection resilience | 🟠 Partial | Adversarial challenge + grounding/direction/structural validation | Dedicated C17 benchmark + explicit failure policy |
+| **Action #6** Contestation range/governance | 🟠 Partial | `isContested`/`factualBasis`, `contestationWeights`, spread signals | Range output + baseless-challenge guard/backstop |
+
+### 5.2 Recommended next actions (decision-ready)
+
+Effort scale used here:
+- **Low:** 0.5-1.5 dev days
+- **Medium:** 2-4 dev days
+- **Medium-High:** 4-7 dev days
+
+| Priority now | Action | Criticality | Effort | Why now | Exit criteria |
+|--------------|--------|-------------|--------|---------|---------------|
+| **1** | **Run first calibration baseline and lock thresholds (C10 closure step)** | 🔴 **Critical** | Low (+~$3-20 run cost, depending on mode) | Until first run, all mitigation claims remain architectural, not empirical | Baseline report generated, thresholds ratified, pass/fail policy recorded |
+| **2** | **Finish Action #6: verdict range + baseless-challenge governance** | 🔴 **Critical** | Medium | Current outputs expose point estimates only; contested claims still lack explicit uncertainty band/guard | `truthPercentageRange` available in JSON/UI/HTML, challenge validity handling enforced or explicitly governed |
+| **3** | **Implement C13 active rebalancing (not just detection)** | 🟠 **High** | Medium-High | C13 remains a pre-reasoning bias source; diagnostics alone do not reduce skew | Rebalancing loop ships, imbalance warnings decrease in calibration A/B without large quality regressions |
+| **4** | **C17 hardening track: adversarial benchmark + fail policy** | 🟠 **High** | Medium | Existing controls are generic; no dedicated injection stress harness or policy gate | C17 benchmark suite in CI/scheduled runs, policy for fail-open/fail-closed behavior approved |
+| **5** | **C9 path-consistency benchmark against current spread method** | 🟡 **Medium-High** | Medium | Needed to decide if current self-consistency is robust or cosmetically stable | Side-by-side benchmark complete, adoption threshold defined, go/no-go documented |
+
+### 5.3 Completed foundational actions (for traceability)
+
+| Action | Status | Notes |
+|--------|--------|-------|
+| Calibration harness implementation | 🟢 Done (implementation) | First empirical run still required for full C10 closure |
+| Failure-mode instrumentation (C18) | 🟢 Done | Runtime + calibration + Admin surface |
+| High-harm confidence floor (C8) | 🟢 Done | `enforceHarmConfidenceFloor()` active, UCM-configurable |
+| Cross-provider challenger separation (C1/C16) | 🟢 Done | `debateProfile` + provider overrides + fallback warnings |
+| Evidence-pool imbalance diagnostics (C13 detection) | 🟢 Done | Detection complete; correction remains open |
 
 ---
 
