@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 19, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
+**Last Updated**: February 20, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -168,6 +168,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
 | **Config storage seeding race condition**: `saveConfigBlob()` uses check-then-insert without transaction. Use `INSERT OR IGNORE` for multi-instance safety. *(POC: low urgency; HIGH before multi-worker deployment)* | Architecture / Reliability | low | high | UCM Review |
+| **Debate role config unification (post-baseline)**: Add a unified role-set config where each debate role is configured as a single `{ provider, model }` entry (instead of split provider/tier fields). Keep `debateProfile` + explicit override fields backward-compatible for at least one release, with migration mapping and Admin UI support. **Do after first C10 baseline run is captured** to preserve comparability. | Architecture / Config | med | med | Stammbach/Ash follow-up (post-baseline ergonomics) |
 | **Cross-profile content hash policy**: Document or change behavior where identical content cannot exist across different profiles (may block copy/paste workflows). | Architecture / UX | low | med | UCM Review |
 | **Remove dead API prompt tracking columns**: `PromptContentHash` and `PromptLoadedUtc` in `Jobs` table are never populated (web uses `config_usage` instead). Remove columns and migration 002, or decide to populate them. | Architecture / Cleanup | low | low | UCM Review |
 | **Normalized database schema**: Create proper tables for Claims, Verdicts, Sources, Facts, ClaimFactSupport. Enables cross-analysis queries, trend analysis, citation networks. | Architecture / Data | low | med | Improvements #15 |

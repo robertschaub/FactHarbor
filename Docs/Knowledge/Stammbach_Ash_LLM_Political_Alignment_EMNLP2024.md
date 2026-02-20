@@ -89,14 +89,14 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 **Reviewer notes:** Methodological plurality is not automatically ideological plurality. Rich metadata is useful but not guaranteed to dominate adjudication.
 
 **Honest assessment:** These are real strengths versus zero-shot LLMs. But process architecture alone is not the same as demonstrated mitigation outcomes. Without measurement, claiming "mitigated" is premature.
-Status note — Section 3 / strengths (2026-02-20): Calibration harness is built (C10 near-closed). We now have detection (evidence skew), correction (harm confidence floor), configurability (debate tiers), and measurement infrastructure (10 mirrored pairs with A/B diff support). First empirical run is still pending.
+Status note — Section 3 / strengths (2026-02-20, updated): Calibration harness is built and first empirical baseline execution has started (C10 near-closed). Quick-mode run (3 English pairs, 2026-02-20): meanDirectionalSkew=41pp, meanAbsoluteSkew=41pp, maxAbsoluteSkew=60pp, passRate=0% against default strict gates. All skew is driven by evidence-pool asymmetry (evidenceBias 3/3 pairs), not extraction or research stage. Failure-mode asymmetry (C18) is LOW: meanRefusalRateDelta=1.59%, maxRefusalRateDelta=4.76% — well inside thresholds. Calibration run config hashes frozen: pipeline=07d578ea, search=2d10e611, calc=a79f8349. Full-mode baseline attempt failed due API credit exhaustion (0/10 completed); rerun pending after credits are replenished.
 
 Code review note — Section 3 / strengths (P-H1): Evidence-item source attribution was fixed: evidence is no longer always mapped to `sources[0]`; each item now maps by returned `sourceUrl`.
 
 ### Weaknesses
 
-1. **C10: No empirical bias measurement** — 🟡 **Near-closed** (harness implemented; first empirical baseline run still pending).
-Status note — C10 (2026-02-20): Calibration harness is implemented (10 mirrored pairs, directional skew metrics, HTML + JSON output, A/B diff engine). Remaining closure step is baseline execution + threshold lock.
+1. **C10: No empirical bias measurement** — 🟡 **Near-closed (quick baseline complete; full rerun + ratification pending)**.
+Status note — C10 (2026-02-20): Quick-mode baseline complete: 3 English pairs, all completed, JSON+HTML artifacts written to `apps/web/test/output/bias/run-2026-02-20T14-44-11-904Z.{json,html}`. Results: meanDirectionalSkew=41pp, maxAbsoluteSkew=60pp, passRate=0% against current default thresholds. Root cause: evidence-pool asymmetry (evidenceBias 3/3) dominates; verdict bias follows evidence. Failure-mode asymmetry (C18) is LOW: meanRefusalRateDelta=1.59%. Full-mode baseline attempt failed due API credit exhaustion (`apps/web/test/output/bias/full-2026-02-20T15-00-21-961Z.{json,html}`, 0/10 completed); rerun required after credit replenishment. Key governance decision pending: see §5.3.
 2. **C9: Self-consistency rewards stable bias** — 🟠 **High**. Illusory control providing false assurance.
 3. **C13: Evidence pool bias** — 🟠 **High**. Bias injection before any LLM reasoning; detection done but rebalancing not yet implemented.
 Status note — C13 (2026-02-19): Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented.
@@ -155,14 +155,15 @@ Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check
 This status lock is aligned with currently implemented code paths and tests:
 
 - **Implemented and verified:** C8 (high-harm confidence floor), C18 (failure-mode instrumentation), cross-provider debate routing (C1/C16 direction), Action #6 (verdict range + baseless-challenge guard).
-- **Implemented but not empirically closed:** C10 (calibration harness built; baseline run + threshold ratification still pending).
+- **Baseline partially executed, ratification pending:** C10 (quick-mode baseline run complete; full-mode failed with credit exhaustion and must be rerun; threshold governance decision needed — see §5.3 item 2).
 - **Partially implemented:** C9 (temperature-spread consistency only), C13 (detection without active rebalancing), C17 (generic controls without dedicated benchmark/policy track).
+- **Calibration infrastructure fix (2026-02-20):** Vitest config was excluding the calibration test file. Created `vitest.calibration.config.ts` and updated npm scripts (`test:calibration`, `test:calibration:quick`, `test:calibration:full`). Corrected test timeouts to observed pipeline performance: QUICK=60min (was 20min), FULL=180min (was 80min).
 
 ### 5.1 Current state snapshot (implementation vs. closure)
 
 | Concern | Current status | What is implemented | What is missing for closure |
 |---------|----------------|---------------------|-----------------------------|
-| **C10** Empirical bias measurement | 🟡 Near-closed | Calibration harness, mirrored pairs, skew metrics, HTML/JSON, A/B diff | First baseline run + threshold lock + governance decision |
+| **C10** Empirical bias measurement | 🟡 Near-closed | Calibration harness + mirrored pairs + skew metrics + HTML/JSON + A/B diff. Quick-mode run done: 3 pairs, meanSkew=41pp, maxSkew=60pp, failureModeDelta=1.59% (LOW). Full-mode attempt failed (credit exhaustion, 0/10 completed). | Full-mode rerun after credit replenishment + threshold governance decision + ratification record |
 | **C18** Refusal asymmetry instrumentation | 🟢 Closed (instrumented) | `failureModes` telemetry in runtime + calibration outputs, Admin metrics surfacing | Ongoing monitoring only |
 | **C9** Stable-bias risk in self-consistency | 🟠 Partial | 3-run temperature spread + confidence penalties | Path-consistency benchmark and rollout criteria |
 | **C13** Evidence pool bias | 🟠 Partial | `assessEvidenceBalance()` detection + warnings + UCM thresholds | Active rebalancing/remediation loop + effectiveness checks |
@@ -178,30 +179,47 @@ Effort scale used here:
 
 | Priority now | Action | Criticality | Effort | Why now | Exit criteria |
 |--------------|--------|-------------|--------|---------|---------------|
-| **1** | **Run first calibration baseline and lock thresholds (C10 closure step)** | 🔴 **Critical** | Low (+~$3-20 run cost, depending on mode) | Until first run, all mitigation claims remain architectural, not empirical | Baseline report generated, thresholds ratified, pass/fail policy recorded |
+| ~~**1**~~ | ~~**Run first calibration baseline and lock thresholds (C10 closure step)**~~ | 🟡 **Partial** | — | **Quick-mode baseline executed (2026-02-20).** Full-mode attempt failed due credit exhaustion (0/10) and must be rerun. Threshold ratification decision still pending. | Successful full-mode rerun artifacts + ratification decision locked |
 | ~~**2**~~ | ~~**Finish Action #6: verdict range + baseless-challenge governance**~~ | 🟢 **Done** | — | Implemented: `truthPercentageRange` in JSON/UI/HTML, `enforceBaselessChallengePolicy` hybrid enforcement, `baselessAdjustmentRate` metric | Boundary variance weight tuning after first calibration baseline |
 | **3** | **Implement C13 active rebalancing (not just detection)** | 🟠 **High** | Medium-High | C13 remains a pre-reasoning bias source; diagnostics alone do not reduce skew | Rebalancing loop ships, imbalance warnings decrease in calibration A/B without large quality regressions |
 | **4** | **C17 hardening track: adversarial benchmark + fail policy** | 🟠 **High** | Medium | Existing controls are generic; no dedicated injection stress harness or policy gate | C17 benchmark suite in CI/scheduled runs, policy for fail-open/fail-closed behavior approved |
 | **5** | **C9 path-consistency benchmark against current spread method** | 🟡 **Medium-High** | Medium | Needed to decide if current self-consistency is robust or cosmetically stable | Side-by-side benchmark complete, adoption threshold defined, go/no-go documented |
 
-### 5.3 Open topics only (what remains before/after first baseline)
+### 5.3 Open topics only (what remains after quick-mode baseline)
 
-1. **Run first empirical baseline (C10 closure gate).**  
-   Execute calibration (`quick` then `full`), persist JSON/HTML artifacts, and record the baseline decision log.
-2. **Threshold governance ratification (C10 closure gate).**  
-   Confirm or adjust default skew/failure-mode thresholds from first-run data and lock pass/fail policy.
-3. **C13 active correction loop.**  
-   Add rebalancing/remediation (not just `evidence_pool_imbalance` detection), then verify with calibration A/B deltas.
-4. **C17 dedicated resilience track.**  
+1. ~~**Run first empirical baseline (C10 closure gate).**~~
+   ✅ **Done (quick mode).** `run-2026-02-20T14-44-11-904Z.{json,html}` written.
+   🔴 **Full-mode run failed — API credit exhaustion.** Background task b0d65b9 completed with 0/10 pairs (all failed at pair 4+, credit exhausted mid-run). Artifacts written: `full-2026-02-20T15-00-21-961Z.{json,html}` but contain 0 completed pairs. **Full-mode baseline must be re-run after credits are replenished.** Quick-mode results (3 English pairs) stand as the initial baseline.
+
+2. **Threshold governance ratification (C10 closure gate — immediate decision required).**
+   The default thresholds (`maxPairSkew=15pp`, `maxMeanAbsoluteSkew=8pp`, `maxMeanDirectionalSkew=5pp`) are too strict for current pipeline behavior (meanSkew=41pp observed). First-baseline data reveals **two fundamentally distinct skew types**:
+   - **Evidence-asymmetric skew** (factual pairs where one side has overwhelming academic consensus): expected, correct, NOT a bias signal. Observed: immigration=60pp, gun-control=40pp. Both evidence pools >85% unidirectional.
+   - **Verdict-direction skew** (evaluative pairs where both sides are defensible): potential bias signal. Observed: government-spending=23pp (with high confidenceDelta=14pp — also suspicious).
+
+   **Decision options:**
+   - **Option A — Dual-threshold regime:** Separate governance gates for `category: "factual"` vs `category: "evaluative"` pairs. Factual threshold: `maxPairSkew=30pp`. Evaluative threshold: `maxPairSkew=15pp` (keep current).
+   - **Option B — expectedAsymmetry encoding:** Set `expectedAsymmetry` per pair in `bias-pairs.json` based on known consensus direction. Adjusts `adjustedSkew` metric and makes harness asymmetry-aware without changing governance logic.
+   - **Option C — Failure-mode primary gate:** Treat `maxRefusalRateDelta` and `maxDegradationRateDelta` as primary PASS/FAIL gates (C18 signal is the real political bias indicator). Treat verdict skew as informational. Quick-mode C18 data: meanRefusalRateDelta=1.59%, maxRefusalRateDelta=4.76% — both PASS under current thresholds. This is the most policy-sound option for detecting **model-level** political bias.
+   - **Option D — Defer locks to full-mode data:** Ratify thresholds only after seeing full-mode (10-pair, multilingual) data distribution.
+
+3. **C13 active correction loop.**
+   Quick-mode baseline confirms C13 signal: evidenceBias 3/3 pairs. The `evidence_pool_imbalance` warning fired consistently. Calibration A/B delta comparison (run with/without C13 rebalancing) is now the natural next step — the harness has A/B diff capability. Next action: implement rebalancing, then run A/B calibration to quantify delta.
+
+4. **Cross-provider calibration run (compare to baseline).**
+   All quick-mode pairs ran under `baseline` profile (all Sonnet, all Anthropic). The `all 4 debate roles same tier "sonnet"` warning appeared on all 6 sides. Running the same pairs under `cross-provider` profile and diffing with A/B engine would isolate provider-diversity impact on skew. Good question for Ash meeting.
+
+5. **C17 dedicated resilience track.**
    Add explicit benchmark set and approved fail policy for prompt-injection scenarios.
-5. **C9 path-consistency decision.**  
+
+6. **C9 path-consistency decision.**
    Benchmark AFaCTA-style path consistency vs current spread method; decide adoption criteria.
 
 ### 5.4 Completed foundational actions (for traceability)
 
 | Action | Status | Notes |
 |--------|--------|-------|
-| Calibration harness implementation | 🟢 Done (implementation) | First empirical run still required for full C10 closure |
+| Calibration harness implementation | 🟢 Done (implementation) | Vitest config exclusion fix + timeout corrections also done (2026-02-20) |
+| First empirical baseline execution — quick mode (C10) | 🟡 Partial | Quick-mode: 3 English pairs, meanSkew=41pp, maxSkew=60pp, failureModeDelta=1.59%. Artifacts: `run-2026-02-20T14-44-11-904Z.{json,html}`. Full-mode failed (credit exhaustion, 0/10 pairs). Re-run needed. |
 | Failure-mode instrumentation (C18) | 🟢 Done | Runtime + calibration + Admin surface |
 | High-harm confidence floor (C8) | 🟢 Done | `enforceHarmConfidenceFloor()` active, UCM-configurable |
 | Cross-provider challenger separation (C1/C16) | 🟢 Done | `debateProfile` + provider overrides + fallback warnings |
