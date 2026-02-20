@@ -214,6 +214,44 @@
   color: #111827;
 }
 
+.breakdownGrid {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.breakdownBlock {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  background-color: #fafafa;
+}
+
+.breakdownBlock h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.breakdownTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.breakdownTable th,
+.breakdownTable td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.35rem 0.4rem;
+  text-align: left;
+}
+
+.breakdownTable th {
+  color: #6b7280;
+  font-weight: 600;
+}
+
 .footer {
   margin-top: 2rem;
   padding-top: 1rem;

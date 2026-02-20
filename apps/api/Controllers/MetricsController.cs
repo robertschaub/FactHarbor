@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Models;
 using System.Text.Json;
+using System.Globalization;
 
 namespace FactHarbor.Api.Controllers;
 
@@ -135,7 +136,18 @@ public class MetricsController : ControllerBase
                     avgTokens = 0,
                     schemaComplianceRate = 0,
                     gate1PassRate = 0,
-                    gate4HighConfidenceRate = 0
+                    gate4HighConfidenceRate = 0,
+                    failureModes = new
+                    {
+                        totalWarnings = 0,
+                        totalRefusalEvents = 0,
+                        totalDegradationEvents = 0,
+                        avgRefusalRatePer100LlmCalls = 0.0,
+                        avgDegradationRatePer100LlmCalls = 0.0,
+                        byProvider = new Dictionary<string, object>(),
+                        byStage = new Dictionary<string, object>(),
+                        byTopic = new Dictionary<string, object>(),
+                    }
                 });
             }
 
@@ -146,6 +158,14 @@ public class MetricsController : ControllerBase
             int schemaCompliantCount = 0;
             double gate1PassSum = 0;
             double gate4HighConfidenceSum = 0;
+            int totalWarnings = 0;
+            int totalRefusalEvents = 0;
+            int totalDegradationEvents = 0;
+            double refusalRateSum = 0;
+            double degradationRateSum = 0;
+            var byProvider = new Dictionary<string, FailureModeCounter>(StringComparer.OrdinalIgnoreCase);
+            var byStage = new Dictionary<string, FailureModeCounter>(StringComparer.OrdinalIgnoreCase);
+            var byTopic = new Dictionary<string, FailureModeCounter>(StringComparer.OrdinalIgnoreCase);
             int count = 0;
 
             foreach (var record in metricsRecords)
@@ -214,6 +234,43 @@ public class MetricsController : ControllerBase
                         }
                     }
 
+                    // Failure mode instrumentation (C18)
+                    if (root.TryGetProperty("failureModes", out var failureModes))
+                    {
+                        if (failureModes.TryGetProperty("totalWarnings", out var fmWarnings))
+                        {
+                            totalWarnings += ReadInt(fmWarnings);
+                        }
+                        if (failureModes.TryGetProperty("refusalEvents", out var fmRefusals))
+                        {
+                            totalRefusalEvents += ReadInt(fmRefusals);
+                        }
+                        if (failureModes.TryGetProperty("degradationEvents", out var fmDegradation))
+                        {
+                            totalDegradationEvents += ReadInt(fmDegradation);
+                        }
+                        if (failureModes.TryGetProperty("refusalRatePer100LlmCalls", out var fmRefusalRate))
+                        {
+                            refusalRateSum += ReadDouble(fmRefusalRate);
+                        }
+                        if (failureModes.TryGetProperty("degradationRatePer100LlmCalls", out var fmDegradationRate))
+                        {
+                            degradationRateSum += ReadDouble(fmDegradationRate);
+                        }
+                        if (failureModes.TryGetProperty("byProvider", out var fmByProvider))
+                        {
+                            MergeCounters(fmByProvider, byProvider);
+                        }
+                        if (failureModes.TryGetProperty("byStage", out var fmByStage))
+                        {
+                            MergeCounters(fmByStage, byStage);
+                        }
+                        if (failureModes.TryGetProperty("byTopic", out var fmByTopic))
+                        {
+                            MergeCounters(fmByTopic, byTopic);
+                        }
+                    }
+
                     count++;
                 }
                 catch (Exception ex)
@@ -233,7 +290,18 @@ public class MetricsController : ControllerBase
                     avgTokens = 0,
                     schemaComplianceRate = 0,
                     gate1PassRate = 0,
-                    gate4HighConfidenceRate = 0
+                    gate4HighConfidenceRate = 0,
+                    failureModes = new
+                    {
+                        totalWarnings = 0,
+                        totalRefusalEvents = 0,
+                        totalDegradationEvents = 0,
+                        avgRefusalRatePer100LlmCalls = 0.0,
+                        avgDegradationRatePer100LlmCalls = 0.0,
+                        byProvider = new Dictionary<string, object>(),
+                        byStage = new Dictionary<string, object>(),
+                        byTopic = new Dictionary<string, object>(),
+                    }
                 });
             }
 
@@ -246,6 +314,17 @@ public class MetricsController : ControllerBase
                 schemaComplianceRate = (double)schemaCompliantCount / count * 100,
                 gate1PassRate = gate1PassSum / count * 100,
                 gate4HighConfidenceRate = gate4HighConfidenceSum / count * 100,
+                failureModes = new
+                {
+                    totalWarnings,
+                    totalRefusalEvents,
+                    totalDegradationEvents,
+                    avgRefusalRatePer100LlmCalls = refusalRateSum / count,
+                    avgDegradationRatePer100LlmCalls = degradationRateSum / count,
+                    byProvider = ToResponseCounters(byProvider),
+                    byStage = ToResponseCounters(byStage),
+                    byTopic = ToResponseCounters(byTopic),
+                },
                 startDate = metricsRecords.Last().CreatedUtc,
                 endDate = metricsRecords.First().CreatedUtc
             });
@@ -287,5 +366,86 @@ public class MetricsController : ControllerBase
             _logger.LogError(ex, "Error cleaning up old metrics");
             return StatusCode(500, new { error = "Failed to cleanup metrics" });
         }
+    }
+
+    private static int ReadInt(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Number)
+        {
+            if (element.TryGetInt32(out var i)) return i;
+            if (element.TryGetInt64(out var l)) return Convert.ToInt32(l);
+        }
+        if (element.ValueKind == JsonValueKind.String &&
+            int.TryParse(element.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+        {
+            return parsed;
+        }
+        return 0;
+    }
+
+    private static double ReadDouble(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out var d))
+        {
+            return d;
+        }
+        if (element.ValueKind == JsonValueKind.String &&
+            double.TryParse(element.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+        {
+            return parsed;
+        }
+        return 0;
+    }
+
+    private static void MergeCounters(
+        JsonElement counterObject,
+        Dictionary<string, FailureModeCounter> target)
+    {
+        if (counterObject.ValueKind != JsonValueKind.Object) return;
+
+        foreach (var item in counterObject.EnumerateObject())
+        {
+            if (item.Value.ValueKind != JsonValueKind.Object) continue;
+
+            if (!target.TryGetValue(item.Name, out var current))
+            {
+                current = new FailureModeCounter();
+                target[item.Name] = current;
+            }
+
+            if (item.Value.TryGetProperty("refusalCount", out var refusalCount))
+            {
+                current.RefusalCount += ReadInt(refusalCount);
+            }
+            if (item.Value.TryGetProperty("degradationCount", out var degradationCount))
+            {
+                current.DegradationCount += ReadInt(degradationCount);
+            }
+            if (item.Value.TryGetProperty("totalEvents", out var totalEvents))
+            {
+                current.TotalEvents += ReadInt(totalEvents);
+            }
+        }
+    }
+
+    private static Dictionary<string, object> ToResponseCounters(
+        Dictionary<string, FailureModeCounter> counters)
+    {
+        return counters.ToDictionary(
+            kv => kv.Key,
+            kv => (object)new
+            {
+                refusalCount = kv.Value.RefusalCount,
+                degradationCount = kv.Value.DegradationCount,
+                totalEvents = kv.Value.TotalEvents,
+            },
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed class FailureModeCounter
+    {
+        public int RefusalCount { get; set; }
+        public int DegradationCount { get; set; }
+        public int TotalEvents { get; set; }
     }
 }

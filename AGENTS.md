@@ -83,6 +83,7 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 - **No stage skipping:** Understand → Research → Verdict (all required)
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
 - **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
+- **Evidence-weighted contestation:** Challenges to a verdict must be backed by documented evidence to count as "contested". Unsubstantiated objections (opinion, political criticism, denial without counter-evidence) are classified as "doubted" — they MUST NOT reduce a verdict's truth percentage or confidence. Only evidence-backed counter-arguments may alter verdicts. This applies to debate challenger outputs, aggregation weighting, and any future contestation logic. Existing implementation: `contestationWeights` in `aggregation.ts` (opinion=1.0, disputed=0.7, established=0.5) and `factualBasis` classification in verdict prompts.
 
 ### Configuration Placement
 When introducing a tunable parameter, place it in the correct tier:

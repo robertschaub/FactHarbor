@@ -61,6 +61,23 @@ export interface Gate4Metric {
   unpublishable: number;
 }
 
+export interface FailureModeCounter {
+  refusalCount: number;
+  degradationCount: number;
+  totalEvents: number;
+}
+
+export interface FailureModeMetrics {
+  totalWarnings: number;
+  refusalEvents: number;
+  degradationEvents: number;
+  refusalRatePer100LlmCalls: number;
+  degradationRatePer100LlmCalls: number;
+  byProvider: Record<string, FailureModeCounter>;
+  byStage: Record<string, FailureModeCounter>;
+  byTopic: Record<string, FailureModeCounter>;
+}
+
 export interface SchemaComplianceMetric {
   understand: {
     success: boolean;
@@ -115,6 +132,9 @@ export interface AnalysisMetrics {
     evidenceItemsExtracted: number;
     averageConfidence: number;
   };
+
+  // Failure-mode observability (C18 instrumentation)
+  failureModes: FailureModeMetrics;
   
   // Costs (estimated)
   estimatedCostUSD: number;
@@ -159,6 +179,16 @@ export class MetricsCollector {
         verdict: 0,
         summary: 0,
         report: 0,
+      },
+      failureModes: {
+        totalWarnings: 0,
+        refusalEvents: 0,
+        degradationEvents: 0,
+        refusalRatePer100LlmCalls: 0,
+        degradationRatePer100LlmCalls: 0,
+        byProvider: {},
+        byStage: {},
+        byTopic: {},
       },
     };
   }
@@ -227,6 +257,13 @@ export class MetricsCollector {
   }
 
   /**
+   * Set failure-mode metrics
+   */
+  setFailureModes(failureModes: FailureModeMetrics): void {
+    this.metrics.failureModes = failureModes;
+  }
+
+  /**
    * Set configuration
    */
   setConfig(config: AnalysisMetrics['config']): void {
@@ -252,6 +289,20 @@ export class MetricsCollector {
 
     // Estimate cost (rough estimates based on common pricing)
     this.metrics.estimatedCostUSD = this.estimateCost();
+
+    // Ensure failureModes is always present for downstream summaries.
+    if (!this.metrics.failureModes) {
+      this.metrics.failureModes = {
+        totalWarnings: 0,
+        refusalEvents: 0,
+        degradationEvents: 0,
+        refusalRatePer100LlmCalls: 0,
+        degradationRatePer100LlmCalls: 0,
+        byProvider: {},
+        byStage: {},
+        byTopic: {},
+      };
+    }
 
     return this.metrics as AnalysisMetrics;
   }

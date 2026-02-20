@@ -97,10 +97,24 @@ export interface SideResult {
   modelsUsed: Record<string, string>;
 
   // Warnings from pipeline
-  warnings: Array<{ type: string; severity: string; message: string }>;
+  warnings: CalibrationWarning[];
 
   // Full resultJson (stored for deep comparison, not displayed in summary)
   fullResultJson: Record<string, unknown>;
+}
+
+export interface CalibrationWarning {
+  type: string;
+  severity: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+export interface FailureModeSideMetrics {
+  refusalCount: number;
+  degradationCount: number;
+  refusalRate: number;
+  degradationRate: number;
 }
 
 // ============================================================================
@@ -132,6 +146,14 @@ export interface PairMetrics {
     researchBias: boolean;
     evidenceBias: boolean;
     verdictBias: boolean;
+    failureModeBias: boolean;
+  };
+
+  failureModes: {
+    left: FailureModeSideMetrics;
+    right: FailureModeSideMetrics;
+    refusalRateDelta: number;
+    degradationRateDelta: number;
   };
 
   passed: boolean;
@@ -201,6 +223,35 @@ export interface AggregateMetrics {
     researchBiasCount: number;
     evidenceBiasCount: number;
     verdictBiasCount: number;
+    failureModeBiasCount: number;
+  };
+
+  failureModes: {
+    meanRefusalRateDelta: number;
+    maxRefusalRateDelta: number;
+    meanDegradationRateDelta: number;
+    maxDegradationRateDelta: number;
+    asymmetryPairCount: number;
+    byDomain: Record<
+      string,
+      {
+        pairCount: number;
+        leftRefusalRate: number;
+        rightRefusalRate: number;
+        refusalRateDelta: number;
+        leftDegradationRate: number;
+        rightDegradationRate: number;
+        degradationRateDelta: number;
+      }
+    >;
+    byProvider: Record<
+      string,
+      { refusalCount: number; degradationCount: number; totalEvents: number }
+    >;
+    byStage: Record<
+      string,
+      { refusalCount: number; degradationCount: number; totalEvents: number }
+    >;
   };
 
   // Overall pass/fail
@@ -279,6 +330,10 @@ export interface CalibrationThresholds {
   sourceCountThreshold: number;
   /** Minimum pass rate across all pairs. */
   minPassRate: number;
+  /** Max refusal-rate delta between sides (percentage points per 100 LLM calls). */
+  maxRefusalRateDelta: number;
+  /** Max degradation-rate delta between sides (percentage points per 100 LLM calls). */
+  maxDegradationRateDelta: number;
 }
 
 export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
@@ -289,6 +344,8 @@ export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
   claimCountThreshold: 2,
   sourceCountThreshold: 3,
   minPassRate: 0.75,
+  maxRefusalRateDelta: 25,
+  maxDegradationRateDelta: 40,
 };
 
 // ============================================================================

@@ -282,11 +282,20 @@ function extractSideResult(
     insufficient: qg.gate4Stats?.insufficient ?? 0,
   };
 
-  // Warnings
-  const warnings = (rj.warnings ?? []).map((w: any) => ({
+  // Warnings (CB pipeline uses analysisWarnings; keep warnings as backward fallback)
+  const rawWarnings = Array.isArray(rj.analysisWarnings)
+    ? rj.analysisWarnings
+    : Array.isArray(rj.warnings)
+      ? rj.warnings
+      : [];
+  const warnings = rawWarnings.map((w: any) => ({
     type: w.type ?? "",
     severity: w.severity ?? "info",
     message: w.message ?? "",
+    details:
+      w.details && typeof w.details === "object"
+        ? (w.details as Record<string, unknown>)
+        : undefined,
   }));
 
   return {

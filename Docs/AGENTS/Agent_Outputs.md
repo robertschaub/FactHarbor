@@ -773,3 +773,44 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 - Use `Docs/WIP/Cross_Provider_Challenger_Separation_2026-02-20.md` as canonical implementation spec.
 - Start in `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, then tests.
 **Learnings:** No new role learnings appended.
+
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | C18 Instrumentation — Refusal/Degradation Asymmetry in Calibration
+**Task:** Implement the minimal C18 package in the Political Bias Calibration Harness: ingest pipeline `analysisWarnings`, compute refusal/degradation asymmetry, and surface diagnostics by topic/provider/stage.
+**Files touched:** `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/src/lib/calibration/index.ts`, `apps/web/test/unit/lib/calibration-metrics.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Fixed warning ingestion mismatch by reading `resultJson.analysisWarnings` (with legacy fallback to `warnings`) and preserving warning `details` for attribution.
+- Extended calibration model with explicit failure-mode metrics (refusal/degradation counts/rates per side, deltas per pair, aggregate summaries).
+- Added aggregate C18 diagnostics by domain (topic), provider, and stage; surfaced in HTML report as a dedicated diagnostics panel.
+- Treated refusal asymmetry/degradation asymmetry as pair-level and run-level pass/fail factors with new thresholds (`maxRefusalRateDelta`, `maxDegradationRateDelta`).
+- Added focused unit tests for pair-level asymmetry detection and aggregate provider/stage/domain attribution.
+**Open items:**
+- Provider attribution remains `unknown` when pipeline warnings omit provider identifiers; optional enhancement is to enrich warning details at emission sites.
+- If desired, tune new thresholds after first empirical baseline run.
+**Warnings:**
+- Workspace contains pre-existing unrelated modification: `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`.
+- New pass/fail semantics are stricter than before because failure-mode asymmetry now contributes to `passed`/`overallPassed`.
+**For next agent:**
+- Run quick calibration (`npm -w apps/web run test:calibration`) and validate C18 panel values in generated HTML under `apps/web/test/output/bias/`.
+- If `overallPassed` becomes too sensitive, adjust `maxRefusalRateDelta` and `maxDegradationRateDelta` defaults in `apps/web/src/lib/calibration/types.ts`.
+**Learnings:** No new role learnings appended.
+
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | C18 Core Telemetry Integration (Metrics + API + Admin UI)
+**Task:** Continue Action #2 while LLM Expert works on Action #6: instrument refusal/degradation failure modes in core metrics and expose by topic/provider/stage.
+**Files touched:** `apps/web/src/lib/analyzer/metrics.ts`, `apps/web/src/lib/analyzer/metrics-integration.ts`, `apps/api/Controllers/MetricsController.cs`, `apps/web/src/app/admin/metrics/page.tsx`, `apps/web/src/app/admin/metrics/metrics.module.css`, `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `failureModes` to persisted `AnalysisMetrics` with totals, rates per 100 LLM calls, and counters by provider/stage/topic.
+- Implemented extraction from `resultJson.analysisWarnings` (with fallback to `warnings`) in `recordOutputQuality()`; topic key derived from first `claimBoundary` label, fallback `unknown`.
+- Extended API summary endpoint (`/api/fh/metrics/summary`) to aggregate and return failure-mode counters/rates.
+- Extended Admin Metrics page with a new “Failure Modes (C18)” section showing totals/rates and top breakdown tables.
+- Updated knowledge doc Action #2 status from Partial to Done with concrete implementation note.
+**Open items:**
+- Topic attribution is currently run-level (primary boundary) and coarse; warning-level topic attribution would require richer warning payloads.
+- Optional next step: add sort/filter controls in admin UI for full provider/stage/topic tables (currently top-5 display).
+**Warnings:**
+- Normal `dotnet build` failed due running API process locking `bin\Debug\net8.0\FactHarbor.Api.dll`; verification was completed using alternative output path (`dotnet build -o .\\bin_verify /p:UseAppHost=false`).
+**For next agent:**
+- If refining C18 fidelity, enrich `analysisWarnings.details` at emission sites with explicit `provider` and `stage` for all warning types to reduce `unknown` buckets.
+- Consider adding API integration tests for `MetricsController.GetSummaryStats` failure-mode aggregation.
+**Learnings:** No new role learnings appended.

@@ -39,6 +39,7 @@ ${CSS}
 ${renderHeader(result)}
 ${renderVerdictBanner(result, passClass, passLabel)}
 ${renderAggregatePanel(result)}
+${renderFailureModePanel(result)}
 ${renderStageBiasHeatmap(result)}
 ${renderPairCards(result)}
 ${renderConfigSnapshot(result)}
@@ -137,6 +138,14 @@ function renderAggregatePanel(r: CalibrationRunResult): string {
       <span class="metric-value">${am.skewStandardDeviation.toFixed(1)}</span>
       <span class="metric-label">Skew Std Dev</span>
     </div>
+    <div class="metric">
+      <span class="metric-value ${am.failureModes.meanRefusalRateDelta <= t.maxRefusalRateDelta ? "pass" : "fail"}">${am.failureModes.meanRefusalRateDelta.toFixed(1)} pp</span>
+      <span class="metric-label">Mean Refusal Delta (≤${t.maxRefusalRateDelta})</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value ${am.failureModes.meanDegradationRateDelta <= t.maxDegradationRateDelta ? "pass" : "fail"}">${am.failureModes.meanDegradationRateDelta.toFixed(1)} pp</span>
+      <span class="metric-label">Mean Degradation Delta (≤${t.maxDegradationRateDelta})</span>
+    </div>
   </div>
 
   <div class="breakdown-row">
@@ -154,13 +163,73 @@ function renderAggregatePanel(r: CalibrationRunResult): string {
 </section>`;
 }
 
+function renderFailureModePanel(r: CalibrationRunResult): string {
+  const fm = r.aggregateMetrics.failureModes;
+
+  let domainRows = "";
+  for (const [domain, stats] of Object.entries(fm.byDomain)) {
+    domainRows += `<tr><td>${esc(domain)}</td><td>${stats.leftRefusalRate.toFixed(1)} / ${stats.rightRefusalRate.toFixed(1)}</td><td>${stats.refusalRateDelta.toFixed(1)}</td><td>${stats.leftDegradationRate.toFixed(1)} / ${stats.rightDegradationRate.toFixed(1)}</td><td>${stats.degradationRateDelta.toFixed(1)}</td></tr>`;
+  }
+
+  let providerRows = "";
+  for (const [provider, stats] of Object.entries(fm.byProvider)) {
+    providerRows += `<tr><td>${esc(provider)}</td><td>${stats.refusalCount}</td><td>${stats.degradationCount}</td><td>${stats.totalEvents}</td></tr>`;
+  }
+
+  let stageRows = "";
+  for (const [stage, stats] of Object.entries(fm.byStage)) {
+    stageRows += `<tr><td>${esc(stage)}</td><td>${stats.refusalCount}</td><td>${stats.degradationCount}</td><td>${stats.totalEvents}</td></tr>`;
+  }
+
+  return `
+<section class="panel">
+  <h2>Failure Mode Diagnostics (C18)</h2>
+  <div class="metrics-grid">
+    <div class="metric">
+      <span class="metric-value">${fm.maxRefusalRateDelta.toFixed(1)} pp</span>
+      <span class="metric-label">Max Refusal Delta</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">${fm.maxDegradationRateDelta.toFixed(1)} pp</span>
+      <span class="metric-label">Max Degradation Delta</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">${fm.asymmetryPairCount}</span>
+      <span class="metric-label">Pairs Flagged for Failure-Mode Bias</span>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>By Topic (Domain)</h3>
+      <table><thead><tr><th>Domain</th><th>Refusal L/R</th><th>Refusal Δ</th><th>Degr. L/R</th><th>Degr. Δ</th></tr></thead>
+      <tbody>${domainRows}</tbody></table>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>By Provider</h3>
+      <table><thead><tr><th>Provider</th><th>Refusal</th><th>Degradation</th><th>Events</th></tr></thead>
+      <tbody>${providerRows}</tbody></table>
+    </div>
+    <div class="breakdown-table">
+      <h3>By Stage</h3>
+      <table><thead><tr><th>Stage</th><th>Refusal</th><th>Degradation</th><th>Events</th></tr></thead>
+      <tbody>${stageRows}</tbody></table>
+    </div>
+  </div>
+</section>`;
+}
+
 function renderStageBiasHeatmap(r: CalibrationRunResult): string {
-  const stages = ["Extraction", "Research", "Evidence", "Verdict"] as const;
+  const stages = ["Extraction", "Research", "Evidence", "Verdict", "Failure"] as const;
   const stageKeys = [
     "extractionBias",
     "researchBias",
     "evidenceBias",
     "verdictBias",
+    "failureModeBias",
   ] as const;
 
   let rows = "";
@@ -289,6 +358,10 @@ function renderPairCard(pr: PairResult, maxSkew: number): string {
         <tr><td>Claim count delta</td><td>${m.claimCountDelta} ${m.stageIndicators.extractionBias ? "⚠" : ""}</td></tr>
         <tr><td>Source count delta</td><td>${m.sourceCountDelta} ${m.stageIndicators.researchBias ? "⚠" : ""}</td></tr>
         <tr><td>Evidence balance delta</td><td>${(m.evidenceBalanceDelta * 100).toFixed(0)}% ${m.stageIndicators.evidenceBias ? "⚠" : ""}</td></tr>
+        <tr><td>Refusal rate L/R</td><td>${m.failureModes.left.refusalRate.toFixed(1)} / ${m.failureModes.right.refusalRate.toFixed(1)} pp</td></tr>
+        <tr><td>Refusal rate delta</td><td>${m.failureModes.refusalRateDelta.toFixed(1)} pp ${m.stageIndicators.failureModeBias ? "⚠" : ""}</td></tr>
+        <tr><td>Degradation rate L/R</td><td>${m.failureModes.left.degradationRate.toFixed(1)} / ${m.failureModes.right.degradationRate.toFixed(1)} pp</td></tr>
+        <tr><td>Degradation rate delta</td><td>${m.failureModes.degradationRateDelta.toFixed(1)} pp ${m.stageIndicators.failureModeBias ? "⚠" : ""}</td></tr>
         <tr><td>Expected skew</td><td>${esc(pr.pair.expectedSkew)}${pr.pair.expectedAsymmetry ? ` (${pr.pair.expectedAsymmetry} pp)` : ""}</td></tr>
       </table>
     </div>

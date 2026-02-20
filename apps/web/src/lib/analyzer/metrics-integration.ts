@@ -8,7 +8,7 @@
  */
 
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
-import type { LLMCallMetric, SearchQueryMetric } from './metrics';
+import type { FailureModeMetrics, LLMCallMetric, SearchQueryMetric } from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 
 // Global metrics collector (set by initializeMetrics)
@@ -158,14 +158,16 @@ export function recordSchemaCompliance(compliance: {
 export function recordOutputQuality(result: any): void {
   if (!currentMetrics) return;
 
-  const claims = result.claims || [];
+  const claims = result.claims || result.claimVerdicts || [];
   // DELETED: analysisContexts handling (Phase 4 cleanup - orchestrated pipeline only)
   const sources = result.sources || [];
 
   const claimsWithVerdicts = claims.filter((c: any) => c.verdict && c.verdict !== 'UNVERIFIED').length;
-  const totalEvidenceItems = claims.reduce((sum: number, c: any) => sum + (c.evidence?.length || 0), 0);
+  const totalEvidenceItems = result.evidenceItems
+    ? result.evidenceItems.length
+    : claims.reduce((sum: number, c: any) => sum + (c.evidence?.length || 0), 0);
   const avgConfidence = claims.length > 0
-    ? claims.reduce((sum: number, c: any) => sum + (c.verdictConfidence || 0), 0) / claims.length
+    ? claims.reduce((sum: number, c: any) => sum + (c.verdictConfidence || c.confidence || 0), 0) / claims.length
     : 0;
 
   currentMetrics.setOutputQuality({
@@ -176,6 +178,155 @@ export function recordOutputQuality(result: any): void {
     evidenceItemsExtracted: totalEvidenceItems,
     averageConfidence: avgConfidence,
   });
+
+  currentMetrics.setFailureModes(buildFailureModeMetrics(result));
+}
+
+const DEGRADATION_WARNING_TYPES = new Set<string>([
+  "structured_output_failure",
+  "evidence_filter_degradation",
+  "search_fallback",
+  "search_provider_error",
+  "llm_provider_error",
+  "classification_fallback",
+  "grounding_check_degraded",
+  "direction_validation_degraded",
+  "verdict_fallback_partial",
+  "verdict_partial_recovery",
+  "verdict_batch_retry",
+  "analysis_generation_failed",
+  "debate_provider_fallback",
+]);
+
+interface WarningShape {
+  type?: string;
+  details?: Record<string, unknown>;
+}
+
+function buildFailureModeMetrics(result: any): FailureModeMetrics {
+  const warnings: WarningShape[] = Array.isArray(result?.analysisWarnings)
+    ? result.analysisWarnings
+    : Array.isArray(result?.warnings)
+      ? result.warnings
+      : [];
+
+  const byProvider: FailureModeMetrics["byProvider"] = {};
+  const byStage: FailureModeMetrics["byStage"] = {};
+  const byTopic: FailureModeMetrics["byTopic"] = {};
+  const topic = derivePrimaryTopic(result);
+
+  let refusalEvents = 0;
+  let degradationEvents = 0;
+
+  for (const warning of warnings) {
+    const warningType = warning?.type ?? "";
+    const details = warning?.details ?? {};
+    const refusal = isRefusalWarning(warningType, details);
+    const degradation = refusal || DEGRADATION_WARNING_TYPES.has(warningType);
+    if (!refusal && !degradation) continue;
+
+    const provider = extractProvider(details);
+    const stage = extractStage(warningType, details);
+
+    if (refusal) refusalEvents++;
+    if (degradation) degradationEvents++;
+    incrementCounter(byProvider, provider, refusal, degradation);
+    incrementCounter(byStage, stage, refusal, degradation);
+    incrementCounter(byTopic, topic, refusal, degradation);
+  }
+
+  const llmCalls = Math.max(result?.meta?.llmCalls ?? 0, 1);
+
+  return {
+    totalWarnings: warnings.length,
+    refusalEvents,
+    degradationEvents,
+    refusalRatePer100LlmCalls: (refusalEvents / llmCalls) * 100,
+    degradationRatePer100LlmCalls: (degradationEvents / llmCalls) * 100,
+    byProvider,
+    byStage,
+    byTopic,
+  };
+}
+
+function incrementCounter(
+  counters: Record<string, { refusalCount: number; degradationCount: number; totalEvents: number }>,
+  key: string,
+  refusal: boolean,
+  degradation: boolean,
+): void {
+  if (!counters[key]) {
+    counters[key] = {
+      refusalCount: 0,
+      degradationCount: 0,
+      totalEvents: 0,
+    };
+  }
+
+  if (refusal) counters[key].refusalCount++;
+  if (degradation) counters[key].degradationCount++;
+  counters[key].totalEvents++;
+}
+
+function isRefusalWarning(type: string, details: Record<string, unknown>): boolean {
+  if (type !== "structured_output_failure") return false;
+  const reason = typeof details.reason === "string"
+    ? details.reason.toLowerCase()
+    : "";
+  return reason.includes("refusal");
+}
+
+function extractProvider(details: Record<string, unknown>): string {
+  const candidates = [
+    details.provider,
+    details.configuredProvider,
+    details.fallbackProvider,
+    details.searchProvider,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+  return "unknown";
+}
+
+function extractStage(type: string, details: Record<string, unknown>): string {
+  const explicit = details.stage;
+  if (typeof explicit === "string" && explicit.trim().length > 0) {
+    return explicit.trim();
+  }
+
+  switch (type) {
+    case "structured_output_failure":
+      return "stage1_pass2";
+    case "search_provider_error":
+    case "search_fallback":
+      return "research_search";
+    case "llm_provider_error":
+      return "research_llm";
+    case "debate_provider_fallback":
+    case "all_same_debate_tier":
+    case "grounding_check_degraded":
+    case "direction_validation_degraded":
+    case "verdict_fallback_partial":
+    case "verdict_partial_recovery":
+    case "verdict_batch_retry":
+      return "verdict";
+    default:
+      return "unknown";
+  }
+}
+
+function derivePrimaryTopic(result: any): string {
+  if (Array.isArray(result?.claimBoundaries) && result.claimBoundaries.length > 0) {
+    const first = result.claimBoundaries[0];
+    const raw = first?.shortName ?? first?.name;
+    if (typeof raw === "string" && raw.trim().length > 0) {
+      return raw.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 60);
+    }
+  }
+  return "unknown";
 }
 
 /**

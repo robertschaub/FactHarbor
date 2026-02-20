@@ -11,6 +11,16 @@ interface SummaryStats {
   schemaComplianceRate: number;
   gate1PassRate: number;
   gate4HighConfidenceRate: number;
+  failureModes?: {
+    totalWarnings: number;
+    totalRefusalEvents: number;
+    totalDegradationEvents: number;
+    avgRefusalRatePer100LlmCalls: number;
+    avgDegradationRatePer100LlmCalls: number;
+    byProvider: Record<string, { refusalCount: number; degradationCount: number; totalEvents: number }>;
+    byStage: Record<string, { refusalCount: number; degradationCount: number; totalEvents: number }>;
+    byTopic: Record<string, { refusalCount: number; degradationCount: number; totalEvents: number }>;
+  };
   startDate?: string;
   endDate?: string;
 }
@@ -120,6 +130,22 @@ export default function MetricsPage() {
   const formatPercent = (pct: number) => {
     return `${pct.toFixed(1)}%`;
   };
+
+  const formatRate = (rate: number) => {
+    return `${rate.toFixed(1)} / 100 calls`;
+  };
+
+  const topEntries = (
+    counters: Record<string, { refusalCount: number; degradationCount: number; totalEvents: number }> | undefined,
+    max = 5,
+  ) => {
+    if (!counters) return [];
+    return Object.entries(counters)
+      .sort((a, b) => b[1].totalEvents - a[1].totalEvents)
+      .slice(0, max);
+  };
+
+  const failureModes = stats.failureModes;
 
   return (
     <div className={styles.container}>
@@ -253,6 +279,44 @@ export default function MetricsPage() {
             </div>
           </div>
         </div>
+
+        <div className={styles.metricSection}>
+          <h2>Failure Modes (C18)</h2>
+          {!failureModes ? (
+            <p className={styles.metricDescription}>No failure-mode metrics available yet.</p>
+          ) : (
+            <>
+              <div className={styles.costBreakdown}>
+                <div className={styles.costItem}>
+                  <span className={styles.costLabel}>Total Warnings</span>
+                  <span className={styles.costValue}>{failureModes.totalWarnings}</span>
+                </div>
+                <div className={styles.costItem}>
+                  <span className={styles.costLabel}>Refusal Events</span>
+                  <span className={styles.costValue}>{failureModes.totalRefusalEvents}</span>
+                </div>
+                <div className={styles.costItem}>
+                  <span className={styles.costLabel}>Degradation Events</span>
+                  <span className={styles.costValue}>{failureModes.totalDegradationEvents}</span>
+                </div>
+                <div className={styles.costItem}>
+                  <span className={styles.costLabel}>Avg Refusal Rate</span>
+                  <span className={styles.costValue}>{formatRate(failureModes.avgRefusalRatePer100LlmCalls)}</span>
+                </div>
+                <div className={styles.costItem}>
+                  <span className={styles.costLabel}>Avg Degradation Rate</span>
+                  <span className={styles.costValue}>{formatRate(failureModes.avgDegradationRatePer100LlmCalls)}</span>
+                </div>
+              </div>
+
+              <div className={styles.breakdownGrid}>
+                <BreakdownTable title="By Provider" rows={topEntries(failureModes.byProvider)} />
+                <BreakdownTable title="By Stage" rows={topEntries(failureModes.byStage)} />
+                <BreakdownTable title="By Topic" rows={topEntries(failureModes.byTopic)} />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {stats.startDate && stats.endDate && (
@@ -262,6 +326,44 @@ export default function MetricsPage() {
             {new Date(stats.endDate).toLocaleDateString()}
           </p>
         </div>
+      )}
+    </div>
+  );
+}
+
+function BreakdownTable({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: Array<[string, { refusalCount: number; degradationCount: number; totalEvents: number }]>;
+}) {
+  return (
+    <div className={styles.breakdownBlock}>
+      <h3>{title}</h3>
+      {rows.length === 0 ? (
+        <p className={styles.metricDescription}>No events</p>
+      ) : (
+        <table className={styles.breakdownTable}>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Refusal</th>
+              <th>Degradation</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([key, val]) => (
+              <tr key={key}>
+                <td>{key}</td>
+                <td>{val.refusalCount}</td>
+                <td>{val.degradationCount}</td>
+                <td>{val.totalEvents}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

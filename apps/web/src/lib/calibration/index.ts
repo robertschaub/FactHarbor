@@ -9,6 +9,8 @@ export type {
   BiasPair,
   BiasFixtures,
   SideResult,
+  CalibrationWarning,
+  FailureModeSideMetrics,
   PairMetrics,
   PairResult,
   AggregateMetrics,
