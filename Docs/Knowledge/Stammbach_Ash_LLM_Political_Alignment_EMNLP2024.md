@@ -45,7 +45,8 @@ The paper measures **stance generation** quality, not **claim verification** acc
 **Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8)
 Automated climate claim fact-checking. **Mediator-Advocate framework** with structurally independent advocates (RAG on IPCC corpus vs. general GPT-4o). >96% accuracy. Adding adversarial NIPCC advocate increased debate rounds from 1 to 18 on contested claims — correctly detecting genuine controversy.
 *Critical comparison:* Climinator uses different models with different corpora. FactHarbor uses the same Sonnet model for all debate roles.
-> **[FH 2026-02-20]** Addressed. Debate role routing supports provider-level separation via UCM (`debateProfile`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Four profiles: `baseline` (all Anthropic), `tier-split` (Haiku challenger), `cross-provider` (OpenAI challenger), `max-diversity` (OpenAI challenger + Google self-consistency). Profile semantics are independent of global `llmProvider` — all profiles define explicit provider intent for all 5 roles. Runtime fallback warnings (`debate_provider_fallback`) surface in `analysisWarnings` JSON. Diversity warning (`checkDebateTierDiversity`) correctly evaluates resolved config using `__inherit_global__` sentinel. 918 tests passing.
+
+**Status (2026-02-20):** Addressed. Debate role routing supports provider-level separation via UCM (`debateProfile`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Four profiles: `baseline` (all Anthropic), `tier-split` (Haiku challenger), `cross-provider` (OpenAI challenger), `max-diversity` (OpenAI challenger + Google self-consistency). Profile semantics are independent of global `llmProvider` — all profiles define explicit provider intent for all 5 roles. Runtime fallback warnings (`debate_provider_fallback`) surface in `analysisWarnings` JSON. Diversity warning (`checkDebateTierDiversity`) correctly evaluates resolved config using `__inherit_global__` sentinel. 918 tests passing.
 
 **AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/)
 LLM-assisted factual claim detection with PoliClaim dataset. Uses **3 predefined reasoning paths** for consistency calibration — structurally different from FactHarbor's temperature-based self-consistency. Path-based consistency could detect bias that temperature variation cannot.
@@ -80,24 +81,30 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 ### Strengths
 
 1. **Evidence-first pipeline.** Verdicts must cite fetched evidence with structural ID validation. Eliminates the paper's core finding (zero-shot fabrication).
-2. **Multi-perspective verdicts.** `BoundaryFindings[]` and `TriangulationScore` surface disagreement structurally, not as post-hoc synthesis. *(Codex caveat: this is methodological plurality, not necessarily ideological plurality.)*
+2. **Multi-perspective verdicts.** `BoundaryFindings[]` and `TriangulationScore` surface disagreement structurally, not as post-hoc synthesis.
 3. **Mandatory contradiction search.** Pipeline explicitly searches for opposing evidence — architecturally enforced.
-4. **Rich metadata conditioning.** EvidenceScope, SourceType, claimDirection, sourceAuthority, evidenceBasis — richer than the paper's party + language + issue template. *(Codex caveat: metadata exists but isn't guaranteed to be decisive in adjudication.)*
+4. **Rich metadata conditioning.** EvidenceScope, SourceType, claimDirection, sourceAuthority, evidenceBasis — richer than the paper's party + language + issue template.
 5. **Input neutrality.** "Was X fair?" = "X was fair" (≤4% tolerance), with test suite.
 
-**Honest assessment:** These are real strengths versus zero-shot LLMs. But "good process architecture" is not the same as "demonstrated bias mitigation outcomes" *(Codex's core critique)*. Without outcome-level measurement, claiming "mitigated" is premature.
-> **[FH 2026-02-20]** Calibration harness now built (C10 closed). We have detection (evidence skew), correction (harm confidence floor), configurability (debate tiers), and measurement (calibration harness with 10 mirrored pairs, A/B diff engine). First empirical run pending — until then, "mitigated" is still architectural, not measured. All new parameters are UCM-configurable with config-load failure logging, so the system is operationally observable. *Code review (P-H1): evidence items were always attributed to `sources[0]` when multiple sources were batched into one LLM call — fixed; LLM now returns a `sourceUrl` per item matched to the correct source. Strength #1 citation accuracy is now genuine.*
+**Reviewer notes:** Methodological plurality is not automatically ideological plurality. Rich metadata is useful but not guaranteed to dominate adjudication.
+
+**Honest assessment:** These are real strengths versus zero-shot LLMs. But process architecture alone is not the same as demonstrated mitigation outcomes. Without measurement, claiming "mitigated" is premature.
+Status note — Section 3 / strengths (2026-02-20): Calibration harness is built (C10 closed). We now have detection (evidence skew), correction (harm confidence floor), configurability (debate tiers), and measurement (10 mirrored pairs with A/B diff support). First empirical run is still pending.
+
+Code review note — Section 3 / strengths (P-H1): Evidence-item source attribution was fixed: evidence is no longer always mapped to `sources[0]`; each item now maps by returned `sourceUrl`.
 
 ### Weaknesses
 
 1. **C10: No empirical bias measurement** — 🟢 **Closed** (harness built, pending first run). Highest priority, directly actionable.
-> **[FH 2026-02-20]** Calibration harness implemented. 10 mirrored claim pairs, directional skew metrics, HTML reports, A/B diff engine. First empirical run pending (~$3-6).
+Status note — C10 (2026-02-20): Calibration harness implemented. 10 mirrored claim pairs, directional skew metrics, HTML reports, A/B diff engine. First empirical run pending (~$3-6).
 2. **C9: Self-consistency rewards stable bias** — 🟠 **High**. Illusory control providing false assurance.
 3. **C13: Evidence pool bias** — 🟠 **High**. Bias injection before any LLM reasoning; detection done but rebalancing not yet implemented.
-> **[FH 2026-02-19]** Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` warning with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented — detection only. *Code review (P-M2): direction label matching fixed from `includes("support")` (would match "unsupported") to `=== "supports"` — directional counts fed into this warning are now correct.*
+Status note — C13 (2026-02-19): Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented.
+
+Code review note — C13 (P-M2): Direction label matching was corrected from `includes("support")` (would match "unsupported") to `=== "supports"`.
 4. **C17: Prompt injection resilience** — 🟠 **High**. Novel attack vectors that can amplify political bias.
 5. **C18: Refusal asymmetry instrumentation** — 🟢 **Closed (instrumented)**. Refusal/degradation rates are now tracked by topic, provider, and stage.
-> **[FH 2026-02-20]** C18 instrumentation is implemented in calibration outputs and core runtime telemetry (`failureModes`), and surfaced in Admin Metrics summary/dashboard.
+Status note — C18 (2026-02-20): C18 instrumentation is implemented in calibration outputs and core runtime telemetry (`failureModes`), and surfaced in Admin Metrics summary/dashboard.
 
 ### Opportunities
 
@@ -106,31 +113,36 @@ Three concrete openings from the Ash collaboration: (1) **Calibration harness de
 ### Addressed
 
 1. **C8: Advisory-only validation** — 🟢 **Closed**. Detection without correction on high-harm claims.
-> **[FH 2026-02-19]** Closed. `enforceHarmConfidenceFloor()` in verdict-stage now pushes low-confidence verdicts to UNVERIFIED for high-harm claims. Threshold (`highHarmMinConfidence`, default 50) and which harm levels trigger (`highHarmFloorLevels`, default ["critical","high"]) are UCM-configurable. *Code review (P-H3, U-L1): `as any` cast removed from the floor check; UCM defaults confirmed correctly registered.*
+Status note — C8 (2026-02-19): Closed. `enforceHarmConfidenceFloor()` in verdict-stage now pushes low-confidence verdicts to UNVERIFIED for high-harm claims. Threshold (`highHarmMinConfidence`, default 50) and triggering harm levels (`highHarmFloorLevels`, default ["critical","high"]) are UCM-configurable.
+
+Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check; UCM defaults confirmed as correctly registered.
 
 ---
 
 ## 4. Meeting Questions (prioritized)
 
+### Measures now in place (as of 2026-02-20)
+
+1. **Bias calibration harness (C10):** 10 mirrored claim pairs, skew metrics, stage indicators, JSON + self-contained HTML reports, A/B comparison support.
+2. **Failure-mode instrumentation (C18):** refusal/degradation telemetry by topic, provider, and stage in calibration outputs and runtime metrics (`failureModes`), surfaced in Admin Metrics.
+3. **High-harm validation guard (C8):** low-confidence high-harm verdicts are forced to `UNVERIFIED` via `enforceHarmConfidenceFloor()`.
+4. **Cross-provider debate separation (C1/C16):** challenger/provider separation via `debateProfile` and `debateModelProviders`, including fallback warnings in `analysisWarnings`.
+5. **Evidence-pool skew diagnostics (C13):** `assessEvidenceBalance()` detection with sample-size-aware warnings and UCM-configurable thresholds.
+6. **Contestation work (Action #6) is partial:** contestation signals exist, but verdict range reporting + baseless-challenge guard are not fully delivered yet.
+
 ### Must-ask (pick 3-4 for a single meeting)
 
-1. **Residual bias after architectural mitigation.** "Given our evidence-first architecture with contradiction search and debate, how much residual political bias do you estimate remains? Is architecture sufficient, or is model-level intervention unavoidable?"
-
-2. **Single-model vs. multi-model debate.** "Climinator uses structurally different advocates. We use the same Sonnet for all roles. Did you see qualitatively different outcomes with structural independence? Is 'performative adversarialism' a real concern?"
-> **[FH 2026-02-20]** Update for meeting: Cross-provider debate now implemented. Four UCM-selectable profiles (`baseline`, `tier-split`, `cross-provider`, `max-diversity`). `cross-provider` routes challenger to OpenAI; `max-diversity` adds Google for self-consistency. Question shifts from "should we do this?" to "does provider-level separation materially change outcomes vs. same-provider tier separation?"
-
-3. **Minimum viable bias measurement.** "What's the smallest benchmark design that distinguishes model prior bias from evidence-pool bias? What does a good political-skew calibration harness look like?"
-> **[FH 2026-02-20]** Update for meeting: Calibration harness built with 10 mirrored pairs (5 domains, 3 languages). Measures directional skew, stage bias indicators (extraction/research/evidence/verdict), and supports A/B comparison of UCM parameter changes. Question can shift from "what does it look like" to "how should we interpret the first results" and "what threshold calibration does Ash recommend?"
-
-4. **Evidence pool bias diagnostics.** "Your KB Choice paper shows domain overlap drives accuracy. Our web search chooses a KB at runtime. How should we detect when the evidence pool is poorly matched or politically skewed?"
-> **[FH 2026-02-19]** Update for meeting: We now detect directional skew in the evidence pool post-research (supporting vs. contradicting ratio with sample-size context). Question can shift from "how to detect" to "how to rebalance" and "is ratio-based detection sufficient or do we need semantic diversity metrics?"
+1. **Residual bias after current mitigations (decision: architecture vs model alignment).** "Given these controls are live, what residual political bias should we still expect, and where is model-level alignment still required?"
+2. **Cross-provider impact, now that routing is live (decision: keep/expand/limit).** "Do you expect measurable quality/bias gains from provider-level role separation versus same-provider tier separation? Which evaluation metrics should decide rollout policy?"
+3. **Calibration interpretation and thresholding (decision: governance baseline).** "For our first calibration runs, what threshold-setting method do you recommend (baseline establishment, tightening cadence, confidence intervals, minimum sample sizes)?"
+4. **Evidence-pool correction strategy (decision: correction algorithm).** "We already detect pool skew; what is the safest correction approach (query diversification, directional balancing, source-type constraints) without introducing artificial neutrality artifacts?"
 
 ### If time allows
 
-5. **AFaCTA path-consistency vs. temperature-consistency.** Which produces more stable calibration on contested claims?
-6. **Search bias compounding.** Does search engine ranking bias compound with or cancel LLM reasoning bias?
-7. **NIPCC stress test analog.** Could we use a deliberately skeptical advocate to test whether our debate genuinely surfaces controversy?
-8. **Refusal asymmetry.** How should a fact-checking system handle topic-dependent model refusals without introducing directional bias?
+5. **Path-consistency vs temperature-consistency (AFaCTA).** Should we add path-based consistency for contested claims, and how should it be evaluated against the current 3-run spread approach?
+6. **Contested-claim range design (Action #6).** For verdict ranges, should we start with consistency spread only, or include boundary-variance widening from day one?
+7. **Baseless challenge governance (Action #6).** Should baseless challenge handling remain advisory-first, or should we add a deterministic backstop when challenger citations are structurally invalid?
+8. **Search-bias compounding.** How should we separate search-provider bias effects from model reasoning bias in comparative runs?
 
 ---
 
