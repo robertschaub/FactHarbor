@@ -95,7 +95,9 @@ Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-check
 2. **C9: Self-consistency rewards stable bias** — 🟠 **High**. Illusory control providing false assurance.
 3. **C13: Evidence pool bias** — 🟠 **High**. Bias injection before any LLM reasoning; detection done but rebalancing not yet implemented.
 > **[FH 2026-02-19]** Detection implemented. `assessEvidenceBalance()` runs after Stage 2 (research), before verdicts. Emits `evidence_pool_imbalance` warning with sample-size context (e.g., "83%, 5 of 6 directional items"). Skew threshold and minimum directional count are UCM-configurable. Rebalancing (active correction) is not yet implemented — detection only. *Code review (P-M2): direction label matching fixed from `includes("support")` (would match "unsupported") to `=== "supports"` — directional counts fed into this warning are now correct.*
-4. **C17/C18: Prompt injection + refusal asymmetry** — 🟠 **High**. Novel attack vectors that amplify political bias.
+4. **C17: Prompt injection resilience** — 🟠 **High**. Novel attack vectors that can amplify political bias.
+5. **C18: Refusal asymmetry instrumentation** — 🟢 **Closed (instrumented)**. Refusal/degradation rates are now tracked by topic, provider, and stage.
+> **[FH 2026-02-20]** C18 instrumentation is implemented in calibration outputs and core runtime telemetry (`failureModes`), and surfaced in Admin Metrics summary/dashboard.
 
 ### Opportunities
 
