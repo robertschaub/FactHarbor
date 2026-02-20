@@ -19,6 +19,8 @@ export default defineConfig({
       "test/unit/lib/analyzer/adversarial-context-leak.test.ts",
       // npm run test:cb-integration — Full CB pipeline with real LLM calls
       "test/integration/claimboundary-integration.test.ts",
+      // npm run test:calibration — Political bias calibration (full pipeline x2 per pair)
+      "test/calibration/political-bias.test.ts",
     ]
   },
   resolve: {

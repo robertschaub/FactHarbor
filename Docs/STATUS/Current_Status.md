@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0 (`v1.0.0-poc`)
-**Last Updated**: 2026-02-19
+**Last Updated**: 2026-02-20
 **Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 853 tests passing, build clean. Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 886 tests passing, build clean. Political bias calibration harness implemented (Phases 1-3). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -327,13 +327,15 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Analyzer core functions (evidence-filter, aggregation, truth-scale, etc.)
 - Quality gates, confidence calibration
 - Job lifecycle
-- 45 test files, 853 tests, all mocked (no real LLM calls)
+- 45 test files, 886 tests, all mocked (no real LLM calls)
 
 **Expensive Integration Tests** (explicit scripts only, $1-5+ per run):
 - `npm run test:llm` — Multi-provider LLM integration
 - `npm run test:neutrality` — Input neutrality (full analysis x2 per pair)
 - `npm run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios)
-- `npm run test:expensive` — All expensive tests combined
+- `npm run test:calibration` — Political bias calibration, quick mode (~$3-6, ~15 min)
+- `npm run test:calibration:full` — Political bias calibration, full mode (~$10-20, ~50-70 min)
+- `npm run test:expensive` — LLM integration + neutrality + CB integration (excludes calibration)
 
 **Missing Tests:**
 - API controller tests
@@ -378,6 +380,27 @@ FH_RUNNER_MAX_CONCURRENCY=3  # Max parallel analysis jobs
 ---
 
 ## Recent Changes
+
+### 2026-02-20 Political Bias Calibration Harness (Phases 1-3)
+**Status: ✅ Implemented — Pending First Run**
+
+Reusable harness for measuring directional political bias through mirrored claim pairs. Addresses Concern C10 (Critical) from the Stammbach/Ash EMNLP 2024 paper review.
+
+**Implementation:**
+- **Phase 1 (Core):** Types, metrics computation, runner (executes pairs through `runClaimBoundaryAnalysis()`), fixture loader
+- **Phase 2 (Report):** Self-contained HTML report generator (dark theme, verdict banner, stage bias heatmap, per-pair side-by-side cards, config snapshot)
+- **Phase 3 (Diff):** A/B comparison engine — config diff + per-pair skew deltas + improved/worsened/unchanged counts
+- **Phase 4 (Admin UI):** Deferred
+
+**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json` (10 pairs), `test/calibration/political-bias.test.ts`
+
+**Run:** `npm -w apps/web run test:calibration` (quick, ~$3-6) or `test:calibration:full` (all pairs, ~$10-20)
+
+**Architect review:** Codex (GPT-5) reviewed and applied targeted adjustments — failure accounting, script safety, neutral baseline fixture policy, report direction fix.
+
+**See:** [Calibration_Harness_Design_2026-02-20.md](../WIP/Calibration_Harness_Design_2026-02-20.md)
+
+---
 
 ### 2026-02-19 Monolithic Dynamic Pipeline Schema Fix
 **Status: ✅ Implemented**
@@ -653,7 +676,7 @@ The POC set out to prove that AI can extract claims from arbitrary text, gather 
 - **Input neutrality** — question vs statement phrasing within ±4% tolerance
 - **Multi-provider LLM** — Anthropic, OpenAI, Google, Mistral with tiered routing
 - **UCM** — runtime-configurable parameters, no redeployment needed
-- **853 unit tests passing**, build clean, 2 pipeline variants operational
+- **886 unit tests passing**, build clean, 2 pipeline variants operational
 
 ---
 
@@ -675,6 +698,6 @@ All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full priori
 
 ---
 
-**Last Updated**: February 19, 2026
+**Last Updated**: February 20, 2026
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
 **Document Status**: POC declared complete. Remaining work reclassified as Alpha.

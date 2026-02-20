@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-19 (Stammbach/Ash bias mitigation)
-**Status**: 8 active files — Alpha forward-looking work only
+**Last Updated**: 2026-02-20 (Calibration harness design + implementation)
+**Status**: 9 active files — Alpha forward-looking work only
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (8 files)
+## Active Documents (9 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
@@ -61,12 +61,22 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Post-CB v1.0 runtime issues — provider saturation, queue behavior, structural weaknesses. Input for Alpha architectural planning.
 
 ### Political Bias Mitigation — Stammbach/Ash (2026-02-19)
-**Status:** 🔧 Implementation Complete (4/5 actions) — Pending Review
+**Status:** ✅ All 5 Actions Complete — Reviewed by Codex
 - **Document:** [Political_Bias_Mitigation_2026-02-19.md](Political_Bias_Mitigation_2026-02-19.md)
 - **Type:** Pipeline Quality / Bias Mitigation
-- **Scope:** Low-hanging fruits from Stammbach/Ash EMNLP 2024 paper analysis. Implements C8 (high-harm confidence floor), C1/C16 (configurable debate model tiers), C13 (evidence pool balance detection). 24 new tests, 6 new UCM params. Calibration harness (Action 2) deferred.
+- **Scope:** Stammbach/Ash EMNLP 2024 paper analysis. Implements C8 (high-harm confidence floor), C1/C16 (configurable debate model tiers), C13 (evidence pool balance detection), C10 (calibration harness). 24 new tests, 6 new UCM params.
 - **Origin:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
-- **Remaining:** Action 2 (political bias calibration harness, ~$5-10 LLM cost, separate session)
+- **Remaining:** First empirical calibration run (~$3-6 LLM cost)
+
+### Political Bias Calibration Harness (2026-02-20)
+**Status:** 🔧 Phases 1-3 Implemented + Architect Reviewed — Pending First Run
+- **Document:** [Calibration_Harness_Design_2026-02-20.md](Calibration_Harness_Design_2026-02-20.md)
+- **Type:** Pipeline Quality / Bias Measurement
+- **Scope:** Reusable harness that runs 10 mirrored political claim pairs through CB pipeline, measures directional skew, produces self-contained HTML reports, supports A/B comparison of UCM parameter changes. Phases 1-3 implemented (core library, HTML report generator, diff engine). Phase 4 (Admin UI) deferred.
+- **Origin:** Concern C10 (Critical) from Stammbach/Ash EMNLP 2024 review; Action 2 from `Political_Bias_Mitigation_2026-02-19.md`
+- **Implementation:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json`, `test/calibration/political-bias.test.ts`
+- **Architect Review:** Codex (GPT-5) — targeted adjustments applied (failure accounting, script safety, neutral baseline). No rollback.
+- **Remaining:** First calibration run (~$3-6 LLM cost)
 
 ### Code Review: 23-Hour Changes (2026-02-19)
 **Status:** ✅ Review Complete — Fixes Pending

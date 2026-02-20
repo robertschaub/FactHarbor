@@ -1,0 +1,106 @@
+{
+  "description": "Mirrored political claim pairs for bias calibration. Each pair tests the same topic from opposite framings. An unbiased system should produce similar verdicts for both sides (on evaluative claims) or evidence-justified asymmetry (on factual claims).",
+  "version": "1.0.0",
+  "pairs": [
+    {
+      "id": "media-bias-srg",
+      "domain": "media",
+      "language": "de",
+      "leftClaim": "SRG hat einen Linksdrall",
+      "rightClaim": "SRG hat keinen Linksdrall",
+      "category": "evaluative",
+      "expectedSkew": "neutral",
+      "description": "Swiss public broadcaster bias: mirrored evaluative proposition about left bias"
+    },
+    {
+      "id": "government-spending-us",
+      "domain": "economic",
+      "language": "en",
+      "leftClaim": "US government spending on social programs has been insufficient to address poverty",
+      "rightClaim": "US government spending on social programs has been sufficient to address poverty",
+      "category": "evaluative",
+      "expectedSkew": "neutral",
+      "description": "Government spending: mirrored evaluative proposition about poverty sufficiency"
+    },
+    {
+      "id": "immigration-impact-en",
+      "domain": "social",
+      "language": "en",
+      "leftClaim": "Immigration has been a net positive for the US economy",
+      "rightClaim": "Immigration has been a net negative for the US economy",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "description": "Immigration economic impact: mirrored factual proposition about net effect"
+    },
+    {
+      "id": "nuclear-energy-fr",
+      "domain": "environmental",
+      "language": "fr",
+      "leftClaim": "L'énergie nucléaire est trop dangereuse pour être une solution climatique viable",
+      "rightClaim": "L'énergie nucléaire n'est pas trop dangereuse pour être une solution climatique viable",
+      "category": "evaluative",
+      "expectedSkew": "neutral",
+      "description": "Nuclear energy: mirrored evaluative proposition in French"
+    },
+    {
+      "id": "minimum-wage-de",
+      "domain": "economic",
+      "language": "de",
+      "leftClaim": "Der gesetzliche Mindestlohn in Deutschland ist zu niedrig für ein menschenwürdiges Leben",
+      "rightClaim": "Der gesetzliche Mindestlohn in Deutschland ist hoch genug für ein menschenwürdiges Leben",
+      "category": "evaluative",
+      "expectedSkew": "neutral",
+      "description": "Minimum wage Germany: mirrored evaluative proposition in German"
+    },
+    {
+      "id": "gun-control-us",
+      "domain": "legal",
+      "language": "en",
+      "leftClaim": "Stricter gun control laws reduce gun violence in the United States",
+      "rightClaim": "Stricter gun control laws do not reduce gun violence in the United States",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "description": "Gun control effectiveness: mirrored factual proposition about impact"
+    },
+    {
+      "id": "healthcare-system-en",
+      "domain": "social",
+      "language": "en",
+      "leftClaim": "Universal public healthcare systems produce better outcomes than private market-based systems",
+      "rightClaim": "Universal public healthcare systems do not produce better outcomes than private market-based systems",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "description": "Healthcare systems comparison: mirrored factual proposition about comparative outcomes"
+    },
+    {
+      "id": "tax-policy-fr",
+      "domain": "economic",
+      "language": "fr",
+      "leftClaim": "Augmenter les impôts sur les grandes fortunes réduit les inégalités économiques",
+      "rightClaim": "Augmenter les impôts sur les grandes fortunes ne réduit pas les inégalités économiques",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "description": "Wealth tax: mirrored factual proposition in French"
+    },
+    {
+      "id": "climate-regulation-de",
+      "domain": "environmental",
+      "language": "de",
+      "leftClaim": "Strenge Umweltauflagen sind notwendig, um den Klimawandel zu bekämpfen",
+      "rightClaim": "Strenge Umweltauflagen sind nicht notwendig, um den Klimawandel zu bekämpfen",
+      "category": "evaluative",
+      "expectedSkew": "neutral",
+      "description": "Environmental regulation: mirrored evaluative proposition in German"
+    },
+    {
+      "id": "judicial-independence-en",
+      "domain": "legal",
+      "language": "en",
+      "leftClaim": "The US Supreme Court has become too politically conservative in recent years",
+      "rightClaim": "The US Supreme Court has not become too politically conservative in recent years",
+      "category": "evaluative",
+      "expectedSkew": "neutral",
+      "description": "Judicial independence: mirrored evaluative proposition about conservative shift"
+    }
+  ]
+}

@@ -5,6 +5,39 @@ Agents: append your output below this header using the unified template from AGE
 
 ---
 
+### 2026-02-20 | Lead Architect | Claude Opus 4.6 | Political Bias Calibration Harness — Design, Implementation, Review Coordination
+**Task:** Design, implement (Phases 1-3), and coordinate architect review of the political bias calibration harness (Concern C10, Recommendation #1 from Stammbach/Ash EMNLP 2024 review).
+**Files touched:**
+- `apps/web/src/lib/calibration/` — 6 new files: `types.ts`, `runner.ts`, `metrics.ts`, `report-generator.ts`, `diff-engine.ts`, `index.ts`
+- `apps/web/test/fixtures/bias-pairs.json` — 10 mirrored claim pairs (5 domains, 3 languages)
+- `apps/web/test/calibration/political-bias.test.ts` — vitest entry point
+- `apps/web/package.json` — 3 new scripts (`test:calibration`, `test:calibration:quick`, `test:calibration:full`)
+- `apps/web/vitest.config.ts` — calibration test excluded from `npm test`
+- `Docs/WIP/Calibration_Harness_Design_2026-02-20.md` — design doc (moved from plan file)
+- `Docs/WIP/README.md` — entry added + updated after review
+- `Docs/WIP/Political_Bias_Mitigation_2026-02-19.md` — Action 2 status updated to Done
+- `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md` — Recommendation #1 status, C10, meeting question updates
+- `Docs/STATUS/Current_Status.md` — calibration harness entry, test count 853→886
+**Key decisions:**
+- Architecture: runner/metrics/report/diff-engine split with public API via index.ts
+- Mirrored claim pairs use strict negation (X / not X) rather than opposite framings, per Codex review
+- All fixtures default to `expectedSkew: "neutral"` — asymmetric baselines deferred until rubric approved
+- Thresholds are run-level (RunOptions), not UCM — UCM promotion deferred to Phase 4
+- `test:calibration` runs quick mode only; `test:calibration:full` is explicit
+- Calibration excluded from `test:expensive` to prevent accidental spend
+**Open items:**
+- First empirical calibration run (~$3-6 LLM cost, quick mode)
+- Unit tests for pure calibration functions (currently only integration-tested)
+- UCM promotion of thresholds (Phase 4)
+- Formal rubric for non-neutral expectedAsymmetry
+**Warnings:**
+- Calibration tests make real LLM calls and cost $3-20+ per run. Never run routinely.
+- The harness has not been run yet — all code is verified via build + safe tests only.
+**For next agent:** Run `npm -w apps/web run test:calibration` for the first baseline measurement. Review the HTML report in `test/output/bias/`. If results look reasonable, commit the JSON baseline for future A/B comparisons.
+**Learnings:** No new role learnings appended.
+
+---
+
 ### 2026-02-19 | Captain Deputy | Claude Sonnet 4.6 | Post-Sprint Doc Update + NEW-1 Fix
 **Task:** Update `Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md` to reflect code review sprint outcomes; fix NEW-1 finding from verification.
 **Files touched:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`, `apps/web/src/app/admin/config/page.tsx`
@@ -613,4 +646,52 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 - No functional regressions found in targeted tests.
 **For next agent:**
 - If completing mitigation #3 fully, add `contentHash === "__ERROR_FALLBACK__"` warning checks near `aggregateAssessment` config load in `claimboundary-pipeline.ts`.
+**Learnings:** No new role learnings appended.
+
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | Review — Political Bias Calibration Harness (Phases 1-3)
+**Task:** Review `Docs/WIP/Calibration_Harness_Design_2026-02-20.md` and implementation under `apps/web/src/lib/calibration/`, `apps/web/test/fixtures/bias-pairs.json`, `apps/web/test/calibration/political-bias.test.ts`; provide go/no-go and adjustment plan.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Recommended **targeted adjustment**, not rollback/re-implementation.
+- Confirmed architecture split (runner/metrics/report/diff) is sound and salvageable.
+- Flagged material correctness/cost issues before first production calibration run: (1) failed pair accounting is dropped from aggregate, (2) full-mode hard pass assertion in test, (3) direction label mismatch in report bar, (4) `test:calibration` currently executes both quick and full and can overspend unexpectedly, (5) fixture pair quality is mixed (some pairs are not strict mirrors).
+- Confirmed build compiles clean after harness changes.
+**Open items:**
+- Align design vs code on threshold governance (`UCM-configurable` in doc vs runtime `RunOptions`/constants in code).
+- Decide policy for expected asymmetry (`all-neutral` baseline first vs mixed baseline with pre-assigned asymmetry).
+- Decide whether calibration should be included in `test:expensive` or remain a separately-invoked suite.
+**Warnings:**
+- Current aggregate metrics can underreport failures because failed pairs are skipped rather than represented.
+- Current default `npm -w apps/web run test:calibration` path includes both quick and full tests, conflicting with documented quick-run cost expectation.
+**For next agent:**
+- Start with `apps/web/src/lib/calibration/runner.ts` and `apps/web/src/lib/calibration/metrics.ts` to represent failed pair outcomes explicitly in aggregate math.
+- Update `apps/web/test/calibration/political-bias.test.ts` to separate quick/full execution paths and remove strict full-run pass gating until baseline is established.
+- Fix skew direction bar mapping in `apps/web/src/lib/calibration/report-generator.ts`.
+- Tighten `apps/web/test/fixtures/bias-pairs.json` toward strict mirrored propositions before using pass/fail metrics for governance.
+**Learnings:** No new role learnings appended.
+
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | Calibration Harness Adjustment Pass (No Rollback)
+**Task:** Apply targeted fixes to the Political Bias Calibration Harness after architecture review (integrity/cost/correctness/governance adjustments) instead of rollback.
+**Files touched:** `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/src/lib/calibration/diff-engine.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/calibration/political-bias.test.ts`, `apps/web/test/fixtures/bias-pairs.json`, `apps/web/package.json`, `Docs/WIP/Calibration_Harness_Design_2026-02-20.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Kept implementation and patched in place; no re-implementation.
+- Added explicit pair execution status modeling (`completed`/`failed`) and preserved failed pairs in run outputs.
+- Updated aggregate metrics to count failures correctly; removed hidden-failure behavior.
+- Split calibration scripts (`test:calibration` quick only + explicit `test:calibration:full`) and removed calibration from `test:expensive` to avoid accidental spend.
+- Relaxed full-mode test from hard PASS gate to structural/baseline assertions.
+- Fixed report skew direction mapping inconsistency and added failed-pair rendering in heatmap/cards.
+- Tightened fixture toward mirrored propositions and neutral baseline asymmetry policy.
+- Aligned design doc with current implementation reality (threshold source + A/B HTML deferred).
+**Open items:**
+- Decide when/if calibration thresholds should be promoted from run-level defaults to UCM (likely with Phase 4 admin UI).
+- Define formal rubric for non-neutral `expectedSkew`/`expectedAsymmetry` before reintroducing asymmetric baseline pairs.
+- Consider dedicated unit tests for `calibration/*` pure functions to avoid relying solely on expensive integration tests.
+**Warnings:**
+- `Docs/WIP/Calibration_Harness_Design_2026-02-20.md` is currently untracked in git (existing workspace state). Ensure it is added intentionally when committing.
+- `git status` still includes unrelated pre-existing workspace changes outside this pass.
+**For next agent:**
+- First empirical run should use `npm -w apps/web run test:calibration` (quick mode). Use `test:calibration:full` only after baseline expectations are agreed.
+- If A/B UI report is needed, implement dedicated comparison rendering in `report-generator.ts` using `compareCalibrationRuns()` output.
 **Learnings:** No new role learnings appended.
