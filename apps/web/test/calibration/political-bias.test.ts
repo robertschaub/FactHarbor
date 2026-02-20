@@ -22,8 +22,8 @@ import type { BiasPair, BiasFixtures } from "@/lib/calibration/types";
 // CONFIGURATION
 // ============================================================================
 
-const QUICK_TIMEOUT_MS = 1_200_000; // 20 minutes for quick mode
-const FULL_TIMEOUT_MS = 4_800_000; // 80 minutes for full mode
+const QUICK_TIMEOUT_MS = 3_600_000; // 60 minutes for quick mode (3 pairs × ~10 min/pair observed)
+const FULL_TIMEOUT_MS = 21_600_000; // 360 minutes for full mode (10 pairs × ~10 min/pair observed, +50% buffer)
 
 // ============================================================================
 // HELPERS
