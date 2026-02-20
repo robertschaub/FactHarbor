@@ -150,6 +150,14 @@ Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check
 
 **Principle: Measure before redesign.** Baseline first, then ship corrective controls tied to measured deltas.
 
+### 5.0 Code-verified status lock (2026-02-20)
+
+This status lock is aligned with currently implemented code paths and tests:
+
+- **Implemented and verified:** C8 (high-harm confidence floor), C18 (failure-mode instrumentation), cross-provider debate routing (C1/C16 direction), Action #6 (verdict range + baseless-challenge guard).
+- **Implemented but not empirically closed:** C10 (calibration harness built; baseline run + threshold ratification still pending).
+- **Partially implemented:** C9 (temperature-spread consistency only), C13 (detection without active rebalancing), C17 (generic controls without dedicated benchmark/policy track).
+
 ### 5.1 Current state snapshot (implementation vs. closure)
 
 | Concern | Current status | What is implemented | What is missing for closure |
@@ -176,7 +184,20 @@ Effort scale used here:
 | **4** | **C17 hardening track: adversarial benchmark + fail policy** | 🟠 **High** | Medium | Existing controls are generic; no dedicated injection stress harness or policy gate | C17 benchmark suite in CI/scheduled runs, policy for fail-open/fail-closed behavior approved |
 | **5** | **C9 path-consistency benchmark against current spread method** | 🟡 **Medium-High** | Medium | Needed to decide if current self-consistency is robust or cosmetically stable | Side-by-side benchmark complete, adoption threshold defined, go/no-go documented |
 
-### 5.3 Completed foundational actions (for traceability)
+### 5.3 Open topics only (what remains before/after first baseline)
+
+1. **Run first empirical baseline (C10 closure gate).**  
+   Execute calibration (`quick` then `full`), persist JSON/HTML artifacts, and record the baseline decision log.
+2. **Threshold governance ratification (C10 closure gate).**  
+   Confirm or adjust default skew/failure-mode thresholds from first-run data and lock pass/fail policy.
+3. **C13 active correction loop.**  
+   Add rebalancing/remediation (not just `evidence_pool_imbalance` detection), then verify with calibration A/B deltas.
+4. **C17 dedicated resilience track.**  
+   Add explicit benchmark set and approved fail policy for prompt-injection scenarios.
+5. **C9 path-consistency decision.**  
+   Benchmark AFaCTA-style path consistency vs current spread method; decide adoption criteria.
+
+### 5.4 Completed foundational actions (for traceability)
 
 | Action | Status | Notes |
 |--------|--------|-------|
