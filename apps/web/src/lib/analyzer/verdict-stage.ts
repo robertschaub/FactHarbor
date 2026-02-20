@@ -22,11 +22,14 @@
  */
 
 import type {
+  AnalysisWarning,
   AtomicClaim,
   BoundaryFinding,
   CBClaimVerdict,
   ChallengeDocument,
+  ChallengePoint,
   ChallengeResponse,
+  ChallengeValidation,
   ClaimAssessmentBoundary,
   ClaimVerdict7Point,
   ConsistencyResult,
@@ -117,6 +120,15 @@ export interface VerdictStageConfig {
 
   /** Harm levels that trigger the confidence floor. Default: ["critical", "high"]. */
   highHarmFloorLevels: Array<"critical" | "high" | "medium" | "low">;
+
+  /** Range reporting configuration (Stammbach/Ash Action #6). */
+  rangeReporting?: {
+    enabled: boolean;
+    /** Range width (pp) above which a contested_verdict_range warning is emitted. */
+    wideRangeThreshold: number;
+    /** Boundary variance widening weight (0-1). 0.0 = disabled (method A). */
+    boundaryVarianceWeight: number;
+  };
 }
 
 /**
@@ -197,6 +209,7 @@ export async function runVerdictStage(
   coverageMatrix: CoverageMatrix,
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+  warnings?: AnalysisWarning[],
 ): Promise<CBClaimVerdict[]> {
   // Step 1: Advocate Verdict
   const advocateVerdicts = await advocateVerdict(
@@ -209,13 +222,18 @@ export async function runVerdictStage(
     adversarialChallenge(advocateVerdicts, evidence, boundaries, llmCall, config),
   ]);
 
-  // Step 4: Reconciliation
-  const reconciledVerdicts = await reconcileVerdicts(
-    advocateVerdicts, challengeDoc, consistencyResults, llmCall, config
+  // Step 4: Reconciliation (with evidence for challenge validation)
+  const { verdicts: reconciledVerdicts, validatedChallengeDoc } = await reconcileVerdicts(
+    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config
+  );
+
+  // Step 4b: Baseless challenge enforcement (hybrid — revert baseless adjustments)
+  const enforcedVerdicts = enforceBaselessChallengePolicy(
+    reconciledVerdicts, validatedChallengeDoc, advocateVerdicts, warnings
   );
 
   // Step 5: Verdict Validation
-  const validatedVerdicts = await validateVerdicts(reconciledVerdicts, evidence, llmCall, config);
+  const validatedVerdicts = await validateVerdicts(enforcedVerdicts, evidence, llmCall, config);
 
   // Structural Consistency Check (deterministic)
   const structuralWarnings = runStructuralConsistencyCheck(
@@ -230,6 +248,24 @@ export async function runVerdictStage(
 
   // Gate 4: Confidence classification
   const finalVerdicts = classifyConfidence(harmEnforcedVerdicts);
+
+  // Range reporting: compute truthPercentageRange for each verdict
+  if (config.rangeReporting?.enabled) {
+    for (const v of finalVerdicts) {
+      v.truthPercentageRange = computeTruthPercentageRange(v, config.rangeReporting);
+      // Emit warning if range is wider than threshold
+      if (v.truthPercentageRange) {
+        const width = v.truthPercentageRange.max - v.truthPercentageRange.min;
+        if (width > config.rangeReporting.wideRangeThreshold) {
+          warnings?.push({
+            type: "contested_verdict_range",
+            severity: "info",
+            message: `Claim ${v.claimId}: truth% range ${v.truthPercentageRange.min}–${v.truthPercentageRange.max} (width ${width.toFixed(1)} pp) exceeds threshold ${config.rangeReporting.wideRangeThreshold} pp.`,
+          });
+        }
+      }
+    }
+  }
 
   return finalVerdicts;
 }
@@ -426,13 +462,22 @@ export async function adversarialChallenge(
  *
  * @returns Final CBClaimVerdicts with revised truth%, confidence, and challenge responses
  */
+export interface ReconcileVerdictsResult {
+  verdicts: CBClaimVerdict[];
+  validatedChallengeDoc: ChallengeDocument;
+}
+
 export async function reconcileVerdicts(
   advocateVerdicts: CBClaimVerdict[],
   challengeDoc: ChallengeDocument,
   consistencyResults: ConsistencyResult[],
+  evidence: EvidenceItem[],
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
-): Promise<CBClaimVerdict[]> {
+): Promise<ReconcileVerdictsResult> {
+  // Validate challenge evidence IDs before reconciliation
+  const validatedChallengeDoc = validateChallengeEvidence(challengeDoc, evidence);
+
   const result = await llmCall("VERDICT_RECONCILIATION", {
     advocateVerdicts: advocateVerdicts.map((v) => ({
       claimId: v.claimId,
@@ -443,13 +488,13 @@ export async function reconcileVerdicts(
       contradictingEvidenceIds: v.contradictingEvidenceIds,
       boundaryFindings: v.boundaryFindings,
     })),
-    challenges: challengeDoc.challenges,
+    challenges: validatedChallengeDoc.challenges,
     consistencyResults,
   }, { tier: config.debateModelTiers.reconciler, providerOverride: config.debateModelProviders.reconciler });
 
   const rawReconciled = result as Array<Record<string, unknown>>;
 
-  return advocateVerdicts.map((original) => {
+  const verdicts = advocateVerdicts.map((original) => {
     const reconciled = rawReconciled.find((r) => String(r.claimId) === original.claimId);
     if (!reconciled) return original;
 
@@ -468,6 +513,8 @@ export async function reconcileVerdicts(
       challengeResponses: parseChallengeResponses(reconciled.challengeResponses),
     };
   });
+
+  return { verdicts, validatedChallengeDoc };
 }
 
 // ============================================================================
@@ -692,6 +739,55 @@ export function classifyConfidence(
 }
 
 // ============================================================================
+// VERDICT RANGE REPORTING (Stammbach/Ash Action #6)
+// ============================================================================
+
+import type { TruthPercentageRange } from "./types";
+
+/**
+ * Compute a plausible truth percentage range for a verdict.
+ *
+ * Base range: min/max of self-consistency percentages.
+ * Optional widening: when 2+ boundary findings exist and boundaryVarianceWeight > 0,
+ * expand symmetrically by (weight × boundarySpread / 2).
+ * Clamp to [0, 100].
+ *
+ * Returns undefined if consistency was not assessed or range reporting is disabled.
+ */
+export function computeTruthPercentageRange(
+  verdict: CBClaimVerdict,
+  rangeConfig?: VerdictStageConfig["rangeReporting"],
+): TruthPercentageRange | undefined {
+  if (!rangeConfig?.enabled) return undefined;
+  if (!verdict.consistencyResult.assessed) return undefined;
+
+  const percentages = verdict.consistencyResult.percentages;
+  if (percentages.length === 0) return undefined;
+
+  // Base range from consistency spread
+  let min = Math.min(...percentages);
+  let max = Math.max(...percentages);
+
+  // Boundary variance widening (method B, weight-controlled)
+  const weight = rangeConfig.boundaryVarianceWeight ?? 0;
+  if (weight > 0 && verdict.boundaryFindings.length >= 2) {
+    const boundaryTruthValues = verdict.boundaryFindings.map((bf) => bf.truthPercentage);
+    const boundaryMin = Math.min(...boundaryTruthValues);
+    const boundaryMax = Math.max(...boundaryTruthValues);
+    const boundarySpread = boundaryMax - boundaryMin;
+    const widening = (weight * boundarySpread) / 2;
+    min -= widening;
+    max += widening;
+  }
+
+  // Clamp to [0, 100]
+  return {
+    min: Math.max(0, Math.round(min * 10) / 10),
+    max: Math.min(100, Math.round(max * 10) / 10),
+  };
+}
+
+// ============================================================================
 // SPREAD MULTIPLIER (§8.5.5)
 // ============================================================================
 
@@ -760,27 +856,38 @@ function parseChallengeDocument(raw: unknown): ChallengeDocument {
   const obj = raw as Record<string, unknown>;
   const challenges = Array.isArray(obj.challenges) ? obj.challenges : [];
   return {
-    challenges: challenges.map((c: Record<string, unknown>) => ({
-      claimId: String(c.claimId ?? ""),
-      challengePoints: Array.isArray(c.challengePoints)
-        ? c.challengePoints.map((cp: Record<string, unknown>) => ({
-            type: parseChallengeType(cp.type),
-            description: String(cp.description ?? ""),
-            evidenceIds: asStringArray(cp.evidenceIds),
-            severity: parseSeverity(cp.severity),
-          }))
-        : [],
-    })),
+    challenges: challenges.map((c: Record<string, unknown>) => {
+      const claimId = String(c.claimId ?? "");
+      return {
+        claimId,
+        challengePoints: Array.isArray(c.challengePoints)
+          ? c.challengePoints.map((cp: Record<string, unknown>, idx: number) => ({
+              id: String(cp.id ?? `CP_${claimId}_${idx}`),
+              type: parseChallengeType(cp.type),
+              description: String(cp.description ?? ""),
+              evidenceIds: asStringArray(cp.evidenceIds),
+              severity: parseSeverity(cp.severity),
+            }))
+          : [],
+      };
+    }),
   };
 }
 
 function parseChallengeResponses(raw: unknown): ChallengeResponse[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((r: Record<string, unknown>) => ({
-    challengeType: parseChallengeType(r.challengeType),
-    response: String(r.response ?? ""),
-    verdictAdjusted: Boolean(r.verdictAdjusted ?? false),
-  }));
+  return raw.map((r: Record<string, unknown>) => {
+    const result: ChallengeResponse = {
+      challengeType: parseChallengeType(r.challengeType),
+      response: String(r.response ?? ""),
+      verdictAdjusted: Boolean(r.verdictAdjusted ?? false),
+    };
+    // Explicit provenance: which challenge point IDs drove this adjustment
+    if (Array.isArray(r.adjustmentBasedOnChallengeIds)) {
+      result.adjustmentBasedOnChallengeIds = r.adjustmentBasedOnChallengeIds.map(String);
+    }
+    return result;
+  });
 }
 
 function parseChallengeType(raw: unknown): ChallengeResponse["challengeType"] {
@@ -802,6 +909,204 @@ function asStringArray(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.map(String);
 }
+
+// ============================================================================
+// BASELESS CHALLENGE GUARD (Stammbach/Ash Action #6)
+// ============================================================================
+
+/**
+ * Validate challenge evidence IDs against the evidence pool.
+ * Annotates each ChallengePoint with a `challengeValidation` object.
+ * This is a deterministic structural check (ID existence), not semantic analysis.
+ *
+ * Called BEFORE reconciler sees challenges — enriches prompt input with validation metadata.
+ */
+export function validateChallengeEvidence(
+  challengeDoc: ChallengeDocument,
+  evidence: EvidenceItem[],
+): ChallengeDocument {
+  const evidenceIdSet = new Set(evidence.map((e) => e.id));
+
+  return {
+    challenges: challengeDoc.challenges.map((c) => ({
+      ...c,
+      challengePoints: c.challengePoints.map((cp) => {
+        const validIds = cp.evidenceIds.filter((id) => evidenceIdSet.has(id));
+        const invalidIds = cp.evidenceIds.filter((id) => !evidenceIdSet.has(id));
+        const validation: ChallengeValidation = {
+          evidenceIdsValid: invalidIds.length === 0 && cp.evidenceIds.length > 0,
+          validIds,
+          invalidIds,
+        };
+        return { ...cp, challengeValidation: validation };
+      }),
+    })),
+  };
+}
+
+export interface BaselessEnforcementResult {
+  blockedCount: number;
+  baselessAdjustmentRate: number;
+}
+
+/**
+ * Hybrid enforcement: revert verdict adjustments based entirely on baseless challenges.
+ *
+ * Post-reconciliation check:
+ * - If verdictAdjusted=true AND all referenced challenge points have zero valid evidence IDs → REVERT
+ * - If verdictAdjusted=true AND provenance missing/ambiguous → REVERT (policy violation)
+ * - If mixed (some valid, some baseless) → advisory warning only, no revert
+ *
+ * Satisfies AGENTS.md: "Evidence-weighted contestation — baseless challenges MUST NOT reduce truth% or confidence."
+ */
+export function enforceBaselessChallengePolicy(
+  reconciledVerdicts: CBClaimVerdict[],
+  validatedChallengeDoc: ChallengeDocument,
+  advocateVerdicts: CBClaimVerdict[],
+  warnings?: AnalysisWarning[],
+): CBClaimVerdict[] {
+  // Build a flat map of all challenge points by explicit ID for provenance lookup
+  const challengePointMap = new Map<string, ChallengePoint>();
+  for (const c of validatedChallengeDoc.challenges) {
+    for (const cp of c.challengePoints) {
+      challengePointMap.set(cp.id, cp);
+    }
+  }
+
+  let totalAdjustments = 0;
+  let baselessCount = 0;
+
+  const enforcedVerdicts = reconciledVerdicts.map((verdict) => {
+    const adjustedResponses = verdict.challengeResponses.filter((cr) => cr.verdictAdjusted);
+    if (adjustedResponses.length === 0) return verdict;
+
+    totalAdjustments += adjustedResponses.length;
+
+    // Find challenge points for this claim
+    const claimChallenges = validatedChallengeDoc.challenges.find(
+      (c) => c.claimId === verdict.claimId,
+    );
+    if (!claimChallenges) return verdict;
+
+    for (const cr of adjustedResponses) {
+      // Determine which challenge points drove this adjustment
+      const referencedPoints: ChallengePoint[] = [];
+      let unresolvedIds: string[] = [];
+
+      if (cr.adjustmentBasedOnChallengeIds && cr.adjustmentBasedOnChallengeIds.length > 0) {
+        // Explicit provenance — look up by ID
+        for (const cpId of cr.adjustmentBasedOnChallengeIds) {
+          const point = challengePointMap.get(cpId);
+          if (point) {
+            referencedPoints.push(point);
+          } else {
+            unresolvedIds.push(cpId);
+          }
+        }
+      } else {
+        // No provenance — match by challengeType (ambiguous fallback)
+        const matchingPoints = claimChallenges.challengePoints.filter(
+          (cp) => cp.type === cr.challengeType,
+        );
+        referencedPoints.push(...matchingPoints);
+      }
+
+      const hasProvenance = cr.adjustmentBasedOnChallengeIds && cr.adjustmentBasedOnChallengeIds.length > 0;
+
+      // Finding 1 fix: non-empty provenance IDs that ALL failed to resolve → treat as policy violation
+      if (hasProvenance && referencedPoints.length === 0) {
+        baselessCount++;
+        const advocate = advocateVerdicts.find((a) => a.claimId === verdict.claimId);
+        if (advocate) {
+          warnings?.push({
+            type: "baseless_challenge_blocked",
+            severity: "warning",
+            message: `Claim ${verdict.claimId}: verdict adjustment reverted — all ${unresolvedIds.length} provenance IDs are unresolved (${unresolvedIds.join(", ")}).`,
+          });
+          return {
+            ...verdict,
+            truthPercentage: advocate.truthPercentage,
+            confidence: advocate.confidence,
+            verdict: advocate.verdict,
+          };
+        }
+      }
+
+      // Check if ALL referenced points are baseless (zero valid evidence IDs)
+      const allBaseless = referencedPoints.length > 0 && referencedPoints.every(
+        (cp) => cp.challengeValidation && cp.challengeValidation.validIds.length === 0,
+      );
+      const someBaseless = referencedPoints.some(
+        (cp) => cp.challengeValidation && cp.challengeValidation.validIds.length === 0,
+      );
+
+      if (!hasProvenance && cr.verdictAdjusted) {
+        // Missing provenance — policy violation → revert
+        baselessCount++;
+        const advocate = advocateVerdicts.find((a) => a.claimId === verdict.claimId);
+        if (advocate) {
+          warnings?.push({
+            type: "baseless_challenge_blocked",
+            severity: "warning",
+            message: `Claim ${verdict.claimId}: verdict adjustment reverted — challenge response lacks adjustmentBasedOnChallengeIds provenance (policy violation).`,
+          });
+          return {
+            ...verdict,
+            truthPercentage: advocate.truthPercentage,
+            confidence: advocate.confidence,
+            verdict: advocate.verdict,
+          };
+        }
+      } else if (allBaseless) {
+        // All referenced challenges are baseless → BLOCK/REVERT
+        baselessCount++;
+        const advocate = advocateVerdicts.find((a) => a.claimId === verdict.claimId);
+        if (advocate) {
+          warnings?.push({
+            type: "baseless_challenge_blocked",
+            severity: "warning",
+            message: `Claim ${verdict.claimId}: verdict adjustment reverted — all ${referencedPoints.length} challenge points cite non-existent evidence IDs.`,
+          });
+          return {
+            ...verdict,
+            truthPercentage: advocate.truthPercentage,
+            confidence: advocate.confidence,
+            verdict: advocate.verdict,
+          };
+        }
+      } else if (someBaseless || unresolvedIds.length > 0) {
+        // Mixed provenance (or some unresolved IDs alongside valid ones) — advisory warning only
+        const detail = unresolvedIds.length > 0
+          ? ` (${unresolvedIds.length} unresolved provenance IDs: ${unresolvedIds.join(", ")})`
+          : "";
+        warnings?.push({
+          type: "baseless_challenge_detected",
+          severity: "info",
+          message: `Claim ${verdict.claimId}: some challenge points cite non-existent evidence IDs (mixed provenance — not reverted).${detail}`,
+        });
+      }
+    }
+
+    return verdict;
+  });
+
+  // Surface enforcement metrics as structured warning (Finding 2 fix)
+  if (totalAdjustments > 0) {
+    const rate = baselessCount / totalAdjustments;
+    warnings?.push({
+      type: "baseless_challenge_detected",
+      severity: baselessCount > 0 ? "warning" : "info",
+      message: `Baseless challenge enforcement: ${baselessCount}/${totalAdjustments} adjustments blocked (rate: ${(rate * 100).toFixed(1)}%).`,
+      details: { baselessAdjustmentRate: rate, blockedCount: baselessCount, totalAdjustments },
+    });
+  }
+
+  return enforcedVerdicts;
+}
+
+// ============================================================================
+// INTERNAL PARSING HELPERS
+// ============================================================================
 
 function clampPercentage(value: number): number {
   if (!Number.isFinite(value)) return 50;

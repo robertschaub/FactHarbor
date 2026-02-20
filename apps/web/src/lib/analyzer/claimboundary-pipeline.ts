@@ -3007,7 +3007,7 @@ export async function generateVerdicts(
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
   const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings);
 
-  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig);
+  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings);
 }
 
 // ============================================================================
@@ -3070,6 +3070,13 @@ export function buildVerdictStageConfig(
       validation: explicitProviders?.validation ?? profileProviders?.validation,
     },
     highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
+    rangeReporting: calcConfig.rangeReporting
+      ? {
+          enabled: calcConfig.rangeReporting.enabled,
+          wideRangeThreshold: calcConfig.rangeReporting.wideRangeThreshold,
+          boundaryVarianceWeight: calcConfig.rangeReporting.boundaryVarianceWeight,
+        }
+      : undefined,
   };
 }
 
@@ -3405,6 +3412,34 @@ export async function aggregateAssessment(
   // ------------------------------------------------------------------
   // Step 5: Report assembly
   // ------------------------------------------------------------------
+
+  // Compute overall truth% range from per-claim ranges (weighted min/max)
+  let overallRange: { min: number; max: number } | undefined;
+  const claimsWithRange = claimVerdicts.filter((v) => v.truthPercentageRange);
+  if (claimsWithRange.length > 0) {
+    const totalW = weightsData.reduce((sum, item) => sum + item.weight, 0);
+    if (totalW > 0) {
+      let weightedMin = 0;
+      let weightedMax = 0;
+      for (let i = 0; i < claimVerdicts.length; i++) {
+        const v = claimVerdicts[i];
+        const w = weightsData[i]?.weight ?? 0;
+        if (v.truthPercentageRange) {
+          weightedMin += v.truthPercentageRange.min * w;
+          weightedMax += v.truthPercentageRange.max * w;
+        } else {
+          // No range — use point estimate for both min and max
+          weightedMin += v.truthPercentage * w;
+          weightedMax += v.truthPercentage * w;
+        }
+      }
+      overallRange = {
+        min: Math.round((weightedMin / totalW) * 10) / 10,
+        max: Math.round((weightedMax / totalW) * 10) / 10,
+      };
+    }
+  }
+
   return {
     truthPercentage: Math.round(weightedTruthPercentage * 10) / 10,
     verdict: verdictLabel,
@@ -3415,6 +3450,7 @@ export async function aggregateAssessment(
     claimVerdicts,
     coverageMatrix,
     qualityGates,
+    truthPercentageRange: overallRange,
   };
 }
 

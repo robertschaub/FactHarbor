@@ -31,13 +31,18 @@ import {
   getSpreadMultiplier,
   applySpreadAdjustment,
   runVerdictStage,
+  validateChallengeEvidence,
+  enforceBaselessChallengePolicy,
+  computeTruthPercentageRange,
   DEFAULT_VERDICT_STAGE_CONFIG,
   type LLMCallFn,
   type VerdictStageConfig,
 } from "@/lib/analyzer/verdict-stage";
 import type {
+  AnalysisWarning,
   AtomicClaim,
   CBClaimVerdict,
+  ChallengeDocument,
   ClaimBoundary,
   ConsistencyResult,
   CoverageMatrix,
@@ -394,8 +399,9 @@ describe("reconcileVerdicts (Step 4)", () => {
       VERDICT_RECONCILIATION: reconciliationResponse(),
     });
 
-    const result = await reconcileVerdicts(
-      advocateVerdictsList, challengeDoc, consistencyResults, mockLLM,
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const { verdicts: result, validatedChallengeDoc } = await reconcileVerdicts(
+      advocateVerdictsList, challengeDoc, consistencyResults, evidence, mockLLM,
     );
 
     expect(result).toHaveLength(1);
@@ -409,6 +415,8 @@ describe("reconcileVerdicts (Step 4)", () => {
     // Consistency result attached
     expect(result[0].consistencyResult.assessed).toBe(true);
     expect(result[0].consistencyResult.spread).toBe(3);
+    // Validated challenge doc returned
+    expect(validatedChallengeDoc.challenges).toHaveLength(1);
   });
 
   it("should keep original verdict if reconciliation doesn't include claim", async () => {
@@ -423,8 +431,8 @@ describe("reconcileVerdicts (Step 4)", () => {
 
     const mockLLM = createMockLLM({ VERDICT_RECONCILIATION: [] }); // empty response
 
-    const result = await reconcileVerdicts(
-      advocateVerdictsList, { challenges: [] }, [], mockLLM,
+    const { verdicts: result } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
     );
 
     // Original preserved
@@ -1053,7 +1061,7 @@ describe("Configurable debate model tiers", () => {
       debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, reconciler: "haiku" },
     };
 
-    await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, mockLLM, config);
+    await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, [], mockLLM, config);
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
@@ -1194,7 +1202,7 @@ describe("Cross-provider debate model providers", () => {
       debateModelProviders: { reconciler: "mistral" },
     };
 
-    await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, mockLLM, config);
+    await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, [], mockLLM, config);
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
@@ -1245,5 +1253,605 @@ describe("Cross-provider debate model providers", () => {
 
   it("default config should have empty debateModelProviders", () => {
     expect(DEFAULT_VERDICT_STAGE_CONFIG.debateModelProviders).toEqual({});
+  });
+});
+
+// ============================================================================
+// BASELESS CHALLENGE GUARD (Stammbach/Ash Action #6)
+// ============================================================================
+
+describe("validateChallengeEvidence", () => {
+  it("should mark all IDs as valid when they exist in the evidence pool", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01" }),
+      createEvidenceItem({ id: "EV_02" }),
+    ];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Test challenge",
+          evidenceIds: ["EV_01", "EV_02"],
+          severity: "medium",
+        }],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, evidence);
+    const cp = result.challenges[0].challengePoints[0];
+
+    expect(cp.challengeValidation).toBeDefined();
+    expect(cp.challengeValidation!.evidenceIdsValid).toBe(true);
+    expect(cp.challengeValidation!.validIds).toEqual(["EV_01", "EV_02"]);
+    expect(cp.challengeValidation!.invalidIds).toEqual([]);
+  });
+
+  it("should mark invalid IDs when they do not exist in the evidence pool", () => {
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Cites non-existent evidence",
+          evidenceIds: ["EV_01", "EV_FAKE", "EV_GHOST"],
+          severity: "high",
+        }],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, evidence);
+    const cp = result.challenges[0].challengePoints[0];
+
+    expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.challengeValidation!.validIds).toEqual(["EV_01"]);
+    expect(cp.challengeValidation!.invalidIds).toEqual(["EV_FAKE", "EV_GHOST"]);
+  });
+
+  it("should handle empty evidenceIds (citing absence)", () => {
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "missing_evidence",
+          description: "More research needed",
+          evidenceIds: [],
+          severity: "low",
+        }],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, evidence);
+    const cp = result.challenges[0].challengePoints[0];
+
+    // Empty evidenceIds → not valid (no evidence cited)
+    expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.challengeValidation!.validIds).toEqual([]);
+    expect(cp.challengeValidation!.invalidIds).toEqual([]);
+  });
+
+  it("should handle empty evidence pool", () => {
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Challenge with IDs but no pool",
+          evidenceIds: ["EV_01"],
+          severity: "medium",
+        }],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, []);
+    const cp = result.challenges[0].challengePoints[0];
+
+    expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.challengeValidation!.validIds).toEqual([]);
+    expect(cp.challengeValidation!.invalidIds).toEqual(["EV_01"]);
+  });
+
+  it("should validate multiple challenge points independently", () => {
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [
+          { id: "CP_AC_01_0", type: "assumption", description: "Valid ref", evidenceIds: ["EV_01"], severity: "medium" },
+          { id: "CP_AC_01_1", type: "methodology_weakness", description: "Invalid ref", evidenceIds: ["EV_FAKE"], severity: "high" },
+        ],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, evidence);
+    expect(result.challenges[0].challengePoints[0].challengeValidation!.evidenceIdsValid).toBe(true);
+    expect(result.challenges[0].challengePoints[1].challengeValidation!.evidenceIdsValid).toBe(false);
+  });
+
+  // Multilingual guardrail: validation is ID-based, not language-dependent
+  it("should produce identical validation regardless of challenge description language (en/de/fr)", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01" }),
+      createEvidenceItem({ id: "EV_02" }),
+    ];
+    const challengeDocEn: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "The methodology is flawed",
+          evidenceIds: ["EV_01", "EV_FAKE"], severity: "medium",
+        }],
+      }],
+    };
+    const challengeDocDe: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "Die Methodik ist fehlerhaft",
+          evidenceIds: ["EV_01", "EV_FAKE"], severity: "medium",
+        }],
+      }],
+    };
+    const challengeDocFr: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "La méthodologie est défaillante",
+          evidenceIds: ["EV_01", "EV_FAKE"], severity: "medium",
+        }],
+      }],
+    };
+
+    const resultEn = validateChallengeEvidence(challengeDocEn, evidence);
+    const resultDe = validateChallengeEvidence(challengeDocDe, evidence);
+    const resultFr = validateChallengeEvidence(challengeDocFr, evidence);
+
+    // Validation outcome must be identical regardless of language
+    const valEn = resultEn.challenges[0].challengePoints[0].challengeValidation!;
+    const valDe = resultDe.challenges[0].challengePoints[0].challengeValidation!;
+    const valFr = resultFr.challenges[0].challengePoints[0].challengeValidation!;
+
+    expect(valEn.validIds).toEqual(valDe.validIds);
+    expect(valEn.validIds).toEqual(valFr.validIds);
+    expect(valEn.invalidIds).toEqual(valDe.invalidIds);
+    expect(valEn.invalidIds).toEqual(valFr.invalidIds);
+    expect(valEn.evidenceIdsValid).toBe(valDe.evidenceIdsValid);
+    expect(valEn.evidenceIdsValid).toBe(valFr.evidenceIdsValid);
+  });
+});
+
+describe("enforceBaselessChallengePolicy", () => {
+  // Helper: create a verdict with specific challenge responses
+  function makeVerdict(
+    claimId: string,
+    truthPct: number,
+    confidence: number,
+    challengeResponses: CBClaimVerdict["challengeResponses"] = [],
+  ): CBClaimVerdict {
+    return {
+      id: `CV_${claimId}`, claimId, truthPercentage: truthPct, verdict: "MOSTLY-TRUE",
+      confidence, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId, percentages: [truthPct], average: truthPct, spread: 0, stable: true, assessed: false },
+      challengeResponses,
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+  }
+
+  it("should not revert when no challenge responses have verdictAdjusted=true", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+    const reconciled = makeVerdict("AC_01", 72, 78, [
+      { challengeType: "assumption", response: "Noted", verdictAdjusted: false },
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "Test", evidenceIds: ["EV_FAKE"], severity: "medium",
+          challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_FAKE"] },
+        }],
+      }],
+    };
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate]);
+    expect(result[0].truthPercentage).toBe(72); // Not reverted
+  });
+
+  it("should revert when all referenced challenge points have zero valid evidence IDs", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+    const reconciled = makeVerdict("AC_01", 60, 65, [
+      {
+        challengeType: "assumption", response: "Adjusted based on challenge",
+        verdictAdjusted: true, adjustmentBasedOnChallengeIds: ["CP_AC_01_0"],
+      },
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "Baseless challenge", evidenceIds: ["EV_FAKE"], severity: "high",
+          challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_FAKE"] },
+        }],
+      }],
+    };
+    const warnings: AnalysisWarning[] = [];
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], warnings);
+
+    // Reverted to advocate values
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].confidence).toBe(80);
+    // Warnings: 1 blocked + 1 metrics
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[1].type).toBe("baseless_challenge_detected"); // metrics warning
+    expect(warnings[1].details).toBeDefined();
+  });
+
+  it("should revert when provenance is missing (policy violation)", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+    const reconciled = makeVerdict("AC_01", 60, 65, [
+      { challengeType: "assumption", response: "Adjusted", verdictAdjusted: true },
+      // No adjustmentBasedOnChallengeIds
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "Test", evidenceIds: ["EV_01"], severity: "medium",
+          challengeValidation: { evidenceIdsValid: true, validIds: ["EV_01"], invalidIds: [] },
+        }],
+      }],
+    };
+    const warnings: AnalysisWarning[] = [];
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], warnings);
+
+    // Reverted due to missing provenance
+    expect(result[0].truthPercentage).toBe(75);
+    // Warnings: 1 blocked + 1 metrics
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[0].message).toContain("provenance");
+  });
+
+  it("should revert when provenance IDs are non-empty but ALL unresolved (Finding 1 bypass fix)", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+    const reconciled = makeVerdict("AC_01", 58, 62, [
+      {
+        challengeType: "assumption", response: "Adjusted",
+        verdictAdjusted: true,
+        // IDs that don't match any challenge point in the doc
+        adjustmentBasedOnChallengeIds: ["CP_NONEXISTENT_0", "CP_GHOST_1"],
+      },
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: "Real challenge", evidenceIds: ["EV_01"], severity: "medium",
+          challengeValidation: { evidenceIdsValid: true, validIds: ["EV_01"], invalidIds: [] },
+        }],
+      }],
+    };
+    const warnings: AnalysisWarning[] = [];
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], warnings);
+
+    // Reverted because ALL provenance IDs are unresolved (can't verify they're evidence-backed)
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].confidence).toBe(80);
+    // Warnings: 1 blocked (with unresolved IDs message) + 1 metrics
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[0].message).toContain("unresolved");
+    expect(warnings[0].message).toContain("CP_NONEXISTENT_0");
+  });
+
+  it("should emit advisory warning only for mixed provenance (some valid, some baseless)", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+    const reconciled = makeVerdict("AC_01", 68, 72, [
+      {
+        challengeType: "assumption", response: "Adjusted", verdictAdjusted: true,
+        adjustmentBasedOnChallengeIds: ["CP_AC_01_0", "CP_AC_01_1"],
+      },
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [
+          {
+            id: "CP_AC_01_0",
+            type: "assumption", description: "Valid challenge", evidenceIds: ["EV_01"], severity: "medium",
+            challengeValidation: { evidenceIdsValid: true, validIds: ["EV_01"], invalidIds: [] },
+          },
+          {
+            id: "CP_AC_01_1",
+            type: "methodology_weakness", description: "Baseless challenge", evidenceIds: ["EV_FAKE"], severity: "high",
+            challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_FAKE"] },
+          },
+        ],
+      }],
+    };
+    const warnings: AnalysisWarning[] = [];
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], warnings);
+
+    // NOT reverted (mixed provenance)
+    expect(result[0].truthPercentage).toBe(68);
+    // Warnings: 1 advisory + 1 metrics
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0].type).toBe("baseless_challenge_detected");
+    expect(warnings[0].severity).toBe("info");
+    expect(warnings[1].details).toBeDefined(); // metrics warning
+  });
+
+  it("should compute baselessAdjustmentRate correctly", () => {
+    const advocate1 = makeVerdict("AC_01", 75, 80);
+    const advocate2 = makeVerdict("AC_02", 60, 70);
+    const reconciled1 = makeVerdict("AC_01", 55, 60, [
+      {
+        challengeType: "assumption", response: "Baseless", verdictAdjusted: true,
+        adjustmentBasedOnChallengeIds: ["CP_AC_01_0"],
+      },
+    ]);
+    const reconciled2 = makeVerdict("AC_02", 55, 65, [
+      {
+        challengeType: "methodology_weakness", response: "Valid", verdictAdjusted: true,
+        adjustmentBasedOnChallengeIds: ["CP_AC_02_0"],
+      },
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [
+        {
+          claimId: "AC_01",
+          challengePoints: [{
+            id: "CP_AC_01_0",
+            type: "assumption", description: "Baseless", evidenceIds: ["EV_FAKE"], severity: "high",
+            challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_FAKE"] },
+          }],
+        },
+        {
+          claimId: "AC_02",
+          challengePoints: [{
+            id: "CP_AC_02_0",
+            type: "methodology_weakness", description: "Valid", evidenceIds: ["EV_01"], severity: "medium",
+            challengeValidation: { evidenceIdsValid: true, validIds: ["EV_01"], invalidIds: [] },
+          }],
+        },
+      ],
+    };
+    const warnings: AnalysisWarning[] = [];
+
+    const result = enforceBaselessChallengePolicy(
+      [reconciled1, reconciled2], challengeDoc, [advocate1, advocate2], warnings,
+    );
+
+    // First claim reverted (baseless), second preserved (valid)
+    expect(result[0].truthPercentage).toBe(75); // reverted
+    expect(result[1].truthPercentage).toBe(55); // preserved
+    expect(warnings.filter((w) => w.type === "baseless_challenge_blocked")).toHaveLength(1);
+    // Metrics warning with rate
+    const metricsWarning = warnings.find((w) => w.details?.baselessAdjustmentRate !== undefined);
+    expect(metricsWarning).toBeDefined();
+    expect(metricsWarning!.details!.baselessAdjustmentRate).toBeCloseTo(0.5); // 1 of 2 adjustments
+    expect(metricsWarning!.details!.blockedCount).toBe(1);
+    expect(metricsWarning!.details!.totalAdjustments).toBe(2);
+  });
+
+  // Multilingual guardrail: enforcement should work identically across languages
+  it("should enforce identically for challenges described in different languages", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+
+    // Same structure, different language descriptions
+    const makeReconciled = () => makeVerdict("AC_01", 60, 65, [
+      {
+        challengeType: "assumption", response: "Adjusted", verdictAdjusted: true,
+        adjustmentBasedOnChallengeIds: ["CP_AC_01_0"],
+      },
+    ]);
+    const makeChallengeDoc = (desc: string): ChallengeDocument => ({
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption", description: desc, evidenceIds: ["EV_FAKE"], severity: "high",
+          challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_FAKE"] },
+        }],
+      }],
+    });
+
+    const warningsEn: AnalysisWarning[] = [];
+    const warningsDe: AnalysisWarning[] = [];
+    const warningsFr: AnalysisWarning[] = [];
+
+    const resultEn = enforceBaselessChallengePolicy([makeReconciled()], makeChallengeDoc("The methodology is flawed"), [advocate], warningsEn);
+    const resultDe = enforceBaselessChallengePolicy([makeReconciled()], makeChallengeDoc("Die Methodik ist fehlerhaft"), [advocate], warningsDe);
+    const resultFr = enforceBaselessChallengePolicy([makeReconciled()], makeChallengeDoc("La méthodologie est défaillante"), [advocate], warningsFr);
+
+    // All should be reverted identically
+    expect(resultEn[0].truthPercentage).toBe(75);
+    expect(resultDe[0].truthPercentage).toBe(75);
+    expect(resultFr[0].truthPercentage).toBe(75);
+    // 2 warnings each: 1 blocked + 1 metrics
+    expect(warningsEn).toHaveLength(2);
+    expect(warningsDe).toHaveLength(2);
+    expect(warningsFr).toHaveLength(2);
+  });
+});
+
+describe("ChallengeResponse.adjustmentBasedOnChallengeIds parsing", () => {
+  it("should parse adjustmentBasedOnChallengeIds when present in reconciliation response", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 70, confidence: 75, reasoning: "Reconciled",
+        challengeResponses: [{
+          challengeType: "methodology_weakness", response: "Adjusted",
+          verdictAdjusted: true, adjustmentBasedOnChallengeIds: ["AC_01:0", "AC_01:1"],
+        }],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(verdicts[0].challengeResponses[0].adjustmentBasedOnChallengeIds).toEqual(["AC_01:0", "AC_01:1"]);
+  });
+
+  it("should leave adjustmentBasedOnChallengeIds undefined when absent", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: [], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 72, confidence: 78, reasoning: "Reconciled",
+        challengeResponses: [{
+          challengeType: "assumption", response: "Noted", verdictAdjusted: false,
+        }],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(verdicts[0].challengeResponses[0].adjustmentBasedOnChallengeIds).toBeUndefined();
+  });
+
+  it("should handle empty adjustmentBasedOnChallengeIds array", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: [], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 72, confidence: 78, reasoning: "Reconciled",
+        challengeResponses: [{
+          challengeType: "assumption", response: "Empty array", verdictAdjusted: true,
+          adjustmentBasedOnChallengeIds: [],
+        }],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(verdicts[0].challengeResponses[0].adjustmentBasedOnChallengeIds).toEqual([]);
+  });
+});
+
+// ============================================================================
+// VERDICT RANGE REPORTING (Stammbach/Ash Action #6)
+// ============================================================================
+
+describe("computeTruthPercentageRange", () => {
+  function makeVerdictWithConsistency(
+    percentages: number[],
+    boundaryFindings: CBClaimVerdict["boundaryFindings"] = [],
+  ): CBClaimVerdict {
+    return {
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: percentages.reduce((a, b) => a + b, 0) / percentages.length,
+      verdict: "MOSTLY-TRUE", confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings,
+      consistencyResult: {
+        claimId: "AC_01",
+        percentages,
+        average: percentages.reduce((a, b) => a + b, 0) / percentages.length,
+        spread: Math.max(...percentages) - Math.min(...percentages),
+        stable: true,
+        assessed: true,
+      },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+  }
+
+  it("should return undefined when range reporting is disabled", () => {
+    const verdict = makeVerdictWithConsistency([60, 70, 80]);
+    const result = computeTruthPercentageRange(verdict, { enabled: false, wideRangeThreshold: 15, boundaryVarianceWeight: 0 });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined when config is undefined", () => {
+    const verdict = makeVerdictWithConsistency([60, 70, 80]);
+    const result = computeTruthPercentageRange(verdict, undefined);
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined when consistency was not assessed", () => {
+    const verdict = makeVerdictWithConsistency([75]);
+    verdict.consistencyResult.assessed = false;
+    const result = computeTruthPercentageRange(verdict, { enabled: true, wideRangeThreshold: 15, boundaryVarianceWeight: 0 });
+    expect(result).toBeUndefined();
+  });
+
+  it("should compute basic range from min/max of consistency percentages", () => {
+    const verdict = makeVerdictWithConsistency([60, 70, 80]);
+    const result = computeTruthPercentageRange(verdict, { enabled: true, wideRangeThreshold: 15, boundaryVarianceWeight: 0 });
+    expect(result).toEqual({ min: 60, max: 80 });
+  });
+
+  it("should widen range by boundary variance when weight > 0 and 2+ boundaries", () => {
+    const verdict = makeVerdictWithConsistency([60, 70, 80], [
+      { boundaryId: "CB_01", boundaryName: "B1", truthPercentage: 55, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 },
+      { boundaryId: "CB_02", boundaryName: "B2", truthPercentage: 85, confidence: 75, evidenceDirection: "supports", evidenceCount: 2 },
+    ]);
+    // boundarySpread = 85-55 = 30, weight 0.5, widening = 0.5 * 30 / 2 = 7.5
+    const result = computeTruthPercentageRange(verdict, { enabled: true, wideRangeThreshold: 50, boundaryVarianceWeight: 0.5 });
+    expect(result).toEqual({ min: 52.5, max: 87.5 });
+  });
+
+  it("should not widen when only 1 boundary", () => {
+    const verdict = makeVerdictWithConsistency([60, 70, 80], [
+      { boundaryId: "CB_01", boundaryName: "B1", truthPercentage: 55, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 },
+    ]);
+    const result = computeTruthPercentageRange(verdict, { enabled: true, wideRangeThreshold: 50, boundaryVarianceWeight: 0.5 });
+    // No widening — only 1 boundary
+    expect(result).toEqual({ min: 60, max: 80 });
+  });
+
+  it("should clamp range to [0, 100]", () => {
+    const verdict = makeVerdictWithConsistency([2, 5, 8], [
+      { boundaryId: "CB_01", boundaryName: "B1", truthPercentage: 0, confidence: 80, evidenceDirection: "contradicts", evidenceCount: 3 },
+      { boundaryId: "CB_02", boundaryName: "B2", truthPercentage: 20, confidence: 75, evidenceDirection: "supports", evidenceCount: 2 },
+    ]);
+    // boundarySpread = 20, weight 1.0, widening = 1.0 * 20 / 2 = 10
+    // min = 2 - 10 = -8 → clamped to 0, max = 8 + 10 = 18
+    const result = computeTruthPercentageRange(verdict, { enabled: true, wideRangeThreshold: 50, boundaryVarianceWeight: 1.0 });
+    expect(result!.min).toBe(0);
+    expect(result!.max).toBe(18);
   });
 });

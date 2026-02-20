@@ -1202,6 +1202,25 @@ export const CalcConfigSchema = z.object({
    * Default: ["critical", "high"].
    */
   highHarmFloorLevels: z.array(z.enum(["critical", "high", "medium", "low"])).min(1).max(4).optional(),
+
+  /**
+   * Range reporting: compute and surface plausible truth% ranges from self-consistency
+   * spread and optionally boundary variance.
+   *
+   * Addresses Action #6 (Stammbach/Ash) — verdict range reporting.
+   */
+  rangeReporting: z.object({
+    /** Enable/disable range computation and surfacing. */
+    enabled: z.boolean(),
+    /** Range width (pp) above which a contested_verdict_range warning is emitted. */
+    wideRangeThreshold: z.number().int().min(5).max(50),
+    /**
+     * Weight for boundary variance widening (0-1).
+     * 0.0 = disabled (method A: spread-only). >0 = method B (spread + boundary variance).
+     * Default 0.0 — enable after baseline calibration confirms widening improves results.
+     */
+    boundaryVarianceWeight: z.number().min(0).max(1),
+  }).optional(),
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;

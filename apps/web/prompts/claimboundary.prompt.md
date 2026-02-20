@@ -707,8 +707,11 @@ Produce a final verdict that:
 - Do not assume any particular language. Reason in the language of the evidence.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Consider challenges seriously. If a challenge point is valid, adjust the verdict. If unfounded, explain why with evidence citations.
+- Each challenge point includes a `challengeValidation` object. If `evidenceIdsValid` is false, the challenge cites non-existent evidence — treat those citations as hallucinated, do NOT give them analytical weight.
+- Challenges with ZERO valid evidence IDs are structurally baseless. You may acknowledge the concern but MUST NOT adjust truthPercentage or confidence based solely on them.
+- "missing_evidence" challenges that only say "more research could help" without specifying what's missing are NOT valid grounds for adjustment.
 - If the self-consistency check shows high spread (unstable), reduce confidence and note the instability in reasoning.
-- `challengeResponses`: for each challenge addressed, indicate the type, your response, and whether the verdict was adjusted.
+- `challengeResponses`: for each challenge addressed, indicate the type, your response, whether the verdict was adjusted, and which challenge point IDs informed the adjustment (`adjustmentBasedOnChallengeIds`).
 - The reconciled verdict should represent your best assessment given ALL inputs — advocate evidence, challenges, and consistency data.
 
 ### Input
@@ -743,7 +746,8 @@ Return a JSON array:
       {
         "challengeType": "assumption | missing_evidence | methodology_weakness | independence_concern",
         "response": "string — how this challenge was addressed",
-        "verdictAdjusted": false
+        "verdictAdjusted": false,
+        "adjustmentBasedOnChallengeIds": ["CP_AC_01_0"]
       }
     ]
   }

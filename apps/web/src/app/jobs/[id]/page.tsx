@@ -868,6 +868,11 @@ export default function JobPage() {
                         </span>
                         <span className={styles.articlePercentage}>
                           {result.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({result.confidence ?? 0}% confidence)</span>
+                          {result.truthPercentageRange && (
+                            <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>
+                              Range: {result.truthPercentageRange.min}%&ndash;{result.truthPercentageRange.max}%
+                            </span>
+                          )}
                         </span>
                       </div>
                       {result.verdictNarrative?.headline && (
@@ -1906,7 +1911,7 @@ function ClaimCard({
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claimVerdictLabel)} {claimTruth}% ({claim.confidence}% confidence)
+          {color.icon} {getVerdictLabel(claimVerdictLabel)} {claimTruth}% ({claim.confidence}% confidence){claim.truthPercentageRange ? ` (range: ${claim.truthPercentageRange.min}%–${claim.truthPercentageRange.max}%)` : ""}
         </Badge>
         {isTangential && (
           <Badge bg="#eeeeee" color="#757575">Not in verdict</Badge>

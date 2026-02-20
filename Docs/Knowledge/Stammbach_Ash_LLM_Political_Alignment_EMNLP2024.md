@@ -128,7 +128,7 @@ Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check
 3. **High-harm validation guard (C8):** low-confidence high-harm verdicts are forced to `UNVERIFIED` via `enforceHarmConfidenceFloor()`.
 4. **Cross-provider debate separation (C1/C16):** challenger/provider separation via `debateProfile` and `debateModelProviders`, including fallback warnings in `analysisWarnings`.
 5. **Evidence-pool skew diagnostics (C13):** `assessEvidenceBalance()` detection with sample-size-aware warnings and UCM-configurable thresholds.
-6. **Contestation work (Action #6) is partial:** contestation signals exist, but verdict range reporting + baseless-challenge guard are not fully delivered yet.
+6. **Contestation work (Action #6) is done:** contestation signals, verdict range reporting (`truthPercentageRange` from consistency spread + boundary variance), and baseless-challenge hybrid enforcement (`enforceBaselessChallengePolicy` with deterministic post-check revert) are fully implemented.
 
 ### Must-ask (pick 3-4 for a single meeting)
 
@@ -140,8 +140,8 @@ Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check
 ### If time allows
 
 5. **Path-consistency vs temperature-consistency (AFaCTA).** Should we add path-based consistency for contested claims, and how should it be evaluated against the current 3-run spread approach?
-6. **Contested-claim range design (Action #6).** For verdict ranges, should we start with consistency spread only, or include boundary-variance widening from day one?
-7. **Baseless challenge governance (Action #6).** Should baseless challenge handling remain advisory-first, or should we add a deterministic backstop when challenger citations are structurally invalid?
+6. ~~**Contested-claim range design (Action #6).**~~ **Done.** Implemented method B (consistency spread + boundary variance widening, weight=0.0 default). Enabling widening after baseline calibration.
+7. ~~**Baseless challenge governance (Action #6).**~~ **Done.** Hybrid enforcement: deterministic post-check reverts baseless adjustments + advisory warnings for mixed provenance. `baselessAdjustmentRate` metric tracked.
 8. **Search-bias compounding.** How should we separate search-provider bias effects from model reasoning bias in comparative runs?
 
 ---
@@ -159,7 +159,7 @@ Code review note — C8 (P-H3, U-L1): Removed `as any` cast from the floor check
 | **C9** Stable-bias risk in self-consistency | 🟠 Partial | 3-run temperature spread + confidence penalties | Path-consistency benchmark and rollout criteria |
 | **C13** Evidence pool bias | 🟠 Partial | `assessEvidenceBalance()` detection + warnings + UCM thresholds | Active rebalancing/remediation loop + effectiveness checks |
 | **C17** Prompt injection resilience | 🟠 Partial | Adversarial challenge + grounding/direction/structural validation | Dedicated C17 benchmark + explicit failure policy |
-| **Action #6** Contestation range/governance | 🟠 Partial | `isContested`/`factualBasis`, `contestationWeights`, spread signals | Range output + baseless-challenge guard/backstop |
+| **Action #6** Contestation range/governance | 🟢 Done | `truthPercentageRange`, `validateChallengeEvidence()`, `enforceBaselessChallengePolicy()`, prompt hardening, `baselessAdjustmentRate` metric, UI/HTML display | Boundary variance weight tuning after first calibration baseline |
 
 ### 5.2 Recommended next actions (decision-ready)
 
@@ -171,7 +171,7 @@ Effort scale used here:
 | Priority now | Action | Criticality | Effort | Why now | Exit criteria |
 |--------------|--------|-------------|--------|---------|---------------|
 | **1** | **Run first calibration baseline and lock thresholds (C10 closure step)** | 🔴 **Critical** | Low (+~$3-20 run cost, depending on mode) | Until first run, all mitigation claims remain architectural, not empirical | Baseline report generated, thresholds ratified, pass/fail policy recorded |
-| **2** | **Finish Action #6: verdict range + baseless-challenge governance** | 🔴 **Critical** | Medium | Current outputs expose point estimates only; contested claims still lack explicit uncertainty band/guard | `truthPercentageRange` available in JSON/UI/HTML, challenge validity handling enforced or explicitly governed |
+| ~~**2**~~ | ~~**Finish Action #6: verdict range + baseless-challenge governance**~~ | 🟢 **Done** | — | Implemented: `truthPercentageRange` in JSON/UI/HTML, `enforceBaselessChallengePolicy` hybrid enforcement, `baselessAdjustmentRate` metric | Boundary variance weight tuning after first calibration baseline |
 | **3** | **Implement C13 active rebalancing (not just detection)** | 🟠 **High** | Medium-High | C13 remains a pre-reasoning bias source; diagnostics alone do not reduce skew | Rebalancing loop ships, imbalance warnings decrease in calibration A/B without large quality regressions |
 | **4** | **C17 hardening track: adversarial benchmark + fail policy** | 🟠 **High** | Medium | Existing controls are generic; no dedicated injection stress harness or policy gate | C17 benchmark suite in CI/scheduled runs, policy for fail-open/fail-closed behavior approved |
 | **5** | **C9 path-consistency benchmark against current spread method** | 🟡 **Medium-High** | Medium | Needed to decide if current self-consistency is robust or cosmetically stable | Side-by-side benchmark complete, adoption threshold defined, go/no-go documented |

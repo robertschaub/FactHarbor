@@ -657,7 +657,10 @@ export type AnalysisWarningType =
   | "analysis_generation_failed"    // Dynamic analysis LLM call failed after retries — degraded result returned
   | "evidence_pool_imbalance"       // Evidence pool heavily skewed toward one direction (C13 bias detection)
   | "all_same_debate_tier"          // All 4 debate roles use the same model tier (C1/C16 degenerate debate risk)
-  | "debate_provider_fallback";     // A debate role's provider override was unavailable; fell back to global provider
+  | "debate_provider_fallback"      // A debate role's provider override was unavailable; fell back to global provider
+  | "contested_verdict_range"       // Verdict truth% range exceeds wide-range threshold (high uncertainty)
+  | "baseless_challenge_detected"   // Challenge adjustment lacks provenance or has mixed valid/invalid evidence IDs (advisory)
+  | "baseless_challenge_blocked";   // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
@@ -792,6 +795,8 @@ export interface CBClaimVerdict {
   consistencyResult: ConsistencyResult;
   challengeResponses: ChallengeResponse[];
   triangulationScore: TriangulationScore;
+  /** Plausible range for truthPercentage, computed from consistency spread + boundary variance. */
+  truthPercentageRange?: TruthPercentageRange;
 }
 
 /**
@@ -807,6 +812,17 @@ export interface ConsistencyResult {
   spread: number;                // max - min
   stable: boolean;               // spread ≤ stableThreshold (UCM)
   assessed: boolean;             // false if skipped (disabled or deterministic mode)
+}
+
+/**
+ * TruthPercentageRange: Plausible range for a truth percentage verdict.
+ * Computed from self-consistency spread and optionally widened by boundary variance.
+ *
+ * @since ClaimAssessmentBoundary pipeline v1
+ */
+export interface TruthPercentageRange {
+  min: number;                   // Lower bound (0-100)
+  max: number;                   // Upper bound (0-100)
 }
 
 /**
@@ -827,10 +843,26 @@ export interface ChallengeDocument {
  * @since ClaimAssessmentBoundary pipeline v1
  */
 export interface ChallengePoint {
+  /** Explicit challenge point ID (format: "CP_{claimId}_{index}"). Assigned by parseChallengeDocument(). */
+  id: string;
   type: "assumption" | "missing_evidence" | "methodology_weakness" | "independence_concern";
   description: string;
   evidenceIds: string[];         // Referenced evidence (or empty if citing absence)
   severity: "high" | "medium" | "low";
+  /** Structural validation of evidenceIds against the evidence pool. Populated by validateChallengeEvidence(). */
+  challengeValidation?: ChallengeValidation;
+}
+
+/**
+ * ChallengeValidation: Structural validation of a challenge point's evidence references.
+ * Populated by `validateChallengeEvidence()` before reconciliation.
+ *
+ * @since ClaimAssessmentBoundary pipeline v1
+ */
+export interface ChallengeValidation {
+  evidenceIdsValid: boolean;     // true if ALL referenced IDs exist in the evidence pool
+  validIds: string[];            // Evidence IDs that exist in the pool
+  invalidIds: string[];          // Evidence IDs that do NOT exist (hallucinated)
 }
 
 /**
@@ -842,6 +874,8 @@ export interface ChallengeResponse {
   challengeType: ChallengePoint["type"];
   response: string;              // Reconciler's response to the challenge
   verdictAdjusted: boolean;      // Whether the verdict changed because of this challenge
+  /** Which challenge point IDs informed this adjustment. Explicit provenance for baseless detection. */
+  adjustmentBasedOnChallengeIds?: string[];
 }
 
 /**
@@ -959,4 +993,6 @@ export interface OverallAssessment {
   claimVerdicts: CBClaimVerdict[];
   coverageMatrix: CoverageMatrix;
   qualityGates: QualityGates;
+  /** Plausible range for overall truthPercentage, aggregated from per-claim ranges. */
+  truthPercentageRange?: TruthPercentageRange;
 }
