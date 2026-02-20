@@ -251,6 +251,22 @@ body.view-preview .preview-pane{width:100%}
 .github-files-empty{color:var(--pv-muted);font-style:italic;font-size:.9em}
 .github-files-error{color:#c33;font-style:italic;font-size:.9em}
 .github-files-footer{margin-top:8px;font-size:.8em}.github-files-footer a{color:var(--pv-muted);text-decoration:none}.github-files-footer a:hover{text-decoration:underline}
+.report-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.report-card{display:block;border:1px solid var(--pv-border);border-radius:8px;padding:14px 18px;text-decoration:none!important;color:inherit;transition:border-color .15s,box-shadow .15s;cursor:pointer}
+.report-card:hover{border-color:var(--pv-link);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.report-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.report-card-claim{font-size:1.05em;font-weight:600;color:var(--pv-heading);line-height:1.35;flex:1}
+.report-card-date{font-size:.78em;color:var(--pv-muted);white-space:nowrap;margin-top:2px}
+.report-card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.82em}
+.report-card-verdict{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:700;font-size:.8em;letter-spacing:.03em;border:1px solid}
+.rv-t{background:#0a2e0a;border-color:#22543d;color:#68d391}
+.rv-lt{background:#0a2e14;border-color:#276749;color:#9ae6b4}
+.rv-inc{background:#1a1230;border-color:#553c9a;color:#b794f4}
+.rv-unv{background:#2d1a00;border-color:#7b2d00;color:#f6ad55}
+.rv-lf{background:#2d1400;border-color:#c05621;color:#fbd38d}
+.rv-f{background:#2d0a0a;border-color:#c53030;color:#feb2b2}
+.report-card-pct{color:var(--pv-muted)}
+.report-card-model{color:var(--pv-muted);font-size:.78em;opacity:.7}
 .mermaid-container{margin:1em 0;background:#fff;border:1px solid var(--pv-border);border-radius:var(--radius);padding:18px;overflow-x:auto;text-align:center}
 .mermaid-container .mermaid-label{font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--pv-muted);text-align:right;margin-bottom:6px;opacity:.5}
 .mermaid-container svg{max-width:100%}
@@ -1093,23 +1109,86 @@ async function renderPreview(){
         if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
-      let h = `<table class="github-files-table"><thead><tr><th>File</th><th>Type</th><th>Size</th></tr></thead><tbody>`;
-      for(const f of files){
-        if(f.type === 'dir') continue; // skip subdirectories
-        const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
-        const typeLabel = ext.toUpperCase() || 'FILE';
-        const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
-        // HTML files open via htmlpreview.github.io; others open on GitHub directly
-        let href;
-        if(ext === 'html' || ext === 'htm'){
-          href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
-        } else {
-          href = `https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
-        }
-        const icon = ext === 'html' || ext === 'htm' ? '📊' : ext === 'pdf' ? '📄' : ext === 'json' ? '📋' : '📁';
-        h += `<tr><td>${icon} <a href="${parser.esc(href)}" target="_blank" rel="noopener">${parser.esc(f.name)}</a></td><td>${esc(typeLabel)}</td><td>${esc(sizeKB)}</td></tr>`;
+
+      // Check for reports-manifest.json and fetch if present
+      const manifestFile = files.find(f => f.name === 'reports-manifest.json');
+      let manifest = null;
+      if(manifestFile){
+        try {
+          const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${ghPath}/reports-manifest.json`;
+          const mResp = await fetch(rawUrl);
+          if(mResp.ok) manifest = await mResp.json();
+        } catch(e){ /* manifest fetch failed, fall back to plain table */ }
       }
-      h += '</tbody></table>';
+
+      // Verdict -> CSS class mapping
+      const rvClass = v => {
+        if(!v) return 'rv-inc';
+        const u = v.toUpperCase();
+        if(u==='TRUE'||u==='MOSTLY-TRUE') return 'rv-t';
+        if(u==='LEANING-TRUE') return 'rv-lt';
+        if(u==='MIXED') return 'rv-inc';
+        if(u==='UNVERIFIED') return 'rv-unv';
+        if(u==='LEANING-FALSE') return 'rv-lf';
+        return 'rv-f';
+      };
+
+      let h = '';
+      const remaining = []; // files without manifest entries
+
+      if(manifest && manifest.reports){
+        h += '<div class="report-cards">';
+        for(const f of files){
+          if(f.type === 'dir' || f.name === 'reports-manifest.json') continue;
+          const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
+          const meta = manifest.reports[f.name];
+          if(meta && meta.claim && (ext === 'html' || ext === 'htm')){
+            const href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+            const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
+            const verdictCls = rvClass(meta.verdict);
+            const pctInfo = (meta.truth != null ? `${meta.truth}% truth` : '') + (meta.confidence != null ? ` · ${meta.confidence}% conf` : '');
+            const modelStr = meta.model && meta.model !== '—' ? meta.model : '';
+            h += `<a class="report-card" href="${parser.esc(href)}" target="_blank" rel="noopener">`;
+            h += `<div class="report-card-top"><span class="report-card-claim">${parser.esc(meta.claim)}</span>`;
+            h += meta.date ? `<span class="report-card-date">${parser.esc(meta.date)}</span>` : '';
+            h += `</div>`;
+            h += `<div class="report-card-meta">`;
+            h += meta.verdict ? `<span class="report-card-verdict ${verdictCls}">${parser.esc(meta.verdict)}</span>` : '';
+            h += pctInfo ? `<span class="report-card-pct">${parser.esc(pctInfo)}</span>` : '';
+            h += modelStr ? `<span class="report-card-model">${parser.esc(modelStr)}</span>` : '';
+            h += `<span class="report-card-pct">${parser.esc(sizeKB)}</span>`;
+            h += `</div></a>`;
+          } else {
+            remaining.push(f);
+          }
+        }
+        h += '</div>';
+      } else {
+        // No manifest — all files go to the plain table
+        for(const f of files){
+          if(f.type !== 'dir' && f.name !== 'reports-manifest.json') remaining.push(f);
+        }
+      }
+
+      // Render remaining files (non-HTML, or files without manifest entries) as table rows
+      if(remaining.length > 0){
+        h += `<table class="github-files-table"><thead><tr><th>File</th><th>Type</th><th>Size</th></tr></thead><tbody>`;
+        for(const f of remaining){
+          const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
+          const typeLabel = ext.toUpperCase() || 'FILE';
+          const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
+          let href;
+          if(ext === 'html' || ext === 'htm'){
+            href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+          } else {
+            href = `https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+          }
+          const icon = ext === 'html' || ext === 'htm' ? '📊' : ext === 'pdf' ? '📄' : ext === 'json' ? '📋' : '📁';
+          h += `<tr><td>${icon} <a href="${parser.esc(href)}" target="_blank" rel="noopener">${parser.esc(f.name)}</a></td><td>${esc(typeLabel)}</td><td>${esc(sizeKB)}</td></tr>`;
+        }
+        h += '</tbody></table>';
+      }
+
       h += `<div class="github-files-footer"><a href="https://github.com/${parser.esc(repo)}/tree/main/${parser.esc(ghPath)}" target="_blank" rel="noopener">View on GitHub</a></div>`;
       el.innerHTML = h;
     } catch(err) {

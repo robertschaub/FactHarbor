@@ -411,7 +411,7 @@ def main():
     # Load page aliases (short deep-link names) from _redirects.json
     aliases = load_aliases(viewer_path.parent)
     if aliases:
-        print(f'  Aliases: {", ".join(f"{k}→{v}" for k,v in aliases.items())}')
+        print(f'  Aliases: {", ".join(f"{k} -> {v}" for k,v in aliases.items())}')
 
     # Generate pages.json
     bundle = {
@@ -449,6 +449,22 @@ def main():
     # Generate .nojekyll
     nojekyll_path = output_dir / '.nojekyll'
     nojekyll_path.write_text('', encoding='utf-8')
+
+    # Regenerate reports manifest (Docs/TESTREPORTS/reports-manifest.json)
+    reports_dir = repo_root / 'Docs' / 'TESTREPORTS'
+    if reports_dir.is_dir():
+        try:
+            from generate_reports_manifest import generate_manifest
+            print(f'Updating reports manifest from {reports_dir} ...')
+            manifest = generate_manifest(reports_dir)
+            manifest_path = reports_dir / 'reports-manifest.json'
+            with open(manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(manifest, f, ensure_ascii=False, indent=2)
+            print(f'  Wrote {manifest_path} ({len(manifest["reports"])} reports)')
+        except ImportError:
+            print('  Skipping reports manifest (generate_reports_manifest.py not found)')
+        except Exception as e:
+            print(f'  Warning: reports manifest generation failed: {e}', file=sys.stderr)
 
     total_size = json_size + html_size
     alias_note = f', {len(aliases)} alias(es)' if aliases else ''

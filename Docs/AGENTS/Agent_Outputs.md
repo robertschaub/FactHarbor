@@ -4,6 +4,79 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-20 | DevOps Expert + Senior Developer | Cline | Follow-up Verification — Rich Report Cards Review Items Closed
+**Task:** Re-verify the implementer’s fixes for the 4 review findings (workflow resilience, CSS var, model string handling, unused import).
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this follow-up entry only; verification read-only).
+**Key decisions:**
+- Confirmed workflow now has early exit on no staged changes and includes `git pull --rebase origin main` before push.
+- Confirmed viewer CSS uses defined variable (`var(--pv-heading)`) for report card claim color.
+- Confirmed provider-specific model string stripping was removed; raw model value is rendered.
+- Confirmed `import os` was removed from manifest generator.
+- Re-checked script integrity: `python -m py_compile Docs/xwiki-pages/scripts/generate_reports_manifest.py` succeeds.
+**Open items:** None (all four previously flagged review items are resolved).
+**Warnings:** None.
+**For next agent:** Rich Report Cards change set is now review-clean from DevOps + Senior Developer perspective.
+**Learnings:** Appended to Role_Learnings.md? No.
+
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | Independent Review — Action #6 Implementation
+**Task:** Perform independent architecture/code review of Action #6 implementation (verdict range reporting + baseless challenge guard), excluding unrelated "Rich Report Cards" work.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-02-20_Lead_Architect_Action6_Independent_Review.md` (new review memo).
+**Key decisions:** Conditional acceptance. Implementation direction is correct, but three issues require follow-up: (1) provenance ID resolution bypass path in deterministic enforcement, (2) `baselessAdjustmentRate` not surfaced beyond logs, (3) implicit `claimId:index` challenge-point ID contract should be explicit.
+**Open items:** Apply follow-up patch set for the 3 findings before declaring enforcement hardened.
+**Warnings:** Review intentionally excluded concurrent "Rich Report Cards for Analysis Test Reports" changes.
+**For next agent:** See full findings and line references in `Docs/AGENTS/Handoffs/2026-02-20_Lead_Architect_Action6_Independent_Review.md`.
+**Learnings:** No.
+
+---
+### 2026-02-20 | DevOps Expert + Senior Developer | Cline | Review — Rich Report Cards for Analysis Test Reports
+**Task:** Review the implementation of rich report cards (manifest generator, GitHub Action, viewer rendering, and HTML meta tags) and provide actionable feedback to the implementer.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this review entry only; code review was read-only).
+**Key decisions:**
+- Overall implementation is **good and production-viable**: metadata tags in report HTML, manifest generation with fallback extraction, viewer card rendering, and gh-pages integration all work together.
+- Verified behavior by running:
+  - `python -m py_compile Docs/xwiki-pages/scripts/generate_reports_manifest.py`
+  - `python Docs/xwiki-pages/scripts/generate_reports_manifest.py --reports-dir Docs/TESTREPORTS --output artifacts/reports-manifest-review.json`
+  - `python Docs/xwiki-pages/scripts/build_ghpages.py -o artifacts/ghpages-review`
+  - structural comparison of generated manifests (excluding timestamp) → equivalent output.
+- Security posture is acceptable in viewer rendering (`parser.esc` used on manifest fields and links).
+
+**Open items:**
+1. **Medium (DevOps reliability):** `update-reports-manifest.yml` pushes directly with no pull/rebase guard. If `main` advances during workflow runtime, push can fail. Recommendation: before push, run `git pull --rebase origin main` (or use a dedicated action handling retries).
+2. **Low (UI robustness):** In `xwiki-viewer.html`, `.report-card-claim` uses `color: var(--pv-fg)` but `--pv-fg` is not defined in `:root`. It currently falls back by inheritance; define `--pv-fg` or switch to `var(--pv-text)`.
+3. **Low (genericity/maintainability):** Viewer model display cleanup is provider-specific (`replace('claude-','').replace('-20250929','')`). Prefer provider-agnostic display formatting (or show raw model).
+4. **Low (code hygiene):** `generate_reports_manifest.py` has an unused `os` import.
+
+**Warnings:** Running `build_ghpages.py` now intentionally rewrites `Docs/TESTREPORTS/reports-manifest.json` as a side effect (good for freshness, but contributors should expect a dirty working tree after docs build).
+**For next agent:** Prioritize Open Item #1 (workflow resilience). The rest are polish improvements; no blocking defects found.
+**Learnings:** Appended to Role_Learnings.md? No.
+
+---
+### 2026-02-20 | LLM Expert | Claude Code (Opus 4.6) | Verdict Range + Baseless Challenge Guard — Implementation Complete
+**Task:** Implement Action #6 (Stammbach/Ash): verdict range reporting + baseless challenge guard with hybrid enforcement.
+**Files touched:**
+- `apps/web/src/lib/analyzer/types.ts` — +`TruthPercentageRange`, +`ChallengeValidation`, optional fields on `ChallengePoint`/`ChallengeResponse`/`CBClaimVerdict`/`OverallAssessment`, 3 new warning types
+- `apps/web/src/lib/config-schemas.ts` — +`rangeReporting` optional section in CalcConfig
+- `apps/web/src/lib/analyzer/verdict-stage.ts` — +`validateChallengeEvidence()`, +`enforceBaselessChallengePolicy()`, +`computeTruthPercentageRange()`, updated `reconcileVerdicts()` (new signature + return type), updated `runVerdictStage()` (warnings param + range computation)
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Pass warnings to `runVerdictStage()`, resolve `rangeReporting` config, compute overall range in `aggregateAssessment()`
+- `apps/web/prompts/claimboundary.prompt.md` — Strengthened VERDICT_RECONCILIATION rules (baseless challenge guidance, provenance field)
+- `apps/web/src/app/jobs/[id]/page.tsx` — Range display in verdict banner + claim cards
+- `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts` — Range in HTML export
+- `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts` — 22 new tests (incl. multilingual guardrail), 4 updated
+**Key decisions:** Hybrid enforcement (architect-mandated): LLM reconciliation + deterministic post-check that reverts baseless adjustments. `boundaryVarianceWeight` defaults to 0.0 (enable after baseline calibration). Explicit reconciler provenance via `adjustmentBasedOnChallengeIds`.
+**Open items:** Enable `boundaryVarianceWeight > 0` after first calibration baseline. `rangeReporting.enabled` defaults to off — enable in UCM CalcConfig.
+**For next agent:** `reconcileVerdicts()` now returns `{ verdicts, validatedChallengeDoc }` — any direct callers must destructure. `runVerdictStage()` has new optional `warnings` param (8th arg).
+**Verification:** 942 tests passing (22 net new), build clean.
+
+---
+### 2026-02-20 | LLM Expert | Claude Code (Opus 4.6) | Verdict Range + Baseless Challenge Guard — Plan for Architect Review
+**Task:** Design plan for Action #6 (Stammbach/Ash): verdict range reporting + baseless challenge guard.
+**Files touched:** `AGENTS.md` (new Pipeline Integrity rule), `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md` (Action #6 status update), `Docs/WIP/Verdict_Range_Baseless_Guard_Plan_2026-02-20.md` (plan document).
+**Key decisions:** Advisory-only guard (warnings + baselessAdjustmentRate metric, no deterministic override). Range from min/max(consistency percentages) + boundary variance widening (weight=0.0 default). Explicit reconciler provenance via `adjustmentBasedOnChallengeIds`. Multilingual guardrail tests.
+**Open items:** Awaiting Architect review of 4 trade-off questions in plan. Implementation not started.
+**For next agent:** Full plan at `Docs/WIP/Verdict_Range_Baseless_Guard_Plan_2026-02-20.md`. 4 phases, ~9 files, ~25 new tests. Architect should review trade-offs in §Architect Review Points (advisory vs. blocking, range methodology, return type change, prompt-as-guard dependency).
+
+---
 ### 2026-02-20 | LLM Expert (Senior Developer execution) | Claude Code (Opus 4.6) | Debate Profile Presets — Follow-up Fixes
 **Task:** Intent-stable profile semantics, runtime fallback warning emission into `resultJson.analysisWarnings`, diversity check correctness, type tightening.
 **Files touched:** `config-schemas.ts`, `claimboundary-pipeline.ts`, `claimboundary-pipeline.test.ts` (3 files, ~8 net new tests).

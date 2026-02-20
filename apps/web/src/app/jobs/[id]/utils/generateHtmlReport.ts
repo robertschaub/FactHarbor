@@ -370,6 +370,7 @@ function buildVerdictBanner(input: HtmlReportInput): string {
         <div class="meter-label">Confidence</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${conf}%;background:#4a5568"></div></div>
       </div>
+      ${result?.truthPercentageRange ? `<div style="font-size:11px;color:#a0aec0;margin-top:4px">Range: ${result.truthPercentageRange.min}%–${result.truthPercentageRange.max}%</div>` : ""}
     </div>
     ${keyFinding && keyFinding.length > 120 ? `<div style="max-width:380px">
       <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
@@ -446,6 +447,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
           <div class="small-meter-val" style="color:#a0aec0">${conf}%</div>
           <div class="small-meter-label">Confidence</div>
         </div>
+        ${cv.truthPercentageRange ? `<div class="small-meter"><div class="small-meter-val" style="color:#a0aec0;font-size:10px">${cv.truthPercentageRange.min}%–${cv.truthPercentageRange.max}%</div><div class="small-meter-label">Range</div></div>` : ""}
       </div>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -759,11 +761,22 @@ export function generateHtmlReport(input: HtmlReportInput): string {
   const meta = result?.meta || {};
   const narrative = result?.verdictNarrative;
 
+  const overallVerdict = result?.overallVerdict || input.claimVerdicts?.[0]?.verdict || "";
+  const truthPct = norm(result?.truthPercentage ?? input.claimVerdicts?.[0]?.truthPercentage);
+  const confPct = norm(result?.confidence ?? input.claimVerdicts?.[0]?.confidence);
+  const dateStr = job.createdUtc ? new Date(job.createdUtc).toISOString().slice(0, 10) : "";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="${esc(job.inputValue)}">
+<meta name="fh:verdict" content="${esc(overallVerdict)}">
+<meta name="fh:truth" content="${truthPct}">
+<meta name="fh:confidence" content="${confPct}">
+<meta name="fh:date" content="${esc(dateStr)}">
+<meta name="fh:model" content="${esc(meta.llmModel || meta.model || "")}">
 <title>FactHarbor Report — ${esc(job.inputValue)}</title>
 ${buildCss()}
 </head>

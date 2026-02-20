@@ -1,0 +1,33 @@
+name: Update Reports Manifest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Docs/TESTREPORTS/*.html'
+
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate reports manifest
+        run: python Docs/xwiki-pages/scripts/generate_reports_manifest.py
+
+      - name: Commit and push manifest if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Docs/TESTREPORTS/reports-manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: auto-update reports-manifest.json"
+          git pull --rebase origin main
+          git push
