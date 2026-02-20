@@ -10,6 +10,7 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 
 * [[Supported Providers>>||anchor="HSupportedProviders"]]
 * [[Provider Selection>>||anchor="HProviderSelection"]]
+* [[Debate Role Configuration>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.Debate Role Configuration.WebHome]]
 * [[Environment Configuration>>||anchor="HEnvironmentConfiguration"]]
 * [[Provider-Specific Optimization>>||anchor="HProvider-SpecificOptimization"]]
 * [[Search Provider Configuration>>||anchor="HSearchProviderConfiguration"]]
@@ -56,6 +57,16 @@ If present in your ##.env## file, it will be ignored.
 
 **Migration:** If you previously set ##LLM_PROVIDER=openai##, update your pipeline config to
 ##"llmProvider": "openai"## via the admin UI.
+
+=== Debate Role Configuration (Verdict Stage) ===
+
+Debate roles are configured in PipelineConfig via:
+* ##debateProfile##
+* ##debateModelTiers##
+* ##debateModelProviders##
+
+See the dedicated guide:
+[[Debate Role Configuration>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.Debate Role Configuration.WebHome]]
 
 === Provider API Keys ===
 

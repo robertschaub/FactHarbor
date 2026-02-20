@@ -1,0 +1,219 @@
+= Debate Role Configuration =
+
+== Overview ==
+
+This page explains how verdict debate roles are configured in FactHarbor.
+
+Role structure is fixed:
+* ##advocate##
+* ##selfConsistency##
+* ##challenger##
+* ##reconciler##
+* ##validation##
+
+Behavior is configurable per role (tier and provider) through UCM PipelineConfig.
+
+=== Recommended Starting Point (post-baseline) ===
+
+After baseline measurement, recommended first default candidate:
+* ##debateProfile = "cross-provider"##
+
+Why this is the best starting point:
+* Introduces structural independence where it matters most (challenger role)
+* Keeps blast radius small (only challenger provider changes)
+* Preserves current debate flow and tier strategy
+* Directly supports C1/C16 risk reduction goals
+
+Operational note:
+* Requires both ##ANTHROPIC_API_KEY## and ##OPENAI_API_KEY##
+* If OpenAI credentials are missing, runtime falls back and emits ##debate_provider_fallback##
+
+----
+
+== How Debate Works (Diagram) ==
+
+The verdict stage runs a fixed 5-step debate pattern per claim.
+
+{{mermaid}}
+flowchart LR
+    E[Evidence + ClaimBoundary] --> A[Step 1: Advocate Verdict]
+    A --> S[Step 2: Self-Consistency x3]
+    A --> C[Step 3: Challenger Critique]
+    S --> R[Step 4: Reconciliation]
+    C --> R
+    R --> V[Step 5: Validation]
+    V --> O[Final Claim Verdict]
+{{/mermaid}}
+
+Role-to-step mapping:
+* ##advocate## -> Step 1
+* ##selfConsistency## -> Step 2
+* ##challenger## -> Step 3
+* ##reconciler## -> Step 4
+* ##validation## -> Step 5
+
+----
+
+== Worked Example ==
+
+=== Example config ===
+
+{{code language="json"}}
+{
+  "llmProvider": "anthropic",
+  "debateProfile": "cross-provider",
+  "debateModelTiers": {
+    "challenger": "sonnet",
+    "validation": "haiku"
+  }
+}
+{{/code}}
+
+=== What this executes as ===
+
+Assuming default model mappings:
+
+|= Role |= Tier |= Provider |= Sub-model used
+| ##advocate## | sonnet | anthropic (inherited) | ##claude-sonnet-4-5-20250929##
+| ##selfConsistency## | sonnet | anthropic (inherited) | ##claude-sonnet-4-5-20250929##
+| ##challenger## | sonnet | openai (from ##cross-provider##) | ##gpt-4.1##
+| ##reconciler## | sonnet | anthropic (inherited) | ##claude-sonnet-4-5-20250929##
+| ##validation## | haiku | anthropic (inherited) | ##claude-haiku-4-5-20251001##
+
+Execution order:
+1. Advocate generates initial verdict.
+1. Self-consistency runs 3 parallel verdict samples.
+1. Challenger critiques the advocate verdict.
+1. Reconciler merges advocate + self-consistency + challenger outputs.
+1. Validation runs grounding/direction checks and returns final verdict package.
+
+----
+
+== Where to Configure ==
+
+Configure in Admin -> Config -> Pipeline:
+
+* ##debateProfile##
+* ##debateModelTiers##
+* ##debateModelProviders##
+* ##llmProvider## (global fallback provider)
+
+All of these are runtime config values (no code change required).
+
+----
+
+== Resolution Precedence ==
+
+Effective role config is resolved in this order:
+
+1. Explicit per-role overrides:
+** ##debateModelTiers##
+** ##debateModelProviders##
+1. Profile preset:
+** ##debateProfile##
+1. Hardcoded defaults:
+** debate tiers: sonnet for debate roles, haiku for validation
+** providers: inherit global ##llmProvider##
+
+----
+
+== Built-in Profiles ==
+
+|= debateProfile |= Role Intent |= Notes
+| ##baseline## | All roles Anthropic, same-tier debate | Default behavior
+| ##tier-split## | Challenger on haiku tier (same provider) | Lower cost
+| ##cross-provider## | Challenger provider = OpenAI | Provider diversity
+| ##max-diversity## | Challenger = OpenAI, selfConsistency = Google | Maximum provider diversity
+
+Example:
+
+{{code language="json"}}
+{
+  "debateProfile": "cross-provider"
+}
+{{/code}}
+
+----
+
+== Per-Role Override Example ==
+
+You can use a profile and still override one role, or define the full role map explicitly.
+
+{{code language="json"}}
+{
+  "llmProvider": "anthropic",
+  "debateModelTiers": {
+    "advocate": "sonnet",
+    "selfConsistency": "sonnet",
+    "challenger": "haiku",
+    "reconciler": "sonnet",
+    "validation": "haiku"
+  },
+  "debateModelProviders": {
+    "advocate": "anthropic",
+    "selfConsistency": "google",
+    "challenger": "openai",
+    "reconciler": "anthropic",
+    "validation": "anthropic"
+  }
+}
+{{/code}}
+
+----
+
+== Tier to Model Mapping ==
+
+For verdict-stage role calls, tier is mapped to task routing:
+* ##sonnet## tier -> ##verdict## task model
+* ##haiku## tier -> ##understand## task model
+
+Current provider defaults:
+
+|= Provider |= sonnet tier |= haiku tier
+| Anthropic | ##modelVerdict## (default: ##claude-sonnet-4-5-20250929##) | ##modelUnderstand## (default: ##claude-haiku-4-5-20251001##)
+| OpenAI | ##gpt-4.1## | ##gpt-4.1-mini##
+| Google | ##gemini-2.5-pro## | ##gemini-2.5-flash##
+| Mistral | ##mistral-large-latest## | ##mistral-small-latest##
+
+Note: For Anthropic, effective model IDs depend on current PipelineConfig values of ##modelVerdict## and ##modelUnderstand##.
+
+----
+
+== Credential Fallback Behavior ==
+
+If a role has provider override but that provider key is missing, runtime falls back to global ##llmProvider## and emits a warning:
+
+* ##debate_provider_fallback## in ##analysisWarnings##
+
+If all 4 debate roles use the same tier and same provider intent, runtime emits:
+
+* ##all_same_debate_tier##
+
+Both warnings are expected signals for calibration/governance review.
+
+----
+
+== Verification ==
+
+=== Quick verification (UI) ===
+
+1. Set PipelineConfig values in Admin -> Config -> Pipeline
+1. Run a job or calibration
+1. Inspect ##analysisWarnings## in result JSON for:
+** ##all_same_debate_tier##
+** ##debate_provider_fallback##
+
+=== Effective runtime dump (terminal) ===
+
+{{code language="powershell"}}
+cd apps/web
+npx tsx -e "import { loadPipelineConfig, loadCalcConfig } from './src/lib/config-loader.ts'; import { buildVerdictStageConfig } from './src/lib/analyzer/claimboundary-pipeline.ts'; (async () => { const p = await loadPipelineConfig('default'); const c = await loadCalcConfig('default'); const v = buildVerdictStageConfig(p.config as any, c.config as any); console.log(JSON.stringify({ llmProvider: (p.config as any).llmProvider, debateProfile: (p.config as any).debateProfile ?? null, debateModelTiers: v.debateModelTiers, debateModelProviders: v.debateModelProviders }, null, 2)); })();"
+{{/code}}
+
+----
+
+== Related ==
+
+* [[LLM Configuration Guide>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.WebHome]]
+* [[Unified Config Management>>FactHarbor.Product Development.DevOps.Subsystems and Components.Unified Config Management.WebHome]]
+* [[LLM Model Tiering (Diagram)>>FactHarbor.Product Development.Diagrams.LLM Model Tiering.WebHome]]
