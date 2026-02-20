@@ -42,6 +42,10 @@ apps/web/devserver.err
 apps/web/test-output.txt
 apps/web/vitest-results.json
 
+# Python
+__pycache__/
+*.pyc
+
 # Node / Next.js
 node_modules/
 next-env.d.ts
