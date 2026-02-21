@@ -92,6 +92,29 @@ https://robertschaub.github.io/FactHarbor/TestReports/  (via redirect alias)
 | Deploy tool | `peaceiris/actions-gh-pages@v4` (`force_orphan: true`) |
 | Re-trigger | `gh workflow run "Deploy Docs to GitHub Pages" --ref main` |
 
+### `deploy-ghpages.ps1` — local preview only, NOT for publishing
+
+**File:** `Docs/xwiki-pages/scripts/deploy-ghpages.ps1`
+
+**What it does now:**
+1. Runs `build_ghpages.py` to generate `index.html` + `pages.json` in `gh-pages-build/`
+2. Switches to the local `gh-pages` branch
+3. Copies generated files
+4. Commits locally
+5. Switches back to the original branch — **does NOT push**
+
+**What it used to do (before 2026-02-21):**
+The original script included `git push origin gh-pages` as step 6. AI agents ran this script when asked to "publish" or "deploy" docs. This overwrote the CI-built `gh-pages` branch with a locally-built version that **lacked the `DOCS_ANALYTICS_URL` secret** (only available in CI). Result: the Stats button stopped working on the live site.
+
+**Why the push was removed:**
+- CI (`.github/workflows/deploy-docs.yml`) uses `peaceiris/actions-gh-pages@v4` with `force_orphan: true`, which replaces the entire `gh-pages` branch on every deploy.
+- CI injects `DOCS_ANALYTICS_URL` into the build via `--analytics-url`, so the deployed `index.html` has `Analytics.configure(url, 'FH')` baked in.
+- A manual `git push origin gh-pages` from the local script overwrites this CI build. Since the secret isn't available locally, the rebuilt `index.html` has no analytics configuration — the Stats button is hidden.
+- This happened in BestWorkplace (same architecture) before the push step was removed from both projects.
+
+**How to publish:** Push to `main`. CI deploys automatically.
+**How to re-trigger without a content change:** `gh workflow run "Deploy Docs to GitHub Pages" --ref main`
+
 ---
 
 ## External Dependencies (viewer)
