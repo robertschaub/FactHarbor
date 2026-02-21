@@ -41,6 +41,7 @@ apps/web/devserver.err
 # Test output artifacts (ephemeral, should not be tracked)
 apps/web/test-output.txt
 apps/web/vitest-results.json
+apps/web/test/output/
 
 # Python
 __pycache__/

@@ -1048,9 +1048,6 @@ function getChildPages(ref){
 
 function derivePageTitle(ref){
   if(!ref) return '';
-  // Check for pre-computed displayTitle first
-  const page = pageIndex[ref];
-  if(page && page.displayTitle) return page.displayTitle;
   // Strip translation suffix: "Space.WebHome.de" → "Space.WebHome"
   var cleaned = ref.replace(/\.WebHome\.[a-z]{2}$/i, '.WebHome').replace(/^WebHome\.[a-z]{2}$/i, 'WebHome');
   const segs = cleaned.split('.').filter(s=>s.toLowerCase()!=='webhome');
@@ -1075,8 +1072,7 @@ async function renderPreview(){
   let src = editorEl.value;
   // Auto-inject title for pages that lack a heading
   if(!contentHasHeading(src)){
-    const page = pageIndex[currentPageRef];
-    const title = (page && page.displayTitle) || derivePageTitle(currentPageRef);
+    const title = derivePageTitle(currentPageRef);
     if(title) src = `= ${title} =\n\n${src}`;
   }
   let html = parser.parse(src);
@@ -1448,7 +1444,7 @@ function updateBreadcrumb(page){
     const isLast = i === segs.length-1;
     const partial = segs.slice(0,i+1).join('.');
     if(isLast){
-      const label = (page.displayTitle) ? page.displayTitle : segs[i];
+      const label = segs[i];
       html += `<span class="bc-item active">${esc(label)}</span>`;
     } else {
       // Try to navigate to this space's index page

@@ -369,12 +369,17 @@ def generate_redirects(aliases: Dict[str, str], output_dir: Path) -> int:
     """
     count = 0
     for slug, ref in aliases.items():
+        # Guard against path traversal from malicious slugs
+        redirect_dir = (output_dir / slug).resolve()
+        if not str(redirect_dir).startswith(str(output_dir.resolve())):
+            print(f'  SKIP redirect: slug "{slug}" escapes output directory (path traversal)', file=sys.stderr)
+            continue
+
         encoded_ref = urllib.parse.quote(ref, safe='.')
         depth = slug.count('/') + 1
         prefix = '../' * depth
         full_target = f'{prefix}#{encoded_ref}'
 
-        redirect_dir = output_dir / slug
         redirect_dir.mkdir(parents=True, exist_ok=True)
         redirect_html = f'''<!DOCTYPE html>
 <html lang="en">

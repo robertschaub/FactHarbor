@@ -14,6 +14,12 @@ import {
   loadCalcConfig,
 } from "@/lib/config-loader";
 import { DEBATE_PROFILES, type PipelineConfig } from "@/lib/config-schemas";
+import {
+  ANTHROPIC_MODELS,
+  OPENAI_MODELS,
+  GOOGLE_MODELS,
+  type ModelTier,
+} from "@/lib/analyzer/model-tiering";
 import { getActiveSearchProviders } from "@/lib/web-search";
 import { computePairMetrics, computeAggregateMetrics } from "./metrics";
 import type {
@@ -200,8 +206,10 @@ async function captureConfigSnapshot(): Promise<
  *   1. Explicit debateModelTiers / debateModelProviders
  *   2. debateProfile preset
  *   3. Hardcoded defaults
+ *
+ * Exported for use by the backfill script.
  */
-function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["configSnapshot"]["resolvedLLM"] {
+export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["configSnapshot"]["resolvedLLM"] {
   const provider = config.llmProvider ?? "anthropic";
   const tiering = config.llmTiering ?? false;
   const modelUnderstand = config.modelUnderstand ?? "claude-haiku-4-5-20251001";
@@ -234,7 +242,12 @@ function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["configS
 }
 
 /**
- * Resolve a model name from tier + provider, matching getModelForTask() / defaultModelNameForTask() logic.
+ * Resolve a model name from debate tier + provider.
+ *
+ * For Anthropic: uses UCM model overrides (modelUnderstand / modelVerdict)
+ * since admin may have overridden the default model IDs.
+ * For other providers: looks up from the canonical model-tiering tables
+ * so model names stay in sync with the routing module.
  */
 function resolveModelName(
   tier: string,
@@ -244,16 +257,24 @@ function resolveModelName(
   modelVerdict: string,
 ): string {
   const isPremium = tier === "sonnet";
+  const modelTier: ModelTier = isPremium ? "premium" : "budget";
   const p = (roleProvider || "").toLowerCase();
 
+  // Anthropic: honour UCM model overrides
   if (p === "anthropic" || p === "claude") {
-    // When tiering is off, all tasks use the verdict (premium) model
     if (!tiering) return modelVerdict;
     return isPremium ? modelVerdict : modelUnderstand;
   }
-  if (p === "openai") return isPremium ? "gpt-4.1" : "gpt-4.1-mini";
-  if (p === "google" || p === "gemini") return isPremium ? "gemini-2.5-pro" : "gemini-2.5-flash";
-  if (p === "mistral") return isPremium ? "mistral-large-latest" : "mistral-small-latest";
+
+  // Other providers: look up from model-tiering tables
+  const providerModels =
+    p === "openai" ? OPENAI_MODELS :
+    (p === "google" || p === "gemini") ? GOOGLE_MODELS :
+    undefined;
+
+  if (providerModels) return providerModels[modelTier].modelId;
+
+  // Unknown provider — fall back to Anthropic UCM models
   return isPremium ? modelVerdict : modelUnderstand;
 }
 
