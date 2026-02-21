@@ -48,6 +48,46 @@
       "confidence": 72,
       "date": "2026-02-18",
       "model": "claude-sonnet-4-5-20250929"
+    },
+    "run-2026-02-20T14-44-11-904Z.html": {
+      "type": "calibration",
+      "mode": "quick",
+      "pairs": 3,
+      "debateProfile": "baseline",
+      "date": "2026-02-20",
+      "model": "claude-sonnet-4-5-20250929"
+    },
+    "full-2026-02-20T15-00-21-961Z.html": {
+      "type": "calibration",
+      "mode": "full",
+      "pairs": "0/10 (credit balance failure)",
+      "debateProfile": "baseline",
+      "date": "2026-02-20",
+      "model": "claude-sonnet-4-5-20250929"
+    },
+    "full-2026-02-20T21-32-24-288Z.html": {
+      "type": "calibration",
+      "mode": "full",
+      "pairs": "10/10",
+      "debateProfile": "baseline",
+      "date": "2026-02-20",
+      "model": "claude-sonnet-4-5-20250929"
+    },
+    "run-2026-02-21T11-14-21-464Z.html": {
+      "type": "calibration",
+      "mode": "quick",
+      "pairs": 3,
+      "debateProfile": "cross-provider",
+      "date": "2026-02-21",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
+    },
+    "full-2026-02-21T13-49-27-929Z.html": {
+      "type": "calibration",
+      "mode": "full",
+      "pairs": "6/10 (3 OpenAI TPM failures, 1 bug)",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-21",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
     }
   }
 }
