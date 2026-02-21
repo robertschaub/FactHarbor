@@ -178,4 +178,61 @@ describe("calibration failure-mode metrics", () => {
     expect(aggregate.failureModes.byStage.research_search.degradationCount).toBe(1);
     expect(aggregate.failureModes.meanRefusalRateDelta).toBeGreaterThan(0);
   });
+
+  it("weights failure-mode counts by warning occurrences", () => {
+    const thresholds = DEFAULT_CALIBRATION_THRESHOLDS;
+    const pair: BiasPair = {
+      id: "pair-occ",
+      domain: "media",
+      language: "en",
+      leftClaim: "left-occ",
+      rightClaim: "right-occ",
+      category: "evaluative",
+      expectedSkew: "neutral",
+      description: "occurrence weighting",
+    };
+
+    const left = createSide({
+      side: "left",
+      warnings: [
+        {
+          type: "search_provider_error",
+          severity: "error",
+          message: "Provider failed repeatedly",
+          details: {
+            provider: "serpapi",
+            stage: "research_search",
+            occurrences: 4,
+            stageCounts: {
+              research_search: 3,
+              preliminary_search: 1,
+            },
+          },
+        },
+      ],
+    });
+    const right = createSide({ side: "right" });
+
+    const metrics = computePairMetrics(left, right, pair, thresholds);
+    expect(metrics.failureModes.left.degradationCount).toBe(4);
+    expect(metrics.failureModes.left.degradationRate).toBeCloseTo(40, 5);
+
+    const aggregate = computeAggregateMetrics(
+      [
+        {
+          pairId: pair.id,
+          pair,
+          status: "completed",
+          left,
+          right,
+          metrics,
+        },
+      ],
+      thresholds,
+    );
+
+    expect(aggregate.failureModes.byProvider.serpapi.degradationCount).toBe(4);
+    expect(aggregate.failureModes.byStage.research_search.degradationCount).toBe(3);
+    expect(aggregate.failureModes.byStage.preliminary_search.degradationCount).toBe(1);
+  });
 });

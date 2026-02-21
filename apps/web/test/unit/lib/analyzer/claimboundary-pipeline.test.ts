@@ -644,7 +644,27 @@ vi.mock("@/lib/retrieval", () => ({
 }));
 
 vi.mock("@/lib/analyzer/source-reliability", () => ({
-  prefetchSourceReliability: vi.fn(async () => ({ domains: [], alreadyPrefetched: 0, cacheHits: 0, evaluated: 0 })),
+  prefetchSourceReliability: vi.fn(async () => ({
+    domains: [],
+    alreadyPrefetched: 0,
+    cacheHits: 0,
+    evaluated: 0,
+    noConsensusCount: 0,
+    errorCount: 0,
+    errorByType: {
+      timeout: 0,
+      connection_refused: 0,
+      http_401: 0,
+      http_403: 0,
+      http_429: 0,
+      http_5xx: 0,
+      http_other: 0,
+      network: 0,
+      unknown: 0,
+    },
+    failedDomains: [],
+    errorSamples: [],
+  })),
   getTrackRecordScore: vi.fn(() => 0.7),
 }));
 

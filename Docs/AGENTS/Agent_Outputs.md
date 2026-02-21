@@ -956,3 +956,23 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 - If refining C18 fidelity, enrich `analysisWarnings.details` at emission sites with explicit `provider` and `stage` for all warning types to reduce `unknown` buckets.
 - Consider adding API integration tests for `MetricsController.GetSummaryStats` failure-mode aggregation.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-20 | Lead Architect | Codex (GPT-5) | Calibration Error Telemetry Hardening (SR/Search/Fetch)
+**Task:** Implement the requested post-baseline hardening pass: identify pipeline-side error handling gaps from calibration logs and improve bubble-up + structured telemetry for failures/degradation.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/calibration-metrics.test.ts`
+**Key decisions:**
+- Added new warning types for retrieval/reliability failures: `source_reliability_error`, `source_fetch_failure`, `source_fetch_degradation`.
+- Upgraded SR prefetch telemetry to separate infra/API evaluation errors from true “no consensus,” with typed error buckets, failed-domain tracking, and sample payloads.
+- Surfaced SR prefetch errors into `resultJson.analysisWarnings` in Stage 2 so failures are visible in JSON/UI and calibration outputs.
+- Replaced provider-warning de-duplication loss with per-provider upsert + `occurrences`/`stageCounts` counters, preserving event cardinality while avoiding warning spam.
+- Reworked `fetchSources()` to capture retrieval exceptions (timeout/http/network/pdf parse), emit structured failure/degradation warnings, and include per-query breakdown details.
+- Updated calibration failure-mode metrics to weight warnings by `details.occurrences` and to honor `stageCounts` distribution when aggregating by stage.
+**Open items:**
+- Source-fetch degradation threshold is currently code-defined (`>=40%` failures with at least 3 attempts); promote to UCM if operators need runtime tuning.
+- Optional: add a dedicated analyzer test for repeated provider errors verifying `occurrences` and `stageCounts` accumulation in `analysisWarnings`.
+**Warnings:**
+- This pass intentionally increases warning volume/detail in `analysisWarnings`; downstream dashboards that assumed one event per warning type may need display tuning.
+**For next agent:**
+- Validate on the next calibration run that `analysisWarnings` now includes SR/fetch warnings with populated `details.errorByType`, `occurrences`, and `stageCounts`.
+- If post-run analysis still shows “unknown” buckets, enrich warning emitters with stricter provider/stage detail coverage at emission sites.
+**Learnings:** No new role learnings appended.

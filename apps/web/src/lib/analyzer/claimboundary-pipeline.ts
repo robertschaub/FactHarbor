@@ -696,24 +696,23 @@ export async function runPreliminarySearch(
         // Report search provider errors to warnings
         if (response.errors && response.errors.length > 0) {
           for (const provErr of response.errors) {
-            const alreadyWarned = state.warnings.some(
-              (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
-            );
-            if (!alreadyWarned) {
-              state.warnings.push({
-                type: "search_provider_error",
-                severity: "error",
-                message: `Search provider "${provErr.provider}" failed: ${provErr.message}`,
-                details: { provider: provErr.provider, status: provErr.status },
-              });
-              state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
-            }
+            upsertSearchProviderWarning(state, {
+              provider: provErr.provider,
+              status: provErr.status,
+              message: provErr.message,
+              query,
+              stage: "preliminary_search",
+            });
+            state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
           }
         }
 
         // Fetch and extract text from top results (limit to 3 per query)
         const sourcesToFetch = response.results.slice(0, 3);
         const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
+        const fetchErrorByType: Record<string, number> = {};
+        const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
+        let fetchFailed = 0;
 
         for (const searchResult of sourcesToFetch) {
           try {
@@ -728,9 +727,39 @@ export async function runPreliminarySearch(
                 text: content.text.slice(0, 8000), // Cap to control prompt size
               });
             }
-          } catch {
-            // Skip sources that fail to fetch — non-fatal
+          } catch (error: unknown) {
+            const classified = classifySourceFetchFailure(error);
+            fetchFailed++;
+            fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
+            if (fetchErrorSamples.length < 5) {
+              fetchErrorSamples.push({
+                url: searchResult.url,
+                type: classified.type,
+                status: classified.status,
+                message: classified.message.slice(0, 240),
+              });
+            }
           }
+        }
+
+        if (fetchFailed > 0 && sourcesToFetch.length > 0) {
+          const failureRatio = fetchFailed / sourcesToFetch.length;
+          state.warnings.push({
+            type: "source_fetch_failure",
+            severity: failureRatio >= 0.5 ? "warning" : "info",
+            message:
+              `Preliminary source fetch failed for ${fetchFailed}/${sourcesToFetch.length} source(s) on query "${query.slice(0, 120)}"`,
+            details: {
+              stage: "preliminary_fetch",
+              query,
+              attempted: sourcesToFetch.length,
+              failed: fetchFailed,
+              failureRatio,
+              errorByType: fetchErrorByType,
+              errorSamples: fetchErrorSamples,
+              occurrences: fetchFailed,
+            },
+          });
         }
 
         if (fetchedSources.length === 0) continue;
@@ -752,11 +781,11 @@ export async function runPreliminarySearch(
         // If this was a search provider error (not a general exception), report it
         // The SearchProviderError has provider name, but generic exceptions don't
         if (err?.name === "SearchProviderError" && err?.provider) {
-          state.warnings.push({
-            type: "search_provider_error",
-            severity: "error",
-            message: `Preliminary search failed: ${err.provider} - ${err.message}`,
-            details: { query, provider: err.provider },
+          upsertSearchProviderWarning(state, {
+            provider: err.provider,
+            message: String(err.message ?? "search provider error"),
+            query,
+            stage: "preliminary_search",
           });
           state.onEvent?.(`Preliminary search error: ${err.provider} - ${err.message}`, 0);
         }
@@ -765,6 +794,78 @@ export async function runPreliminarySearch(
   }
 
   return allEvidence;
+}
+
+function normalizeWarningCounterMap(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object") return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === "number" && Number.isFinite(v) && v > 0) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+function upsertSearchProviderWarning(
+  state: CBResearchState,
+  params: {
+    provider?: string;
+    message: string;
+    status?: number;
+    query?: string;
+    stage: "preliminary_search" | "research_search";
+  },
+): void {
+  const provider = params.provider ?? "unknown";
+  const statusKey = params.status !== undefined ? String(params.status) : "unknown";
+  const existing = state.warnings.find(
+    (w) => w.type === "search_provider_error" && w.details?.provider === provider,
+  );
+
+  if (!existing) {
+    state.warnings.push({
+      type: "search_provider_error",
+      severity: "error",
+      message: `Search provider "${provider}" failed: ${params.message}`,
+      details: {
+        provider,
+        status: params.status,
+        query: params.query,
+        stage: params.stage,
+        occurrences: 1,
+        statusCounts: { [statusKey]: 1 },
+        stageCounts: { [params.stage]: 1 },
+      },
+    });
+    return;
+  }
+
+  const details =
+    existing.details && typeof existing.details === "object"
+      ? (existing.details as Record<string, unknown>)
+      : {};
+  const previousOccurrences =
+    typeof details.occurrences === "number" && Number.isFinite(details.occurrences)
+      ? details.occurrences
+      : 1;
+
+  details.occurrences = previousOccurrences + 1;
+  details.status = params.status;
+  details.query = params.query;
+  details.stage = params.stage;
+  details.lastMessage = params.message;
+
+  const statusCounts = normalizeWarningCounterMap(details.statusCounts);
+  statusCounts[statusKey] = (statusCounts[statusKey] ?? 0) + 1;
+  details.statusCounts = statusCounts;
+
+  const stageCounts = normalizeWarningCounterMap(details.stageCounts);
+  stageCounts[params.stage] = (stageCounts[params.stage] ?? 0) + 1;
+  details.stageCounts = stageCounts;
+
+  existing.details = details;
+  existing.message = `Search provider "${provider}" failed ${details.occurrences} time(s); latest: ${params.message}`;
 }
 
 /**
@@ -1660,7 +1761,27 @@ export async function researchEvidence(
   const allSourceUrls = state.sources.map((s) => s.url);
   if (allSourceUrls.length > 0) {
     state.onEvent?.("Evaluating source reliability...", 58);
-    await prefetchSourceReliability(allSourceUrls);
+    const srPrefetch = await prefetchSourceReliability(allSourceUrls);
+    if (srPrefetch.errorCount > 0) {
+      const severity: AnalysisWarning["severity"] =
+        srPrefetch.errorCount >= Math.max(3, Math.ceil(srPrefetch.domains.length * 0.3))
+          ? "error"
+          : "warning";
+      state.warnings.push({
+        type: "source_reliability_error",
+        severity,
+        message:
+          `Source reliability prefetch had ${srPrefetch.errorCount} error(s) across ` +
+          `${srPrefetch.failedDomains.length} domain(s). Reliability scores for those domains default to unknown.`,
+        details: {
+          stage: "research_sr",
+          errorCount: srPrefetch.errorCount,
+          errorByType: srPrefetch.errorByType,
+          failedDomains: srPrefetch.failedDomains.slice(0, 20),
+          noConsensusCount: srPrefetch.noConsensusCount,
+        },
+      });
+    }
   }
 
   // ------------------------------------------------------------------
@@ -1850,20 +1971,15 @@ export async function runResearchIteration(
             recordSearchFailure(provErr.provider, provErr.message);
           }
 
-          // Deduplicate warnings: only warn once per provider in result
-          const alreadyWarned = state.warnings.some(
-            (w) => w.type === "search_provider_error" && w.details?.provider === provErr.provider,
-          );
-          if (!alreadyWarned) {
-            state.warnings.push({
-              type: "search_provider_error",
-              severity: "error",
-              message: `Search provider "${provErr.provider}" failed: ${provErr.message}`,
-              details: { provider: provErr.provider, status: provErr.status },
-            });
-            // Emit to live events log so the user sees the error during the run
-            state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
-          }
+          upsertSearchProviderWarning(state, {
+            provider: provErr.provider,
+            status: provErr.status,
+            message: provErr.message,
+            query: queryObj.query,
+            stage: "research_search",
+          });
+          // Emit to live events log so the user sees the error during the run
+          state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
         }
       }
 
@@ -2080,6 +2196,11 @@ export async function fetchSources(
   state: CBResearchState,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
+  const fetchErrorByType: Record<string, number> = {};
+  const failedUrls: string[] = [];
+  const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
+  let fetchAttempted = 0;
+  let fetchFailed = 0;
 
   // Filter out already-fetched URLs
   const toFetch = relevantSources.filter(
@@ -2090,6 +2211,7 @@ export async function fetchSources(
   const FETCH_CONCURRENCY = 3;
   for (let i = 0; i < toFetch.length; i += FETCH_CONCURRENCY) {
     const batch = toFetch.slice(i, i + FETCH_CONCURRENCY);
+    fetchAttempted += batch.length;
     const results = await Promise.all(
       batch.map((source) =>
         extractTextFromUrl(source.url, {
@@ -2097,12 +2219,28 @@ export async function fetchSources(
           maxLength: 15000,
         })
           .then((content) => ({ source, content, ok: true as const }))
-          .catch(() => ({ source, content: null, ok: false as const })),
+          .catch((error: unknown) => ({ source, content: null, ok: false as const, error })),
       ),
     );
 
     for (const result of results) {
-      if (!result.ok || !result.content) continue;
+      if (!result.ok || !result.content) {
+        fetchFailed++;
+        const classified = classifySourceFetchFailure(result.error);
+        fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
+        if (!failedUrls.includes(result.source.url)) {
+          failedUrls.push(result.source.url);
+        }
+        if (fetchErrorSamples.length < 10) {
+          fetchErrorSamples.push({
+            url: result.source.url,
+            type: classified.type,
+            status: classified.status,
+            message: classified.message.slice(0, 240),
+          });
+        }
+        continue;
+      }
       if (result.content.text.length < 100) continue; // Too short to be useful
 
       const fetchedSource: FetchedSource = {
@@ -2126,7 +2264,97 @@ export async function fetchSources(
     }
   }
 
+  if (fetchFailed > 0 && fetchAttempted > 0) {
+    const failureRatio = fetchFailed / fetchAttempted;
+    state.warnings.push({
+      type: "source_fetch_failure",
+      severity: failureRatio >= 0.5 ? "error" : "warning",
+      message:
+        `Source fetch failed for ${fetchFailed}/${fetchAttempted} source(s) while researching query "${searchQuery.slice(0, 120)}"`,
+      details: {
+        stage: "research_fetch",
+        query: searchQuery,
+        attempted: fetchAttempted,
+        failed: fetchFailed,
+        failureRatio,
+        errorByType: fetchErrorByType,
+        failedUrls: failedUrls.slice(0, 20),
+        errorSamples: fetchErrorSamples,
+        occurrences: fetchFailed,
+      },
+    });
+
+    if (failureRatio >= 0.4 && fetchAttempted >= 3) {
+      state.warnings.push({
+        type: "source_fetch_degradation",
+        severity: failureRatio >= 0.7 ? "error" : "warning",
+        message:
+          `Source fetch degradation detected (${Math.round(failureRatio * 100)}% failures, ${fetchFailed}/${fetchAttempted})`,
+        details: {
+          stage: "research_fetch",
+          query: searchQuery,
+          attempted: fetchAttempted,
+          failed: fetchFailed,
+          failureRatio,
+          occurrences: 1,
+        },
+      });
+    }
+  }
+
   return fetched;
+}
+
+function classifySourceFetchFailure(
+  error: unknown,
+): { type: string; status?: number; message: string } {
+  const fallback = { type: "unknown", message: "Unknown fetch failure" };
+  if (!error) return fallback;
+
+  const status =
+    typeof (error as any)?.status === "number"
+      ? (error as any).status
+      : typeof (error as any)?.statusCode === "number"
+        ? (error as any).statusCode
+        : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+
+  if ((error as any)?.name === "AbortError" || normalized.includes("timeout")) {
+    return { type: "timeout", status, message };
+  }
+  if (status === 401 || normalized.includes("http 401")) {
+    return { type: "http_401", status: 401, message };
+  }
+  if (status === 403 || normalized.includes("http 403")) {
+    return { type: "http_403", status: 403, message };
+  }
+  if (status === 404 || normalized.includes("http 404")) {
+    return { type: "http_404", status: 404, message };
+  }
+  if (status === 429 || normalized.includes("http 429")) {
+    return { type: "http_429", status: 429, message };
+  }
+  if ((typeof status === "number" && status >= 500) || normalized.includes("http 5")) {
+    return { type: "http_5xx", status, message };
+  }
+  if (normalized.includes("invalid pdf") || normalized.includes("failed to extract pdf text")) {
+    return { type: "pdf_parse_failure", status, message };
+  }
+  if (normalized.includes("econnrefused")) {
+    return { type: "connection_refused", status, message };
+  }
+  if (
+    normalized.includes("enotfound") ||
+    normalized.includes("eai_again") ||
+    normalized.includes("econnreset") ||
+    normalized.includes("fetch failed") ||
+    normalized.includes("network")
+  ) {
+    return { type: "network", status, message };
+  }
+
+  return { type: "unknown", status, message };
 }
 
 /**

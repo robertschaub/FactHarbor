@@ -140,10 +140,57 @@ export interface PrefetchResult {
   alreadyPrefetched: number;
   cacheHits: number;
   evaluated: number;
+  noConsensusCount: number;
+  errorCount: number;
+  errorByType: Record<SourceReliabilityErrorType, number>;
+  failedDomains: string[];
+  errorSamples: SourceReliabilityErrorEvent[];
+}
+
+export type SourceReliabilityErrorType =
+  | "timeout"
+  | "connection_refused"
+  | "http_401"
+  | "http_403"
+  | "http_429"
+  | "http_5xx"
+  | "http_other"
+  | "network"
+  | "unknown";
+
+export interface SourceReliabilityErrorEvent {
+  domain: string;
+  type: SourceReliabilityErrorType;
+  statusCode?: number;
+  message: string;
+}
+
+function emptySourceReliabilityErrorCounts(): Record<SourceReliabilityErrorType, number> {
+  return {
+    timeout: 0,
+    connection_refused: 0,
+    http_401: 0,
+    http_403: 0,
+    http_429: 0,
+    http_5xx: 0,
+    http_other: 0,
+    network: 0,
+    unknown: 0,
+  };
 }
 
 export async function prefetchSourceReliability(urls: string[]): Promise<PrefetchResult> {
-  const result: PrefetchResult = { domains: [], alreadyPrefetched: 0, cacheHits: 0, evaluated: 0 };
+  const result: PrefetchResult = {
+    domains: [],
+    alreadyPrefetched: 0,
+    cacheHits: 0,
+    evaluated: 0,
+    noConsensusCount: 0,
+    errorCount: 0,
+    errorByType: emptySourceReliabilityErrorCounts(),
+    failedDomains: [],
+    errorSamples: [],
+  };
   
   if (!SR_CONFIG.enabled) {
     console.log("[SR] Source reliability disabled");
@@ -207,7 +254,21 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
 
     // Evaluate via internal API
     try {
-      const evalResult = await evaluateSourceInternal(domain);
+      let hadEvalError = false;
+      const evalResult = await evaluateSourceInternal(
+        domain,
+        (errInfo) => {
+          hadEvalError = true;
+          result.errorCount++;
+          result.errorByType[errInfo.type] = (result.errorByType[errInfo.type] ?? 0) + 1;
+          if (!result.failedDomains.includes(domain)) {
+            result.failedDomains.push(domain);
+          }
+          if (result.errorSamples.length < 20) {
+            result.errorSamples.push(errInfo);
+          }
+        },
+      );
       if (evalResult) {
         prefetchedData.set(domain, {
           score: evalResult.score,
@@ -238,10 +299,27 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
         );
       } else {
         prefetchedData.set(domain, null);
-        console.log(`[SR] No consensus for ${domain}`);
+        if (hadEvalError) {
+          console.log(`[SR] Evaluation failed for ${domain} — using unknown reliability (null score)`);
+        } else {
+          result.noConsensusCount++;
+          console.log(`[SR] No consensus for ${domain}`);
+        }
       }
     } catch (err) {
       console.error(`[SR] Error evaluating ${domain}:`, err);
+      result.errorCount++;
+      result.errorByType.unknown = (result.errorByType.unknown ?? 0) + 1;
+      if (!result.failedDomains.includes(domain)) {
+        result.failedDomains.push(domain);
+      }
+      if (result.errorSamples.length < 20) {
+        result.errorSamples.push({
+          domain,
+          type: "unknown",
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
       prefetchedData.set(domain, null);
     }
   };
@@ -254,6 +332,12 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
   }
 
   console.log(`[SR] Prefetch complete: ${prefetchedData.size} domains total`);
+  if (result.errorCount > 0) {
+    console.warn(
+      `[SR] Prefetch had ${result.errorCount} evaluation error(s) across ${result.failedDomains.length} domain(s). ` +
+      `Types: ${JSON.stringify(result.errorByType)}`
+    );
+  }
   return result;
 }
 
@@ -329,7 +413,8 @@ interface EvaluationResult {
  * This is only called during prefetch (async phase).
  */
 async function evaluateSourceInternal(
-  domain: string
+  domain: string,
+  onError?: (event: SourceReliabilityErrorEvent) => void,
 ): Promise<EvaluationResult | null> {
   const baseUrl = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
   const runnerKey = process.env.FH_INTERNAL_RUNNER_KEY || "";
@@ -358,8 +443,16 @@ async function evaluateSourceInternal(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      const errorType = classifySourceReliabilityHttpError(response.status);
+      const message = `HTTP ${response.status} ${response.statusText}`.trim();
+      onError?.({
+        domain,
+        type: errorType,
+        statusCode: response.status,
+        message,
+      });
       console.error(
-        `[SR] Evaluation API error for ${domain}: ${response.status}`
+        `[SR] Evaluation API error for ${domain}: ${message}`
       );
       return null;
     }
@@ -368,6 +461,13 @@ async function evaluateSourceInternal(
     return data as EvaluationResult;
   } catch (err: any) {
     clearTimeout(timeoutId);
+    const errorType = classifySourceReliabilityTransportError(err);
+    const message = err instanceof Error ? err.message : String(err);
+    onError?.({
+      domain,
+      type: errorType,
+      message,
+    });
     if (err?.name === 'AbortError') {
       console.error(`[SR] Evaluation timeout for ${domain} after ${EVAL_TIMEOUT_MS}ms`);
     } else {
@@ -375,6 +475,24 @@ async function evaluateSourceInternal(
     }
     return null;
   }
+}
+
+function classifySourceReliabilityHttpError(statusCode: number): SourceReliabilityErrorType {
+  if (statusCode === 401) return "http_401";
+  if (statusCode === 403) return "http_403";
+  if (statusCode === 429) return "http_429";
+  if (statusCode >= 500 && statusCode <= 599) return "http_5xx";
+  return "http_other";
+}
+
+function classifySourceReliabilityTransportError(err: any): SourceReliabilityErrorType {
+  if (err?.name === "AbortError") return "timeout";
+  const code = String(err?.code ?? err?.cause?.code ?? "").toUpperCase();
+  if (code === "ECONNREFUSED") return "connection_refused";
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN" || code === "ECONNRESET" || code === "ETIMEDOUT") {
+    return "network";
+  }
+  return "unknown";
 }
 
 // ============================================================================

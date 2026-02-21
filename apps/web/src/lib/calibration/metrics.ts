@@ -23,6 +23,9 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
   "evidence_filter_degradation",
   "search_fallback",
   "search_provider_error",
+  "source_reliability_error",
+  "source_fetch_failure",
+  "source_fetch_degradation",
   "llm_provider_error",
   "classification_fallback",
   "grounding_check_degraded",
@@ -312,8 +315,9 @@ function computeSideFailureModeMetrics(side: SideResult): FailureModeSideMetrics
 
   for (const warning of side.warnings) {
     const c = classifyWarning(warning);
-    if (c.refusal) refusalCount++;
-    if (c.degradation) degradationCount++;
+    const occurrences = getWarningOccurrences(warning);
+    if (c.refusal) refusalCount += occurrences;
+    if (c.degradation) degradationCount += occurrences;
   }
 
   const llmCalls = Math.max(side.llmCalls, 1);
@@ -349,6 +353,29 @@ function classifyWarning(warning: CalibrationWarning): WarningClassification {
   };
 }
 
+function getWarningOccurrences(warning: CalibrationWarning): number {
+  const occurrences = warning.details?.occurrences;
+  if (typeof occurrences === "number" && Number.isFinite(occurrences) && occurrences > 0) {
+    return occurrences;
+  }
+  return 1;
+}
+
+function getWarningCounterMap(
+  details: Record<string, unknown>,
+  key: string,
+): Record<string, number> {
+  const value = details[key];
+  if (!value || typeof value !== "object") return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === "number" && Number.isFinite(v) && v > 0) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 function extractStage(
   warningType: string,
   details: Record<string, unknown>,
@@ -364,6 +391,11 @@ function extractStage(
     case "search_fallback":
     case "search_provider_error":
       return "research_search";
+    case "source_reliability_error":
+      return "research_sr";
+    case "source_fetch_failure":
+    case "source_fetch_degradation":
+      return "research_fetch";
     case "llm_provider_error":
       return "research_llm";
     case "debate_provider_fallback":
@@ -406,8 +438,19 @@ function accumulateFailureModeWarnings(
     const c = classifyWarning(warning);
     if (!c.refusal && !c.degradation) continue;
 
-    incrementFailureCounter(byProvider, c.provider, c.refusal, c.degradation);
-    incrementFailureCounter(byStage, c.stage, c.refusal, c.degradation);
+    const occurrences = getWarningOccurrences(warning);
+    incrementFailureCounter(byProvider, c.provider, c.refusal, c.degradation, occurrences);
+
+    const stageCounts = getWarningCounterMap(warning.details ?? {}, "stageCounts");
+    const totalStageCount = Object.values(stageCounts).reduce((sum, value) => sum + value, 0);
+    if (totalStageCount > 0) {
+      for (const [stage, count] of Object.entries(stageCounts)) {
+        incrementFailureCounter(byStage, stage, c.refusal, c.degradation, count);
+      }
+      continue;
+    }
+
+    incrementFailureCounter(byStage, c.stage, c.refusal, c.degradation, occurrences);
   }
 }
 
@@ -419,14 +462,15 @@ function incrementFailureCounter(
   key: string,
   refusal: boolean,
   degradation: boolean,
+  occurrences: number,
 ): void {
   if (!counters[key]) {
     counters[key] = { refusalCount: 0, degradationCount: 0, totalEvents: 0 };
   }
 
-  if (refusal) counters[key].refusalCount++;
-  if (degradation) counters[key].degradationCount++;
-  counters[key].totalEvents++;
+  if (refusal) counters[key].refusalCount += occurrences;
+  if (degradation) counters[key].degradationCount += occurrences;
+  counters[key].totalEvents += occurrences;
 }
 
 function mean(values: number[]): number {
