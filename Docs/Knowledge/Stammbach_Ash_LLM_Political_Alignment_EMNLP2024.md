@@ -5,6 +5,8 @@
 **Starting point:** [Aligning LLMs with Diverse Political Viewpoints](https://aclanthology.org/2024.emnlp-main.412/) (Stammbach, Widmer, Cho, Gulcehre, Ash — EMNLP 2024)
 **Reviewed by:** Claude Opus 4.6, Claude Sonnet 4.6, GPT-5.3 Codex (all merged below)
 
+> **Related docs:** [Executive Summary](EXECUTIVE_SUMMARY.md) for the consolidated priority table. [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) for the full research network, project summaries, and debate landscape. [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the paper-vs-code deep-dive. [Epistemic Asymmetry](Truth_Seeking.md) for the evidence-pool bias context.
+
 ---
 
 ## 1. The Paper in Brief
@@ -42,18 +44,16 @@ The paper measures **stance generation** quality, not **claim verification** acc
 
 ### Tier 1: Directly relevant to FactHarbor
 
-**Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8)
-Automated climate claim fact-checking. **Mediator-Advocate framework** with structurally independent advocates (RAG on IPCC corpus vs. general GPT-4o). >96% accuracy. Adding adversarial NIPCC advocate increased debate rounds from 1 to 18 on contested claims — correctly detecting genuine controversy.
-*Critical comparison:* Climinator uses different models with different corpora. FactHarbor uses the same Sonnet model for all debate roles.
+**Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8) | [Full analysis](Climinator_Lessons_for_FactHarbor.md)
+Mediator-Advocate framework with RAG on distinct corpora. >96% reported accuracy. **Critical: open-source code diverges significantly from paper** (debate.py empty, only 3/6 corpora). FactHarbor's debate is already more sophisticated. See [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the complete paper-vs-code gap analysis and 11 lessons.
 
 **Status (2026-02-20):** Addressed. Debate role routing supports provider-level separation via UCM (`debateProfile`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Four profiles: `baseline` (all Anthropic), `tier-split` (Haiku challenger), `cross-provider` (OpenAI challenger), `max-diversity` (OpenAI challenger + Google self-consistency). Profile semantics are independent of global `llmProvider` — all profiles define explicit provider intent for all 5 roles. Runtime fallback warnings (`debate_provider_fallback`) surface in `analysisWarnings` JSON. Diversity warning (`checkDebateTierDiversity`) correctly evaluates resolved config using `__inherit_global__` sentinel. Latest handoff reports clean build and full test pass.
 
-**AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/)
-LLM-assisted factual claim detection with PoliClaim dataset. Uses **3 predefined reasoning paths** for consistency calibration — structurally different from FactHarbor's temperature-based self-consistency. Path-based consistency could detect bias that temperature variation cannot.
+**AFaCTA** (ACL 2024) — [Link](https://aclanthology.org/2024.acl-long.104/) | [Full analysis](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#32-afacta-acl-2024)
+3 predefined reasoning paths for consistency calibration — structurally different from FactHarbor's temperature-based self-consistency. Could detect bias that temperature variation cannot (C9).
 
-**Knowledge Base Choice** (JDIQ 2023) — [Link](https://dl.acm.org/doi/10.1145/3561389)
-No universally best knowledge base. Domain overlap drives accuracy. Combining multiple KBs offers minimal benefit over the single best match. Pipeline confidence predicts KB effectiveness without ground-truth labels. Advocates "data-centric claim checking."
-*Most actionable for FactHarbor:* Web search = choosing a KB at runtime. Search strategy should be claim-domain-aware.
+**Knowledge Base Choice** (JDIQ 2023) — [Link](https://dl.acm.org/doi/10.1145/3561389) | [Lesson L-B](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-b-data-centric-approach-to-search-strategy)
+No universally best KB. Domain overlap drives accuracy. *Most actionable for FactHarbor:* Web search = choosing a KB at runtime. Search strategy should be claim-domain-aware.
 
 **BallotBot** (Working paper 2025) — [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5168217)
 Randomized experiment (California 2024 election). AI chatbot with official voter guide info. Key findings: improved in-depth answers, **reduced overconfidence**, lowered info costs for less-informed voters, **no effect on voting direction**. Validates that balanced AI information informs without steering.
@@ -72,7 +72,7 @@ Randomized experiment (California 2024 election). AI chatbot with official voter
 
 ### Dominik Stammbach (lead author)
 
-Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-checking. Current focus: legal NLP, misinformation detection, AI for access to justice.
+Postdoc at Princeton CITP. PhD from ETH (Spring 2024) on data-centric fact-checking. Current focus: legal NLP, misinformation detection, AI for access to justice. [Full profile](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#72-dominik-stammbach)
 
 ---
 

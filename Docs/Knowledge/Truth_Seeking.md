@@ -1,7 +1,9 @@
-# Truth-Seeking Journalism, Political Bias, and Epistemic Asymmetry
+# Epistemic Asymmetry: Why Evidence-Following Systems Appear Politically Biased
 
 **Created:** 2026-02-21
 **Context:** Research synthesis prompted by FactHarbor calibration baseline v1 findings — specifically the `media-bias-srg` pair anomaly and the broader question of whether evidence-following systems structurally appear politically biased.
+
+> **Related docs:** [Executive Summary](EXECUTIVE_SUMMARY.md) for the calibration snapshot and priority table. [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) for the C10/C13 technical status. [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) for the broader research network.
 
 ---
 
@@ -202,6 +204,9 @@ The C18 hard gate (`failureModeBiasCount === 0`) ensures the LLM itself does not
 
 | Document | Relationship |
 |----------|-------------|
+| [EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md) | Calibration snapshot, consolidated priority table |
 | [Calibration_Baseline_v1.md](../STATUS/Calibration_Baseline_v1.md) | Baseline v1 data underlying this analysis |
-| [Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | LLM political alignment research; C10/C13 concerns |
+| [Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | LLM political alignment research; C10/C13 technical status |
+| [Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) | Broader research network; debate frameworks |
+| [Climinator_Lessons_for_FactHarbor.md](Climinator_Lessons_for_FactHarbor.md) | Climinator paper-vs-code analysis; evidence pool lessons |
 | [Backlog.md](../STATUS/Backlog.md) | C13 rebalancing backlog item |
