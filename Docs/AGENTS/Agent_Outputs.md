@@ -1042,3 +1042,24 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 **For next agent:**
 - Use `npm -w apps/web run test:calibration:validate` after each run and compare with `--prev` against baseline artifacts.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-21 | Lead Architect | Codex (GPT-5) | Phase-1 Immediate Execution (A-1, A-2) — Report Semantics + Failure Resilience
+**Task:** Execute Phase-1 immediate items from D1-D5 (A-1 report semantics clarity, A-2b TPM guard, A-2c diagnostics bubble-up, plus pragmatic A-2a resilience retry) without starting any B-* scope.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/calibration-runner-failures.test.ts`
+**Key decisions:**
+- Clarified calibration report semantics: `Global Provider` badge, `Role Provider Mode` badge (`single`/`mixed`), and explicit note that table values are run-start resolved config while runtime fallback/degradation appears in warnings/diagnostics.
+- Added structured failed-pair diagnostics (`errorClass`, `stage`, `promptKey`, `provider`, `model`, `side`, truncated stack) and surfaced them in HTML failed pair cards.
+- Implemented OpenAI TPM protection for Stage-4 debate calls: pre-check fallback from `gpt-4.1` to configurable mini model, plus one retry fallback on TPM errors; emits structured `llm_provider_error` warning details.
+- Added structured Stage-4 error wrapper (`Stage4LLMCallError` + details) to improve error bubble-up into calibration outputs.
+- Added one-time retry guard for known transient crash signature (`Cannot read properties of undefined (reading 'value')`) in calibration side execution to reduce run aborts.
+- Added UCM-backed pipeline config knobs: `openaiTpmGuardEnabled`, `openaiTpmGuardInputTokenThreshold`, `openaiTpmGuardFallbackModel`.
+**Open items:**
+- Confirm on next cross-provider full runs (A-3 gate) that `undefined.value` crash no longer causes pair failure and that TPM fallback frequency is acceptable.
+- Decide whether to keep or remove one-time transient retry once root-cause fix is confirmed.
+**Warnings:**
+- Workspace contains unrelated untracked docs under `Docs/WIP/` and an untracked pre-existing test file `apps/web/test/unit/lib/calibration-runner.test.ts`; not modified by this execution.
+- TPM pre-check uses an approximate token estimator (char/4) for routing guard only.
+**For next agent:**
+- Run A-3 cross-provider full runs and inspect failed-pair diagnostics in generated HTML/JSON first; verify warning details include provider/model/prompt/stage.
+- If fallback activation is too frequent, tune the new UCM thresholds before promoting profile defaults.
+**Learnings:** No new role learnings appended.
