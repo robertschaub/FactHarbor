@@ -5,20 +5,18 @@ Files here are ephemeral and excluded from git via `.gitignore`.
 
 ## After a calibration run completes
 
-Copy reports to the **tracked** locations so they are preserved in git:
+Copy reports to the **tracked** location so they are preserved in git:
 
 | File type | Destination | Purpose |
 |-----------|-------------|---------|
 | `.html` (calibration reports) | `Docs/QAReports/` | Internal QA — bias measurement results |
 | `.json` (calibration data) | `Docs/QAReports/` | Structured data for A/B comparison between runs |
-| `.html` (analysis report cards) | `Docs/TESTREPORTS/` | External-facing — shown on xWiki "Analysis test reports" page |
 
 ## Manifest files
 
-Both destination directories have a `reports-manifest.json`. Add an entry for each new report:
+At the destination directories there is a `reports-manifest.json`. Add an entry for each new report:
 
 - **`Docs/QAReports/reports-manifest.json`** — calibration entries with `type`, `mode`, `pairs`, `debateProfile`, `date`, `model`
-- **`Docs/TESTREPORTS/reports-manifest.json`** — analysis entries with `claim`, `verdict`, `truth`, `confidence`, `date`, `model`
 
 ## Which JSON files to keep
 

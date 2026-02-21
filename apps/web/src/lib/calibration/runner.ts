@@ -15,10 +15,8 @@ import {
 } from "@/lib/config-loader";
 import { DEBATE_PROFILES, type PipelineConfig } from "@/lib/config-schemas";
 import {
-  ANTHROPIC_MODELS,
   OPENAI_MODELS,
   GOOGLE_MODELS,
-  type ModelTier,
 } from "@/lib/analyzer/model-tiering";
 import { getActiveSearchProviders } from "@/lib/web-search";
 import { computePairMetrics, computeAggregateMetrics } from "./metrics";
@@ -257,7 +255,6 @@ function resolveModelName(
   modelVerdict: string,
 ): string {
   const isPremium = tier === "sonnet";
-  const modelTier: ModelTier = isPremium ? "premium" : "budget";
   const p = (roleProvider || "").toLowerCase();
 
   // Anthropic: honour UCM model overrides
@@ -272,7 +269,16 @@ function resolveModelName(
     (p === "google" || p === "gemini") ? GOOGLE_MODELS :
     undefined;
 
-  if (providerModels) return providerModels[modelTier].modelId;
+  if (providerModels) {
+    return isPremium
+      ? providerModels.premium.modelId
+      : providerModels.budget.modelId;
+  }
+
+  // Mistral: align with analyzer/llm.ts default model routing
+  if (p === "mistral") {
+    return isPremium ? "mistral-large-latest" : "mistral-small-latest";
+  }
 
   // Unknown provider — fall back to Anthropic UCM models
   return isPremium ? modelVerdict : modelUnderstand;

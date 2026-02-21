@@ -368,10 +368,13 @@ def generate_redirects(aliases: Dict[str, str], output_dir: Path) -> int:
     E.g. alias "TestReports" → TestReports/index.html → ../#Product%20Development.TestReports.WebHome
     """
     count = 0
+    output_root = output_dir.resolve()
     for slug, ref in aliases.items():
         # Guard against path traversal from malicious slugs
-        redirect_dir = (output_dir / slug).resolve()
-        if not str(redirect_dir).startswith(str(output_dir.resolve())):
+        redirect_dir = (output_root / slug).resolve()
+        try:
+            redirect_dir.relative_to(output_root)
+        except ValueError:
             print(f'  SKIP redirect: slug "{slug}" escapes output directory (path traversal)', file=sys.stderr)
             continue
 

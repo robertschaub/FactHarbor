@@ -4,6 +4,40 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-21 | Code Reviewer | Claude Code (Sonnet 4.6) | Code Review — Feb 21 5-Hour Window (5 commits)
+**Task:** Review all code changes since previous review (84aad35..HEAD). 5 commits: calibration LLM/search transparency, gh-pages redirects, viewer improvements, docs/meta.
+**Files touched:**
+- `Docs/WIP/Code_Review_2026-02-21b.md` — CREATED (review report)
+- `Docs/WIP/README.md` — updated (11→12 active files, added entry)
+- `Docs/AGENTS/Agent_Outputs.md` — this entry
+**Key decisions:** Direct review (no parallel agents — small scope). No code changes made.
+**Open items:** R2-C1 CRITICAL: 7.8MB of test JSON/HTML blobs committed — remove with `git rm --cached` and restore .gitignore. R2-H1/H2: resolveModelName() duplicated + hardcoded model names. R2-M1: path traversal in redirect generator.
+**Warnings:** Committed JSON blobs (especially 58K-line file) contain full LLM traces; cannot be cleanly removed from history without force-push. Every future calibration run adds more files unless .gitignore is restored. displayTitle in xwiki-viewer.html is dead code.
+**For next agent:** Remove committed test blobs first (R2-C1). Full findings in `Docs/WIP/Code_Review_2026-02-21b.md`.
+**Learnings:** No.
+
+---
+### 2026-02-21 | Code Reviewer | Claude Code (Sonnet 4.6) | Code Review — Feb 20-21 Changes (24 commits)
+**Task:** Review all code changes since `Docs/WIP/Code_Review_23h_2026-02-19.md` (commits a8d4b94..HEAD). 4 parallel review agents covering core pipeline, calibration module, metrics/admin UI, and infrastructure/prompts.
+**Files touched:**
+- `Docs/WIP/Code_Review_2026-02-21.md` — CREATED (comprehensive review report)
+- `Docs/WIP/README.md` — updated (added new review entry, updated count 10→11)
+- `Docs/AGENTS/Agent_Outputs.md` — this entry
+**Key decisions:** 4-agent parallel review strategy. No code changes made (review only).
+**Open items:**
+- 6 CRITICAL findings require fixes before next production use (A1-C1, A1-H4, A3-C1, A4-C1, A2-C1, A3-C2)
+- A4-H1: verify explicit user approval for VERDICT_RECONCILIATION prompt changes
+- 13 HIGH findings for this sprint; 21 MEDIUM for next sprint
+**Warnings:**
+- A1-C1: baseless challenge loop early-exit bug is subtle — silent enforcement gaps possible
+- A1-H4: missing_evidence challenges silently treated as baseless → verdict corruption possible
+- A4-C1: test-case term "AC_01" in production prompt (AGENTS.md violation)
+- A2-C1: calibration thresholds hardcoded (not UCM-configurable)
+- A3-C2: byTopic metrics key unbounded from user input
+**For next agent:** Full findings in `Docs/WIP/Code_Review_2026-02-21.md`. Priority fixes: loop control in `enforceBaselessChallengePolicy`, `validateChallengeEvidence` exemption for `missing_evidence` type, `DEFAULT_CALC_CONFIG.rangeReporting` defaults, prompt example ID replacement, UCM calibration thresholds. Build was green at review start; calibration tests running (not interrupted).
+**Learnings:** No.
+
+---
 ### 2026-02-20 | Lead Developer | Claude Code (Opus 4.6) | Baseline Lock + Status Sync — Executed
 **Task:** Create baseline manifest, ratify threshold policy, triage logs, sync Backlog/Status docs, define closure criteria for C10/C13/C9/C17.
 **Files touched:**
