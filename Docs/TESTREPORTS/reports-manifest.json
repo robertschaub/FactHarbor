@@ -73,6 +73,16 @@
       "date": "2026-02-20",
       "model": "claude-sonnet-4-5-20250929"
     },
+    "full-2026-02-20T21-32-24-288Z.json": {
+      "type": "calibration-data",
+      "note": "Canonical baseline JSON — structured data for A/B comparison with future runs",
+      "mode": "full",
+      "pairs": "10/10",
+      "debateProfile": "baseline",
+      "date": "2026-02-20",
+      "model": "claude-sonnet-4-5-20250929",
+      "meanAbsoluteSkew": "35.06pp"
+    },
     "run-2026-02-21T11-14-21-464Z.html": {
       "type": "calibration",
       "mode": "quick",
