@@ -22,6 +22,7 @@ import os
 import re
 import subprocess
 import sys
+import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -238,7 +239,7 @@ async function loadBundle(){
     // Navigate to ?page= param, hash target, or root page
     const params = new URLSearchParams(location.search);
     const pageParam = params.get('page');
-    const hashRef = location.hash.slice(1);
+    const hashRef = decodeURIComponent(location.hash.slice(1));
     const initRef = (pageParam && pageIndex[pageParam]) ? pageParam
       : (hashRef && pageIndex[hashRef]) ? hashRef
       : (bundle.rootRef || Object.keys(pageIndex)[0]);
@@ -262,7 +263,7 @@ async function loadBundle(){
 
 // Hash-based deep linking
 window.addEventListener('hashchange',()=>{
-  const ref = location.hash.slice(1);
+  const ref = decodeURIComponent(location.hash.slice(1));
   if(ref && pageIndex[ref]) loadPage(ref);
 });
 
@@ -331,27 +332,68 @@ loadBundle();"""
     return html
 
 
-def load_aliases(viewer_dir: Path) -> Dict[str, str]:
+def load_aliases(redirects_path: Path) -> Dict[str, str]:
+    """Extract page aliases from _redirects.json for bundle injection.
+
+    Supports both formats:
+    - Object (standard): { "slug": "#pageRef" }  → alias slug → decoded pageRef
+    - Array  (legacy):   [{ "alias": "...", "ref": "..." }]
     """
-    Read _redirects.json from viewer_dir and return a dict of alias→pageRef mappings.
-    Each entry { "alias": "Foo", "ref": "Some.Page.WebHome" } adds Foo→Some.Page.WebHome.
-    These are injected into pages.json as bundle.aliases and applied to pageIndex in the viewer.
-    """
-    redirects_file = viewer_dir / '_redirects.json'
-    if not redirects_file.is_file():
+    if not redirects_path.is_file():
         return {}
     try:
-        redirects = json.loads(redirects_file.read_text(encoding='utf-8'))
+        data = json.loads(redirects_path.read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as e:
-        print(f'  Warning: could not read _redirects.json: {e}', file=sys.stderr)
+        print(f'  Warning: could not read {redirects_path}: {e}', file=sys.stderr)
         return {}
     aliases: Dict[str, str] = {}
-    for entry in redirects:
-        alias = entry.get('alias', '').strip()
-        ref = entry.get('ref', '').strip()
-        if alias and ref:
-            aliases[alias] = ref
+    if isinstance(data, dict):
+        for slug, target in data.items():
+            ref = urllib.parse.unquote(target.lstrip('#')) if target.startswith('#') else target
+            aliases[slug] = ref
+    elif isinstance(data, list):
+        for entry in data:
+            alias = entry.get('alias', '').strip()
+            ref = entry.get('ref', '').strip()
+            if alias and ref:
+                aliases[alias] = ref
     return aliases
+
+
+def generate_redirects(aliases: Dict[str, str], output_dir: Path) -> int:
+    """Generate HTML redirect pages from aliases.
+
+    Each alias slug gets a directory with an index.html that redirects
+    to the viewer with the page ref as a hash fragment.
+    E.g. alias "TestReports" → TestReports/index.html → ../#Product%20Development.TestReports.WebHome
+    """
+    count = 0
+    for slug, ref in aliases.items():
+        encoded_ref = urllib.parse.quote(ref, safe='.')
+        depth = slug.count('/') + 1
+        prefix = '../' * depth
+        full_target = f'{prefix}#{encoded_ref}'
+
+        redirect_dir = output_dir / slug
+        redirect_dir.mkdir(parents=True, exist_ok=True)
+        redirect_html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Redirecting\u2026</title>
+<script>window.location.replace("{full_target}");</script>
+<noscript><meta http-equiv="refresh" content="0; URL={full_target}"></noscript>
+</head>
+<body>
+<p>Redirecting to <a href="{full_target}">{full_target}</a>\u2026</p>
+</body>
+</html>
+'''
+        (redirect_dir / 'index.html').write_text(redirect_html, encoding='utf-8')
+        count += 1
+        print(f'  Redirect: /{slug}/ -> #{encoded_ref}')
+
+    return count
 
 
 def main():
@@ -409,7 +451,11 @@ def main():
     commit_hash = _git_short_hash()
 
     # Load page aliases (short deep-link names) from _redirects.json
-    aliases = load_aliases(viewer_path.parent)
+    # Check project-level location first (standard), then viewer-impl (legacy)
+    redirects_path = repo_root / 'Docs' / 'xwiki-pages' / '_redirects.json'
+    if not redirects_path.is_file():
+        redirects_path = viewer_path.parent / '_redirects.json'
+    aliases = load_aliases(redirects_path)
     if aliases:
         print(f'  Aliases: {", ".join(f"{k} -> {v}" for k,v in aliases.items())}')
 
@@ -446,6 +492,9 @@ def main():
     html_size = html_path.stat().st_size
     print(f'  Wrote {html_path} ({html_size:,} bytes)')
 
+    # Generate HTML redirect pages from aliases
+    redirect_count = generate_redirects(aliases, output_dir)
+
     # Generate .nojekyll
     nojekyll_path = output_dir / '.nojekyll'
     nojekyll_path.write_text('', encoding='utf-8')
@@ -468,7 +517,8 @@ def main():
 
     total_size = json_size + html_size
     alias_note = f', {len(aliases)} alias(es)' if aliases else ''
-    print(f'\nDone! {len(pages)} pages{alias_note}, {total_size:,} bytes total')
+    redirect_note = f', {redirect_count} redirect(s)' if redirect_count else ''
+    print(f'\nDone! {len(pages)} pages{alias_note}{redirect_note}, {total_size:,} bytes total')
     print(f'Output: {output_dir.resolve()}')
     print(f'\nTo deploy, copy contents of {output_dir}/ to the gh-pages branch.')
 
