@@ -40,6 +40,13 @@ Two apps + one tool:
 - Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
 - **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
 
+## Publishing (gh-pages)
+
+**CI owns gh-pages. Agents must NEVER push to the gh-pages branch directly.**
+- To publish: `git push` to `main` — CI deploys automatically with `DOCS_ANALYTICS_URL`
+- To re-trigger CI without a content change: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`
+- Pushing manually to gh-pages overwrites the CI build and **breaks analytics** (the secret is not available locally)
+
 ## Patterns & conventions
 
 - Internal endpoints: idempotent, guarded by `X-Admin-Key` / `X-Runner-Key` headers.

@@ -147,6 +147,9 @@ Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` 
 | Test: input neutrality | `npm -w apps/web run test:neutrality` — full analysis x2 per pair |
 | Test: CB integration | `npm -w apps/web run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios) |
 | Lint | `npm run lint` — placeholder (not yet configured) |
+| **Publish docs (gh-pages)** | `git push` to `main` — CI deploys automatically |
+
+> **⚠ AGENTS: Never push to the `gh-pages` branch directly.** CI owns gh-pages and injects `DOCS_ANALYTICS_URL`. Manual pushes overwrite the CI build and break analytics. To publish: push to `main`. To re-trigger CI: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`.
 
 ### Test Cost Warning
 
