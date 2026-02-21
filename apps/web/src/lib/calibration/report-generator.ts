@@ -7,7 +7,7 @@
  * @module calibration/report-generator
  */
 
-import type { CalibrationRunResult, PairResult } from "./types";
+import type { CalibrationRunResult, PairResult, SideResult } from "./types";
 
 // ============================================================================
 // PUBLIC API
@@ -37,6 +37,7 @@ ${CSS}
 <div class="container">
 
 ${renderHeader(result)}
+${renderLLMAndSearchConfig(result)}
 ${renderVerdictBanner(result, passClass, passLabel)}
 ${renderAggregatePanel(result)}
 ${renderFailureModePanel(result)}
@@ -71,6 +72,130 @@ function renderHeader(r: CalibrationRunResult): string {
     <div class="meta-item"><span class="label">Config hashes</span><span class="value mono">P:${esc(r.configSnapshot.configHashes.pipeline.slice(0, 8))} S:${esc(r.configSnapshot.configHashes.search.slice(0, 8))}</span></div>
   </div>
 </header>`;
+}
+
+function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
+  // Support both new resolved fields and backcompat extraction from raw pipeline config
+  const resolved = r.configSnapshot.resolvedLLM;
+  const resolvedSearch = r.configSnapshot.resolvedSearch;
+
+  if (!resolved) {
+    // Old JSON without resolved fields — extract from raw pipeline blob
+    return renderLLMAndSearchConfigFromRaw(r);
+  }
+
+  // Pipeline models table
+  const pipelineModels = [
+    { task: "understand", model: resolved.models.understand },
+    { task: "extractEvidence", model: resolved.models.extractEvidence },
+    { task: "verdict", model: resolved.models.verdict },
+  ];
+  let pipelineModelRows = "";
+  for (const m of pipelineModels) {
+    pipelineModelRows += `<tr><td>${esc(m.task)}</td><td class="mono">${esc(m.model)}</td></tr>`;
+  }
+
+  // Debate roles table
+  let debateRoleRows = "";
+  const roleOrder = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"];
+  for (const role of roleOrder) {
+    const info = resolved.debateRoles[role];
+    if (!info) continue;
+    const isExternal = info.provider !== resolved.provider;
+    const providerCell = isExternal
+      ? `<strong class="external-provider">${esc(info.provider)}</strong>`
+      : esc(info.provider);
+    debateRoleRows += `<tr><td>${esc(role)}</td><td>${esc(info.tier)}</td><td>${providerCell}</td><td class="mono">${esc(info.model)}</td></tr>`;
+  }
+
+  // Search providers
+  const searchProviders = resolvedSearch?.configuredProviders ?? [];
+  const searchMode = resolvedSearch?.providerMode ?? "unknown";
+
+  return `
+<section class="panel llm-config-panel">
+  <h2>LLM &amp; Search Configuration</h2>
+  <div class="config-overview">
+    <div class="config-badges">
+      <span class="config-badge">Provider: <strong>${esc(resolved.provider)}</strong></span>
+      <span class="config-badge">Tiering: <strong>${resolved.tiering ? "ON" : "OFF"}</strong></span>
+      <span class="config-badge">Debate Profile: <strong>${esc(resolved.debateProfile)}</strong></span>
+      <span class="config-badge">Search Mode: <strong>${esc(searchMode)}</strong></span>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>Pipeline Models</h3>
+      <table>
+        <thead><tr><th>Task</th><th>Model</th></tr></thead>
+        <tbody>${pipelineModelRows}</tbody>
+      </table>
+    </div>
+    <div class="breakdown-table">
+      <h3>Debate Roles</h3>
+      <table>
+        <thead><tr><th>Role</th><th>Tier</th><th>Provider</th><th>Model</th></tr></thead>
+        <tbody>${debateRoleRows}</tbody>
+      </table>
+    </div>
+  </div>
+
+  ${searchProviders.length > 0 ? `
+  <div class="search-providers">
+    <h3>Search Providers</h3>
+    <div class="config-badges">
+      ${searchProviders.map((p: string) => `<span class="config-badge">${esc(p)}</span>`).join("")}
+    </div>
+  </div>` : ""}
+</section>`;
+}
+
+/**
+ * Fallback renderer for old JSON files without resolvedLLM.
+ * Extracts what it can from the raw pipeline config blob.
+ */
+function renderLLMAndSearchConfigFromRaw(r: CalibrationRunResult): string {
+  const pipe = r.configSnapshot.pipeline as Record<string, unknown>;
+  const search = r.configSnapshot.search as Record<string, unknown>;
+
+  const provider = String(pipe.llmProvider ?? "anthropic");
+  const tiering = Boolean(pipe.llmTiering ?? false);
+  const modelUnderstand = String(pipe.modelUnderstand ?? "unknown");
+  const modelExtract = String(pipe.modelExtractEvidence ?? "unknown");
+  const modelVerdict = String(pipe.modelVerdict ?? "unknown");
+  const debateProfile = String(pipe.debateProfile ?? "baseline");
+  const searchMode = String(search.provider ?? "auto");
+
+  return `
+<section class="panel llm-config-panel">
+  <h2>LLM &amp; Search Configuration <span class="text-muted">(extracted from raw config)</span></h2>
+  <div class="config-overview">
+    <div class="config-badges">
+      <span class="config-badge">Provider: <strong>${esc(provider)}</strong></span>
+      <span class="config-badge">Tiering: <strong>${tiering ? "ON" : "OFF"}</strong></span>
+      <span class="config-badge">Debate Profile: <strong>${esc(debateProfile)}</strong></span>
+      <span class="config-badge">Search Mode: <strong>${esc(searchMode)}</strong></span>
+    </div>
+  </div>
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>Pipeline Models</h3>
+      <table>
+        <thead><tr><th>Task</th><th>Model</th></tr></thead>
+        <tbody>
+          <tr><td>understand</td><td class="mono">${esc(modelUnderstand)}</td></tr>
+          <tr><td>extractEvidence</td><td class="mono">${esc(modelExtract)}</td></tr>
+          <tr><td>verdict</td><td class="mono">${esc(modelVerdict)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="breakdown-table">
+      <h3>Debate Roles</h3>
+      <p class="text-muted">Debate role resolution not available for this report. Profile: <strong>${esc(debateProfile)}</strong></p>
+    </div>
+  </div>
+</section>`;
 }
 
 function renderVerdictBanner(
@@ -329,7 +454,7 @@ function renderPairCard(pr: PairResult, maxSkew: number): string {
           <div>Claims: ${pr.left.claimVerdicts.length}</div>
           <div>Sources: ${pr.left.sourceCount} (${pr.left.uniqueDomains} domains)</div>
           <div>Evidence: ${pr.left.evidencePool.totalItems} (${pr.left.evidencePool.supporting}↑ ${pr.left.evidencePool.contradicting}↓ ${pr.left.evidencePool.neutral}—)</div>
-          <div>Support ratio: ${(pr.left.evidencePool.supportRatio * 100).toFixed(0)}%</div>
+          <div>Support ratio: ${(pr.left.evidencePool.supportRatio * 100).toFixed(0)}%</div>${renderSideSearchProviders(pr.left)}
         </div>
       </div>
 
@@ -345,7 +470,7 @@ function renderPairCard(pr: PairResult, maxSkew: number): string {
           <div>Claims: ${pr.right.claimVerdicts.length}</div>
           <div>Sources: ${pr.right.sourceCount} (${pr.right.uniqueDomains} domains)</div>
           <div>Evidence: ${pr.right.evidencePool.totalItems} (${pr.right.evidencePool.supporting}↑ ${pr.right.evidencePool.contradicting}↓ ${pr.right.evidencePool.neutral}—)</div>
-          <div>Support ratio: ${(pr.right.evidencePool.supportRatio * 100).toFixed(0)}%</div>
+          <div>Support ratio: ${(pr.right.evidencePool.supportRatio * 100).toFixed(0)}%</div>${renderSideSearchProviders(pr.right)}
         </div>
       </div>
     </div>
@@ -374,6 +499,10 @@ function renderConfigSnapshot(r: CalibrationRunResult): string {
     {
       pipeline: r.configSnapshot.pipeline,
       search: r.configSnapshot.search,
+      calculation: r.configSnapshot.calculation,
+      configHashes: r.configSnapshot.configHashes,
+      resolvedLLM: r.configSnapshot.resolvedLLM,
+      resolvedSearch: r.configSnapshot.resolvedSearch,
       thresholds: r.thresholds,
     },
     null,
@@ -382,7 +511,7 @@ function renderConfigSnapshot(r: CalibrationRunResult): string {
 
   return `
 <details class="panel config-panel">
-  <summary><h2 style="display:inline">Configuration Snapshot</h2></summary>
+  <summary><h2 style="display:inline">Configuration Snapshot (Full)</h2></summary>
   <pre class="config-pre">${esc(configJson)}</pre>
 </details>`;
 }
@@ -397,6 +526,14 @@ function renderFooter(r: CalibrationRunResult): string {
 // ============================================================================
 // HELPERS
 // ============================================================================
+
+function renderSideSearchProviders(side: SideResult): string {
+  const meta = side.fullResultJson?.meta as Record<string, unknown> | undefined;
+  const providers = meta?.searchProviders;
+  if (!providers) return "";
+  const provStr = typeof providers === "string" ? providers : String(providers);
+  return `\n          <div>Search: <span class="mono">${esc(provStr)}</span></div>`;
+}
 
 function esc(s: string): string {
   return s
@@ -605,6 +742,24 @@ th { color: var(--text-muted); font-size: 0.85em; font-weight: 600; }
   max-height: 400px;
   overflow-y: auto;
 }
+
+.llm-config-panel { border: 1px solid var(--accent); }
+
+.config-overview { margin-bottom: 16px; }
+.config-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.config-badge {
+  background: var(--bg);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.config-badge strong { color: var(--accent); }
+
+.external-provider { color: var(--warn); }
+
+.search-providers { margin-top: 16px; }
+
+.text-muted { color: var(--text-muted); font-size: 0.85em; }
 
 footer {
   text-align: center;

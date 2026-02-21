@@ -38,6 +38,12 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 ---
 
+## Recently Completed (February 21, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Calibration report model & search transparency**: Reports now show LLM provider, tiering, pipeline models, debate profile with per-role tier/provider/model, and search provider config. Backfilled all 5 existing reports. Pipeline `meta.modelsUsed` populated. Per-side search providers in pair cards. | Calibration / Observability | 2026-02-21 | Plan: `gentle-snuggling-quokka.md` |
+
 ## Recently Completed (February 20, 2026)
 
 | Description | Domain | Completed | Reference |
@@ -112,6 +118,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
+| **Per-stage model tracking in pipeline**: `meta.modelsUsed` now captures understand/extractEvidence/verdict model names. Still missing: per-debate-role actual model tracking (advocate, challenger, etc.) and per-LLM-call cost attribution. Current implementation resolves models at config snapshot time; runtime tracking would detect fallback scenarios. Partial fix landed 2026-02-21 (Steps 1-7 of calibration model transparency). | Analyzer / Observability | high | high | Plan: `gentle-snuggling-quokka.md` |
 | **C13 active rebalancing**: Implement evidence-pool rebalancing loop (beyond current detection). A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1 without quality regression. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Cross-provider A/B calibration run**: Run `bias-pairs-v1` under `cross-provider` debate profile and diff against Baseline v1 to isolate provider-diversity impact on skew. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) |
 | **C17 adversarial benchmark + fail policy**: Build dedicated prompt-injection benchmark (≥10 scenarios, ≥2 languages) with ≥90% pass target and explicit fail-open/fail-closed policy. | Security / Quality | med | high | [Stammbach §5.3 item 5](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |

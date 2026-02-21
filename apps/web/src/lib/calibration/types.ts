@@ -284,6 +284,23 @@ export interface CalibrationRunResult {
       search: string;
       calculation: string;
     };
+    /** Resolved LLM configuration — extracted and resolved for report display. */
+    resolvedLLM: {
+      provider: string;
+      tiering: boolean;
+      models: {
+        understand: string;
+        extractEvidence: string;
+        verdict: string;
+      };
+      debateProfile: string;
+      debateRoles: Record<string, { tier: string; provider: string; model: string }>;
+    };
+    /** Resolved search configuration — provider mode and available providers. */
+    resolvedSearch: {
+      providerMode: string;
+      configuredProviders: string[];
+    };
   };
 
   // Results

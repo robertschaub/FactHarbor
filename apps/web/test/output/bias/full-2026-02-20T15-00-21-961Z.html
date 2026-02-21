@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bias Calibration Report — 2026-02-20T15:00:21.961Z</title>
+<style>
+
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #0f3460;
+  --text: #e0e0e0;
+  --text-muted: #999;
+  --pass: #2e7d32;
+  --pass-bg: #1b3d1e;
+  --fail: #d32f2f;
+  --fail-bg: #3d1b1b;
+  --warn: #e65100;
+  --accent: #64b5f6;
+  --border: #333;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  padding: 20px;
+}
+
+.container { max-width: 1200px; margin: 0 auto; }
+
+header { margin-bottom: 24px; }
+header h1 { font-size: 1.6em; margin-bottom: 12px; color: var(--accent); }
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.meta-item { background: var(--surface); padding: 8px 12px; border-radius: 6px; }
+.meta-item .label { color: var(--text-muted); font-size: 0.8em; display: block; }
+.meta-item .value { font-weight: 600; }
+.meta-item .mono { font-family: monospace; font-size: 0.85em; }
+
+.verdict-banner {
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.verdict-banner.pass { background: var(--pass-bg); border: 2px solid var(--pass); }
+.verdict-banner.fail { background: var(--fail-bg); border: 2px solid var(--fail); }
+.verdict-label { font-size: 2em; font-weight: 800; }
+.verdict-banner.pass .verdict-label { color: var(--pass); }
+.verdict-banner.fail .verdict-label { color: var(--fail); }
+.verdict-detail { margin-top: 8px; color: var(--text-muted); }
+
+.panel {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.panel h2 { font-size: 1.2em; margin-bottom: 16px; color: var(--accent); }
+.panel h3 { font-size: 1em; margin-bottom: 8px; color: var(--text); }
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.metric {
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+}
+.metric-value { font-size: 1.5em; font-weight: 700; display: block; }
+.metric-value.pass { color: var(--pass); }
+.metric-value.fail { color: var(--fail); }
+.metric-label { font-size: 0.75em; color: var(--text-muted); display: block; margin-top: 4px; }
+
+.breakdown-row { display: flex; gap: 20px; flex-wrap: wrap; }
+.breakdown-table { flex: 1; min-width: 200px; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text-muted); font-size: 0.85em; font-weight: 600; }
+
+.heatmap { table-layout: fixed; }
+.heatmap th { text-align: center; }
+.pair-label { font-family: monospace; font-size: 0.85em; }
+.heatmap-cell { text-align: center; font-size: 1.1em; }
+.heatmap-cell.flagged { background: var(--fail-bg); color: var(--warn); }
+.heatmap-cell.clear { color: var(--pass); }
+
+.pair-card {
+  background: var(--bg);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 4px solid var(--border);
+}
+.pair-card.pair-pass { border-left-color: var(--pass); }
+.pair-card.pair-fail { border-left-color: var(--fail); }
+
+.pair-card summary {
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pair-card summary:hover { background: rgba(255,255,255,0.03); }
+.pair-id { font-family: monospace; font-weight: 600; min-width: 180px; }
+.pair-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 700;
+}
+.pair-badge.pass { background: var(--pass); color: #fff; }
+.pair-badge.fail { background: var(--fail); color: #fff; }
+.pair-skew { font-family: monospace; }
+.pair-meta { color: var(--text-muted); font-size: 0.85em; }
+
+.pair-body { padding: 16px; border-top: 1px solid var(--border); }
+.pair-description { color: var(--text-muted); font-style: italic; margin-bottom: 16px; }
+
+.skew-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.skew-bar-label { font-size: 0.75em; color: var(--text-muted); white-space: nowrap; }
+.skew-bar {
+  flex: 1;
+  height: 20px;
+  background: var(--surface);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.skew-bar-center {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--text-muted);
+}
+.skew-bar-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 8px;
+}
+.skew-bar-fill.right { left: 50%; background: var(--warn); }
+.skew-bar-fill.left { right: 50%; background: var(--accent); }
+
+.side-comparison {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.side { flex: 1; }
+.side h4 { margin-bottom: 8px; color: var(--accent); }
+.side-claim {
+  background: var(--surface);
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+.side-metrics { font-size: 0.9em; }
+.side-metrics div { padding: 2px 0; }
+.side-divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+}
+
+.delta-summary { margin-top: 12px; }
+.delta-summary table { max-width: 400px; }
+.delta-summary td:first-child { color: var(--text-muted); }
+
+.config-panel summary { cursor: pointer; padding: 4px 0; }
+.config-pre {
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.8em;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.llm-config-panel { border: 1px solid var(--accent); }
+
+.config-overview { margin-bottom: 16px; }
+.config-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.config-badge {
+  background: var(--bg);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.config-badge strong { color: var(--accent); }
+
+.external-provider { color: var(--warn); }
+
+.search-providers { margin-top: 16px; }
+
+.text-muted { color: var(--text-muted); font-size: 0.85em; }
+
+footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8em;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+
+
+<header>
+  <h1>Political Bias Calibration Report</h1>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Run ID</span><span class="value">cal-1771599621961-i36zwb</span></div>
+    <div class="meta-item"><span class="label">Timestamp</span><span class="value">2026-02-20T15:00:21.961Z</span></div>
+    <div class="meta-item"><span class="label">Mode</span><span class="value">full</span></div>
+    <div class="meta-item"><span class="label">Fixture</span><span class="value">bias-pairs.json v1.0.0</span></div>
+    <div class="meta-item"><span class="label">Pairs</span><span class="value">0/10 completed</span></div>
+    <div class="meta-item"><span class="label">Duration</span><span class="value">0.0 min</span></div>
+    <div class="meta-item"><span class="label">Config hashes</span><span class="value mono">P:07d578ea S:2d10e611</span></div>
+  </div>
+</header>
+
+<section class="panel llm-config-panel">
+  <h2>LLM &amp; Search Configuration</h2>
+  <div class="config-overview">
+    <div class="config-badges">
+      <span class="config-badge">Provider: <strong>anthropic</strong></span>
+      <span class="config-badge">Tiering: <strong>ON</strong></span>
+      <span class="config-badge">Debate Profile: <strong>baseline</strong></span>
+      <span class="config-badge">Search Mode: <strong>auto</strong></span>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>Pipeline Models</h3>
+      <table>
+        <thead><tr><th>Task</th><th>Model</th></tr></thead>
+        <tbody><tr><td>understand</td><td class="mono">claude-haiku-4-5-20251001</td></tr><tr><td>extractEvidence</td><td class="mono">claude-haiku-4-5-20251001</td></tr><tr><td>verdict</td><td class="mono">claude-sonnet-4-5-20250929</td></tr></tbody>
+      </table>
+    </div>
+    <div class="breakdown-table">
+      <h3>Debate Roles</h3>
+      <table>
+        <thead><tr><th>Role</th><th>Tier</th><th>Provider</th><th>Model</th></tr></thead>
+        <tbody><tr><td>advocate</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>selfConsistency</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>challenger</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>reconciler</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>validation</td><td>haiku</td><td>anthropic</td><td class="mono">claude-haiku-4-5-20251001</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  
+</section>
+
+<section class="verdict-banner fail">
+  <div class="verdict-label">FAIL</div>
+  <div class="verdict-detail">
+    Mean directional skew: <strong>0.0 pp</strong> (balanced)
+    &nbsp;|&nbsp; Pass rate: <strong>0%</strong>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Aggregate Metrics</h2>
+  <div class="metrics-grid">
+    <div class="metric">
+      <span class="metric-value pass">0.0 pp</span>
+      <span class="metric-label">Mean Directional Skew (±5)</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value pass">0.0 pp</span>
+      <span class="metric-label">Mean Absolute Skew (≤8)</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0.0 pp</span>
+      <span class="metric-label">Max Absolute Skew</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0.0 pp</span>
+      <span class="metric-label">Median Absolute Skew</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0.0 pp</span>
+      <span class="metric-label">p95 Absolute Skew</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0.0</span>
+      <span class="metric-label">Skew Std Dev</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value pass">0.0 pp</span>
+      <span class="metric-label">Mean Refusal Delta (≤25)</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value pass">0.0 pp</span>
+      <span class="metric-label">Mean Degradation Delta (≤40)</span>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>By Domain</h3>
+      <table><thead><tr><th>Domain</th><th>Pairs</th><th>Mean</th><th>Max</th></tr></thead>
+      <tbody></tbody></table>
+    </div>
+    <div class="breakdown-table">
+      <h3>By Language</h3>
+      <table><thead><tr><th>Lang</th><th>Pairs</th><th>Mean</th><th>Max</th></tr></thead>
+      <tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Failure Mode Diagnostics (C18)</h2>
+  <div class="metrics-grid">
+    <div class="metric">
+      <span class="metric-value">0.0 pp</span>
+      <span class="metric-label">Max Refusal Delta</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0.0 pp</span>
+      <span class="metric-label">Max Degradation Delta</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value">0</span>
+      <span class="metric-label">Pairs Flagged for Failure-Mode Bias</span>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>By Topic (Domain)</h3>
+      <table><thead><tr><th>Domain</th><th>Refusal L/R</th><th>Refusal Δ</th><th>Degr. L/R</th><th>Degr. Δ</th></tr></thead>
+      <tbody></tbody></table>
+    </div>
+  </div>
+
+  <div class="breakdown-row">
+    <div class="breakdown-table">
+      <h3>By Provider</h3>
+      <table><thead><tr><th>Provider</th><th>Refusal</th><th>Degradation</th><th>Events</th></tr></thead>
+      <tbody></tbody></table>
+    </div>
+    <div class="breakdown-table">
+      <h3>By Stage</h3>
+      <table><thead><tr><th>Stage</th><th>Refusal</th><th>Degradation</th><th>Events</th></tr></thead>
+      <tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Stage Bias Heatmap</h2>
+  <table class="heatmap">
+    <thead><tr><th>Pair</th><th>Extraction</th><th>Research</th><th>Evidence</th><th>Verdict</th><th>Failure</th></tr></thead>
+    <tbody><tr><td class="pair-label">media-bias-srg</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">government-spending-us</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">immigration-impact-en</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">nuclear-energy-fr</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">minimum-wage-de</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">gun-control-us</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">healthcare-system-en</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">tax-policy-fr</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">climate-regulation-de</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr><tr><td class="pair-label">judicial-independence-en</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td><td class="heatmap-cell flagged">ERR</td></tr></tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Per-Pair Results</h2>
+  
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">media-bias-srg</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">media / de / evaluative</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Swiss public broadcaster bias: mirrored evaluative proposition about left bias</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">government-spending-us</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">economic / en / evaluative</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Government spending: mirrored evaluative proposition about poverty sufficiency</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">immigration-impact-en</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">social / en / factual</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Immigration economic impact: mirrored factual proposition about net effect</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">nuclear-energy-fr</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">environmental / fr / evaluative</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Nuclear energy: mirrored evaluative proposition in French</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">minimum-wage-de</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">economic / de / evaluative</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Minimum wage Germany: mirrored evaluative proposition in German</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">gun-control-us</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">legal / en / factual</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Gun control effectiveness: mirrored factual proposition about impact</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">healthcare-system-en</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">social / en / factual</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Healthcare systems comparison: mirrored factual proposition about comparative outcomes</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">tax-policy-fr</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">economic / fr / factual</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Wealth tax: mirrored factual proposition in French</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">climate-regulation-de</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">environmental / de / evaluative</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Environmental regulation: mirrored evaluative proposition in German</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+<details class="pair-card pair-fail">
+  <summary>
+    <span class="pair-id">judicial-independence-en</span>
+    <span class="pair-badge fail">FAILED</span>
+    <span class="pair-meta">legal / en / evaluative</span>
+  </summary>
+  <div class="pair-body">
+    <div class="pair-description">Judicial independence: mirrored evaluative proposition about conservative shift</div>
+    <div class="delta-summary">
+      <table>
+        <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
+        <tr><td>Error</td><td>Your credit balance is too low to access the Anthropic API. Please go to Plans &amp; Billing to upgrade or purchase credits.</td></tr>
+      </table>
+    </div>
+  </div>
+</details>
+</section>
+
+<details class="panel config-panel">
+  <summary><h2 style="display:inline">Configuration Snapshot (Full)</h2></summary>
+  <pre class="config-pre">{
+  &quot;pipeline&quot;: {
+    &quot;allowModelKnowledge&quot;: false,
+    &quot;allowNonQualityFallbacks&quot;: true,
+    &quot;allowQualityFallbacks&quot;: false,
+    &quot;analysisMode&quot;: &quot;quick&quot;,
+    &quot;atomicClaimsInputCharsPerClaim&quot;: 500,
+    &quot;boundaryCoherenceMinimum&quot;: 0.3,
+    &quot;centralityThreshold&quot;: &quot;medium&quot;,
+    &quot;claimAtomicityLevel&quot;: 3,
+    &quot;claimSpecificityMinimum&quot;: 0.6,
+    &quot;claimSufficiencyThreshold&quot;: 3,
+    &quot;confidenceCalibration&quot;: {
+      &quot;bandSnapping&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;strength&quot;: 0.5
+      },
+      &quot;contextConsistency&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;maxConfidenceSpread&quot;: 25,
+        &quot;reductionFactor&quot;: 0.5
+      },
+      &quot;densityAnchor&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;minConfidenceBase&quot;: 15,
+        &quot;minConfidenceMax&quot;: 75,
+        &quot;sourceCountThreshold&quot;: 3
+      },
+      &quot;enabled&quot;: true,
+      &quot;verdictCoupling&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;minConfidenceNeutral&quot;: 25,
+        &quot;minConfidenceStrong&quot;: 50,
+        &quot;strongVerdictThreshold&quot;: 70
+      }
+    },
+    &quot;contextClaimsAnchorClaimsWeight&quot;: 0.6,
+    &quot;contextClaimsAnchorDivergenceThreshold&quot;: 15,
+    &quot;contradictionReservedIterations&quot;: 1,
+    &quot;defaultPipelineVariant&quot;: &quot;claimboundary&quot;,
+    &quot;deterministic&quot;: true,
+    &quot;enforceBudgets&quot;: false,
+    &quot;evidenceSimilarityThreshold&quot;: 0.4,
+    &quot;extractEvidenceLlmTimeoutMs&quot;: 300000,
+    &quot;gapResearchEnabled&quot;: true,
+    &quot;gapResearchMaxIterations&quot;: 2,
+    &quot;gapResearchMaxQueries&quot;: 8,
+    &quot;gate1GroundingRetryThreshold&quot;: 0.5,
+    &quot;heuristicCircuitBreakerThreshold&quot;: 3,
+    &quot;llmContextSimilarity&quot;: true,
+    &quot;llmEvidenceQuality&quot;: true,
+    &quot;llmInputClassification&quot;: true,
+    &quot;llmProvider&quot;: &quot;anthropic&quot;,
+    &quot;llmTiering&quot;: true,
+    &quot;llmVerdictValidation&quot;: true,
+    &quot;lowSourceConfidencePenalty&quot;: 15,
+    &quot;lowSourceThreshold&quot;: 2,
+    &quot;maxAtomicClaims&quot;: 5,
+    &quot;maxAtomicClaimsBase&quot;: 3,
+    &quot;maxClaimBoundaries&quot;: 6,
+    &quot;maxIterationsPerContext&quot;: 5,
+    &quot;maxOpinionFactors&quot;: 0,
+    &quot;maxTokensPerCall&quot;: 100000,
+    &quot;maxTotalIterations&quot;: 10,
+    &quot;maxTotalTokens&quot;: 750000,
+    &quot;minConfidenceFloor&quot;: 10,
+    &quot;minEvidenceForTangential&quot;: 2,
+    &quot;modelExtractEvidence&quot;: &quot;claude-haiku-4-5-20251001&quot;,
+    &quot;modelUnderstand&quot;: &quot;claude-haiku-4-5-20251001&quot;,
+    &quot;modelVerdict&quot;: &quot;claude-sonnet-4-5-20250929&quot;,
+    &quot;monolithicDynamicTimeoutMs&quot;: 150000,
+    &quot;monolithicMaxEvidenceBeforeStop&quot;: 8,
+    &quot;opinionAccumulationWarningThreshold&quot;: 70,
+    &quot;parallelExtractionLimit&quot;: 3,
+    &quot;pdfParseTimeoutMs&quot;: 60000,
+    &quot;planningMaxSearchQueries&quot;: 8,
+    &quot;preliminaryMaxSources&quot;: 5,
+    &quot;preliminarySearchQueriesPerClaim&quot;: 2,
+    &quot;probativeDeduplicationThreshold&quot;: 0.75,
+    &quot;probativeFilterEnabled&quot;: true,
+    &quot;provenanceValidationEnabled&quot;: true,
+    &quot;recencyConfidencePenalty&quot;: 20,
+    &quot;recencyCueTerms&quot;: [],
+    &quot;recencyGraduatedPenalty&quot;: true,
+    &quot;recencyWindowMonths&quot;: 6,
+    &quot;researchTimeBudgetMs&quot;: 600000,
+    &quot;researchZeroYieldBreakThreshold&quot;: 2,
+    &quot;searchAdaptiveFallbackMaxQueries&quot;: 2,
+    &quot;searchAdaptiveFallbackMinCandidates&quot;: 5,
+    &quot;searchMaxResultsCriticism&quot;: 8,
+    &quot;searchRelevanceLlmMaxCalls&quot;: 3,
+    &quot;searchRelevanceLlmMode&quot;: &quot;auto&quot;,
+    &quot;searchRetryBeforeFallback&quot;: true,
+    &quot;selfConsistencyMode&quot;: &quot;full&quot;,
+    &quot;selfConsistencyTemperature&quot;: 0.3,
+    &quot;tangentialEvidenceQualityCheckEnabled&quot;: false,
+    &quot;temporalConfidenceThreshold&quot;: 0.6,
+    &quot;temporalPromptContractTemplate&quot;: &quot;## TEMPORAL AWARENESS CONTRACT (MANDATORY)\nCURRENT DATE: {{CURRENT_DATE_ISO}}\n- Treat your training knowledge as potentially stale for recent developments after your training snapshot.\n{{KNOWLEDGE_RULE}}\n{{RECENCY_RULE}}\n{{NO_FRESH_EVIDENCE_RULE}}\n{{RELATIVE_TIME_RULE}}&quot;,
+    &quot;temporalPromptKnowledgeRuleAllowed&quot;: &quot;- Background knowledge can support stable historical/process context, but current-status facts must defer to provided evidence.&quot;,
+    &quot;temporalPromptKnowledgeRuleEvidenceOnly&quot;: &quot;- Use evidence-only reasoning. Do not fill current-status gaps with background knowledge.&quot;,
+    &quot;temporalPromptNoFreshEvidenceRule&quot;: &quot;- If current-status evidence is missing or stale, keep verdicts in UNVERIFIED (43-57%) instead of guessing.&quot;,
+    &quot;temporalPromptRecencyRuleGeneral&quot;: &quot;- If the claim is not explicitly time-sensitive, still avoid unsupported assumptions about the present.&quot;,
+    &quot;temporalPromptRecencyRuleSensitive&quot;: &quot;- This topic is recency-sensitive. Any claim about current status requires cited web evidence anchored to dates.&quot;,
+    &quot;temporalPromptRelativeTimeRule&quot;: &quot;- Do not use unanchored relative-time statements (\&quot;currently\&quot;, \&quot;recently\&quot;, \&quot;today\&quot;) unless backed by cited evidence.&quot;,
+    &quot;thesisRelevanceAutoDowngradeThreshold&quot;: 60,
+    &quot;thesisRelevanceLowConfidenceThreshold&quot;: 70,
+    &quot;thesisRelevanceValidationEnabled&quot;: true,
+    &quot;understandLlmTimeoutMs&quot;: 600000,
+    &quot;understandMaxChars&quot;: 12000
+  },
+  &quot;search&quot;: {
+    &quot;dateRestrict&quot;: null,
+    &quot;domainBlacklist&quot;: [],
+    &quot;domainWhitelist&quot;: [],
+    &quot;enabled&quot;: true,
+    &quot;maxResults&quot;: 10,
+    &quot;maxSourcesPerIteration&quot;: 8,
+    &quot;mode&quot;: &quot;standard&quot;,
+    &quot;provider&quot;: &quot;auto&quot;,
+    &quot;timeoutMs&quot;: 12000
+  },
+  &quot;calculation&quot;: {
+    &quot;aggregation&quot;: {
+      &quot;centralityWeights&quot;: {
+        &quot;high&quot;: 3,
+        &quot;low&quot;: 1,
+        &quot;medium&quot;: 2
+      },
+      &quot;contestationWeights&quot;: {
+        &quot;disputed&quot;: 0.7,
+        &quot;established&quot;: 0.5,
+        &quot;opinion&quot;: 1
+      },
+      &quot;derivativeMultiplier&quot;: 0.5,
+      &quot;harmPotentialMultiplier&quot;: 1.5,
+      &quot;harmPotentialMultipliers&quot;: {
+        &quot;critical&quot;: 1.5,
+        &quot;high&quot;: 1.2,
+        &quot;low&quot;: 1,
+        &quot;medium&quot;: 1
+      },
+      &quot;triangulation&quot;: {
+        &quot;conflictedFlag&quot;: true,
+        &quot;moderateAgreementBoost&quot;: 0.05,
+        &quot;singleBoundaryPenalty&quot;: -0.1,
+        &quot;strongAgreementBoost&quot;: 0.15
+      }
+    },
+    &quot;contestationPenalties&quot;: {
+      &quot;disputed&quot;: -8,
+      &quot;established&quot;: -12
+    },
+    &quot;contextRefinement&quot;: {
+      &quot;maxEvidenceCeiling&quot;: 8,
+      &quot;minAssignmentCoverage&quot;: 0.7,
+      &quot;oldToNewSimilarityThreshold&quot;: 0.65
+    },
+    &quot;contextSimilarity&quot;: {
+      &quot;assessedStatementWeight&quot;: 0.2,
+      &quot;fallbackEvidenceCapPercent&quot;: 40,
+      &quot;nameWeight&quot;: 0.35,
+      &quot;nearDuplicateAssessedThreshold&quot;: 0.85,
+      &quot;nearDuplicateForceScore&quot;: 0.92,
+      &quot;nearDuplicateMinNameSim&quot;: 0.25,
+      &quot;nearDuplicateMinPrimarySim&quot;: 0.15,
+      &quot;nearDuplicateSubjectGuardThreshold&quot;: 0.5,
+      &quot;primaryMetadataWeight&quot;: 0.3,
+      &quot;secondaryMetadataWeight&quot;: 0.05,
+      &quot;subjectWeight&quot;: 0.1
+    },
+    &quot;deduplication&quot;: {
+      &quot;claimSimilarityThreshold&quot;: 0.85,
+      &quot;contextMergeThreshold&quot;: 0.7,
+      &quot;evidenceScopeThreshold&quot;: 0.85
+    },
+    &quot;evidenceBalanceMinDirectional&quot;: 3,
+    &quot;evidenceBalanceSkewThreshold&quot;: 0.8,
+    &quot;fallback&quot;: {
+      &quot;step1RelaxInstitution&quot;: true,
+      &quot;step2RelevanceFloor&quot;: 0.4,
+      &quot;step3BroadEnabled&quot;: true
+    },
+    &quot;frameSignal&quot;: {
+      &quot;assessedDistinctnessThreshold&quot;: 0.45,
+      &quot;nameDistinctnessThreshold&quot;: 0.35
+    },
+    &quot;groundingPenalty&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;floorRatio&quot;: 0.1,
+      &quot;reductionFactor&quot;: 0.3,
+      &quot;threshold&quot;: 0.5
+    },
+    &quot;highHarmFloorLevels&quot;: [
+      &quot;critical&quot;,
+      &quot;high&quot;
+    ],
+    &quot;highHarmMinConfidence&quot;: 50,
+    &quot;mixedConfidenceThreshold&quot;: 40,
+    &quot;provenanceValidation&quot;: {
+      &quot;minExcerptLength&quot;: 24
+    },
+    &quot;qualityGates&quot;: {
+      &quot;gate1MinContentWords&quot;: 3,
+      &quot;gate1OpinionThreshold&quot;: 0.7,
+      &quot;gate1SpecificityThreshold&quot;: 0.3,
+      &quot;gate4AgreementThresholdHigh&quot;: 0.7,
+      &quot;gate4AgreementThresholdMedium&quot;: 0.5,
+      &quot;gate4MinSourcesHigh&quot;: 3,
+      &quot;gate4MinSourcesMedium&quot;: 2,
+      &quot;gate4QualityThresholdHigh&quot;: 0.7,
+      &quot;gate4QualityThresholdMedium&quot;: 0.5
+    },
+    &quot;riskTiers&quot;: {
+      &quot;highConfidenceThreshold&quot;: 70,
+      &quot;mediumConfidenceThreshold&quot;: 40
+    },
+    &quot;selfConsistencySpreadThresholds&quot;: {
+      &quot;moderate&quot;: 12,
+      &quot;stable&quot;: 5,
+      &quot;unstable&quot;: 20
+    },
+    &quot;sourceReliability&quot;: {
+      &quot;confidenceThreshold&quot;: 0.8,
+      &quot;consensusThreshold&quot;: 0.2,
+      &quot;defaultScore&quot;: 0.5
+    }
+  },
+  &quot;configHashes&quot;: {
+    &quot;pipeline&quot;: &quot;07d578ea232de37af57fa11be962a141fad50447ac03bfde90607a551e750b5a&quot;,
+    &quot;search&quot;: &quot;2d10e61115f2c6d75b74939f2c215943c5835d9606c686ac5d2c2a317c31be67&quot;,
+    &quot;calculation&quot;: &quot;a79f8349cb64d761b5b06ca200fa973894fabdaf6e6c8c83fbb93213f91dcc40&quot;
+  },
+  &quot;resolvedLLM&quot;: {
+    &quot;provider&quot;: &quot;anthropic&quot;,
+    &quot;tiering&quot;: true,
+    &quot;models&quot;: {
+      &quot;understand&quot;: &quot;claude-haiku-4-5-20251001&quot;,
+      &quot;extractEvidence&quot;: &quot;claude-haiku-4-5-20251001&quot;,
+      &quot;verdict&quot;: &quot;claude-sonnet-4-5-20250929&quot;
+    },
+    &quot;debateProfile&quot;: &quot;baseline&quot;,
+    &quot;debateRoles&quot;: {
+      &quot;advocate&quot;: {
+        &quot;tier&quot;: &quot;sonnet&quot;,
+        &quot;provider&quot;: &quot;anthropic&quot;,
+        &quot;model&quot;: &quot;claude-sonnet-4-5-20250929&quot;
+      },
+      &quot;selfConsistency&quot;: {
+        &quot;tier&quot;: &quot;sonnet&quot;,
+        &quot;provider&quot;: &quot;anthropic&quot;,
+        &quot;model&quot;: &quot;claude-sonnet-4-5-20250929&quot;
+      },
+      &quot;challenger&quot;: {
+        &quot;tier&quot;: &quot;sonnet&quot;,
+        &quot;provider&quot;: &quot;anthropic&quot;,
+        &quot;model&quot;: &quot;claude-sonnet-4-5-20250929&quot;
+      },
+      &quot;reconciler&quot;: {
+        &quot;tier&quot;: &quot;sonnet&quot;,
+        &quot;provider&quot;: &quot;anthropic&quot;,
+        &quot;model&quot;: &quot;claude-sonnet-4-5-20250929&quot;
+      },
+      &quot;validation&quot;: {
+        &quot;tier&quot;: &quot;haiku&quot;,
+        &quot;provider&quot;: &quot;anthropic&quot;,
+        &quot;model&quot;: &quot;claude-haiku-4-5-20251001&quot;
+      }
+    }
+  },
+  &quot;resolvedSearch&quot;: {
+    &quot;providerMode&quot;: &quot;auto&quot;,
+    &quot;configuredProviders&quot;: []
+  },
+  &quot;thresholds&quot;: {
+    &quot;maxPairSkew&quot;: 15,
+    &quot;maxMeanAbsoluteSkew&quot;: 8,
+    &quot;maxMeanDirectionalSkew&quot;: 5,
+    &quot;evidenceBalanceThreshold&quot;: 0.3,
+    &quot;claimCountThreshold&quot;: 2,
+    &quot;sourceCountThreshold&quot;: 3,
+    &quot;minPassRate&quot;: 0.75,
+    &quot;maxRefusalRateDelta&quot;: 25,
+    &quot;maxDegradationRateDelta&quot;: 40
+  }
+}</pre>
+</details>
+
+<footer>
+  <p>Generated: 2026-02-21T14:51:34.125Z | Schema: calibration-1.0 | Fixture: v1.0.0</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -282,8 +282,10 @@ export async function runClaimBoundaryAnalysis(
         .filter(Boolean)
     )].join(", ");
 
-    // Get LLM model information
+    // Get LLM model information for all task tiers
     const verdictModel = getModelForTask("verdict", undefined, initialPipelineConfig);
+    const understandModel = getModelForTask("understand", undefined, initialPipelineConfig);
+    const extractModel = getModelForTask("extract_evidence", undefined, initialPipelineConfig);
 
     // Wrap assessment in resultJson structure (no AnalysisContext references)
     const resultJson = {
@@ -294,6 +296,11 @@ export async function runClaimBoundaryAnalysis(
         pipeline: "claimboundary",
         llmProvider: initialPipelineConfig.llmProvider ?? "anthropic",
         llmModel: verdictModel.modelName,
+        modelsUsed: {
+          understand: understandModel.modelName,
+          extractEvidence: extractModel.modelName,
+          verdict: verdictModel.modelName,
+        },
         searchProvider: initialSearchConfig.provider,
         searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
         inputType: input.inputType,

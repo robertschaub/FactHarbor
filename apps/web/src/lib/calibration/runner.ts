@@ -13,6 +13,8 @@ import {
   loadSearchConfig,
   loadCalcConfig,
 } from "@/lib/config-loader";
+import { DEBATE_PROFILES, type PipelineConfig } from "@/lib/config-schemas";
+import { getActiveSearchProviders } from "@/lib/web-search";
 import { computePairMetrics, computeAggregateMetrics } from "./metrics";
 import type {
   BiasPair,
@@ -175,6 +177,9 @@ async function captureConfigSnapshot(): Promise<
     loadCalcConfig("default"),
   ]);
 
+  const pipelineConfig = pipelineResult.config as PipelineConfig;
+  const searchConfig = searchResult.config as { provider?: string };
+
   return {
     pipeline: pipelineResult.config as unknown as Record<string, unknown>,
     search: searchResult.config as unknown as Record<string, unknown>,
@@ -184,7 +189,81 @@ async function captureConfigSnapshot(): Promise<
       search: searchResult.contentHash,
       calculation: calcResult.contentHash,
     },
+    resolvedLLM: resolveLLMConfig(pipelineConfig),
+    resolvedSearch: resolveSearchConfig(searchConfig),
   };
+}
+
+/**
+ * Resolve the full LLM configuration including per-role debate models.
+ * Applies the same resolution logic as the pipeline:
+ *   1. Explicit debateModelTiers / debateModelProviders
+ *   2. debateProfile preset
+ *   3. Hardcoded defaults
+ */
+function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["configSnapshot"]["resolvedLLM"] {
+  const provider = config.llmProvider ?? "anthropic";
+  const tiering = config.llmTiering ?? false;
+  const modelUnderstand = config.modelUnderstand ?? "claude-haiku-4-5-20251001";
+  const modelExtractEvidence = config.modelExtractEvidence ?? "claude-haiku-4-5-20251001";
+  const modelVerdict = config.modelVerdict ?? "claude-sonnet-4-5-20250929";
+  const debateProfile = (config.debateProfile ?? "baseline") as string;
+
+  // Resolve debate role tiers and providers from profile + explicit overrides
+  const profile = DEBATE_PROFILES[debateProfile as keyof typeof DEBATE_PROFILES] ?? DEBATE_PROFILES.baseline;
+  const explicitTiers = config.debateModelTiers;
+  const explicitProviders = config.debateModelProviders;
+
+  const roles = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"] as const;
+  const debateRoles: Record<string, { tier: string; provider: string; model: string }> = {};
+
+  for (const role of roles) {
+    const tier = explicitTiers?.[role] ?? profile.tiers[role] ?? "sonnet";
+    const roleProvider = explicitProviders?.[role] ?? profile.providers[role] ?? provider;
+    const model = resolveModelName(tier, roleProvider, tiering, modelUnderstand, modelVerdict);
+    debateRoles[role] = { tier, provider: roleProvider, model };
+  }
+
+  return {
+    provider,
+    tiering,
+    models: { understand: modelUnderstand, extractEvidence: modelExtractEvidence, verdict: modelVerdict },
+    debateProfile,
+    debateRoles,
+  };
+}
+
+/**
+ * Resolve a model name from tier + provider, matching getModelForTask() / defaultModelNameForTask() logic.
+ */
+function resolveModelName(
+  tier: string,
+  roleProvider: string,
+  tiering: boolean,
+  modelUnderstand: string,
+  modelVerdict: string,
+): string {
+  const isPremium = tier === "sonnet";
+  const p = (roleProvider || "").toLowerCase();
+
+  if (p === "anthropic" || p === "claude") {
+    // When tiering is off, all tasks use the verdict (premium) model
+    if (!tiering) return modelVerdict;
+    return isPremium ? modelVerdict : modelUnderstand;
+  }
+  if (p === "openai") return isPremium ? "gpt-4.1" : "gpt-4.1-mini";
+  if (p === "google" || p === "gemini") return isPremium ? "gemini-2.5-pro" : "gemini-2.5-flash";
+  if (p === "mistral") return isPremium ? "mistral-large-latest" : "mistral-small-latest";
+  return isPremium ? modelVerdict : modelUnderstand;
+}
+
+/**
+ * Resolve active search providers from env vars + config.
+ */
+function resolveSearchConfig(searchConfig: { provider?: string }): CalibrationRunResult["configSnapshot"]["resolvedSearch"] {
+  const providerMode = searchConfig.provider ?? "auto";
+  const configuredProviders = getActiveSearchProviders(searchConfig as any);
+  return { providerMode, configuredProviders };
 }
 
 /**
