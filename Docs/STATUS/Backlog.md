@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 20, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
+**Last Updated**: February 21, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -172,6 +172,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **Classification monitoring**: Track fallback rates/distributions per field (harmPotential, factualBasis, etc.). Admin endpoint `GET /api/admin/classification-metrics`. Alert on fallback rate >5%. ~3-4h. | Observability / Analyzer | med | med | [Classification Monitoring Spec](../ARCHIVE/P2_Classification_Monitoring_Backlog.md) |
 | **Observability dashboard**: Real-time metrics dashboard showing performance (p50/p95/p99), costs (LLM/search), quality (gate pass rates), usage (success rate), and errors. | Observability | low | high | Improvements #17 |
 | **Error pattern detection & auto-recovery**: Automatically categorize errors, suggest fixes, apply recovery actions (retry with shorter prompt, skip source, fallback model). | Observability / Reliability | low | med | Improvements #18 |
+| **Calibration report “run health” block**: Add infra health KPIs to calibration output (`infraFailureRate`, `fetchFailureRate`, `srEvalFailureRate`) and surface in JSON + HTML report header panel. | Observability / Calibration | low | med | Post-baseline telemetry hardening follow-up |
+| **Calibration replay diagnostics**: Persist/report top failed URLs (top 20) with reason histogram in calibration JSON/HTML to speed incident triage. | Observability / Calibration | low | med | Post-baseline telemetry hardening follow-up |
+| **Synthetic failure-injection calibration fixture**: Add a small intentionally broken URL/doc fixture set to continuously verify error bubbling + warning structure regressions. | Testing / Reliability | low | med | Post-baseline telemetry hardening follow-up |
 | Persist metrics and cost estimates: tokens/search calls/cost estimation stored per job; basic admin view. | Observability | low | med | Existing |
 | Error pattern tracking: persist structured error categories and frequency to inform prompt/code fixes. | Observability | low | med | Existing |
 

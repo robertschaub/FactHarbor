@@ -20,6 +20,7 @@
     "test:calibration": "vitest run --config vitest.calibration.config.ts test/calibration/political-bias.test.ts -t \"quick mode\"",
     "test:calibration:quick": "vitest run --config vitest.calibration.config.ts test/calibration/political-bias.test.ts -t \"quick mode\"",
     "test:calibration:full": "vitest run --config vitest.calibration.config.ts test/calibration/political-bias.test.ts -t \"full mode\"",
+    "test:calibration:validate": "npx tsx scripts/validate-calibration-telemetry.ts",
     "test:jobs": "vitest run test/unit/lib/job-lifecycle.test.ts",
     "test:baseline": "node scripts/baseline-runner.js",
     "promptfoo": "promptfoo eval --env-file .env.local",

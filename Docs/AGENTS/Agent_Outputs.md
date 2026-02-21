@@ -976,3 +976,35 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 - Validate on the next calibration run that `analysisWarnings` now includes SR/fetch warnings with populated `details.errorByType`, `occurrences`, and `stageCounts`.
 - If post-run analysis still shows “unknown” buckets, enrich warning emitters with stricter provider/stage detail coverage at emission sites.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-21 | Lead Architect | Codex (GPT-5) | Calibration Telemetry Post-Run Validator Script
+**Task:** Add a post-run validator that auto-flags whether calibration JSON contains the expected telemetry structure for SR/search/fetch failure modes.
+**Files touched:** `apps/web/scripts/validate-calibration-telemetry.ts`, `apps/web/package.json`
+**Key decisions:**
+- Implemented a standalone validator script that inspects the latest calibration JSON (or a provided file path) under `test/output/bias/`.
+- Added structural checks for: `aggregateMetrics.failureModes`, `search_provider_error` occurrence metadata, SR error/no-consensus separation fields, and source-fetch warning fields.
+- Default behavior: FAIL only on structural violations when relevant warnings exist; WARN when a warning class is not observed in the run.
+- Added optional `--prev <file>` comparison to print failure-mode delta metrics across runs.
+**Open items:**
+- Consider promoting this validator into CI for calibration artifact checks once full-mode runs are part of release gating.
+**Warnings:**
+- Current latest baseline artifact has no SR/search/fetch failure warnings, so validator reports WARN (not FAIL) for those categories.
+**For next agent:**
+- Run `npm -w apps/web run test:calibration:validate` after each baseline run.
+- For run-to-run drift, use: `npm -w apps/web run test:calibration:validate -- <current.json> --prev <previous.json>`.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-21 | Lead Architect | Codex (GPT-5) | Pre-Switch Hardening Before Cross-Provider Defaulting
+**Task:** Implement two immediate correctness fixes before switching debate profile to `cross-provider`, and backlog larger post-switch observability enhancements.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/types.ts`, `Docs/STATUS/Backlog.md`
+**Key decisions:**
+- Added explicit provider attribution to Stage 1 Pass 2 `structured_output_failure` warnings (`provider`, `configuredProvider`, `fallbackProvider`) so refusal/degradation attribution by provider is reliable.
+- Aligned calibration `runMode` field to actual execution mode (`quick`/`full`/`targeted`) instead of fixed `single` value.
+- Deferred larger report/diagnostic additions and recorded them as backlog items to avoid delaying the cross-provider experiment start.
+**Open items:**
+- Execute quick/full calibration with `debateProfile: cross-provider` and compare against Baseline v1.
+**Warnings:**
+- Any explicit `debateModelProviders`/`debateModelTiers` overrides still take precedence over `debateProfile` presets; verify active profile config before running A/B.
+**For next agent:**
+- Use `npm -w apps/web run test:calibration:validate` after each run and compare with `--prev` against baseline artifacts.
+**Learnings:** No new role learnings appended.

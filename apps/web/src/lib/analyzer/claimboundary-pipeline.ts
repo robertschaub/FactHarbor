@@ -1274,6 +1274,9 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                     details: {
                       stage: "stage1_pass2",
                       reason: "content_policy_soft_refusal",
+                      provider: model.provider,
+                      configuredProvider: model.provider,
+                      fallbackProvider: fallbackModel.provider,
                       primaryModel: model.modelName,
                       fallbackModel: fallbackModel.modelName,
                       degradedPath: true,

@@ -272,7 +272,7 @@ export interface AggregateMetrics {
 export interface CalibrationRunResult {
   runId: string;
   timestamp: string;
-  runMode: "single" | "ab-comparison" | "regression";
+  runMode: "quick" | "full" | "targeted" | "single" | "ab-comparison" | "regression";
 
   // Configuration snapshot (full, for reproducibility)
   configSnapshot: {

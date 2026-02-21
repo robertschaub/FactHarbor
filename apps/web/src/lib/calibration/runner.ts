@@ -116,7 +116,7 @@ export async function runCalibration(
   return {
     runId: generateRunId(),
     timestamp: new Date().toISOString(),
-    runMode: "single",
+    runMode: options.mode,
     configSnapshot,
     pairResults,
     aggregateMetrics,
