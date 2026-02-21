@@ -1048,11 +1048,19 @@ function getChildPages(ref){
 
 function derivePageTitle(ref){
   if(!ref) return '';
-  const segs = ref.split('.').filter(s=>s.toLowerCase()!=='webhome');
+  // Check for pre-computed displayTitle first
+  const page = pageIndex[ref];
+  if(page && page.displayTitle) return page.displayTitle;
+  // Strip translation suffix: "Space.WebHome.de" → "Space.WebHome"
+  var cleaned = ref.replace(/\.WebHome\.[a-z]{2}$/i, '.WebHome').replace(/^WebHome\.[a-z]{2}$/i, 'WebHome');
+  const segs = cleaned.split('.').filter(s=>s.toLowerCase()!=='webhome');
   if(segs.length) return segs[segs.length-1];
   // Root WebHome — use wiki/folder name
   if(pageTree && pageTree[0] && pageTree[0].type==='folder') return pageTree[0].name;
   return '';
+}
+function isTranslationWebHome(baseName){
+  return /^WebHome\.[a-z]{2}$/i.test(baseName);
 }
 function contentHasHeading(src){
   for(const line of src.split('\n')){
@@ -1067,7 +1075,8 @@ async function renderPreview(){
   let src = editorEl.value;
   // Auto-inject title for pages that lack a heading
   if(!contentHasHeading(src)){
-    const title = derivePageTitle(currentPageRef);
+    const page = pageIndex[currentPageRef];
+    const title = (page && page.displayTitle) || derivePageTitle(currentPageRef);
     if(title) src = `= ${title} =\n\n${src}`;
   }
   let html = parser.parse(src);
@@ -1439,7 +1448,8 @@ function updateBreadcrumb(page){
     const isLast = i === segs.length-1;
     const partial = segs.slice(0,i+1).join('.');
     if(isLast){
-      html += `<span class="bc-item active">${esc(segs[i])}</span>`;
+      const label = (page.displayTitle) ? page.displayTitle : segs[i];
+      html += `<span class="bc-item active">${esc(label)}</span>`;
     } else {
       // Try to navigate to this space's index page
       html += `<span class="bc-item" onclick="tryNavigateSpace('${escAttr(partial)}')">${esc(segs[i])}</span>`;
@@ -1552,6 +1562,8 @@ function buildPageIndex(tree, idx={}){
 function renderTree(tree, depth=0){
   let html = '';
   for(const item of tree){
+    // Hide translation WebHome pages (e.g. WebHome.de) — accessible via language links
+    if(item.type === 'file' && isTranslationWebHome(item.baseName)) continue;
     const pad = depth * 14;
     if(item.type === 'folder'){
       const id = 'tg-'+item.segments.join('-');

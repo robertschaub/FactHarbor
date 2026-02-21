@@ -66,8 +66,8 @@ if (-not (Test-Path $viewerPath)) {
     exit 1
 }
 
-# The Best Workplace wiki directory for auto-loading
-$wikiRoot = Join-Path (Split-Path $scriptDir) 'The Best Workplace'
+# FactHarbor wiki directory for auto-loading
+$wikiRoot = Join-Path (Split-Path $scriptDir) 'FactHarbor'
 $wikiExists = Test-Path $wikiRoot
 
 # Build manifest dynamically (called on each request to pick up new/changed files)
@@ -93,7 +93,21 @@ function Build-WikiManifest {
         $sortData[$key] = $lines
     }
 
-    $manifest = @{ root = 'The Best Workplace'; files = $fileList; sorts = $sortData }
+    $metaFiles = $allFiles | Where-Object { $_.Name -eq '_meta.json' }
+
+    $metaData = @{}
+    foreach ($mf in $metaFiles) {
+        if ($mf.Directory.FullName -eq $wikiRoot) {
+            $key = ''
+        } else {
+            $key = $mf.Directory.FullName.Substring($wikiRoot.Length + 1).Replace('\', '/')
+        }
+        try {
+            $metaData[$key] = Get-Content $mf.FullName -Encoding UTF8 -Raw | ConvertFrom-Json
+        } catch { }
+    }
+
+    $manifest = @{ root = 'FactHarbor'; files = $fileList; sorts = $sortData; metas = $metaData }
     $manifestJson = $manifest | ConvertTo-Json -Depth 4 -Compress
     return [System.Text.Encoding]::UTF8.GetBytes($manifestJson)
 }
