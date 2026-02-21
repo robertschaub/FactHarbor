@@ -78,6 +78,13 @@ For completed work, historical documents, and reference materials, see:
 - **Current references:** `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`, `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
 - **Remaining:** Pass A-3 gate (two 10/10 cross-provider full runs), then B-sequence (`B-1 -> B-3 -> B-2`).
 
+### Code Review: Pre-A-3 Phase-1 Focused (2026-02-21)
+**Status:** ✅ Review Complete — GO for A-3 (no blocking findings)
+- **Document:** [Code_Review_Pre_A3_Phase1_2026-02-21.md](Code_Review_Pre_A3_Phase1_2026-02-21.md)
+- **Type:** Code Review / Gate Validation
+- **Scope:** Commits `2c5ffa4` + `edb6a50`. 4 findings (0C, 0H, 2M, 2L). Covers TPM guard/fallback correctness, structured error bubble-up, retry-once scope, report semantics. `resolveOpenAiFallbackModel()` verified correct.
+- **Remaining:** Post-A-3 B-sequence: narrow `isOpenAiTpmError`, full-prompt token estimate for pre-call guard.
+
 ### Code Review: Feb 21 (5-Hour Window)
 **Status:** ✅ Review Complete — CRITICAL fix pending (committed test output)
 - **Document:** [Code_Review_2026-02-21b.md](Code_Review_2026-02-21b.md)

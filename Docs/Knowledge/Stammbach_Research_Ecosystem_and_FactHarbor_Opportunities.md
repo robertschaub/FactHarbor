@@ -596,50 +596,7 @@ Beyond the 11 Climinator-specific lessons in [Climinator Analysis](Climinator_Le
 
 ---
 
-## 8. Proposed Email to Stammbach
-
-```
-Subject: Automated fact-checking pipeline — data-centric approach (from FactHarbor / you know Elliott)
-
-Dear Dominik,
-
-I'm Robert Schaub, founder of FactHarbor, a Swiss nonprofit developing an open-source
-platform for automated claim verification. I've just contacted Prof. Ash about a
-potential collaboration — he may mention it.
-
-Your PhD work on data-centric fact-checking is directly relevant to what we're building.
-FactHarbor autonomously extracts verifiable claims, searches for evidence across multiple
-sources, groups findings into analytical perspectives, and generates verdicts through an
-adversarial LLM debate — producing fully sourced, transparent reports.
-
-Two of your contributions particularly resonate:
-- Your KB Choice finding (domain overlap > model quality) matches our calibration data:
-  evidence-pool composition drives verdict skew more than model selection (8 of 10 test
-  pairs show evidence-pool asymmetry as the dominant bias source).
-- AFaCTA's path-based consistency is a promising complement to our current
-  temperature-based self-consistency — we're evaluating it for our contested-claim
-  handling.
-
-I'd welcome the chance to discuss how data-centric principles apply to general-purpose
-(not just climate) fact-checking, and whether our calibration harness could benefit from
-your measurement methodology.
-
-Would you have 20 minutes for a call in the coming weeks?
-
-Best regards,
-Robert Schaub
-Founder, FactHarbor
-
-https://factharbor.ch
-https://www.linkedin.com/in/robertschaub
-Office: +41 76 449 14 39
-```
-
-**Email strategy:** Lead with KB Choice (Stammbach's own research identity), not Climinator (Leippold's project). Mention Ash to create social proof. Keep short — Stammbach is a postdoc at Princeton. Frame as peer exchange, not sales.
-
----
-
-## 9. References
+## 8. References
 
 ### Primary Projects
 

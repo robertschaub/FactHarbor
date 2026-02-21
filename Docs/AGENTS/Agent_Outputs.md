@@ -4,6 +4,15 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-21 | Code Reviewer | Claude Code (Sonnet 4.6) | Pre-A-3 Phase-1 Focused Review (2c5ffa4 + edb6a50)
+**Task:** Focused review of Phase-1 commits before A-3 cross-provider calibration gate. Validate TPM guard correctness, structured error bubble-up, retry-once scope, and report semantics.
+**Files touched:** `Docs/WIP/Code_Review_Pre_A3_Phase1_2026-02-21.md` (created)
+**Key decisions:** Verified `resolveOpenAiFallbackModel()` correctly returns mini (llm.ts confirmed: `detectProviderFromModelName("gpt-4.1-mini")` → "openai", override accepted). No patches required before A-3.
+**Open items:** Post-A-3 (B-sequence): narrow `isOpenAiTpmError` to drop "request too large" clause; full prompt token estimate for pre-call guard.
+**Warnings:** `isOpenAiTpmError()` includes `"request too large"` which is broader than needed — no current false-positive but fragile to future API changes. Pre-call token estimate excludes system prompt (~500–2000 tokens); post-call retry is the backstop.
+**For next agent:** **Recommendation: GO for A-3.** 0 CRITICAL, 0 HIGH, 2 MEDIUM (both non-blocking). Phase-1 telemetry is end-to-end verified. If A-3 run shows failures with `guardPhase: "tpm_guard_precheck"` or `"tpm_guard_retry"` in diagnostics, the guard fired correctly. If failures show bare `Stage4LLMCallError` without guard phase, TPM guard didn't trigger (check `openaiTpmGuardEnabled` in config).
+
+---
 ### 2026-02-21 | Code Reviewer | Claude Code (Sonnet 4.6) | Code Review — Feb 21 5-Hour Window (5 commits)
 **Task:** Review all code changes since previous review (84aad35..HEAD). 5 commits: calibration LLM/search transparency, gh-pages redirects, viewer improvements, docs/meta.
 **Files touched:**
