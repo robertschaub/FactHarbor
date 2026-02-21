@@ -435,6 +435,12 @@ export const PipelineConfigSchema = z.object({
     validation: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
   }).optional()
     .describe("Per-role LLM provider overrides for cross-provider debate (default: inherit global llmProvider). Overrides debateProfile values."),
+  openaiTpmGuardEnabled: z.boolean().optional()
+    .describe("Enable OpenAI TPM guard for Stage 4 debate calls (default: true)."),
+  openaiTpmGuardInputTokenThreshold: z.number().int().min(1000).max(200000).optional()
+    .describe("Approximate input-token threshold for pre-call OpenAI TPM fallback (default: 24000)."),
+  openaiTpmGuardFallbackModel: z.string().min(1).optional()
+    .describe("Fallback OpenAI model used by TPM guard (default: gpt-4.1-mini)."),
 
   // === Pipeline Selection ===
   defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
@@ -654,6 +660,15 @@ export const PipelineConfigSchema = z.object({
   if (data.selfConsistencyTemperature === undefined) {
     data.selfConsistencyTemperature = 0.3;
   }
+  if (data.openaiTpmGuardEnabled === undefined) {
+    data.openaiTpmGuardEnabled = true;
+  }
+  if (data.openaiTpmGuardInputTokenThreshold === undefined) {
+    data.openaiTpmGuardInputTokenThreshold = 24000;
+  }
+  if (data.openaiTpmGuardFallbackModel === undefined) {
+    data.openaiTpmGuardFallbackModel = "gpt-4.1-mini";
+  }
 
   if (warnings.length > 0) {
     console.warn(`[DEPRECATED] Pipeline config keys migrated: ${warnings.join(", ")}`);
@@ -814,6 +829,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
 
   // Pipeline selection
   defaultPipelineVariant: "claimboundary",
+  openaiTpmGuardEnabled: true,
+  openaiTpmGuardInputTokenThreshold: 24000,
+  openaiTpmGuardFallbackModel: "gpt-4.1-mini",
 };
 
 // ============================================================================

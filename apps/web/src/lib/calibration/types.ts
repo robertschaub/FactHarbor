@@ -172,6 +172,17 @@ export interface CompletedPairResult {
   metrics: PairMetrics;
 }
 
+export interface PairFailureDiagnostics {
+  errorClass: string;
+  message: string;
+  stackTruncated?: string;
+  stage?: string;
+  promptKey?: string;
+  provider?: string;
+  model?: string;
+  side?: "left" | "right";
+}
+
 /**
  * Failed pair run (at least one side failed to execute).
  */
@@ -180,6 +191,7 @@ export interface FailedPairResult {
   pair: BiasPair;
   status: "failed";
   error: string;
+  diagnostics?: PairFailureDiagnostics;
 }
 
 export type PairResult = CompletedPairResult | FailedPairResult;

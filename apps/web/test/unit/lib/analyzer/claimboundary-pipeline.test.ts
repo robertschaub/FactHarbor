@@ -619,7 +619,7 @@ vi.mock("ai", () => ({
 }));
 
 vi.mock("@/lib/analyzer/llm", () => ({
-  getModelForTask: vi.fn(() => ({ model: "mock-model", name: "mock" })),
+  getModelForTask: vi.fn(() => ({ model: "mock-model", modelName: "mock-model", provider: "anthropic" })),
   extractStructuredOutput: vi.fn(),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
   getPromptCachingOptions: vi.fn(() => ({})),
@@ -2344,6 +2344,118 @@ describe("Stage 4: createProductionLLMCall", () => {
       if (origKey !== undefined) {
         process.env.MISTRAL_API_KEY = origKey;
       }
+    }
+  });
+
+  it("should preemptively fallback from gpt-4.1 to gpt-4.1-mini when TPM guard threshold is exceeded", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "{\"ok\":true}" } as any);
+
+    const origKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+
+    try {
+      const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
+      vi.mocked(mockGetModel)
+        .mockReturnValueOnce({ model: "openai-gpt41", modelName: "gpt-4.1", provider: "openai" } as any)
+        .mockReturnValueOnce({ model: "openai-mini", modelName: "gpt-4.1-mini", provider: "openai" } as any);
+
+      const warnings: any[] = [];
+      const llmCall = createProductionLLMCall({
+        llmProvider: "anthropic",
+        openaiTpmGuardEnabled: true,
+        openaiTpmGuardInputTokenThreshold: 24000,
+        openaiTpmGuardFallbackModel: "gpt-4.1-mini",
+      } as any, warnings);
+
+      await llmCall(
+        "VERDICT_CHALLENGER",
+        { userMessage: "x".repeat(120000) },
+        { tier: "sonnet", providerOverride: "openai" },
+      );
+
+      expect(mockGenerateText).toHaveBeenCalledTimes(1);
+      expect(mockGenerateText.mock.calls[0]?.[0]?.model).toBe("openai-mini");
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0].type).toBe("llm_provider_error");
+      expect(warnings[0].details.reason).toBe("tpm_guard");
+      expect(warnings[0].details.guardPhase).toBe("tpm_guard_precheck");
+    } finally {
+      if (origKey !== undefined) {
+        process.env.OPENAI_API_KEY = origKey;
+      } else {
+        delete process.env.OPENAI_API_KEY;
+      }
+    }
+  });
+
+  it("should retry once with gpt-4.1-mini when OpenAI returns TPM error", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText
+      .mockRejectedValueOnce(new Error("Request too large for gpt-4.1 on tokens per min (TPM): Limit 30000, Requested 30487"))
+      .mockResolvedValueOnce({ text: "{\"ok\":true}" } as any);
+
+    const origKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+
+    try {
+      const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
+      vi.mocked(mockGetModel)
+        .mockReturnValueOnce({ model: "openai-gpt41", modelName: "gpt-4.1", provider: "openai" } as any)
+        .mockReturnValueOnce({ model: "openai-mini", modelName: "gpt-4.1-mini", provider: "openai" } as any);
+
+      const warnings: any[] = [];
+      const llmCall = createProductionLLMCall({
+        llmProvider: "anthropic",
+        openaiTpmGuardEnabled: true,
+        openaiTpmGuardInputTokenThreshold: 24000,
+        openaiTpmGuardFallbackModel: "gpt-4.1-mini",
+      } as any, warnings);
+
+      await llmCall(
+        "VERDICT_CHALLENGER",
+        { userMessage: "short prompt to avoid precheck fallback" },
+        { tier: "sonnet", providerOverride: "openai" },
+      );
+
+      expect(mockGenerateText).toHaveBeenCalledTimes(2);
+      expect(mockGenerateText.mock.calls[0]?.[0]?.model).toBe("openai-gpt41");
+      expect(mockGenerateText.mock.calls[1]?.[0]?.model).toBe("openai-mini");
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0].details.guardPhase).toBe("tpm_guard_retry");
+    } finally {
+      if (origKey !== undefined) {
+        process.env.OPENAI_API_KEY = origKey;
+      } else {
+        delete process.env.OPENAI_API_KEY;
+      }
+    }
+  });
+
+  it("should throw Stage4LLMCallError with structured diagnostics on unrecovered provider failure", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockRejectedValue(new Error("provider unavailable"));
+
+    const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
+    vi.mocked(mockGetModel).mockReturnValueOnce({
+      model: "anthropic-sonnet",
+      modelName: "claude-sonnet-4-5-20250929",
+      provider: "anthropic",
+    } as any);
+
+    const llmCall = createProductionLLMCall({ llmProvider: "anthropic" } as any);
+
+    try {
+      await llmCall("VERDICT_ADVOCATE", { userMessage: "x" }, { tier: "sonnet" });
+      throw new Error("expected failure");
+    } catch (err) {
+      const e = err as Error & { details?: Record<string, unknown> };
+      expect(e.name).toBe("Stage4LLMCallError");
+      expect(e.message).toContain("Stage 4: LLM call failed");
+      expect(e.details?.stage).toBe("stage4_verdict");
+      expect(e.details?.promptKey).toBe("VERDICT_ADVOCATE");
+      expect(e.details?.provider).toBe("anthropic");
+      expect(e.details?.model).toBe("claude-sonnet-4-5-20250929");
     }
   });
 

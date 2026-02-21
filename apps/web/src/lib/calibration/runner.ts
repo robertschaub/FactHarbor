@@ -26,6 +26,7 @@ import type {
   PairResult,
   CalibrationRunResult,
   CalibrationThresholds,
+  PairFailureDiagnostics,
 } from "./types";
 import { DEFAULT_CALIBRATION_THRESHOLDS } from "./types";
 
@@ -100,15 +101,16 @@ export async function runCalibration(
       );
     } catch (err) {
       console.error(`[Calibration] Pair ${pair.id} failed:`, err);
-      const message = err instanceof Error ? err.message : String(err);
+      const diagnostics = buildPairFailureDiagnostics(err);
       pairResults.push({
         pairId: pair.id,
         pair,
         status: "failed",
-        error: message,
+        error: diagnostics.message,
+        diagnostics,
       });
       options.onProgress?.(
-        `Pair ${pair.id}: FAILED (${message})`,
+        `Pair ${pair.id}: FAILED (${diagnostics.message})`,
         i + 1,
         activePairs.length,
       );
@@ -302,16 +304,87 @@ async function runSide(
 ): Promise<SideResult> {
   const claim = side === "left" ? pair.leftClaim : pair.rightClaim;
   const startMs = Date.now();
+  let result: Awaited<ReturnType<typeof runClaimBoundaryAnalysis>> | undefined;
+  let lastError: unknown;
 
-  const result = await runClaimBoundaryAnalysis({
-    inputValue: claim,
-    inputType: "text",
-  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      result = await runClaimBoundaryAnalysis({
+        inputValue: claim,
+        inputType: "text",
+      });
+      break;
+    } catch (err) {
+      lastError = err;
+      const message = err instanceof Error ? err.message : String(err);
+      const isValueReadCrash =
+        message.includes("Cannot read properties of undefined")
+        && message.includes("reading 'value'");
+
+      if (attempt === 0 && isValueReadCrash) {
+        console.warn(
+          `[Calibration] Side ${side} hit transient value-read crash; retrying once.`,
+        );
+        continue;
+      }
+
+      throw annotateSideOnError(err, side);
+    }
+  }
+
+  if (!result) {
+    throw annotateSideOnError(lastError ?? new Error("Unknown side execution error"), side);
+  }
 
   const durationMs = Date.now() - startMs;
   const rj = result.resultJson;
 
   return extractSideResult(claim, side, rj, durationMs);
+}
+
+function annotateSideOnError(
+  err: unknown,
+  side: "left" | "right",
+): Error {
+  const wrapped = err instanceof Error ? err : new Error(String(err));
+  const details =
+    (wrapped as Error & { details?: Record<string, unknown> }).details ?? {};
+
+  (wrapped as Error & { details?: Record<string, unknown> }).details = {
+    ...details,
+    side,
+  };
+
+  return wrapped;
+}
+
+function buildPairFailureDiagnostics(err: unknown): PairFailureDiagnostics {
+  const fallbackMessage = err instanceof Error ? err.message : String(err);
+  const e = err as (Error & { details?: Record<string, unknown> }) | undefined;
+  const details = e?.details;
+
+  const stackTruncated =
+    typeof e?.stack === "string"
+      ? e.stack.split("\n").slice(0, 12).join("\n")
+      : undefined;
+
+  const asString = (value: unknown): string | undefined =>
+    typeof value === "string" && value.trim().length > 0 ? value : undefined;
+
+  const sideValue = details?.side;
+  const side =
+    sideValue === "left" || sideValue === "right" ? sideValue : undefined;
+
+  return {
+    errorClass: asString(e?.name) ?? "Error",
+    message: asString(e?.message) ?? fallbackMessage,
+    stackTruncated,
+    stage: asString(details?.stage),
+    promptKey: asString(details?.promptKey),
+    provider: asString(details?.provider),
+    model: asString(details?.model),
+    side,
+  };
 }
 
 /**

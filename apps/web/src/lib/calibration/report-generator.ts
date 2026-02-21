@@ -98,15 +98,18 @@ function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
   // Debate roles table
   let debateRoleRows = "";
   const roleOrder = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"];
+  const roleProviders: string[] = [];
   for (const role of roleOrder) {
     const info = resolved.debateRoles[role];
     if (!info) continue;
+    roleProviders.push(info.provider);
     const isExternal = info.provider !== resolved.provider;
     const providerCell = isExternal
       ? `<strong class="external-provider">${esc(info.provider)}</strong>`
       : esc(info.provider);
     debateRoleRows += `<tr><td>${esc(role)}</td><td>${esc(info.tier)}</td><td>${providerCell}</td><td class="mono">${esc(info.model)}</td></tr>`;
   }
+  const roleProviderMode = new Set(roleProviders).size > 1 ? "mixed" : "single";
 
   // Search providers
   const searchProviders = resolvedSearch?.configuredProviders ?? [];
@@ -117,7 +120,8 @@ function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
   <h2>LLM &amp; Search Configuration</h2>
   <div class="config-overview">
     <div class="config-badges">
-      <span class="config-badge">Provider: <strong>${esc(resolved.provider)}</strong></span>
+      <span class="config-badge">Global Provider: <strong>${esc(resolved.provider)}</strong></span>
+      <span class="config-badge">Role Provider Mode: <strong>${esc(roleProviderMode)}</strong></span>
       <span class="config-badge">Tiering: <strong>${resolved.tiering ? "ON" : "OFF"}</strong></span>
       <span class="config-badge">Debate Profile: <strong>${esc(resolved.debateProfile)}</strong></span>
       <span class="config-badge">Search Mode: <strong>${esc(searchMode)}</strong></span>
@@ -138,6 +142,7 @@ function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
         <thead><tr><th>Role</th><th>Tier</th><th>Provider</th><th>Model</th></tr></thead>
         <tbody>${debateRoleRows}</tbody>
       </table>
+      <p class="text-muted">Resolved role config at run start. Runtime fallbacks and degraded paths are reported in warnings and failed-pair diagnostics.</p>
     </div>
   </div>
 
@@ -172,7 +177,8 @@ function renderLLMAndSearchConfigFromRaw(r: CalibrationRunResult): string {
   <h2>LLM &amp; Search Configuration <span class="text-muted">(extracted from raw config)</span></h2>
   <div class="config-overview">
     <div class="config-badges">
-      <span class="config-badge">Provider: <strong>${esc(provider)}</strong></span>
+      <span class="config-badge">Global Provider: <strong>${esc(provider)}</strong></span>
+      <span class="config-badge">Role Provider Mode: <strong>unknown</strong></span>
       <span class="config-badge">Tiering: <strong>${tiering ? "ON" : "OFF"}</strong></span>
       <span class="config-badge">Debate Profile: <strong>${esc(debateProfile)}</strong></span>
       <span class="config-badge">Search Mode: <strong>${esc(searchMode)}</strong></span>
@@ -398,6 +404,34 @@ function renderPairCards(r: CalibrationRunResult): string {
 
 function renderPairCard(pr: PairResult, maxSkew: number): string {
   if (pr.status !== "completed") {
+    const diagRows = pr.diagnostics
+      ? [
+          pr.diagnostics.errorClass
+            ? `<tr><td>Error class</td><td>${esc(pr.diagnostics.errorClass)}</td></tr>`
+            : "",
+          pr.diagnostics.side
+            ? `<tr><td>Failed side</td><td>${esc(pr.diagnostics.side)}</td></tr>`
+            : "",
+          pr.diagnostics.stage
+            ? `<tr><td>Stage</td><td>${esc(pr.diagnostics.stage)}</td></tr>`
+            : "",
+          pr.diagnostics.promptKey
+            ? `<tr><td>Prompt</td><td>${esc(pr.diagnostics.promptKey)}</td></tr>`
+            : "",
+          pr.diagnostics.provider
+            ? `<tr><td>Provider</td><td>${esc(pr.diagnostics.provider)}</td></tr>`
+            : "",
+          pr.diagnostics.model
+            ? `<tr><td>Model</td><td class="mono">${esc(pr.diagnostics.model)}</td></tr>`
+            : "",
+          pr.diagnostics.stackTruncated
+            ? `<tr><td>Stack</td><td><pre class="error-stack">${esc(pr.diagnostics.stackTruncated)}</pre></td></tr>`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("")
+      : "";
+
     return `
 <details class="pair-card pair-fail">
   <summary>
@@ -411,6 +445,7 @@ function renderPairCard(pr: PairResult, maxSkew: number): string {
       <table>
         <tr><td>Status</td><td><strong>Execution failed</strong></td></tr>
         <tr><td>Error</td><td>${esc(pr.error)}</td></tr>
+        ${diagRows}
       </table>
     </div>
   </div>
@@ -760,6 +795,14 @@ th { color: var(--text-muted); font-size: 0.85em; font-weight: 600; }
 .search-providers { margin-top: 16px; }
 
 .text-muted { color: var(--text-muted); font-size: 0.85em; }
+
+.error-stack {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.75em;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
 
 footer {
   text-align: center;

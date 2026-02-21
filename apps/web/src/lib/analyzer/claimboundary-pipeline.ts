@@ -3362,6 +3362,39 @@ export function createProductionLLMCall(
     options?: { tier?: "sonnet" | "haiku"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string },
   ): Promise<unknown> => {
     const startTime = Date.now();
+    const stage = "stage4_verdict";
+
+    const userContent = typeof input.userMessage === "string"
+      ? input.userMessage
+      : JSON.stringify(input);
+
+    const approxTokenCount = (text: string): number => {
+      if (!text) return 0;
+      // Approximation for routing guards only; not used for analytical decisions.
+      return Math.ceil(text.length / 4);
+    };
+
+    const toError = (
+      message: string,
+      details: Record<string, unknown>,
+      cause?: unknown,
+    ): Error => {
+      const err = new Error(message);
+      err.name = "Stage4LLMCallError";
+      (err as Error & { details?: Record<string, unknown> }).details = details;
+      if (cause instanceof Error) {
+        err.cause = cause;
+      }
+      return err;
+    };
+
+    const isOpenAiTpmError = (error: unknown): boolean => {
+      const msg = error instanceof Error ? error.message : String(error ?? "");
+      const lower = msg.toLowerCase();
+      return lower.includes("tokens per min")
+        || lower.includes("tpm")
+        || lower.includes("request too large");
+    };
 
     // 1. Load UCM prompt section
     const currentDate = new Date().toISOString().split("T")[0];
@@ -3370,7 +3403,10 @@ export function createProductionLLMCall(
       currentDate,
     });
     if (!rendered) {
-      throw new Error(`Stage 4: Failed to load prompt section "${promptKey}"`);
+      throw toError(
+        `Stage 4: Failed to load prompt section "${promptKey}"`,
+        { stage, promptKey },
+      );
     }
 
     // 2. Resolve provider — apply per-role override with credential pre-check
@@ -3386,7 +3422,7 @@ export function createProductionLLMCall(
         type: "debate_provider_fallback",
         severity: "warning",
         message: `Provider override "${effectiveProviderOverride}" for "${promptKey}" lacks credentials. Fell back to global provider "${globalProvider}".`,
-        details: { promptKey, configuredProvider: effectiveProviderOverride, fallbackProvider: globalProvider },
+        details: { stage, promptKey, configuredProvider: effectiveProviderOverride, fallbackProvider: globalProvider },
       });
       effectiveProviderOverride = undefined;
     }
@@ -3394,41 +3430,93 @@ export function createProductionLLMCall(
     // 3. Select model based on tier + resolved provider
     const tier = options?.tier ?? "sonnet";
     const taskKey: ModelTask = tier === "sonnet" ? "verdict" : "understand";
-    const model = getModelForTask(taskKey, effectiveProviderOverride, pipelineConfig);
+    let model = getModelForTask(taskKey, effectiveProviderOverride, pipelineConfig);
+
+    // A-2b: OpenAI TPM guard/fallback configuration (UCM-backed defaults).
+    const tpmGuardEnabled = pipelineConfig.openaiTpmGuardEnabled ?? true;
+    const tpmGuardInputTokenThreshold = pipelineConfig.openaiTpmGuardInputTokenThreshold ?? 24000;
+    const tpmGuardFallbackModel = pipelineConfig.openaiTpmGuardFallbackModel ?? "gpt-4.1-mini";
+    const estimatedInputTokens = approxTokenCount(rendered.content) + approxTokenCount(userContent);
+
+    const resolveOpenAiFallbackModel = () => {
+      const fallbackConfig: PipelineConfig = {
+        ...pipelineConfig,
+        llmTiering: true,
+        llmProvider: "openai",
+        modelVerdict: tpmGuardFallbackModel,
+      };
+      return getModelForTask("verdict", "openai", fallbackConfig);
+    };
+
+    const maybeWarnTpmGuardFallback = (
+      configuredModel: string,
+      fallbackModel: string,
+      reason: "tpm_guard_precheck" | "tpm_guard_retry",
+      originalError?: string,
+    ) => {
+      warnings?.push({
+        type: "llm_provider_error",
+        severity: "warning",
+        message: `Stage 4 TPM guard used fallback model "${fallbackModel}" for "${promptKey}" (configured: "${configuredModel}").`,
+        details: {
+          stage,
+          promptKey,
+          provider: "openai",
+          configuredModel,
+          fallbackModel,
+          reason: "tpm_guard",
+          guardPhase: reason,
+          estimatedInputTokens,
+          threshold: tpmGuardInputTokenThreshold,
+          ...(originalError ? { originalError } : {}),
+        },
+      });
+    };
+
+    // Pre-call TPM guard based on request-size estimate.
+    if (
+      tpmGuardEnabled
+      && model.provider === "openai"
+      && model.modelName === "gpt-4.1"
+      && estimatedInputTokens >= tpmGuardInputTokenThreshold
+    ) {
+      const fallback = resolveOpenAiFallbackModel();
+      maybeWarnTpmGuardFallback(model.modelName, fallback.modelName, "tpm_guard_precheck");
+      model = fallback;
+    }
 
     // 4. Call AI SDK
     let result: any;
-    let success = false;
-    let errorMessage: string | undefined;
-
-    try {
-      result = await generateText({
-        model: model.model,
+    const callModel = async (activeModel: typeof model): Promise<any> => {
+      return generateText({
+        model: activeModel.model,
         messages: [
           {
             role: "system",
             content: rendered.content,
-            providerOptions: getPromptCachingOptions(model.provider),
+            providerOptions: getPromptCachingOptions(activeModel.provider),
           },
           {
             role: "user",
-            content: typeof input.userMessage === "string"
-              ? input.userMessage
-              : JSON.stringify(input),
+            content: userContent,
           },
         ],
         temperature: options?.temperature ?? 0.0,
-        providerOptions: getStructuredOutputProviderOptions(model.provider),
+        providerOptions: getStructuredOutputProviderOptions(activeModel.provider),
       });
-      success = true;
+    };
+
+    let attemptModel = model;
+    try {
+      result = await callModel(attemptModel);
     } catch (error) {
-      errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Record failed LLM call with actual resolved provider
       recordLLMCall({
         taskType: 'verdict',
-        provider: model.provider,
-        modelName: model.modelName,
+        provider: attemptModel.provider,
+        modelName: attemptModel.modelName,
         promptTokens: 0,
         completionTokens: 0,
         totalTokens: 0,
@@ -3440,14 +3528,70 @@ export function createProductionLLMCall(
         timestamp: new Date(),
       });
 
-      throw error;
+      // Retry once with mini fallback when OpenAI TPM pressure is detected.
+      if (
+        tpmGuardEnabled
+        && attemptModel.provider === "openai"
+        && attemptModel.modelName === "gpt-4.1"
+        && isOpenAiTpmError(error)
+      ) {
+        const fallback = resolveOpenAiFallbackModel();
+        maybeWarnTpmGuardFallback(attemptModel.modelName, fallback.modelName, "tpm_guard_retry", errorMessage);
+        attemptModel = fallback;
+
+        try {
+          result = await callModel(attemptModel);
+        } catch (retryError) {
+          const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+          recordLLMCall({
+            taskType: "verdict",
+            provider: attemptModel.provider,
+            modelName: attemptModel.modelName,
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            durationMs: Date.now() - startTime,
+            success: false,
+            schemaCompliant: false,
+            retries: 1,
+            errorMessage: retryMessage,
+            timestamp: new Date(),
+          });
+
+          throw toError(
+            `Stage 4: LLM call failed for "${promptKey}"`,
+            {
+              stage,
+              promptKey,
+              provider: attemptModel.provider,
+              model: attemptModel.modelName,
+              tier,
+              reason: "tpm_guard_retry_failed",
+            },
+            retryError,
+          );
+        }
+      } else {
+        throw toError(
+          `Stage 4: LLM call failed for "${promptKey}"`,
+          {
+            stage,
+            promptKey,
+            provider: attemptModel.provider,
+            model: attemptModel.modelName,
+            tier,
+            reason: "llm_call_failed",
+          },
+          error,
+        );
+      }
     }
 
     // Record successful LLM call with actual resolved provider
     recordLLMCall({
       taskType: 'verdict',
-      provider: model.provider,
-      modelName: model.modelName,
+      provider: attemptModel.provider,
+      modelName: attemptModel.modelName,
       promptTokens: result.usage?.promptTokens ?? 0,
       completionTokens: result.usage?.completionTokens ?? 0,
       totalTokens: result.usage?.totalTokens ?? 0,
@@ -3461,18 +3605,38 @@ export function createProductionLLMCall(
     // 5. Parse result as JSON
     const text = result.text?.trim();
     if (!text) {
-      throw new Error(`Stage 4: LLM returned empty response for prompt "${promptKey}"`);
+      throw toError(
+        `Stage 4: LLM returned empty response for prompt "${promptKey}"`,
+        {
+          stage,
+          promptKey,
+          provider: attemptModel.provider,
+          model: attemptModel.modelName,
+          tier,
+        },
+      );
     }
 
     try {
       return JSON.parse(text);
-    } catch {
+    } catch (parseError) {
       // Try extracting JSON from markdown code blocks
       const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch?.[1]) {
         return JSON.parse(jsonMatch[1].trim());
       }
-      throw new Error(`Stage 4: Failed to parse LLM response as JSON for prompt "${promptKey}"`);
+      throw toError(
+        `Stage 4: Failed to parse LLM response as JSON for prompt "${promptKey}"`,
+        {
+          stage,
+          promptKey,
+          provider: attemptModel.provider,
+          model: attemptModel.modelName,
+          tier,
+          reason: "json_parse_failure",
+        },
+        parseError,
+      );
     }
   };
 }
