@@ -1,8 +1,12 @@
 # Decision Log — Calibration + Debate System Review (2026-02-21)
 
 **Chair:** Lead Architect (Claude Opus 4.6)
-**Review packet:** `Docs/WIP/Review_Round_Packet_Calibration_Debate_2026-02-21.md`
-**Pre-reads consumed:** Continuation Plan, Climinator Lessons, Stammbach/Ash prep, Cross-Provider Execution Report, source code verification (evidence-filter, types.ts, claimboundary-pipeline.ts)
+
+## Execution Initiated (Phase 1 Only)
+
+- Phase 1 implementation spec prepared: `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
+- Scope locked to `A-1`, `A-2a`, `A-2b`, `A-2c` (no `B-*` work before `A-3` gate passes)
+- Lead Dev delegation brief included in the Phase 1 spec
 
 ---
 
@@ -20,8 +24,6 @@ All five items are stabilization prerequisites. No architectural risk, no sequen
 | A-2c | Failure diagnostics bubble-up: error class, message, truncated stack, stage, provider/model in pair result JSON | Lead Dev | 2026-02-25 | Failed pairs contain structured diagnostics (not just "error") |
 | A-3 | Rerun gate: two complete 10/10 cross-provider full runs with `failureModeBiasCount=0` and no fatal exceptions | Lead Dev | 2026-02-27 | Two decision-grade artifacts in `test/output/bias/` |
 
-**Rationale:** Cross-provider results are currently non-interpretable (6/10 completion, 1 crash, 3 TPM failures). Nothing downstream can proceed until these blockers are resolved. A-3 is the quality gate — no interpretation of cross-provider deltas before two clean runs.
-
 ---
 
 ## D2 — "Soon" Scope Approval
@@ -34,23 +36,11 @@ All five items are stabilization prerequisites. No architectural risk, no sequen
 | B-3 | Knowledge-diversity-lite (C13 correction): evidence sufficiency gate + source-type partitioning + trigger-based contrarian retrieval + cost caps (see D5) + A/B calibration run | LLM Expert + Lead Dev | 2026-03-11 | A/B shows C13 correction effect without exceeding cost caps | B-1 |
 | B-2 | Structured A/B conclusion: baseline vs cross-provider vs with/without knowledge-diversity-lite on same fixture + config hashes. Completion quality, skew deltas, C18 deltas, warning deltas, cost deltas. One decision sheet. | Architect | 2026-03-14 | Cross-provider decision is based on complete comparable runs with runtime-role evidence | B-1, B-3 |
 
-**Rationale for order:**
-- B-1 before B-3: runtime tracing must be live before the knowledge-diversity A/B runs, so we can verify what actually executed.
-- B-3 before B-2: the A/B conclusion memo (B-2) is the synthesis deliverable — it must incorporate C13 correction data. Making B-2 the final step avoids a premature memo that gets immediately invalidated.
-
-**Edit vs original plan:** None. The continuation plan's proposed order (B-1 → B-3 → B-2) is correct as-is.
-
 ---
 
 ## D3 — Backlog Strategy
 
 **Decision: Debate V2 topology reset stays in backlog. Re-evaluate gate: after B-2 conclusion memo is approved.**
-
-**Rationale:**
-1. **Wrong bottleneck.** The dominant bias signal is C13 evidence pool asymmetry (8/10 pairs), not debate topology deficiency. Knowledge-diversity-lite (B-3) directly targets this root cause. Pulling Debate V2 forward before measuring C13 correction would be premature optimization.
-2. **Climinator lesson confirms priority.** Climinator's key finding is "knowledge diversity > model diversity" — all five advocates use GPT-4o; power comes from different corpora, not different models. This validates fixing evidence diversity (B-3) before restructuring debate topology (C-1).
-3. **Stabilization not complete.** Cross-provider runs still fail 4/10. Runtime tracing doesn't exist yet. Launching a topology reset on unstable infrastructure is high-risk.
-4. **Re-evaluation trigger:** After B-2 is reviewed, if `meanAbsoluteSkew` remains >25pp despite knowledge-diversity-lite, Debate V2 gets pulled to the next sprint with an explicit A/B success gate.
 
 ---
 
@@ -60,7 +50,7 @@ All five items are stabilization prerequisites. No architectural risk, no sequen
 
 | Gate | Requirement | Blocks promotion if |
 |------|-------------|-------------------|
-| **Gate 1: Stability** | A-3 complete (two 10/10 cross-provider full runs, `failureModeBiasCount=0`, no fatal exceptions) | Any cross-provider run fails or has failure-mode asymmetry |
+| **Gate 1: Stability** | A-3 complete (two 10/10 cross-provider full runs, `failureModeBiasCount=0`, `meanDegradationRateDelta <= 5.0`, no fatal exceptions) | Any cross-provider run fails, has failure-mode asymmetry, or exceeds degradation-rate threshold |
 | **Gate 2: Observability** | B-1 live (runtime role tracing confirms resolved config = actual execution) | Report cannot answer "what model actually ran for each role" |
 | **Gate 3: C13 correction** | B-3 A/B shows ≥30% `meanAbsoluteSkew` reduction without quality regression (`passRate` ≥30%, `failureModeBiasCount` =0, improvement in ≥2 languages). Cost caps met. | Knowledge-diversity-lite doesn't measurably reduce skew, or cost ceiling exceeded |
 | **Gate 4: Decision memo** | B-2 conclusion reviewed and approved by Captain | Memo not written or not approved |
@@ -72,6 +62,7 @@ All five items are stabilization prerequisites. No architectural risk, no sequen
 ## D5 — Knowledge-Diversity-Lite Approval
 
 **Decision: Approved with cost caps specified below.**
+**Governance rule (R-1 applied):** All D5 thresholds are UCM-configurable with the approved values as defaults.
 
 ### Approved Controls
 
@@ -92,18 +83,6 @@ All five items are stabilization prerequisites. No architectural risk, no sequen
 | Fail-open policy | Yes | If contrarian retrieval times out or ceiling approached, skip and proceed with current evidence pool |
 | Evidence sufficiency: min items | 3 | Below 3 items, verdict reliability is too low (Climinator Lesson 5: NEI is informative) |
 | Evidence sufficiency: min distinct sourceTypes | 2 | Single source-type evidence = structural monoculture risk |
-
-### Rationale
-
-1. **Evidence sufficiency gate (zero cost, always-on):** Directly implements Climinator Lesson 5. Prevents "confident answer from thin evidence" — the calibration baseline has claims with verdicts based on 2-3 items from a single source type. `INSUFFICIENT_EVIDENCE` is an honest signal, not a failure.
-
-2. **Source-type partitioning (zero cost, always-on):** Implements Climinator Lesson 1 at minimum complexity. The `sourceType` field on `EvidenceItem` (types.ts:432) already supports this. No new infrastructure, no extra searches, no extra LLM calls — just route existing filtered evidence differently into verdict-stage debate prompts. This creates structural advocate independence (academic evidence vs media evidence) without adding RAG corpora.
-
-3. **Contrarian retrieval (trigger-based, capped):** Implements Climinator Lesson 3. The `evidence_pool_imbalance` warning already fires in 8/10 baseline pairs — this is the natural trigger. Inverted queries ("X criticism", "X problems") surface counter-evidence that either survives the `probativeValue` filter (genuine, useful) or doesn't (weak, self-destructs — per Climinator's NIPCC finding). The ≤2 query cap and fail-open policy prevent runaway cost.
-
-4. **What is explicitly NOT approved:** Always-on extra search passes, iterative debate loops (Climinator Lesson 2 — remains backlog C-1), mediator question step (Lesson 4 — requires Debate V2), prompt neutrality audit (Lesson 8 — separate track, not knowledge-diversity).
-
----
 
 ## Locked Execution Order
 
@@ -134,7 +113,7 @@ Phase 3: BACKLOG (C-1, C-2, C-3)               Re-evaluated at gate
 | 2 | Fix `nuclear-energy-fr` `undefined.value` crash with failing test | Lead Dev | Immediate | 2026-02-24 | Test green + pair completes | Needs repro locally |
 | 3 | Add OpenAI TPM guard: pre-call estimate + `gpt-4.1` → `gpt-4.1-mini` fallback | Lead Dev | Immediate | 2026-02-25 | No TPM fatals in full run | OpenAI tier limits may vary |
 | 4 | Failure diagnostics in pair result JSON (class, msg, stack, stage, provider) | Lead Dev | Immediate | 2026-02-25 | Failed pairs have structured errors | None |
-| 5 | Run cross-provider full ×2, validate 10/10 + `failureModeBias=0` | Lead Dev | Immediate | 2026-02-27 | Two decision-grade artifacts | Depends on #2, #3 |
+| 5 | Run cross-provider full ×2, validate 10/10 + `failureModeBias=0` + `meanDegradationRateDelta <= 5.0` | Lead Dev | Immediate | 2026-02-27 | Two decision-grade artifacts | Depends on #2, #3 |
 | 6 | Instrument per-call verdict-stage tracing + `meta.runtimeRoleModels` + HTML table | Lead Dev | Soon | 2026-03-04 | Report shows actual per-role execution | Depends on #5 |
 | 7 | Implement evidence sufficiency gate (≥3 items, ≥2 sourceTypes) | LLM Expert | Soon | 2026-03-07 | Gate active, INSUFFICIENT_EVIDENCE verdicts produced when triggered | None |
 | 8 | Implement source-type evidence partitioning for debate roles | LLM Expert + Lead Dev | Soon | 2026-03-09 | Advocate/challenger receive partitioned evidence | Depends on #7 |
@@ -149,15 +128,3 @@ Phase 3: BACKLOG (C-1, C-2, C-3)               Re-evaluated at gate
 Per exit criteria:
 1. Update `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md` §5.3 with D1-D5 outcomes
 2. This file serves as the execution update in `Docs/WIP/`
-
----
-
-## Review Notes
-
-**Key evidence driving decisions:**
-- Canonical baseline: 10/10 complete, `meanAbsoluteSkew=35.1pp`, `passRate=30%`, `failureModeBias=0/10`. C18 is clean. C13 (evidence pool bias) is dominant signal (8/10 pairs).
-- Cross-provider first attempt: 6/10 complete, blocked by 1 crash + 3 TPM failures. Not baseline-comparable.
-- Climinator finding: knowledge diversity (different corpora) outperforms model diversity (different providers). All 5 Climinator advocates use GPT-4o; what differs is the knowledge base. Direct validation for prioritizing B-3 over C-1.
-- French pairs near-zero skew (mean=2.0pp) vs English (47.1pp) confirms evidence pool composition is the variable, not model reasoning bias — further supporting knowledge-diversity-lite over topology reset.
-- `sourceType` field exists on `EvidenceItem` (types.ts:432) and `EvidenceScope` (types.ts:238), making source-type partitioning zero-cost.
-- `evidence_pool_imbalance` warning already fires via `assessEvidenceBalance()` (claimboundary-pipeline.ts:198), making it the natural trigger for contrarian retrieval.

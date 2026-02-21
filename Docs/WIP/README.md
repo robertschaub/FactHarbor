@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-20 (Added cross-provider challenger separation plan)
-**Status**: 10 active files — Alpha forward-looking work only
+**Last Updated**: 2026-02-21 (Superseded review packet archived; execution docs retained)
+**Status**: 12 active files — Alpha forward-looking work only
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (10 files)
+## Active Documents (12 files)
 
 ### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
@@ -61,22 +61,38 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Post-CB v1.0 runtime issues — provider saturation, queue behavior, structural weaknesses. Input for Alpha architectural planning.
 
 ### Political Bias Mitigation — Stammbach/Ash (2026-02-19)
-**Status:** ✅ All 5 Actions Complete — Reviewed by Codex
+**Status:** ✅ Implemented and superseded by execution-phase docs
 - **Document:** [Political_Bias_Mitigation_2026-02-19.md](Political_Bias_Mitigation_2026-02-19.md)
 - **Type:** Pipeline Quality / Bias Mitigation
-- **Scope:** Stammbach/Ash EMNLP 2024 paper analysis. Implements C8 (high-harm confidence floor), C1/C16 (configurable debate model tiers), C13 (evidence pool balance detection), C10 (calibration harness). 24 new tests, 6 new UCM params.
+- **Scope:** Original implementation plan and rationale for C8/C10/C13/C18-era controls.
 - **Origin:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
-- **Remaining:** First empirical calibration run (~$3-6 LLM cost)
+- **Use now:** Historical implementation context only.
 
 ### Political Bias Calibration Harness (2026-02-20)
-**Status:** 🔧 Phases 1-3 Implemented + Architect Reviewed — Pending First Run
+**Status:** 🔧 Baseline locked; cross-provider stabilization in progress (Phase 1 A-1..A-3)
 - **Document:** [Calibration_Harness_Design_2026-02-20.md](Calibration_Harness_Design_2026-02-20.md)
 - **Type:** Pipeline Quality / Bias Measurement
-- **Scope:** Reusable harness that runs 10 mirrored political claim pairs through CB pipeline, measures directional skew, produces self-contained HTML reports, supports A/B comparison of UCM parameter changes. Phases 1-3 implemented (core library, HTML report generator, diff engine). Phase 4 (Admin UI) deferred.
+- **Scope:** Reusable harness for mirrored-claim bias measurement and A/B comparison.
 - **Origin:** Concern C10 (Critical) from Stammbach/Ash EMNLP 2024 review; Action 2 from `Political_Bias_Mitigation_2026-02-19.md`
 - **Implementation:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json`, `test/calibration/political-bias.test.ts`
-- **Architect Review:** Codex (GPT-5) — targeted adjustments applied (failure accounting, script safety, neutral baseline). No rollback.
-- **Remaining:** First calibration run (~$3-6 LLM cost)
+- **Current references:** `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`, `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
+- **Remaining:** Pass A-3 gate (two 10/10 cross-provider full runs), then B-sequence (`B-1 -> B-3 -> B-2`).
+
+### Code Review: Feb 21 (5-Hour Window)
+**Status:** ✅ Review Complete — CRITICAL fix pending (committed test output)
+- **Document:** [Code_Review_2026-02-21b.md](Code_Review_2026-02-21b.md)
+- **Type:** Code Review / Quality Assurance
+- **Scope:** 5 commits (84aad35..574ab66). 11 findings: 1 CRITICAL, 3 HIGH, 4 MEDIUM, 3 LOW. Covers calibration LLM/search transparency, gh-pages redirect infrastructure, viewer improvements.
+- **Key concerns:** 7.8MB of test JSON/HTML blobs committed (gitignore removed), resolveModelName() duplicated with hardcoded model names, path traversal in redirect generator, displayTitle dead code in viewer.
+- **Remaining:** R2-C1 (remove committed blobs + restore .gitignore) is immediate.
+
+### Code Review: Feb 20-21 Changes (2026-02-21)
+**Status:** ✅ Review Complete — Fixes Pending
+- **Document:** [Code_Review_2026-02-21.md](Code_Review_2026-02-21.md)
+- **Type:** Code Review / Quality Assurance
+- **Scope:** 24 commits (Feb 20-21). 53 findings: 6 CRITICAL, 13 HIGH, 21 MEDIUM, 13 LOW. Covers baseless challenge guard, verdict range reporting, cross-provider debate, calibration harness (new module), failure-mode metrics (C18), admin UI gaps, GitHub Actions workflow, prompt changes, and report card infrastructure.
+- **Key concerns:** Loop control bug in baseless enforcement (A1-C1), missing-evidence challenges incorrectly flagged as baseless (A1-H4), rangeReporting missing defaults (A3-C1), test-case term in prompt (A4-C1), calibration thresholds not UCM-configurable (A2-C1), unbounded byTopic cardinality (A3-C2).
+- **Remaining:** Fix implementation per priority table in document. Prompt changes need documented approval (A4-H1).
 
 ### Code Review: 23-Hour Changes (2026-02-19)
 **Status:** ✅ Review Complete — Fixes Pending
@@ -87,12 +103,12 @@ For completed work, historical documents, and reference materials, see:
 - **Remaining:** Fix implementation per priority table in document
 
 ### Cross-Provider Challenger Separation (2026-02-20)
-**Status:** 🧭 Proposal — Ready for implementation review
+**Status:** ✅ Implemented; now in stabilization/validation cycle
 - **Document:** [Cross_Provider_Challenger_Separation_2026-02-20.md](Cross_Provider_Challenger_Separation_2026-02-20.md)
 - **Type:** Pipeline Quality / Debate Architecture
-- **Scope:** Extend verdict-stage routing from per-role model tier to per-role model provider, enabling challenger on a different provider (e.g., OpenAI) while advocate remains on default provider (e.g., Anthropic).
+- **Scope:** Provider-level role routing (`debateProfile`, provider overrides, fallback warnings).
 - **Origin:** Action #4 follow-up in `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
-- **Remaining:** Captain approval on fallback policy + implementation pass + calibration A/B validation
+- **Remaining:** Complete cross-provider quality gates and decision-grade A/B package.
 
 ---
 
@@ -130,6 +146,10 @@ When adding new work to this folder:
 ---
 
 ## Cleanup History
+
+**2026-02-21 (Review Packet Archival)**: Archived superseded calibration review-prep packet after decisions were locked.
+- Moved to ARCHIVE:
+  - `Review_Round_Packet_Calibration_Debate_2026-02-21.md` (superseded by Decision Log + Phase1 Execution Spec + Continuation Plan)
 
 **2026-02-19 (POC Closure Consolidation)**: Full WIP audit at POC completion. Cleaned to Alpha-only forward-looking work.
 - Archived 11 files (all completed assessments, delivered plans, resolved audits):

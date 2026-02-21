@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-19 (Documentation Cleanup — Historical Content Archival)
+**Last Updated**: 2026-02-21 (WIP superseded review-packet archival)
 
 ---
 
@@ -19,6 +19,16 @@ The following documents had valuable content extracted and merged into active do
 ---
 
 ## What's Archived
+
+### WIP Consolidation (2026-02-21)
+
+**Description**: Superseded review-prep packet archived after D1-D5 decisions were locked and execution shifted to active decision/spec documents.
+
+**Files**:
+1. `Review_Round_Packet_Calibration_Debate_2026-02-21.md` — Superseded by:
+   - `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`
+   - `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
+   - `Docs/WIP/Debate_System_Continuation_Plan_2026-02-21.md`
 
 ### Review & Audit Documents
 

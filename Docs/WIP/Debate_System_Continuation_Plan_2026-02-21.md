@@ -1,17 +1,6 @@
 # Debate System Continuation Plan (Executable, Post-Baseline, 2026-02-21)
 
-## 1) Investigation Result (Model display in HTML)
-
-### Confirmed
-- HTML report values are consistent with each report JSON `configSnapshot.resolvedLLM`.
-- Cross-provider artifacts correctly show challenger as `openai / gpt-4.1`.
-
-### Real issue (semantics, not raw mismatch)
-- `Provider` badge currently shows global provider (`anthropic`) and can be misread as "all roles used Anthropic".
-- Debate role table shows resolved config intent at run start, not guaranteed runtime effective model per call.
-- Runtime per-role usage is not yet surfaced in report output.
-
-## 2) Delivery Buckets
+## 1) Delivery Buckets
 
 ### Strategy guardrail (applies to all buckets)
 - We do **both**:
@@ -138,7 +127,7 @@ Success gate:
 Success gate:
 - Error observability remains stable across releases.
 
-## 3) Execution Order (strict)
+## 2) Execution Order (strict)
 
 1. A-1 low-hanging report clarity
 2. A-2 crash + TPM + failure diagnostics
@@ -148,7 +137,7 @@ Success gate:
 6. B-2 A/B conclusion package
 7. C-* backlog architecture and UX changes
 
-## 4) Decision Policy
+## 3) Decision Policy
 
 - Until A-3 is complete, cross-provider results are diagnostic only.
 - No default profile/pipeline promotion before:
@@ -157,7 +146,7 @@ Success gate:
   - knowledge-diversity-lite A/B result with cost guardrails satisfied
   - A/B conclusion package
 
-## 5) Owners and Artifacts
+## 4) Owners and Artifacts
 
 - Lead Dev:
   - A-1, A-2 implementation
