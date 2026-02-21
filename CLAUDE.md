@@ -46,6 +46,7 @@ Two apps + one tool:
 - To publish: `git push` to `main` — CI deploys automatically with `DOCS_ANALYTICS_URL`
 - To re-trigger CI without a content change: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`
 - Pushing manually to gh-pages overwrites the CI build and **breaks analytics** (the secret is not available locally)
+- **NEVER `git checkout gh-pages`** in the main working tree — it disrupts other agents and tools. If you must inspect or test the gh-pages branch locally, use a worktree: `git worktree add ../fh-ghpages gh-pages` (and `git worktree remove ../fh-ghpages` when done).
 
 ## Patterns & conventions
 
