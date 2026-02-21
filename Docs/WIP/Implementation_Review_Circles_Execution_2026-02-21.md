@@ -3,6 +3,43 @@
 ## Goal
 Run fast, parallel, multi-agent implementation review circles for Phase 1 (`A-1`, `A-2a`, `A-2b`, `A-2c`) and produce one go/no-go recommendation for `A-3` execution.
 
+## Sub-Agent Capability Modes (must choose one before kickoff)
+
+### Mode A — Direct sub-agent invocation available
+- The orchestrating Claude session can spawn/coordinate sub-agents directly.
+- Execute Circles 1-3 in true parallel from one orchestrator.
+- Enforce output contract per circle and then run Circle 4 synthesis.
+
+### Mode B — No direct sub-agent invocation (Captain-mediated)
+- Use separate role sessions/tabs (or separate agent runs), one per circle.
+- Captain acts as dispatcher and collector:
+  1. Send Circle 1/2/3 prompts to assigned role sessions.
+  2. Wait for all outputs.
+  3. Send Circle 4 synthesis prompt with all three outputs attached.
+- This is the default-safe mode and is fully supported by current AGENTS protocol.
+
+### Required output routing (both modes)
+- Each circle appends a Standard completion entry to `Docs/AGENTS/Agent_Outputs.md`.
+- If a circle produces substantial findings, create a handoff file in `Docs/AGENTS/Handoffs/` and cross-reference it.
+- Circle 4 publishes the final decision memo and frozen checklist in `Docs/WIP/`.
+
+## Predefined Sub-Model Assignment (recommended)
+
+Use capability-tier guidance from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
+
+| Circle | Workload type | Primary model class | Preferred Claude model | Fallback model class | Fallback Claude model |
+|---|---|---|---|---|---|
+| Circle 1 (Code Correctness) | Multi-file code review + regression triage | Mid-tier | Claude Sonnet | High-capability | Claude Opus |
+| Circle 2 (Architecture/Policy) | High-stakes reasoning + governance checks | High-capability | Claude Opus | Mid-tier | Claude Sonnet |
+| Circle 3 (Docs/Observability) | Structured doc + consistency review | Mid-tier | Claude Sonnet | Lightweight (only if constrained) | Claude Haiku |
+| Circle 4 (Synthesis/Decision) | Cross-circle conflict resolution + final decision | High-capability | Claude Opus | Mid-tier | Claude Sonnet |
+
+### Hard rules for model use
+1. Do not assign lightweight models to Circle 2 or Circle 4.
+2. If only one model is available, run all circles on Claude Sonnet and keep Circle 4 as a separate pass.
+3. If Circle 1 finds Critical/High regressions, escalate Circle 4 to Claude Opus even when Sonnet is default.
+4. Keep model assignment stable for a full review cycle; do not swap models mid-circle unless blocked.
+
 ## Scope Lock
 - In scope: code and docs touched by recent calibration/reporting/stability fixes, plus Phase 1 implementation prep.
 - Out of scope: `B-*` and `C-*` implementation work.
@@ -69,9 +106,10 @@ Run fast, parallel, multi-agent implementation review circles for Phase 1 (`A-1`
   - ordered implementation checklist
 
 ## Execution Order and SLA
-1. Run Circles 1-3 in parallel.
-2. Complete Circle 4 after all three outputs are in.
-3. Target turnaround: same working day.
+1. Confirm capability mode (Mode A or Mode B).
+2. Run Circles 1-3 in parallel (native in Mode A, session-parallel in Mode B).
+3. Complete Circle 4 after all three outputs are in.
+4. Target turnaround: same working day.
 
 ## Minimum Exit Criteria
 1. No unresolved High/Critical regressions in scoped commits.
