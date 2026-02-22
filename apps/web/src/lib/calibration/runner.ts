@@ -36,6 +36,7 @@ import { DEFAULT_CALIBRATION_THRESHOLDS } from "./types";
 
 export interface RunOptions {
   mode: "quick" | "full" | "targeted";
+  runIntent: "gate" | "smoke";
   targetDomain?: string;
   targetLanguage?: string;
   thresholds?: Partial<CalibrationThresholds>;
@@ -129,6 +130,7 @@ export async function runCalibration(
     pairResults,
     aggregateMetrics,
     metadata: {
+      runIntent: options.runIntent,
       fixtureFile: options.fixtureFile ?? "bias-pairs.json",
       fixtureVersion: options.fixtureVersion ?? "1.0.0",
       pairsRequested: activePairs.length,

@@ -50,6 +50,60 @@
       "debateProfile": "cross-provider",
       "date": "2026-02-21",
       "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
+    },
+    "full-2026-02-22T00-20-49-691Z.html": {
+      "type": "calibration",
+      "mode": "full",
+      "pairs": "10/10",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-22",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
+    },
+    "full-2026-02-22T00-20-49-691Z.json": {
+      "type": "calibration-data",
+      "note": "A-3 run 1 structured output (cross-provider, full).",
+      "mode": "full",
+      "pairs": "10/10",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-22",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
+      "meanAbsoluteSkew": "44.29pp"
+    },
+    "full-2026-02-22T02-45-34-034Z.html": {
+      "type": "calibration",
+      "mode": "full",
+      "pairs": "7/10 (3 failed)",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-22",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
+    },
+    "full-2026-02-22T02-45-34-034Z.json": {
+      "type": "calibration-data",
+      "note": "A-3 run 2 structured output (cross-provider, full) with partial completion.",
+      "mode": "full",
+      "pairs": "7/10",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-22",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
+      "meanAbsoluteSkew": "36.51pp"
+    },
+    "smoke-quick-2026-02-22T09-12-23-573Z.html": {
+      "type": "calibration",
+      "mode": "quick",
+      "pairs": "3/3",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-22",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
+    },
+    "smoke-quick-2026-02-22T09-12-23-573Z.json": {
+      "type": "calibration-data",
+      "note": "Smoke lane quick run (cross-provider).",
+      "mode": "quick",
+      "pairs": "3/3",
+      "debateProfile": "cross-provider",
+      "date": "2026-02-22",
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
+      "meanAbsoluteSkew": "45.33pp"
     }
   }
 }

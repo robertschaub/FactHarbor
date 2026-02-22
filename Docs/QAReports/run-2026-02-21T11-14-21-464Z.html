@@ -59,6 +59,46 @@ header h1 { font-size: 1.6em; margin-bottom: 12px; color: var(--accent); }
 .verdict-banner.fail .verdict-label { color: var(--fail); }
 .verdict-detail { margin-top: 8px; color: var(--text-muted); }
 
+.significance-banner {
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.significance-banner h2 {
+  margin-bottom: 6px;
+  font-size: 1.1em;
+}
+
+.significance-banner p {
+  margin: 0 0 8px 0;
+}
+
+.significance-banner ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.significance-banner li {
+  margin: 4px 0;
+}
+
+.significance-ok {
+  background: #123226;
+  border-color: var(--pass);
+}
+
+.significance-warn {
+  background: #3a2a12;
+  border-color: var(--warn);
+}
+
+.significance-high {
+  background: #3d1b1b;
+  border-color: var(--fail);
+}
+
 .panel {
   background: var(--surface);
   border-radius: 8px;
@@ -219,6 +259,14 @@ th { color: var(--text-muted); font-size: 0.85em; font-weight: 600; }
 
 .text-muted { color: var(--text-muted); font-size: 0.85em; }
 
+.error-stack {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.75em;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
 footer {
   text-align: center;
   color: var(--text-muted);
@@ -240,6 +288,7 @@ footer {
     <div class="meta-item"><span class="label">Run ID</span><span class="value">cal-1771672461464-dhkk64</span></div>
     <div class="meta-item"><span class="label">Timestamp</span><span class="value">2026-02-21T11:14:21.464Z</span></div>
     <div class="meta-item"><span class="label">Mode</span><span class="value">quick</span></div>
+    <div class="meta-item"><span class="label">Run Intent</span><span class="value">legacy-unspecified</span></div>
     <div class="meta-item"><span class="label">Fixture</span><span class="value">bias-pairs.json v1.0.0</span></div>
     <div class="meta-item"><span class="label">Pairs</span><span class="value">3/3 completed</span></div>
     <div class="meta-item"><span class="label">Duration</span><span class="value">53.9 min</span></div>
@@ -247,11 +296,20 @@ footer {
   </div>
 </header>
 
+<section class="significance-banner significance-warn">
+  <h2>Report Significance Notice</h2>
+  <p><strong>Decision-grade criteria are satisfied.</strong></p>
+  <ul>
+    <li>Provider attribution incomplete: 87/95 failure-mode event(s) attributed to &quot;unknown&quot; (92%).</li><li>Source-reliability evaluation degraded in 6 event(s) (stage: research_sr).</li>
+  </ul>
+</section>
+
 <section class="panel llm-config-panel">
   <h2>LLM &amp; Search Configuration</h2>
   <div class="config-overview">
     <div class="config-badges">
-      <span class="config-badge">Provider: <strong>anthropic</strong></span>
+      <span class="config-badge">Global Provider: <strong>anthropic</strong></span>
+      <span class="config-badge">Role Provider Mode: <strong>mixed</strong></span>
       <span class="config-badge">Tiering: <strong>ON</strong></span>
       <span class="config-badge">Debate Profile: <strong>cross-provider</strong></span>
       <span class="config-badge">Search Mode: <strong>auto</strong></span>
@@ -272,6 +330,7 @@ footer {
         <thead><tr><th>Role</th><th>Tier</th><th>Provider</th><th>Model</th></tr></thead>
         <tbody><tr><td>advocate</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>selfConsistency</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>challenger</td><td>sonnet</td><td><strong class="external-provider">openai</strong></td><td class="mono">gpt-4.1</td></tr><tr><td>reconciler</td><td>sonnet</td><td>anthropic</td><td class="mono">claude-sonnet-4-5-20250929</td></tr><tr><td>validation</td><td>haiku</td><td>anthropic</td><td class="mono">claude-haiku-4-5-20251001</td></tr></tbody>
       </table>
+      <p class="text-muted">Resolved role config at run start. Runtime fallbacks and degraded paths are reported in warnings and failed-pair diagnostics.</p>
     </div>
   </div>
 
@@ -901,7 +960,7 @@ footer {
 </details>
 
 <footer>
-  <p>Generated: 2026-02-21T14:51:34.440Z | Schema: calibration-1.0 | Fixture: v1.0.0</p>
+  <p>Generated: 2026-02-22T12:17:45.727Z | Schema: calibration-1.0 | Fixture: v1.0.0 | Intent: legacy-unspecified</p>
 </footer>
 
 </div>

@@ -65,7 +65,7 @@ describe("runCalibration failure diagnostics", () => {
 
     vi.mocked(runClaimBoundaryAnalysis).mockRejectedValueOnce(err);
 
-    const result = await runCalibration(PAIRS, { mode: "full" });
+    const result = await runCalibration(PAIRS, { mode: "full", runIntent: "gate" });
     const failed = result.pairResults[0];
     expect(failed?.status).toBe("failed");
 
@@ -106,7 +106,7 @@ describe("runCalibration failure diagnostics", () => {
         reportMarkdown: "",
       } as any);
 
-    const result = await runCalibration(PAIRS, { mode: "full" });
+    const result = await runCalibration(PAIRS, { mode: "full", runIntent: "gate" });
     const pair = result.pairResults[0];
     expect(pair?.status).toBe("completed");
     expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(3);
