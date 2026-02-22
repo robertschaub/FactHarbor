@@ -3791,11 +3791,11 @@ describe("B-8: explanation quality check", () => {
       expect(findings.hasLimitations).toBe(false);
     });
 
-    it("should detect confidence keywords in key finding", () => {
+    it("should detect numeric score in headline as confidence statement", () => {
       const narrative: VerdictNarrative = {
-        headline: "Analysis complete",
+        headline: "MOSTLY-TRUE — 78 confidence",
         evidenceBaseSummary: "8 items from 4 sources",
-        keyFinding: "Evidence likely supports the claim with moderate certainty.",
+        keyFinding: "Evidence supports the claim.",
         limitations: "Some limitations exist in the dataset.",
       };
       const findings = checkExplanationStructure(narrative);
@@ -3811,6 +3811,28 @@ describe("B-8: explanation quality check", () => {
       };
       const findings = checkExplanationStructure(narrative);
       expect(findings.hasConfidenceStatement).toBe(true);
+    });
+
+    it("should detect fraction pattern as confidence statement", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Analyse terminée",
+        evidenceBaseSummary: "6 éléments",
+        keyFinding: "Score de confiance: 4/5. Les preuves soutiennent la thèse.",
+        limitations: "Couverture géographique limitée.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasConfidenceStatement).toBe(true);
+    });
+
+    it("should detect ALL-CAPS verdict label in non-English headline", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Analyse: VRAI — Bewertung abgeschlossen",
+        evidenceBaseSummary: "12 Elemente aus 6 Quellen",
+        keyFinding: "Die Behauptung wird durch Belege gestützt.",
+        limitations: "Begrenzte zeitliche Abdeckung.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasVerdictCategory).toBe(true);
     });
   });
 

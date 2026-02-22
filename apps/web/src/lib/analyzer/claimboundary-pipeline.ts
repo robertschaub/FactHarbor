@@ -2695,9 +2695,9 @@ export function assessScopeQuality(
 
   if (!hasMethodology || !hasTemporal) return "incomplete";
 
-  // Check if fields are meaningful vs vague
+  // Check if fields are meaningful vs vague (language-neutral: length + structural markers only)
   const isVague = (s: string) =>
-    s.length < 5 || /^(unknown|unspecified|n\/?a|none|other)$/i.test(s.trim());
+    s.length < 5 || /^(n\/?a|—|-|\?|\.{1,3}|\*+)$/i.test(s.trim());
 
   if (isVague(scope.methodology!) || isVague(scope.temporal!)) return "partial";
 
@@ -4346,15 +4346,16 @@ export function checkExplanationStructure(
     // Check if narrative references evidence quantities (e.g., "14 items", "9 sources")
     hasCitedEvidence: narrative.evidenceBaseSummary.length > 0
       && /\d+/.test(narrative.evidenceBaseSummary),
-    // Check if verdict category/label or percentage is mentioned in headline
-    // M3 fix: check for verdict terms or percentage pattern, not just non-empty
+    // Check if verdict label or percentage is in headline (language-neutral: match ALL-CAPS
+    // tokens like TRUE, MOSTLY-TRUE, MIXED, FAUX, VRAI, or any digit%)
     hasVerdictCategory: narrative.headline.length > 0
-      && (/\b(true|false|mostly|mixed|unverified|misleading|verdict|assessment)\b/i.test(narrative.headline)
+      && (/\b[A-Z][A-Z-]{2,}\b/.test(narrative.headline)
         || /\d+%/.test(narrative.headline)),
-    // Check if confidence is referenced in headline or key finding
-    hasConfidenceStatement: /confiden|certain|uncertain|likely|probably/i.test(
-      narrative.headline + " " + narrative.keyFinding
-    ) || /\d+%/.test(narrative.headline),
+    // Check if confidence/numeric score appears in headline or key finding (language-neutral:
+    // match percentage patterns or digit-based scores, not English confidence synonyms)
+    hasConfidenceStatement: /\d+%/.test(narrative.headline)
+      || /\d+\s*\/\s*\d+/.test(narrative.headline + " " + narrative.keyFinding)
+      || /\b\d{1,3}\b/.test(narrative.headline),
     // Check if limitations section is non-empty
     hasLimitations: narrative.limitations.length > 5,
   };
