@@ -643,6 +643,7 @@ export type AnalysisWarningType =
   | "source_fetch_failure"          // Individual source fetch/extraction failures during research
   | "source_fetch_degradation"      // High source-fetch failure ratio; evidence acquisition degraded
   | "budget_exceeded"               // Analysis terminated early due to budget
+  | "query_budget_exhausted"        // Stage 2 query budget exhausted for all claims before sufficiency
   | "classification_fallback"       // Classification fields defaulted due to LLM failure
   | "low_evidence_count"            // Insufficient evidence for reliable verdict
   | "context_without_evidence"      // AnalysisContext has claims but no evidence
@@ -967,6 +968,8 @@ export interface CBResearchState {
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
   searchQueries: SearchQuery[];
+  // Shared Stage 2 query budget usage: claimId -> queries consumed
+  queryBudgetUsageByClaim: Record<string, number>;
   // Iteration tracking (replaces boolean contradictionSearchPerformed)
   mainIterationsUsed: number;
   contradictionIterationsReserved: number;

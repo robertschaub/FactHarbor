@@ -258,7 +258,13 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
 
 - Do not assume any particular language. Generate queries in the language most likely to find relevant evidence.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
-- Include one query targeting potential contradictions or counterevidence.
+- `queryStrategyMode = "legacy"`:
+  - Keep legacy behavior: generate 2-3 general-purpose queries for the claim.
+  - Include at least one query targeting potential contradictions or counterevidence.
+- `queryStrategyMode = "pro_con"`:
+  - Generate two explicit query variants for the claim: supporting-evidence intent and refuting-evidence intent.
+  - Return at least one `supporting` query and at least one `refuting` query.
+  - Each query object must include `variantType` with value `supporting` or `refuting`.
 - Avoid overly broad queries — target specific evidence types.
 - Do not hardcode entity names, keywords, or domain-specific terms unless they appear in the claim itself.
 - Keep queries concise (3–8 words typical).
@@ -281,6 +287,12 @@ ${iterationType}
 ```
 (One of: "main", "contradiction")
 
+**Query Strategy Mode:**
+```
+${queryStrategyMode}
+```
+(One of: "legacy", "pro_con")
+
 ### Output Schema
 
 Return a JSON object:
@@ -289,7 +301,8 @@ Return a JSON object:
   "queries": [
     {
       "query": "string — search query",
-      "rationale": "string — what evidence type this targets"
+      "rationale": "string — what evidence type this targets",
+      "variantType": "supporting | refuting (required when queryStrategyMode is pro_con; omit in legacy mode)"
     }
   ]
 }

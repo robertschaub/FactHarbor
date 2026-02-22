@@ -403,6 +403,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Wall-clock time budget for Stage 2 research loop in ms (default: 600000 = 10 min)"),
   researchZeroYieldBreakThreshold: z.number().int().min(1).max(5).optional()
     .describe("Consecutive zero-yield iterations before breaking research loop (default: 2)"),
+  queryStrategyMode: z.enum(["legacy", "pro_con"]).optional()
+    .describe("Stage 2 query strategy mode: legacy or pro_con (default: legacy)"),
+  perClaimQueryBudget: z.number().int().min(1).max(20).optional()
+    .describe("Shared Stage 2 query budget per claim across all query sources (default: 8)"),
 
   // Stage 3: Clustering
   maxClaimBoundaries: z.number().int().min(2).max(10).optional()
@@ -644,6 +648,12 @@ export const PipelineConfigSchema = z.object({
   if (data.researchZeroYieldBreakThreshold === undefined) {
     data.researchZeroYieldBreakThreshold = 2;
   }
+  if (data.queryStrategyMode === undefined) {
+    data.queryStrategyMode = "legacy";
+  }
+  if (data.perClaimQueryBudget === undefined) {
+    data.perClaimQueryBudget = 8;
+  }
 
   // ClaimBoundary Stage 3 defaults
   if (data.maxClaimBoundaries === undefined) {
@@ -821,6 +831,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   maxTotalTokens: 750000, // v2.11.1 reduced to 500000; Captain decision 2026-02-19: 750000
   maxTokensPerCall: 100000,
   enforceBudgets: false,
+  queryStrategyMode: "legacy",
+  perClaimQueryBudget: 8,
 
   // Gap-driven research (Pipeline Phase 1)
   gapResearchEnabled: true,

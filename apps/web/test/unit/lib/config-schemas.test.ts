@@ -156,6 +156,45 @@ describe("PipelineConfigSchema", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, maxIterationsPerContext: 21 }).success).toBe(false);
   });
 
+  it("validates query strategy mode and per-claim query budget", () => {
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      queryStrategyMode: "legacy",
+      perClaimQueryBudget: 1,
+    }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      queryStrategyMode: "pro_con",
+      perClaimQueryBudget: 20,
+    }).success).toBe(true);
+
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      queryStrategyMode: "invalid",
+    }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      perClaimQueryBudget: 0,
+    }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      perClaimQueryBudget: 21,
+    }).success).toBe(false);
+  });
+
+  it("applies Stage 2 query strategy defaults when fields are omitted", () => {
+    const config = { ...DEFAULT_PIPELINE_CONFIG };
+    delete (config as any).queryStrategyMode;
+    delete (config as any).perClaimQueryBudget;
+
+    const result = PipelineConfigSchema.safeParse(config);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.queryStrategyMode).toBe("legacy");
+      expect(result.data.perClaimQueryBudget).toBe(8);
+    }
+  });
+
   it("validates defaultPipelineVariant enum", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary" }).success).toBe(true);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_dynamic" }).success).toBe(true);
@@ -519,6 +558,8 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalIterations).toBe(10); // v2.11.1: reduced from 20
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(750000); // Captain decision 2026-02-19: restored to 750000
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
+      expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("legacy");
+      expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
     });
   });
 

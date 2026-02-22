@@ -26,6 +26,7 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
   "source_reliability_error",
   "source_fetch_failure",
   "source_fetch_degradation",
+  "query_budget_exhausted",
   "llm_provider_error",
   "classification_fallback",
   "grounding_check_degraded",
@@ -398,6 +399,8 @@ function extractStage(
       return "research_fetch";
     case "llm_provider_error":
       return "research_llm";
+    case "query_budget_exhausted":
+      return "research_budget";
     case "debate_provider_fallback":
     case "all_same_debate_tier":
     case "grounding_check_degraded":

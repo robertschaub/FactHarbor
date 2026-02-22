@@ -1292,9 +1292,9 @@ describe("Stage 2: generateResearchQueries", () => {
     vi.clearAllMocks();
   });
 
-  const mockPipelineConfig = {} as any;
+  const mockPipelineConfig = { queryStrategyMode: "legacy" } as any;
 
-  it("should generate queries via LLM", async () => {
+  it("keeps legacy mode query behavior unchanged", async () => {
     const claim = createAtomicClaim({
       id: "AC_01",
       statement: "Entity A increased metric by 50%",
@@ -1317,8 +1317,63 @@ describe("Stage 2: generateResearchQueries", () => {
     const result = await generateResearchQueries(claim, "main", [], mockPipelineConfig, "2026-02-17");
 
     expect(result).toHaveLength(2);
-    expect(result[0].query).toBe("entity A metric growth statistics");
+    expect(result).toEqual([
+      { query: "entity A metric growth statistics", rationale: "official data" },
+      { query: "entity A 50% increase study", rationale: "verification" },
+    ]);
     expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "GENERATE_QUERIES", expect.any(Object));
+  });
+
+  it("generates supporting + refuting variants in pro_con mode", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "entity A evidence supports claim", rationale: "pro", variantType: "supporting" },
+        { query: "entity A evidence refutes claim", rationale: "con", variantType: "refuting" },
+      ],
+    });
+
+    const result = await generateResearchQueries(
+      claim,
+      "main",
+      [],
+      { queryStrategyMode: "pro_con" } as any,
+      "2026-02-17",
+    );
+
+    expect(result).toEqual([
+      { query: "entity A evidence supports claim", rationale: "pro" },
+      { query: "entity A evidence refutes claim", rationale: "con" },
+    ]);
+  });
+
+  it("keeps partially unlabeled pro_con queries instead of dropping them", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "entity A supporting evidence", rationale: "pro", variantType: "supporting" },
+        { query: "entity A independent audit", rationale: "unlabeled" },
+      ],
+    });
+
+    const result = await generateResearchQueries(
+      claim,
+      "main",
+      [],
+      { queryStrategyMode: "pro_con" } as any,
+      "2026-02-17",
+    );
+
+    expect(result).toEqual([
+      { query: "entity A supporting evidence", rationale: "pro" },
+      { query: "entity A independent audit", rationale: "unlabeled" },
+    ]);
   });
 
   it("should fallback to claim statement when prompt is missing", async () => {
@@ -1517,6 +1572,7 @@ describe("Stage 2: runResearchIteration", () => {
     const claim = createAtomicClaim({ id: "AC_01", statement: "Test claim" });
     const state = {
       searchQueries: [],
+      queryBudgetUsageByClaim: {},
       llmCalls: 0,
       sources: [],
       evidenceItems: [],
@@ -1599,6 +1655,7 @@ describe("Stage 2: runResearchIteration", () => {
     const claim = createAtomicClaim({ id: "AC_01" });
     const state = {
       searchQueries: [],
+      queryBudgetUsageByClaim: {},
       llmCalls: 0,
       sources: [],
       evidenceItems: [],
@@ -1619,6 +1676,164 @@ describe("Stage 2: runResearchIteration", () => {
 
     // contradictionSourcesFound should be 0 (no sources found)
     expect(state.contradictionSourcesFound).toBe(0);
+  });
+
+  it("enforces per-claim budget and skips query generation when exhausted", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: { AC_01: 1 },
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    await runResearchIteration(
+      claim,
+      "main",
+      mockSearchConfig,
+      { perClaimQueryBudget: 1, queryStrategyMode: "legacy" } as any,
+      8,
+      "2026-02-17",
+      state,
+    );
+
+    expect(state.searchQueries).toHaveLength(0);
+    expect(state.llmCalls).toBe(0);
+    expect(mockLoadSection).not.toHaveBeenCalled();
+  });
+
+  it("stops issuing queries after perClaimQueryBudget is reached", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "query one", rationale: "test" },
+        { query: "query two", rationale: "test" },
+      ],
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    await runResearchIteration(
+      claim,
+      "main",
+      mockSearchConfig,
+      { perClaimQueryBudget: 1, queryStrategyMode: "legacy" } as any,
+      8,
+      "2026-02-17",
+      state,
+    );
+
+    expect(state.searchQueries).toHaveLength(1);
+    expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(1);
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it("tracks query budget per claim (not global)", async () => {
+    const claimA = createAtomicClaim({ id: "AC_01", statement: "Claim A" });
+    const claimB = createAtomicClaim({ id: "AC_02", statement: "Claim B" });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [{ query: "single query", rationale: "test" }],
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    const budgetConfig = { perClaimQueryBudget: 1, queryStrategyMode: "legacy" } as any;
+    await runResearchIteration(claimA, "main", mockSearchConfig, budgetConfig, 8, "2026-02-17", state);
+    await runResearchIteration(claimB, "main", mockSearchConfig, budgetConfig, 8, "2026-02-17", state);
+
+    expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(1);
+    expect(state.queryBudgetUsageByClaim["AC_02"]).toBe(1);
+    expect(state.searchQueries).toHaveLength(2);
+  });
+});
+
+describe("Stage 2: researchEvidence", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("emits query_budget_exhausted warning when all claim budgets are exhausted before sufficiency", async () => {
+    const { researchEvidence } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        maxTotalIterations: 3,
+        contradictionReservedIterations: 1,
+        claimSufficiencyThreshold: 3,
+        perClaimQueryBudget: 1,
+      } as any,
+      contentHash: "__TEST__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: { maxSourcesPerIteration: 8 } as any,
+      contentHash: "__TEST__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+
+    const state = {
+      originalInput: "input",
+      originalText: "input",
+      inputType: "text",
+      understanding: {
+        atomicClaims: [
+          createAtomicClaim({ id: "AC_01" }),
+          createAtomicClaim({ id: "AC_02" }),
+        ],
+        preliminaryEvidence: [],
+      },
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: { AC_01: 1, AC_02: 1 },
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    } as any;
+
+    await researchEvidence(state);
+
+    const budgetWarnings = state.warnings.filter((w: any) => w.type === "query_budget_exhausted");
+    expect(budgetWarnings).toHaveLength(1);
+    expect(budgetWarnings[0].severity).toBe("warning");
+    expect(budgetWarnings[0].details?.stage).toBe("research_budget");
   });
 });
 

@@ -157,6 +157,7 @@ export async function runClaimBoundaryAnalysis(
       evidenceItems: [],
       sources: [],
       searchQueries: [],
+      queryBudgetUsageByClaim: {},
       mainIterationsUsed: 0,
       contradictionIterationsReserved: initialPipelineConfig.contradictionReservedIterations ?? 1,
       contradictionIterationsUsed: 0,
@@ -1583,6 +1584,7 @@ const GenerateQueriesOutputSchema = z.object({
   queries: z.array(z.object({
     query: z.string(),
     rationale: z.string(),
+    variantType: z.enum(["supporting", "refuting"]).optional(),
   })),
 });
 
@@ -1670,6 +1672,7 @@ export async function researchEvidence(
 
   const researchStartMs = Date.now();
   let consecutiveZeroYield = 0;
+  let budgetExhaustionWarned = false;
 
   for (let iteration = 0; iteration < maxMainIterations; iteration++) {
     // Abort signal check
@@ -1688,12 +1691,35 @@ export async function researchEvidence(
       break;
     }
 
-    // Find claim with fewest evidence items
-    const targetClaim = findLeastResearchedClaim(claims, state.evidenceItems);
-    if (!targetClaim) break;
-
     // Check if all claims are sufficient
     if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold)) break;
+
+    // Find claim with fewest evidence items that still has budget remaining.
+    const budgetEligibleClaims = claims.filter(
+      (claim) => getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > 0,
+    );
+    if (budgetEligibleClaims.length === 0) {
+      console.info("[Stage2] Shared per-claim query budgets exhausted for all claims; ending main research loop.");
+      if (!budgetExhaustionWarned) {
+        budgetExhaustionWarned = true;
+        const perClaimBudget = getPerClaimQueryBudget(pipelineConfig);
+        state.warnings.push({
+          type: "query_budget_exhausted",
+          severity: "warning",
+          message: `Stage 2 stopped early: all claims exhausted shared per-claim query budget (${perClaimBudget}).`,
+          details: {
+            stage: "research_budget",
+            perClaimQueryBudget: perClaimBudget,
+            queryBudgetUsageByClaim: { ...state.queryBudgetUsageByClaim },
+            mainIterationsUsed: state.mainIterationsUsed,
+            contradictionIterationsUsed: state.contradictionIterationsUsed,
+          },
+        });
+      }
+      break;
+    }
+    const targetClaim = findLeastResearchedClaim(budgetEligibleClaims, state.evidenceItems);
+    if (!targetClaim) break;
 
     // Emit progress update for this iteration (30% → 55%)
     if (state.onEvent) {
@@ -1742,8 +1768,31 @@ export async function researchEvidence(
       break;
     }
 
-    // Target: claim with fewest contradicting evidence items
-    const targetClaim = findLeastContradictedClaim(claims, state.evidenceItems);
+    // Target: claim with fewest contradicting evidence items that still has budget remaining.
+    const budgetEligibleClaims = claims.filter(
+      (claim) => getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > 0,
+    );
+    if (budgetEligibleClaims.length === 0) {
+      console.info("[Stage2] Shared per-claim query budgets exhausted for all claims; skipping contradiction loop.");
+      if (!budgetExhaustionWarned) {
+        budgetExhaustionWarned = true;
+        const perClaimBudget = getPerClaimQueryBudget(pipelineConfig);
+        state.warnings.push({
+          type: "query_budget_exhausted",
+          severity: "warning",
+          message: `Contradiction search skipped: all claims exhausted shared per-claim query budget (${perClaimBudget}).`,
+          details: {
+            stage: "research_budget",
+            perClaimQueryBudget: perClaimBudget,
+            queryBudgetUsageByClaim: { ...state.queryBudgetUsageByClaim },
+            mainIterationsUsed: state.mainIterationsUsed,
+            contradictionIterationsUsed: state.contradictionIterationsUsed,
+          },
+        });
+      }
+      break;
+    }
+    const targetClaim = findLeastContradictedClaim(budgetEligibleClaims, state.evidenceItems);
     if (!targetClaim) break;
 
     // Emit progress update for contradiction search (55% → 58%)
@@ -1932,6 +1981,59 @@ export function allClaimsSufficient(
 }
 
 /**
+ * Resolve per-claim shared query budget from config (B-4).
+ * This budget is shared across all query sources for a claim.
+ */
+export function getPerClaimQueryBudget(pipelineConfig: PipelineConfig): number {
+  return pipelineConfig.perClaimQueryBudget ?? 8;
+}
+
+/**
+ * Read consumed query budget for a claim.
+ */
+export function getClaimQueryBudgetUsed(
+  state: CBResearchState,
+  claimId: string,
+): number {
+  if (!state.queryBudgetUsageByClaim) {
+    state.queryBudgetUsageByClaim = {};
+  }
+  return state.queryBudgetUsageByClaim[claimId] ?? 0;
+}
+
+/**
+ * Remaining shared query budget for a claim.
+ */
+export function getClaimQueryBudgetRemaining(
+  state: CBResearchState,
+  claimId: string,
+  pipelineConfig: PipelineConfig,
+): number {
+  return Math.max(0, getPerClaimQueryBudget(pipelineConfig) - getClaimQueryBudgetUsed(state, claimId));
+}
+
+/**
+ * Consume query budget for a claim.
+ * Returns false when consumption would exceed the configured budget.
+ */
+export function consumeClaimQueryBudget(
+  state: CBResearchState,
+  claimId: string,
+  pipelineConfig: PipelineConfig,
+  amount = 1,
+): boolean {
+  if (amount <= 0) return true;
+  if (!state.queryBudgetUsageByClaim) {
+    state.queryBudgetUsageByClaim = {};
+  }
+  const used = getClaimQueryBudgetUsed(state, claimId);
+  const budget = getPerClaimQueryBudget(pipelineConfig);
+  if (used + amount > budget) return false;
+  state.queryBudgetUsageByClaim[claimId] = used + amount;
+  return true;
+}
+
+/**
  * Run a single research iteration for a target claim.
  * Covers: query generation → web search → relevance check → source fetch →
  * reliability prefetch → evidence extraction → scope validation → derivative validation → filter
@@ -1945,6 +2047,12 @@ export async function runResearchIteration(
   currentDate: string,
   state: CBResearchState,
 ): Promise<void> {
+  const remainingBudget = getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig);
+  if (remainingBudget <= 0) {
+    console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`);
+    return;
+  }
+
   // 1. Generate search queries via LLM (Haiku)
   const queries = await generateResearchQueries(
     targetClaim,
@@ -1952,10 +2060,16 @@ export async function runResearchIteration(
     state.evidenceItems,
     pipelineConfig,
     currentDate,
+    remainingBudget,
   );
   state.llmCalls++;
 
   for (const queryObj of queries) {
+    if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
+      console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}" during ${iterationType} iteration.`);
+      break;
+    }
+
     try {
       // 2. Web search
       const response = await searchWebWithProvider({
@@ -2091,16 +2205,24 @@ export async function generateResearchQueries(
   existingEvidence: EvidenceItem[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  remainingQueryBudget?: number,
 ): Promise<Array<{ query: string; rationale: string }>> {
+  const maxQueries = Math.max(0, Math.min(3, remainingQueryBudget ?? 3));
+  if (maxQueries === 0) {
+    return [];
+  }
+
+  const queryStrategyMode = pipelineConfig.queryStrategyMode ?? "legacy";
   const rendered = await loadAndRenderSection("claimboundary", "GENERATE_QUERIES", {
     currentDate,
     claim: claim.statement,
     expectedEvidenceProfile: JSON.stringify(claim.expectedEvidenceProfile ?? {}),
     iterationType,
+    queryStrategyMode,
   });
   if (!rendered) {
     // Fallback: use claim statement directly
-    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }];
+    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
@@ -2127,13 +2249,52 @@ export async function generateResearchQueries(
     });
 
     const parsed = extractStructuredOutput(result);
-    if (!parsed) return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }];
+    if (!parsed) {
+      return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
+    }
 
     const validated = GenerateQueriesOutputSchema.parse(parsed);
-    return validated.queries.slice(0, 3);
+    if (queryStrategyMode !== "pro_con") {
+      return validated.queries
+        .slice(0, maxQueries)
+        .map(({ query, rationale }) => ({ query, rationale }));
+    }
+
+    const supportingQueries = validated.queries.filter((query) => query.variantType === "supporting");
+    const refutingQueries = validated.queries.filter((query) => query.variantType === "refuting");
+    const unlabeledQueries = validated.queries.filter(
+      (query) => query.variantType !== "supporting" && query.variantType !== "refuting",
+    );
+
+    const merged: Array<{ query: string; rationale: string }> = [];
+    const maxVariantLength = Math.max(supportingQueries.length, refutingQueries.length);
+    for (let i = 0; i < maxVariantLength; i++) {
+      if (supportingQueries[i]) {
+        merged.push({
+          query: supportingQueries[i].query,
+          rationale: supportingQueries[i].rationale,
+        });
+      }
+      if (refutingQueries[i]) {
+        merged.push({
+          query: refutingQueries[i].query,
+          rationale: refutingQueries[i].rationale,
+        });
+      }
+    }
+
+    for (const unlabeled of unlabeledQueries) {
+      merged.push({ query: unlabeled.query, rationale: unlabeled.rationale });
+    }
+
+    const normalized = merged.length > 0
+      ? merged
+      : validated.queries.map(({ query, rationale }) => ({ query, rationale }));
+
+    return normalized.slice(0, maxQueries);
   } catch (err) {
     console.warn("[Stage2] Query generation failed, using fallback:", err);
-    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }];
+    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
   }
 }
 

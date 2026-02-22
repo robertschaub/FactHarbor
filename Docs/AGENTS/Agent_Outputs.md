@@ -4,6 +4,15 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-22 | Code Reviewer | Claude Code (Opus 4.6) | B-4 Query Strategy Mode + Per-Claim Budget Review
+**Task:** Review Lead Developer's B-4 implementation (queryStrategyMode, perClaimQueryBudget, budget framework, pro_con normalization).
+**Files touched:** `Docs/WIP/Code_Review_B4_Query_Strategy_2026-02-22.md` (created)
+**Key decisions:** GO — 0C, 0H, 2M, 4L. Backward compatibility correct (legacy default). UCM placement correct. Budget framework well-structured. AGENTS.md fully compliant.
+**Open items:** B4-M1 (partial-label query drop in pro_con mode — unlabeled queries silently lost). B4-M2 (budget exhaustion not surfaced as AnalysisWarning — invisible to calibration/reports).
+**Warnings:** In pro_con mode with tight budgets, interleaving order favors supporting over refuting queries (B4-L2). Not active at default settings. When B-4 is switched from legacy to pro_con in UCM, verify that the LLM reliably labels `variantType` on all returned queries.
+**For next agent:** **Verdict: GO to commit.** Optional pre-commit: fix B4-M1 (append unlabeled queries after interleaving, ~10 min) and B4-M2 (emit AnalysisWarning on all-claims-exhausted, ~15 min). Build passes, 958/958 tests pass.
+
+---
 ### 2026-02-22 | LLM Expert | Claude Code (Opus 4.6) | Review of Quality Opportunity Map (R1)
 **Task:** Technical review of `Report_Quality_Opportunity_Map_2026-02-22.md` — assess feasibility of B-4 through B-8 proposals, challenge effort claims, identify risks and interactions.
 **Files touched:** `Docs/WIP/Review_QualityMap_R1_LLMExpert_2026-02-22.md` (created), `Docs/AGENTS/Role_Learnings.md` (4 entries appended)
@@ -1240,3 +1249,43 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 - Use `npm -w apps/web run test:calibration:refresh-html` after report-renderer changes to keep historical HTML artifacts aligned.
 - Validate A-3 and future runs by checking the new top-level significance banner first.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-22 | Lead Developer | Codex (GPT-5) | B-4 Pro/Con Query Separation + Shared Budget Framework
+**Task:** Implement B-4 from the quality-map decisions: add query strategy + per-claim shared budget config, update query-generation prompt/pipeline logic, and add coverage tests.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/config-schemas.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
+**Key decisions:**
+- Added `queryStrategyMode` (`legacy | pro_con`, default `legacy`) and `perClaimQueryBudget` (1-20, default `8`) to pipeline config schema + defaults.
+- Kept schema marker unchanged (`3.0.0-cb` output untouched) per B-4 constraint.
+- Implemented shared per-claim budget accounting in `CBResearchState` (`queryBudgetUsageByClaim`) with exported helper functions (`getClaimQueryBudgetRemaining`, `consumeClaimQueryBudget`) so future query sources (e.g., D5#3 contrarian retrieval) can consume the same budget.
+- Updated Stage 2 research loops to target only budget-eligible claims and log budget exhaustion as expected info (not warning).
+- Extended `GENERATE_QUERIES` handling: legacy mode unchanged; `pro_con` mode supports explicit `supporting` + `refuting` variants via prompt/output contract.
+- Ran prompt reseed and confirmed prompt hash update for `claimboundary` (`626cd0d9 -> 37e0a0cf`).
+**Open items:**
+- D5#3 contrarian retrieval is not implemented yet; it should call the shared budget helpers to consume from the same per-claim budget map.
+- Admins must explicitly set `queryStrategyMode: pro_con` in UCM to activate new retrieval behavior; default remains legacy.
+**Warnings:**
+- `apps/web/scripts/reseed-all-prompts.ts --prompts` refreshes defaults in `apps/web/config.db` during reseed; no repository-tracked DB artifacts changed in this run.
+**For next agent:**
+- If continuing with B-6/B-7/B-8, preserve the same sequential main-branch merge pattern and keep prompt reseed/hash verification in each prompt-touching slice.
+- For B-3/D5#3 integration, reuse `queryBudgetUsageByClaim` and `consumeClaimQueryBudget()` instead of introducing a second budget counter.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-22 | Lead Developer | Codex (GPT-5) | B-4 Review Fixes (M1/M2)
+**Task:** Apply post-review fixes for B-4 medium findings: preserve partially unlabeled `pro_con` queries and surface shared budget exhaustion to warnings/metrics.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
+**Key decisions:**
+- Fixed mixed-label `pro_con` handling by appending unlabeled queries after supporting/refuting interleaving instead of dropping them.
+- Added `query_budget_exhausted` analysis warning when Stage 2 ends early because all claims have exhausted per-claim query budget.
+- Added warning details (`stage: research_budget`, per-claim budget usage snapshot, iteration counters) for calibration/report visibility.
+- Wired `query_budget_exhausted` into calibration degradation classification and stage extraction so failure-mode metrics/reporting includes this condition.
+- Added tests for partial-label `pro_con` behavior and budget-exhaustion warning emission.
+**Open items:**
+- If desired, add an explicit report rendering row for `query_budget_exhausted` counts (current visibility is via warning/metrics aggregation).
+**Warnings:**
+- `Docs/WIP/Code_Review_B4_Query_Strategy_2026-02-22.md` remains untracked local review input (not modified by this fix).
+**For next agent:**
+- If B-3/D5#3 adds additional query sources, continue consuming budget via `consumeClaimQueryBudget()` so `query_budget_exhausted` remains authoritative.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-22 | Lead Developer | Codex (GPT-5) | B-4 Handoff File Pointer
+See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_Strategy_ReviewFixes.md`
