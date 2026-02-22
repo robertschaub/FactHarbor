@@ -399,7 +399,7 @@ graph TB
 
 **What Climate+Tech offers FactHarbor:** Curated knowledge corpora, domain-specific evaluation datasets, academic network (IPCC authors, WMO scientists), ClimateNLP workshop community, institutional credibility (UZH, ETH, DFKI).
 
-**What FactHarbor offers Climate+Tech:** Production-grade infrastructure, general-purpose design, sophisticated debate implementation, calibration methodology, multilingual support, live web search evidence.
+**What FactHarbor offers Climate+Tech:** Working infrastructure, general-purpose design, sophisticated debate implementation, calibration methodology, multilingual support, live web search evidence.
 
 ---
 
@@ -407,49 +407,63 @@ graph TB
 
 ### 5.1. Framework Comparison
 
-| Framework | Agents | Tools | Rounds | Convergence | Key Innovation |
-|-----------|--------|-------|--------|-------------|----------------|
-| **Du et al.** (ICML 2024) | 3 (same model) | None | 2 fixed | None | Proves multi-agent debate reduces hallucinations |
-| **AFaCTA** (ACL 2024) | 3 paths (same model) | None | 1 (parallel) | Vote aggregation | Disagreement = reliability signal, not resolved |
-| **Tool-MAD** (2025) | 2 debaters + judge | RAG + Search | 1-3 adaptive | Consensus + stability | Agents refine search queries each round |
-| **D3** (2024) | Advocates + judge + jury | None | Budgeted | Token budget | Cost-aware budgeted stopping; MORE + SAMRE patterns |
-| **Stability Detection** (2025) | 7 optimal | None | 4-8 adaptive | KS-statistic < 0.05 | Formal convergence model; 7 agents optimal |
-| **Climinator** (paper) | 5-6 + mediator | RAG (5 corpora) | 1-18 | Full consensus | Knowledge diversity; iterative until convergence |
-| **Climinator** (code) | 3 + mediator | RAG (3 corpora) | 1 (single) | None | [Paper-vs-code gap is significant](Climinator_Lessons_for_FactHarbor.md) |
-| **FactHarbor** | 5 roles + multi-model | Web search | 7 LLM calls | Temperature-spread | Multi-model multi-provider; iterative web search |
+| Framework | Venue | Agents | Tools | Rounds | Convergence | Key Innovation |
+|-----------|-------|--------|-------|--------|-------------|----------------|
+| **Du et al.** | ICML 2024 | 3 (same model) | None | 2 fixed | None | Proves multi-agent debate reduces hallucinations |
+| **AFaCTA** | ACL 2024 | 3 paths (same model) | None | 1 (parallel) | Vote aggregation | Disagreement = reliability signal, not resolved |
+| **D3** | arXiv 2024 | Advocates + judge + jury | None | Budgeted | Token budget | Cost-aware budgeted stopping; MORE + SAMRE patterns |
+| **ED2D** | EMNLP 2025 | 3 (Affirm + Negate + Judge) | **Evidence retrieval during debate** | 5 stages | Orchestrator-driven | Most structured protocol; evidence during Free Debate + Judgment stages |
+| **DelphiAgent** | IPM 2025 | Multiple LLMs | Evidence mining module | Delphi rounds | Multi-round consensus | Delphi method emulation; training-free; competitive with supervised |
+| **FACT-AUDIT** | ACL 2025 | 4 (Appraiser + Inquirer + Inspector + Evaluator) | Importance sampling | Adaptive | Model-specific | Evaluates both verdicts and justifications; hard-case generation |
+| **A-HMAD** | JKSU 2025 | Heterogeneous (different model types) | Varies | Adaptive | Dynamic | 4-6% higher accuracy, 30% fewer errors vs standard MAD |
+| **Tool-MAD** | arXiv Jan 2026 | 2 debaters + judge | **Distinct tool per agent** (RAG, Search, KG) | 1-3 adaptive | Consensus + stability | Tool-diverse agents; adaptive retrieval during debate |
+| **Stability Detection** | arXiv 2025 | 7 optimal | None | 4-8 adaptive | KS-statistic < 0.05 | Formal convergence model; 7 agents optimal |
+| **Climinator** (paper) | npj CA 2025 | 5-6 + mediator | RAG (5 corpora) | 1-18 | Full consensus | Knowledge diversity; iterative until convergence |
+| **Climinator** (code) | — | 3 + mediator | RAG (3 corpora) | 1 (single) | None | [Paper-vs-code gap is significant](Climinator_Lessons_for_FactHarbor.md) |
+| **FactHarbor** | Pre-release | 5 roles + multi-model | Web search | 7 LLM calls | Temperature-spread | **Only working MAD implementation**; multi-provider; calibration methodology |
+
+> For detailed profiles of ED2D, Tool-MAD, DelphiAgent, FACT-AUDIT, A-HMAD and others, see [Global Fact-Checking Landscape §4.2](Global_FactChecking_Landscape_2026.md#42-multi-agent-debate-systems-research).
 
 ```mermaid
 graph TD
     subgraph "Foundational (2023-2024)"
         DU["Du et al. (ICML 2024)<br/>3 agents, 2 rounds<br/>Proves debate helps factuality"]
+        AF["AFaCTA (ACL 2024)<br/>3-Path Consistency"]
+        D3["D3 (2024)<br/>MORE + SAMRE patterns<br/>Cost-aware budgeted stopping"]
     end
 
-    subgraph "Tool-Augmented (2025)"
-        TM["Tool-MAD (2025)<br/>RAG + Search agent + Judge<br/>Adaptive query reformulation"]
+    subgraph "Structured Debate (2025)"
+        ED["ED2D (EMNLP 2025)<br/>5-stage debate protocol<br/>Evidence retrieval during debate"]
+        DP["DelphiAgent (IPM 2025)<br/>Delphi consensus method<br/>Training-free"]
+        FA["FACT-AUDIT (ACL 2025)<br/>4 agent roles<br/>Hard-case generation"]
+        AH["A-HMAD (JKSU 2025)<br/>Heterogeneous agents<br/>+4-6% accuracy"]
+        MS["Stability Detection (2025)<br/>Beta-Binomial convergence"]
     end
 
-    subgraph "Structured Adversarial (2024-2025)"
-        D3["D3 Framework (2024)<br/>MORE + SAMRE patterns<br/>Cost-aware budgeted stopping"]
-        MS["Stability Detection (2025)<br/>Beta-Binomial convergence<br/>KS-statistic stopping"]
+    subgraph "Tool-Augmented (2026)"
+        TM["Tool-MAD (Jan 2026)<br/>Distinct tool per agent<br/>Adaptive retrieval during debate"]
     end
 
-    subgraph "Domain-Specific (2024-2025)"
-        CL["Climinator (2025)<br/>Mediator-Advocate + RAG"]
-        AF["AFaCTA (2024)<br/>3-Path Consistency"]
-        FH["FactHarbor (current)<br/>5-Step Structured Debate"]
+    subgraph "Domain-Specific / Operational"
+        CL["Climinator (npj CA 2025)<br/>Mediator-Advocate + RAG"]
+        FH["FactHarbor (pre-release)<br/>5-Step Debate + Calibration<br/>Only working MAD implementation"]
     end
 
-    DU -->|"Debate validated"| TM
-    DU -->|"Debate validated"| D3
-    TM -->|"Tool diversity"| CL
-    D3 -->|"Convergence"| MS
+    DU -->|"Debate validated"| ED
     DU -->|"Path diversity"| AF
+    DU -->|"Cost awareness"| D3
+    D3 -->|"Convergence"| MS
+    ED -->|"Evidence during debate"| TM
     AF -->|"Consistency"| CL
     CL -->|"Domain debate"| FH
+    TM -.->|"Design influence"| FH
+    ED -.->|"Design influence"| FH
+    DP -.->|"Consensus model"| FH
 
     style FH fill:#4CAF50,color:#fff
-    style CL fill:#2196F3,color:#fff
-    style AF fill:#FF9800,color:#fff
+    style ED fill:#2196F3,color:#fff
+    style TM fill:#2196F3,color:#fff
+    style CL fill:#FF9800,color:#fff
 ```
 
 ### 5.2. Key Findings from the Debate Literature
@@ -592,7 +606,7 @@ Beyond the 11 Climinator-specific lessons in [Climinator Analysis](Climinator_Le
 - Natural overlap with FactHarbor's domain-agnostic pipeline
 - Potential collaboration on evaluation benchmarks
 - **Approach:** Through applied impact lens, not pure CS. Jingwei Ni bridges both Ash and Leippold groups.
-- **Mutual benefit:** FactHarbor has production infrastructure + general-purpose design; Climate+Tech has curated corpora + academic network + IPCC/WMO connections
+- **Mutual benefit:** FactHarbor has working infrastructure + general-purpose design; Climate+Tech has curated corpora + academic network + IPCC/WMO connections
 
 ---
 

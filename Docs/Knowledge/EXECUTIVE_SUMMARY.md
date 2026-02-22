@@ -1,20 +1,43 @@
 # Executive Summary — FactHarbor Knowledge Base
 
-**Date:** 2026-02-21
+**Date:** 2026-02-22
 **Scope:** All documents in `Docs/Knowledge/`
 
 ---
 
 ## Reading Guide
 
-This knowledge base maps the academic landscape around automated fact-checking, LLM debate, and political bias — and distills what FactHarbor should learn from each. Start here, then dive into the topic that matters most.
+This knowledge base maps the global fact-checking landscape, academic research, LLM debate, and political bias — and distills what FactHarbor should learn from each. Start here, then dive into the topic that matters most.
 
 | If you want to understand... | Read | Key takeaway |
 |------------------------------|------|-------------|
+| **Global landscape, top systems, cooperation targets** | [**Global Fact-Checking Landscape 2026**](Global_FactChecking_Landscape_2026.md) | Full Fact AI (#1 deployed), ED2D/Tool-MAD (#1 research debate), 3 concepts to learn from. FactHarbor has the only working MAD implementation; evidence retrieval is the #1 gap. |
 | Climinator paper vs code, 11 lessons | [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | Paper-vs-code gap is significant. FactHarbor's debate is already more sophisticated than Climinator's actual code. |
-| Research network, people, projects, debate landscape | [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) | 10+ papers, 5 debate frameworks, 10 additional learnings. Search strategy matters more than debate architecture. |
+| Research network, people, projects, debate landscape | [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) | 10+ papers, 13 debate frameworks, 10 additional learnings. Search strategy matters more than debate architecture. |
 | Meeting prep for Elliott Ash | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | EMNLP 2024 paper, Ash portfolio, FactHarbor SWOA, calibration status, meeting questions. |
 | Why evidence-following appears politically biased | [Epistemic Asymmetry](Truth_Seeking.md) | The information environment is not politically symmetric. This is a property of reality, not a pipeline bug. |
+
+---
+
+## The Best Fact-Checking in the World — and Where FactHarbor Fits
+
+**Full Fact AI (UK)** is the world's #1 production fact-checking AI: 350K sentences/day, licensed to 45 organizations in 26 countries, battle-tested in 7 African elections and the UK election (136M words). Their AI detects and surfaces claims at massive scale — but humans still make the verdict. No IFCN-certified organization trusts AI for verdicts.
+
+**ED2D (EMNLP 2025)** is the most sophisticated multi-agent debate architecture published: 5-stage structured debate where agents retrieve new evidence during the debate itself — solving the "static evidence pool" problem.
+
+**FactHarbor is the only system with a working multi-agent debate implementation for fact-checking.** Full Fact monitors at scale but won't automate verdicts. ED2D has the best debate architecture but exists only as a research paper. FactHarbor sits at the intersection — a functional, pre-release system with a debate architecture more sophisticated than any competitor, but weaker evidence retrieval than the research frontier.
+
+| Dimension | FactHarbor | Best Competitor | Gap |
+|-----------|-----------|----------------|-----|
+| **Multi-agent debate** | 5-step working implementation | ED2D (EMNLP 2025) — research only | **FH leads** — only working MAD implementation |
+| **Calibration methodology** | C18 hard gate, C13 rebalancing | No published equivalent | **FH leads** — publishable contribution |
+| **Evidence retrieval** | Web search only | KG²RAG, Tool-MAD (tool-diverse agents) | **FH lags** — #1 quality bottleneck |
+| **Monitoring scale** | User-submitted claims only | Full Fact AI: 350K sentences/day | **FH lags** — no detection layer |
+| **Cross-provider debate** | Anthropic, OpenAI, Google, Mistral | No competitor compares providers | **FH unique** |
+
+The #1 gap to close: evidence retrieval (C13 = 8/10 pairs). The #1 cooperation target: Full Fact — they have monitoring scale, we have verdict automation they deliberately don't build.
+
+Full analysis: [Global Fact-Checking Landscape 2026](Global_FactChecking_Landscape_2026.md)
 
 ---
 
@@ -59,48 +82,59 @@ Details: [Epistemic Asymmetry](Truth_Seeking.md)
 
 ## Prioritized Action Items
 
-Consolidated from all research documents. This is the single source of truth for priorities. Items marked * are validated in Climinator code; items marked † are paper-only (not in OSS code).
+Consolidated from all research documents (Climinator analysis, Stammbach ecosystem, and Global Landscape investigation). This is the single source of truth for priorities.
 
-For full details on each item, follow the link to the source section.
+Items marked * are validated in Climinator code; items marked † are paper-only (not in OSS code); items marked ‡ are from the 2026-02-22 landscape investigation.
 
-| # | Learning | Source | Effort | Impact |
-|---|---------|--------|--------|--------|
-| **1** | Evidence sufficiency gate — don't verdict from thin evidence | [Climinator L5](Climinator_Lessons_for_FactHarbor.md#lesson-5-not-enough-information-as-a-first-class-verdict) | Low | Prevents bad verdicts |
-| **2** | Pro/Con query separation — supporting + refuting queries* | [Climinator L10](Climinator_Lessons_for_FactHarbor.md#lesson-10-procon-query-separation) | Low | Quick-win C13 fix |
-| **3** | Strong challenger model (Opus) — agent quality > debate structure | [Ecosystem L-I](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-i-strong-agent-quality-over-debate-structure) | Low | High: dominant predictor |
-| **4** | Contrarian search pass — search for counter-evidence explicitly | [Climinator L3](Climinator_Lessons_for_FactHarbor.md#lesson-3-the-adversarial-corpus-test-nipcc-pattern) | Medium | Addresses C13 (8/10 pairs) |
-| **5** | Search strategy > debate architecture — KB selection matters most | [Ecosystem L-B](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-b-data-centric-approach-to-search-strategy) | Medium | Most impactful variable |
-| **6** | Claim verifiability field — filter non-verifiable assertions | [Ecosystem L-A](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-a-claim-detection-as-a-quality-gate) | Low | Prevents spurious verdicts |
-| **7** | Multi-advocate parallel verdicts (MORE) — eliminates anchoring bias | [Ecosystem L-G](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-g-balanced-overviews--multi-advocate-one-round-pattern) | Medium | Structural improvement |
-| **8** | Evidence partitioning by source type* — structural advocate independence | [Climinator L1](Climinator_Lessons_for_FactHarbor.md#lesson-1-knowledge-diversity--model-diversity) | Medium | Knowledge diversity |
-| **9** | Path-based consistency (3 paths) — detects reasoning bias | [Ecosystem L-C](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-c-path-based-consistency-for-annotation-quality) | Medium | Addresses C9 |
-| **10** | Debate-informed re-search — fill evidence gaps post-challenge | [Ecosystem L-H](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-h-debate-informed-re-search) | Medium | Evidence completeness |
-| **11** | Misleadingness flag — catches "true but misleading" claims | [Ecosystem L-D](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-d-greenwashing-detection-pattern) | Low-Med | Nuance |
-| **12** | Mediator question step† — resolve instability, don't penalize it | [Climinator L4](Climinator_Lessons_for_FactHarbor.md#lesson-4-mediator-as-question-asker-not-just-decision-maker) | Medium | Better verdicts |
-| **13** | Iterative debate with adaptive stopping† — convergence detection | [Climinator L2](Climinator_Lessons_for_FactHarbor.md#lesson-2-iterative-debate-with-convergence-detection) | Med-High | Depth where needed |
-| **14** | User-facing explanation layer — readable summary for non-experts | [Ecosystem L-E](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-e-explanation-and-transparency-layer) | Low | Transparency |
-| **15** | Balanced overviews for evaluative claims — perspective-aware verdicts | [Ecosystem L-G](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-g-balanced-overviews--multi-advocate-one-round-pattern) | Medium | Handles contested claims |
+### Tier 1 — Do Now (Low effort, high impact)
 
-### Quick Wins (Low effort)
+| # | Action | Source | Addresses |
+|---|--------|--------|-----------|
+| **1** | Evidence sufficiency gate — hold verdict when evidence is thin | [Climinator L5](Climinator_Lessons_for_FactHarbor.md#lesson-5-not-enough-information-as-a-first-class-verdict) + Full Fact model‡ | Bad verdicts on weak evidence |
+| **2** | Pro/Con query separation — supporting + refuting queries per claim* | [Climinator L10](Climinator_Lessons_for_FactHarbor.md#lesson-10-procon-query-separation) | C13 (8/10 pairs) |
+| **3** | Strong challenger model (Opus) — agent quality > debate structure | [Ecosystem L-I](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-i-strong-agent-quality-over-debate-structure) | Verdict quality |
+| **4** | Claim verifiability scoring — Haiku pre-filter before the full pipeline | [Ecosystem L-A](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-a-claim-detection-as-a-quality-gate) + Full Fact model‡ | Compute waste, false verdicts |
+| **5** | User-facing explanation layer — readable summary for non-experts | [Ecosystem L-E](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-e-explanation-and-transparency-layer) | Transparency |
+| **6** | Misleadingness flag — catches "true but misleading" claims | [Ecosystem L-D](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-d-greenwashing-detection-pattern) | Nuance |
+| **7** | Contact Full Fact AI — explore partnership (monitoring + verdict engine)‡ | [Landscape §5](Global_FactChecking_Landscape_2026.md#5-cooperation-strategy) | Market positioning |
 
-1. **Evidence sufficiency gate** — deterministic check before verdicts
-2. **Pro/Con query separation** — two query templates per claim (from Climinator code)
-3. **Strong challenger profile** — config change, test via calibration A/B
-4. **Claim verifiability field** — one prompt addition
-5. **User-facing explanation** — one Haiku call at pipeline end
-6. **Misleadingness flag** — one field in verdict prompt
+### Tier 2 — Do Next (Medium effort, high impact)
+
+| # | Action | Source | Addresses |
+|---|--------|--------|-----------|
+| **8** | Debate-triggered re-search — challenger retrieves counter-evidence during debate‡ | [ED2D](Global_FactChecking_Landscape_2026.md#concept-1-evidence-retrieval-during-debate-ed2d--tool-mad) + [Ecosystem L-H](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-h-debate-informed-re-search) | C13, evidence completeness |
+| **9** | Contrarian search pass — dedicated search for counter-evidence | [Climinator L3](Climinator_Lessons_for_FactHarbor.md#lesson-3-the-adversarial-corpus-test-nipcc-pattern) | C13 (8/10 pairs) |
+| **10** | Tool-diverse advocates — route each advocate to a different evidence source‡ | [Tool-MAD](Global_FactChecking_Landscape_2026.md#concept-1-evidence-retrieval-during-debate-ed2d--tool-mad) + [Climinator L1](Climinator_Lessons_for_FactHarbor.md#lesson-1-knowledge-diversity--model-diversity) | Evidence diversity |
+| **11** | Multi-advocate parallel verdicts (MORE) — eliminates anchoring bias | [Ecosystem L-G](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-g-balanced-overviews--multi-advocate-one-round-pattern) | Structural improvement |
+| **12** | Path-based consistency (3 paths) — detects reasoning bias | [Ecosystem L-C](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-c-path-based-consistency-for-annotation-quality) | Addresses C9 |
+| **13** | Benchmark against AVeriTeC — evaluate on 4,568-claim standard dataset‡ | [Landscape §4.5](Global_FactChecking_Landscape_2026.md#45-key-benchmarks-and-evaluation-frameworks) | Credibility, measurement |
+| **14** | Publish calibration methodology — C18/C13 framework as paper/report‡ | [Landscape §6.1](Global_FactChecking_Landscape_2026.md#61-what-no-one-has-built-yet) | Academic positioning |
+
+### Tier 3 — Investigate (Medium-High effort, strategic)
+
+| # | Action | Source | Addresses |
+|---|--------|--------|-----------|
+| **15** | Mediator question step† — resolve instability, don't penalize it | [Climinator L4](Climinator_Lessons_for_FactHarbor.md#lesson-4-mediator-as-question-asker-not-just-decision-maker) | Better verdicts |
+| **16** | Iterative debate with adaptive stopping† — convergence detection | [Climinator L2](Climinator_Lessons_for_FactHarbor.md#lesson-2-iterative-debate-with-convergence-detection) | Depth where needed |
+| **17** | GraphRAG integration — knowledge graph-guided evidence retrieval‡ | [KG²RAG](Global_FactChecking_Landscape_2026.md#concept-2-knowledge-graph-guided-evidence-retrieval-kgrag--graphrag) | Evidence quality at root level |
+| **18** | Monitoring-mode architecture — continuous claim detection‡ | [Full Fact model](Global_FactChecking_Landscape_2026.md#concept-3-full-facts-ai-monitoring--prebunking-model) | Scale, market positioning |
+| **19** | EU AI Act compliance documentation‡ | [Landscape §6.6](Global_FactChecking_Landscape_2026.md#66-eu-ai-act-implications) | Regulatory positioning |
+| **20** | Balanced overviews for evaluative claims — perspective-aware verdicts | [Ecosystem L-G](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md#l-g-balanced-overviews--multi-advocate-one-round-pattern) | Contested claims |
 
 ---
 
 ## Collaboration Status
 
-| Contact | Affiliation | Status | Focus |
-|---------|------------|--------|-------|
-| **Elliott Ash** | ETH Zurich | Email sent (2026-02-19) | Calibration methodology, cross-provider debate, C13 correction |
-| **Dominik Stammbach** | Princeton CITP | Email drafted, not sent | Data-centric fact-checking, KB selection theory |
-| **Markus Leippold** | UZH | Not yet contacted | Climate+Tech, evaluation benchmarks, agentic RAG |
+| Priority | Contact | Affiliation | Status | Focus |
+|----------|---------|------------|--------|-------|
+| **1** | **Full Fact AI team** | Full Fact, UK | Not yet contacted | Monitoring (350K/day) + FactHarbor as verdict engine |
+| **2** | **AVeriTeC organizers** | Multi-university | Not yet contacted | Benchmark evaluation (4,568 claims, 50 orgs) |
+| **3** | **ED2D / Tool-MAD authors** | Academic | Not yet contacted | Evidence retrieval during debate; working pipeline as testbed |
+| **4** | **Elliott Ash** | ETH Zurich | Email sent (2026-02-19) | Calibration methodology, cross-provider debate, C13 correction |
+| **5** | **Dominik Stammbach** | Princeton CITP | Email drafted, not sent | Data-centric fact-checking, KB selection theory |
+| — | **Markus Leippold** | UZH | Not yet contacted | Climate+Tech, evaluation benchmarks, agentic RAG |
 
-Full details, email draft, and collaboration strategy: [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md)
+Academic contacts: [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). Industry + new targets: [Global Landscape §5](Global_FactChecking_Landscape_2026.md#5-cooperation-strategy).
 
 ---
 
@@ -116,7 +150,8 @@ Full details, email draft, and collaboration strategy: [Research Ecosystem §7-8
 3. Send Stammbach email once Ash meeting is confirmed
 
 **Debate V2 (backlog, pending B-2 outcome):**
-- Quick wins #1-6 from the priority table above
-- Contrarian search pass (#4, medium effort)
-- Multi-advocate parallel verdicts (#7, medium effort)
-- Note: Iterative debate (#13) and mediator questions (#12) are paper-only† — FactHarbor would be the first OSS implementation
+- Tier 1 quick wins #1-6 from the priority table above
+- Tier 2 evidence improvements: debate-triggered re-search (#8), contrarian search (#9), tool-diverse advocates (#10)
+- Note: Iterative debate (#16) and mediator questions (#15) are paper-only† — FactHarbor would be the first OSS implementation
+
+Full prioritized action plan with justifications: [Global Landscape — Executive Summary](Global_FactChecking_Landscape_2026.md#executive-summary)

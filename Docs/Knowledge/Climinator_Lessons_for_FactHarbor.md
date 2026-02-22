@@ -16,20 +16,91 @@ A Mediator-Advocate debate framework for automated climate claim fact-checking. 
 
 ### Paper Architecture
 
+```mermaid
+flowchart LR
+    CLAIM["Climate Change<br>Claim"] --> A & B
+
+    subgraph A["Advocate A"]
+        direction TB
+        DA["Documents A<br>(e.g. IPCC AR6)"] --> PA["PDF Reader<br>& Parser"]
+        PA --> CA["Parsed Structural<br>Chunks"]
+        CA --> RA["Information<br>Retrieval"]
+        RA --> LA["SOTA LLM<br>Analysis + Prompting"]
+        LA --> VA["Verdict A<br>+ Reasoning"]
+    end
+
+    subgraph B["Advocate B"]
+        direction TB
+        DB["Documents B<br>(e.g. WMO reports)"] --> PB["PDF Reader<br>& Parser"]
+        PB --> CB["Parsed Structural<br>Chunks"]
+        CB --> RB["Information<br>Retrieval"]
+        RB --> LB["SOTA LLM<br>Analysis + Prompting"]
+        LB --> VB["Verdict B<br>+ Reasoning"]
+    end
+
+    subgraph M["Mediator"]
+        direction TB
+        MA["SOTA LLM<br>Agreement Check"]
+        MA -->|"YES"| FV["Final Verdict"]
+        MA -->|"NO"| FQ["Follow-up<br>Questions"]
+    end
+
+    VA & VB --> MA
+    FQ -.->|"Iterative<br>reassessment"| A & B
+
+    style A fill:#fff3e0,stroke:#ef6c00
+    style B fill:#fff3e0,stroke:#ef6c00
+    style M fill:#e8f5e9,stroke:#2e7d32
 ```
-Claim
-  ├─ Advocate 1 (IPCC AR6 corpus via RAG + GPT-4o)
-  ├─ Advocate 2 (WMO reports via RAG + GPT-4o)
-  ├─ Advocate 3 (290K climate abstracts via RAG + GPT-4o)
-  ├─ Advocate 4 (190K top-scientist abstracts via RAG + GPT-4o)
-  ├─ Advocate 5 (GPT-4o general, no RAG) — Climinator+ variant
-  └─ [Optional] Advocate 6 (NIPCC denial corpus via RAG + GPT-4o)
-         │
-         ▼
-     Mediator (GPT-4o)
-       ├─ Consensus? → Final verdict
-       └─ Disagreement? → Follow-up questions → Advocates reassess → Loop
+
+*Climinator's Mediator-Advocate debate architecture (paper design). Each advocate has its own document corpus and RAG pipeline. The mediator checks agreement; on disagreement, it generates follow-up questions that drive iterative reassessment. Simplified from [Fig. 2, npj Climate Action, doi:10.1038/s44168-025-00215-8](https://doi.org/10.1038/s44168-025-00215-8). Note: the paper describes 5-6 advocates; only 3 are implemented in the [open-source code](https://github.com/climateandtech/factchecker), and the iterative loop is not implemented (`debate.py` is empty).*
+
+### FactHarbor's Debate Architecture (Current — 2026-02)
+
+The equivalent in FactHarbor's ClaimAssessmentBoundary pipeline (Stage 4: Verdict). Compared to Climinator's Mediator-Advocate pattern, FactHarbor uses temperature-varied advocates from a shared evidence pool, adds an adversarial challenger step, and has a fully operational pipeline.
+
+```mermaid
+flowchart LR
+    subgraph Evidence["Evidence Pool (from Stage 2)"]
+        direction TB
+        E1["Web Search<br>(news, institutional)"]
+        E2["Academic Sources"]
+        E3["Contradiction Search<br>(reserved iterations)"]
+    end
+
+    subgraph Advocates["Step 1-2: Advocate Verdicts + Self-Consistency"]
+        direction TB
+        A1["Advocate Run 1<br>(Sonnet, temp=0.3)"]
+        A2["Advocate Run 2<br>(Sonnet, temp=0.6)"]
+        A3["Advocate Run 3<br>(Sonnet, temp=0.9)"]
+        SC["Self-Consistency<br>Check (σ across runs)"]
+    end
+
+    subgraph Challenge["Step 3: Adversarial Challenge"]
+        CH["Challenger<br>(Sonnet)<br>Critiques verdicts,<br>flags evidence gaps,<br>tests counter-arguments"]
+    end
+
+    subgraph Resolve["Step 4-5: Reconciliation + Validation"]
+        REC["Reconciler<br>(Sonnet)<br>Synthesizes advocate verdicts<br>+ challenger critique<br>→ final per-claim verdict"]
+        VAL["Validator<br>(Haiku × 2)<br>Grounding check +<br>direction check"]
+        G4["Gate 4:<br>Confidence Check"]
+    end
+
+    Evidence --> Advocates
+    A1 & A2 & A3 --> SC
+    SC --> Challenge
+    Evidence --> Challenge
+    CH --> Resolve
+    SC --> REC
+    REC --> VAL --> G4
+
+    style Evidence fill:#e3f2fd,stroke:#1565c0
+    style Advocates fill:#fff3e0,stroke:#ef6c00
+    style Challenge fill:#fce4ec,stroke:#c62828
+    style Resolve fill:#e8f5e9,stroke:#2e7d32
 ```
+
+*FactHarbor's 5-step debate: advocates produce independent verdicts from the same evidence pool (temperature-varied for diversity), a challenger stress-tests the majority position, the reconciler synthesizes everything into final verdicts, and validators check grounding and directional consistency. ~7 LLM calls per claim. Compare with the Climinator paper's Mediator-Advocate diagram: [Fig. 2, npj Climate Action, doi:10.1038/s44168-025-00215-8](https://doi.org/10.1038/s44168-025-00215-8)*
 
 ### Reported Performance
 
