@@ -48,6 +48,7 @@ import {
   assessEvidenceBalance,
   checkDebateTierDiversity,
   checkDebateProviderCredentials,
+  checkExplanationStructure,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -64,6 +65,8 @@ import type {
   ChallengeResponse,
   TriangulationScore,
   OverallAssessment,
+  ExplanationQualityCheck,
+  ExplanationStructuralFindings,
   EvidenceItem,
   EvidenceScope,
 } from "@/lib/analyzer/types";
@@ -3751,5 +3754,111 @@ describe("B-7: misleadingness flag", () => {
     });
     expect(verdict.truthPercentage).toBe(90);
     expect(verdict.misleadingness).toBe("highly_misleading");
+  });
+});
+
+// ============================================================================
+// B-8: Explanation Quality Check
+// ============================================================================
+describe("B-8: explanation quality check", () => {
+  describe("checkExplanationStructure (Tier 1)", () => {
+    it("should detect all structural components present", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Analysis yields MOSTLY-TRUE verdict at 78% confidence",
+        evidenceBaseSummary: "14 evidence items from 9 sources across 3 perspectives",
+        keyFinding: "The claim is well-supported. Evidence indicates a likely positive outcome.",
+        limitations: "Limited geographic scope; evidence primarily from one region.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasCitedEvidence).toBe(true);
+      expect(findings.hasVerdictCategory).toBe(true);
+      expect(findings.hasConfidenceStatement).toBe(true);
+      expect(findings.hasLimitations).toBe(true);
+    });
+
+    it("should detect missing structural components", () => {
+      const narrative: VerdictNarrative = {
+        headline: "",
+        evidenceBaseSummary: "",
+        keyFinding: "Some finding.",
+        limitations: "",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasCitedEvidence).toBe(false);
+      expect(findings.hasVerdictCategory).toBe(false);
+      expect(findings.hasConfidenceStatement).toBe(false);
+      expect(findings.hasLimitations).toBe(false);
+    });
+
+    it("should detect confidence keywords in key finding", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Analysis complete",
+        evidenceBaseSummary: "8 items from 4 sources",
+        keyFinding: "Evidence likely supports the claim with moderate certainty.",
+        limitations: "Some limitations exist in the dataset.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasConfidenceStatement).toBe(true);
+    });
+
+    it("should detect percentage in headline as confidence statement", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Verdict: 72% truth assessment",
+        evidenceBaseSummary: "5 items",
+        keyFinding: "Basic finding.",
+        limitations: "Limited evidence base.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasConfidenceStatement).toBe(true);
+    });
+  });
+
+  describe("ExplanationQualityCheck type", () => {
+    it("should accept structural mode check", () => {
+      const check: ExplanationQualityCheck = {
+        mode: "structural",
+        structuralFindings: {
+          hasCitedEvidence: true,
+          hasVerdictCategory: true,
+          hasConfidenceStatement: true,
+          hasLimitations: true,
+        },
+      };
+      expect(check.mode).toBe("structural");
+      expect(check.rubricScores).toBeUndefined();
+    });
+
+    it("should accept rubric mode check with scores", () => {
+      const check: ExplanationQualityCheck = {
+        mode: "rubric",
+        structuralFindings: {
+          hasCitedEvidence: true,
+          hasVerdictCategory: true,
+          hasConfidenceStatement: false,
+          hasLimitations: true,
+        },
+        rubricScores: {
+          clarity: 4,
+          completeness: 3,
+          neutrality: 5,
+          evidenceSupport: 4,
+          appropriateHedging: 3,
+          overallScore: 3.8,
+          flags: ["missing_confidence_statement"],
+        },
+      };
+      expect(check.mode).toBe("rubric");
+      expect(check.rubricScores!.overallScore).toBe(3.8);
+      expect(check.rubricScores!.flags).toContain("missing_confidence_statement");
+    });
+
+    it("should be optional on OverallAssessment (backward compat)", () => {
+      const assessment: Partial<OverallAssessment> = {
+        truthPercentage: 75,
+        verdict: "MOSTLY-TRUE",
+        confidence: 80,
+      };
+      expect(assessment.explanationQualityCheck).toBeUndefined();
+    });
   });
 });

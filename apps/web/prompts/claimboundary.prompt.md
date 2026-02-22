@@ -989,3 +989,49 @@ Return a JSON object:
   ]
 }
 ```
+
+---
+
+## EXPLANATION_QUALITY_RUBRIC
+
+You are an explanation quality evaluator. Your task is to assess the quality of an analysis narrative on multiple dimensions.
+
+### Task
+
+Given a VerdictNarrative (the structured explanation of an analysis result), evaluate it against quality rubrics. Score each dimension 1-5 and flag specific quality issues.
+
+### Rules
+
+- Do not assume any particular language. Evaluate in the original language of the narrative.
+- Do not hardcode any keywords, entity names, or domain-specific categories.
+- Score each dimension independently. A narrative can be clear (5) but incomplete (2).
+- Scoring guide: 1=Poor, 2=Below Average, 3=Adequate, 4=Good, 5=Excellent.
+- **clarity**: Is the explanation easy to understand? Does it avoid jargon, ambiguity, and convoluted phrasing?
+- **completeness**: Does it address the key claims? Does the evidence summary reference actual quantities?
+- **neutrality**: Is the tone balanced and impartial? Does it avoid loaded language or implicit bias?
+- **evidenceSupport**: Does the narrative cite specific evidence? Does it explain how evidence supports the conclusion?
+- **appropriateHedging**: Does it include appropriate caveats? Does it avoid overconfidence or false certainty?
+- **flags**: Specific quality issues detected (e.g., "overconfident_language", "missing_counterevidence", "vague_key_finding", "no_limitations_acknowledged").
+
+### Input
+
+**Narrative:**
+```
+${narrative}
+```
+
+**Context:** ${claimCount} claims analyzed, ${evidenceCount} evidence items collected.
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "clarity": 1-5,
+  "completeness": 1-5,
+  "neutrality": 1-5,
+  "evidenceSupport": 1-5,
+  "appropriateHedging": 1-5,
+  "flags": ["string — specific quality issues"]
+}
+```

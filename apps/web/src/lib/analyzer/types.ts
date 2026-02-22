@@ -991,6 +991,41 @@ export interface CBResearchState {
 }
 
 /**
+ * B-8: Structural findings from Tier 1 explanation quality check (deterministic).
+ * Verifies the narrative contains required structural components.
+ */
+export interface ExplanationStructuralFindings {
+  hasCitedEvidence: boolean;       // Narrative references evidence quantities
+  hasVerdictCategory: boolean;     // Verdict type/label stated
+  hasConfidenceStatement: boolean; // Confidence level mentioned
+  hasLimitations: boolean;         // Limitations section non-empty
+}
+
+/**
+ * B-8: Rubric scores from Tier 2 explanation quality evaluation (LLM-powered).
+ * Each dimension scored 1-5.
+ */
+export interface ExplanationRubricScores {
+  clarity: number;               // 1-5: Is the explanation understandable?
+  completeness: number;          // 1-5: Does it address all claims?
+  neutrality: number;            // 1-5: Is it balanced and impartial?
+  evidenceSupport: number;       // 1-5: Does it cite specific evidence?
+  appropriateHedging: number;    // 1-5: Are confidence caveats present?
+  overallScore: number;          // Weighted average
+  flags: string[];               // Quality flags (e.g., "overconfident_language")
+}
+
+/**
+ * B-8: Explanation quality check result, attached to OverallAssessment.
+ * Tier 1 (structural) is deterministic; Tier 2 (rubric) is LLM-powered.
+ */
+export interface ExplanationQualityCheck {
+  mode: "structural" | "rubric";
+  structuralFindings: ExplanationStructuralFindings;
+  rubricScores?: ExplanationRubricScores; // Only present when mode === "rubric"
+}
+
+/**
  * OverallAssessment: Final aggregated result of the ClaimAssessmentBoundary pipeline.
  *
  * @since ClaimAssessmentBoundary pipeline v1
@@ -1008,4 +1043,6 @@ export interface OverallAssessment {
   qualityGates: QualityGates;
   /** Plausible range for overall truthPercentage, aggregated from per-claim ranges. */
   truthPercentageRange?: TruthPercentageRange;
+  /** B-8: Explanation quality check result (when explanationQualityMode !== "off"). */
+  explanationQualityCheck?: ExplanationQualityCheck;
 }

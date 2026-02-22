@@ -101,6 +101,7 @@
   "claimSufficiencyThreshold": 3,
   "contradictionReservedIterations": 1,
   "claimAnnotationMode": "off",
+  "explanationQualityMode": "off",
   "queryStrategyMode": "legacy",
   "perClaimQueryBudget": 8,
   "maxClaimBoundaries": 6,

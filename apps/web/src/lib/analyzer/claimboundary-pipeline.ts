@@ -28,6 +28,9 @@ import type {
   CoverageMatrix,
   EvidenceItem,
   EvidenceScope,
+  ExplanationQualityCheck,
+  ExplanationRubricScores,
+  ExplanationStructuralFindings,
   FetchedSource,
   Gate4Stats,
   OverallAssessment,
@@ -281,6 +284,27 @@ export async function runClaimBoundaryAnalysis(
       state
     );
     endPhase("report");
+
+    // B-8: Explanation quality check (after aggregation, before result assembly)
+    const explanationQualityMode = initialPipelineConfig.explanationQualityMode ?? "off";
+    if (explanationQualityMode !== "off" && assessment.verdictNarrative) {
+      const structuralFindings = checkExplanationStructure(assessment.verdictNarrative);
+      const qualityCheck: ExplanationQualityCheck = {
+        mode: explanationQualityMode === "rubric" ? "rubric" : "structural",
+        structuralFindings,
+      };
+      if (explanationQualityMode === "rubric") {
+        const llmCallFn = createProductionLLMCall(initialPipelineConfig, state.warnings);
+        qualityCheck.rubricScores = await evaluateExplanationRubric(
+          assessment.verdictNarrative,
+          understanding.atomicClaims.length,
+          state.evidenceItems.length,
+          llmCallFn,
+        );
+      }
+      assessment.explanationQualityCheck = qualityCheck;
+      console.info(`[Stage5] B-8 explanation quality check (${explanationQualityMode}):`, JSON.stringify(qualityCheck));
+    }
 
     onEvent("Analysis complete.", 100);
 
@@ -4283,4 +4307,72 @@ export function buildQualityGates(
       contradictionSearchPerformed: state.contradictionIterationsUsed > 0,
     },
   };
+}
+
+// ============================================================================
+// B-8: EXPLANATION QUALITY CHECK
+// ============================================================================
+
+/**
+ * B-8 Tier 1: Structural explanation quality check (deterministic).
+ * Verifies the VerdictNarrative contains required structural components.
+ * No semantic analysis — purely structural plumbing per AGENTS.md.
+ */
+export function checkExplanationStructure(
+  narrative: VerdictNarrative,
+): ExplanationStructuralFindings {
+  return {
+    // Check if narrative references evidence quantities (e.g., "14 items", "9 sources")
+    hasCitedEvidence: narrative.evidenceBaseSummary.length > 0
+      && /\d+/.test(narrative.evidenceBaseSummary),
+    // Check if verdict category/label is mentioned in headline
+    hasVerdictCategory: narrative.headline.length > 0,
+    // Check if confidence is referenced in headline or key finding
+    hasConfidenceStatement: /confiden|certain|uncertain|likely|probably/i.test(
+      narrative.headline + " " + narrative.keyFinding
+    ) || /\d+%/.test(narrative.headline),
+    // Check if limitations section is non-empty
+    hasLimitations: narrative.limitations.length > 5,
+  };
+}
+
+/**
+ * B-8 Tier 2: Rubric-based explanation quality evaluation (LLM-powered).
+ * Calls LLM to evaluate narrative quality on 5 dimensions.
+ * Uses Haiku tier for cost efficiency.
+ */
+export async function evaluateExplanationRubric(
+  narrative: VerdictNarrative,
+  claimCount: number,
+  evidenceCount: number,
+  llmCall: LLMCallFn,
+): Promise<ExplanationRubricScores> {
+  const result = await llmCall("EXPLANATION_QUALITY_RUBRIC", {
+    headline: narrative.headline,
+    evidenceBaseSummary: narrative.evidenceBaseSummary,
+    keyFinding: narrative.keyFinding,
+    limitations: narrative.limitations,
+    boundaryDisagreements: narrative.boundaryDisagreements ?? [],
+    claimCount,
+    evidenceCount,
+  }, { tier: "haiku" });
+
+  const raw = result as Record<string, unknown>;
+  const parseScore = (v: unknown): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.max(1, Math.min(5, Math.round(n))) : 3;
+  };
+
+  const clarity = parseScore(raw.clarity);
+  const completeness = parseScore(raw.completeness);
+  const neutrality = parseScore(raw.neutrality);
+  const evidenceSupport = parseScore(raw.evidenceSupport);
+  const appropriateHedging = parseScore(raw.appropriateHedging);
+  const overallScore = Math.round(
+    (clarity + completeness + neutrality + evidenceSupport + appropriateHedging) / 5 * 10
+  ) / 10;
+
+  const flags = Array.isArray(raw.flags) ? raw.flags.map(String) : [];
+
+  return { clarity, completeness, neutrality, evidenceSupport, appropriateHedging, overallScore, flags };
 }
