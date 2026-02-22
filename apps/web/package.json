@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.39",
-    "@ai-sdk/google": "^3.0.1",
+    "@ai-sdk/google": "^3.0.30",
     "@ai-sdk/mistral": "^3.0.19",
     "@ai-sdk/openai": "^3.0.1",
     "ai": "^6.0.78",
