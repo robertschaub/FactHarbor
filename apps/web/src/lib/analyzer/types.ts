@@ -804,6 +804,10 @@ export interface CBClaimVerdict {
   triangulationScore: TriangulationScore;
   /** Plausible range for truthPercentage, computed from consistency spread + boundary variance. */
   truthPercentageRange?: TruthPercentageRange;
+  /** B-7: Misleadingness assessment, independent of truthPercentage. Output-only (not fed back into debate). */
+  misleadingness?: "not_misleading" | "potentially_misleading" | "highly_misleading";
+  /** B-7: Reason for misleadingness assessment (empty when not_misleading). */
+  misleadingnessReason?: string;
 }
 
 /**

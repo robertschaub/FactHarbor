@@ -3712,3 +3712,44 @@ describe("B-6: verifiability annotation", () => {
     expect(evaluativeHighVerifiability.verifiability).toBe("high");
   });
 });
+
+// ============================================================================
+// B-7: Misleadingness Flag
+// ============================================================================
+describe("B-7: misleadingness flag", () => {
+  it("should accept misleadingness fields on CBClaimVerdict", () => {
+    const verdict = createCBClaimVerdict({
+      misleadingness: "highly_misleading",
+      misleadingnessReason: "Cherry-picks data to create false impression",
+    });
+    expect(verdict.misleadingness).toBe("highly_misleading");
+    expect(verdict.misleadingnessReason).toBe("Cherry-picks data to create false impression");
+    // Decoupled from truthPercentage
+    expect(verdict.truthPercentage).toBe(75);
+  });
+
+  it("should accept all valid misleadingness enum values", () => {
+    for (const m of ["not_misleading", "potentially_misleading", "highly_misleading"] as const) {
+      const verdict = createCBClaimVerdict({ misleadingness: m });
+      expect(verdict.misleadingness).toBe(m);
+    }
+  });
+
+  it("should allow CBClaimVerdict without misleadingness (backward compat)", () => {
+    const verdict = createCBClaimVerdict();
+    expect(verdict.misleadingness).toBeUndefined();
+    expect(verdict.misleadingnessReason).toBeUndefined();
+  });
+
+  it("should allow high truthPercentage with highly_misleading (decoupling)", () => {
+    // The core B-7 invariant: "90% true AND highly misleading" is a valid state
+    const verdict = createCBClaimVerdict({
+      truthPercentage: 90,
+      verdict: "TRUE",
+      misleadingness: "highly_misleading",
+      misleadingnessReason: "Uses technically-correct framing to imply false causation",
+    });
+    expect(verdict.truthPercentage).toBe(90);
+    expect(verdict.misleadingness).toBe("highly_misleading");
+  });
+});

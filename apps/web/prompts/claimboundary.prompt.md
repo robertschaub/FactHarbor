@@ -740,6 +740,7 @@ Produce a final verdict that:
 - If the self-consistency check shows high spread (unstable), reduce confidence and note the instability in reasoning.
 - `challengeResponses`: for each challenge addressed, indicate the type, your response, whether the verdict was adjusted, and which challenge point IDs informed the adjustment (`adjustmentBasedOnChallengeIds`).
 - The reconciled verdict should represent your best assessment given ALL inputs — advocate evidence, challenges, and consistency data.
+- If misleadingness assessment is requested (via configuration), assess `misleadingness` INDEPENDENTLY of `truthPercentage`. A claim can be factually true (high truth%) yet highly misleading if it cherry-picks data, omits crucial context, implies false causation, or uses technically-correct framing to create a false impression. "90% true AND highly misleading" is a valid and expected output state. Do NOT let misleadingness influence your truthPercentage or vice versa.
 
 ### Input
 
@@ -776,7 +777,9 @@ Return a JSON array:
         "verdictAdjusted": false,
         "adjustmentBasedOnChallengeIds": ["CP_AC_01_0"]
       }
-    ]
+    ],
+    "misleadingness": "not_misleading | potentially_misleading | highly_misleading",
+    "misleadingnessReason": "string — empty when not_misleading; otherwise explains why the claim is misleading despite its truth%"
   }
 ]
 ```

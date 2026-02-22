@@ -258,6 +258,14 @@ export async function runClaimBoundaryAnalysis(
     );
     endPhase("verdict");
 
+    // B-7: Strip misleadingness fields if annotation mode doesn't include them
+    if (initialPipelineConfig.claimAnnotationMode !== "verifiability_and_misleadingness") {
+      for (const v of claimVerdicts) {
+        delete v.misleadingness;
+        delete v.misleadingnessReason;
+      }
+    }
+
     // Record Gate 4 stats after verdicts
     recordGate4Stats(claimVerdicts);
 

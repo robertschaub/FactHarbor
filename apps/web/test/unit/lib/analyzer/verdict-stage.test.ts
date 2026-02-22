@@ -1855,3 +1855,139 @@ describe("computeTruthPercentageRange", () => {
     expect(result!.max).toBe(18);
   });
 });
+
+// ============================================================================
+// B-7: MISLEADINGNESS FLAG IN VERDICT OUTPUT
+// ============================================================================
+
+describe("B-7: misleadingness flag in reconciliation", () => {
+  it("should extract misleadingness fields from reconciliation LLM output", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 85, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [85], average: 85, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 85, confidence: 80, reasoning: "Reconciled",
+        isContested: false,
+        challengeResponses: [],
+        misleadingness: "highly_misleading",
+        misleadingnessReason: "Cherry-picks data to create false impression despite being technically true",
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(verdicts[0].misleadingness).toBe("highly_misleading");
+    expect(verdicts[0].misleadingnessReason).toBe("Cherry-picks data to create false impression despite being technically true");
+    // Truth percentage NOT affected by misleadingness (decoupling)
+    expect(verdicts[0].truthPercentage).toBe(85);
+  });
+
+  it("should handle not_misleading (no reason field)", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 70, verdict: "MOSTLY-TRUE",
+      confidence: 75, reasoning: "Original", harmPotential: "low", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [70], average: 70, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 70, confidence: 75, reasoning: "Reconciled",
+        isContested: false, challengeResponses: [],
+        misleadingness: "not_misleading",
+        misleadingnessReason: "",
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(verdicts[0].misleadingness).toBe("not_misleading");
+    expect(verdicts[0].misleadingnessReason).toBeUndefined(); // Stripped when not_misleading
+  });
+
+  it("should omit misleadingness fields when LLM does not return them (backward compat)", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: reconciliationResponse(),
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    // Fields not present when LLM doesn't return them
+    expect(verdicts[0].misleadingness).toBeUndefined();
+    expect(verdicts[0].misleadingnessReason).toBeUndefined();
+  });
+
+  it("should ignore invalid misleadingness enum values", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 72, confidence: 78, reasoning: "Reconciled",
+        isContested: false, challengeResponses: [],
+        misleadingness: "INVALID_VALUE",
+        misleadingnessReason: "Should be ignored",
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    // Invalid enum → not set
+    expect(verdicts[0].misleadingness).toBeUndefined();
+    expect(verdicts[0].misleadingnessReason).toBeUndefined();
+  });
+
+  it("should support potentially_misleading with reason", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 60, verdict: "MIXED",
+      confidence: 70, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [60], average: 60, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 60, confidence: 70, reasoning: "Reconciled",
+        isContested: false, challengeResponses: [],
+        misleadingness: "potentially_misleading",
+        misleadingnessReason: "Omits important temporal context",
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(verdicts[0].misleadingness).toBe("potentially_misleading");
+    expect(verdicts[0].misleadingnessReason).toBe("Omits important temporal context");
+  });
+});

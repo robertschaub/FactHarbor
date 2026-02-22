@@ -502,6 +502,12 @@ export async function reconcileVerdicts(
     const confidence = clampPercentage(Number(reconciled.confidence ?? original.confidence));
     const consistency = consistencyResults.find((c) => c.claimId === original.claimId);
 
+    // B-7: Extract misleadingness fields (output-only, not fed back into debate)
+    const misleadingness = parseMisleadingness(reconciled.misleadingness);
+    const misleadingnessReason = misleadingness && misleadingness !== "not_misleading"
+      ? String(reconciled.misleadingnessReason ?? "")
+      : undefined;
+
     return {
       ...original,
       truthPercentage,
@@ -511,6 +517,8 @@ export async function reconcileVerdicts(
       isContested: Boolean(reconciled.isContested ?? original.isContested),
       consistencyResult: consistency ?? original.consistencyResult,
       challengeResponses: parseChallengeResponses(reconciled.challengeResponses),
+      ...(misleadingness ? { misleadingness } : {}),
+      ...(misleadingnessReason ? { misleadingnessReason } : {}),
     };
   });
 
@@ -893,6 +901,13 @@ function parseChallengeResponses(raw: unknown): ChallengeResponse[] {
 function parseChallengeType(raw: unknown): ChallengeResponse["challengeType"] {
   const valid = ["assumption", "missing_evidence", "methodology_weakness", "independence_concern"];
   return valid.includes(String(raw)) ? String(raw) as ChallengeResponse["challengeType"] : "assumption";
+}
+
+/** B-7: Parse misleadingness enum from reconciliation output. Returns undefined if not present/invalid. */
+function parseMisleadingness(raw: unknown): CBClaimVerdict["misleadingness"] | undefined {
+  const valid = ["not_misleading", "potentially_misleading", "highly_misleading"];
+  if (raw === undefined || raw === null) return undefined;
+  return valid.includes(String(raw)) ? String(raw) as CBClaimVerdict["misleadingness"] : undefined;
 }
 
 function parseSeverity(raw: unknown): "high" | "medium" | "low" {
