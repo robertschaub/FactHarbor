@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactHarbor Documentation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #16161a;
+  --surface: #1e1e23;
+  --surface-2: #26262c;
+  --surface-3: #2c2c34;
+  --border: #33333b;
+  --text: #d8d8de;
+  --text-muted: #7c7c8a;
+  --text-dim: #55555f;
+  --accent: #c9915a;
+  --accent-hover: #dba46e;
+  --accent-dim: rgba(201,145,90,0.15);
+  --accent-active: rgba(201,145,90,0.25);
+  --pv-bg: #faf7f2;
+  --pv-text: #2e2b26;
+  --pv-heading: #1a1816;
+  --pv-muted: #7a756c;
+  --pv-link: #8b5c2a;
+  --pv-link-hover: #a06e38;
+  --pv-code-bg: #efeae2;
+  --pv-code-border: #ddd7cc;
+  --pv-border: #e0dbd2;
+  --pv-table-head: #e0e0e0;
+  --pv-table-stripe: #f5f5f0;
+  --pv-info-bg: #eaf2fa; --pv-info-border: #8db8dc;
+  --pv-warn-bg: #fdf5e0; --pv-warn-border: #d4b040;
+  --pv-err-bg: #fce8e8; --pv-err-border: #c86060;
+  --pv-ok-bg: #eaf5ea; --pv-ok-border: #6aaa6a;
+  --pv-toc-bg: #f4f0e8;
+  --pv-blockquote-border: #c9915a;
+  --tree-bg: #1a1a1f;
+  --tree-hover: #24242a;
+  --tree-active: var(--accent-dim);
+  --radius: 6px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.toolbar .logo{font-family:'Crimson Pro',serif;font-weight:700;font-size:18px;color:var(--accent);cursor:pointer;user-select:none;white-space:nowrap}
+.toolbar .logo span{color:var(--text-muted);font-weight:400;font-size:13px;margin-left:5px}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+.spacer{flex:1}
+.file-info{display:flex;align-items:center;gap:8px;min-width:0}
+.filename{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:10px;color:var(--text-dim);white-space:nowrap}
+.copy-path-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);padding:2px;border-radius:3px;display:inline-flex;align-items:center;transition:all .15s;flex-shrink:0}
+.copy-path-btn:hover{color:var(--accent);background:var(--accent-dim)}
+.copy-path-btn svg{width:12px;height:12px}
+.watch-badge{display:none;align-items:center;gap:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6aaa6a;background:rgba(106,170,106,.12);padding:2px 7px;border-radius:10px;white-space:nowrap}
+.watch-badge .pulse{width:5px;height:5px;background:#6aaa6a;border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--border);border-color:var(--text-muted)}
+.btn.primary{background:var(--accent);color:#1a1816;border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--text-muted)}
+.btn.ghost:hover{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+.btn svg{width:14px;height:14px;flex-shrink:0}
+.btn:disabled{opacity:.35;pointer-events:none}
+
+/* Nav buttons */
+.nav-btn{padding:4px 6px;background:transparent;border:1px solid transparent;border-radius:var(--radius);cursor:pointer;color:var(--text-muted);transition:all .15s}
+.nav-btn:hover:not(:disabled){background:var(--surface-2);color:var(--text);border-color:var(--border)}
+.nav-btn:disabled{opacity:.25;cursor:default}
+.nav-btn svg{width:16px;height:16px;display:block}
+
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.view-toggle button{padding:4px 10px;border:none;background:var(--surface-2);color:var(--text-muted);font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
+.view-toggle button.active{background:var(--accent);color:#1a1816}
+.view-toggle button:hover:not(.active){background:var(--border);color:var(--text)}
+
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:2px;font-size:11px;min-width:0;overflow:hidden}
+.breadcrumb .bc-item{color:var(--text-dim);cursor:pointer;white-space:nowrap;padding:2px 4px;border-radius:3px;transition:all .12s}
+.breadcrumb .bc-item:hover{color:var(--accent);background:var(--accent-dim)}
+.breadcrumb .bc-item.active{color:var(--text);font-weight:600;cursor:default}
+.breadcrumb .bc-item.active:hover{background:transparent;color:var(--text)}
+.breadcrumb .bc-sep{color:var(--text-dim);font-size:10px;user-select:none}
+
+/* ── WELCOME SCREEN ── */
+.welcome-screen{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
+.welcome-screen.hidden{display:none}
+.welcome-card{max-width:580px;width:100%;text-align:center}
+.welcome-card .wc-icon{width:56px;height:56px;margin:0 auto 16px;color:var(--accent);opacity:.7}
+.welcome-card h1{font-family:'Crimson Pro',serif;font-weight:700;font-size:26px;color:var(--text);margin-bottom:6px}
+.welcome-card .subtitle{color:var(--text-muted);font-size:13px;margin-bottom:28px;line-height:1.5}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:36px;margin-bottom:20px;transition:all .2s;cursor:pointer}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-dim)}
+.drop-zone svg{width:32px;height:32px;color:var(--text-dim);margin-bottom:8px}
+.drop-zone:hover svg,.drop-zone.dragover svg{color:var(--accent)}
+.drop-zone p{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px}
+.drop-zone span{font-size:11px;color:var(--text-muted)}
+.welcome-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.recent-section{text-align:left;margin-top:6px}
+.recent-section .rs-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--text-dim);margin-bottom:6px;padding-left:4px}
+.recent-list{list-style:none}
+.recent-list li{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius);cursor:pointer;transition:background .12s}
+.recent-list li:hover{background:var(--surface-2)}
+.recent-list li svg{width:14px;height:14px;color:var(--text-dim);flex-shrink:0}
+.recent-list .rf-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.recent-list .rf-kind{font-size:10px;color:var(--text-dim);white-space:nowrap}
+.recent-list .rf-date{font-size:10px;color:var(--text-dim);white-space:nowrap}
+
+/* ── MAIN AREA ── */
+.main-area{flex:1;display:flex;overflow:hidden}
+.main-area.hidden{display:none}
+
+/* File tree sidebar */
+.tree-sidebar{width:260px;min-width:200px;max-width:400px;background:var(--tree-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.tree-sidebar.collapsed{width:0;min-width:0;border-right:none;overflow:hidden}
+.tree-header{padding:8px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;user-select:none}
+.tree-header .tree-count{font-weight:400;color:var(--text-dim)}
+.tree-body{flex:1;overflow-y:auto;padding:6px 0;font-size:12px}
+.tree-body::-webkit-scrollbar{width:6px}
+.tree-body::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
+
+.tree-item{display:flex;align-items:center;gap:4px;padding:3px 8px 3px;cursor:pointer;color:var(--text-muted);transition:all .1s;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
+.tree-item:hover{background:var(--tree-hover);color:var(--text)}
+.tree-item.active{background:var(--tree-active);color:var(--accent)}
+.tree-item .ti-icon{width:14px;height:14px;flex-shrink:0;opacity:.5}
+.tree-item .ti-arrow{width:12px;height:12px;flex-shrink:0;transition:transform .15s;color:var(--text-dim);cursor:pointer;padding:2px;border-radius:3px}
+.tree-item .ti-arrow:hover{color:var(--accent)}
+.tree-item .ti-arrow.open{transform:rotate(90deg)}
+.ti-folder-label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;overflow:hidden;min-width:0}
+.tree-item .ti-label{overflow:hidden;text-overflow:ellipsis}
+.tree-group{overflow:hidden}
+.tree-group.collapsed{display:none}
+
+.tree-search{padding:6px 8px;border-bottom:1px solid var(--border)}
+.tree-search input{width:100%;padding:4px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-size:11px;outline:none}
+.tree-search input::placeholder{color:var(--text-dim)}
+.tree-search input:focus{border-color:var(--accent)}
+
+/* Content area */
+.content-area{flex:1;display:flex;overflow:hidden;min-width:0}
+.editor-pane{width:50%;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0}
+.editor-pane .pane-header{padding:6px 14px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);background:var(--surface-2);border-bottom:1px solid var(--border);user-select:none;display:flex;align-items:center;justify-content:space-between}
+.editor-wrap{flex:1;overflow:hidden}
+#editor{width:100%;height:100%;resize:none;border:none;outline:none;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;padding:14px 16px;tab-size:2;overflow-y:auto}
+#editor::selection{background:rgba(201,145,90,.3)}
+#editor::-webkit-scrollbar{width:7px}
+#editor::-webkit-scrollbar-thumb{background:#33333b;border-radius:3px}
+
+.preview-pane{flex:1;display:flex;flex-direction:column;background:var(--pv-bg);min-width:0}
+.preview-pane .pane-header{padding:6px 14px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--pv-muted);background:#f0ebe3;border-bottom:1px solid var(--pv-border);user-select:none}
+.preview-wrap{flex:1;overflow-y:auto;padding:28px 40px 60px}
+.preview-wrap::-webkit-scrollbar{width:7px}
+.preview-wrap::-webkit-scrollbar-thumb{background:#d4cfc6;border-radius:3px}
+
+body.view-source .preview-pane{display:none}
+body.view-source .editor-pane{width:100%;border-right:none}
+body.view-preview .editor-pane{display:none}
+body.view-preview .preview-pane{width:100%}
+
+/* ── PREVIEW CONTENT ── */
+.preview-content{max-width:760px;margin:0 auto;font-family:'Crimson Pro',serif;font-size:17px;line-height:1.75;color:var(--pv-text)}
+.preview-content .xwiki-group{margin:.5em 0}
+.preview-content .box{border-radius:var(--radius);padding:12px 16px;margin:1em 0;font-family:'Outfit',sans-serif;font-size:.88em;line-height:1.55}
+.preview-content .box.successmessage{background:var(--pv-ok-bg);border-left:4px solid var(--pv-ok-border)}
+.preview-content .box.infomessage{background:var(--pv-info-bg);border-left:4px solid var(--pv-info-border)}
+.preview-content .box.warningmessage{background:var(--pv-warn-bg);border-left:4px solid var(--pv-warn-border)}
+.preview-content .box.errormessage{background:var(--pv-err-bg);border-left:4px solid var(--pv-err-border)}
+.preview-content .xwiki-include{background:linear-gradient(135deg,#e8e4f8,#dde8f8);border:1px solid #b8c4e8;border-radius:var(--radius);padding:10px 14px;margin:1em 0;font-family:'Outfit',sans-serif;font-size:.85em;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px}
+.preview-content .xwiki-include:hover{background:linear-gradient(135deg,#ddd8f0,#d0e0f8);border-color:#9aacd8}
+.preview-content .xwiki-include .include-icon{font-size:1.1em}
+.preview-content .xwiki-include .include-label{color:#6070a0;font-weight:600;font-size:.8em;text-transform:uppercase;letter-spacing:.5px}
+.preview-content .xwiki-included-content{border:1px solid var(--pv-border);border-radius:var(--radius);margin:1em 0;background:#fafafa}
+.preview-content .xwiki-included-header{background:linear-gradient(135deg,#f0f0f5,#e8e8f0);padding:6px 12px;font-family:'Outfit',sans-serif;font-size:.75em;font-weight:600;color:#6070a0;cursor:pointer;border-bottom:1px solid var(--pv-border);border-radius:var(--radius) var(--radius) 0 0;display:flex;align-items:center;gap:6px}
+.preview-content .xwiki-included-header:hover{background:linear-gradient(135deg,#e8e8f0,#e0e0e8)}
+.preview-content .xwiki-included-content > :not(.xwiki-included-header){padding:0 16px}
+.preview-content .xwiki-included-content > :last-child{padding-bottom:12px}
+.preview-content .xwiki-include-error{background:#fce8e8;border:1px solid #e0a0a0;border-radius:var(--radius);padding:10px 14px;margin:1em 0;font-family:'Outfit',sans-serif;font-size:.85em;color:#804040}
+.preview-content pre.xwiki-verbatim{background:#f5f0e6;border:1px solid var(--pv-code-border);border-radius:var(--radius);padding:12px 16px;overflow-x:auto;margin:1em 0;white-space:pre-wrap;word-wrap:break-word}
+.preview-content pre.xwiki-verbatim code{background:none;border:none;padding:0;font-size:.82em;line-height:1.6}
+.preview-content li p{margin:.2em 0}
+.preview-content li .xwiki-group{margin:.3em 0}
+.preview-content h1{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.9em;color:var(--pv-heading);margin:1.3em 0 .4em;line-height:1.25;border-bottom:2px solid var(--pv-border);padding-bottom:.25em}
+.preview-content h2{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.5em;color:var(--pv-heading);margin:1.2em 0 .35em;border-bottom:1px solid var(--pv-border);padding-bottom:.18em}
+.preview-content h3{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.2em;color:var(--pv-heading);margin:1.1em 0 .3em}
+.preview-content h4,.preview-content h5,.preview-content h6{font-family:'Outfit',sans-serif;font-weight:500;font-size:1.05em;color:var(--pv-heading);margin:1em 0 .3em}
+.preview-content h1:first-child{margin-top:0}
+.preview-content p{margin:.5em 0}
+.preview-content strong{font-weight:600}
+.preview-content em{font-style:italic}
+.preview-content del{text-decoration:line-through;color:var(--pv-muted)}
+.preview-content sup{font-size:.75em;vertical-align:super}
+.preview-content sub{font-size:.75em;vertical-align:sub}
+.preview-content a{color:var(--pv-link);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.preview-content a:hover{color:var(--pv-link-hover)}
+.preview-content a.wiki-link{text-decoration-style:dotted}
+.preview-content a.wiki-link.resolved{text-decoration-style:solid}
+.preview-content a.wiki-link.unresolved{color:#b06040;text-decoration-style:wavy;text-decoration-color:rgba(176,96,64,.4)}
+.preview-content code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:var(--pv-code-bg);border:1px solid var(--pv-code-border);border-radius:3px;padding:1px 5px}
+.preview-content pre{background:var(--pv-code-bg);border:1px solid var(--pv-code-border);border-radius:var(--radius);padding:12px 16px;overflow-x:auto;margin:1em 0;position:relative}
+.preview-content pre code{background:none;border:none;padding:0;font-size:.82em;line-height:1.6}
+.preview-content pre .lang-label{position:absolute;top:5px;right:9px;font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--pv-muted);opacity:.5}
+.preview-content ul,.preview-content ol{margin:.5em 0 .5em 1.3em}
+.preview-content li{margin:.2em 0}
+.preview-content ul ul,.preview-content ol ol{margin:.1em 0 .1em 1.1em}
+.preview-content hr{border:none;height:1px;background:var(--pv-border);margin:1.4em 0}
+.preview-content blockquote{border-left:3px solid var(--pv-blockquote-border);padding:.3em 0 .3em 1.1em;margin:.7em 0;color:var(--pv-muted);font-style:italic}
+.preview-content img{max-width:100%;height:auto;border-radius:var(--radius);margin:.7em 0}
+.preview-content table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.9em;font-family:'Outfit',sans-serif}
+.preview-content th{background:var(--pv-table-head);font-weight:600;text-align:left;padding:7px 10px;border:1px solid var(--pv-border);font-size:.88em;color:#333}
+.preview-content td{padding:7px 10px;border:1px solid var(--pv-border)}
+.preview-content tr:nth-child(even) td{background:rgba(0,0,0,0.03)}
+.preview-content .table-hover tr:hover td{background:rgba(0,0,0,0.06);transition:background .15s}
+.xwiki-cell-group{padding:4px 0}
+.xwiki-cell-group table{margin:.5em 0;font-size:1em}
+.xwiki-cell-group p{margin:.4em 0}
+.xwiki-box{border-radius:var(--radius);padding:12px 16px;margin:1em 0;font-family:'Outfit',sans-serif;font-size:.88em;line-height:1.55}
+.xwiki-box .box-title{font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.xwiki-box.info{background:var(--pv-info-bg);border-left:4px solid var(--pv-info-border)}
+.xwiki-box.warning{background:var(--pv-warn-bg);border-left:4px solid var(--pv-warn-border)}
+.xwiki-box.error{background:var(--pv-err-bg);border-left:4px solid var(--pv-err-border)}
+.xwiki-box.success{background:var(--pv-ok-bg);border-left:4px solid var(--pv-ok-border)}
+.xwiki-toc{background:var(--pv-toc-bg);border:1px solid var(--pv-border);border-radius:var(--radius);padding:14px 20px;margin:1em 0;font-family:'Outfit',sans-serif}
+.xwiki-toc .toc-title{font-weight:700;font-size:.85em;text-transform:uppercase;letter-spacing:.7px;color:var(--pv-muted);margin-bottom:6px}
+.xwiki-toc ul{list-style:none;margin:0;padding:0}
+.xwiki-toc li{margin:2px 0}
+.xwiki-toc li a{font-size:.85em;color:var(--pv-link);text-decoration:none}
+.xwiki-toc li a:hover{text-decoration:underline}
+.xwiki-toc .toc-h1,.xwiki-toc .toc-h2{padding-left:0}
+.xwiki-toc .toc-h3{padding-left:14px}
+.xwiki-toc .toc-h4{padding-left:28px}
+.xwiki-children-list{margin:1em 0;font-family:'Outfit',sans-serif}
+.xwiki-children-list ul{list-style:none;margin:0;padding:0}
+.xwiki-children-list li{margin:.3em 0;padding:3px 0 3px 22px;position:relative;font-size:.95em}
+.xwiki-children-list li::before{content:'\1F4C4';position:absolute;left:0;top:3px;font-size:.8em}
+.xwiki-children-list .children-empty{color:var(--pv-muted);font-style:italic;font-size:.9em}
+.github-files-list{margin:1em 0;font-family:'Outfit',sans-serif}
+.github-files-table{width:100%;border-collapse:collapse;font-size:.9em}
+.github-files-table th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--pv-border);font-size:.8em;text-transform:uppercase;letter-spacing:.5px;color:var(--pv-muted)}
+.github-files-table td{padding:6px 12px;border-bottom:1px solid var(--pv-border)}
+.github-files-table tr:hover td{background:rgba(0,0,0,.03)}
+.github-files-table a{color:var(--pv-link);text-decoration:none}
+.github-files-table a:hover{text-decoration:underline}
+.github-files-loading{color:var(--pv-muted);font-style:italic;font-size:.9em}
+.github-files-empty{color:var(--pv-muted);font-style:italic;font-size:.9em}
+.github-files-error{color:#c33;font-style:italic;font-size:.9em}
+.github-files-footer{margin-top:8px;font-size:.8em}.github-files-footer a{color:var(--pv-muted);text-decoration:none}.github-files-footer a:hover{text-decoration:underline}
+.report-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.report-card{display:block;border:1px solid var(--pv-border);border-radius:8px;padding:14px 18px;text-decoration:none!important;color:inherit;transition:border-color .15s,box-shadow .15s;cursor:pointer}
+.report-card:hover{border-color:var(--pv-link);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.report-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.report-card-claim{font-size:1.05em;font-weight:600;color:var(--pv-heading);line-height:1.35;flex:1}
+.report-card-date{font-size:.78em;color:var(--pv-muted);white-space:nowrap;margin-top:2px}
+.report-card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.82em}
+.report-card-verdict{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:700;font-size:.8em;letter-spacing:.03em;border:1px solid}
+.rv-t{background:#0a2e0a;border-color:#22543d;color:#68d391}
+.rv-lt{background:#0a2e14;border-color:#276749;color:#9ae6b4}
+.rv-inc{background:#1a1230;border-color:#553c9a;color:#b794f4}
+.rv-unv{background:#2d1a00;border-color:#7b2d00;color:#f6ad55}
+.rv-lf{background:#2d1400;border-color:#c05621;color:#fbd38d}
+.rv-f{background:#2d0a0a;border-color:#c53030;color:#feb2b2}
+.report-card-pct{color:var(--pv-muted)}
+.report-card-model{color:var(--pv-muted);font-size:.78em;opacity:.7}
+.mermaid-container{margin:1em 0;background:#fff;border:1px solid var(--pv-border);border-radius:var(--radius);padding:18px;overflow-x:auto;text-align:center}
+.mermaid-container .mermaid-label{font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--pv-muted);text-align:right;margin-bottom:6px;opacity:.5}
+.mermaid-container svg{max-width:100%}
+.preview-content dl{margin:.5em 0}
+.preview-content dt{font-weight:600;margin-top:.4em}
+.preview-content dd{margin-left:1.4em;color:var(--pv-muted)}
+
+/* ── DROP OVERLAY ── */
+.drop-overlay{position:fixed;inset:0;background:rgba(22,22,26,.85);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
+.drop-overlay.active{display:flex}
+.drop-overlay .drop-box{border:2px dashed var(--accent);border-radius:16px;padding:50px 70px;text-align:center}
+.drop-overlay .drop-box svg{width:40px;height:40px;color:var(--accent);margin-bottom:10px}
+.drop-overlay .drop-box p{font-size:16px;font-weight:500;color:var(--text)}
+.drop-overlay .drop-box span{font-size:12px;color:var(--text-muted)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;font-size:12px;color:var(--text);z-index:200;display:flex;align-items:center;gap:7px;transform:translateY(70px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast svg{width:14px;height:14px;color:#6aaa6a;flex-shrink:0}
+
+/* Hide WebHome entries from tree — folders already load their WebHome on click */
+.tree-item.tree-page[data-ref$=".WebHome"],
+.tree-item.tree-page[data-ref="WebHome"]{display:none}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.tree-sidebar:not(.collapsed){width:200px;min-width:160px}}
+
+#btnToggleTree{background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:6px 10px}
+/* Overlay behind sidebar on mobile */
+.tree-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.3)}
+
+@media(max-width:768px){
+  .tree-sidebar:not(.collapsed){width:220px;min-width:160px}
+  .preview-wrap{padding:20px 24px 40px}
+  .preview-content{max-width:100%}
+  body.view-split .editor-pane{display:none}
+  body.view-split .preview-pane{width:100%}
+  .view-toggle{display:none}
+}
+@media(max-width:480px){
+  .tree-sidebar:not(.collapsed){width:85vw;max-width:300px;position:fixed;top:0;left:0;bottom:0;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  .tree-overlay.active{display:block}
+  .toolbar{padding:6px 8px;gap:4px}
+  .toolbar .sep{display:none}
+  .toolbar .btn span:not(.ti){display:none}
+  .breadcrumb{font-size:.75em}
+  .preview-wrap{padding:14px 16px 32px}
+  #editControls .btn:not(#btnToggleTree){display:none}
+  .file-info{display:none !important}
+  #btnStats{display:none !important}
+  .tree-item{padding-top:4px;padding-bottom:4px;min-height:36px;display:flex;align-items:center}
+  .toolbar .btn{min-width:36px;min-height:36px}
+}
+
+/* ── ANALYTICS MODAL ── */
+.analytics-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);align-items:center;justify-content:center}
+.analytics-overlay.active{display:flex}
+.analytics-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:90vw;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.am-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.am-header h2{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--accent)}
+.am-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px}
+.am-close:hover{color:var(--text);background:var(--surface-2)}
+.am-close svg{width:18px;height:18px;display:block}
+.am-body{flex:1;overflow-y:auto;padding:12px 16px 16px}
+.am-body::-webkit-scrollbar{width:6px}
+.am-body::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
+.am-summary{display:flex;gap:10px;margin-bottom:12px}
+.am-stat{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;text-align:center}
+.am-stat b{font-family:'Crimson Pro',serif;font-size:24px;color:var(--accent);display:block}
+.am-stat span{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px}
+.am-table{width:100%;border-collapse:collapse;font-size:12px}
+.am-table th{text-align:left;padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);border-bottom:1px solid var(--border)}
+.am-table td{padding:5px 8px;border-bottom:1px solid rgba(51,51,59,.3);color:var(--text)}
+.am-table tr:hover td{background:var(--surface-2)}
+.am-table .num{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px}
+.am-table .pg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.am-table .pg:hover{text-decoration:underline}
+.am-msg{text-align:center;padding:30px 20px;color:var(--text-dim);font-size:13px}
+
+/* GitHub Pages static mode: hide interactive-only controls */
+.welcome-screen { display: none !important; }
+.welcome-actions, #dropZone, .drop-zone { display: none !important; }
+#fileInput, #folderInput { display: none !important; }
+.toolbar .btn[onclick*="openFile"],
+.toolbar .btn[onclick*="openFolder"],
+#btnWatch, #btnReload { display: none !important; }
+.view-toggle button[onclick*="source"] { display: none !important; }
+.view-toggle button[onclick*="split"] { display: none !important; }
+#dropOverlay { display: none !important; }
+#bundleMeta { display: none; color: var(--text-dim); font-size: .75em; margin-left: 8px; }
+</style>
+</head>
+<body class="view-preview">
+<input type="file" id="fileInput" accept=".txt,.md,.xwiki,.wiki,.xml,.xwk" style="display:none">
+<input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="logo" onclick="showWelcome()" title="Home">FactHarbor<span>Docs</span></div>
+  <div class="sep"></div>
+
+  <!-- Navigation -->
+  <button class="nav-btn" id="btnBack" onclick="navBack()" disabled title="Back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+  </button>
+  <button class="nav-btn" id="btnFwd" onclick="navForward()" disabled title="Forward">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div class="spacer"></div>
+  <div class="file-info" id="fileInfo" style="display:none">
+    <span class="filename" id="filename"></span>
+    <button type="button" class="copy-path-btn" id="btnCopyPath" onclick="copyPagePath()" title="Copy path relative to project root">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
+    <span class="file-size" id="fileSize"></span>
+    <button class="btn ghost" id="btnStats" onclick="toggleAnalytics()" title="Page view stats" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Stats
+      </button>
+    <span id="bundleMeta"></span><span class="watch-badge" id="watchBadge"><span class="pulse"></span>Watching</span>
+  </div>
+
+  <div id="editControls" style="display:none">
+    <span style="display:inline-flex;align-items:center;gap:6px;">
+      <button class="btn ghost" id="btnToggleTree" onclick="toggleTree()" title="Toggle file tree">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h18"/></svg>
+      </button>
+      <div class="view-toggle">
+        <button onclick="setView('source')" id="vSource">Source</button>
+        <button onclick="setView('split')" id="vSplit">Split</button>
+        <button onclick="setView('preview')" id="vPreview" class="active">Preview</button>
+      </div>
+      <div class="sep"></div>
+      <button class="btn" onclick="openFilePicker()" title="Open single file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+        File
+      </button>
+      <button class="btn" onclick="openFolderPicker()" title="Open wiki folder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        Folder
+      </button>
+      <button class="btn" id="btnWatch" onclick="toggleWatch()" style="display:none" title="Watch for changes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M20.2 10.9c.4.5.6.7.6 1.1s-.2.6-.6 1.1C18.8 14.8 15.6 18 12 18s-6.8-3.2-8.2-4.9c-.4-.5-.6-.7-.6-1.1s.2-.6.6-1.1C5.2 9.2 8.4 6 12 6s6.8 3.2 8.2 4.9Z"/></svg>
+        Watch
+      </button>
+      <button class="btn" id="btnReload" onclick="reloadFile()" disabled title="Reload file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.9 1 6.7 2.7L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+    </span>
+  </div>
+</div>
+
+<!-- WELCOME SCREEN -->
+<div class="welcome-screen" id="welcomeScreen">
+  <div class="welcome-card">
+    <svg class="wc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M10 13l-2 2 2 2"/><path d="M14 13l2 2-2 2"/></svg>
+    <h1>FactHarbor Documentation</h1>
+    <p class="subtitle">Standalone viewer for XWiki 2.1 syntax with Mermaid diagrams,<br>local wiki navigation, and live file watching.</p>
+    <div class="drop-zone" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p>Drop a file or folder here</p>
+      <span>.xwiki · .wiki · .txt · .md</span>
+    </div>
+    <div class="welcome-actions">
+      <button class="btn primary" onclick="openFolderPicker()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        Open Wiki Folder
+      </button>
+      <button class="btn" onclick="openFilePicker()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+        Open Single File
+      </button>
+      <button class="btn" onclick="loadDemo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Demo
+      </button>
+    </div>
+    <div class="recent-section" id="recentSection" style="display:none">
+      <div class="rs-title">Recent</div>
+      <ul class="recent-list" id="recentList"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main-area" id="mainArea">
+  <div class="tree-overlay" id="treeOverlay" onclick="toggleTree()"></div>
+  <!-- File tree sidebar -->
+  <div class="tree-sidebar" id="treeSidebar">
+    <div class="tree-header">
+      <span>Pages <span class="tree-count" id="treeCount"></span></span>
+    </div>
+    <div class="tree-search"><input type="text" id="treeSearch" placeholder="Search pages…" oninput="filterTree(this.value)"></div>
+    <div class="tree-body" id="treeBody"></div>
+  </div>
+
+  <!-- Content: editor + preview -->
+  <div class="content-area">
+    <div class="editor-pane">
+      <div class="pane-header">
+        <span>XWiki 2.1 Source</span>
+        <span style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text-dim)">Ctrl+Enter</span>
+      </div>
+      <div class="editor-wrap"><textarea id="editor" spellcheck="false"></textarea></div>
+    </div>
+    <div class="preview-pane">
+      <div class="pane-header">Rendered Preview</div>
+      <div class="preview-wrap">
+        <div class="preview-content" id="preview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overlays -->
+<div class="drop-overlay" id="dropOverlay">
+  <div class="drop-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <p>Drop to open</p>
+    <span>file or folder</span>
+  </div>
+</div>
+<!-- ANALYTICS MODAL -->
+<div class="analytics-overlay" id="analyticsOverlay" onclick="if(event.target===this)toggleAnalytics()">
+  <div class="analytics-modal">
+    <div class="am-header">
+      <h2>Page Views</h2>
+      <button class="am-close" onclick="toggleAnalytics()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="am-body" id="analyticsBody">
+      <div class="am-msg">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
+
+<script>
+// =================================================================
+// XWiki 2.1 Parser (with wiki-link awareness)
+// =================================================================
+class XWikiParser {
+  constructor() { this.headings=[]; this.mermaidCounter=0; this._placeholders={}; this.wikiLinks=[]; }
+
+  parse(source) {
+    this.headings=[]; this.mermaidCounter=0; this._placeholders={}; this.wikiLinks=[];
+    let html='';
+    // Normalize line endings
+    source = source.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    source = this.extractBlockMacros(source);
+    const lines=source.split('\n');
+    let i=0,listStack=[],inList=false,inTable=false,tableRows=[],tableGroupDepth=0;
+    let pendingParams = null; // Store (% ... %) parameters for next element
+    let tableAttrs = ''; // Store table-level (% ... %) attributes
+
+    while(i<lines.length){
+      let line=lines[i];
+      let trimmed = line.trim();
+
+      // Parse parameter line: (% class="..." style="..." %)
+      const paramMatch = trimmed.match(/^\(%\s*(.*?)\s*%\)$/);
+      if(paramMatch){
+        pendingParams = this.parseParams(paramMatch[1]);
+        i++; continue;
+      }
+
+      // Handle (% ... %) prefix followed by more content on the same line
+      // e.g. (% class="active" %)|(% colspan="1" %)(((
+      // Strip the prefix params and re-process the remainder as the line
+      if(trimmed.startsWith('(%')){
+        const prefixMatch = trimmed.match(/^\(%\s*.*?\s*%\)\s*(.+)/);
+        if(prefixMatch){
+          lines[i] = prefixMatch[1];
+          continue;
+        }
+      }
+
+      // Inside a table with open ((( group — keep collecting lines
+      if(inTable && tableGroupDepth > 0){
+        tableRows.push(line);
+        tableGroupDepth += (line.match(/\(\(\(/g)||[]).length;
+        tableGroupDepth -= (line.match(/\)\)\)/g)||[]).length;
+        i++; continue;
+      }
+
+      // Parse group start: ((( - can also be on same line as content
+      if(trimmed === '(((' || trimmed.startsWith('(((')){
+        if(inList){html+=this.cls(listStack);listStack=[];inList=false}
+        if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
+        const groupAttrs = this.buildGroupAttrs(pendingParams);
+        html += `<div${groupAttrs}>\n`;
+        pendingParams = null;
+        // Check if there's content after ((( on the same line
+        const afterOpen = trimmed.slice(3).trim();
+        if(afterOpen){
+          // Re-process the rest of the line
+          lines[i] = afterOpen;
+          continue;
+        }
+        i++; continue;
+      }
+
+      // Parse group end: )))
+      if(trimmed === ')))'){
+        if(inList){html+=this.cls(listStack);listStack=[];inList=false}
+        if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
+        html += '</div>\n';
+        i++; continue;
+      }
+
+      if(line.trim()===''){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}pendingParams=null;i++;continue}
+      if(/^----\s*$/.test(line)){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}html+='<hr>\n';pendingParams=null;i++;continue}
+      const hm=line.match(/^(={1,6})\s+(.+?)\s+\1\s*$/)||line.match(/^(={1,6})\s+(.+?)\s*$/);
+      if(hm){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(inTable){if(tableGroupDepth>0){tableRows.push(line);i++;continue}html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}const lv=hm[1].length,rt=hm[2],id=this.slug(rt);this.headings.push({level:lv,text:rt,id});const attrs=pendingParams?this.buildAttrs(pendingParams):'';html+=`<h${lv} id="${id}"${attrs}>${this.inl(rt)}</h${lv}>\n`;pendingParams=null;i++;continue}
+      if(line.trim().startsWith('|')){if(inList){html+=this.cls(listStack);listStack=[];inList=false}if(!inTable&&pendingParams){tableAttrs=this.buildAttrs(pendingParams);pendingParams=null}inTable=true;tableRows.push(line);tableGroupDepth+=(line.match(/\(\(\(/g)||[]).length;tableGroupDepth-=(line.match(/\)\)\)/g)||[]).length;i++;continue}else if(inTable){html+=this.renderTable(tableRows,tableAttrs);tableRows=[];inTable=false;tableGroupDepth=0;tableAttrs=''}
+      const ul=line.match(/^(\*+)\s+(.*)/);
+      if(ul){
+        const content = ul[2].trim();
+        if(content === '(((' || content.startsWith('(((')){
+          // Rich list item with group content
+          inList=true;
+          const richContent = this.collectGroup(lines, i, content);
+          html += this.li(listStack, ul[1].length, 'ul', richContent.html);
+          i = richContent.nextIndex;
+          continue;
+        }
+        inList=true;html+=this.li(listStack,ul[1].length,'ul',this.inl(ul[2]));i++;continue;
+      }
+      const ol=line.match(/^(1+)\.\s+(.*)/);
+      if(ol){
+        const content = ol[2].trim();
+        if(content === '(((' || content.startsWith('(((')){
+          // Rich list item with group content
+          inList=true;
+          const richContent = this.collectGroup(lines, i, content);
+          html += this.li(listStack, ol[1].length, 'ol', richContent.html);
+          i = richContent.nextIndex;
+          continue;
+        }
+        inList=true;html+=this.li(listStack,ol[1].length,'ol',this.inl(ol[2]));i++;continue;
+      }
+      if(inList){html+=this.cls(listStack);listStack=[];inList=false}
+      const dm=line.match(/^;\s+(.*)/);
+      if(dm){let d='<dl><dt>'+this.inl(dm[1])+'</dt>';i++;while(i<lines.length){const dd=lines[i].match(/^:\s+(.*)/);if(dd){d+='<dd>'+this.inl(dd[1])+'</dd>';i++}else break}html+=d+'</dl>\n';pendingParams=null;continue}
+      if(line.startsWith('>')){let ql=[];while(i<lines.length&&lines[i].startsWith('>')){ql.push(lines[i].replace(/^>\s?/,''));i++}html+='<blockquote>'+ql.map(l=>this.inl(l)).join('<br>')+'</blockquote>\n';pendingParams=null;continue}
+      if(line.match(/^%%XWIKI_BLOCK_\w+_\d+%%$/)){html+=line+'\n';pendingParams=null;i++;continue}
+
+      // Paragraph - collect lines, apply pending params
+      let pl=[line];i++;
+      while(i<lines.length){
+        const nextLine = lines[i];
+        const nextTrimmed = nextLine.trim();
+        // Stop conditions
+        if(nextTrimmed === '') break;
+        if(/^={1,6}\s/.test(nextLine)) break;
+        if(nextTrimmed.startsWith('|')) break;
+        if(/^\*+\s/.test(nextLine)) break;
+        if(/^1+\.\s/.test(nextLine)) break;
+        if(nextLine.startsWith('>')) break;
+        if(nextLine.startsWith(';')) break;
+        if(/^----/.test(nextLine)) break;
+        if(/^%%XWIKI_BLOCK_/.test(nextLine)) break;
+        if(/^\(%.*%\)$/.test(nextTrimmed)) break; // parameter line
+        if(nextTrimmed.startsWith('(((')) break; // group start
+        if(nextTrimmed === ')))') break; // group end
+        pl.push(nextLine);
+        i++;
+      }
+      const attrs = pendingParams ? this.buildAttrs(pendingParams) : '';
+      html+=`<p${attrs}>`+pl.map(l=>this.inl(l)).join(' ')+'</p>\n';
+      pendingParams = null;
+    }
+    if(inList) html+=this.cls(listStack);
+    if(inTable) html+=this.renderTable(tableRows,tableAttrs);
+    return html;
+  }
+
+  // Collect a ((( ... ))) group from lines, returning {html, nextIndex}
+  // content is the text after the list marker on the opening line (e.g. "(((" or "(((text")
+  collectGroup(lines, startLine, content) {
+    let i = startLine;
+    // Get any content after ((( on the same line
+    let afterOpen = content.slice(3).trim();
+    let innerLines = [];
+    if (afterOpen) innerLines.push(afterOpen);
+    i++; // move past the line with (((
+
+    // Collect lines until matching )))
+    let depth = 1;
+    while (i < lines.length && depth > 0) {
+      const trimmed = lines[i].trim();
+      // Count nested ((( and )))
+      if (trimmed === '(((') depth++;
+      // Check for ((( in list items too
+      else if (/^[\*1]+[\.\s]\s*\(\(\(/.test(trimmed)) depth++;
+
+      if (trimmed === ')))') {
+        depth--;
+        if (depth === 0) {
+          i++; // skip the closing )))
+          break;
+        }
+      }
+      innerLines.push(lines[i]);
+      i++;
+    }
+
+    // Parse the inner content with a temporary parser to get HTML
+    const innerSource = innerLines.join('\n');
+    const subParser = new XWikiParser();
+    // Share headings reference for TOC
+    let innerHtml = subParser.parse(innerSource);
+    innerHtml = subParser.resolvePlaceholders(innerHtml);
+    this.headings.push(...subParser.headings);
+    // Merge wiki links
+    this.wikiLinks.push(...subParser.wikiLinks);
+    // Merge block placeholders for mermaid etc
+    Object.assign(this._placeholders, subParser._placeholders);
+
+    return { html: innerHtml, nextIndex: i };
+  }
+
+  // Parse (% class="x" style="y" %) into {class:'x', style:'y'}
+  parseParams(str){
+    const params = {};
+    // Match key="value" or key='value'
+    const re = /(\w+)\s*=\s*["']([^"']*)["']/g;
+    let m;
+    while((m = re.exec(str)) !== null){
+      params[m[1]] = m[2];
+    }
+    return params;
+  }
+
+  // Build HTML attributes string from params object
+  buildAttrs(params){
+    let attrs = '';
+    if(params.class){
+      attrs += ` class="${this.esc(params.class)}"`;
+    }
+    if(params.style){
+      attrs += ` style="${this.esc(params.style)}"`;
+    }
+    // Handle other common attributes
+    if(params.id){
+      attrs += ` id="${this.esc(params.id)}"`;
+    }
+    if(params.title){
+      attrs += ` title="${this.esc(params.title)}"`;
+    }
+    if(params.colspan){
+      attrs += ` colspan="${this.esc(params.colspan)}"`;
+    }
+    if(params.rowspan){
+      attrs += ` rowspan="${this.esc(params.rowspan)}"`;
+    }
+    return attrs;
+  }
+
+  // Build attributes for groups, merging xwiki-group with provided classes
+  buildGroupAttrs(params){
+    let classes = 'xwiki-group';
+    let style = '';
+    let other = '';
+    if(params){
+      if(params.class) classes += ' ' + params.class;
+      if(params.style) style = params.style;
+      if(params.id) other += ` id="${this.esc(params.id)}"`;
+      if(params.title) other += ` title="${this.esc(params.title)}"`;
+    }
+    let attrs = ` class="${this.esc(classes)}"`;
+    if(style) attrs += ` style="${this.esc(style)}"`;
+    attrs += other;
+    return attrs;
+  }
+
+  extractBlockMacros(s){let r=s,x=0;
+    // Verbatim {{{ ... }}} - must be processed first before other macros
+    r=r.replace(/\{\{\{([\s\S]*?)\}\}\}/g,(m,c)=>{const k=`%%XWIKI_BLOCK_VERBATIM_${x++}%%`;this._placeholders[k]={type:'verbatim',content:c};return k});
+    r=r.replace(/\{\{mermaid(?:\s[^}]*)?\}\}([\s\S]*?)\{\{\/mermaid\}\}/gi,(m,c)=>{const k=`%%XWIKI_BLOCK_MERMAID_${x++}%%`;this._placeholders[k]={type:'mermaid',content:c.trim()};return k});
+    r=r.replace(/\{\{code(?:\s+language="([^"]*)")?\s*\}\}([\s\S]*?)\{\{\/code\}\}/gi,(m,l,c)=>{const k=`%%XWIKI_BLOCK_CODE_${x++}%%`;this._placeholders[k]={type:'code',lang:l||'',content:c.replace(/^\n/,'').replace(/\n$/,'')};return k});
+    for(const bt of['info','warning','error','success']){const re=new RegExp(`\\{\\{${bt}(?:\\s+title="([^"]*)")?\\s*\\}\\}([\\s\\S]*?)\\{\\{\\/${bt}\\}\\}`,'gi');r=r.replace(re,(m,t,c)=>{const k=`%%XWIKI_BLOCK_BOX_${x++}%%`;this._placeholders[k]={type:'box',boxType:bt,title:t||'',content:c.trim()};return k})}
+    r=r.replace(/\{\{toc\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_TOC_${x++}%%`;this._placeholders[k]={type:'toc'};return k});
+    // Handle {{children}} macro - list child pages
+    r=r.replace(/\{\{children\s*\/?\}\}/gi,()=>{const k=`%%XWIKI_BLOCK_CHILDREN_${x++}%%`;this._placeholders[k]={type:'children'};return k});
+    // Handle {{include}} macro - render as a navigable link
+    r=r.replace(/\{\{include\s+reference="([^"]+)"[^}]*\/?\}\}/gi,(m,ref)=>{const k=`%%XWIKI_BLOCK_INCLUDE_${x++}%%`;this._placeholders[k]={type:'include',reference:ref};return k});
+    // Handle {{github-files}} macro - dynamic file listing from GitHub repo
+    r=r.replace(/\{\{github-files\s+([^}]*?)\/?\}\}/gi,(m,attrs)=>{const k=`%%XWIKI_BLOCK_GHFILES_${x++}%%`;const p=this.parseParams(attrs.replace(/&quot;/g,'"'));this._placeholders[k]={type:'github-files',repo:p.repo||'',path:p.path||''};return k});
+    return r;
+  }
+
+  resolvePlaceholders(html){
+    for(const[k,d]of Object.entries(this._placeholders)){let r='';
+      switch(d.type){
+        case'mermaid':{const id=`mermaid-${this.mermaidCounter++}`;r=`<div class="mermaid-container"><div class="mermaid-label">Mermaid</div><div class="mermaid" id="${id}">${this.esc(d.content)}</div></div>`;break}
+        case'code':{const ll=d.lang?`<span class="lang-label">${this.esc(d.lang)}</span>`:'';r=`<pre>${ll}<code>${this.esc(d.content)}</code></pre>`;break}
+        case'box':{const ic={info:'ℹ️',warning:'⚠️',error:'❌',success:'✅'};const th=d.title?`<div class="box-title">${ic[d.boxType]||''} ${this.esc(d.title)}</div>`:'';r=`<div class="xwiki-box ${d.boxType}">${th}${this.inl(d.content)}</div>`;break}
+        case'verbatim':{
+          const c = d.content.replace(/^\n/,'').replace(/\n$/,'');
+          r=`<pre class="xwiki-verbatim"><code>${this.esc(c)}</code></pre>`;
+          break;
+        }
+        case'toc':r=this.renderTOC();break;
+        case'children':{r='<div class="xwiki-children-list"></div>';break}
+        case'include':{
+          const ref = d.reference;
+          // Output a marker that will be resolved async with actual content
+          r=`<!--XWIKI_INCLUDE_START:${this.esc(ref)}--><div class="xwiki-include-placeholder" data-include-ref="${this.esc(ref)}"></div><!--XWIKI_INCLUDE_END:${this.esc(ref)}-->`;
+          break;
+        }
+        case'github-files':{
+          r=`<div class="github-files-list" data-gh-repo="${this.esc(d.repo)}" data-gh-path="${this.esc(d.path)}"><span class="github-files-loading">Loading files from GitHub…</span></div>`;
+          break;
+        }
+      }
+      html=html.replace(k,r);
+    }
+    return html;
+  }
+
+  inl(text){
+    if(!text)return'';
+    text=this.esc(text);
+    // Handle inline (% ... %) parameters as styled spans (quotes are &quot; after esc)
+    text=text.replace(/\(%\s*(.*?)\s*%\)([\s\S]*?)(?=\(%\s*.*?\s*%\)|$)/g,(m,raw,content)=>{
+      const attrs=raw.replace(/&quot;/g,'"').replace(/&amp;/g,'&');
+      const ha=this.buildAttrs(this.parseParams(attrs));
+      return ha?`<span${ha}>${content}</span>`:content;
+    });
+    text=text.replace(/##(.+?)##/g,'<code>$1</code>');
+    text=text.replace(/`([^`]+?)`/g,'<code>$1</code>');
+    text=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    text=text.replace(/(?<![:\w])\/\/(.+?)\/\//g,'<em>$1</em>');
+    text=text.replace(/--(.+?)--/g,'<del>$1</del>');
+    text=text.replace(/\^\^(.+?)\^\^/g,'<sup>$1</sup>');
+    text=text.replace(/,,(.+?),,/g,'<sub>$1</sub>');
+    // Strip xWiki url: prefix so url:https://... becomes https://...
+    text=text.replace(/&gt;&gt;url:(https?:\/\/)/g,'&gt;&gt;$1');
+    // External links
+    text=text.replace(/\[\[([^\]]+?)&gt;&gt;(https?:\/\/[^\]]+?)\]\]/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    text=text.replace(/\[\[(https?:\/\/[^\]]+?)\]\]/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // Mailto links
+    text=text.replace(/\[\[([^\]]+?)&gt;&gt;(mailto:[^\]]+?)\]\]/g,'<a href="$2">$1</a>');
+    // Wiki links: [[label>>ref]] or [[ref]]
+    text=text.replace(/\[\[([^\]]+?)&gt;&gt;(?!https?:\/\/)([^\]]+?)\]\]/g,(m,label,ref)=>{
+      ref=ref.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+      this.wikiLinks.push(ref);
+      return `<a class="wiki-link" data-wiki-ref="${this.esc(ref)}" href="javascript:void(0)" onclick="navigateToRef('${this.escAttr(ref)}')">${label}</a>`;
+    });
+    text=text.replace(/\[\[(?!https?:\/\/)([^\]]+?)\]\]/g,(m,ref)=>{
+      const clean=ref.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+      this.wikiLinks.push(clean);
+      return `<a class="wiki-link" data-wiki-ref="${this.esc(clean)}" href="javascript:void(0)" onclick="navigateToRef('${this.escAttr(clean)}')">${ref}</a>`;
+    });
+    text=text.replace(/\[\[image:([^\]|]+?)(?:\|[^\]]*)?\]\]/g,'<img src="$1" alt="image">');
+    text=text.replace(/image:(https?:\/\/\S+)/g,'<img src="$1" alt="image">');
+    text=text.replace(/\\\\/g,'<br>');
+    return text;
+  }
+
+  li(stk,d,t,c){let h='';while(stk.length>d)h+=`</li></${stk.pop()}>`;if(stk.length<d){while(stk.length<d){h+=`<${t}>`;stk.push(t)}h+=`<li>${c}`}else h+=`</li><li>${c}`;return h}
+  cls(stk){let h='';while(stk.length>0)h+=`</li></${stk.pop()}>`;return h+'\n'}
+  renderTable(rawLines,tblAttrs){
+    if(!rawLines.length)return'';
+    // Merge multi-line rows: a logical row starts with | at depth 0
+    const logicalRows=[];
+    let cur='',depth=0;
+    for(const line of rawLines){
+      if(line.trim().startsWith('|')&&depth===0){
+        if(cur)logicalRows.push(cur);
+        cur=line;
+      }else{
+        cur+='\n'+line;
+      }
+      depth+=(line.match(/\(\(\(/g)||[]).length;
+      depth-=(line.match(/\)\)\)/g)||[]).length;
+      if(depth<0)depth=0;
+    }
+    if(cur)logicalRows.push(cur);
+
+    let h=`<table${tblAttrs||''}>`;
+    for(const row of logicalRows){
+      const cells=this.splitTableCells(row);
+      h+='<tr>';
+      for(const cell of cells){
+        const ct=cell.trim();
+        if(!ct)continue;
+        const isHdr=ct.startsWith('=');
+        let content=isHdr?ct.slice(1):ct;
+        // Extract inline parameters (% ... %) at start of cell
+        let cellAttrs='';
+        const pm=content.match(/^\s*\(%\s*(.*?)\s*%\)([\s\S]*)/);
+        if(pm){cellAttrs=this.buildAttrs(this.parseParams(pm[1]));content=pm[2]}
+        const rendered=this.renderCellContent(content.trim());
+        h+=isHdr?`<th${cellAttrs}>${rendered}</th>`:`<td${cellAttrs}>${rendered}</td>`;
+      }
+      h+='</tr>';
+    }
+    return h+'</table>\n';
+  }
+  // Split a logical table row into cells, respecting ((( ))) and [[ ]] nesting
+  splitTableCells(row){
+    const cells=[];let cur='',depth=0,linkDepth=0,i=0;
+    // Skip leading |
+    while(i<row.length&&row[i]!=='|')i++;
+    if(i<row.length)i++; // skip the first |
+    while(i<row.length){
+      if(row[i]==='('&&row.substring(i,i+3)==='((('){depth++;cur+='(((';i+=3;continue}
+      if(row[i]===')'&&row.substring(i,i+3)===')))'){depth--;if(depth<0)depth=0;cur+=')))';i+=3;continue}
+      if(row[i]==='['&&row[i+1]==='['){linkDepth++;cur+='[[';i+=2;continue}
+      if(row[i]===']'&&row[i+1]===']'){linkDepth--;if(linkDepth<0)linkDepth=0;cur+=']]';i+=2;continue}
+      if(row[i]==='|'&&depth===0&&linkDepth===0){cells.push(cur);cur='';i++;continue}
+      cur+=row[i];i++;
+    }
+    if(cur.trim())cells.push(cur);
+    return cells;
+  }
+  // Render cell content: if it contains ((( groups, parse as blocks; otherwise inline
+  renderCellContent(content){
+    if(content.indexOf('(((')===-1) return this.inl(content);
+    let result='',i=0;
+    while(i<content.length){
+      if(content.substring(i,i+3)==='((('){
+        // Collect group with nesting support
+        let depth=1,j=i+3;
+        while(j<content.length&&depth>0){
+          if(content.substring(j,j+3)==='((('){depth++;j+=3}
+          else if(content.substring(j,j+3)===')))'){depth--;if(depth===0)break;j+=3}
+          else j++;
+        }
+        const inner=content.substring(i+3,j);
+        const subParser=new XWikiParser();
+        let html=subParser.parse(inner.trim());
+        html=subParser.resolvePlaceholders(html);
+        this.headings.push(...subParser.headings);
+        this.wikiLinks.push(...subParser.wikiLinks);
+        Object.assign(this._placeholders,subParser._placeholders);
+        result+='<div class="xwiki-cell-group">'+html+'</div>';
+        i=j+3; // skip past )))
+      }else{
+        let nextGroup=content.indexOf('(((',i);
+        if(nextGroup===-1)nextGroup=content.length;
+        const seg=content.substring(i,nextGroup).trim();
+        if(seg)result+=this.inl(seg);
+        i=nextGroup;
+      }
+    }
+    return result;
+  }
+  renderTOC(){if(!this.headings.length)return'';let h='<div class="xwiki-toc"><div class="toc-title">Table of Contents</div><ul>';for(const hd of this.headings)h+=`<li class="toc-h${hd.level}"><a href="#${hd.id}">${this.esc(hd.text)}</a></li>`;return h+'</ul></div>'}
+  esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+  escAttr(t){return t.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+  slug(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
+}
+
+// =================================================================
+// State
+// =================================================================
+const parser = new XWikiParser();
+const editorEl = document.getElementById('editor');
+const previewEl = document.getElementById('preview');
+let renderTimeout = null, mermaidRenderCount = 0;
+
+// Wiki tree
+let dirHandle = null;           // directory handle from FS API
+let pageIndex = {};             // ref → { handle, path, name, relPath, segments }
+let pageTree = null;            // hierarchical tree for sidebar
+let currentPageRef = null;      // current page reference key
+let currentFileHandle = null;   // for single-file mode
+let currentSpace = [];          // current space path segments
+let fallbackFiles = {};         // webkitdirectory: relPath → File object
+
+// Navigation history
+let navHistory = [], navPos = -1;
+
+// Watching
+let isWatching = false, watchInterval = null, lastMod = null, lastContent = null;
+
+const WIKI_EXTS = ['.xwiki','.wiki','.txt','.md'];
+const hasFSAPI = ('showDirectoryPicker' in window);
+
+// =================================================================
+// Rendering
+// =================================================================
+// Resolve {{include}} macros by fetching and parsing referenced pages
+async function resolveIncludes(html, includedRefs, depth = 0) {
+  if (depth > 10) return html; // Max recursion depth
+
+  const includeRegex = /<!--XWIKI_INCLUDE_START:([^>]+)--><div class="xwiki-include-placeholder" data-include-ref="[^"]*"><\/div><!--XWIKI_INCLUDE_END:[^>]+-->/g;
+  const matches = [...html.matchAll(includeRegex)];
+
+  if (matches.length === 0) return html;
+
+  for (const match of matches) {
+    const ref = match[1];
+    const fullMatch = match[0];
+
+    // Check for circular include
+    if (includedRefs.has(ref)) {
+      const errorHtml = `<div class="xwiki-include-error">⚠️ Circular include detected: ${parser.esc(ref)}</div>`;
+      html = html.replace(fullMatch, errorHtml);
+      continue;
+    }
+
+    // Try to resolve the reference
+    const page = resolveRef(ref);
+
+    if (!page) {
+      // Page not found - show link instead
+      const notFoundHtml = `<div class="xwiki-include" onclick="navigateToRef('${parser.escAttr(ref)}')"><span class="include-icon">📄</span><span class="include-label">Include:</span> <a class="wiki-link unresolved" data-wiki-ref="${parser.esc(ref)}" href="javascript:void(0)">${parser.esc(ref)}</a> <span style="color:#b06040;font-size:.8em">(not found)</span></div>`;
+      html = html.replace(fullMatch, notFoundHtml);
+      continue;
+    }
+
+    try {
+      // Fetch the page content
+      let text;
+      if (page.content !== undefined) {
+        text = page.content;
+      } else if (page.handle) {
+        const file = await page.handle.getFile();
+        text = await file.text();
+      } else if (page.fileObj) {
+        text = await page.fileObj.text();
+      } else if (page.serverUrl) {
+        const res = await fetch(page.serverUrl);
+        if (!res.ok) throw new Error('Cannot load from server');
+        text = await res.text();
+      } else {
+        throw new Error('Cannot read page');
+      }
+
+      // Parse the included content with a fresh parser instance
+      const includeParser = new XWikiParser();
+      let includedHtml = includeParser.parse(text);
+      includedHtml = includeParser.resolvePlaceholders(includedHtml);
+
+      // Recursively resolve nested includes
+      const newIncludedRefs = new Set(includedRefs);
+      newIncludedRefs.add(ref);
+      includedHtml = await resolveIncludes(includedHtml, newIncludedRefs, depth + 1);
+
+      // Wrap in a container with a subtle header
+      const wrappedHtml = `<div class="xwiki-included-content" data-source="${parser.esc(ref)}">
+        <div class="xwiki-included-header" onclick="navigateToRef('${parser.escAttr(ref)}')" title="Click to open ${parser.esc(ref)}">📄 ${parser.esc(page.name)}</div>
+        ${includedHtml}
+      </div>`;
+
+      html = html.replace(fullMatch, wrappedHtml);
+    } catch (e) {
+      console.warn('Include error:', ref, e);
+      const errorHtml = `<div class="xwiki-include-error">❌ Failed to include: ${parser.esc(ref)}</div>`;
+      html = html.replace(fullMatch, errorHtml);
+    }
+  }
+
+  return html;
+}
+
+function getChildPages(ref){
+  if(!ref) return [];
+  const page = pageIndex[ref];
+  if(!page) return [];
+  const segs = page.segments;
+  if(segs[segs.length-1] !== 'WebHome') return [];
+  const spaceSegs = segs.slice(0,-1);
+  const children = [];
+  for(const[r,p] of Object.entries(pageIndex)){
+    if(r === ref) continue;
+    const ps = p.segments;
+    // Child space WebHome: spaceSegs + childName + WebHome
+    if(ps.length === spaceSegs.length+2 && ps[ps.length-1]==='WebHome'){
+      let match = true;
+      for(let j=0;j<spaceSegs.length;j++){if(ps[j]!==spaceSegs[j]){match=false;break}}
+      if(match) children.push({ref:r, name:ps[spaceSegs.length]});
+    }
+    // Terminal page directly in space: spaceSegs + pageName (non-WebHome)
+    else if(ps.length === spaceSegs.length+1 && ps[ps.length-1]!=='WebHome'){
+      let match = true;
+      for(let j=0;j<spaceSegs.length;j++){if(ps[j]!==spaceSegs[j]){match=false;break}}
+      if(match) children.push({ref:r, name:ps[spaceSegs.length]});
+    }
+  }
+  children.sort((a,b)=>a.name.localeCompare(b.name));
+  return children;
+}
+
+function derivePageTitle(ref){
+  if(!ref) return '';
+  // Strip translation suffix: "Space.WebHome.de" → "Space.WebHome"
+  var cleaned = ref.replace(/\.WebHome\.[a-z]{2}$/i, '.WebHome').replace(/^WebHome\.[a-z]{2}$/i, 'WebHome');
+  const segs = cleaned.split('.').filter(s=>s.toLowerCase()!=='webhome');
+  if(segs.length) return segs[segs.length-1];
+  // Root WebHome — use wiki/folder name
+  if(pageTree && pageTree[0] && pageTree[0].type==='folder') return pageTree[0].name;
+  return '';
+}
+function isTranslationWebHome(baseName){
+  return /^WebHome\.[a-z]{2}$/i.test(baseName);
+}
+function contentHasHeading(src){
+  for(const line of src.split('\n')){
+    const s=line.trim();
+    if(!s) continue;
+    return /^={1,6}\s/.test(s);
+  }
+  return false;
+}
+
+async function renderPreview(){
+  let src = editorEl.value;
+  // Auto-inject title for pages that lack a heading
+  if(!contentHasHeading(src)){
+    const title = derivePageTitle(currentPageRef);
+    if(title) src = `= ${title} =\n\n${src}`;
+  }
+  let html = parser.parse(src);
+  html = parser.resolvePlaceholders(html);
+  // Resolve includes (async - fetches and parses included pages)
+  html = await resolveIncludes(html, new Set([currentPageRef]));
+  previewEl.innerHTML = html;
+
+  // Resolve {{children/}} placeholders
+  previewEl.querySelectorAll('.xwiki-children-list').forEach(el => {
+    const children = getChildPages(currentPageRef);
+    if(children.length === 0){
+      el.innerHTML = '<span class="children-empty">No child pages.</span>';
+    } else {
+      let h = '<ul>';
+      for(const c of children){
+        h += `<li><a class="wiki-link resolved" data-wiki-ref="${parser.esc(c.ref)}" href="javascript:void(0)" onclick="navigateToRef('${parser.escAttr(c.ref)}')">${parser.esc(c.name)}</a></li>`;
+      }
+      el.innerHTML = h + '</ul>';
+    }
+  });
+
+  // Resolve {{github-files/}} placeholders - fetch file list from GitHub Contents API
+  previewEl.querySelectorAll('.github-files-list').forEach(async el => {
+    const repo = el.getAttribute('data-gh-repo');
+    const ghPath = el.getAttribute('data-gh-path');
+    if(!repo || !ghPath){ el.innerHTML = '<span class="github-files-error">Missing repo or path attribute.</span>'; return; }
+    try {
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/${ghPath}`;
+      const resp = await fetch(apiUrl, {headers:{Accept:'application/vnd.github.v3+json'}});
+      if(!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+      const files = await resp.json();
+      if(!Array.isArray(files) || files.length === 0){
+        el.innerHTML = '<span class="github-files-empty">No files found.</span>';
+        return;
+      }
+      // Sort: directories first, then by name
+      files.sort((a,b) => {
+        if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      // Check for reports-manifest.json and fetch if present
+      const manifestFile = files.find(f => f.name === 'reports-manifest.json');
+      let manifest = null;
+      if(manifestFile){
+        try {
+          const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${ghPath}/reports-manifest.json`;
+          const mResp = await fetch(rawUrl);
+          if(mResp.ok) manifest = await mResp.json();
+        } catch(e){ /* manifest fetch failed, fall back to plain table */ }
+      }
+
+      // Verdict -> CSS class mapping
+      const rvClass = v => {
+        if(!v) return 'rv-inc';
+        const u = v.toUpperCase();
+        if(u==='TRUE'||u==='MOSTLY-TRUE') return 'rv-t';
+        if(u==='LEANING-TRUE') return 'rv-lt';
+        if(u==='MIXED') return 'rv-inc';
+        if(u==='UNVERIFIED') return 'rv-unv';
+        if(u==='LEANING-FALSE') return 'rv-lf';
+        return 'rv-f';
+      };
+
+      let h = '';
+      const remaining = []; // files without manifest entries
+
+      if(manifest && manifest.reports){
+        h += '<div class="report-cards">';
+        for(const f of files){
+          if(f.type === 'dir' || f.name === 'reports-manifest.json') continue;
+          const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
+          const meta = manifest.reports[f.name];
+          if(meta && meta.claim && (ext === 'html' || ext === 'htm')){
+            const href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+            const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
+            const verdictCls = rvClass(meta.verdict);
+            const pctInfo = (meta.truth != null ? `${meta.truth}% truth` : '') + (meta.confidence != null ? ` · ${meta.confidence}% conf` : '');
+            const modelStr = meta.model && meta.model !== '—' ? meta.model : '';
+            h += `<a class="report-card" href="${parser.esc(href)}" target="_blank" rel="noopener">`;
+            h += `<div class="report-card-top"><span class="report-card-claim">${parser.esc(meta.claim)}</span>`;
+            h += meta.date ? `<span class="report-card-date">${parser.esc(meta.date)}</span>` : '';
+            h += `</div>`;
+            h += `<div class="report-card-meta">`;
+            h += meta.verdict ? `<span class="report-card-verdict ${verdictCls}">${parser.esc(meta.verdict)}</span>` : '';
+            h += pctInfo ? `<span class="report-card-pct">${parser.esc(pctInfo)}</span>` : '';
+            h += modelStr ? `<span class="report-card-model">${parser.esc(modelStr)}</span>` : '';
+            h += `<span class="report-card-pct">${parser.esc(sizeKB)}</span>`;
+            h += `</div></a>`;
+          } else {
+            remaining.push(f);
+          }
+        }
+        h += '</div>';
+      } else {
+        // No manifest — all files go to the plain table
+        for(const f of files){
+          if(f.type !== 'dir' && f.name !== 'reports-manifest.json') remaining.push(f);
+        }
+      }
+
+      // Render remaining files (non-HTML, or files without manifest entries) as table rows
+      if(remaining.length > 0){
+        h += `<table class="github-files-table"><thead><tr><th>File</th><th>Type</th><th>Size</th></tr></thead><tbody>`;
+        for(const f of remaining){
+          const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
+          const typeLabel = ext.toUpperCase() || 'FILE';
+          const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
+          let href;
+          if(ext === 'html' || ext === 'htm'){
+            href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+          } else {
+            href = `https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+          }
+          const icon = ext === 'html' || ext === 'htm' ? '📊' : ext === 'pdf' ? '📄' : ext === 'json' ? '📋' : '📁';
+          h += `<tr><td>${icon} <a href="${parser.esc(href)}" target="_blank" rel="noopener">${parser.esc(f.name)}</a></td><td>${esc(typeLabel)}</td><td>${esc(sizeKB)}</td></tr>`;
+        }
+        h += '</tbody></table>';
+      }
+
+      h += `<div class="github-files-footer"><a href="https://github.com/${parser.esc(repo)}/tree/main/${parser.esc(ghPath)}" target="_blank" rel="noopener">View on GitHub</a></div>`;
+      el.innerHTML = h;
+    } catch(err) {
+      el.innerHTML = `<span class="github-files-error">Failed to load files: ${parser.esc(String(err.message))}</span>`;
+    }
+  });
+
+  // Mark resolved/unresolved wiki links
+  previewEl.querySelectorAll('.wiki-link').forEach(el => {
+    const ref = el.getAttribute('data-wiki-ref');
+    // Anchor-only links (||anchor="...") are always valid — skip page resolution
+    if(ref && ref.startsWith('||')){
+      el.classList.add('resolved');
+      el.title = 'Anchor link';
+      return;
+    }
+    // Strip ||params from ref for page resolution
+    const pipeIdx = ref ? ref.indexOf('||') : -1;
+    const pageRef = pipeIdx >= 0 ? ref.substring(0, pipeIdx).trim() : ref;
+    const resolved = resolveRef(pageRef);
+    el.classList.toggle('resolved', !!resolved);
+    el.classList.toggle('unresolved', !resolved);
+    if(resolved) el.title = resolved.relPath;
+    else el.title = `Page not found: ${pageRef}`;
+  });
+
+  mermaidRenderCount++;
+  const cur = mermaidRenderCount;
+  try {
+    const els = previewEl.querySelectorAll('.mermaid');
+    if(els.length>0){els.forEach((el,i)=>{el.removeAttribute('data-processed');el.id=`m-${cur}-${i}`});await mermaid.run({nodes:els})}
+  } catch(e){ console.warn('Mermaid:',e); }
+}
+
+editorEl.addEventListener('input',()=>{clearTimeout(renderTimeout);renderTimeout=setTimeout(renderPreview,400)});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();renderPreview()}});
+
+// =================================================================
+// Page Reference Resolution
+// =================================================================
+function normalizeRef(ref){
+  // Strip doc: prefix, normalize dots and path separators
+  let r = ref.replace(/^doc:/i,'').replace(/^xwiki:/i,'').trim();
+  r = r.replace(/\//g,'.').replace(/\\+/g,'.');
+  // Strip leading dots (xWiki relative reference syntax)
+  r = r.replace(/^\.+/,'');
+  // Remove .WebHome suffix (XWiki convention)
+  r = r.replace(/\.WebHome$/i,'');
+  return r;
+}
+
+function resolveRef(ref){
+  const norm = normalizeRef(ref);
+  const normWithWebHome = norm + '.WebHome';
+
+  // 1. Exact match in page index (with and without .WebHome)
+  if(pageIndex[norm]) return pageIndex[norm];
+  if(pageIndex[normWithWebHome]) return pageIndex[normWithWebHome];
+
+  // 2. Case-insensitive match (try both with and without .WebHome)
+  const normLow = norm.toLowerCase();
+  const normWebHomeLow = normWithWebHome.toLowerCase();
+  for(const[k,v] of Object.entries(pageIndex)){
+    const kLow = k.toLowerCase();
+    if(kLow === normLow || kLow === normWebHomeLow) return v;
+  }
+
+  // 3. Try relative to current space
+  if(currentSpace.length > 0){
+    const rel = [...currentSpace, norm].join('.');
+    const relWebHome = rel + '.WebHome';
+    if(pageIndex[rel]) return pageIndex[rel];
+    if(pageIndex[relWebHome]) return pageIndex[relWebHome];
+    const relLow = rel.toLowerCase();
+    const relWebHomeLow = relWebHome.toLowerCase();
+    for(const[k,v] of Object.entries(pageIndex)){
+      const kLow = k.toLowerCase();
+      if(kLow === relLow || kLow === relWebHomeLow) return v;
+    }
+  }
+
+  // 4. Fuzzy matching - find best matching page by key segments
+  const refSegments = norm.toLowerCase().split('.').filter(s => s && s !== 'webhome');
+  const refKey = refSegments.slice(-2).join('.'); // Last 2 meaningful segments
+  const refKeyNorm = refKey.replace(/[^a-z0-9]/g, '');
+
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for(const[k,v] of Object.entries(pageIndex)){
+    const kSegments = k.toLowerCase().split('.').filter(s => s && s !== 'webhome');
+    const kKey = kSegments.slice(-2).join('.');
+    const kKeyNorm = kKey.replace(/[^a-z0-9]/g, '');
+
+    // Score based on matching segments
+    let score = 0;
+
+    // Check if key segments match (normalized - no spaces/special chars)
+    if(kKeyNorm === refKeyNorm) score += 100;
+    else if(kKeyNorm.includes(refKeyNorm) || refKeyNorm.includes(kKeyNorm)) score += 50;
+
+    // Check for matching individual segments
+    for(const refSeg of refSegments){
+      const refSegNorm = refSeg.replace(/[^a-z0-9]/g, '');
+      for(const kSeg of kSegments){
+        const kSegNorm = kSeg.replace(/[^a-z0-9]/g, '');
+        if(kSegNorm === refSegNorm) score += 20;
+        else if(kSegNorm.includes(refSegNorm) || refSegNorm.includes(kSegNorm)) score += 10;
+      }
+    }
+
+    // Prefer WebHome pages
+    if(k.toLowerCase().endsWith('.webhome')) score += 5;
+
+    if(score > bestScore){
+      bestScore = score;
+      bestMatch = v;
+    }
+  }
+
+  // Only return if we have a reasonable match (at least one segment matched)
+  if(bestScore >= 20) return bestMatch;
+
+  return null;
+}
+
+async function navigateToRef(ref){
+  // Split page ref from ||parameters (e.g. "Page.WebHome||anchor="id"")
+  let pageRef = ref, anchor = null;
+  const pipeIdx = ref.indexOf('||');
+  if(pipeIdx >= 0){
+    const params = ref.substring(pipeIdx + 2);
+    const am = params.match(/anchor=["']?([^"']+)["']?/);
+    if(am) anchor = am[1];
+    pageRef = ref.substring(0, pipeIdx).trim();
+  }
+  // Pure anchor link (no page ref) — scroll within current page
+  if(!pageRef && anchor){
+    scrollToAnchor(anchor);
+    return;
+  }
+  if(!pageRef){ showToast(`Invalid link: ${ref}`); return; }
+  const page = resolveRef(pageRef);
+  if(!page){
+    showToast(`Page not found: ${pageRef}`);
+    return;
+  }
+  await loadPage(page.ref, true);
+  if(anchor) setTimeout(() => scrollToAnchor(anchor), 150);
+}
+
+function scrollToAnchor(id){
+  // Normalize: strip xWiki H-prefix, remove non-alphanumeric, lowercase
+  const norm = s => s.replace(/^H/,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+  const target = norm(id);
+  const previewEl = document.querySelector('.preview-content') || document;
+  for(const el of previewEl.querySelectorAll('[id]')){
+    if(norm(el.id) === target){
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+  }
+  showToast('Anchor not found: ' + id);
+}
+
+// =================================================================
+// Page Loading
+// =================================================================
+async function loadPage(ref, addHistory=true){
+  const page = pageIndex[ref];
+  if(!page) return;
+  try {
+    // Support bundle content, FS API handles, server URLs, and direct File objects
+    let text, fileSize=0, fileMod=Date.now();
+    if(page.content !== undefined){
+      text = page.content;
+      fileSize = new Blob([text]).size;
+    } else if(page.handle){
+      const file = await page.handle.getFile();
+      text = await file.text();
+      fileSize = file.size;
+      fileMod = file.lastModified;
+    } else if(page.fileObj){
+      text = await page.fileObj.text();
+      fileSize = page.fileObj.size;
+      fileMod = page.fileObj.lastModified;
+    } else if(page.serverUrl){
+      const res = await fetch(page.serverUrl);
+      if(!res.ok){ showToast('Cannot load page from server'); return; }
+      text = await res.text();
+      fileSize = new Blob([text]).size;
+    } else { showToast('Cannot read page'); return; }
+
+    editorEl.value = text;
+    lastContent = text;
+    lastMod = fileMod;
+    currentPageRef = ref;
+    Analytics.trackPageView(ref);
+    if(history.replaceState) history.replaceState(null,'','#'+ref);
+    currentFileHandle = page.handle || null;
+    currentSpace = page.segments.slice(0,-1);
+
+    const hasHandle = !!page.handle;
+    document.getElementById('filename').textContent = page.name;
+    document.getElementById('filename').title = getPageRelPath(page);
+    document.getElementById('fileSize').textContent = formatSize(fileSize);
+    document.getElementById('fileInfo').style.display = 'flex';
+    document.getElementById('btnReload').disabled = !hasHandle;
+    document.getElementById('btnWatch').style.display = hasHandle ? '' : 'none';
+
+    if(addHistory){
+      navHistory = navHistory.slice(0, navPos+1);
+      navHistory.push(ref);
+      navPos = navHistory.length-1;
+    }
+    updateNavButtons();
+    updateBreadcrumb(page);
+    highlightTreeItem(ref);
+    checkMobileLayout();
+    document.querySelector('.preview-wrap').scrollTop = 0;
+    editorEl.scrollTop = 0;
+    renderPreview();
+  } catch(e){ console.warn('Load error:',e); showToast('Could not load page'); }
+}
+
+function updateNavButtons(){
+  document.getElementById('btnBack').disabled = navPos <= 0;
+  document.getElementById('btnFwd').disabled = navPos >= navHistory.length-1;
+}
+
+function navBack(){
+  if(navPos <= 0) return;
+  navPos--;
+  loadPage(navHistory[navPos], false);
+}
+function navForward(){
+  if(navPos >= navHistory.length-1) return;
+  navPos++;
+  loadPage(navHistory[navPos], false);
+}
+
+function updateBreadcrumb(page){
+  const bc = document.getElementById('breadcrumb');
+  if(!page){bc.innerHTML='';return}
+  let html = '';
+  const segs = page.segments;
+  for(let i=0; i<segs.length; i++){
+    if(i>0) html += '<span class="bc-sep">›</span>';
+    const isLast = i === segs.length-1;
+    const partial = segs.slice(0,i+1).join('.');
+    if(isLast){
+      const label = segs[i];
+      html += `<span class="bc-item active">${esc(label)}</span>`;
+    } else {
+      // Try to navigate to this space's index page
+      html += `<span class="bc-item" onclick="tryNavigateSpace('${escAttr(partial)}')">${esc(segs[i])}</span>`;
+    }
+  }
+  bc.innerHTML = html;
+}
+
+function tryNavigateSpace(dotPath){
+  // Try to find WebHome or index in this space
+  const candidates = [dotPath+'.WebHome', dotPath+'.Index', dotPath+'.Home', dotPath];
+  for(const c of candidates){
+    if(pageIndex[c]){navigateToRef(c);return}
+    const cl=c.toLowerCase();
+    for(const[k] of Object.entries(pageIndex)){if(k.toLowerCase()===cl){navigateToRef(k);return}}
+  }
+  showToast(`No index page for space: ${dotPath}`);
+}
+
+// =================================================================
+// Directory Scanning & Page Index
+// =================================================================
+async function scanDirectory(dirH, prefix=[]){
+  const entries = [];
+  let sortOrder = null;
+  for await(const entry of dirH.values()){
+    if(entry.name.startsWith('.')) continue; // skip hidden
+    if(entry.name === '_sort' && entry.kind === 'file'){
+      try {
+        const f = await entry.getFile();
+        const text = await f.text();
+        sortOrder = text.split('\n').map(l=>l.trim()).filter(l=>l && !l.startsWith('#'));
+      } catch(e){ /* ignore */ }
+      continue;
+    }
+    if(entry.kind === 'file'){
+      const ext = '.'+entry.name.split('.').pop().toLowerCase();
+      if(WIKI_EXTS.includes(ext)){
+        const baseName = entry.name.replace(/\.[^.]+$/,'');
+        const segments = [...prefix, baseName];
+        const ref = segments.join('.');
+        const relPath = [...prefix, entry.name].join('/');
+        entries.push({
+          type: 'file',
+          name: entry.name,
+          baseName,
+          ref,
+          segments,
+          relPath,
+          handle: entry,
+          parentPath: prefix.join('.')
+        });
+      }
+    } else if(entry.kind === 'directory'){
+      const children = await scanDirectory(entry, [...prefix, entry.name]);
+      if(children.length > 0){
+        entries.push({
+          type: 'folder',
+          name: entry.name,
+          segments: [...prefix, entry.name],
+          children
+        });
+      }
+    }
+  }
+  applySortOrder(entries, sortOrder);
+  return entries;
+}
+
+function applySortOrder(entries, sortOrder){
+  if(sortOrder && sortOrder.length > 0){
+    const orderMap = {};
+    sortOrder.forEach((n,i)=>{ orderMap[n.toLowerCase()] = i; });
+    entries.sort((a,b)=>{
+      const aIsFolder = a.type==='folder' ? 0 : 1;
+      const bIsFolder = b.type==='folder' ? 0 : 1;
+      if(aIsFolder !== bIsFolder) return aIsFolder - bIsFolder;
+      const aName = a.name.toLowerCase().replace(/\.[^.]+$/,'');
+      const bName = b.name.toLowerCase().replace(/\.[^.]+$/,'');
+      const aIdx = aName in orderMap ? orderMap[aName] : (a.name.toLowerCase() in orderMap ? orderMap[a.name.toLowerCase()] : Infinity);
+      const bIdx = bName in orderMap ? orderMap[bName] : (b.name.toLowerCase() in orderMap ? orderMap[b.name.toLowerCase()] : Infinity);
+      const aListed = aIdx !== Infinity ? 0 : 1;
+      const bListed = bIdx !== Infinity ? 0 : 1;
+      if(aListed !== bListed) return aListed - bListed;
+      if(aIdx !== bIdx) return aIdx - bIdx;
+      return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+    });
+  } else {
+    entries.sort((a,b)=>{
+      if(a.type!==b.type) return a.type==='folder'?-1:1;
+      return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+    });
+  }
+}
+
+function buildPageIndex(tree, idx={}){
+  for(const item of tree){
+    if(item.type==='file'){
+      idx[item.ref] = item;
+    } else if(item.type==='folder'){
+      buildPageIndex(item.children, idx);
+    }
+  }
+  return idx;
+}
+
+// =================================================================
+// File Tree Sidebar
+// =================================================================
+function renderTree(tree, depth=0){
+  let html = '';
+  for(const item of tree){
+    // Hide translation WebHome pages (e.g. WebHome.de) — accessible via language links
+    if(item.type === 'file' && isTranslationWebHome(item.baseName)) continue;
+    const pad = depth * 14;
+    if(item.type === 'folder'){
+      const id = 'tg-'+item.segments.join('-');
+      const folderPath = item.segments.join('.');
+      html += `<div class="tree-item tree-folder" data-folder-path="${esc(folderPath)}" style="padding-left:${8+pad}px">
+        <svg class="ti-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="toggleFolder('${id}',this.parentElement);event.stopPropagation()"><path d="m9 18 6-6-6-6"/></svg>
+        <span class="ti-folder-label" onclick="openFolder('${id}',this.parentElement,'${escAttr(folderPath)}')">
+          <svg class="ti-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          <span class="ti-label">${esc(item.name)}</span>
+        </span>
+      </div>
+      <div class="tree-group collapsed" id="${id}">${renderTree(item.children, depth+1)}</div>`;
+    } else {
+      html += `<div class="tree-item tree-page" data-ref="${esc(item.ref)}" style="padding-left:${8+pad+16}px" onclick="loadPage('${escAttr(item.ref)}')">
+        <svg class="ti-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+        <span class="ti-label">${esc(item.baseName)}</span>
+      </div>`;
+    }
+  }
+  return html;
+}
+
+// Arrow click: toggle expand/collapse only
+function toggleFolder(id, el){
+  const group = document.getElementById(id);
+  if(!group) return;
+  group.classList.toggle('collapsed');
+  const arrow = el.querySelector('.ti-arrow');
+  if(arrow) arrow.classList.toggle('open', !group.classList.contains('collapsed'));
+}
+
+// Folder label click: open WebHome page and ensure expanded
+function openFolder(id, el, folderPath){
+  // Ensure folder is expanded
+  const group = document.getElementById(id);
+  if(group && group.classList.contains('collapsed')){
+    group.classList.remove('collapsed');
+    const arrow = el.querySelector('.ti-arrow');
+    if(arrow) arrow.classList.add('open');
+  }
+
+  // Try to open WebHome page in this folder
+  if(folderPath && Object.keys(pageIndex).length > 0){
+    const indexNames = ['WebHome', 'webhome', 'Index', 'index', 'Home', 'home'];
+    const folderPathLower = folderPath.toLowerCase();
+
+    for(const indexName of indexNames){
+      const candidateRef = folderPath + '.' + indexName;
+      if(pageIndex[candidateRef]){
+        loadPage(candidateRef);
+        return;
+      }
+    }
+
+    for(const indexName of indexNames){
+      const candidateLower = (folderPath + '.' + indexName).toLowerCase();
+      for(const k of Object.keys(pageIndex)){
+        if(k.toLowerCase() === candidateLower){
+          loadPage(k);
+          return;
+        }
+      }
+    }
+
+    for(const k of Object.keys(pageIndex)){
+      if(k.toLowerCase().startsWith(folderPathLower + '.') && !k.toLowerCase().slice(folderPathLower.length + 1).includes('.')){
+        loadPage(k);
+        return;
+      }
+    }
+  }
+}
+
+function highlightTreeItem(ref){
+  // Clear all active states (pages and folders)
+  document.querySelectorAll('.tree-item.active').forEach(el=> el.classList.remove('active'));
+
+  // For WebHome refs, highlight the parent folder instead of the hidden page element
+  let target = null;
+  const baseName = ref.split('.').pop();
+  if(baseName === 'WebHome' || baseName === 'webhome'){
+    const folderPath = ref.split('.').slice(0,-1).join('.');
+    target = document.querySelector(`.tree-folder[data-folder-path="${CSS.escape(folderPath)}"]`);
+  }
+  if(!target){
+    target = document.querySelector(`.tree-page[data-ref="${CSS.escape(ref)}"]`);
+  }
+  if(!target) return;
+  target.classList.add('active');
+
+  // Expand parent folders and scroll into view
+  let parent = target.parentElement;
+  while(parent && parent.id !== 'treeBody'){
+    if(parent.classList.contains('tree-group') && parent.classList.contains('collapsed')){
+      parent.classList.remove('collapsed');
+      const folderItem = parent.previousElementSibling;
+      if(folderItem){
+        const arrow = folderItem.querySelector('.ti-arrow');
+        if(arrow) arrow.classList.add('open');
+      }
+    }
+    parent = parent.parentElement;
+  }
+  target.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+
+function filterTree(query){
+  const q = query.toLowerCase().trim();
+
+  if(!q){
+    // No query - show everything and restore collapsed state
+    document.querySelectorAll('.tree-item, .tree-group').forEach(el=>{
+      el.style.display = '';
+    });
+    return;
+  }
+
+  // First pass: mark pages as matching or not
+  document.querySelectorAll('.tree-page').forEach(el=>{
+    const ref = (el.dataset.ref||'').toLowerCase();
+    const label = (el.querySelector('.ti-label')?.textContent||'').toLowerCase();
+    const match = ref.includes(q) || label.includes(q);
+    el.style.display = match ? '' : 'none';
+  });
+
+  // Second pass: show/hide folders based on whether they have visible children
+  const groups = Array.from(document.querySelectorAll('.tree-group'));
+  groups.reverse().forEach(group=>{
+    const visibleChildren = group.querySelectorAll('.tree-item:not([style*="none"]), .tree-item[style=""]');
+    const hasVisibleChildren = Array.from(visibleChildren).some(el => el.style.display !== 'none');
+    const folderItem = group.previousElementSibling;
+    if(folderItem && folderItem.classList.contains('tree-item')){
+      const folderLabel = (folderItem.querySelector('.ti-label')?.textContent||'').toLowerCase();
+      const folderMatches = folderLabel.includes(q);
+      if(hasVisibleChildren || folderMatches){
+        folderItem.style.display = '';
+        group.style.display = '';
+        group.classList.remove('collapsed');
+        const arrow = folderItem.querySelector('.ti-arrow');
+        if(arrow) arrow.classList.add('open');
+      } else {
+        folderItem.style.display = 'none';
+        group.style.display = 'none';
+      }
+    }
+  });
+}
+
+function toggleTree(){
+  const sidebar = document.getElementById('treeSidebar');
+  sidebar.classList.toggle('collapsed');
+  const overlay = document.getElementById('treeOverlay');
+  if(sidebar.classList.contains('collapsed')) overlay.classList.remove('active');
+  else overlay.classList.add('active');
+}
+function checkMobileLayout(){
+  if(window.innerWidth <= 480){
+    const sidebar = document.getElementById('treeSidebar');
+    if(!sidebar.classList.contains('collapsed')){
+      sidebar.classList.add('collapsed');
+      document.getElementById('treeOverlay').classList.remove('active');
+    }
+  }
+}
+window.addEventListener('resize', checkMobileLayout);
+
+// =================================================================
+// Open Folder
+// =================================================================
+async function openFolderPicker(){
+  if(hasFSAPI){
+    try {
+      dirHandle = await window.showDirectoryPicker({mode:'read'});
+      const tree = await scanDirectory(dirHandle);
+      pageTree = tree;
+      pageIndex = buildPageIndex(tree);
+      const count = Object.keys(pageIndex).length;
+      document.getElementById('treeBody').innerHTML = renderTree(tree);
+      document.getElementById('treeCount').textContent = `(${count})`;
+      document.getElementById('treeSidebar').classList.remove('collapsed');
+      addRecent(dirHandle.name,'folder');
+      showEditor();
+      showToast(`Loaded ${count} pages from ${dirHandle.name}/`);
+      const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+      if(rootRef) await loadPage(rootRef);
+    } catch(e){ if(e.name!=='AbortError') console.warn(e); }
+  } else {
+    // Fallback: use webkitdirectory input (works in Firefox, Chrome, Edge, Safari)
+    document.getElementById('folderInput').click();
+  }
+}
+
+// Handle webkitdirectory input result
+document.getElementById('folderInput').addEventListener('change', async e => {
+  const files = Array.from(e.target.files);
+  if(!files.length) return;
+  // files[].webkitRelativePath gives "folder/sub/file.txt"
+  const rootName = files[0].webkitRelativePath.split('/')[0] || 'Wiki';
+  const wikiFiles = files.filter(f => {
+    const ext = '.'+f.name.split('.').pop().toLowerCase();
+    return WIKI_EXTS.includes(ext);
+  });
+  if(!wikiFiles.length){ showToast('No wiki files found in folder'); e.target.value=''; return; }
+
+  // Store all File objects keyed by relative path for reading later
+  fallbackFiles = {};
+  const tree = buildTreeFromFileList(wikiFiles, rootName);
+  pageTree = tree;
+  pageIndex = buildPageIndex(tree);
+  dirHandle = null; // no FS API handle in fallback mode
+
+  const count = Object.keys(pageIndex).length;
+  document.getElementById('treeBody').innerHTML = renderTree(tree);
+  document.getElementById('treeCount').textContent = `(${count})`;
+  document.getElementById('treeSidebar').classList.remove('collapsed');
+  addRecent(rootName, 'folder');
+  showEditor();
+  showToast(`Loaded ${count} pages from ${rootName}/`);
+
+  const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+  if(rootRef) await loadPage(rootRef);
+  e.target.value = '';
+});
+
+// Build hierarchical tree from flat file list (webkitdirectory)
+function buildTreeFromFileList(files, rootName){
+  // Group files by their path segments (skip root folder name)
+  const root = [];
+  const folderMap = {}; // path → children array
+
+  for(const file of files){
+    const parts = file.webkitRelativePath.split('/');
+    parts.shift(); // remove root folder name
+    const fileName = parts.pop();
+    const baseName = fileName.replace(/\.[^.]+$/,'');
+    const segments = [...parts, baseName];
+    const ref = segments.join('.');
+    const relPath = parts.length ? parts.join('/') + '/' + fileName : fileName;
+
+    const entry = {
+      type: 'file',
+      name: fileName,
+      baseName,
+      ref,
+      segments,
+      relPath,
+      handle: null,        // no FS API handle
+      fileObj: file,        // store the File object directly
+      parentPath: parts.join('.')
+    };
+
+    // Ensure parent folders exist in the tree
+    let currentChildren = root;
+    for(let i = 0; i < parts.length; i++){
+      const folderPath = parts.slice(0, i+1).join('/');
+      if(!folderMap[folderPath]){
+        const folder = {
+          type: 'folder',
+          name: parts[i],
+          segments: parts.slice(0, i+1),
+          children: []
+        };
+        currentChildren.push(folder);
+        folderMap[folderPath] = folder.children;
+      }
+      currentChildren = folderMap[folderPath];
+    }
+    currentChildren.push(entry);
+  }
+
+  // Sort recursively
+  sortTree(root);
+  return root;
+}
+
+function sortTree(items){
+  items.sort((a,b)=>{
+    if(a.type!==b.type) return a.type==='folder'?-1:1;
+    return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+  });
+  for(const item of items){
+    if(item.type==='folder' && item.children) sortTree(item.children);
+  }
+}
+
+// =================================================================
+// Open Single File
+// =================================================================
+function openFilePicker(){ document.getElementById('fileInput').click(); }
+document.getElementById('fileInput').addEventListener('change',e=>{
+  const file = e.target.files[0];
+  if(file) loadSingleFile(file, null);
+  e.target.value='';
+});
+
+async function openSingleFileFSAPI(){
+  if(!hasFSAPI){openFilePicker();return}
+  try{
+    const[h]=await window.showOpenFilePicker({types:[{description:'XWiki',accept:{'text/plain':WIKI_EXTS.map(e=>e)}}]});
+    const f=await h.getFile();
+    loadSingleFile(f,h);
+  }catch(e){if(e.name!=='AbortError')console.warn(e)}
+}
+
+function loadSingleFile(file, handle){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    editorEl.value = text;
+    lastContent = text; lastMod = file.lastModified;
+    currentFileHandle = handle;
+    currentPageRef = null;
+    currentSpace = [];
+    dirHandle = null;
+    pageIndex = {}; pageTree = null;
+
+    document.getElementById('filename').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatSize(file.size);
+    document.getElementById('fileInfo').style.display = 'flex';
+    document.getElementById('btnReload').disabled = !handle;
+    document.getElementById('btnWatch').style.display = handle ? '' : 'none';
+    document.getElementById('treeSidebar').classList.add('collapsed');
+    document.getElementById('treeBody').innerHTML = '';
+
+    navHistory = []; navPos = -1; updateNavButtons();
+    updateBreadcrumb({segments:[file.name.replace(/\.[^.]+$/,'')]});
+    addRecent(file.name, 'file');
+    showEditor();
+    renderPreview();
+    showToast(`Loaded ${file.name}`);
+  };
+  reader.readAsText(file);
+}
+
+// =================================================================
+// File Watching & Reload
+// =================================================================
+function toggleWatch(){if(isWatching)stopWatch();else startWatch()}
+function startWatch(){
+  if(!currentFileHandle){showToast('Open via File System Access to enable watch');return}
+  isWatching=true;
+  document.getElementById('watchBadge').style.display='inline-flex';
+  document.getElementById('btnWatch').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Pause';
+  watchInterval=setInterval(checkChanges,1500);
+  showToast('Watching for changes');
+}
+function stopWatch(){
+  isWatching=false;
+  document.getElementById('watchBadge').style.display='none';
+  document.getElementById('btnWatch').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20.2 10.9c.4.5.6.7.6 1.1s-.2.6-.6 1.1C18.8 14.8 15.6 18 12 18s-6.8-3.2-8.2-4.9c-.4-.5-.6-.7-.6-1.1s.2-.6.6-1.1C5.2 9.2 8.4 6 12 6s6.8 3.2 8.2 4.9Z"/></svg>Watch';
+  if(watchInterval){clearInterval(watchInterval);watchInterval=null}
+}
+async function checkChanges(){
+  if(!currentFileHandle)return;
+  try{
+    const f=await currentFileHandle.getFile();
+    if(f.lastModified!==lastMod){
+      lastMod=f.lastModified;
+      const t=await f.text();
+      if(t!==lastContent){lastContent=t;editorEl.value=t;document.getElementById('fileSize').textContent=formatSize(f.size);renderPreview();showToast('File updated')}
+    }
+  }catch(e){stopWatch();showToast('Watch stopped')}
+}
+async function reloadFile(){
+  if(!currentFileHandle)return;
+  try{const f=await currentFileHandle.getFile();const t=await f.text();lastContent=t;lastMod=f.lastModified;editorEl.value=t;document.getElementById('fileSize').textContent=formatSize(f.size);renderPreview();showToast('Reloaded')}catch(e){showToast('Reload failed')}
+}
+
+// =================================================================
+// View Management
+// =================================================================
+function showWelcome(){
+  stopWatch();
+  document.getElementById('welcomeScreen').classList.remove('hidden');
+  document.getElementById('mainArea').classList.add('hidden');
+  document.getElementById('editControls').style.display='none';
+  document.getElementById('fileInfo').style.display='none';
+  document.getElementById('breadcrumb').innerHTML='';
+  renderRecentList();
+}
+function showEditor(){
+  document.getElementById('welcomeScreen').classList.add('hidden');
+  document.getElementById('mainArea').classList.remove('hidden');
+  document.getElementById('editControls').style.display='';
+}
+function setView(mode){
+  document.body.className=`view-${mode}`;
+  document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById(`v${mode.charAt(0).toUpperCase()+mode.slice(1)}`);
+  if(btn) btn.classList.add('active');
+  if(mode==='preview'||mode==='split') renderPreview();
+}
+
+// =================================================================
+// Recent Files (localStorage)
+// =================================================================
+function getRecent(){try{return JSON.parse(localStorage.getItem('xwv-recent')||'[]')}catch{return[]}}
+function saveRecent(l){try{localStorage.setItem('xwv-recent',JSON.stringify(l))}catch{}}
+function addRecent(name,kind){let l=getRecent();l=l.filter(f=>f.name!==name);l.unshift({name,kind,date:new Date().toISOString()});if(l.length>8)l=l.slice(0,8);saveRecent(l)}
+function renderRecentList(){
+  const l=getRecent();const sec=document.getElementById('recentSection');const ul=document.getElementById('recentList');
+  if(!l.length){sec.style.display='none';return}
+  sec.style.display='';
+  ul.innerHTML=l.map(f=>{
+    const d=new Date(f.date);const ds=d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    const icon=f.kind==='folder'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>';
+    return `<li onclick="${f.kind==='folder'?'openFolderPicker()':'openFilePicker()'}">${icon}<span class="rf-name">${esc(f.name)}</span><span class="rf-kind">${f.kind}</span><span class="rf-date">${ds}</span></li>`;
+  }).join('');
+}
+
+// =================================================================
+// Drag & Drop
+// =================================================================
+const dropZone=document.getElementById('dropZone');
+const dropOverlay=document.getElementById('dropOverlay');
+let dragCounter=0;
+
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',async e=>{
+  e.preventDefault();e.stopPropagation();dropZone.classList.remove('dragover');
+  await handleDrop(e.dataTransfer);
+});
+dropZone.addEventListener('click',()=>openFilePicker());
+
+document.addEventListener('dragenter',e=>{e.preventDefault();dragCounter++;if(!document.getElementById('mainArea').classList.contains('hidden'))dropOverlay.classList.add('active')});
+document.addEventListener('dragleave',e=>{e.preventDefault();dragCounter--;if(dragCounter<=0){dropOverlay.classList.remove('active');dragCounter=0}});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',async e=>{
+  e.preventDefault();dropOverlay.classList.remove('active');dragCounter=0;
+  await handleDrop(e.dataTransfer);
+});
+
+async function handleDrop(dt){
+  // Try 1: File System Access API (Chrome/Edge) — handles both files and directories
+  if(dt.items && dt.items.length > 0){
+    const item = dt.items[0];
+    if(item.getAsFileSystemHandle){
+      try{
+        const handle = await item.getAsFileSystemHandle();
+        if(handle.kind === 'directory'){
+          dirHandle = handle;
+          const tree = await scanDirectory(dirHandle);
+          pageTree = tree; pageIndex = buildPageIndex(tree);
+          const count = Object.keys(pageIndex).length;
+          document.getElementById('treeBody').innerHTML = renderTree(tree);
+          document.getElementById('treeCount').textContent = `(${count})`;
+          document.getElementById('treeSidebar').classList.remove('collapsed');
+          addRecent(dirHandle.name,'folder');
+          showEditor(); showToast(`Loaded ${count} pages from ${dirHandle.name}/`);
+          const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+          if(rootRef) await loadPage(rootRef);
+          return;
+        } else {
+          const file = await handle.getFile();
+          loadSingleFile(file, handle);
+          return;
+        }
+      }catch(e){console.warn('FS handle drop:',e)}
+    }
+    // Try 2: webkitGetAsEntry (Firefox) — can read dropped directories
+    if(item.webkitGetAsEntry){
+      const entry = item.webkitGetAsEntry();
+      if(entry && entry.isDirectory){
+        try{
+          const files = await readAllEntriesRecursive(entry, '');
+          const wikiFiles = files.filter(f=>{
+            const ext='.'+f.name.split('.').pop().toLowerCase();
+            return WIKI_EXTS.includes(ext);
+          });
+          if(wikiFiles.length){
+            const rootName = entry.name;
+            const tree = buildTreeFromFileList(wikiFiles, rootName);
+            pageTree = tree; pageIndex = buildPageIndex(tree); dirHandle = null;
+            const count = Object.keys(pageIndex).length;
+            document.getElementById('treeBody').innerHTML = renderTree(tree);
+            document.getElementById('treeCount').textContent = `(${count})`;
+            document.getElementById('treeSidebar').classList.remove('collapsed');
+            addRecent(rootName,'folder');
+            showEditor(); showToast(`Loaded ${count} pages from ${rootName}/`);
+            const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+            if(rootRef) await loadPage(rootRef);
+            return;
+          }
+        }catch(e){console.warn('Entry drop error:',e)}
+      }
+    }
+  }
+  // Fallback: regular single file drop
+  const file = dt.files[0];
+  if(file) loadSingleFile(file, null);
+}
+
+// Recursively read all files from a dropped directory entry (webkitGetAsEntry API)
+function readAllEntriesRecursive(dirEntry, pathPrefix){
+  return new Promise((resolve)=>{
+    const allFiles = [];
+    const reader = dirEntry.createReader();
+    const rootName = pathPrefix ? pathPrefix : dirEntry.name;
+
+    function readBatch(){
+      reader.readEntries(async entries=>{
+        if(!entries.length){ resolve(allFiles); return; }
+        for(const entry of entries){
+          if(entry.isFile){
+            const file = await new Promise(r => entry.file(f => r(f)));
+            // Attach webkitRelativePath-like path
+            const relPath = rootName + '/' + entry.fullPath.replace(/^\//, '');
+            Object.defineProperty(file, 'webkitRelativePath', {value: relPath, writable: false});
+            allFiles.push(file);
+          } else if(entry.isDirectory){
+            const subFiles = await readAllEntriesRecursive(entry, rootName);
+            allFiles.push(...subFiles);
+          }
+        }
+        readBatch(); // read more (batched in 100s)
+      }, ()=> resolve(allFiles));
+    }
+    readBatch();
+  });
+}
+
+// =================================================================
+// Demo
+// =================================================================
+function loadDemo(){
+  editorEl.value=DEMO;lastContent=DEMO;currentFileHandle=null;currentPageRef=null;currentSpace=[];
+  dirHandle=null;pageIndex={};pageTree=null;
+  document.getElementById('filename').textContent='demo.xwiki';
+  document.getElementById('fileSize').textContent=formatSize(DEMO.length);
+  document.getElementById('fileInfo').style.display='flex';
+  document.getElementById('btnReload').disabled=true;
+  document.getElementById('btnWatch').style.display='none';
+  document.getElementById('treeSidebar').classList.add('collapsed');
+  navHistory=[];navPos=-1;updateNavButtons();
+  updateBreadcrumb({segments:['Demo']});
+  showEditor();renderPreview();
+}
+
+const DEMO=`= XWiki Viewer Demo =
+
+This is a **standalone viewer** for //XWiki 2.1 syntax// files with full rendering.
+
+== Navigation ==
+
+Internal links resolve to local files when a wiki folder is open:
+
+* [[Home Page>>Home]] — resolved if Home.xwiki exists in your folder
+* [[Some Space Page>>MySpace.MyPage]] — dot-separated space references
+* [[External link>>https://www.xwiki.org]]
+
+Try **Open Wiki Folder** to load your XWiki pages directory and navigate between pages.
+
+== Features ==
+
+* XWiki 2.1 syntax: **bold**, //italic//, --strikethrough--, ##code##
+* Nested lists, tables, definition lists, blockquotes
+* Mermaid diagrams, code blocks, info/warning/error boxes
+* File tree sidebar with search
+* Back/forward navigation between pages
+* File watching for live reload
+* Breadcrumb navigation
+
+== Mermaid Diagram ==
+
+{{mermaid}}
+graph LR
+    A[Open Folder] --> B[Scan Files]
+    B --> C[Build Index]
+    C --> D[Render Tree]
+    D --> E[Click Page]
+    E --> F[Parse XWiki]
+    F --> G[Resolve Links]
+    G --> E
+    style A fill:#c9915a,color:#1a1816
+    style G fill:#6aaa6a,color:#fff
+{{/mermaid}}
+
+== Table ==
+
+|=Syntax|=Renders As
+|##**bold**##|**bold**
+|##//italic//##|//italic//
+|##--strike--##|--strike--
+|##\\[\\[label>>ref\\]\\]##|wiki link
+
+{{info title="How Links Work"}}
+When you open a wiki folder, the viewer scans all .xwiki/.wiki/.txt/.md files and builds a page index. Internal links like \\[\\[label>>PageName\\]\\] are resolved against this index using the folder structure as the space hierarchy. Resolved links appear solid; unresolved links appear wavy.
+{{/info}}
+
+{{toc/}}
+`;
+
+// =================================================================
+// Utilities
+// =================================================================
+function formatSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function escAttr(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+let toastTimer=null;
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500)}
+
+function getPageRelPath(page){
+  const folderName = dirHandle ? dirHandle.name : '';
+  // Build path: Docs/xwiki-pages/<folderName>/<relPath>
+  // Avoid duplication if folder is already 'xwiki-pages' or 'Docs'
+  const parts = [];
+  const fnLow = folderName.toLowerCase();
+  if(fnLow === 'xwiki-pages'){
+    parts.push('Docs','xwiki-pages');
+  } else if(fnLow === 'docs'){
+    parts.push('Docs','xwiki-pages');
+  } else {
+    parts.push('Docs','xwiki-pages');
+    if(folderName) parts.push(folderName);
+  }
+  parts.push(page.relPath);
+  return parts.join('/');
+}
+
+function copyPagePath(){
+  if(!currentPageRef) return;
+  const page = pageIndex[currentPageRef];
+  if(!page) return;
+  const path = getPageRelPath(page);
+  navigator.clipboard.writeText(path).then(()=>showToast('Copied: '+path)).catch(()=>{
+    const tmp=document.createElement('input');tmp.value=path;document.body.appendChild(tmp);tmp.select();document.execCommand('copy');document.body.removeChild(tmp);showToast('Copied: '+path);
+  });
+}
+
+// =================================================================
+// Server-mode auto-loading (when served by Open-XWikiViewer.ps1)
+// =================================================================
+async function loadFromServer(){
+  try {
+    const res = await fetch('/wiki-manifest.json');
+    if(!res.ok) return false;
+    const manifest = await res.json();
+    const tree = buildTreeFromManifest(manifest);
+    pageTree = tree;
+    pageIndex = buildPageIndex(tree);
+    // Alias root WebHome under wrapper folder so folder click works
+    const wikiName = manifest.root || 'Wiki';
+    if(pageIndex['WebHome'] && !pageIndex[wikiName+'.WebHome']){
+      pageIndex[wikiName+'.WebHome'] = pageIndex['WebHome'];
+    }
+    dirHandle = null;
+    const count = Object.keys(pageIndex).length;
+    document.getElementById('treeBody').innerHTML = renderTree(tree);
+    document.getElementById('treeCount').textContent = `(${count})`;
+    document.getElementById('treeSidebar').classList.remove('collapsed');
+    showEditor();
+    showToast(`Loaded ${count} pages`);
+    const rootRef = pageIndex['WebHome'] ? 'WebHome' : Object.keys(pageIndex)[0];
+    if(rootRef) await loadPage(rootRef);
+    return true;
+  } catch(e){ return false; }
+}
+
+function buildTreeFromManifest(manifest){
+  const root = [];
+  const folderMap = {};
+  const sorts = manifest.sorts || {};
+  const wikiName = manifest.root || 'Wiki';
+  for(const relPath of manifest.files){
+    const parts = relPath.split('/');
+    const fileName = parts.pop();
+    const baseName = fileName.replace(/\.[^.]+$/,'');
+    const segments = [...parts, baseName];
+    const ref = segments.join('.');
+    const entry = {
+      type:'file', name:fileName, baseName, ref, segments,
+      relPath, handle:null, fileObj:null,
+      serverUrl:'/wiki/'+encodeURI(relPath),
+      parentPath:parts.join('.')
+    };
+    let currentChildren = root;
+    for(let i=0; i<parts.length; i++){
+      const folderPath = parts.slice(0,i+1).join('/');
+      if(!folderMap[folderPath]){
+        const folder = {type:'folder', name:parts[i], segments:parts.slice(0,i+1), children:[]};
+        currentChildren.push(folder);
+        folderMap[folderPath] = folder.children;
+      }
+      currentChildren = folderMap[folderPath];
+    }
+    currentChildren.push(entry);
+  }
+  applySortToTree(root, '', sorts);
+  // Wrap in root folder so project name appears in sidebar (matches gh-pages structure)
+  return [{type:'folder', name:wikiName, segments:[wikiName], children:root}];
+}
+
+function applySortToTree(items, path, sorts){
+  const sortOrder = sorts[path];
+  if(sortOrder){
+    applySortOrder(items, sortOrder);
+  } else {
+    items.sort((a,b)=>{
+      if(a.type!==b.type) return a.type==='folder'?-1:1;
+      return a.name.localeCompare(b.name, undefined, {sensitivity:'base'});
+    });
+  }
+  for(const item of items){
+    if(item.type==='folder' && item.children){
+      const childPath = path ? path+'/'+item.name : item.name;
+      applySortToTree(item.children, childPath, sorts);
+    }
+  }
+}
+
+// =================================================================
+// Analytics — Privacy-preserving page view tracking
+// =================================================================
+const Analytics = (function(){
+  let EP = '', SITE = '';
+
+  function vid(){
+    let id = localStorage.getItem('fh_vid');
+    if(!id){
+      id = crypto.randomUUID ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+            const r=Math.random()*16|0; return(c==='x'?r:(r&0x3|0x8)).toString(16);
+          });
+      localStorage.setItem('fh_vid', id);
+    }
+    return id;
+  }
+
+  function track(pageRef){
+    if(!EP) return;
+    const p = SITE ? SITE+':'+pageRef : pageRef;
+    fetch(EP+'/track',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({p,id:vid()})}).catch(()=>{});
+  }
+
+  async function stats(){
+    if(!EP) return null;
+    try{
+      const r=await fetch(EP+'/stats');
+      if(!r.ok) return null;
+      const all=await r.json();
+      if(!SITE) return all;
+      const pfx=SITE+':';
+      return all.filter(e=>e.p.startsWith(pfx)).map(e=>({...e,p:e.p.slice(pfx.length)}));
+    }catch{ return null; }
+  }
+
+  function configure(url, siteId){
+    EP=(url||'').replace(/\/+$/,'');
+    SITE=siteId||'';
+    const btn=document.getElementById('btnStats');
+    if(btn) btn.style.display=EP?'':'none';
+  }
+
+  return { trackPageView:track, stats, configure, isEnabled:()=>!!EP };
+})();
+
+function toggleAnalytics(){
+  const o=document.getElementById('analyticsOverlay');
+  if(o.classList.toggle('active')) loadAnalytics();
+}
+
+async function loadAnalytics(){
+  const body=document.getElementById('analyticsBody');
+  body.innerHTML='<div class="am-msg">Loading...</div>';
+  const data=await Analytics.stats();
+  if(!data){body.innerHTML='<div class="am-msg">No data yet.</div>';return;}
+
+  const totalViews=data.reduce((s,d)=>s+d.v,0);
+  // Collect unique visitor count from all pages (server already provides per-page unique count)
+  const totalUnique=new Set(); // approximate from page data
+  let html='<div class="am-summary">';
+  html+='<div class="am-stat"><b>'+totalViews+'</b><span>Total Views</span></div>';
+  html+='<div class="am-stat"><b>'+data.length+'</b><span>Pages Viewed</span></div>';
+  html+='</div>';
+
+  if(data.length===0){
+    html+='<div class="am-msg">No page views recorded yet.</div>';
+  } else {
+    html+='<table class="am-table"><thead><tr>';
+    html+='<th>#</th><th>Page</th><th style="text-align:right">Views</th><th style="text-align:right">Visitors</th>';
+    html+='</tr></thead><tbody>';
+    data.forEach((d,i)=>{
+      const click=pageIndex[d.p]?' onclick="toggleAnalytics();loadPage(\''+escAttr(d.p)+'\')"':'';
+      html+='<tr><td class="num">'+(i+1)+'</td>';
+      html+='<td class="pg"'+click+' title="'+esc(d.p)+'">'+esc(d.p)+'</td>';
+      html+='<td class="num">'+d.v+'</td>';
+      html+='<td class="num">'+d.u+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+  body.innerHTML=html;
+}
+
+// =================================================================
+// Init
+// =================================================================
+mermaid.initialize({startOnLoad:false,theme:'default',securityLevel:'loose',fontFamily:'Outfit,sans-serif',
+  themeVariables:{primaryColor:'#f0ebe3',primaryBorderColor:'#c9915a',primaryTextColor:'#2e2b26',lineColor:'#8a8580',secondaryColor:'#eaf2fa',tertiaryColor:'#fdf5e0'}});
+renderRecentList();
+
+
+// =================================================================
+// Bundle Loading (GitHub Pages static mode)
+// =================================================================
+async function loadBundle(){
+  try {
+    // Cache-busting: append timestamp to force fresh fetch
+    const cacheBust = new Date().getTime();
+    const resp = await fetch('pages.json?v='+cacheBust);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const bundle = await resp.json();
+    pageTree = bundle.tree;
+    pageIndex = buildPageIndex(pageTree);
+    // Attach content strings to page index entries
+    for(const[ref,entry] of Object.entries(pageIndex)){
+      entry.content = bundle.pages[ref] || '';
+    }
+    // Alias root WebHome under wrapper folder name so folder click works
+    if(bundle.tree[0] && pageIndex['WebHome'] && !pageIndex[bundle.tree[0].name+'.WebHome']){
+      pageIndex[bundle.tree[0].name+'.WebHome'] = pageIndex['WebHome'];
+    }
+    // Apply short-name aliases (e.g. #TestReports → Product Development.TestReports.WebHome)
+    for(const[alias,ref] of Object.entries(bundle.aliases||{})){
+      if(!pageIndex[alias] && pageIndex[ref]) pageIndex[alias]=pageIndex[ref];
+    }
+    const count = Object.keys(pageIndex).length;
+    document.getElementById('treeBody').innerHTML = renderTree(pageTree);
+    document.getElementById('treeCount').textContent = '('+count+')';
+    document.getElementById('treeSidebar').classList.remove('collapsed');
+    showEditor();
+    // Navigate to ?page= param, hash target, or root page
+    const params = new URLSearchParams(location.search);
+    const pageParam = params.get('page');
+    const hashRef = decodeURIComponent(location.hash.slice(1));
+    const initRef = (pageParam && pageIndex[pageParam]) ? pageParam
+      : (hashRef && pageIndex[hashRef]) ? hashRef
+      : (bundle.rootRef || Object.keys(pageIndex)[0]);
+    if(initRef) await loadPage(initRef);
+    // Show metadata
+    const meta = document.getElementById('bundleMeta');
+    if(meta){
+      const d = bundle.generated ? bundle.generated.slice(0,10) : '';
+      const h = bundle.commitHash || '';
+      meta.textContent = 'Updated: '+d+(h?' ('+h+')':'');
+      meta.style.display = '';
+    }
+  } catch(e){
+    console.error('Bundle load failed:',e);
+    document.getElementById('welcomeScreen').classList.remove('hidden');
+    document.getElementById('mainArea').classList.add('hidden');
+    const card = document.querySelector('.welcome-card');
+    if(card) card.innerHTML = '<h1 style="color:#c9915a">FactHarbor Documentation</h1><p style="color:#d8d8de">Failed to load documentation bundle.</p><p style="color:#7c7c8a;font-size:.9em">Make sure <code>pages.json</code> exists alongside this file.<br>Error: '+e.message+'</p>';
+  }
+}
+
+// Hash-based deep linking
+window.addEventListener('hashchange',()=>{
+  const ref = decodeURIComponent(location.hash.slice(1));
+  if(ref && pageIndex[ref]) loadPage(ref);
+});
+
+
+// Configure analytics endpoint
+Analytics.configure('https://factharbor-docs-analytics.factharbor.workers.dev', 'FH');
+// Auto-load documentation bundle
+loadBundle();
+</script>
+</body>
+</html>
