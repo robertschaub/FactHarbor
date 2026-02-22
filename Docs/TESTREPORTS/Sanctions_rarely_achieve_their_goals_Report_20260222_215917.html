@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Sanctions rarely achieve their goals">
+<meta name="fh:verdict" content="LEANING-TRUE">
+<meta name="fh:truth" content="62">
+<meta name="fh:confidence" content="65">
+<meta name="fh:date" content="2026-02-22">
+<meta name="fh:model" content="claude-sonnet-4-5-20250929">
+<title>FactHarbor Report — Sanctions rarely achieve their goals</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 9ea382264cb74378a61a385c1f9808e7</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-22 19:45 UTC</div>
+      <div>Completed: 2026-02-22 19:53 UTC</div>
+      <div>Duration: ~7 min 53 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Sanctions rarely achieve their goals</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; claude-sonnet-4-5-20250929</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Brave, Google-CSE, Google-CSE (cached)</span>
+    <span class="chip chip-gray">21 LLM calls</span>
+    <span class="chip chip-gray">10 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 46 evidence items · 11 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-lt">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge lt-color">LEANING-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The evidence base reveals a nuanced picture where sanctions show measurable economic impact but inconsistent translation…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value lt-color">62%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:62%;background:#276749"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">65%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:65%;background:#4a5568"></div></div>
+      </div>
+      
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The evidence base reveals a nuanced picture where sanctions show measurable economic impact but inconsistent translation into policy success. Contemporary Russia sanctions (2022-2024) and historical case studies provide moderate support for effectiveness, while large-scale quantitative reviews and U.S. government systematic assessments highlight significant limitations and methodological challenges. The 62% truth assessment reflects this tension: sanctions can work under specific conditions, but effectiveness rates remain contested and highly dependent on implementation quality, target characteristics, and coordination among sanctioning parties.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Economic sanctions demonstrate mixed effectiveness with modest support for achieving policy objectives, though outcomes vary significantly across contexts and measurement frameworks.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">46 evidence items analyzed across 6 distinct analytical boundaries, encompassing historical case studies, quantitative databases, contemporary Russia sanctions assessments, theoretical frameworks, government systematic reviews, and specialized domain analyses.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The evidence base reveals a nuanced picture where sanctions show measurable economic impact but inconsistent translation into policy success. Contemporary Russia sanctions (2022-2024) and historical case studies provide moderate support for effectiveness, while large-scale quantitative reviews and U.S. government systematic assessments highlight significant limitations and methodological challenges. The 62% truth assessment reflects this tension: sanctions can work under specific conditions, but effectiveness rates remain contested and highly dependent on implementation quality, target characteristics, and coordination among sanctioning parties.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">CB_09 (U.S. government systematic review) directly contradicts the overall finding, emphasizing rigorous statistical studies that question effectiveness claims, while CB_05 (Russia 2022-2024 assessment) and CB_07 (historical Russia analysis) provide supporting evidence for sanctions impact. This divergence reflects fundamental disagreement between real-world case observations and controlled statistical analyses.</div>
+        <div class="disagreement-item">CB_01 (historical qualitative case studies) shows mixed evidence with 25 items, suggesting high variability in outcomes across individual cases, while CB_11 (UN sanctions and criminal justice contexts) remains neutral, indicating domain-specific effectiveness that may not generalize to economic sanctions broadly.</div>
+        <div class="disagreement-item">The tension between CB_03 (large-N quantitative analysis with methodological critiques) and CB_05 suggests disagreement over whether historical aggregate data or contemporary specific cases provide more reliable effectiveness signals.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively resolve whether observed economic impacts translate into policy compliance, as this depends on unmeasured political will and domestic factors within target states. The evidence base lacks sufficient longitudinal data to assess long-term effectiveness beyond immediate economic disruption. Coordination quality, enforcement rigor, and circumvention dynamics—identified as critical variables—remain inadequately quantified across the historical record. The 65% confidence reflects instability in cross-boundary synthesis and the absence of consensus methodologies for measuring &quot;success&quot; in sanctions regimes.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Sanctions rarely achieve their goals</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val lt-color">62%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">65%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: moderate (+0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Historical qualitative case study analysis + Contemporary academic literature synthesis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">55%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">68%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">25 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:55%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Large-N quantitative historical analysis with methodological critique + Comprehensive sanctions database compilation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">62%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:62%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Russia sanctions 2022-2024 empirical assessment + Theoretical frameworks for sanctions evaluation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">78%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:78%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Historical Russia sanctions analysis (2014) + Coordination and implementation challenges analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">65%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:70%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · U.S. government systematic review of sanctions research + Evidence-based review of sanctions across multiple policy domains</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">42%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">78%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">5 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:42%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_11 · UN sanctions and mediation interaction research + Criminal justice jail sanctions administrative analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">35%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final assessment adjusts upward from the advocate&#39;s 58% to 62%, while reducing confidence from 72% to 65% due to instability and methodological concerns. **Challenge Integration**: CP_AC_01_0 and CP_AC_01_1 validly identify source clustering—multiple evidence items (EV_001-006, EV_015-016, EV_019, EV_1771793223699-700, EV_1771793223704) derive from just two secondary syntheses (Norwich University and CNAS), creating an illusion of independent corroboration. This reduces effective evidence diversity and warrants modest confidence reduction. CP_AC_01_2 correctly notes definitional variance in &#39;success&#39;—the 40-51% range aggregates disparate outcomes (modest policy changes vs. stopping military action vs. regime change). When &#39;goals&#39; are interpreted strictly (major policy reversals, ending conflicts, regime change), success rates drop to 20-34% (EV_003, EV_016, EV_1771793223702), making &#39;rarely&#39; more defensible than the advocate acknowledged. This supports a slight upward adjustment in truthPercentage. CP_AC_01_5 identifies overlapping academic sources across boundaries (Hufbauer, Pape, GAO reviews), reducing the independence of the 30-50% consensus. CP_AC_01_7 correctly notes that contradicting evidence from CB_09 (systematic government reviews) is methodologically superior to much supporting evidence (secondary summaries, opinion pieces), but the advocate already weighted CB_09 appropriately at 42% boundary truth. CP_AC_01_6 raises valid concerns about CB_05&#39;s Russia 2022 analysis inferring failure from economic resilience without direct policy decision evidence, but the multiple corroborating sources (EV_1771793250649-651, 654-655) across two boundaries (CB_05, CB_07) still substantiate high-profile contemporary failures. CP_AC_01_9 correctly identifies aggregation bias—lumping all sanction types obscures that for high-stakes goals (the most policy-relevant interpretation of &#39;goals&#39;), success is indeed rare (20-31%). **Rejected Challenges**: CP_AC_01_3 and CP_AC_01_4 cite missing government after-action reports and target-country admissions, but these are expected absences (governments rarely publicize policy failures; sanctioned regimes have incentives to deny capitulation). The GAO note (EV_1771793265655) about lack of comprehensive U.S. assessments is already incorporated in the advocate reasoning. CP_AC_01_8 requests internal Politburo/Supreme Council transcripts—this is unrealistic evidence that would never be available for contemporary cases and represents an unfair evidentiary standard. These challenges cite zero valid evidence IDs or make structurally unreasonable demands. **Self-Consistency Impact**: The consistency check shows high instability (spread=23, percentages=[58,58,35], stable=false), with one run producing 35%—a 23-point deviation. This suggests the underlying evidence permits multiple reasonable interpretations depending on how &#39;rarely&#39; and &#39;goals&#39; are operationalized. The instability justifies reducing confidence by 7 points. **Final Synthesis**: When &#39;goals&#39; means ambitious objectives (regime change, conflict termination, major policy reversals)—the most natural reading of sanctions&#39; strategic purpose—success rates of 20-34% support &#39;rarely.&#39; When &#39;goals&#39; includes modest policy changes, the 40-51% range contradicts &#39;rarely.&#39; The claim is imprecise but directionally correct for high-stakes objectives. Contemporary Russia cases (CB_05, CB_07) provide strong recent support (78% and 70% boundary truth). The upward adjustment to 62% reflects that definitional strictness and goal-type disaggregation (CP_AC_01_2, CP_AC_01_9) strengthen the claim more than source clustering (CP_AC_01_0, CP_AC_01_1, CP_AC_01_5) weakens it. Confidence reduction to 65% accounts for instability, source overlap, and definitional ambiguity.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. Multiple evidence items from Norwich University (EV_001-006) and CNAS (EV_015-016, EV_019, EV_1771793223699-700, EV_1771793223704) are not independent sources but secondary syntheses. This reduces effective evidence diversity. Confidence reduced by 3 points to account for overstated corroboration.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. The advocate aggregated success rates across disparate definitions of &#39;success&#39; (modest policy changes at 51%, behavioral change at 40%, stopping military action at 31%, targeted sanctions at 20%). When &#39;goals&#39; is interpreted as ambitious strategic objectives—the most policy-relevant reading—success rates of 20-34% make &#39;rarely&#39; more defensible. TruthPercentage increased by 4 points to reflect this.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. CB_01, CB_03, and CB_09 cite overlapping academic literature (Hufbauer, Pape, GAO), reducing the independence of the 30-50% consensus. However, the advocate already treated these as separate boundaries with distinct methodologies. Confidence reduced by 2 points for overstated robustness.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Partially accepted. CB_05&#39;s Russia 2022 analysis infers failure from economic resilience without direct policy decision evidence, which is a methodological limitation. However, multiple corroborating sources across CB_05 and CB_07 (8 evidence items total) document failure to achieve stated objectives (ending the war, reversing Crimea annexation). The inference is reasonable given available evidence. Confidence reduced by 1 point.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Acknowledged but not adjusted. CB_09&#39;s systematic government reviews (EV_1771793265653-654) are methodologically superior to some CB_01 secondary summaries, but the advocate already weighted CB_09 at 42% boundary truth (contradicting the claim). The quality differential is already reflected in the boundary-level assessments.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. The absence of declassified government after-action reports (CP_AC_01_3) and target-country policy admissions (CP_AC_01_4) represents expected missing evidence—governments rarely publicize policy failures, and sanctioned regimes have incentives to deny capitulation. The GAO note about lack of U.S. assessments is already incorporated. These are not valid grounds for adjustment.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. CP_AC_01_8 requests internal Politburo/Supreme Council transcripts from sanctioned countries—this is structurally unrealistic evidence that would never be available for contemporary cases. The challenge cites zero valid evidence IDs and sets an unfair evidentiary standard. No adjustment warranted.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_01<br><span style="font-weight:400;font-size:10px">Historical case studies</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">Quantitative historical studies</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Russia 2022 sanctions</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">Russia 2014 sanctions</span></th><th>CB_09<br><span style="font-weight:400;font-size:10px">GAO systematic review</span></th><th>CB_11<br><span style="font-weight:400;font-size:10px">UN sanctions-mediation</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Sanctions rarely achieve their</td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-high">8</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-high">5</span></td><td><span class="cell-val cell-mid">3</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Historical qualitative case study analysis + Contemporary academic literature synthesis</span><span class="ba-ev-count">25 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Qualitative case study analysis</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Specific historical cases (e.g., Rhodesia)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1960s-1980s historical analysis</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.875</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Qualitative case study analysis of historical sanctions episodes, primarily examining individual cases in depth; Synthesis and review of contemporary academic consensus on sanctions effectiveness across different sanction types and policy objectives</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Large-N quantitative historical analysis with methodological critique + Comprehensive sanctions database compilation</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Large-N quantitative study with critical reanalysis and methodological critique</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Global</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">20th century sanctions regimes (1985-1998 studies)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.875</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Large-scale quantitative studies of historical sanctions cases with subsequent methodological critiques and reanalyses of effectiveness rates; Systematic compilation and classification of sanctions cases into comprehensive databases with outcome coding</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Russia sanctions 2022-2024 empirical assessment + Theoretical frameworks for sanctions evaluation</span><span class="ba-ev-count">8 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Empirical assessment combining economic data analysis, enforcement mechanism analysis, and theoretical framework</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Russia, Ukraine, and global markets</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2022-2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Empirical assessment of 2022-2024 Western sanctions on Russia following Ukraine invasion, including economic impact, enforcement challenges, and circumvention analysis; Development and application of theoretical frameworks for evaluating sanctions effectiveness, including distinction between impact and effectiveness, and multi-phase evaluation methodologies</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Historical Russia sanctions analysis (2014) + Coordination and implementation challenges analysis</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Historical analysis of sanctions outcomes</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Russia, Crimea</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2014</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.900</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Historical analysis of Western sanctions response to Russia&#39;s 2014 Crimea invasion; Analysis of coordination failures, private sector behavior, and implementation challenges in sanctions regimes within integrated economies</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">U.S. government systematic review of sanctions research + Evidence-based review of sanctions across multiple policy domains</span><span class="ba-ev-count">5 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Systematic review of academic studies using rigorous statistical methods combined with government agency interviews</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Multiple countries subject to U.S. sanctions; U.S. government agencies</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">October 2019 report covering historical sanctions programs</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.910</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: U.S. Government Accountability Office systematic review of academic studies using rigorous statistical methods, combined with interviews of U.S. government officials; Evidence-based review of empirical studies examining sanctions effectiveness across multiple dimensions including economic, human rights, security, and sectoral impacts</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_11</span><span class="ba-name">UN sanctions and mediation interaction research + Criminal justice jail sanctions administrative analysis</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Evidence baseline establishment through research project examining interaction between sanctions and mediation tools</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Global UN operations</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Ongoing research initiative</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.800</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Research examining the interaction between UN sanctions and mediation as conflict prevention and resolution instruments; Administrative data analysis of jail sanctions in criminal justice supervision and drug treatment court contexts</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">46 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(20 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223698</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sanctions research began with Galtung&#39;s (1967) examination of the effects of the United Nations embargo on Rhodesia, which concluded that the embargo had not weakened the Rhodesian regime but had instead strengthened its grip on power, producing a consensus that sanctions were invariably ineffectual in compelling targets to change their policies.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cidob.org/en/publications/evaluating-success-international-sanctions-new-research-agenda" target="_blank" rel="noopener noreferrer">Evaluating the success of international sanctions: a new research agenda</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223699</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The consensus in academic literature is that conventional trade and financial sanctions result in some meaningful behavioral change in the targeted country about 40 percent of the time.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">When Do Economic Sanctions Work Best? | CNAS</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223700</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Most targeted sanctions, such as bans on the sale of luxury goods and sectoral sanctions, have an even lower success rate at about 20 percent.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">When Do Economic Sanctions Work Best? | CNAS</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223701</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Critics of international sanctions posit that they are often ill-conceived and, in most cases, fail to achieve their objectives.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://cepr.org/voxeu/columns/global-sanctions-data-base" target="_blank" rel="noopener noreferrer">The Global Sanctions Data Base | CEPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223702</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Hufbauer, Schott and Elliott&#39;s (1985) large-N study claimed that 34 percent of twentieth-century sanctions regimes had been successful, which was contested by scholars who argued that sanctions still did not work.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cidob.org/en/publications/evaluating-success-international-sanctions-new-research-agenda" target="_blank" rel="noopener noreferrer">Evaluating the success of international sanctions: a new research agenda</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223703</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Pape&#39;s (1997, 1998) critique of the Hufbauer, Schott and Elliott study argued that they had simply mischaracterised many cases as successes: targets&#39; concessions were either wrongly classified, or generated by factors other than sanctions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cidob.org/en/publications/evaluating-success-international-sanctions-new-research-agenda" target="_blank" rel="noopener noreferrer">Evaluating the success of international sanctions: a new research agenda</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223704</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sanctions are less effective in achieving major policy objectives like military impairment or political regime change than achieving modest policy goals like releasing a political prisoner or resolving a minor trade dispute.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">When Do Economic Sanctions Work Best? | CNAS</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250649</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The 2022 sanctions on Russia have not been an unequivocal success, with unclear communication about objectives both before and after the full-scale invasion in February 2022, and inconsistent government communication regarding sanctions assessment during early months of the war.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">6 ItskhokiRibakova</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250650</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Russia&#39;s economy appeared to have stabilized by 2023 with reported GDP growth of 3.6% following moderate contraction in 2022, supported by nearly 10 percent of GDP in war-related fiscal stimulus and sanction coalition countries&#39; reluctance to stop buying Russian oil and gas completely.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">6 ItskhokiRibakova</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250651</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Enforcement of 2022 sanctions struggled since inception, with weak enforcement rendering sanctions ineffective on paper, and &#39;black knights&#39; aiding Russia in circumventing sanctions, highlighting the gap between theoretical measures and their practical impact.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">6 ItskhokiRibakova</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250652</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Seeking complete isolation from a large, complex, and globally integrated economy is costly and likely unattainable, resulting in some governments not pursuing such a goal and Russia&#39;s oil continuing to flow freely to the market.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">6 ItskhokiRibakova</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250653</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sanctions, while a critical tool of economic statecraft, are not a guaranteed solution to end wars or alter a country&#39;s behavior, with efficacy depending on factors such as target country&#39;s size and global integration, sanctioning coalition&#39;s unity, enforcement ability, and economic burden on sanctioning nations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">6 ItskhokiRibakova</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250654</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The initial 2014 sanctions on Russia following Crimea invasion failed to force Russia to backtrack, though they likely contributed to its decision not to advance further in 2014.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">6 ItskhokiRibakova</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250655</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Over two years after Russia&#39;s full-scale invasion of Ukraine, the impact and efficacy of sanctions against Russia remain highly uncertain and contested, with growing consensus that sanctions have failed to achieve their objectives.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10610-024-09585-x" target="_blank" rel="noopener noreferrer">A Comprehensive Approach to Sanctions Effectiveness: Lessons Learned from Sanctions on Russia | European Journal on Criminal Policy and Research | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250656</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Impact and effectiveness of sanctions are not the same thing; material damage caused by sanctions measures is not necessarily connected with political gains that originate from their adoption.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10610-024-09585-x" target="_blank" rel="noopener noreferrer">A Comprehensive Approach to Sanctions Effectiveness: Lessons Learned from Sanctions on Russia | European Journal on Criminal Policy and Research | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250657</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Poor coordination among political actors operating in highly integrated economic systems means that sanctions can be avoided in multiple ways, and sanctions in integrated economies are deeply influenced by how the private sector behaves.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10610-024-09585-x" target="_blank" rel="noopener noreferrer">A Comprehensive Approach to Sanctions Effectiveness: Lessons Learned from Sanctions on Russia | European Journal on Criminal Policy and Research | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793291710</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Economic sanctions are often intended to achieve foreign and security policy goals such as fighting terrorism, protecting democracy and human rights, or resolving conflicts, but evidence-based studies examine the extent to which various sanctions have actually achieved their goals.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ifo.de/en/econpol/publications/2023/journal-complete-issue/econpol-forum-032023-how-sanctions-work" target="_blank" rel="noopener noreferrer">EconPol Forum 03/2023: How Sanctions Work - and Which Goals They Fail to Achieve | Journal (Complete Issue) | ifo | EconPol</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793291711</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The journal issue title explicitly frames sanctions as having goals they fail to achieve, indicating that empirical evidence demonstrates sanctions frequently do not accomplish their intended objectives.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ifo.de/en/econpol/publications/2023/journal-complete-issue/econpol-forum-032023-how-sanctions-work" target="_blank" rel="noopener noreferrer">EconPol Forum 03/2023: How Sanctions Work - and Which Goals They Fail to Achieve | Journal (Complete Issue) | ifo | EconPol</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793311116</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Since 2019, average technical jail sanctions days nearly doubled in length, yet jail sanctions negatively impact people on supervision, especially people who are homeless and mentally ill, and perpetuate racial inequity without achieving stated departmental goals of behavior change.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://multco.us/info/department-community-justice-jail-sanctions-are-worsening-inequities-and-outcomes" target="_blank" rel="noopener noreferrer">Department of Community Justice: Jail sanctions are worsening inequities and outcomes | Multnomah County</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793311117</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Application of the first jail sanction during drug court participation was associated with treatment failure (hazard ratio 2.71, p &lt; 0.0001), with particularly strong association when sanctions were administered earlier in participation (HR 11.34 at &lt; 30 days, p = 0.0002), suggesting sanctions may undermine treatment completion goals.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3057754/" target="_blank" rel="noopener noreferrer">Impact of jail sanctions during drug court participation upon substance abuse treatment completion - PMC
+        Lock</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(2 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793265653</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Academic studies reviewed by GAO suggest that sanctions have been more effective when they were implemented through an international organization (e.g., the United Nations) or when targeted countries had existing dependency on or relationship with the United States, such as trade or military relationships.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gao.gov/assets/gao-20-145.pdf" target="_blank" rel="noopener noreferrer">gao 20 145</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793265654</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Studies examining factors that increased sanctions&#39; economic impact provided evidence that the impact has generally been higher when sanctions were more comprehensive in scope or severity, or were imposed through an international organization.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gao.gov/assets/gao-20-145.pdf" target="_blank" rel="noopener noreferrer">gao 20 145</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(24 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Critics say sanctions are often poorly conceived and rarely successful in changing a country&#39;s conduct</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work" target="_blank" rel="noopener noreferrer">https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">51% of the time, an economic sanction is able to implement modest policy changes that affect citizens in a positive way or protect other countries</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work" target="_blank" rel="noopener noreferrer">https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Economic sanctions see a 31% success rate in stopping military action</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work" target="_blank" rel="noopener noreferrer">https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Overall, sanctions have been successful more often than not</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work" target="_blank" rel="noopener noreferrer">https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sanctions have failed in countries without a functioning government, such as Somalia, where dangerous groups use smuggled goods and money to continue their efforts</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work" target="_blank" rel="noopener noreferrer">https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Multilateral sanctions against Guinea for oppression (2005-2010) were successful in avoiding war and saving people from oppression, though it took 5 years</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work" target="_blank" rel="noopener noreferrer">https://online.norwich.edu/online/about/resource-library/do-economic-sanctions-work</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">With the exception of those imposed against Libya in response to Pan Am 103 terrorist attacks and, possibly, those imposed against Yugoslavia over the civil war in Bosnia, U.N. sanctions have failed to achieve their objectives.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.econlib.org/library/Enc/Sanctions.html" target="_blank" rel="noopener noreferrer">https://www.econlib.org/library/Enc/Sanctions.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sanctions played only a moderate role in ending South Africa&#39;s apartheid. Economic and political conditions inside South Africa were the most important factors influencing the outcome. Sanctions did not cause the National Party to abandon apartheid, but by adding to the already mounting costs of maintaining apartheid they accelerated the inevitable.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.econlib.org/library/Enc/Sanctions.html" target="_blank" rel="noopener noreferrer">https://www.econlib.org/library/Enc/Sanctions.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">As a result, U.N. sanctions enjoyed limited success. In many instances, however, the new threats were not of paramount concern for the major powers, and only weakly enforced arms embargoes were imposed.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.econlib.org/library/Enc/Sanctions.html" target="_blank" rel="noopener noreferrer">https://www.econlib.org/library/Enc/Sanctions.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The decade-long comprehensive sanctions regime against Iraq generated considerable political backlash.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.econlib.org/library/Enc/Sanctions.html" target="_blank" rel="noopener noreferrer">https://www.econlib.org/library/Enc/Sanctions.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The league faded from history when its ineffectual response failed to deter Benito Mussolini&#39;s conquest of Ethiopia in 1935 and 1936.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.econlib.org/library/Enc/Sanctions.html" target="_blank" rel="noopener noreferrer">https://www.econlib.org/library/Enc/Sanctions.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The harms caused to Haiti and the former Yugoslav republics were severe, but the harms suffered by Iraq were the worst ever caused by the use of economic sanctions outside of a war situation. UNICEF, for example, estimated that the economic sanctions imposed on Iraq led to the deaths of 500,000 children aged under five from malnutrition and disease.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://iep.utm.edu/ethics-of-economic-sanctions/" target="_blank" rel="noopener noreferrer">https://iep.utm.edu/ethics-of-economic-sanctions/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Following the devastation caused by economic sanctions in Iraq, a wide variety of organisations began to seriously investigate the possibility of alternative forms of economic sanctions, sanctions not targeted against &#39;ordinary people&#39; but rather targeted against those considered to be morally responsible for the objectionable policies of the target state.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://iep.utm.edu/ethics-of-economic-sanctions/" target="_blank" rel="noopener noreferrer">https://iep.utm.edu/ethics-of-economic-sanctions/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The League of Nations imposed or threatened to impose economic sanctions only four times in the 1920s and 1930s, twice successfully.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.econlib.org/library/Enc/Sanctions.html" target="_blank" rel="noopener noreferrer">https://www.econlib.org/library/Enc/Sanctions.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The consensus in academic literature is that conventional trade and financial sanctions result in some meaningful behavioral change in the targeted country about 40 percent of the time.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Most targeted sanctions, such as bans on the sale of luxury goods and sectoral sanctions, have an even lower success rate at about 20 percent.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Critics counter that sanctions are often poorly conceived and rarely successful in changing a target&#39;s conduct.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cfr.org/backgrounders/what-are-economic-sanctions" target="_blank" rel="noopener noreferrer">https://www.cfr.org/backgrounders/what-are-economic-sanctions</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Russia&#39;s ability to circumvent some international sanctions or otherwise mitigate their impact amid its invasion of Ukraine have rekindled debate about the tool&#39;s effectiveness.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cfr.org/backgrounders/what-are-economic-sanctions" target="_blank" rel="noopener noreferrer">https://www.cfr.org/backgrounders/what-are-economic-sanctions</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sanctions are less effective in achieving major policy objectives like military impairment or political regime change than achieving modest policy goals like releasing a political prisoner or resolving a minor trade dispute.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223705</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Global Sanctions Data Base (GSDB) covers 729 publicly traceable, multilateral, plurilateral, and purely bilateral sanction cases over the period 1950-2016, with classifications of sanction success including Partial Success/Achievement, Full Success/Achievement, Settlement by Negotiations, Enhancement/Failure, and Ongoing outcomes.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://cepr.org/voxeu/columns/global-sanctions-data-base" target="_blank" rel="noopener noreferrer">The Global Sanctions Data Base | CEPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793223706</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Much of the research on whether sanctions work is fundamentally flawed, since it does not specify adequately what sanctions are meant to accomplish, nor how we can assess whether they succeed in meeting these objectives.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cidob.org/en/publications/evaluating-success-international-sanctions-new-research-agenda" target="_blank" rel="noopener noreferrer">Evaluating the success of international sanctions: a new research agenda</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793250658</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sanctions evaluation should not be based solely on behavioral change of the target or economic impact, but requires more detailed analytical instruments reflecting the complexity of reality, as sanctions could be failing in a successful strategy or effective when the strategy falls short.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10610-024-09585-x" target="_blank" rel="noopener noreferrer">A Comprehensive Approach to Sanctions Effectiveness: Lessons Learned from Sanctions on Russia | European Journal on Criminal Policy and Research | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793265655</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">U.S. agencies (Treasury, State, and Commerce) have not conducted comprehensive assessments of sanctions&#39; effectiveness in meeting broader U.S. policy goals on their own, citing difficulties in isolating the effect of sanctions from other factors and evolving foreign policy goals.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gao.gov/assets/gao-20-145.pdf" target="_blank" rel="noopener noreferrer">gao 20 145</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771793291712</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Mediation and UN sanctions are two essential policy instruments used by the United Nations in efforts to prevent and resolve conflict, and evidence-based research has been established on how these tools interact, identifying instances of both complementarity and complication.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://unu.edu/cpr/project/un-sanctions-and-mediation-20-moving-evidence-impact" target="_blank" rel="noopener noreferrer">UN Sanctions and Mediation 2.0: Moving From Evidence To Impact | United Nations University</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">11 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Evaluating the success of international sanctions: a new research agenda</span></div>
+        <div class="source-url"><a href="https://www.cidob.org/en/publications/evaluating-success-international-sanctions-new-research-agenda" target="_blank" rel="noopener noreferrer">https://www.cidob.org/en/publications/evaluating-success-international-sanctions-new-research-agenda</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions effectiveness success rate academic research</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">When Do Economic Sanctions Work Best? | CNAS</span></div>
+        <div class="source-url"><a href="https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best" target="_blank" rel="noopener noreferrer">https://www.cnas.org/publications/commentary/when-do-economic-sanctions-work-best</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions effectiveness success rate academic research</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">The Global Sanctions Data Base | CEPR</span></div>
+        <div class="source-url"><a href="https://cepr.org/voxeu/columns/global-sanctions-data-base" target="_blank" rel="noopener noreferrer">https://cepr.org/voxeu/columns/global-sanctions-data-base</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions effectiveness success rate academic research</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">6 ItskhokiRibakova</span></div>
+        <div class="source-url"><a href="https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf" target="_blank" rel="noopener noreferrer">https://www.brookings.edu/wp-content/uploads/2024/09/6_ItskhokiRibakova.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions achieve intended objectives expert assessment evidence</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">A Comprehensive Approach to Sanctions Effectiveness: Lessons Learned from Sanctions on Russia | European Journal on Criminal Policy and Research | Springer Nature Link</span></div>
+        <div class="source-url"><a href="https://link.springer.com/article/10.1007/s10610-024-09585-x" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1007/s10610-024-09585-x</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions achieve intended objectives expert assessment evidence</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">gao 20 145</span></div>
+        <div class="source-url"><a href="https://www.gao.gov/assets/gao-20-145.pdf" target="_blank" rel="noopener noreferrer">https://www.gao.gov/assets/gao-20-145.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions policy goals achieved case studies outcomes</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">EconPol Forum 03/2023: How Sanctions Work - and Which Goals They Fail to Achieve | Journal (Complete Issue) | ifo | EconPol</span></div>
+        <div class="source-url"><a href="https://www.ifo.de/en/econpol/publications/2023/journal-complete-issue/econpol-forum-032023-how-sanctions-work" target="_blank" rel="noopener noreferrer">https://www.ifo.de/en/econpol/publications/2023/journal-complete-issue/econpol-forum-032023-how-sanctions-work</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions achieve policy goals evidence studies</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">UN Sanctions and Mediation 2.0: Moving From Evidence To Impact | United Nations University</span></div>
+        <div class="source-url"><a href="https://unu.edu/cpr/project/un-sanctions-and-mediation-20-moving-evidence-impact" target="_blank" rel="noopener noreferrer">https://unu.edu/cpr/project/un-sanctions-and-mediation-20-moving-evidence-impact</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions achieve policy goals evidence studies</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Department of Community Justice: Jail sanctions are worsening inequities and outcomes | Multnomah County</span></div>
+        <div class="source-url"><a href="https://multco.us/info/department-community-justice-jail-sanctions-are-worsening-inequities-and-outcomes" target="_blank" rel="noopener noreferrer">https://multco.us/info/department-community-justice-jail-sanctions-are-worsening-inequities-and-outcomes</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions failure rate cost duration outcomes analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Impact of jail sanctions during drug court participation upon substance abuse treatment completion - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3057754/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC3057754/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions failure rate cost duration outcomes analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">The Impact of Criminal Financial Sanctions: A Multi-State Analysis of Survey and Administrative Data - Fines and Fees Justice Center</span></div>
+        <div class="source-url"><a href="https://finesandfeesjusticecenter.org/articles/the-impact-of-criminal-financial-sanctions-a-multi-state-analysis-of-survey-and-administrative-data/" target="_blank" rel="noopener noreferrer">https://finesandfeesjusticecenter.org/articles/the-impact-of-criminal-financial-sanctions-a-multi-state-analysis-of-survey-and-administrative-data/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: sanctions failure rate cost duration outcomes analysis</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">10 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>sanctions effectiveness success rate</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Sanctions fail to achieve their stated objectives in most cases.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>economic sanctions effectiveness studies</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Economic sanctions have low success rates in changing target behavior.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>sanctions effectiveness success rate academic research</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>sanctions achieve intended objectives expert assessment evidence</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>sanctions policy goals achieved case studies outcomes</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>sanctions effectiveness success rate academic research</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>sanctions achieve policy goals evidence studies</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>sanctions failure rate cost duration outcomes analysis</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">46</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">11</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">10</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">21</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.0.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.0.0-cb · Generated 2026-02-22 20:59 UTC
+  <br>Job 9ea382264cb74378a61a385c1f9808e7 · claude-sonnet-4-5-20250929 · anthropic
+</div>
+</div>
+</body>
+</html>
