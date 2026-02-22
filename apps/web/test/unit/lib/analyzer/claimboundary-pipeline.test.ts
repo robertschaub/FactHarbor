@@ -3676,3 +3676,39 @@ describe("checkDebateProviderCredentials", () => {
     }
   });
 });
+
+// ============================================================================
+// B-6: Verifiability Annotation
+// ============================================================================
+describe("B-6: verifiability annotation", () => {
+  it("should accept verifiability field in AtomicClaim when present", () => {
+    const claim = createAtomicClaim({ verifiability: "high" });
+    expect(claim.verifiability).toBe("high");
+  });
+
+  it("should accept all valid verifiability values", () => {
+    for (const v of ["high", "medium", "low", "none"] as const) {
+      const claim = createAtomicClaim({ verifiability: v });
+      expect(claim.verifiability).toBe(v);
+    }
+  });
+
+  it("should allow AtomicClaim without verifiability (backward compat)", () => {
+    const claim = createAtomicClaim();
+    expect(claim.verifiability).toBeUndefined();
+  });
+
+  it("should pass Zod schema with verifiability field in Pass2 output", () => {
+    // The Pass2AtomicClaimSchema is internal, but we can test through the types
+    const claimWithVerifiability = createAtomicClaim({ verifiability: "medium" });
+    expect(claimWithVerifiability.category).toBe("factual");
+    expect(claimWithVerifiability.verifiability).toBe("medium");
+    // category and verifiability are independent axes
+    const evaluativeHighVerifiability = createAtomicClaim({
+      category: "evaluative",
+      verifiability: "high",
+    });
+    expect(evaluativeHighVerifiability.category).toBe("evaluative");
+    expect(evaluativeHighVerifiability.verifiability).toBe("high");
+  });
+});

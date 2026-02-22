@@ -391,6 +391,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Search queries per claim in Stage 1 preliminary search (default: 2)"),
   preliminaryMaxSources: z.number().int().min(1).max(10).optional()
     .describe("Max sources to fetch in Stage 1 preliminary search (default: 5)"),
+  claimAnnotationMode: z.enum(["off", "verifiability", "verifiability_and_misleadingness"]).optional()
+    .describe("Claim annotation mode: off (default), verifiability (adds verifiability field at Stage 1), verifiability_and_misleadingness (adds both)"),
   gate1GroundingRetryThreshold: z.number().min(0).max(1).optional()
     .describe("If >X% of claims fail Gate 1, trigger retry loop (default: 0.5)"),
 
@@ -648,6 +650,9 @@ export const PipelineConfigSchema = z.object({
   if (data.researchZeroYieldBreakThreshold === undefined) {
     data.researchZeroYieldBreakThreshold = 2;
   }
+  if (data.claimAnnotationMode === undefined) {
+    data.claimAnnotationMode = "off";
+  }
   if (data.queryStrategyMode === undefined) {
     data.queryStrategyMode = "legacy";
   }
@@ -831,6 +836,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   maxTotalTokens: 750000, // v2.11.1 reduced to 500000; Captain decision 2026-02-19: 750000
   maxTokensPerCall: 100000,
   enforceBudgets: false,
+  claimAnnotationMode: "off",
   queryStrategyMode: "legacy",
   perClaimQueryBudget: 8,
 

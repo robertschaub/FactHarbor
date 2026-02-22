@@ -195,6 +195,37 @@ describe("PipelineConfigSchema", () => {
     }
   });
 
+  it("validates claimAnnotationMode enum", () => {
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      claimAnnotationMode: "off",
+    }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      claimAnnotationMode: "verifiability",
+    }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      claimAnnotationMode: "verifiability_and_misleadingness",
+    }).success).toBe(true);
+
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      claimAnnotationMode: "invalid",
+    }).success).toBe(false);
+  });
+
+  it("applies claimAnnotationMode default when omitted", () => {
+    const config = { ...DEFAULT_PIPELINE_CONFIG };
+    delete (config as any).claimAnnotationMode;
+
+    const result = PipelineConfigSchema.safeParse(config);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.claimAnnotationMode).toBe("off");
+    }
+  });
+
   it("validates defaultPipelineVariant enum", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary" }).success).toBe(true);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_dynamic" }).success).toBe(true);
@@ -558,6 +589,7 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalIterations).toBe(10); // v2.11.1: reduced from 20
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(750000); // Captain decision 2026-02-19: restored to 750000
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
+      expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("off");
       expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("legacy");
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
     });

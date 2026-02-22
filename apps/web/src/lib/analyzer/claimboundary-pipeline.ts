@@ -396,6 +396,7 @@ const Pass2AtomicClaimSchema = z.object({
   id: z.string().catch(""),
   statement: z.string().catch(""),
   category: z.enum(["factual", "evaluative", "procedural"]).catch("factual"),
+  verifiability: z.enum(["high", "medium", "low", "none"]).optional().catch(undefined),
   centrality: z.enum(["high", "medium", "low"]).catch("low"),
   harmPotential: z.enum(["critical", "high", "medium", "low"]).catch("low"),
   isCentral: z.boolean().catch(false),
@@ -1544,6 +1545,23 @@ export async function runGate1Validation(
     if (failRate > gate1Threshold) {
       console.warn(
         `[Stage1] Gate 1: ${Math.round(failRate * 100)}% of claims failed specificity (threshold: ${Math.round(gate1Threshold * 100)}%). Retry deferred to v1.1.`,
+      );
+    }
+
+    // B-6: Log verifiability annotations if present (flag-only, no filtering)
+    const annotationMode = pipelineConfig.claimAnnotationMode ?? "off";
+    if (annotationMode !== "off") {
+      const verifiabilityCounts = { high: 0, medium: 0, low: 0, none: 0, missing: 0 };
+      for (const claim of keptClaims) {
+        const v = claim.verifiability;
+        if (v && v in verifiabilityCounts) {
+          verifiabilityCounts[v as keyof typeof verifiabilityCounts]++;
+        } else {
+          verifiabilityCounts.missing++;
+        }
+      }
+      console.info(
+        `[Stage1] Gate 1: verifiability annotation — ${JSON.stringify(verifiabilityCounts)} (${keptClaims.length} claims, flag-only)`,
       );
     }
 

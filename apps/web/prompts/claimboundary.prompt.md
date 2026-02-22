@@ -93,6 +93,12 @@ For each claim, assess how well preliminary evidence informed the **verification
 - **"weak"**: Preliminary evidence had limited impact on verification framing.
 - **"none"**: Verification framing was derived from the input alone.
 
+If `verifiability` assessment is requested (via configuration), also assess how fact-checkable each claim is using `verifiability`. This is INDEPENDENT of `category` — a factual claim can have low verifiability (too vague to check), and an evaluative claim can have high verifiability (contains checkable sub-assertions):
+- **"high"**: The claim can be directly checked against available evidence (data, studies, official records).
+- **"medium"**: The claim is partially checkable — some aspects can be verified but others depend on interpretation or unavailable data.
+- **"low"**: The claim is difficult to check — it involves predictions, subjective assessments, or evidence that is unlikely to be publicly available.
+- **"none"**: The claim is a pure value judgment, preference, or unfalsifiable statement that no evidence can resolve.
+
 ### Rules
 
 - Preserve the original language of the input and evidence. Do not translate.
@@ -159,6 +165,7 @@ Return a JSON object:
       "id": "AC_01",
       "statement": "string — specific, research-ready verifiable assertion",
       "category": "factual | evaluative | procedural",
+      "verifiability": "high | medium | low | none",
       "centrality": "high | medium | low",
       "harmPotential": "critical | high | medium | low",
       "isCentral": true,

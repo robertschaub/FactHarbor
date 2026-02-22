@@ -715,6 +715,9 @@ export interface AtomicClaim {
   id: string;                    // "AC_01", "AC_02", ...
   statement: string;             // The verifiable assertion
   category: "factual" | "evaluative" | "procedural";
+  /** Fact-checkability assessment: can evidence resolve this claim? Independent of category.
+   *  Added by B-6 when claimAnnotationMode includes "verifiability". Optional for backward compat. */
+  verifiability?: "high" | "medium" | "low" | "none";
   centrality: "high" | "medium"; // Only central claims survive
   harmPotential: "critical" | "high" | "medium" | "low";
   isCentral: true;               // Always true (filtered)
