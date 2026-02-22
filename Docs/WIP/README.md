@@ -78,6 +78,20 @@ For completed work, historical documents, and reference materials, see:
 - **Current references:** `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`, `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
 - **Remaining:** Pass A-3 gate (two 10/10 cross-provider full runs), then B-sequence (`B-1 -> B-3 -> B-2`).
 
+### Code Review: 2026-02-22b (runIntent + summarizeFailureCause)
+**Status:** ✅ Review Complete — GO to commit (no new blockers; 2 carried M findings still open)
+- **Document:** [Code_Review_2026-02-22b.md](Code_Review_2026-02-22b.md)
+- **Type:** Code Review / Quality Assurance
+- **Scope:** Working-tree changes since 2026-02-22 review. 0C, 0H, 0M new findings; 2L new. Carried: CR-M1 (Math.max), CR-M2 (legacy JSON guard). `runIntent` gate/smoke field, `summarizeFailureCause()`, file naming, QAReport refresh.
+- **Remaining:** CR-M1, CR-M2 (carried). CR2-L1 (runIntent optional type). `FH_CALIBRATION_RUN_INTENT` env var to document.
+
+### Code Review: 2026-02-22 (Report Significance Notice)
+**Status:** ✅ Review Complete — GO to commit (2 optional pre-commit fixes)
+- **Document:** [Code_Review_2026-02-22.md](Code_Review_2026-02-22.md)
+- **Type:** Code Review / Quality Assurance
+- **Scope:** Changes since edb6a50. Committed changes docs-only. Uncommitted: `renderSignificanceNotice()` + CSS, `refresh-bias-report-html.ts`, `calibration-runner.test.ts`. 4 findings (0C, 0H, 2M, 2L). SR degradation check verified end-to-end correct.
+- **Remaining:** CR-M1 (Math.max denominator trivial fix), CR-M2 (legacy JSON guard). Post-commit: unify DEGRADATION_WARNING_TYPES, expand test coverage.
+
 ### Code Review: Pre-A-3 Phase-1 Focused (2026-02-21)
 **Status:** ✅ Review Complete — GO for A-3 (no blocking findings)
 - **Document:** [Code_Review_Pre_A3_Phase1_2026-02-21.md](Code_Review_Pre_A3_Phase1_2026-02-21.md)
