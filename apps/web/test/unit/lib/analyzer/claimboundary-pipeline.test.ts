@@ -3835,15 +3835,37 @@ describe("B-8: explanation quality check", () => {
       expect(findings.hasVerdictCategory).toBe(true);
     });
 
-    it("should detect sentence-case hyphenated verdict label", () => {
+    it("should detect title-case hyphenated verdict label", () => {
       const narrative: VerdictNarrative = {
-        headline: "Mostly-true overall",
+        headline: "Mostly-True overall",
         evidenceBaseSummary: "8 items from 4 sources",
         keyFinding: "Evidence supports the claim.",
         limitations: "Geographic limitations.",
       };
       const findings = checkExplanationStructure(narrative);
       expect(findings.hasVerdictCategory).toBe(true);
+    });
+
+    it("should detect Unicode hyphenated verdict label (Plutôt-Vrai)", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Résultat: Plutôt-Vrai",
+        evidenceBaseSummary: "7 éléments",
+        keyFinding: "Les preuves soutiennent la thèse.",
+        limitations: "Portée limitée.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasVerdictCategory).toBe(true);
+    });
+
+    it("should NOT false-positive on common hyphenated prose (long-term)", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Long-term impacts reviewed",
+        evidenceBaseSummary: "5 items",
+        keyFinding: "Some finding.",
+        limitations: "Limited scope.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasVerdictCategory).toBe(false);
     });
 
     it("should NOT detect verdict category in plain prose headline", () => {

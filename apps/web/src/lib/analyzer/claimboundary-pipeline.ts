@@ -4346,11 +4346,13 @@ export function checkExplanationStructure(
     // Check if narrative references evidence quantities (e.g., "14 items", "9 sources")
     hasCitedEvidence: narrative.evidenceBaseSummary.length > 0
       && /\d+/.test(narrative.evidenceBaseSummary),
-    // Check if verdict label or percentage is in headline (language-neutral: match ALL-CAPS
-    // tokens like TRUE, MOSTLY-TRUE, or hyphenated compounds like Mostly-True in any case)
+    // Check if verdict label or percentage is in headline (language-neutral, Unicode-aware):
+    // - ALL-CAPS tokens (TRUE, VRAI, ÜBERWIEGEND) via \p{Lu}
+    // - Title-case hyphenated compounds (Mostly-True, Plutôt-Vrai) — both parts capitalized
+    // - Percentage pattern (72%)
     hasVerdictCategory: narrative.headline.length > 0
-      && (/\b[A-Z][A-Z-]{2,}\b/.test(narrative.headline)
-        || /\b\w+-\w+\b/.test(narrative.headline)
+      && (/\p{Lu}[\p{Lu}\-]{2,}/u.test(narrative.headline)
+        || /\p{Lu}\p{L}+-\p{Lu}\p{L}+/u.test(narrative.headline)
         || /\d+%/.test(narrative.headline)),
     // Check if confidence/numeric score appears in headline or key finding (language-neutral:
     // match percentage patterns or fraction scores, not bare numbers which cause false positives)
