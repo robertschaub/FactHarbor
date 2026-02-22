@@ -1,29 +1,70 @@
 = Evidence Quality Filtering Pipeline =
 
+This diagram shows the evidence quality filtering layers across both pipeline variants. The **ClaimAssessmentBoundary pipeline** (default, production) uses Layers 1, 6, and 7. Layers 2-5 are defined in shared modules but currently only active in the **Monolithic Dynamic pipeline** (alternative).
+
 {{mermaid}}
 flowchart TB
-    subgraph SOFT["Soft Enforcement"]
-        L1["Layer 1: Evidence Quality Filtering<br/>evidence-filter.ts<br/>Filter vague/incomplete evidence"]
+    subgraph CB["ClaimAssessmentBoundary Pipeline (default)"]
+        L1["Layer 1: Evidence Quality Filtering<br/>evidence-filter.ts<br/>Structural safety net: opinion sources,<br/>low probativeValue, short statements,<br/>missing excerpts/URLs, statistics without numbers"]
+        L6["Layer 6: Baseless Challenge Enforcement<br/>verdict-stage.ts<br/>Revert verdict adjustments from challenges<br/>lacking documented counter-evidence"]
+        L7["Layer 7: Boundary Clustering<br/>claimboundary-pipeline.ts<br/>Stage 3: clusterBoundaries<br/>Group evidence by EvidenceScope congruence"]
     end
 
-    subgraph HARD["Hard Enforcement"]
-        L2["Layer 2: Provenance Validation<br/>provenance-validation.ts<br/>Reject synthetic/LLM-generated content"]
-        L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential claims with 0 evidence"]
-        L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Tangential claims get weight=0"]
-        L5["Layer 5: Contestation Basis Pruning<br/>aggregation.ts<br/>Remove opinion-based contestations"]
-        L6["Layer 6: Contestation Validation<br/>aggregation.ts<br/>Downgrade opinion-based contestation"]
-        L7["Layer 7: Boundary Clustering<br/>claimboundary-pipeline.ts<br/>Stage 3: clusterBoundaries"]
+    subgraph MONO["Monolithic Dynamic Pipeline only"]
+        L2["Layer 2: Provenance Validation<br/>provenance-validation.ts<br/>Reject evidence items missing<br/>valid source URL or excerpt"]
+        L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential/irrelevant claims<br/>with insufficient supporting evidence"]
+        L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Non-direct claims get weight=0<br/>via getClaimWeight"]
+        L5["Layer 5: Opinion-Only KeyFactor Pruning<br/>aggregation.ts<br/>Drop KeyFactors with no documented<br/>evidence basis (opinion/unknown)"]
     end
 
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
+    L1 --> L6 --> L7
+    L2 --> L3 --> L4 --> L5
 
     style L1 fill:#c8e6c9,color:#000
+    style L6 fill:#ffccbc,color:#000
+    style L7 fill:#e3f2fd,color:#000
     style L2 fill:#fff9c4,color:#000
     style L3 fill:#fff9c4,color:#000
     style L4 fill:#fff9c4,color:#000
     style L5 fill:#fff9c4,color:#000
-    style L6 fill:#fff9c4,color:#000
-    style L7 fill:#e3f2fd,color:#000
+
 {{/mermaid}}
 
-//Green = evidence quality filter. Yellow = deterministic enforcement layers. Blue = boundary clustering (Stage 3). Each layer catches issues the previous layers may have missed.//
+//Green = structural evidence filter (deterministic field checks). Orange = baseless challenge enforcement (hybrid: deterministic revert of LLM-assessed challenges). Blue = boundary clustering (LLM-powered Stage 3). Yellow = deterministic enforcement layers (Monolithic Dynamic pipeline only).//
+
+== Layer Details ==
+
+=== Layer 1: Evidence Quality Filtering (both pipelines) ===
+
+**File:** ##evidence-filter.ts## | **Function:** ##filterByProbativeValue##
+
+Deterministic structural safety net. Semantic quality assessment (vague phrases, attribution, deduplication) is handled by the LLM evidence quality service (##assessEvidenceQuality##) which runs before this filter.
+
+Structural checks:
+* Opinion sources (##sourceAuthority === "opinion"##)
+* Low probativeValue (LLM-assigned field, ##probativeValue === "low"##)
+* Statement too short (< 20 characters)
+* Missing or short source excerpt (< 30 characters)
+* Missing source URL
+* Statistics without numbers (digit presence check)
+
+=== Layer 6: Baseless Challenge Enforcement (CB pipeline) ===
+
+**File:** ##verdict-stage.ts## | **Function:** ##enforceBaselessChallengePolicy##
+
+After the 5-step LLM debate pattern (advocate, consistency, challenge, reconcile, validate), this layer reverts any verdict adjustments caused by challenges that lack documented counter-evidence. Satisfies the AGENTS.md rule: //evidence-weighted contestation -- baseless challenges MUST NOT reduce truth% or confidence.//
+
+=== Layer 7: Boundary Clustering (CB pipeline) ===
+
+**File:** ##claimboundary-pipeline.ts## | **Function:** ##clusterBoundaries##
+
+Stage 3 of the ClaimAssessmentBoundary pipeline. A single Sonnet-tier LLM call groups EvidenceScopes with compatible methodology, geography, temporal period, and analytical boundaries into ClaimAssessmentBoundaries.
+
+=== Layers 2-5: Monolithic Dynamic Pipeline Only ===
+
+These layers are defined in shared modules (##provenance-validation.ts##, ##aggregation.ts##) but are not imported or called by the ClaimAssessmentBoundary pipeline. They remain active in the Monolithic Dynamic pipeline variant.
+
+* **Layer 2** (##filterEvidenceByProvenance##): Validates source URL format (HTTP/S) and excerpt presence. Evidence items without valid provenance are rejected before verdict processing.
+* **Layer 3** (##pruneTangentialBaselessClaims##): Removes tangential or irrelevant claims that have fewer than 2 supporting evidence items, or whose evidence lacks medium/high probativeValue.
+* **Layer 4** (##getClaimWeight## / ##calculateWeightedVerdictAverage##): Non-direct claims (##thesisRelevance !== "direct"##) receive weight=0, excluding them from the weighted verdict average.
+* **Layer 5** (##pruneOpinionOnlyFactors##): Drops KeyFactors where ##factualBasis## is "opinion" or "unknown". Only factors with documented evidence ("established" or "disputed") are kept.

@@ -19,33 +19,47 @@ The ClaimAssessmentBoundary pipeline produces a hierarchy of entities: the input
 == Entity Descriptions ==
 
 |= Entity |= Purpose |= Source Interface |= Key Relationships
-| **CBClaimUnderstanding** | Stage 1 output: decomposition of input into AtomicClaims with Gate 1 stats | ##types.ts:893## | Parent of AtomicClaim[]
-| **AtomicClaim** | Single verifiable assertion extracted from user input; the analytical unit | ##types.ts:704## | Receives CBClaimVerdict[]; has centrality, harmPotential, groundingQuality
-| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes; the top-level analytical frame | ##types.ts:733## | Contains EvidenceItem[] and EvidenceScope[]; referenced by BoundaryFinding[]
-| **CBClaimVerdict** | Per-claim verdict with truth percentage, confidence, reasoning, boundary findings, and challenge responses | ##types.ts:777## | References EvidenceItem[] (supporting + contradicting); contains BoundaryFinding[], ConsistencyResult, ChallengeResponse[]
-| **EvidenceItem** | Extracted statement from a web source with quality metadata (probative value, scope quality, derivative tracking) | ##types.ts:385## | References FetchedSource; assigned to ClaimAssessmentBoundary; has EvidenceScope
-| **FetchedSource** | Web source with URL, content, and source reliability score (0.0-1.0 from LLM evaluation) | ##types.ts:447## | Referenced by EvidenceItem[]
-| **OverallAssessment** | Final aggregated result: weighted truth percentage, verdict, confidence, narrative, coverage matrix | ##types.ts:949## | Aggregates CBClaimVerdict[], ClaimAssessmentBoundary[]; has VerdictNarrative, CoverageMatrix, QualityGates
-| **VerdictNarrative** | Structured narrative: headline, evidence base summary, key finding, boundary disagreements, limitations | ##types.ts:878## | Contained by OverallAssessment
+| **CBClaimUnderstanding** | Stage 1 output: decomposition of input into AtomicClaims with Gate 1 stats and preliminary evidence | ##types.ts:942## | Parent of AtomicClaim[]; contains gate1Stats, preliminaryEvidence
+| **AtomicClaim** | Single verifiable assertion extracted from user input; the analytical unit. Only central claims (high/medium centrality) survive extraction. | ##types.ts:715## | Receives CBClaimVerdict[]; has centrality, harmPotential, groundingQuality, expectedEvidenceProfile
+| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes; the top-level analytical frame. Created post-research by clustering EvidenceScopes. | ##types.ts:747## | Contains EvidenceItem[] and constituentScopes[]; referenced by BoundaryFinding[]; has internalCoherence
+| **CBClaimVerdict** | Per-claim verdict with truth percentage, confidence, reasoning, boundary findings, challenge responses, and misleadingness assessment | ##types.ts:791## | References EvidenceItem[] (supporting + contradicting); contains BoundaryFinding[], ConsistencyResult, ChallengeResponse[], TriangulationScore, TruthPercentageRange
+| **EvidenceItem** | Extracted statement from a web source with quality metadata (probativeValue, scopeQuality, sourceType, derivative tracking) | ##types.ts:385## | References FetchedSource; assigned to ClaimAssessmentBoundary via claimBoundaryId; has EvidenceScope
+| **FetchedSource** | Web source with URL, content, and source reliability score (0.0-1.0 from LLM evaluation, with confidence and consensus) | ##types.ts:447## | Referenced by EvidenceItem[]
+| **OverallAssessment** | Final aggregated result: weighted truth percentage, verdict, confidence, narrative, coverage matrix, quality gates, explanation quality check | ##types.ts:1035## | Aggregates CBClaimVerdict[], ClaimAssessmentBoundary[]; has VerdictNarrative, CoverageMatrix, QualityGates, ExplanationQualityCheck, TruthPercentageRange
+| **VerdictNarrative** | Structured narrative: headline, evidence base summary, key finding, boundary disagreements, limitations | ##types.ts:927## | Contained by OverallAssessment
 
 === Additional Entities ===
 
 * **EvidenceScope** (##types.ts:226##) — Per-evidence methodology metadata (methodology [optional], temporal [optional], boundaries, geographic, sourceType, additionalDimensions). All fields except ##name## are optional; populated when available from the source. Embedded in EvidenceItem.
-* **BoundaryFinding** (##types.ts:759##) — Per-boundary quantitative signals within a CBClaimVerdict: truthPercentage, confidence, evidenceDirection, evidenceCount.
-* **ConsistencyResult** (##types.ts:800##) — Self-consistency check output: verdict stability across multiple LLM runs (percentages, spread, stable flag).
-* **ChallengeResponse** (##types.ts:838##) — How adversarial challenges were addressed in reconciliation: challengeType, response, verdictAdjusted.
-* **TriangulationScore** (##types.ts:849##) — Cross-boundary agreement assessment: supporting/contradicting boundary counts, level (strong/moderate/weak/conflicted), factor.
-* **CoverageMatrix** (##types.ts:863##) — Claims x boundaries evidence distribution: counts per cell.
-* **CBResearchState** (##types.ts:922##) — Top-level research container holding CBClaimUnderstanding, EvidenceItem[], FetchedSource[], SearchQuery[], iteration tracking, ClaimAssessmentBoundary[].
+* **BoundaryFinding** (##types.ts:773##) — Per-boundary quantitative signals within a CBClaimVerdict: boundaryId, boundaryName, truthPercentage, confidence, evidenceDirection, evidenceCount.
+* **ConsistencyResult** (##types.ts:820##) — Self-consistency check output: verdict stability across multiple LLM runs (percentages[], average, spread, stable flag, assessed flag).
+* **ChallengeDocument** (##types.ts:845##) — Output of the adversarial challenge step (Stage 4, Step 3): contains per-claim arrays of ChallengePoints.
+* **ChallengePoint** (##types.ts:857##) — A single adversarial challenge against a verdict: id, type (assumption/missing_evidence/methodology_weakness/independence_concern), description, evidenceIds, severity, challengeValidation.
+* **ChallengeValidation** (##types.ts:874##) — Structural validation of a challenge point's evidence references: evidenceIdsValid, validIds[], invalidIds[]. Populated by ##validateChallengeEvidence()## before reconciliation.
+* **ChallengeResponse** (##types.ts:885##) — How adversarial challenges were addressed in reconciliation: challengeType, response, verdictAdjusted, adjustmentBasedOnChallengeIds.
+* **TriangulationScore** (##types.ts:898##) — Cross-boundary agreement assessment: supporting/contradicting boundary counts, level (strong/moderate/weak/conflicted), factor.
+* **CoverageMatrix** (##types.ts:912##) — Claims x boundaries evidence distribution: claim IDs (rows), boundary IDs (columns), counts[][] per cell. Provides ##getBoundariesForClaim()## and ##getClaimsForBoundary()## accessors.
+* **TruthPercentageRange** (##types.ts:835##) — Plausible range for a truth percentage verdict (min, max), computed from self-consistency spread and optionally widened by boundary variance. Attached to both CBClaimVerdict and OverallAssessment.
+* **CBResearchState** (##types.ts:971##) — Top-level research container holding CBClaimUnderstanding, EvidenceItem[], FetchedSource[], SearchQuery[], query budget tracking, iteration tracking, ClaimAssessmentBoundary[], and accumulated AnalysisWarning[].
+
+=== Explanation Quality Entities (B-8) ===
+
+* **ExplanationQualityCheck** (##types.ts:1023##) — Explanation quality check result, attached to OverallAssessment: mode (structural or rubric), structuralFindings, rubricScores (when mode is rubric).
+* **ExplanationStructuralFindings** (##types.ts:998##) — Tier 1 deterministic structural check: hasCitedEvidence, hasVerdictCategory, hasConfidenceStatement, hasLimitations.
+* **ExplanationRubricScores** (##types.ts:1009##) — Tier 2 LLM-powered rubric evaluation: clarity, completeness, neutrality, evidenceSupport, appropriateHedging (each scored 1-5), overallScore (weighted average), flags[].
 
 == Quality Gate Entities ==
 
 Two quality gates produce validation entities that attach to the analysis result.
 
 |= Entity |= Gate |= Purpose |= Key Fields |= Source
-| **ClaimValidationResult** | Gate 1 | Per-claim factuality + fidelity check | ##isFactual##, ##opinionScore##, ##specificityScore##, ##passedFidelity##, ##claimType## | ##types.ts:105##
+| **ClaimValidationResult** | Gate 1 | Per-claim factuality + fidelity check | ##isFactual##, ##opinionScore##, ##specificityScore##, ##claimType##, ##passed## | ##types.ts:105##
 | **VerdictValidationResult** | Gate 4 | Per-verdict confidence assessment | ##evidenceCount##, ##averageSourceQuality##, ##evidenceAgreement##, ##confidenceTier## | ##types.ts:121##
-| **QualityGatesSummary** | Both | Aggregate pass/fail with Gate1Stats and Gate4Stats | ##passed##, ##gate1Stats##, ##gate4Stats## | ##types.ts:161##
+| **QualityGates** | Both | Aggregate pass/fail with Gate1Stats and Gate4Stats | ##passed##, ##gate1Stats##, ##gate4Stats##, ##summary## | ##types.ts:172##
+
+Gate 1 statistics (##Gate1Stats##, ##types.ts:137##) track total claims evaluated, passed, filtered, and central claims kept despite failing validation. The CB pipeline's ##CBClaimUnderstanding.gate1Stats## additionally tracks ##passedFidelity## — the count of claims passing the fidelity check.
+
+Gate 4 statistics (##Gate4Stats##, ##types.ts:148##) track verdict confidence distribution across HIGH, MEDIUM, LOW, and INSUFFICIENT tiers.
 
 For detailed quality gate criteria and examples, see [[Quality Gates Deep Dive>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]].
 
@@ -91,7 +105,7 @@ Both occupy the 43-57% truth range. The distinction is **confidence-based**:
 
 |= Status |= Meaning
 | **QUEUED** | Job submitted, waiting for runner capacity
-| **RUNNING** | AKEL pipeline is executing
+| **RUNNING** | ClaimAssessmentBoundary pipeline is executing
 | **SUCCEEDED** | Analysis complete, results available
 | **FAILED** | Analysis failed (provider error, timeout, or input issue)
 | **PAUSED** | System auto-paused due to provider outage (jobs resume when system recovers)
@@ -115,7 +129,7 @@ Analysis results are currently stored as **JSON blobs** in SQLite (via the .NET 
 
 * [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Verdict calculation formulas, aggregation hierarchy, weighting factors
 * [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] — 4-layer confidence system, penalty calculations
-* [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] — KeyFactor design decisions, contestation structure, conceptual target ERD
+* [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] — //Historical (Orchestrated pipeline).// Retained for design context on how CB pipeline's boundary-based approach evolved.
 
 ----
 
