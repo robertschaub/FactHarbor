@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 21, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
+**Last Updated**: February 22, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -42,6 +42,8 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **Calibration review hardening (2026-02-22b + carried fixes)**: `runIntent` metadata made legacy-safe (optional type), lane scripts now explicitly stamp run intent (`FH_CALIBRATION_RUN_INTENT` via smoke/gate runner), provider-attribution denominator cleanup, and legacy report refresh guard for missing `failureModes`. | Calibration / Reliability | 2026-02-22 | [Code_Review_2026-02-22b.md](../WIP/Code_Review_2026-02-22b.md), [Plan_Pause_Status_2026-02-22.md](../WIP/Plan_Pause_Status_2026-02-22.md) |
+| ✅ **Calibration gate/smoke lane policy + wiring**: Added canonical run policy, consolidated significance tiers, and implemented `runIntent` metadata (`gate`/`smoke`) with lane-specific artifact prefixes. | Calibration / Governance | 2026-02-22 | [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |
 | ✅ **Calibration report model & search transparency**: Reports now show LLM provider, tiering, pipeline models, debate profile with per-role tier/provider/model, and search provider config. Backfilled all 5 existing reports. Pipeline `meta.modelsUsed` populated. Per-side search providers in pair cards. | Calibration / Observability | 2026-02-21 | Plan: `gentle-snuggling-quokka.md` |
 
 ## Recently Completed (February 20, 2026)
@@ -118,6 +120,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
+| **D1-D5 execution pause checkpoint**: Broader analysis/discussion hold is active. Resume implementation only from stable checkpoint after decision sync; avoid advancing B-* while pause is active. | Governance / Execution | high | high | [Plan_Pause_Status_2026-02-22.md](../WIP/Plan_Pause_Status_2026-02-22.md), [Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md](../WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md) |
 | **Per-stage model tracking in pipeline**: `meta.modelsUsed` now captures understand/extractEvidence/verdict model names. Still missing: per-debate-role actual model tracking (advocate, challenger, etc.) and per-LLM-call cost attribution. Current implementation resolves models at config snapshot time; runtime tracking would detect fallback scenarios. Partial fix landed 2026-02-21 (Steps 1-7 of calibration model transparency). | Analyzer / Observability | high | high | Plan: `gentle-snuggling-quokka.md` |
 | **C13 active rebalancing**: Implement evidence-pool rebalancing loop (beyond current detection). A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1 without quality regression. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Cross-provider A/B calibration run**: Run `bias-pairs-v1` under `cross-provider` debate profile and diff against Baseline v1 to isolate provider-diversity impact on skew. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) |

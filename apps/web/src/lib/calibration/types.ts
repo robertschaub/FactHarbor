@@ -321,6 +321,7 @@ export interface CalibrationRunResult {
 
   // Run metadata
   metadata: {
+    runIntent?: "gate" | "smoke";
     fixtureFile: string;
     fixtureVersion: string;
     pairsRequested: number;

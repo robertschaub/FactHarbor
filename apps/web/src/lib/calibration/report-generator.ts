@@ -7,7 +7,7 @@
  * @module calibration/report-generator
  */
 
-import type { CalibrationRunResult, PairResult, SideResult } from "./types";
+import type { CalibrationRunResult, PairFailureDiagnostics, PairResult, SideResult } from "./types";
 
 // ============================================================================
 // PUBLIC API
@@ -37,6 +37,7 @@ ${CSS}
 <div class="container">
 
 ${renderHeader(result)}
+${renderSignificanceNotice(result)}
 ${renderLLMAndSearchConfig(result)}
 ${renderVerdictBanner(result, passClass, passLabel)}
 ${renderAggregatePanel(result)}
@@ -58,6 +59,7 @@ ${renderFooter(result)}
 function renderHeader(r: CalibrationRunResult): string {
   const am = r.aggregateMetrics;
   const durationMin = (am.totalDurationMs / 60_000).toFixed(1);
+  const runIntent = r.metadata.runIntent ?? "legacy-unspecified";
 
   return `
 <header>
@@ -66,12 +68,138 @@ function renderHeader(r: CalibrationRunResult): string {
     <div class="meta-item"><span class="label">Run ID</span><span class="value">${esc(r.runId)}</span></div>
     <div class="meta-item"><span class="label">Timestamp</span><span class="value">${esc(r.timestamp)}</span></div>
     <div class="meta-item"><span class="label">Mode</span><span class="value">${esc(r.metadata.mode)}</span></div>
+    <div class="meta-item"><span class="label">Run Intent</span><span class="value">${esc(runIntent)}</span></div>
     <div class="meta-item"><span class="label">Fixture</span><span class="value">${esc(r.metadata.fixtureFile)} v${esc(r.metadata.fixtureVersion)}</span></div>
     <div class="meta-item"><span class="label">Pairs</span><span class="value">${am.completedPairs}/${am.totalPairs} completed</span></div>
     <div class="meta-item"><span class="label">Duration</span><span class="value">${durationMin} min</span></div>
     <div class="meta-item"><span class="label">Config hashes</span><span class="value mono">P:${esc(r.configSnapshot.configHashes.pipeline.slice(0, 8))} S:${esc(r.configSnapshot.configHashes.search.slice(0, 8))}</span></div>
   </div>
 </header>`;
+}
+
+/**
+ * Extract a human-readable root cause from a failed pair's error + diagnostics.
+ * Groups identical causes so the significance notice is concise.
+ */
+function summarizeFailureCause(error: string, diag?: PairFailureDiagnostics): string {
+  // Known patterns — extract the actionable root cause
+  const msg = diag?.message ?? error;
+  if (/credit balance/i.test(msg)) {
+    return "API credit exhaustion (billing limit reached)";
+  }
+  if (/rate limit|429|too many requests|tpm/i.test(msg)) {
+    return `Rate limit / TPM throttle (${diag?.provider ?? "unknown provider"})`;
+  }
+  if (/timeout|timed out|ETIMEDOUT|ECONNRESET/i.test(msg)) {
+    return `Network timeout (${diag?.provider ?? "unknown provider"})`;
+  }
+  // Generic: use error class + first ~120 chars of message
+  const truncated = msg.length > 120 ? msg.slice(0, 117) + "..." : msg;
+  return `${diag?.errorClass ?? "Error"}: ${truncated}`;
+}
+
+function renderSignificanceNotice(r: CalibrationRunResult): string {
+  const am = r.aggregateMetrics;
+  const fm = getFailureModes(am);
+  const t = r.thresholds;
+
+  const issues: string[] = [];
+  const highImpactIssues: string[] = [];
+
+  if (am.failedPairs > 0 || am.completedPairs < am.totalPairs) {
+    highImpactIssues.push(
+      `Incomplete execution: ${am.completedPairs}/${am.totalPairs} pairs completed (${am.failedPairs} failed).`,
+    );
+
+    // Extract root causes from failed pair diagnostics
+    const failedPairs = r.pairResults.filter((p) => p.status === "failed");
+    if (failedPairs.length > 0) {
+      const causeGroups = new Map<string, string[]>();
+      for (const fp of failedPairs) {
+        const cause = summarizeFailureCause(fp.error, fp.diagnostics);
+        const group = causeGroups.get(cause) ?? [];
+        group.push(fp.pairId);
+        causeGroups.set(cause, group);
+      }
+      for (const [cause, pairIds] of causeGroups) {
+        highImpactIssues.push(
+          `Root cause (${pairIds.length} pair${pairIds.length > 1 ? "s" : ""}): ${cause} [${pairIds.join(", ")}]`,
+        );
+      }
+    }
+  }
+
+  if (fm.asymmetryPairCount > 0) {
+    highImpactIssues.push(
+      `Failure-mode asymmetry detected in ${fm.asymmetryPairCount} pair(s).`,
+    );
+  }
+
+  if (fm.meanDegradationRateDelta > t.maxDegradationRateDelta) {
+    highImpactIssues.push(
+      `Mean degradation-rate delta ${fm.meanDegradationRateDelta.toFixed(1)} pp exceeds threshold ${t.maxDegradationRateDelta.toFixed(1)} pp.`,
+    );
+  }
+
+  if (fm.meanRefusalRateDelta > t.maxRefusalRateDelta) {
+    highImpactIssues.push(
+      `Mean refusal-rate delta ${fm.meanRefusalRateDelta.toFixed(1)} pp exceeds threshold ${t.maxRefusalRateDelta.toFixed(1)} pp.`,
+    );
+  }
+
+  let unknownProviderEvents = 0;
+  let totalProviderEvents = 0;
+  for (const stats of Object.values(fm.byProvider)) {
+    totalProviderEvents += stats.totalEvents;
+  }
+  if (fm.byProvider.unknown) {
+    unknownProviderEvents = fm.byProvider.unknown.totalEvents;
+  }
+  if (unknownProviderEvents > 0) {
+    const pct = totalProviderEvents > 0
+      ? (unknownProviderEvents / totalProviderEvents) * 100
+      : 100;
+    issues.push(
+      `Provider attribution incomplete: ${unknownProviderEvents}/${totalProviderEvents} failure-mode event(s) attributed to "unknown" (${pct.toFixed(0)}%).`,
+    );
+  }
+
+  const srDegradationEvents = fm.byStage.research_sr?.degradationCount ?? 0;
+  if (srDegradationEvents > 0) {
+    issues.push(
+      `Source-reliability evaluation degraded in ${srDegradationEvents} event(s) (stage: research_sr).`,
+    );
+  }
+
+  const allIssues = [...highImpactIssues, ...issues];
+  if (allIssues.length === 0) {
+    return `
+<section class="significance-banner significance-ok">
+  <h2>Report Significance</h2>
+  <p>No material execution issues detected that reduce report significance.</p>
+</section>`;
+  }
+
+  const decisionGrade =
+    am.failedPairs === 0
+    && am.completedPairs === am.totalPairs
+    && fm.asymmetryPairCount === 0
+    && fm.meanDegradationRateDelta <= t.maxDegradationRateDelta
+    && fm.meanRefusalRateDelta <= t.maxRefusalRateDelta;
+
+  const severityClass = highImpactIssues.length > 0 ? "significance-high" : "significance-warn";
+  const decisionText = decisionGrade
+    ? "Decision-grade criteria are satisfied."
+    : "Decision-grade criteria are NOT satisfied for this run.";
+
+  return `
+<section class="significance-banner ${severityClass}">
+  <h2>Report Significance Notice</h2>
+  <p><strong>${esc(decisionText)}</strong></p>
+  <ul>
+    ${allIssues.map((item) => `<li>${esc(item)}</li>`).join("")}
+  </ul>
+</section>`;
 }
 
 function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
@@ -295,7 +423,7 @@ function renderAggregatePanel(r: CalibrationRunResult): string {
 }
 
 function renderFailureModePanel(r: CalibrationRunResult): string {
-  const fm = r.aggregateMetrics.failureModes;
+  const fm = getFailureModes(r.aggregateMetrics);
 
   let domainRows = "";
   for (const [domain, stats] of Object.entries(fm.byDomain)) {
@@ -552,9 +680,10 @@ function renderConfigSnapshot(r: CalibrationRunResult): string {
 }
 
 function renderFooter(r: CalibrationRunResult): string {
+  const runIntent = r.metadata.runIntent ?? "legacy-unspecified";
   return `
 <footer>
-  <p>Generated: ${new Date().toISOString()} | Schema: ${esc(r.metadata.schemaVersion)} | Fixture: v${esc(r.metadata.fixtureVersion)}</p>
+  <p>Generated: ${new Date().toISOString()} | Schema: ${esc(r.metadata.schemaVersion)} | Fixture: v${esc(r.metadata.fixtureVersion)} | Intent: ${esc(runIntent)}</p>
 </footer>`;
 }
 
@@ -568,6 +697,23 @@ function renderSideSearchProviders(side: SideResult): string {
   if (!providers) return "";
   const provStr = typeof providers === "string" ? providers : String(providers);
   return `\n          <div>Search: <span class="mono">${esc(provStr)}</span></div>`;
+}
+
+function getFailureModes(
+  aggregateMetrics: CalibrationRunResult["aggregateMetrics"],
+): CalibrationRunResult["aggregateMetrics"]["failureModes"] {
+  return (
+    aggregateMetrics.failureModes ?? {
+      meanRefusalRateDelta: 0,
+      maxRefusalRateDelta: 0,
+      meanDegradationRateDelta: 0,
+      maxDegradationRateDelta: 0,
+      asymmetryPairCount: 0,
+      byDomain: {},
+      byProvider: {},
+      byStage: {},
+    }
+  );
 }
 
 function esc(s: string): string {
@@ -635,6 +781,46 @@ header h1 { font-size: 1.6em; margin-bottom: 12px; color: var(--accent); }
 .verdict-banner.pass .verdict-label { color: var(--pass); }
 .verdict-banner.fail .verdict-label { color: var(--fail); }
 .verdict-detail { margin-top: 8px; color: var(--text-muted); }
+
+.significance-banner {
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.significance-banner h2 {
+  margin-bottom: 6px;
+  font-size: 1.1em;
+}
+
+.significance-banner p {
+  margin: 0 0 8px 0;
+}
+
+.significance-banner ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.significance-banner li {
+  margin: 4px 0;
+}
+
+.significance-ok {
+  background: #123226;
+  border-color: var(--pass);
+}
+
+.significance-warn {
+  background: #3a2a12;
+  border-color: var(--warn);
+}
+
+.significance-high {
+  background: #3d1b1b;
+  border-color: var(--fail);
+}
 
 .panel {
   background: var(--surface);

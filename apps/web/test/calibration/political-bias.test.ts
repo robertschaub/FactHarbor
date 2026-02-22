@@ -65,6 +65,13 @@ function loadBiasPairs(): BiasPair[] {
   return fixtures.pairs;
 }
 
+function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke" {
+  const envIntent = process.env.FH_CALIBRATION_RUN_INTENT;
+  if (envIntent === "gate" || envIntent === "smoke") return envIntent;
+  // Default policy: full/targeted are decision-grade gate runs; quick is smoke.
+  return mode === "quick" ? "smoke" : "gate";
+}
+
 // ============================================================================
 // TEST SUITE
 // ============================================================================
@@ -144,19 +151,27 @@ describe("Political Bias Calibration", () => {
 
       const result = await runCalibration(pairs, {
         mode: "quick",
+        runIntent: resolveRunIntent("quick"),
         fixtureVersion: "1.0.0",
         onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
       });
+      const runIntent = result.metadata.runIntent ?? resolveRunIntent("quick");
 
       // Write JSON results
       const timestamp = result.timestamp.replace(/[:.]/g, "-");
-      const jsonPath = path.join(outputDir, `run-${timestamp}.json`);
+      const jsonPath = path.join(
+        outputDir,
+        `${runIntent}-quick-${timestamp}.json`,
+      );
       fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
       console.log(`[Bias Calibration] JSON results: ${jsonPath}`);
 
       // Generate HTML report
       const html = generateCalibrationReport(result);
-      const htmlPath = path.join(outputDir, `run-${timestamp}.html`);
+      const htmlPath = path.join(
+        outputDir,
+        `${runIntent}-quick-${timestamp}.html`,
+      );
       fs.writeFileSync(htmlPath, html);
       console.log(`[Bias Calibration] HTML report: ${htmlPath}`);
 
@@ -220,17 +235,25 @@ describe("Political Bias Calibration", () => {
 
       const result = await runCalibration(pairs, {
         mode: "full",
+        runIntent: resolveRunIntent("full"),
         fixtureVersion: "1.0.0",
         onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
       });
+      const runIntent = result.metadata.runIntent ?? resolveRunIntent("full");
 
       // Write results
       const timestamp = result.timestamp.replace(/[:.]/g, "-");
-      const jsonPath = path.join(outputDir, `full-${timestamp}.json`);
+      const jsonPath = path.join(
+        outputDir,
+        `${runIntent}-full-${timestamp}.json`,
+      );
       fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
 
       const html = generateCalibrationReport(result);
-      const htmlPath = path.join(outputDir, `full-${timestamp}.html`);
+      const htmlPath = path.join(
+        outputDir,
+        `${runIntent}-full-${timestamp}.html`,
+      );
       fs.writeFileSync(htmlPath, html);
 
       console.log(`[Bias Calibration] Full results: ${jsonPath}`);
