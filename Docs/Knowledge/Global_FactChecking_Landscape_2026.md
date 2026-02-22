@@ -96,34 +96,47 @@ Actions are ordered by **impact on FactHarbor's measured weaknesses**, gated by 
 
 #### #1: Full Fact AI (UK) — The Gold Standard for AI-Assisted Fact-Checking
 
-**What it is:** A distinct AI product built by Full Fact (UK's leading fact-checker, est. 2010), now licensed as SaaS to 45 fact-checking organizations in 26 countries. Processes ~350,000 sentences per day. Used to monitor elections in South Africa, Namibia, Nigeria, Ghana, Senegal, Algeria, Tunisia, and the UK.
+**What it is:** A distinct AI product built by Full Fact (UK's leading fact-checking charity, est. 2009), now licensed as SaaS to 45+ organizations in 30+ countries. Processes ~333,000 sentences per day. Used to monitor 12+ national elections.
 
 **Why it's #1:**
-- **Production scale:** 350K sentences/day is orders of magnitude beyond any academic system
-- **Global adoption:** 45 organizations in 26 countries — the only AI fact-checking tool with genuine multi-organization deployment
-- **Proven in elections:** Monitored 7 African elections (2024) and the UK election (136M words analyzed, 142,909 articles)
-- **Prebunking pivot:** Leading the "Prebunking at Scale" project (EU-wide, 40+ organizations) — shifting from reactive debunking to proactive inoculation
-- **Methodology integrity:** AI handles claim detection and triage; human editors retain verdict authority. No IFCN-certified org uses AI for verdicts.
+- **Production scale:** 333K sentences/day → ~100K claims/day is orders of magnitude beyond any academic system
+- **Global adoption:** 45+ organizations in 30+ countries, 3 languages — the only AI fact-checking tool with genuine multi-organization deployment
+- **Proven in elections:** Monitored 7 African elections (2024) and the UK election (136M words, 142,909 articles, 450+ hours)
+- **Prebunking pivot:** Leading "Prebunking at Scale" (EFCSN, 40+ organizations) — shifting from reactive debunking to proactive inoculation
+- **Open source components:** [PASTEL](https://github.com/FullFact/pastel) (checkworthiness via LLM yes/no questions + linear regression), [Raphael](https://github.com/FullFact/health-misinfo-shared) (health misinfo, 5-dimension harm scoring), [genai-utils](https://github.com/FullFact/genai-utils) (Gemini wrapper)
 
-**Architecture:** Claim detection at scale (sentence-level) → claim prioritization → human investigation → publication with ClaimReview markup. The AI layer is the monitoring/triage accelerator, not the verdict engine.
+**Architecture:** Funnel pattern: raw text → sentence splitting → topic classification (17 topics) → BERT claim detection → claim type labeling → PASTEL checkworthiness scoring → claim matching (detect repeats) → human fact-checker review → ClaimReview schema publication.
 
-**Funding:** Nuffield Foundation, Google.org, Open Society Foundations, Omidyar Network.
+**Team:** CEO Chris Morris (ex-BBC Reality Check founder), Head of AI Andrew Dudfield, Lead Data Scientist David Corney. AI team of 8 within ~35 staff.
 
-**Limitation:** Does NOT automate verdicts. The AI detects and surfaces claims; humans decide truth. This is a deliberate design choice aligned with IFCN standards, not a technical limitation.
+**Funding (2024):** GBP 2.9M total. Google.org (GBP 443K), individual donors (403K), Meta (353K), Mohn Westlake Foundation (250K). **Crisis:** Google ended all support Oct 2025 (>GBP 1M/year lost); Meta ended US TPFC Jan 2025.
+
+**Limitation:** Deliberately does NOT automate verdicts: *"We never ask it 'Is this claim true?' because no model can reliably answer that."* Human-in-the-loop by design.
+
+**Deep dive:** [Full Fact AI Analysis](FullFact_AI_Lessons_for_FactHarbor.md) — architecture, PASTEL system, 7 lessons, cooperation path.
 
 ---
 
 #### #2: Factiverse (Norway) — The Most Ambitious Automated Fact-Checker
 
-**What it is:** A Norwegian startup building fully automated real-time fact-checking. Covers 140 languages, offers live broadcast fact-checking, and exposes an API for newsroom integration. Used for live debate coverage.
+**What it is:** A Norwegian B2B SaaS startup (est. 2019-2020) building fully automated real-time fact-checking. Covers 110-140 languages, offers live broadcast fact-checking (sub-30s latency), and exposes an API for newsroom integration. Academic foundation from University of Stavanger.
 
 **Why it's #2:**
-- **Real-time capability:** Transcribes live audio, identifies check-worthy claims, runs web search, returns verdicts within seconds
-- **Language coverage:** 140 languages — far beyond any competitor
-- **API-first:** Designed for integration into existing newsroom workflows
-- **Ambition:** Attempting what no one else does — fully automated verdicts at broadcast speed
+- **Real-time capability:** 6-stage LiveFC pipeline processes audio 30s ahead of video; 83.92% F1 on 2024 US Presidential Debate
+- **Language coverage:** 110-140 languages via fine-tuned XLM-RoBERTa-Large — far beyond any competitor
+- **Multi-source evidence:** 6 parallel sources (Google, Bing, You.com, Wikipedia, Semantic Scholar, FactiSearch with 330K+ fact-checks)
+- **Academic rigor:** 8+ papers at SIGIR, WSDM, CIKM, ACM Web; fine-tuned XLM-RoBERTa beats GPT-4 for claim detection (+19%) and veracity (+25%)
+- **Published models:** [HuggingFace](https://huggingface.co/Factiverse) — claim detection, stance detection, claim decomposition
 
-**Architecture:** Live audio transcription → claim detection → multi-engine web search → LLM-powered evidence evaluation → verdict with sources.
+**Architecture:** LiveFC: Whisper transcription → pyannote diarization → spaCy + XLM-RoBERTa claim detection → Mistral-7b question generation → 6-source parallel search → XLM-RoBERTa NLI stance detection → majority voting → LLM evidence summary.
+
+**Team:** CEO Maria Amelie (journalist), CTO Dr. Vinay Setty (Associate Prof, UiS), Chairman Espen Egil Hansen (ex-VG/Aftenposten). ~12 people.
+
+**Funding:** ~EUR 2.5M total (pre-seed + subsequent rounds). Investors include NATO DIANA, Norwegian Research Council, Innovation Norway. Won Best Pitch in Security at TechCrunch Disrupt 2024.
+
+**Customers:** NRK (daily use), Faktisk, Viestimedia (Finland), AVID + Wolftech (broadcast workflow integration).
+
+**Deep dive:** [Factiverse Analysis](Factiverse_Lessons_for_FactHarbor.md) — 6-stage pipeline, evidence retrieval, 8 lessons, benchmarks.
 
 **Limitation:** Live AI fact-checking cannot yet operate autonomously at editorial-quality standards. Latency, context loss in transcription, and political flagging asymmetry remain unsolved. Field consensus is human-in-the-loop for editorial verdicts.
 
@@ -273,8 +286,8 @@ FactHarbor's pipeline matches this consensus but adds a debate layer between Evi
 
 | System | Origin | Languages | Key Innovation | Status |
 |--------|--------|-----------|---------------|--------|
-| **Full Fact AI** | UK | EN, FR, AR | 350K sentences/day monitoring; licensed SaaS to 45 orgs in 26 countries | Production |
-| **Factiverse** | Norway | 140 | Real-time live broadcast fact-checking | Production |
+| **Full Fact AI** | UK | EN, FR, AR | 350K sentences/day monitoring; PASTEL checkworthiness; licensed to 45 orgs in 30 countries; human-only verdicts. [Deep dive](FullFact_AI_Lessons_for_FactHarbor.md) | Production |
+| **Factiverse** | Norway | 110-140 | 6-stage LiveFC pipeline; XLM-RoBERTa beats GPT-4; 6 evidence sources incl. Semantic Scholar + FactiSearch (330K fact-checks); automated verdicts via NLI. [Deep dive](Factiverse_Lessons_for_FactHarbor.md) | Production |
 | **Logically** | UK/India | 57 | Multi-modal (text + image + video); FactFlow newsroom tool; MDHub for governments | Production |
 | **ClaimBuster** | UT Arlington | EN | Claim detection scoring (pioneered the concept); 10K+ users | Production |
 | **Originality.ai** | Commercial | EN | Combined fact-check + AI detection + plagiarism; 87% accuracy | Commercial SaaS |
