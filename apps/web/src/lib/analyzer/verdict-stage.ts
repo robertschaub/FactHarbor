@@ -92,11 +92,11 @@ export interface VerdictStageConfig {
    * Default: debate roles "sonnet", validation "haiku".
    */
   debateModelTiers: {
-    advocate: "haiku" | "sonnet";
-    selfConsistency: "haiku" | "sonnet";
-    challenger: "haiku" | "sonnet";
-    reconciler: "haiku" | "sonnet";
-    validation: "haiku" | "sonnet";
+    advocate: "haiku" | "sonnet" | "opus";
+    selfConsistency: "haiku" | "sonnet" | "opus";
+    challenger: "haiku" | "sonnet" | "opus";
+    reconciler: "haiku" | "sonnet" | "opus";
+    validation: "haiku" | "sonnet" | "opus";
   };
 
   /**
@@ -176,7 +176,7 @@ export type LLMCallFn = (
   promptKey: string,
   input: Record<string, unknown>,
   options?: {
-    tier?: "sonnet" | "haiku";
+    tier?: "sonnet" | "haiku" | "opus";
     temperature?: number;
     /** Override the LLM provider for this call (e.g., "openai" when global is "anthropic"). */
     providerOverride?: LLMProviderType;

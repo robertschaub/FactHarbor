@@ -257,6 +257,33 @@ describe("PipelineConfigSchema", () => {
     }
   });
 
+  it("validates debateModelTiers with opus tier (B-5b)", () => {
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      debateModelTiers: { reconciler: "opus" },
+    }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      debateModelTiers: { advocate: "sonnet", reconciler: "opus", challenger: "haiku" },
+    }).success).toBe(true);
+    // Invalid tier value
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      debateModelTiers: { reconciler: "invalid" },
+    }).success).toBe(false);
+  });
+
+  it("accepts modelOpus config field (B-5b)", () => {
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      modelOpus: "claude-opus-4-6",
+    }).success).toBe(true);
+    // Optional — config without modelOpus is valid
+    const config = { ...DEFAULT_PIPELINE_CONFIG };
+    delete (config as any).modelOpus;
+    expect(PipelineConfigSchema.safeParse(config).success).toBe(true);
+  });
+
   it("validates defaultPipelineVariant enum", () => {
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary" }).success).toBe(true);
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_dynamic" }).success).toBe(true);

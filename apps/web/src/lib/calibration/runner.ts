@@ -217,6 +217,7 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
   const modelUnderstand = config.modelUnderstand ?? "claude-haiku-4-5-20251001";
   const modelExtractEvidence = config.modelExtractEvidence ?? "claude-haiku-4-5-20251001";
   const modelVerdict = config.modelVerdict ?? "claude-sonnet-4-5-20250929";
+  const modelOpus = config.modelOpus ?? modelVerdict; // B-5b: fallback to modelVerdict
   const debateProfile = (config.debateProfile ?? "baseline") as string;
 
   // Resolve debate role tiers and providers from profile + explicit overrides
@@ -230,7 +231,7 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
   for (const role of roles) {
     const tier = explicitTiers?.[role] ?? profile.tiers[role] ?? "sonnet";
     const roleProvider = explicitProviders?.[role] ?? profile.providers[role] ?? provider;
-    const model = resolveModelName(tier, roleProvider, tiering, modelUnderstand, modelVerdict);
+    const model = resolveModelName(tier, roleProvider, tiering, modelUnderstand, modelVerdict, modelOpus);
     debateRoles[role] = { tier, provider: roleProvider, model };
   }
 
@@ -257,12 +258,15 @@ function resolveModelName(
   tiering: boolean,
   modelUnderstand: string,
   modelVerdict: string,
+  modelOpus?: string,
 ): string {
-  const isPremium = tier === "sonnet";
+  const isPremium = tier === "sonnet" || tier === "opus";
+  const isOpus = tier === "opus";
   const p = (roleProvider || "").toLowerCase();
 
   // Anthropic: honour UCM model overrides
   if (p === "anthropic" || p === "claude") {
+    if (isOpus) return modelOpus ?? modelVerdict;
     if (!tiering) return modelVerdict;
     return isPremium ? modelVerdict : modelUnderstand;
   }
@@ -285,6 +289,7 @@ function resolveModelName(
   }
 
   // Unknown provider — fall back to Anthropic UCM models
+  if (isOpus) return modelOpus ?? modelVerdict;
   return isPremium ? modelVerdict : modelUnderstand;
 }
 

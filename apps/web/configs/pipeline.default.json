@@ -5,6 +5,7 @@
   "modelUnderstand": "claude-haiku-4-5-20251001",
   "modelExtractEvidence": "claude-haiku-4-5-20251001",
   "modelVerdict": "claude-sonnet-4-5-20250929",
+  "modelOpus": "claude-opus-4-6",
   "llmInputClassification": true,
   "llmEvidenceQuality": true,
   "llmContextSimilarity": true,

@@ -1105,6 +1105,28 @@ describe("Configurable debate model tiers", () => {
     expect(call1Options.tier).toBe("sonnet");
     expect(call2Options.tier).toBe("sonnet");
   });
+
+  it("reconcileVerdicts should accept opus tier for reconciler (B-5b)", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_RECONCILIATION: reconciliationResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, reconciler: "opus" },
+    };
+
+    await reconcileVerdicts(advocateVerdictsList, { challenges: [] }, [], [], mockLLM, config);
+
+    expect(mockLLM).toHaveBeenCalledTimes(1);
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.tier).toBe("opus");
+  });
 });
 
 // ============================================================================

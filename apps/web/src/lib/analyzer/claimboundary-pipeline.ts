@@ -3570,7 +3570,7 @@ export function createProductionLLMCall(
   return async (
     promptKey: string,
     input: Record<string, unknown>,
-    options?: { tier?: "sonnet" | "haiku"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string },
+    options?: { tier?: "sonnet" | "haiku" | "opus"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string },
   ): Promise<unknown> => {
     const startTime = Date.now();
     const stage = "stage4_verdict";
@@ -3640,8 +3640,14 @@ export function createProductionLLMCall(
 
     // 3. Select model based on tier + resolved provider
     const tier = options?.tier ?? "sonnet";
-    const taskKey: ModelTask = tier === "sonnet" ? "verdict" : "understand";
-    let model = getModelForTask(taskKey, effectiveProviderOverride, pipelineConfig);
+    const isPremium = tier === "sonnet" || tier === "opus";
+    const taskKey: ModelTask = isPremium ? "verdict" : "understand";
+    // B-5b: For "opus" tier, temporarily override modelVerdict with modelOpus so
+    // getModelForTask resolves the correct model ID through the standard path.
+    const effectiveConfig = tier === "opus" && pipelineConfig.modelOpus
+      ? { ...pipelineConfig, modelVerdict: pipelineConfig.modelOpus }
+      : pipelineConfig;
+    let model = getModelForTask(taskKey, effectiveProviderOverride, effectiveConfig);
 
     // A-2b: OpenAI TPM guard/fallback configuration (UCM-backed defaults).
     const tpmGuardEnabled = pipelineConfig.openaiTpmGuardEnabled ?? true;

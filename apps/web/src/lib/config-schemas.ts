@@ -180,6 +180,7 @@ export const PipelineConfigSchema = z.object({
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
   modelExtractEvidence: z.string().min(1).describe("Model for EXTRACT_EVIDENCE phase"),
   modelVerdict: z.string().min(1).describe("Model for VERDICT phase (final verdicts)"),
+  modelOpus: z.string().min(1).optional().describe("Model for OPUS debate tier (B-5b). Used when a debate role is set to 'opus'. Falls back to modelVerdict if not set."),
 
   // === LLM Text Analysis Feature Flags ===
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
@@ -428,13 +429,13 @@ export const PipelineConfigSchema = z.object({
       "baseline: all same provider+tier (default). tier-split: challenger uses haiku. " +
       "cross-provider: challenger on OpenAI. max-diversity: challenger on OpenAI + selfConsistency on Google."),
   debateModelTiers: z.object({
-    advocate: z.enum(["haiku", "sonnet"]).optional(),
-    selfConsistency: z.enum(["haiku", "sonnet"]).optional(),
-    challenger: z.enum(["haiku", "sonnet"]).optional(),
-    reconciler: z.enum(["haiku", "sonnet"]).optional(),
-    validation: z.enum(["haiku", "sonnet"]).optional(),
+    advocate: z.enum(["haiku", "sonnet", "opus"]).optional(),
+    selfConsistency: z.enum(["haiku", "sonnet", "opus"]).optional(),
+    challenger: z.enum(["haiku", "sonnet", "opus"]).optional(),
+    reconciler: z.enum(["haiku", "sonnet", "opus"]).optional(),
+    validation: z.enum(["haiku", "sonnet", "opus"]).optional(),
   }).optional()
-    .describe("Model tier overrides for each debate role (default: debate roles sonnet, validation haiku). Overrides debateProfile values."),
+    .describe("Model tier overrides for each debate role (default: debate roles sonnet, validation haiku). B-5b: opus tier available for premium reasoning. Overrides debateProfile values."),
   debateModelProviders: z.object({
     advocate: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
     selfConsistency: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
@@ -760,6 +761,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   modelUnderstand: "claude-haiku-4-5-20251001",
   modelExtractEvidence: "claude-haiku-4-5-20251001",
   modelVerdict: "claude-opus-4-6",
+  modelOpus: "claude-opus-4-6", // B-5b: explicit Opus model ID for opus debate tier
 
   // LLM text analysis (all enabled by default per v2.8.3)
   llmInputClassification: true,

@@ -50,5 +50,43 @@ describe("resolveLLMConfig", () => {
       "claude-haiku-4-5-20251001",
     );
   });
+
+  it("resolves opus tier to modelOpus for Anthropic (B-5b)", () => {
+    const config = createPipelineConfig({
+      debateModelTiers: { reconciler: "opus" },
+      modelOpus: "claude-opus-4-6",
+    });
+
+    const resolved = resolveLLMConfig(config);
+    expect(resolved.debateRoles.reconciler.tier).toBe("opus");
+    expect(resolved.debateRoles.reconciler.model).toBe("claude-opus-4-6");
+    // Other roles remain at default sonnet
+    expect(resolved.debateRoles.advocate.tier).toBe("sonnet");
+    expect(resolved.debateRoles.advocate.model).toBe("claude-sonnet-4-5-20250929");
+  });
+
+  it("falls back to modelVerdict when modelOpus is not set (B-5b)", () => {
+    const config = createPipelineConfig({
+      debateModelTiers: { reconciler: "opus" },
+      // No modelOpus set
+    });
+
+    const resolved = resolveLLMConfig(config);
+    // Opus falls back to modelVerdict
+    expect(resolved.debateRoles.reconciler.model).toBe("claude-sonnet-4-5-20250929");
+  });
+
+  it("resolves opus tier for non-Anthropic providers to premium model (B-5b)", () => {
+    const config = createPipelineConfig({
+      debateModelProviders: { reconciler: "openai" },
+      debateModelTiers: { reconciler: "opus" },
+      modelOpus: "claude-opus-4-6",
+    });
+
+    const resolved = resolveLLMConfig(config);
+    expect(resolved.debateRoles.reconciler.provider).toBe("openai");
+    // OpenAI doesn't have Opus — maps to premium model
+    expect(resolved.debateRoles.reconciler.model).toBe("gpt-4.1");
+  });
 });
 
