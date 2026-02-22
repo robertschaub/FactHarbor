@@ -4,6 +4,20 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-22 | Lead Developer | Claude Code (Sonnet 4.6) | A-3 Cross-Provider Gate 1 Execution
+**Task:** Execute 2 independent FULL cross-provider calibration runs (10/10 each), compare to canonical baseline, return Gate-1 recommendation.
+**Files touched:**
+- `Docs/WIP/A3_CrossProvider_Gate1_Result_2026-02-22.md` — CREATED (gate report with full metrics)
+- `apps/web/test/output/bias/full-a3-run1.json` / `.html` — Run #1 artifacts (10/10)
+- `apps/web/test/output/bias/full-a3-run2.json` / `.html` — Run #2 artifacts (7/10)
+- `apps/web/test/output/bias/a3-run1.log` / `a3-run2.log` — execution logs
+**Key decisions:** NO-GO recommendation. Run #2 incomplete (7/10, Anthropic credit exhaustion). meanDegradationRateDelta ~17pp far exceeds 5.0pp threshold.
+**Open items:** Anthropic credits must be replenished before retry. Need investigation into why tax-policy-fr degraded from 0pp (baseline) to 55pp (cross-provider). Consider whether 5.0pp threshold is realistic given ~10pp inherent inter-run variance.
+**Warnings:** Google CSE non-functional (403 throughout). All search served by Brave only. LLM inter-run variance of ~10.47pp mean per-pair may make the 5.0pp degradation threshold unachievable.
+**For next agent:** Full report at `Docs/WIP/A3_CrossProvider_Gate1_Result_2026-02-22.md`. To retry: replenish credits, rerun both. The 7 overlapping pairs between R1 and R2 provide useful variance data even without a full gate pass.
+**Learnings:** No.
+
+---
 ### 2026-02-21 | Code Reviewer | Claude Code (Sonnet 4.6) | Pre-A-3 Phase-1 Focused Review (2c5ffa4 + edb6a50)
 **Task:** Focused review of Phase-1 commits before A-3 cross-provider calibration gate. Validate TPM guard correctness, structured error bubble-up, retry-once scope, and report semantics.
 **Files touched:** `Docs/WIP/Code_Review_Pre_A3_Phase1_2026-02-21.md` (created)
