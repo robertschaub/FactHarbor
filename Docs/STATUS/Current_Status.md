@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0 (`v1.0.0-poc`)
-**Last Updated**: 2026-02-20
+**Last Updated**: 2026-02-22
 **Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 943 tests passing, build clean. Political bias calibration Baseline v1 locked and threshold ratified. Action #6 (verdict range + baseless challenge guard) complete. Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1001 tests passing, build clean. Political bias calibration Baseline v1 locked and threshold ratified. B-sequence quality improvements (B-5a/B-6/B-7/B-8/B-5b) implemented with Codex review fixes. i18n structural checks hardened. Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -52,6 +52,24 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Advanced triangulation (§8.5.2) — cross-boundary correlation analysis
 - Contestation weight reduction — requires factualBasis field on CBClaimVerdict
 - Derivative source detection improvements (§8.5.3)
+
+---
+
+## Recent Changes (2026-02-22)
+
+**B-sequence Quality Improvements (commits 6e9fa0b → 640d883):**
+- ✅ **B-5a**: Strengthened challenger prompt with structured adversarial analysis
+- ✅ **B-6**: Verifiability annotation at Stage 1 extraction (`claimAnnotationMode` UCM control)
+- ✅ **B-7**: Misleadingness flag on verdicts (decoupled from truthPercentage)
+- ✅ **B-8**: Explanation quality check (Tier 1 structural + Tier 2 LLM rubric, `explanationQualityMode` UCM control)
+- ✅ **B-5b**: Opus tier support for debate model roles (`modelOpus` UCM field)
+
+**Review fixes + i18n hardening (commits efd12c2 → 62e7e37):**
+- ✅ M1: `claimAnnotationMode` wired to strip verifiability when "off"
+- ✅ M2: B-8 rubric LLM failure degrades gracefully to structural-only
+- ✅ M3: `hasVerdictCategory` checks verdict terms, not just non-empty
+- ✅ i18n: All structural checks use Unicode-aware patterns (`\p{Lu}`), no English keyword matching
+- ✅ Deleted dead `ENGLISH_STOPWORDS` constant
 
 ---
 

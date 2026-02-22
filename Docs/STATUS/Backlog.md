@@ -35,8 +35,16 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Advanced triangulation | Cross-boundary correlation analysis | Architecture §8.5.2 |
 | Contestation weight reduction | Requires `factualBasis` field on CBClaimVerdict | Legacy getClaimWeight() incompatibility |
 | Derivative detection improvements | Enhanced derivative source identification | Architecture §8.5.3 |
+| UCM model defaults for non-Anthropic providers | OpenAI/Google/Mistral model IDs are hardcoded in `llm.ts`, `model-tiering.ts`, `calibration/runner.ts`. Add per-provider UCM fields (e.g., `modelVerdictOpenAI`) or a provider→tier→modelId map so admins can tune without code changes. Anthropic already UCM-managed via `modelUnderstand`/`modelVerdict`/`modelOpus`. Comment at `llm.ts:105` notes this as P1D. | Code review 2026-02-22 |
 
 ---
+
+## Recently Completed (February 22, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **B-sequence quality improvements (B-5a/B-6/B-7/B-8/B-5b)**: Challenger prompt strengthening, verifiability annotation, misleadingness flag (decoupled from truth%), explanation quality check (structural + LLM rubric), opus tier support. All UCM-configurable. | Analyzer / Quality | 2026-02-22 | Commits `6e9fa0b`→`640d883` |
+| ✅ **Codex review fixes (3M) + i18n hardening**: claimAnnotationMode wired to strip verifiability, rubric graceful degradation, verdict category structural check. All English-language regex replaced with Unicode-aware structural patterns. Dead stopwords.ts deleted. 1001 tests passing. | Analyzer / i18n | 2026-02-22 | Commits `efd12c2`→`62e7e37` |
 
 ## Recently Completed (February 21, 2026)
 

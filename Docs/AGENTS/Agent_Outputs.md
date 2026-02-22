@@ -4,6 +4,27 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-22 | Senior Developer | Claude Code (Opus 4.6) | B-sequence review fixes + i18n hardening
+**Task:** Address Codex code review findings on B-5a/B-6/B-7/B-8/B-5b implementation, then audit and fix all hardcoded English-language patterns in analysis code.
+**Files touched:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (M1/M2/M3 fixes, i18n structural checks)
+- `apps/web/src/lib/analyzer/types.ts` (added `explanation_quality_rubric_failed` warning type)
+- `apps/web/src/lib/analyzer/constants/stopwords.ts` (deleted — dead code)
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (M1/M2 tests, multilingual edge-case tests)
+- `Docs/STATUS/Backlog.md` (added UCM model defaults backlog item)
+**Key decisions:**
+- M1: Strip `verifiability` from claims when `claimAnnotationMode === "off"` (Gate 1 else-branch)
+- M2: Wrap B-8 rubric LLM call in try/catch — degrade to structural-only on failure
+- M3: `hasVerdictCategory` checks verdict terms + percentage, not just non-empty headline
+- i18n: Replaced all English regex patterns with language-neutral structural checks (Unicode `\p{Lu}`, percentages, fractions, title-case hyphenated compounds)
+- Deleted unused `ENGLISH_STOPWORDS` constant (dead code, never imported)
+- Brand suffix/stopword patterns in evaluate-source left as-is (domain names are structurally English)
+- Non-Anthropic model ID hardcoding logged as backlog item (Anthropic models already UCM-managed)
+**Open items:** None — all review findings addressed.
+**Commits:** `efd12c2` (review fixes), `f71dff7` (i18n v1), `e506773` (Codex i18n review), `62e7e37` (Codex i18n tightening)
+**For next agent:** 1001 tests passing, build clean. Tier 1 structural checks are now language-neutral but inherently approximate — Tier 2 LLM rubric handles real quality evaluation multilingually. Residual: regex can't detect non-hyphenated, non-uppercase sentence-case labels in all languages; accepted as advisory-only limitation.
+
+---
 ### 2026-02-22 | Code Reviewer | Claude Code (Opus 4.6) | B-4 Query Strategy Mode + Per-Claim Budget Review
 **Task:** Review Lead Developer's B-4 implementation (queryStrategyMode, perClaimQueryBudget, budget framework, pro_con normalization).
 **Files touched:** `Docs/WIP/Code_Review_B4_Query_Strategy_2026-02-22.md` (created)
@@ -1289,3 +1310,20 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 ---
 ### 2026-02-22 | Lead Developer | Codex (GPT-5) | B-4 Handoff File Pointer
 See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_Strategy_ReviewFixes.md`
+---
+### 2026-02-22 | Code Reviewer | Codex (GPT-5) | Review of Lead Architect B-Sequence Implementation
+**Task:** Perform a code review of Lead Architect's B-sequence implementation commits (B-5a, B-6, B-7, B-8, B-5b) and report risks.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Reviewed commit diffs and integrated HEAD behavior, not just summary claims.
+- Verified current branch health with `npm test` and `npm -w apps/web run build` (both passing).
+- Flagged medium/low risks centered on B-6/B-8 gating and explanation-quality structural checks.
+**Open items:**
+- Decide whether to enforce `claimAnnotationMode` in Stage 1 prompt/input wiring and output stripping semantics for `verifiability`.
+- Decide whether explanation-quality rubric failures should degrade gracefully (warning-only) instead of failing analysis when enabled.
+- Decide whether Tier-1 structure checks should be language-agnostic/LLM-backed for multilingual robustness.
+**Warnings:**
+- `Docs/WIP/Code_Review_B4_Query_Strategy_2026-02-22.md` remains untracked in git (pre-existing local file).
+**For next agent:**
+- If fixing review findings, start in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` around the B-6 Pass2 prompt rendering and B-8 quality check blocks, then add/extend tests in `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`.
+**Learnings:** No new role learnings appended.
