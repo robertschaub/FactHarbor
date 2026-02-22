@@ -271,6 +271,7 @@ Vitest config: `apps/web/vitest.calibration.config.ts` (separate from main `vite
 
 | Document | Section | Relationship |
 |----------|---------|-------------|
+| [Calibration_Run_Policy.md](Calibration_Run_Policy.md) | — | Gate/smoke execution policy and significance tiering for post-baseline runs |
 | [Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | §5.5 | Baseline v1 canonical record |
 | [Backlog.md](Backlog.md) | Recently Completed | C10 baseline + threshold ratification |
 | [Current_Status.md](Current_Status.md) | Recent Changes | Calibration Baseline v1 entry |
