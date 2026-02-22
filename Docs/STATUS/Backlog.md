@@ -14,7 +14,7 @@
 
 ## ClaimAssessmentBoundary Pipeline — Alpha Remaining Work
 
-The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 853 tests passing.
+The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1001 tests passing.
 
 **Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
@@ -45,12 +45,15 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 |---|---|---|---|
 | ✅ **B-sequence quality improvements (B-5a/B-6/B-7/B-8/B-5b)**: Challenger prompt strengthening, verifiability annotation, misleadingness flag (decoupled from truth%), explanation quality check (structural + LLM rubric), opus tier support. All UCM-configurable. | Analyzer / Quality | 2026-02-22 | Commits `6e9fa0b`→`640d883` |
 | ✅ **Codex review fixes (3M) + i18n hardening**: claimAnnotationMode wired to strip verifiability, rubric graceful degradation, verdict category structural check. All English-language regex replaced with Unicode-aware structural patterns. Dead stopwords.ts deleted. 1001 tests passing. | Analyzer / i18n | 2026-02-22 | Commits `efd12c2`→`62e7e37` |
+| ✅ **xWiki documentation update (CB pipeline)**: 7 architecture xWiki pages updated for ClaimAssessmentBoundary pipeline. Core ERD, Analysis Entity Model, Entity Views (5 views), Data Model, Quality Gates Flow, CB Pipeline Detail, Evidence Filter — all rewritten from Orchestrated-era content. | Documentation | 2026-02-22 | Commits `464e641`, `c605d70` |
+| ✅ **Code review final findings (1M, 3L)**: B8-M1 (UCM cost documentation), B7-L1 (parseMisleadingness warning), B8-L1 (hasLimitations comment). | Analyzer / Quality | 2026-02-22 | Commit `231ff13` |
+| ✅ **WIP consolidation**: Archived 17 completed/superseded files (8 code reviews, 3 quality map reviews, 6 process docs). 17 files retained as active. | Documentation | 2026-02-22 | `Docs/ARCHIVE/README_ARCHIVE.md` |
 
 ## Recently Completed (February 21, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
-| ✅ **Calibration review hardening (2026-02-22b + carried fixes)**: `runIntent` metadata made legacy-safe (optional type), lane scripts now explicitly stamp run intent (`FH_CALIBRATION_RUN_INTENT` via smoke/gate runner), provider-attribution denominator cleanup, and legacy report refresh guard for missing `failureModes`. | Calibration / Reliability | 2026-02-22 | [Code_Review_2026-02-22b.md](../WIP/Code_Review_2026-02-22b.md), [Plan_Pause_Status_2026-02-22.md](../WIP/Plan_Pause_Status_2026-02-22.md) |
+| ✅ **Calibration review hardening (2026-02-22b + carried fixes)**: `runIntent` metadata made legacy-safe (optional type), lane scripts now explicitly stamp run intent (`FH_CALIBRATION_RUN_INTENT` via smoke/gate runner), provider-attribution denominator cleanup, and legacy report refresh guard for missing `failureModes`. | Calibration / Reliability | 2026-02-22 | [Code_Review_2026-02-22b.md](../ARCHIVE/Code_Review_2026-02-22b.md), [Plan_Pause_Status_2026-02-22.md](../WIP/Plan_Pause_Status_2026-02-22.md) |
 | ✅ **Calibration gate/smoke lane policy + wiring**: Added canonical run policy, consolidated significance tiers, and implemented `runIntent` metadata (`gate`/`smoke`) with lane-specific artifact prefixes. | Calibration / Governance | 2026-02-22 | [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |
 | ✅ **Calibration report model & search transparency**: Reports now show LLM provider, tiering, pipeline models, debate profile with per-role tier/provider/model, and search provider config. Backfilled all 5 existing reports. Pipeline `meta.modelsUsed` populated. Per-side search providers in pair cards. | Calibration / Observability | 2026-02-21 | Plan: `gentle-snuggling-quokka.md` |
 

@@ -1,9 +1,10 @@
 # Phase 1 Immediate Execution Spec (A-1 / A-2 / A-3 Gate)
 
-**Date:** 2026-02-21
+**Date:** 2026-02-21 (updated 2026-02-22)
 **Role:** Lead Architect
 **Scope lock:** Phase 1 only (`A-1`, `A-2a`, `A-2b`, `A-2c`).
 **Out of scope:** All `B-*` and `C-*` items until `A-3` gate passes.
+**Execution status:** ✅ A-1 done, ✅ A-2a done, ✅ A-2b done, ✅ A-2c done. ❌ A-3 NO-GO (7/10 pairs, Anthropic credit exhaustion). Re-run required.
 
 ## 1) Amendments Applied (Decision Log)
 

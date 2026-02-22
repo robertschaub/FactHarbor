@@ -71,6 +71,18 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - ✅ i18n: All structural checks use Unicode-aware patterns (`\p{Lu}`), no English keyword matching
 - ✅ Deleted dead `ENGLISH_STOPWORDS` constant
 
+**Final review findings (commit 231ff13):**
+- ✅ B8-M1: Documented provider cost in UCM `explanationQualityMode` description
+- ✅ B7-L1: `parseMisleadingness` logs dropped invalid values
+- ✅ B8-L1: `hasLimitations` threshold commented
+
+**xWiki documentation update (commits 464e641, c605d70):**
+- ✅ 7 architecture xWiki pages updated for CB pipeline (Core ERD, Analysis Entity Model, Entity Views, Data Model, Quality Gates Flow, CB Pipeline Detail, Evidence Filter)
+
+**WIP consolidation:**
+- ✅ Archived 17 completed/superseded WIP files (8 code reviews, 3 quality map reviews, 6 process docs)
+- 17 active files retained (architecture, calibration/quality track, Alpha proposals)
+
 ---
 
 ## Quick Status (Current Pipelines)

@@ -1,12 +1,12 @@
 # Political Bias Calibration Harness — Design Proposal
 
-**Status:** 🔧 Phases 1-3 Implemented — Phase 4 (Admin UI) Deferred
+**Status:** 🔧 Phases 1-3 Implemented — Baseline locked — A-3 gate NO-GO (re-run needed) — Phase 4 (Admin UI) Deferred
 **Author:** Claude Code (Opus) — requested by Captain
-**Date:** 2026-02-20
+**Date:** 2026-02-20 (updated 2026-02-22)
 **Origin:** Concern C10 (Critical) from Stammbach/Ash EMNLP 2024 review; Recommendation #1 in `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
 **Implementation:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json`, `test/calibration/political-bias.test.ts`
-**Build verified:** Yes (886 tests pass, `npm run build` clean)
-**Not yet run:** Actual calibration run pending (`npm -w apps/web run test:calibration`, ~$3-6 LLM cost)
+**Build verified:** Yes (1001 tests pass, `npm run build` clean)
+**Baseline:** `apps/web/test/output/bias/full-2026-02-20T21-32-24-288Z.json` (locked). A-3 cross-provider gate: NO-GO (7/10 pairs, Anthropic credit exhaustion). See `A3_CrossProvider_Gate1_Result_2026-02-22.md`.
 
 ---
 

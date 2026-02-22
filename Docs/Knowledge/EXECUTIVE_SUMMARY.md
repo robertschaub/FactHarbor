@@ -45,7 +45,7 @@ Full analysis: [Global Fact-Checking Landscape 2026](Global_FactChecking_Landsca
 
 Autonomous fact-checking pipeline: claim → AtomicClaim extraction → iterative web search (up to 10 rounds) → evidence grouping (ClaimAssessmentBoundaries) → 5-step LLM debate (advocate × 3 + challenger + reconciler + validation) → sourced report.
 
-Multiple LLM models (Sonnet for reasoning, Haiku for lightweight tasks) across configurable providers (Anthropic, OpenAI, Google, Mistral). ~40-50 LLM calls per analysis.
+Multiple LLM models (Opus/Sonnet for reasoning, Haiku for lightweight tasks) across configurable providers (Anthropic, OpenAI, Google, Mistral). UCM-configurable model tiers. ~40-50 LLM calls per analysis.
 
 ---
 
@@ -140,12 +140,18 @@ Academic contacts: [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_F
 
 ## What's Next
 
+**Recently completed (2026-02-22):**
+- ✅ A-2 fixes: structured error telemetry (A-2c), TPM guard/fallback (A-2b), crash fix (A-2a)
+- ✅ B-sequence quality improvements (from Quality Opportunity Map): B-5a (challenger prompt), B-4 (pro/con query separation), B-6 (verifiability annotation), B-7 (misleadingness flag), B-8 (explanation quality — structural + LLM rubric), B-5b (opus tier)
+- ✅ i18n hardening: all structural checks use Unicode-aware patterns, no English-keyword matching
+- ✅ xWiki architecture docs updated for CB pipeline (7 pages)
+
 **Immediate (in progress):**
-1. Cross-provider stabilization (A-2 fixes + A-3 quality gate pass)
-2. Pass A-3 gate (two complete 10/10 cross-provider full runs)
+1. A-3 gate re-run (first attempt NO-GO: 7/10 pairs due to Anthropic credit exhaustion, not code issues)
+2. Calibration cost optimization (gate vs smoke lane policy)
 
 **After A-3 gate:**
-1. B-sequence: runtime tracing (B-1) → knowledge-diversity-lite A/B (B-3) → decision memo (B-2)
+1. D2 B-sequence: runtime tracing (B-1) → knowledge-diversity-lite A/B (B-3) → decision memo (B-2)
 2. C13 active rebalancing implementation + A/B calibration
 3. Send Stammbach email once Ash meeting is confirmed
 

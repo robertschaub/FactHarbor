@@ -172,19 +172,21 @@ This status lock is aligned with currently implemented code paths and tests:
 
 ### 5.2 Recommended next actions (decision-ready)
 
-1. Execute D1-D5 Phase 1 (`A-1`, `A-2a`, `A-2b`, `A-2c`) and pass `A-3` gate (two 10/10 cross-provider full runs).
-2. Then execute D2 sequence `B-1 -> B-3 -> B-2` (runtime tracing, knowledge-diversity-lite A/B, decision memo).
-3. Keep Debate V2 topology work (`C-1`) in backlog until B-2 outcome is reviewed.
+1. ✅ D1-D5 Phase 1 (`A-1`, `A-2a`, `A-2b`, `A-2c`) — all executed. `A-3` gate ran but NO-GO (7/10 pairs, Anthropic credit exhaustion — code issues resolved).
+2. ✅ Quality Map B-sequence (B-5a → B-4 → B-6 → B-7 → B-8 → B-5b) — all implemented (separate from D2 B-sequence).
+3. **Next:** Re-run `A-3` gate, then execute D2 sequence `B-1 -> B-3 -> B-2` (runtime tracing, knowledge-diversity-lite A/B, decision memo).
+4. Keep Debate V2 topology work (`C-1`) in backlog until B-2 outcome is reviewed.
 
 ### 5.3 Open topics only (what remains after quick-mode baseline)
 
 1. **Cross-provider stabilization remains open.**
-   - Round-2 quick run completed.
-   - Round-2 full run is not decision-grade (`6/10` complete).
-   - Blockers: `undefined.value` crash path + OpenAI TPM pressure + limited failed-pair diagnostics.
+   - A-2 code fixes done (crash fix, TPM guard/fallback, structured diagnostics).
+   - A-3 Gate 1 result: **NO-GO** (7/10 pairs, Anthropic credit exhaustion — not a code issue). Re-run required.
+   - See `Docs/WIP/A3_CrossProvider_Gate1_Result_2026-02-22.md`.
 
 2. **C13 correction remains open.**
    - Detection exists (`evidence_pool_imbalance`), active correction does not.
+   - B-4 (pro/con query separation) adds balanced query generation, partially addressing evidence-pool asymmetry.
    - Next milestone: run A/B with and without C13 correction once cross-provider run quality gates pass.
 
 3. **C17 benchmark/policy remains open.**
@@ -201,8 +203,8 @@ This status lock is aligned with currently implemented code paths and tests:
 | C10 baseline measurement | 🟢 Closed | Canonical quick + full baseline locked |
 | Action #6 contestation/range | 🟢 Done | Implemented and test-verified |
 | C18 failure-mode instrumentation | 🟢 Closed (instrumented) | Telemetry live and monitored |
-| Cross-provider execution | 🟡 In progress | Needs A-2 fixes + A-3 gate pass |
-| C13 correction loop | 🟠 Partial | Detection done, correction pending |
+| Cross-provider execution | 🟡 In progress | A-2 fixes done; A-3 gate NO-GO (credit exhaustion) — re-run needed |
+| C13 correction loop | 🟠 Partial | Detection done, B-4 pro/con query separation adds balanced retrieval, active correction loop pending |
 | C17 resilience benchmark | 🟠 Partial | Dedicated benchmark/policy pending |
 | C9 path-consistency decision | 🟠 Partial | Benchmark and go/no-go pending |
 
