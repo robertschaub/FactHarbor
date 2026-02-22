@@ -4,6 +4,22 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-22 | LLM Expert | Claude Code (Opus 4.6) | Review of Quality Opportunity Map (R1)
+**Task:** Technical review of `Report_Quality_Opportunity_Map_2026-02-22.md` — assess feasibility of B-4 through B-8 proposals, challenge effort claims, identify risks and interactions.
+**Files touched:** `Docs/WIP/Review_QualityMap_R1_LLMExpert_2026-02-22.md` (created), `Docs/AGENTS/Role_Learnings.md` (4 entries appended)
+**Key decisions:**
+- All 5 items are genuinely LOW implementation effort, but B-4 (doubles search queries) and B-5 (77% cost increase from Opus) have MEDIUM operational cost impact
+- B-5 (Opus challenger) is highest risk: creates asymmetric debate. Recommend Opus reconciler first, or both
+- B-6 (verifiability) belongs at Stage 1 extraction, not verdict prompt — same effort, avoids anchoring risk
+- B-7 (misleadingness) must explicitly decouple from truthPercentage — "90% true AND highly misleading" must be valid
+- B-8 (self-eval) should use structural checks first (zero cost), rubric-based LLM eval second, holistic self-eval never
+- Verdict Accuracy Test Set is the single most important proposal — needs multilingual claims and explicit band-mapping
+**Open items:** 5 amendments proposed for Architect review: (1) B-5 evaluation order, (2) B-6 move to Stage 1, (3) B-4 + D5#3 shared search budget, (4) B-8 design refinement, (5) multilingual test set requirement. Two additional quality dimensions identified: Q8 (timeliness), Q9 (source attribution accuracy).
+**Warnings:** B-4 + D5#3 combined query volume could breach cost ceiling if both active. B-5 Opus-only-challenger creates reconciler bottleneck. Risk register with 8 items in the review file.
+**For next agent:** Architect should review all 5 amendments and the risk register. Key decision: accept/reject Amendment 1 (Opus placement). If B-4 through B-8 approved, each needs acceptance criteria incorporating the constraints identified here.
+**Learnings:** Appended to Role_Learnings.md? Yes — 4 entries (Opus asymmetry, verifiability placement, self-eval reliability, runtime warning collector pattern was pre-existing).
+
+---
 ### 2026-02-22 | Lead Architect | Claude Code (Opus 4.6) | Report Quality Opportunity Map
 **Task:** Investigate whether the bias calibration baseline is the right quality focus; map all quality dimensions and propose specific improvements.
 **Files touched:** `Docs/WIP/Report_Quality_Opportunity_Map_2026-02-22.md` (created)

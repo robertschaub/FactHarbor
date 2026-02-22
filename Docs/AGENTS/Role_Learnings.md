@@ -176,6 +176,24 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** `LLMCallFn` returns `Promise<unknown>` — no room for side-channel data like warnings. To surface runtime events (e.g., provider fallback) into `resultJson.analysisWarnings`, pass an `AnalysisWarning[]` array to the factory (`createProductionLLMCall`) by closure. The factory's inner function appends to it. The pipeline threads `state.warnings` through `generateVerdicts` → factory. This avoids changing the `LLMCallFn` contract or verdict-stage's interface while still surfacing structured warnings in the analysis output.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (createProductionLLMCall, generateVerdicts)
 
+### 2026-02-22 — Opus challenger without Opus reconciler creates asymmetric debate
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** Upgrading only the challenger model to a higher tier (e.g., Opus) while keeping the reconciler at Sonnet creates an architectural asymmetry: the reconciler cannot fully evaluate whether the Opus challenger's arguments are valid or specious. The baseless challenge guard (`enforceBaselessChallengePolicy`) catches challenges without evidence backing, but it cannot catch sophisticated-sounding but wrong challenges that cite real evidence misleadingly. If upgrading model tiers in the debate, the reconciler is the higher-value placement — it's the decision-maker. Alternatively, upgrade both roles. Never upgrade only the adversary.
+**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts` (runVerdictStage, enforceBaselessChallengePolicy)
+
+### 2026-02-22 — Verifiability assessment belongs at extraction (Stage 1), not verdict (Stage 4)
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** tip
+**Learning:** When adding a claim verifiability field (`verifiable | evaluative | predictive | vague`), place it in the Stage 1 extraction prompt, not the verdict prompt. Reasons: (1) saves 30-40 LLM calls per non-verifiable claim by catching it early, (2) avoids anchoring risk — verifiability assessment in the same prompt as truthPercentage can bias the truth% reasoning, (3) enables downstream routing where evaluative claims get different search strategies or verdict presentations. Same implementation effort at either stage, strictly better value at Stage 1.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Stage 1 EXTRACT_CLAIMS), `apps/web/src/lib/analyzer/verdict-stage.ts`
+
+### 2026-02-22 — LLM self-evaluation is unreliable for quality dimensions correlated with generation biases
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** LLM self-evaluation of its own output (e.g., "rate the quality of this narrative") is unreliable for dimensions like clarity, completeness, and logical coherence — precisely the dimensions that matter for explanation quality. The model tends to rate same-family output higher. Better approach: decompose quality into structural checks (evidence citation count, counter-evidence addressed, length bounds) which are deterministic and zero-cost, then add rubric-based LLM eval with explicit scoring dimensions (not open-ended). Treat scores as diagnostic until validated against human evaluation.
+**Files:** N/A (design principle for B-8 and similar post-hoc quality evaluations)
+
 ## Product Strategist
 
 _(No entries yet)_
