@@ -54,6 +54,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** The D5 field granularity discussion revealed a clean design rule: "Categorical for LLM classification outputs, continuous for LLM assessment outputs." LLMs produce categorical outputs (high/medium/low) more reliably than numeric ones (0.73). Fields used as gate thresholds or formula multipliers should be categorical (the LLM picks a bucket); fields used as direct numeric inputs in formulas (truth%, confidence, specificityScore) should be continuous. Applying this rule upfront — rather than debating each field individually — resolved 6 field granularity decisions in a single pass. Future type design should apply this rule before asking "how many levels."
 **Files:** `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.1, §9.1
 
+### 2026-02-22 — Bias calibration measures consistency, not correctness — distinguish these early
+**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** The bias calibration harness (C10 mirrored pairs, C18 failure-mode check) is valuable as a regression guard but measures whether mirrored claims get symmetric treatment — it says nothing about whether the truth percentages are correct. When the D1-D5 plan treated bias remediation as the primary quality track, it created a blind spot: 4 of 7 quality dimensions (verdict accuracy, explanation quality, evidence completeness, cross-lingual robustness) were unaddressed. Always map all quality dimensions before selecting a primary quality metric. A pipeline that produces bias-symmetric wrong answers is worse than one with measurable asymmetry and correct verdicts.
+**Files:** `Docs/WIP/Report_Quality_Opportunity_Map_2026-02-22.md`, `Docs/Knowledge/EXECUTIVE_SUMMARY.md`
+
+### 2026-02-22 — Cross-reference Executive Summary priorities against any execution plan
+**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** tip
+**Learning:** The Executive Summary contains 15 prioritized action items with 6 identified quick wins. The D1-D5 plan only scheduled 3 of 15. Cross-referencing a consolidated priority list against any execution plan immediately reveals coverage gaps that would otherwise go unnoticed until later. This takes 15 minutes and prevents scope blindness — especially when a plan was built bottom-up from a specific problem (bias skew) rather than top-down from the full opportunity set.
+**Files:** `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/WIP/Report_Quality_Opportunity_Map_2026-02-22.md` §3
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas
@@ -61,6 +73,18 @@ After completing a task, if you discovered something that would help future agen
 **Category:** useful-pattern
 **Learning:** When reviewing architecture proposals with brainstorming ideas, always cross-check the current codebase for integration points BEFORE writing the assessment. For the ClaimBoundary brainstorming review, discovering that (a) verdict temperature is hardcoded at 0.3 (not configurable), (b) aggregation uses a pluggable multiplicative weight chain, and (c) the current pipeline has 3 verdict paths (which the new pipeline collapses to 1) changed my recommendations materially. Without the cross-check, I would have underestimated Idea E's deterministic-mode conflict and overestimated Idea C's integration effort.
 **Files:** `apps/web/src/lib/analyzer/aggregation.ts`, `apps/web/src/lib/analyzer/config.ts` (getDeterministicTemperature), `apps/web/src/lib/analyzer/orchestrated.ts` (verdict generation lines 7948-10710)
+
+### 2026-02-22 — Calibration tests need a dedicated Vitest config and explicit timeout ownership
+**Role:** Lead Developer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** If the main `vitest.config.ts` excludes expensive calibration tests, passing a specific test file on CLI does not reliably override that exclusion in practice. Use a dedicated config (`vitest.calibration.config.ts`) and dedicated npm scripts for calibration runs. Also, per-test timeout passed as the third `it(..., timeout)` argument takes precedence over CLI timeout flags, so runtime tuning must update code-level constants, not only command-line arguments.
+**Files:** `apps/web/vitest.calibration.config.ts`, `apps/web/package.json`, `apps/web/test/calibration/political-bias.test.ts`
+
+### 2026-02-22 — Full calibration gates need variance-aware interpretation
+**Role:** Lead Developer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** tip
+**Learning:** Cross-provider full calibration runs can show meaningful inter-run variance even with unchanged code/config due live web retrieval and model stochasticity. For promotion gates, compare overlapping completed pairs and track degradation deltas explicitly; do not interpret a single run in isolation. Keep strict hard-gates on failure-mode asymmetry, and treat skew shifts with variance context unless runs are repeated under matched conditions.
+**Files:** `Docs/WIP/A3_CrossProvider_Gate1_Result_2026-02-22.md`, `apps/web/test/output/bias/full-a3-run1.json`, `apps/web/test/output/bias/full-a3-run2.json`
 
 ## Senior Developer
 
@@ -223,6 +247,12 @@ _(No entries yet)_
 **Category:** gotcha
 **Learning:** The Phase 1 security fix correctly created `lib/auth.ts` and applied it to new/refactored routes. But 18 pre-existing routes (14 admin config routes + 4 others) still use inline `===` for admin key comparison instead of the timing-safe `checkAdminKey`. The migration is only as good as its coverage. When extracting a shared utility for a security-sensitive function, always follow up with a codebase-wide grep to replace ALL callers — not just the ones you are currently touching.
 **Files:** `apps/web/src/lib/auth.ts`, `apps/web/src/app/api/admin/config/` (14 route files)
+
+### 2026-02-22 — Calibrations need review of diagnostics completeness, not only pass/fail
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** useful-pattern
+**Learning:** For long-running calibration jobs, a failing threshold assertion can hide whether the run itself was healthy. Review should always verify diagnostic completeness (`stage`, `provider`, `model`, `promptKey`, failure-mode aggregates) and artifact integrity (`json` + `html`) before judging result significance. This prevents classifying infrastructure/reporting failures as model-quality regressions.
+**Files:** `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/output/bias/*.json`
 
 ## Security Expert
 

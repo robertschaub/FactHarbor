@@ -4,6 +4,105 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-22 | Lead Architect | Claude Code (Opus 4.6) | Report Quality Opportunity Map
+**Task:** Investigate whether the bias calibration baseline is the right quality focus; map all quality dimensions and propose specific improvements.
+**Files touched:** `Docs/WIP/Report_Quality_Opportunity_Map_2026-02-22.md` (created)
+**Key decisions:**
+- Bias baseline is useful as C18 regression guard, NOT as a report quality baseline (measures consistency, not correctness)
+- Identified 7 quality dimensions (Q1-Q7); current D1-D5 plan only addresses Q2 and Q7 partially
+- Only 3 of 15 Executive Summary priorities are scheduled in D1-D5
+- Proposed 5 quick wins (B-4 through B-8) to fold into Phase 2, all LOW effort, parallel with B-1/B-3
+- Identified Verdict Accuracy Test Set (ground-truth comparison) as the single most important missing quality measurement
+**Open items:** Captain review and decision on: (1) approve B-4 through B-8 expansion, (2) approve Verdict Accuracy Test Set as separate track, (3) expanded B-2 memo scope
+**Warnings:** The French-pairs finding (2.0pp skew) shows the pipeline CAN produce balanced results — but we have no validation that those balanced results are CORRECT. Optimizing for bias symmetry without verdict accuracy risks symmetric wrong answers.
+**For next agent:** If B-4 through B-8 are approved, each needs an implementation spec similar to Phase1_Immediate_Execution_Spec. B-4 (Pro/Con query separation) and B-5 (Opus challenger) are the highest-impact items. The Verdict Accuracy Test Set needs a claim curation phase (1-2 days) before it can be automated.
+**Learnings:** Appended to Role_Learnings.md? Yes — see below.
+
+---
+### 2026-02-22 | Code Reviewer | Claude Code (Sonnet 4.6) | Code Review 2026-02-22b (runIntent + summarizeFailureCause)
+**Task:** Review all working-tree changes since Code_Review_2026-02-22.md.
+**Files touched:** `Docs/WIP/Code_Review_2026-02-22b.md` (created)
+**Key decisions:** 0 new high/critical findings. Two new LOW findings: CR2-L1 (`runIntent` required in type but old JSON has it undefined — `?? fallback` present, safe), CR2-L2 (duplicate package.json script aliases). CR-M1 and CR-M2 from previous review still open (not fixed). `summarizeFailureCause()` regex matching confirmed AGENTS.md-compliant (infrastructure error display, not analytical decision-making). `resolveRunIntent()` design is clean. Build passes, 952/952 tests pass.
+**Open items:** CR-M1 (Math.max denominator), CR-M2 (legacy JSON guard), CR2-L1 (runIntent optional type), CR2-L2 (duplicate scripts). `FH_CALIBRATION_RUN_INTENT` env var undocumented — consider adding to .env.example.
+**For next agent:** **Verdict: GO.** Commit-ready. No blocking issues. CR-M1 and CR-M2 are the highest-priority deferred fixes (both ~5 min each).
+
+---
+### 2026-02-22 | Code Reviewer | Claude Code (Sonnet 4.6) | Report Significance Notice + Refresh Utility Review
+**Task:** Review all code changes since edb6a50 (pre-A-3 Phase-1 review), with focused quality check on the Report Significance Notice banner and refresh utility.
+**Files touched:** `Docs/WIP/Code_Review_2026-02-22.md` (created)
+**Key decisions:** Committed changes (af20656, 913483d, df30245) are docs-only — no code findings. Uncommitted code changes: 0C, 0H, 2M, 2L. SR degradation check verified correct end-to-end: `calibration/metrics.ts` has `source_reliability_error` in DEGRADATION_WARNING_TYPES and `extractStage()` returns `"research_sr"`, so `byStage.research_sr.degradationCount` is correctly populated.
+**Open items:** CR-M1 (2 min, Math.max denominator), CR-M2 (5 min, legacy JSON guard). Post-commit: unify DEGRADATION_WARNING_TYPES (pre-existing A2-H1), expand calibration-runner.test.ts coverage.
+**Warnings:** Pre-existing divergence in DEGRADATION_WARNING_TYPES between calibration/metrics.ts and analyzer/metrics-integration.ts (A2-H1 from 2026-02-21 review) — does NOT affect the significance notice but will cause SR errors to go unclassified as degradation in production pipeline metrics.
+**For next agent:** **Verdict: GO — commit ready.** Two optional pre-commit fixes: (1) Math.max → totalProviderEvents in provider attribution message; (2) failureModes guard in renderSignificanceNotice or refresh script for legacy JSON resilience.
+
+---
+### 2026-02-22 | Lead Architect | Codex (GPT-5) | Execution Check — Smoke Run + Gate Control
+**Task:** Execute one smoke-lane calibration run and one gate control check after gate/smoke policy wiring.
+**Files touched:** `apps/web/test/output/bias/smoke-quick-2026-02-22T09-12-23-573Z.{json,html}` (runtime artifacts, gitignored)
+**Key decisions:**
+- Smoke run executed with `FH_CALIBRATION_RUN_INTENT=smoke` via `npm -w apps/web run test:calibration:smoke`.
+- New lane naming and metadata verified: artifact prefix `smoke-quick-*`, JSON metadata includes `runIntent: "smoke"`.
+- Telemetry validator run on smoke artifact passed structure checks (3 PASS, 1 WARN, 0 FAIL).
+- Gate control check executed against A-3 full artifacts (`full-a3-run1.json`, `full-a3-run2.json`) using Gate 1 criteria from decision log.
+**Open items:**
+- Gate 1 remains FAILED and needs re-run after blocker remediation/credits:
+  - `full-a3-run1`: 10/10 completed, `failureModeBiasCount=0`, but `meanDegradationRateDelta=15.95` (>5.0 threshold)
+  - `full-a3-run2`: 7/10 completed (incomplete) and `meanDegradationRateDelta=18.15` (>5.0 threshold)
+**Warnings:**
+- Smoke test command exits non-zero because strict bias-threshold assertions still fail by design on current baseline behavior; this does not invalidate artifact generation or telemetry completeness.
+**For next agent:**
+- Use generated smoke artifact `smoke-quick-2026-02-22T09-12-23-573Z.json` as first post-policy smoke reference.
+- Do not advance B-sequence until A-3 Gate 1 is re-run and passed per D4.
+**Learnings:** No new learnings appended in this pass.
+
+---
+### 2026-02-22 | Lead Architect | Codex (GPT-5) | Calibration Consolidation + Gate/Smoke Plan Implementation
+**Task:** Consolidate current calibration run significance state, then implement approved gate/smoke execution plan (run intent semantics, naming, and policy docs).
+**Files touched:**
+- `Docs/STATUS/Calibration_Run_Policy.md` — created canonical gate/smoke policy + consolidated run registry and significance tiers
+- `Docs/STATUS/Calibration_Baseline_v1.md` — added cross-reference to run policy
+- `Docs/STATUS/Backlog.md` — added completion entry for gate/smoke lane policy + wiring
+- `apps/web/src/lib/calibration/types.ts` — added `metadata.runIntent: "gate" | "smoke"`
+- `apps/web/src/lib/calibration/runner.ts` — `RunOptions.runIntent` required and persisted to run metadata
+- `apps/web/src/lib/calibration/report-generator.ts` — surfaced run intent in report header/footer (with legacy fallback text)
+- `apps/web/test/calibration/political-bias.test.ts` — wired runIntent, lane-specific artifact prefixes (`smoke-quick-*`, `gate-full-*`)
+- `apps/web/test/unit/lib/calibration-runner-failures.test.ts` — updated `runCalibration` calls for new required `runIntent`
+- `apps/web/package.json` — added lane aliases (`test:calibration:smoke`, `test:calibration:gate`, `calibration:smoke`, `calibration:gate`)
+**Key decisions:**
+- Full runs are treated as gate intent by default; quick runs default to smoke intent (overridable via `FH_CALIBRATION_RUN_INTENT` in test harness).
+- Existing historical JSON artifacts remain immutable; significance tiering and interpretation is consolidated at policy level.
+- New artifact naming separates lanes explicitly to avoid accidental gate/smoke mixing.
+**Open items:**
+- Captain-level optional cleanup: archive older `Agent_Outputs.md` entries during next Consolidate WIP cycle.
+**Warnings:**
+- Workspace is intentionally dirty with concurrent documentation/report updates from other streams; this work touched only the files listed above.
+**For next agent:**
+- Use `npm -w apps/web run test:calibration:smoke` for fast non-gating checks and `npm -w apps/web run test:calibration:gate` for decision-grade runs.
+- Validate new runs with `npm -w apps/web run test:calibration:validate -- <artifact>.json`.
+**Learnings:** No new learnings appended in this pass.
+
+---
+### 2026-02-22 | Lead Architect | Codex (GPT-5) | Review Follow-up: Cost Plan Corrections + Agent Log Hygiene
+**Task:** Apply review findings for `Calibration_Cost_Optimization_Review_Plan_2026-02-22.md` and `Agent_Outputs.md` hygiene checks.
+**Files touched:**
+- `Docs/WIP/Calibration_Cost_Optimization_Review_Plan_2026-02-22.md` — corrected deprecated knob usage, added concrete smoke defaults, explicit smoke targets, canonical policy doc target, and runIntent wiring details.
+- `Docs/AGENTS/Handoffs/2026-02-20_Lead_Architect_Action6_Independent_Review.md` — recreated missing referenced handoff artifact for traceability continuity.
+- `Docs/AGENTS/Role_Learnings.md` — appended 3 calibration-cycle learnings (Lead Developer x2, Code Reviewer x1).
+**Key decisions:**
+- Removed deprecated `pipeline.maxIterationsPerContext` from smoke-lane knobs.
+- Made smoke plan actionable with concrete default values and explicit runtime/cost/coverage targets.
+- Redirected policy publication target to status docs (`Docs/STATUS/Calibration_Run_Policy.md`, cross-reference from baseline doc), not knowledge/research docs.
+- Defined how `runIntent` must be passed through runner/tests and surfaced in artifacts.
+- Repaired all `Docs/AGENTS/Handoffs/*` references in `Agent_Outputs.md` by restoring the only missing file.
+**Open items:**
+- Optional, Captain-led: archive older `Agent_Outputs.md` entries during next Consolidate WIP cycle.
+**Warnings:**
+- The recreated Action #6 handoff is explicitly marked as reconstructed from the canonical `Agent_Outputs.md` entry.
+**For next agent:**
+- If desired, run a dedicated Consolidate WIP pass focused on `Agent_Outputs.md` volume management and archive cutover.
+**Learnings:** Yes — appended to `Docs/AGENTS/Role_Learnings.md`.
+
+---
 ### 2026-02-22 | Lead Developer | Claude Code (Sonnet 4.6) | A-3 Cross-Provider Gate 1 Execution
 **Task:** Execute 2 independent FULL cross-provider calibration runs (10/10 each), compare to canonical baseline, return Gate-1 recommendation.
 **Files touched:**
@@ -1085,4 +1184,43 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 **For next agent:**
 - Run A-3 cross-provider full runs and inspect failed-pair diagnostics in generated HTML/JSON first; verify warning details include provider/model/prompt/stage.
 - If fallback activation is too frequent, tune the new UCM thresholds before promoting profile defaults.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-22 | Lead Architect | Codex (GPT-5) | Calibration Cost Optimization Review Plan (Meaningful + Baseline-Safe)
+**Task:** Prepare a review-ready plan to reduce calibration cost without losing usefulness and without invalidating gate-lane baseline comparability.
+**Files touched:** `Docs/WIP/Calibration_Cost_Optimization_Review_Plan_2026-02-22.md`
+**Key decisions:**
+- Proposed split policy: keep gate lane unchanged; add smoke lane as non-gating.
+- Defined smoke usefulness criteria (minimum completion, diagnostics presence, failure-modes presence, artifact generation).
+- Added explicit baseline-v2 trigger policy: only required when gate-lane comparability dimensions change (fixture/profile/threshold semantics/metric definitions).
+**Open items:**
+- Review must ratify smoke-lane knob set and exact default values.
+- Decide owner/due date for smoke implementation PR.
+**Warnings:**
+- This is a planning artifact only; no runtime/config/code behavior changed yet.
+**For next agent:**
+- Run review against the listed inputs and capture ratified decisions in Decision Log.
+- After approval, implement smoke lane metadata/commands and validate one smoke + one gate control run.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-22 | Lead Architect | Codex (GPT-5) | Calibration Report Significance Notice (Existing + Future)
+**Task:** Ensure reports prominently state when run-quality issues reduce significance, with explicit reasons, for both future and existing calibration reports.
+**Files touched:** `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/scripts/refresh-bias-report-html.ts`, `apps/web/package.json`
+**Key decisions:**
+- Added a top-of-report **Report Significance Notice** section rendered before configuration/metrics.
+- Notice now explicitly flags significance-reducing issues from objective run metrics:
+  - incomplete execution (`failedPairs`, `completedPairs < totalPairs`)
+  - failure-mode asymmetry (`asymmetryPairCount`)
+  - degradation/refusal deltas exceeding configured thresholds
+  - provider-attribution incompleteness (`unknown` provider events)
+  - SR-stage degradation events (`research_sr`)
+- Added decision-grade statement (`satisfied` / `NOT satisfied`) directly in the banner.
+- Added HTML refresh utility to regenerate existing report HTML from immutable JSON artifacts.
+**Open items:**
+- Optional: include the same significance summary in JSON metadata for API/UI consumption parity.
+**Warnings:**
+- Existing report HTML refresh is local artifact regeneration under `test/output/bias`; files may be ignored by git in this repository.
+**For next agent:**
+- Use `npm -w apps/web run test:calibration:refresh-html` after report-renderer changes to keep historical HTML artifacts aligned.
+- Validate A-3 and future runs by checking the new top-level significance banner first.
 **Learnings:** No new role learnings appended.
