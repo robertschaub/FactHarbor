@@ -1,9 +1,9 @@
 {{info}}
-**Multi-View Entity Reference (CB Pipeline v2.11.0+)** — Five complementary ERD views of the FactHarbor entity landscape. Each view highlights a different aspect: overview, analysis result, target database, runtime processing, and UI visibility.
+**Multi-View Entity Reference (CB Pipeline v2.11.0+)** -- Five complementary ERD views of the FactHarbor entity landscape. Each view highlights a different aspect: overview, analysis result, target database, runtime processing, and UI visibility.
 
-**Source of truth**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/api/Data/Entities.cs##, ##config-schemas.ts##
+**Source of truth**: ##apps/web/src/lib/analyzer/types.ts##, ##apps/api/Data/Entities.cs##, ##apps/web/src/lib/config-storage.ts##
 
-Updated 2026-02-19 per CB pipeline interfaces in ##types.ts##.
+Updated 2026-02-22 per CB pipeline interfaces in ##types.ts##.
 {{/info}}
 
 = Entity Views =
@@ -34,7 +34,7 @@ All views use a consistent color scheme:
 
 == Overview ERD ==
 
-Bird's-eye view showing all major entity groups and their primary relationships. Minimal field detail — use the other views for field-level information.
+Bird's-eye view showing all major entity groups and their primary relationships. Minimal field detail -- use the other views for field-level information.
 
 {{mermaid}}
 
@@ -44,11 +44,12 @@ erDiagram
     JOB }o--|| CONFIG_SNAPSHOT : uses
 
     ANALYSIS_RESULT ||--|| CB_CLAIM_UNDERSTANDING : contains
-    ANALYSIS_RESULT ||--o{ CB_CLAIM_VERDICT : contains
-    ANALYSIS_RESULT ||--|| OVERALL_ASSESSMENT : aggregates
+    ANALYSIS_RESULT ||--o{ ATOMIC_CLAIM : contains
     ANALYSIS_RESULT ||--o{ EVIDENCE_ITEM : contains
     ANALYSIS_RESULT ||--o{ FETCHED_SOURCE : contains
     ANALYSIS_RESULT ||--o{ CLAIM_BOUNDARY : contains
+    ANALYSIS_RESULT ||--o{ CB_CLAIM_VERDICT : contains
+    ANALYSIS_RESULT ||--|| OVERALL_ASSESSMENT : aggregates
     ANALYSIS_RESULT ||--|| QUALITY_GATES : validated_by
     ANALYSIS_RESULT ||--|| TWO_PANEL_SUMMARY : summarized_as
 
@@ -59,20 +60,22 @@ erDiagram
     CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : contains
     BOUNDARY_FINDING }o--|| CLAIM_BOUNDARY : per_boundary
     EVIDENCE_ITEM }o--|| FETCHED_SOURCE : extracted_from
-    EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : assigned_to
+    EVIDENCE_ITEM }o--o| CLAIM_BOUNDARY : assigned_to
 
     OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : has
     OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : has
 
+    SOURCE_RELIABILITY ||--o{ FETCHED_SOURCE : scores
+
     JOB {
-        string jobId_PK
-        string status
-        string pipelineVariant
+        string JobId_PK
+        string Status
+        string PipelineVariant
     }
 
     ANALYSIS_RESULT {
         string schemaVersion "3.0.0-cb"
-        json meta
+        json ResultJson
     }
 
     CB_CLAIM_UNDERSTANDING {
@@ -95,10 +98,11 @@ erDiagram
     }
 
     CB_CLAIM_VERDICT {
-        string claimId_PK
+        string id_PK
+        string claimId_FK
         int truthPercentage
-        int confidence
         string verdict
+        int confidence
     }
 
     BOUNDARY_FINDING {
@@ -151,15 +155,21 @@ erDiagram
     }
 
     JOB_EVENT {
-        long id_PK
-        string jobId_FK
-        string level
-        string message
+        long Id_PK
+        string JobId_FK
+        string Level
+        string Message
+    }
+
+    SOURCE_RELIABILITY {
+        text domain_PK
+        float score
+        float confidence
     }
 
 {{/mermaid}}
 
-//Overview: JOB produces an ANALYSIS_RESULT containing decomposed claims (CB_CLAIM_UNDERSTANDING with ATOMIC_CLAIMs), per-claim verdicts (CB_CLAIM_VERDICT with per-boundary BOUNDARY_FINDINGs) supported by evidence (EVIDENCE_ITEM) from web sources (FETCHED_SOURCE), grouped into evidence-emergent CLAIM_BOUNDARYs, and aggregated into an OVERALL_ASSESSMENT with VERDICT_NARRATIVE and COVERAGE_MATRIX. Quality validation (QUALITY_GATES) and a user-facing summary (TWO_PANEL_SUMMARY) complete the result.//
+//Overview: JOB produces an ANALYSIS_RESULT containing decomposed claims (CB_CLAIM_UNDERSTANDING with ATOMIC_CLAIMs), per-claim verdicts (CB_CLAIM_VERDICT with per-boundary BOUNDARY_FINDINGs) supported by evidence (EVIDENCE_ITEM) from web sources (FETCHED_SOURCE), grouped into evidence-emergent CLAIM_BOUNDARYs, and aggregated into an OVERALL_ASSESSMENT with VERDICT_NARRATIVE and COVERAGE_MATRIX. Quality validation (QUALITY_GATES) and a user-facing summary (TWO_PANEL_SUMMARY) complete the result. SOURCE_RELIABILITY provides cached domain-level trust scores for FETCHED_SOURCEs.//
 
 ----
 
@@ -176,27 +186,28 @@ erDiagram
     CB_CLAIM_UNDERSTANDING ||--|| GATE_1_STATS : produces
 
     CB_CLAIM_UNDERSTANDING {
-        string detectedInputType
+        string detectedInputType "claim_or_article"
         string impliedClaim
         string articleThesis
         string backgroundDetails
-        string riskTier
+        string riskTier "A_B_or_C"
         json distinctEvents
         json preliminaryEvidence
     }
 
     ATOMIC_CLAIM {
-        string id_PK "AC_01 AC_02"
+        string id_PK "AC_01_AC_02"
         string statement
-        string category "factual evaluative procedural"
-        string centrality "high medium"
-        string harmPotential "critical high medium low"
-        boolean isCentral "Always true (filtered)"
-        string claimDirection "supports_thesis contradicts_thesis contextual"
-        string checkWorthiness "high medium"
-        string_array keyEntities "Named entities referenced"
+        string category "factual_evaluative_procedural"
+        string centrality "high_medium"
+        string harmPotential "critical_high_medium_low"
+        boolean isCentral "Always_true_(filtered)"
+        string claimDirection "supports_thesis_contradicts_thesis_contextual"
+        string verifiability "high_medium_low_none_(optional)"
+        string checkWorthiness "high_medium"
         float specificityScore "0-1"
-        string groundingQuality "strong moderate weak none"
+        string groundingQuality "strong_moderate_weak_none"
+        json keyEntities
         json expectedEvidenceProfile
     }
 
@@ -211,7 +222,7 @@ erDiagram
 
 {{/mermaid}}
 
-//Stage 1 output: CB_CLAIM_UNDERSTANDING with ATOMIC_CLAIMs (replacing Orchestrated SUB_CLAIMs). Each claim has centrality, harmPotential (4-level), groundingQuality, and specificityScore. Gate 1 stats include passedFidelity (claim-to-input fidelity check).//
+//Stage 1 output: CB_CLAIM_UNDERSTANDING with ATOMIC_CLAIMs (the analytical units). Each claim has centrality, harmPotential (4-level: critical/high/medium/low), groundingQuality (strong/moderate/weak/none), specificityScore (0-1, Gate 1 minimum 0.6), and an expectedEvidenceProfile describing what evidence would verify or refute the claim. Gate 1 stats include passedFidelity (claim-to-input fidelity check). The optional verifiability field (B-6) independently assesses fact-checkability.//
 
 === Stage 2: Research ===
 
@@ -219,36 +230,38 @@ erDiagram
 
 erDiagram
     EVIDENCE_ITEM }o--|| FETCHED_SOURCE : extracted_from
-    EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE : has_scope
+    EVIDENCE_ITEM ||--o| EVIDENCE_SCOPE : has_scope
 
     SEARCH_QUERY ||--o{ FETCHED_SOURCE : found
 
     EVIDENCE_ITEM {
-        string id_PK "EV_001 EV_002"
+        string id_PK "EV_001_EV_002"
         string statement
-        string category "statistic expert_quote event legal_provision etc"
+        string category "statistic_expert_quote_event_legal_provision_etc"
         string sourceId_FK
         string sourceUrl
         string sourceTitle
         string sourceExcerpt
-        string claimDirection "supports contradicts neutral"
-        string sourceAuthority "primary secondary opinion"
-        string evidenceBasis "scientific documented anecdotal theoretical pseudoscientific"
-        string probativeValue "high medium low"
+        string claimDirection "supports_contradicts_neutral"
+        string sourceAuthority "primary_secondary_opinion"
+        string evidenceBasis "scientific_documented_anecdotal_theoretical_pseudoscientific"
+        string probativeValue "high_medium_low"
         float extractionConfidence "0-100"
-        string sourceType "peer_reviewed_study etc"
-        string_array relevantClaimIds
-        string claimBoundaryId_FK "Assigned in Stage 3"
+        string sourceType "peer_reviewed_study_etc"
+        json relevantClaimIds
+        string claimBoundaryId_FK "Assigned_in_Stage_3"
         boolean isDerivative
         string derivedFromSourceUrl
         boolean derivativeClaimUnverified
-        string scopeQuality "complete partial incomplete"
+        string scopeQuality "complete_partial_incomplete"
+        boolean isContestedClaim
+        boolean fromOppositeClaimSearch
     }
 
     EVIDENCE_SCOPE {
         string name
-        string methodology "Optional"
-        string temporal "Optional"
+        string methodology
+        string temporal
         string boundaries
         string geographic
         string sourceType
@@ -261,7 +274,7 @@ erDiagram
         string title
         string fullText
         float trackRecordScore "0.0-1.0"
-        float trackRecordConfidence
+        float trackRecordConfidence "0.0-1.0"
         boolean trackRecordConsensus
         string category
         boolean fetchSuccess
@@ -281,34 +294,34 @@ erDiagram
 
 {{/mermaid}}
 
-//Stage 2 output: EVIDENCE_ITEMs with EVIDENCE_SCOPEs from FETCHED_SOURCEs. CB pipeline additions: relevantClaimIds (which claims evidence relates to), claimBoundaryId (assigned in Stage 3), isDerivative/derivedFromSourceUrl (derivative tracking), scopeQuality assessment.//
+//Stage 2 output: EVIDENCE_ITEMs with EVIDENCE_SCOPEs from FETCHED_SOURCEs. CB pipeline additions: relevantClaimIds (which atomic claims evidence relates to), claimBoundaryId (assigned in Stage 3), isDerivative/derivedFromSourceUrl/derivativeClaimUnverified (derivative evidence tracking), scopeQuality assessment (complete/partial/incomplete), fromOppositeClaimSearch (contradiction research flag). Each SEARCH_QUERY records provider, results, and any error. FETCHED_SOURCE includes trackRecordScore, trackRecordConfidence, and trackRecordConsensus from Source Reliability evaluation.//
 
 === Stage 3: Cluster Boundaries ===
 
 {{mermaid}}
 
 erDiagram
-    CLAIM_BOUNDARY ||--o{ EVIDENCE_SCOPE : "composed of"
-    EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : "assigned to"
+    CLAIM_BOUNDARY ||--o{ EVIDENCE_SCOPE : "composed_of"
+    EVIDENCE_ITEM }o--o| CLAIM_BOUNDARY : "assigned_to"
 
     CLAIM_BOUNDARY {
-        string id_PK "CB_01 CB_02"
-        string name "Human-readable label"
-        string shortName "Short label for UI tabs"
+        string id_PK "CB_01_CB_02"
+        string name "Human-readable_label"
+        string shortName "Short_label_for_UI_tabs"
         string description
-        string methodology "Dominant methodology (optional)"
-        string boundaries "Scope boundaries (optional)"
-        string geographic "Geographic scope (optional)"
-        string temporal "Temporal scope (optional)"
-        json constituentScopes "EvidenceScope[] composing this boundary"
+        string methodology "Dominant_methodology"
+        string boundaries "Scope_boundaries"
+        string geographic "Geographic_scope"
+        string temporal "Temporal_scope"
+        json constituentScopes "EvidenceScope[]"
         float internalCoherence "0-1"
         int evidenceCount
     }
 
     EVIDENCE_SCOPE {
         string name
-        string methodology "Optional"
-        string temporal "Optional"
+        string methodology
+        string temporal
     }
 
     EVIDENCE_ITEM {
@@ -317,7 +330,7 @@ erDiagram
 
 {{/mermaid}}
 
-//Stage 3 output: CLAIM_BOUNDARYs emerge from clustering compatible EVIDENCE_SCOPEs. Each boundary has internal coherence and count. Evidence items are assigned to their boundary.//
+//Stage 3 output: CLAIM_BOUNDARYs (ClaimAssessmentBoundary) emerge from clustering compatible EVIDENCE_SCOPEs. Each boundary has a name, shortName (for UI tabs), derived methodology/boundaries/geographic/temporal from constituent scopes, internalCoherence (0-1), and evidenceCount. Evidence items receive their claimBoundaryId assignment in this stage.//
 
 === Stage 4: Verdict (LLM Debate) ===
 
@@ -327,62 +340,72 @@ erDiagram
     CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : contains
     CB_CLAIM_VERDICT ||--|| CONSISTENCY_RESULT : has
     CB_CLAIM_VERDICT ||--o{ CHALLENGE_RESPONSE : has
-    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites supporting"
-    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites contradicting"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites_supporting"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites_contradicting"
     CB_CLAIM_VERDICT ||--|| TRIANGULATION_SCORE : has
+    CB_CLAIM_VERDICT ||--o| TRUTH_PERCENTAGE_RANGE : has
 
     CB_CLAIM_VERDICT {
         string id_PK
         string claimId_FK
         float truthPercentage "0-100"
-        string verdict "7-point label"
+        string verdict "7-point_label"
         float confidence "0-100"
-        string reasoning "Includes challenge responses"
-        string harmPotential "critical high medium low"
+        string reasoning
+        string harmPotential "critical_high_medium_low"
         boolean isContested
-        string_array supportingEvidenceIds
-        string_array contradictingEvidenceIds
-        json boundaryFindings "BoundaryFinding[]"
-        json consistencyResult "ConsistencyResult"
-        json challengeResponses "ChallengeResponse[]"
-        json triangulationScore "TriangulationScore"
+        json supportingEvidenceIds
+        json contradictingEvidenceIds
+        json boundaryFindings
+        json consistencyResult
+        json challengeResponses
+        json triangulationScore
+        json truthPercentageRange
+        string misleadingness "not_potentially_highly_(optional)"
+        string misleadingnessReason
     }
 
     BOUNDARY_FINDING {
         string boundaryId_FK
         string boundaryName
-        float truthPercentage "Per-boundary 0-100"
-        float confidence "Per-boundary 0-100"
-        string evidenceDirection "supports contradicts mixed neutral"
+        float truthPercentage "Per-boundary_0-100"
+        float confidence "Per-boundary_0-100"
+        string evidenceDirection "supports_contradicts_mixed_neutral"
         int evidenceCount
     }
 
     CONSISTENCY_RESULT {
         string claimId_FK
-        float_array percentages
+        json percentages "Truth_%_from_each_run"
         float average
-        float spread
-        boolean stable
-        boolean assessed "false if disabled"
+        float spread "max_minus_min"
+        boolean stable "spread_within_threshold"
+        boolean assessed "false_if_disabled"
     }
 
     CHALLENGE_RESPONSE {
-        string challengeType "assumption missing_evidence methodology_weakness independence_concern"
+        string challengeType "assumption_missing_evidence_methodology_weakness_independence_concern"
         string response
         boolean verdictAdjusted
+        json adjustmentBasedOnChallengeIds
     }
 
     TRIANGULATION_SCORE {
         int boundaryCount
         int supporting
         int contradicting
-        string level "strong moderate weak conflicted"
-        float factor "Weight adjustment"
+        string level "strong_moderate_weak_conflicted"
+        float factor "Weight_adjustment"
+    }
+
+    TRUTH_PERCENTAGE_RANGE {
+        float min "0-100"
+        float max "0-100"
     }
 
 {{/mermaid}}
 
-//Stage 4 output: CB_CLAIM_VERDICTs via 5-step LLM debate (Advocate → Self-Consistency → Adversarial Challenge → Reconciliation → Validation). Each verdict includes per-boundary BOUNDARY_FINDINGs, CONSISTENCY_RESULT (self-consistency spread), CHALLENGE_RESPONSEs (addressed challenges), and TRIANGULATION_SCORE (cross-boundary agreement).//
+//Stage 4 output: CB_CLAIM_VERDICTs via 5-step LLM debate (Advocate -> Self-Consistency -> Adversarial Challenge -> Reconciliation -> Validation). Each verdict includes per-boundary BOUNDARY_FINDINGs, CONSISTENCY_RESULT (self-consistency spread across multiple LLM runs), CHALLENGE_RESPONSEs (how challenges were addressed, with adjustmentBasedOnChallengeIds for provenance), TRIANGULATION_SCORE (cross-boundary agreement), TRUTH_PERCENTAGE_RANGE (plausible range from consistency spread and boundary variance), and optional misleadingness assessment (B-7, output-only).//
 
 === Stage 5: Aggregate + Quality ===
 
@@ -394,58 +417,101 @@ erDiagram
     OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : has
     OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : has
     OVERALL_ASSESSMENT ||--|| QUALITY_GATES : has
+    OVERALL_ASSESSMENT ||--o| EXPLANATION_QUALITY_CHECK : has
+    OVERALL_ASSESSMENT ||--o| TRUTH_PERCENTAGE_RANGE : has
 
-    QUALITY_GATES ||--|| GATE1_STATS : claim_validation
-    QUALITY_GATES ||--|| GATE4_STATS : verdict_confidence
+    QUALITY_GATES ||--o| GATE1_STATS : claim_validation
+    QUALITY_GATES ||--o| GATE4_STATS : verdict_confidence
+    QUALITY_GATES ||--o| QUALITY_GATES_SUMMARY : high_level
+
+    EXPLANATION_QUALITY_CHECK ||--|| EXPLANATION_STRUCTURAL_FINDINGS : has
+    EXPLANATION_QUALITY_CHECK ||--o| EXPLANATION_RUBRIC_SCORES : has
 
     OVERALL_ASSESSMENT {
-        float truthPercentage "0-100 weighted"
-        string verdict "7-point label"
-        float confidence "0-100 weighted"
+        float truthPercentage "0-100_weighted"
+        string verdict "7-point_label"
+        float confidence "0-100_weighted"
         boolean hasMultipleBoundaries
-        json verdictNarrative "VerdictNarrative"
-        json claimBoundaries "ClaimAssessmentBoundary[]"
-        json claimVerdicts "CBClaimVerdict[]"
-        json coverageMatrix "CoverageMatrix"
-        json qualityGates "QualityGates"
+        json verdictNarrative
+        json claimBoundaries
+        json claimVerdicts
+        json coverageMatrix
+        json qualityGates
+        json truthPercentageRange
+        json explanationQualityCheck
     }
 
     VERDICT_NARRATIVE {
         string headline
         string evidenceBaseSummary
         string keyFinding
-        string_array boundaryDisagreements
+        json boundaryDisagreements
         string limitations
     }
 
     COVERAGE_MATRIX {
-        string_array claims "Rows"
-        string_array boundaries "Columns"
-        int_array_array counts "Evidence per cell"
+        json claims "Rows_(claim_IDs)"
+        json boundaries "Columns_(boundary_IDs)"
+        json counts "Evidence_per_cell"
     }
 
     QUALITY_GATES {
         boolean passed
     }
 
+    QUALITY_GATES_SUMMARY {
+        int totalEvidenceItems
+        int totalSources
+        int searchesPerformed
+        boolean contradictionSearchPerformed
+    }
+
     GATE1_STATS {
-        int totalClaims
-        int passedClaims
-        int filteredClaims
-        int passedFidelity
+        int total
+        int passed
+        int filtered
+        int centralKept
     }
 
     GATE4_STATS {
-        int totalVerdicts
+        int total
+        int publishable
         int highConfidence
         int mediumConfidence
         int lowConfidence
         int insufficient
+        int centralKept
+    }
+
+    TRUTH_PERCENTAGE_RANGE {
+        float min "0-100"
+        float max "0-100"
+    }
+
+    EXPLANATION_QUALITY_CHECK {
+        string mode "structural_or_rubric"
+    }
+
+    EXPLANATION_STRUCTURAL_FINDINGS {
+        boolean hasCitedEvidence
+        boolean hasVerdictCategory
+        boolean hasConfidenceStatement
+        boolean hasLimitations
+    }
+
+    EXPLANATION_RUBRIC_SCORES {
+        int clarity "1-5"
+        int completeness "1-5"
+        int neutrality "1-5"
+        int evidenceSupport "1-5"
+        int appropriateHedging "1-5"
+        float overallScore "weighted_average"
+        json flags
     }
 
     ANALYSIS_WARNING {
         string type
-        string severity "error warning info"
+        string severity "error_warning_info"
         string message
         json details
     }
@@ -464,7 +530,7 @@ erDiagram
 
 {{/mermaid}}
 
-//Stage 5 output: OVERALL_ASSESSMENT aggregates CB_CLAIM_VERDICTs with weighted averaging (centrality, harm, confidence, triangulation, derivative). VERDICT_NARRATIVE provides structured summary. COVERAGE_MATRIX maps claims to boundaries. QUALITY_GATES summarize Gate 1 (claim validation) and Gate 4 (verdict confidence). TWO_PANEL_SUMMARY and PSEUDOSCIENCE_ANALYSIS complete the result.//
+//Stage 5 output: OVERALL_ASSESSMENT aggregates CB_CLAIM_VERDICTs with weighted averaging (centrality, harm, confidence, triangulation, derivative). VERDICT_NARRATIVE provides structured summary (headline, evidenceBaseSummary, keyFinding, boundaryDisagreements, limitations). COVERAGE_MATRIX maps claims to boundaries. QUALITY_GATES summarize Gate 1 (claim validation with total/passed/filtered/centralKept) and Gate 4 (verdict confidence with publishable/high/medium/low/insufficient/centralKept), plus QUALITY_GATES_SUMMARY (evidence and search counts). EXPLANATION_QUALITY_CHECK (B-8) provides Tier 1 structural findings and optional Tier 2 rubric scores. TRUTH_PERCENTAGE_RANGE gives the plausible overall range. TWO_PANEL_SUMMARY, PSEUDOSCIENCE_ANALYSIS, and ANALYSIS_WARNINGs complete the result.//
 
 ----
 
@@ -502,7 +568,14 @@ erDiagram
         int Progress
         string InputType
         string InputValue
+        string InputPreview
         string PipelineVariant
+        string ParentJobId_FK
+        int RetryCount
+        datetime RetriedFromUtc
+        string RetryReason
+        string PromptContentHash
+        datetime PromptLoadedUtc
         datetime CreatedUtc
         datetime UpdatedUtc
         json ResultJson
@@ -561,9 +634,12 @@ erDiagram
         string statement
         string category
         string centrality
-        string harmPotential "critical high medium low"
+        string harmPotential "critical_high_medium_low"
         float specificityScore
         string groundingQuality
+        string claimDirection
+        json keyEntities
+        json expectedEvidenceProfile
     }
 
     CB_CLAIM_VERDICTS {
@@ -574,12 +650,16 @@ erDiagram
         int confidence
         string verdict
         string reasoning
+        string harmPotential
+        boolean isContested
         json supportingEvidenceIds
         json contradictingEvidenceIds
         json boundaryFindings
         json consistencyResult
         json challengeResponses
         json triangulationScore
+        json truthPercentageRange
+        string misleadingness
     }
 
     EVIDENCE_ITEMS {
@@ -593,7 +673,11 @@ erDiagram
         string claimBoundaryId_FK
         json relevantClaimIds
         boolean isDerivative
+        string derivedFromSourceUrl
+        boolean derivativeClaimUnverified
         string scopeQuality
+        string sourceType
+        float extractionConfidence
     }
 
     FETCHED_SOURCES {
@@ -603,6 +687,8 @@ erDiagram
         string domain
         string title
         float trackRecordScore
+        float trackRecordConfidence
+        boolean trackRecordConsensus
         boolean fetchSuccess
         datetime fetchedAt
     }
@@ -614,6 +700,8 @@ erDiagram
         string shortName
         string description
         string methodology
+        string geographic
+        string temporal
         float internalCoherence
         int evidenceCount
     }
@@ -649,18 +737,18 @@ erDiagram
 === Implementation Status ===
 
 |= Table |= Status |= Technology |= Notes
-| ##jobs## | Exists | .NET EF Core (SQLite) | Analysis results stored as JSON blob in ##ResultJson##
+| ##jobs## | Exists | .NET EF Core (SQLite) | Analysis results stored as JSON blob in ##ResultJson##. Includes retry tracking (ParentJobId, RetryCount) and prompt tracking (PromptContentHash).
 | ##job_events## | Exists | .NET EF Core (SQLite) | Event log with SSE streaming
 | ##analysis_metrics## | Exists | .NET EF Core (SQLite) | Metrics as JSON blob
 | ##config_blobs## | Exists | Next.js better-sqlite3 | Immutable, content-addressed
 | ##config_active## | Exists | Next.js better-sqlite3 | Activation pointers
 | ##config_usage## | Exists | Next.js better-sqlite3 | Per-job config snapshots
 | ##source_reliability## | Exists | Next.js better-sqlite3 | LLM-evaluated cache (90-day TTL)
-| ##atomic_claims## | **Target** | PostgreSQL | Normalised from JSON blob (replaces Orchestrated ##claim_verdicts## scope)
-| ##cb_claim_verdicts## | **Target** | PostgreSQL | Normalised from JSON blob (includes boundary findings, consistency, challenges)
-| ##evidence_items## | **Target** | PostgreSQL | Normalised from JSON blob (includes claimBoundaryId, derivative flags)
-| ##fetched_sources## | **Target** | PostgreSQL | Normalised from JSON blob
-| ##claim_boundaries## | **Target** | PostgreSQL | Normalised from JSON blob (replaces Orchestrated ##analysis_contexts##)
+| ##atomic_claims## | **Target** | PostgreSQL | Normalised from JSON blob (includes claimDirection, keyEntities, expectedEvidenceProfile)
+| ##cb_claim_verdicts## | **Target** | PostgreSQL | Normalised from JSON blob (includes boundaryFindings, consistencyResult, challengeResponses, triangulationScore, truthPercentageRange, misleadingness)
+| ##evidence_items## | **Target** | PostgreSQL | Normalised from JSON blob (includes claimBoundaryId, derivative flags, scopeQuality, sourceType)
+| ##fetched_sources## | **Target** | PostgreSQL | Normalised from JSON blob (includes trackRecordConfidence, trackRecordConsensus)
+| ##claim_boundaries## | **Target** | PostgreSQL | Normalised from JSON blob (includes geographic, temporal, internalCoherence)
 | ##users## | **Planned** | PostgreSQL | Not yet implemented (Alpha phase)
 | ##flags## | **Planned** | PostgreSQL | Not yet implemented (Alpha phase)
 | ##quality_metrics## | **Planned** | PostgreSQL | Not yet implemented (time-series)
@@ -671,7 +759,7 @@ For detailed field descriptions, denormalisation strategy, and cost projections,
 
 == Runtime Process Entities ==
 
-Entities that exist only during pipeline execution. These are transient — they facilitate processing but are not directly stored in the result JSON. Some contribute data that flows into stored entities.
+Entities that exist only during pipeline execution. These are transient -- they facilitate processing but are not directly stored in the result JSON. Some contribute data that flows into stored entities.
 
 {{mermaid}}
 
@@ -682,7 +770,7 @@ flowchart TD
     end
 
     subgraph Research["RESEARCH (Stage 2)"]
-        RS["CBResearchState\n(main mutable container)\nunderstanding, evidenceItems\nsources, searchQueries, llmCalls\nmainIterationsUsed, contradictionIterations"]
+        RS["CBResearchState\n(main mutable container)\nunderstanding, evidenceItems\nsources, searchQueries, llmCalls\nmainIterationsUsed\ncontradictionIterations\nqueryBudgetUsageByClaim\nwarnings"]
         RD["ResearchDecision\ncomplete, focus, queries"]
         EQR["EvidenceQualityResult\nqualityAssessment, issues\nreasoning (per evidence)"]
         PV["ProvenanceValidation\nURL validation, excerpt check"]
@@ -696,7 +784,7 @@ flowchart TD
     subgraph Verdict["VERDICT (Stage 4)"]
         ADV["Advocate Verdict\ninitial per-claim verdicts"]
         SC["Self-Consistency Check\ntemp=0.3, spread measurement"]
-        CHAL["Adversarial Challenge\nchallenge points per claim"]
+        CHAL["ChallengeDocument\nchallenge points per claim\nwith ChallengeValidation"]
         REC["Reconciliation\nfinal verdicts"]
         VV["Verdict Validation\ngrounding + direction checks"]
         G4M["Gate 4 Assessment\nconfidence distribution"]
@@ -757,12 +845,12 @@ flowchart TD
 
 {{/mermaid}}
 
-//Grey boxes = transient runtime entities. Colored boxes = stored destinations. Arrows show how runtime data flows into (or is discarded from) the final result. Source files: ##types.ts##, ##metrics.ts##, ##budgets.ts##, ##claimboundary-pipeline.ts##, ##verdict-stage.ts##.//
+//Grey boxes = transient runtime entities. Colored boxes = stored destinations. Arrows show how runtime data flows into (or is discarded from) the final result. CBResearchState is the main mutable container through the pipeline, accumulating evidenceItems, sources, searchQueries, claimBoundaries, and warnings. ChallengeDocument contains ChallengePoints with ChallengeValidation (structural validation of evidence references). Source files: ##types.ts##, ##metrics.ts##, ##budgets.ts##, ##claimboundary-pipeline.ts##, ##verdict-stage.ts##.//
 
 === Runtime Entity Reference ===
 
 |= Entity |= Source File |= Lifecycle |= Destination
-| ##CBResearchState## | ##types.ts:922## | Full pipeline | Container — fields distributed into resultJson
+| ##CBResearchState## | ##types.ts:971## | Full pipeline | Container -- fields distributed into resultJson. Includes queryBudgetUsageByClaim, iteration counters, and accumulated warnings.
 | ##BudgetTracker## | ##budgets.ts## | Full pipeline | ##meta.budgetStats##
 | ##ResearchDecision## | ##types.ts:599## | Per iteration | Discarded after use
 | ##InputClassificationResult## | ##text-analysis-types.ts## | Extract phase | Data flows into ##CBClaimUnderstanding##
@@ -772,8 +860,10 @@ flowchart TD
 | ##LLMCallMetric## | ##metrics.ts## | Per LLM call | Aggregated in ##MetricsCollector##
 | ##SearchQueryMetric## | ##metrics.ts## | Per search call | Aggregated in ##MetricsCollector##
 | ##ProvenanceValidation## | ##evidence-filter.ts## | Research phase | Filters evidence (pass/fail)
-| ##ChallengeDocument## | ##types.ts:814## | Verdict Step 3 | Challenge points consumed by Reconciliation (Step 4)
-| ##ConsistencyResult## | ##types.ts:800## | Verdict Step 2 | Stored in ##CBClaimVerdict.consistencyResult##
+| ##ChallengeDocument## | ##types.ts:845## | Verdict Step 3 | Challenge points consumed by Reconciliation (Step 4)
+| ##ChallengePoint## | ##types.ts:857## | Verdict Step 3 | Individual challenges with ChallengeValidation, consumed by Reconciliation
+| ##ChallengeValidation## | ##types.ts:874## | Verdict Step 3 | Structural validation of evidence references (validIds/invalidIds)
+| ##ConsistencyResult## | ##types.ts:820## | Verdict Step 2 | Stored in ##CBClaimVerdict.consistencyResult##
 
 ----
 
@@ -791,18 +881,19 @@ flowchart TD
     subgraph JobDetail["/jobs/id - Job Detail Page"]
 
         subgraph VerdictBanner["Verdict Banner"]
-            JD_OA["OVERALL_ASSESSMENT\ntruthPercentage, verdict\nconfidence"]
+            JD_OA["OVERALL_ASSESSMENT\ntruthPercentage, verdict\nconfidence\ntruthPercentageRange"]
             JD_VN["VERDICT_NARRATIVE\nheadline, keyFinding\nlimitations"]
             JD_TPS["TWO_PANEL_SUMMARY\narticleSummary\nfactharborAnalysis"]
         end
 
         subgraph BoundarySection["ClaimAssessmentBoundary Tabs"]
-            JD_CB["CLAIM_BOUNDARY\nname, shortName\nmethodology, temporal"]
-            JD_BF["BOUNDARY_FINDING\ntruthPercentage, confidence\nevidenceDirection"]
+            JD_CB["CLAIM_BOUNDARY\nname, shortName\nmethodology, temporal\ngeographic"]
+            JD_BF["BOUNDARY_FINDING\ntruthPercentage, confidence\nevidenceDirection, evidenceCount"]
         end
 
         subgraph ClaimsSection["Claims Analyzed"]
-            JD_CV["CB_CLAIM_VERDICT\nstatement, verdict\nconfidence, reasoning\nharmPotential, isContested"]
+            JD_AC["ATOMIC_CLAIM\nstatement, category\ncentrality, harmPotential"]
+            JD_CV["CB_CLAIM_VERDICT\nverdict, truthPercentage\nconfidence, reasoning\nharmPotential, isContested\nmisleadingness"]
         end
 
         subgraph EvidenceSection["Evidence Panel"]
@@ -817,6 +908,7 @@ flowchart TD
         subgraph QualitySection["Quality Panel"]
             JD_QG["QUALITY_GATES\npassed, gate1Stats\ngate4Stats"]
             JD_AW["ANALYSIS_WARNING\ntype, severity\nmessage"]
+            JD_EQC["EXPLANATION_QUALITY_CHECK\nmode, structuralFindings\nrubricScores (when rubric)"]
         end
 
         subgraph SearchSection["Search Queries"]
@@ -831,6 +923,7 @@ flowchart TD
     end
 
     JL_JOB -->|"click job"| JobDetail
+    JD_AC -->|"has verdict"| JD_CV
     JD_CV -->|"references"| JD_EI
     JD_EI -->|"from"| JD_FS
     JD_CB -->|"findings"| JD_BF
@@ -841,12 +934,14 @@ flowchart TD
     style JD_TPS fill:#c8e6c9,stroke:#2e7d32,color:#000
     style JD_CB fill:#e1bee7,stroke:#7b1fa2,color:#000
     style JD_BF fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style JD_AC fill:#e1bee7,stroke:#7b1fa2,color:#000
     style JD_CV fill:#c8e6c9,stroke:#2e7d32,color:#000
     style JD_EI fill:#fff3e0,stroke:#e65100,color:#000
     style JD_ES fill:#fff3e0,stroke:#e65100,color:#000
     style JD_FS fill:#fff3e0,stroke:#e65100,color:#000
     style JD_QG fill:#fff9c4,stroke:#f9a825,color:#000
     style JD_AW fill:#fff9c4,stroke:#f9a825,color:#000
+    style JD_EQC fill:#fff9c4,stroke:#f9a825,color:#000
     style JD_SQ fill:#fff3e0,stroke:#e65100,color:#000
     style AD_HEALTH fill:#e3f2fd,stroke:#1565c0,color:#000
     style AD_METRICS fill:#e3f2fd,stroke:#1565c0,color:#000
@@ -854,18 +949,22 @@ flowchart TD
 
 {{/mermaid}}
 
-//UI visibility: The Jobs list shows minimal JOB metadata. The Job detail page renders the full analysis result across multiple sections: verdict banner (OVERALL_ASSESSMENT + VERDICT_NARRATIVE), ClaimAssessmentBoundary tabs with BOUNDARY_FINDINGs, claims with CB_CLAIM_VERDICTs, evidence panel, sources, quality gates, and search queries. Admin pages show operational data (provider health, aggregated metrics, config snapshots).//
+//UI visibility: The Jobs list shows minimal JOB metadata. The Job detail page renders the full analysis result across multiple sections: verdict banner (OVERALL_ASSESSMENT with truthPercentageRange + VERDICT_NARRATIVE), ClaimAssessmentBoundary tabs with BOUNDARY_FINDINGs (including evidenceCount), claims section showing ATOMIC_CLAIMs with their CB_CLAIM_VERDICTs (including misleadingness when present), evidence panel, sources, quality gates (including EXPLANATION_QUALITY_CHECK from B-8), and search queries. Admin pages show operational data (provider health, aggregated metrics, config snapshots).//
 
 === What Users See vs. What's Internal ===
 
 |= Entity |= User-Visible Fields |= Internal-Only Fields
-| **CBClaimVerdict** | statement, verdict, confidence, reasoning, isContested, harmPotential | triangulationScore, consistencyResult details, challengeResponses
-| **EvidenceItem** | statement, category, sourceTitle, claimDirection, probativeValue | sourceId, extractionConfidence, scopeQuality, sourceAuthority, evidenceBasis, isDerivative, derivedFromSourceUrl
-| **FetchedSource** | url, title, trackRecordScore | fullText, fetchedAt, searchQuery
-| **ClaimBoundary** | name, shortName, description, methodology | internalCoherence, constituentScopes
-| **BoundaryFinding** | truthPercentage, confidence, evidenceDirection | boundaryId (used for cross-referencing)
+| **AtomicClaim** | statement, category, centrality, harmPotential, claimDirection | specificityScore, groundingQuality, checkWorthiness, keyEntities, expectedEvidenceProfile, verifiability
+| **CBClaimVerdict** | truthPercentage, verdict, confidence, reasoning, isContested, harmPotential, misleadingness | triangulationScore, consistencyResult details, challengeResponses, supportingEvidenceIds, contradictingEvidenceIds, truthPercentageRange details
+| **EvidenceItem** | statement, category, sourceTitle, claimDirection, probativeValue | sourceId, extractionConfidence, scopeQuality, sourceAuthority, evidenceBasis, isDerivative, derivedFromSourceUrl, derivativeClaimUnverified, fromOppositeClaimSearch, isContestedClaim, relevantClaimIds
+| **FetchedSource** | url, title, trackRecordScore, fetchSuccess | fullText, fetchedAt, searchQuery, trackRecordConfidence, trackRecordConsensus, category
+| **ClaimBoundary** | name, shortName, description, methodology, geographic, temporal | internalCoherence, constituentScopes, evidenceCount
+| **BoundaryFinding** | truthPercentage, confidence, evidenceDirection, evidenceCount | boundaryId (used for cross-referencing)
+| **OverallAssessment** | truthPercentage, verdict, confidence, truthPercentageRange | hasMultipleBoundaries, coverageMatrix details
+| **VerdictNarrative** | headline, keyFinding, limitations, boundaryDisagreements | evidenceBaseSummary
 | **QualityGates** | passed, gate1Stats (counts), gate4Stats (counts) | Individual ClaimValidationResult, VerdictValidationResult per claim
+| **ExplanationQualityCheck** | mode, structuralFindings, rubricScores (when rubric mode) | Internal scoring details
 
 ----
 
-**Navigation:** [[Diagrams Index>>FactHarbor.Product Development.Diagrams.WebHome]] | [[Architecture Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] | [[Target Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]]
+**Navigation:** [[Diagrams Index>>FactHarbor.Product Development.Diagrams.WebHome]] | [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] | [[Architecture Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] | [[Target Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]]

@@ -1,50 +1,52 @@
 {{info}}
 **Current Implementation (CB Pipeline v2.11.0+)** — This ERD shows the ClaimAssessmentBoundary pipeline data model as implemented in ##types.ts## and stored as JSON blobs in SQLite ##ResultJson## field.
 
-Updated 2026-02-19 per source code audit against ##apps/web/src/lib/analyzer/types.ts## (CB pipeline interfaces: ##AtomicClaim##, ##ClaimAssessmentBoundary##, ##CBClaimVerdict##, ##OverallAssessment##, etc.).
+Updated 2026-02-22 per source code audit against ##apps/web/src/lib/analyzer/types.ts## (CB pipeline interfaces: ##AtomicClaim##, ##ClaimAssessmentBoundary##, ##CBClaimVerdict##, ##BoundaryFinding##, ##OverallAssessment##, ##VerdictNarrative##, ##CBClaimUnderstanding##, etc.).
 {{/info}}
 
-= ClaimAssessmentBoundary Data Model =
+= ClaimAssessmentBoundary Data Model (v2.11.0+) =
 
 {{mermaid}}
 
 erDiagram
     INPUT_ARTICLE ||--o{ ATOMIC_CLAIM : "extracts"
     ATOMIC_CLAIM ||--o{ SEARCH_QUERY : "generates"
-    SEARCH_QUERY }o--o{ FETCHED_SOURCE : "discovers"
-    FETCHED_SOURCE ||--o{ EVIDENCE_ITEM : "yields"
+    SEARCH_QUERY }o--o{ SOURCE : "discovers"
+    SOURCE ||--o{ EVIDENCE_ITEM : "yields"
     EVIDENCE_ITEM |o--o| EVIDENCE_SCOPE : "has"
-    EVIDENCE_SCOPE }o--|| CLAIM_BOUNDARY : "clusters into"
-    EVIDENCE_ITEM }o--|| CLAIM_BOUNDARY : "assigned to"
+    EVIDENCE_SCOPE }o--|| CLAIM_ASSESSMENT_BOUNDARY : "clusters into"
+    EVIDENCE_ITEM }o--|| CLAIM_ASSESSMENT_BOUNDARY : "assigned to"
     ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : "receives"
     CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites"
-    CB_CLAIM_VERDICT }o--o| CLAIM_BOUNDARY : "scoped by"
+    CB_CLAIM_VERDICT }o--o| CLAIM_ASSESSMENT_BOUNDARY : "scoped by"
     CB_CLAIM_VERDICT }o--|| OVERALL_ASSESSMENT : "aggregates into"
-    OVERALL_ASSESSMENT ||--o{ CLAIM_BOUNDARY : "presents"
+    OVERALL_ASSESSMENT ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "presents"
     CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : "contains"
-    BOUNDARY_FINDING }o--|| CLAIM_BOUNDARY : "per boundary"
+    BOUNDARY_FINDING }o--|| CLAIM_ASSESSMENT_BOUNDARY : "per boundary"
 
     INPUT_ARTICLE {
-        string id PK
+        string id_PK
         string inputType "text or url"
+        string detectedInputType "claim or article"
         string impliedClaim "LLM-extracted thesis"
         string articleThesis
         string backgroundDetails
-        string detectedInputType "claim or article"
         string riskTier "A B or C"
     }
 
     ATOMIC_CLAIM {
-        string id PK "AC_01 AC_02"
+        string id_PK "AC_01 AC_02"
         string statement "The verifiable assertion"
         string category "factual evaluative procedural"
         string centrality "high medium"
         string harmPotential "critical high medium low"
         boolean isCentral "Always true (filtered)"
         string claimDirection "supports_thesis contradicts_thesis contextual"
-        string_array keyEntities "Named entities referenced"
-        float specificityScore "0-1 (Gate 1 min 0.6)"
+        string verifiability "high medium low none (optional)"
+        string checkWorthiness "high medium"
+        float specificityScore "0-1 Gate1 min 0.6"
         string groundingQuality "strong moderate weak none"
+        json keyEntities "Named entities referenced"
         json expectedEvidenceProfile "methodologies metrics sourceTypes"
     }
 
@@ -53,11 +55,12 @@ erDiagram
         int iteration
         string focus "Evidence type sought"
         int resultsCount
+        string timestamp
         string searchProvider
     }
 
-    FETCHED_SOURCE {
-        string id PK
+    SOURCE {
+        string id_PK
         string url
         string title
         string fullText "Retrieved page content"
@@ -70,17 +73,18 @@ erDiagram
     }
 
     EVIDENCE_ITEM {
-        string id PK "EV_001 EV_002"
+        string id_PK "EV_001 EV_002"
         string statement "Extracted evidence text"
         string category "statistic expert_quote event legal_provision etc"
-        string sourceId FK
+        string sourceId_FK
         string sourceUrl
+        string sourceTitle
         string sourceExcerpt
         string claimDirection "supports contradicts neutral"
         string probativeValue "high medium low"
         float extractionConfidence "0-100"
-        string claimBoundaryId FK "Assigned in Stage 3"
-        string_array relevantClaimIds "Which claims this relates to"
+        string claimBoundaryId_FK "Assigned in Stage 3"
+        json relevantClaimIds "Which claims this relates to"
         string scopeQuality "complete partial incomplete"
         string sourceType "peer_reviewed_study news_primary etc"
         boolean isDerivative "Cites another source study"
@@ -90,16 +94,16 @@ erDiagram
 
     EVIDENCE_SCOPE {
         string name "Short label: WTW TTW EU-LCA"
-        string methodology "Optional: ISO 14040 EU RED II etc"
-        string temporal "Optional: Source data time period"
+        string methodology "ISO 14040 EU RED II etc"
+        string temporal "Source data time period"
         string boundaries "What is included or excluded"
         string geographic "Source data geography"
         string sourceType "peer_reviewed_study government_report etc"
         map additionalDimensions "Domain-specific scope data"
     }
 
-    CLAIM_BOUNDARY {
-        string id PK "CB_01 CB_02"
+    CLAIM_ASSESSMENT_BOUNDARY {
+        string id_PK "CB_01 CB_02"
         string name "Human-readable label"
         string shortName "Short label for UI tabs"
         string description "What this boundary represents"
@@ -107,29 +111,33 @@ erDiagram
         string boundaries "Scope boundaries"
         string geographic "Geographic scope"
         string temporal "Temporal scope"
+        json constituentScopes "EvidenceScopes composing this boundary"
         float internalCoherence "0-1 consistency"
         int evidenceCount
     }
 
     CB_CLAIM_VERDICT {
-        string id PK
-        string claimId FK
+        string id_PK
+        string claimId_FK
         float truthPercentage "0-100"
         string verdict "7-point scale label"
         float confidence "0-100"
         string reasoning "LLM-generated explanation"
         string harmPotential "critical high medium low"
         boolean isContested
-        string_array supportingEvidenceIds FK
-        string_array contradictingEvidenceIds FK
+        json supportingEvidenceIds_FK
+        json contradictingEvidenceIds_FK
         json boundaryFindings "Per-boundary signals"
         json consistencyResult "Self-consistency check"
         json challengeResponses "Adversarial challenge responses"
         json triangulationScore "Cross-boundary agreement"
+        json truthPercentageRange "min max plausible range"
+        string misleadingness "not_misleading potentially highly (optional)"
+        string misleadingnessReason "Reason (optional)"
     }
 
     BOUNDARY_FINDING {
-        string boundaryId FK
+        string boundaryId_FK
         string boundaryName
         float truthPercentage "Per-boundary 0-100"
         float confidence "Per-boundary 0-100"
@@ -142,9 +150,12 @@ erDiagram
         string verdict "7-point scale label"
         float confidence "0-100 weighted"
         boolean hasMultipleBoundaries
+        json claimBoundaries "All ClaimAssessmentBoundary objects"
+        json claimVerdicts "All CBClaimVerdict objects"
         json verdictNarrative "headline keyFinding limitations"
         json coverageMatrix "claims x boundaries"
         json qualityGates "gate1Stats gate4Stats"
+        json truthPercentageRange "min max plausible range"
     }
 
 {{/mermaid}}
@@ -156,15 +167,23 @@ erDiagram
 * MIXED (43-57%, confidence >= 40%) / UNVERIFIED (43-57%, confidence < 40%)
 * LEANING-FALSE (29-42%) / MOSTLY-FALSE (15-28%) / FALSE (0-14%)
 
-**EvidenceScope (optional):** Per-evidence metadata describing the methodology and boundaries of the source data. All fields except ##name## are optional (##methodology## and ##temporal## are populated when available from the source). Embedded in EvidenceItem, not a separate stored entity. Extensible via ##additionalDimensions## (Decision D4).
+**EvidenceScope (mandatory core fields):** Per-evidence metadata describing the methodology and boundaries of the source data. ##methodology## and ##temporal## are the primary scope dimensions populated when available from the source. All fields except ##name## are optional in the TypeScript interface, but the extraction prompt targets methodology and temporal as mandatory when source data permits. Embedded in EvidenceItem, not a separate stored entity. Extensible via ##additionalDimensions## (Decision D4).
 
-**harmPotential (4-level, Decision D9):** ##critical## (1.5x weight) = death/injury allegations, ##high## (1.2x) = serious but not life-threatening, ##medium## (1.0x) = moderate, ##low## (1.0x) = minimal.
+**harmPotential (4-level, Decision D9):** ##critical## (1.5x weight) = death/injury allegations, ##high## (1.2x) = serious but not life-threatening, ##medium## (1.0x) = moderate, ##low## (1.0x) = minimal. Applied to both AtomicClaim and CBClaimVerdict.
 
-**claimDirection "contextual" (Decision D6):** Evidence providing relevant background without directional stance. Renamed from "neutral" to clarify semantics.
+**claimDirection "contextual" (Decision D6):** Evidence providing relevant background without directional stance. Renamed from "neutral" to clarify semantics. Used in AtomicClaim. Note: EvidenceItem still uses "supports" / "contradicts" / "neutral" for backward compatibility.
 
 **Derivative evidence (CB pipeline):** Evidence items that cite another source's underlying study are flagged with ##isDerivative## and ##derivedFromSourceUrl##. If the original source was not fetched, ##derivativeClaimUnverified## = true. Derivative evidence receives reduced weight in aggregation.
 
-**VerdictNarrative (Decision D7):** Structured type with ##headline##, ##evidenceBaseSummary##, ##keyFinding##, ##boundaryDisagreements[]##, and ##limitations##. LLM-generated (Sonnet, 1 call) after weighted aggregation.
+**VerdictNarrative (Decision D7):** Structured type with ##headline##, ##evidenceBaseSummary##, ##keyFinding##, ##boundaryDisagreements[]##, and ##limitations##. LLM-generated (Sonnet, 1 call) after weighted aggregation. Stored within OverallAssessment.
+
+**BoundaryFinding:** Per-boundary quantitative signals within a CBClaimVerdict. Provides nuance when different methodological boundaries yield different conclusions about the same claim. Each BoundaryFinding records truth percentage, confidence, evidence direction, and evidence count for one ClaimAssessmentBoundary.
+
+**Self-Consistency & Triangulation:** CBClaimVerdict includes ##consistencyResult## (spread of truth percentages across multiple LLM runs) and ##triangulationScore## (cross-boundary agreement: strong/moderate/weak/conflicted). Both influence final confidence.
+
+**Adversarial Challenge:** CBClaimVerdict includes ##challengeResponses## recording how each adversarial challenge point was addressed in reconciliation. Challenges must be evidence-backed to adjust verdicts; unsubstantiated objections do not reduce truth percentage.
+
+**Misleadingness (B-7):** Optional independent assessment on CBClaimVerdict. Values: ##not_misleading##, ##potentially_misleading##, ##highly_misleading##. Output-only; not fed back into the debate.
 
 **Storage:** All data stored as JSON blob in SQLite ##ResultJson## field. Schema version: ##3.0.0-cb##.
 
