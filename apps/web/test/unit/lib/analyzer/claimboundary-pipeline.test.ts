@@ -49,6 +49,7 @@ import {
   checkDebateTierDiversity,
   checkDebateProviderCredentials,
   checkExplanationStructure,
+  evaluateExplanationRubric,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -3860,5 +3861,135 @@ describe("B-8: explanation quality check", () => {
       };
       expect(assessment.explanationQualityCheck).toBeUndefined();
     });
+  });
+});
+
+// ============================================================================
+// M1: claimAnnotationMode strips verifiability when "off"
+// ============================================================================
+describe("M1: claimAnnotationMode verifiability stripping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should strip verifiability from claims when claimAnnotationMode is off (default)", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01", verifiability: "high" as any }),
+      createAtomicClaim({ id: "AC_02", verifiability: "medium" as any }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    // claimAnnotationMode absent → defaults to "off" → verifiability stripped
+    const result = await runGate1Validation(claims, {} as any, "2026-02-17");
+
+    for (const claim of result.filteredClaims) {
+      expect(claim.verifiability).toBeUndefined();
+    }
+  });
+
+  it("should preserve verifiability when claimAnnotationMode is 'verifiability'", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01", verifiability: "high" as any }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(
+      claims,
+      { claimAnnotationMode: "verifiability" } as any,
+      "2026-02-17",
+    );
+
+    expect(result.filteredClaims[0].verifiability).toBe("high");
+  });
+
+  it("should strip verifiability when claimAnnotationMode is explicitly 'off'", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01", verifiability: "low" as any }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(
+      claims,
+      { claimAnnotationMode: "off" } as any,
+      "2026-02-17",
+    );
+
+    expect(result.filteredClaims[0].verifiability).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// M2: evaluateExplanationRubric graceful failure
+// ============================================================================
+describe("M2: evaluateExplanationRubric error handling", () => {
+  it("should propagate LLM errors (pipeline wraps in try/catch)", async () => {
+    const narrative: VerdictNarrative = {
+      headline: "Verdict: TRUE at 85%",
+      evidenceBaseSummary: "10 items from 5 sources",
+      keyFinding: "Well-supported claim.",
+      limitations: "Geographic scope limitations.",
+    };
+
+    const failingLLMCall = vi.fn().mockRejectedValue(new Error("LLM timeout"));
+
+    await expect(
+      evaluateExplanationRubric(narrative, 3, 10, failingLLMCall as any),
+    ).rejects.toThrow("LLM timeout");
+  });
+
+  it("should return valid rubric scores on successful LLM call", async () => {
+    const narrative: VerdictNarrative = {
+      headline: "Assessment: MOSTLY-TRUE verdict",
+      evidenceBaseSummary: "8 items from 4 sources",
+      keyFinding: "Evidence supports the claim with moderate confidence.",
+      limitations: "Limited temporal scope.",
+    };
+
+    const mockLLMCall = vi.fn().mockResolvedValue({
+      clarity: 4,
+      completeness: 3,
+      neutrality: 5,
+      evidenceSupport: 4,
+      appropriateHedging: 3,
+      flags: ["minor_hedging_gap"],
+    });
+
+    const scores = await evaluateExplanationRubric(narrative, 2, 8, mockLLMCall as any);
+
+    expect(scores.clarity).toBe(4);
+    expect(scores.completeness).toBe(3);
+    expect(scores.neutrality).toBe(5);
+    expect(scores.evidenceSupport).toBe(4);
+    expect(scores.appropriateHedging).toBe(3);
+    expect(scores.overallScore).toBeGreaterThan(0);
+    expect(scores.flags).toContain("minor_hedging_gap");
   });
 });

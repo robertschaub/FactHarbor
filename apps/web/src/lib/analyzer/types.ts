@@ -664,7 +664,8 @@ export type AnalysisWarningType =
   | "debate_provider_fallback"      // A debate role's provider override was unavailable; fell back to global provider
   | "contested_verdict_range"       // Verdict truth% range exceeds wide-range threshold (high uncertainty)
   | "baseless_challenge_detected"   // Challenge adjustment lacks provenance or has mixed valid/invalid evidence IDs (advisory)
-  | "baseless_challenge_blocked";   // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
+  | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
+  | "explanation_quality_rubric_failed"; // B-8 rubric LLM evaluation failed — degraded to structural-only
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

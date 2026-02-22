@@ -294,13 +294,23 @@ export async function runClaimBoundaryAnalysis(
         structuralFindings,
       };
       if (explanationQualityMode === "rubric") {
-        const llmCallFn = createProductionLLMCall(initialPipelineConfig, state.warnings);
-        qualityCheck.rubricScores = await evaluateExplanationRubric(
-          assessment.verdictNarrative,
-          understanding.atomicClaims.length,
-          state.evidenceItems.length,
-          llmCallFn,
-        );
+        try {
+          const llmCallFn = createProductionLLMCall(initialPipelineConfig, state.warnings);
+          qualityCheck.rubricScores = await evaluateExplanationRubric(
+            assessment.verdictNarrative,
+            understanding.atomicClaims.length,
+            state.evidenceItems.length,
+            llmCallFn,
+          );
+        } catch (rubricError) {
+          // M2 fix: rubric failure is non-fatal — degrade to structural-only
+          console.warn("[Stage5] B-8 rubric evaluation failed, degrading to structural-only:", rubricError);
+          state.warnings.push({
+            type: "explanation_quality_rubric_failed",
+            severity: "warning",
+            message: `Explanation quality rubric evaluation failed: ${rubricError instanceof Error ? rubricError.message : String(rubricError)}. Structural checks still available.`,
+          });
+        }
       }
       assessment.explanationQualityCheck = qualityCheck;
       console.info(`[Stage5] B-8 explanation quality check (${explanationQualityMode}):`, JSON.stringify(qualityCheck));
@@ -1580,7 +1590,7 @@ export async function runGate1Validation(
       );
     }
 
-    // B-6: Log verifiability annotations if present (flag-only, no filtering)
+    // B-6: Log verifiability annotations if mode includes it; strip if mode is "off"
     const annotationMode = pipelineConfig.claimAnnotationMode ?? "off";
     if (annotationMode !== "off") {
       const verifiabilityCounts = { high: 0, medium: 0, low: 0, none: 0, missing: 0 };
@@ -1595,6 +1605,11 @@ export async function runGate1Validation(
       console.info(
         `[Stage1] Gate 1: verifiability annotation — ${JSON.stringify(verifiabilityCounts)} (${keptClaims.length} claims, flag-only)`,
       );
+    } else {
+      // M1 fix: strip verifiability when claimAnnotationMode is "off"
+      for (const claim of keptClaims) {
+        delete claim.verifiability;
+      }
     }
 
     return {
@@ -4331,8 +4346,11 @@ export function checkExplanationStructure(
     // Check if narrative references evidence quantities (e.g., "14 items", "9 sources")
     hasCitedEvidence: narrative.evidenceBaseSummary.length > 0
       && /\d+/.test(narrative.evidenceBaseSummary),
-    // Check if verdict category/label is mentioned in headline
-    hasVerdictCategory: narrative.headline.length > 0,
+    // Check if verdict category/label or percentage is mentioned in headline
+    // M3 fix: check for verdict terms or percentage pattern, not just non-empty
+    hasVerdictCategory: narrative.headline.length > 0
+      && (/\b(true|false|mostly|mixed|unverified|misleading|verdict|assessment)\b/i.test(narrative.headline)
+        || /\d+%/.test(narrative.headline)),
     // Check if confidence is referenced in headline or key finding
     hasConfidenceStatement: /confiden|certain|uncertain|likely|probably/i.test(
       narrative.headline + " " + narrative.keyFinding
