@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-21 (WIP superseded review-packet archival)
+**Last Updated**: 2026-02-22 (WIP consolidation — code reviews, quality map reviews, process docs archived)
 
 ---
 
@@ -19,6 +19,38 @@ The following documents had valuable content extracted and merged into active do
 ---
 
 ## What's Archived
+
+### WIP Consolidation (2026-02-22) — Code Reviews, Quality Map Reviews, Process Docs
+
+**Description**: Archived 17 completed/superseded WIP files. All code review findings addressed in subsequent commits. Quality Map reviews consumed by Captain Decision doc. Process and execution docs completed.
+
+**Code Reviews** (8 files — all reviewed, GO verdicts, findings addressed in code):
+1. `Code_Review_23h_2026-02-19.md` — 46 findings across ~40 commits (Feb 18-19). Sprint closure verified (886 tests). All priority fixes committed.
+2. `Code_Review_2026-02-21.md` — 53 findings across 24 commits. Key concerns (baseless enforcement, rangeReporting, calibration thresholds) addressed in Phase 1 A-1/A-2 execution.
+3. `Code_Review_2026-02-21b.md` — 11 findings (1 CRITICAL: committed test blobs). R2-C1 addressed. Remaining items tracked in subsequent reviews.
+4. `Code_Review_Pre_A3_Phase1_2026-02-21.md` — Pre-gate review for A-3. GO verdict. Gate executed.
+5. `Code_Review_2026-02-22.md` — Report significance notice review. CR-M1/CR-M2 fixed in Plan_Pause pass.
+6. `Code_Review_2026-02-22b.md` — runIntent + summarizeFailureCause review. All carried findings (CR-M1, CR-M2) fixed.
+7. `Code_Review_B6_B7_B8_B5b_i18n_2026-02-22.md` — B-sequence + i18n review. GO verdict. B8-M1 (UCM cost documentation) addressed in commit `231ff13`.
+8. `Code_Review_B4_Query_Strategy_2026-02-22.md` — B-4 pro/con query strategy review. B-4 implemented.
+
+**Quality Map Reviews** (3 files — SUPERSEDED by `Decision_QualityMap_B4-B8_2026-02-22.md`):
+9. `Review_QualityMap_R1_LLMExpert_2026-02-22.md` — R1 LLM Expert review
+10. `Review_QualityMap_R2_LeadDev_2026-02-22.md` — R2 Lead Developer review
+11. `Review_QualityMap_R3_LeadDev_Codex_2026-02-22.md` — R3 Lead Developer (Codex) delta review
+
+**Process and Execution Docs** (6 files — DONE):
+12. `Political_Bias_Mitigation_2026-02-19.md` — All 5 Stammbach/Ash actions complete. Superseded by execution-phase docs.
+13. `GhPages_Alignment_Report_2026-02-21.md` — Viewer & deploy alignment completed (commits `9ef9a78`..`da84394`).
+14. `Implementation_Review_Circles_Execution_2026-02-21.md` — Review circles process doc. Circles executed.
+15. `Implementation_Review_Circles_Result_2026-02-21.md` — Circle results consumed by Pre-A3 review.
+16. `CrossProvider_Calibration_Execution_Report_2026-02-21.md` — Superseded by `A3_CrossProvider_Gate1_Result_2026-02-22.md`.
+17. `Review_Codex_84aad35_PreSwitch_Hardening.md` — Pre-switch hardening review. Good to go, no blockers.
+
+**Remaining WIP (17 files — forward-looking):**
+Architecture reference, cost strategy, test/tuning designs, runtime issues, calibration harness, claim fidelity, cross-provider separation, debate plans, decision logs, quality map, A3 gate result, cost optimization plan, pause status.
+
+---
 
 ### WIP Consolidation (2026-02-21)
 

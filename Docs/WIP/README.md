@@ -1,15 +1,15 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-21 (Superseded review packet archived; execution docs retained)
-**Status**: 12 active files — Alpha forward-looking work only
+**Last Updated**: 2026-02-22 (Consolidated: 17 files archived, 17 retained)
+**Status**: 17 active files — Alpha forward-looking work + active calibration/quality track
 
 ---
 
 ## Overview
 
-This directory contains **active design proposals and future work items** for the Alpha phase.
+This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. All remaining WIP files are forward-looking Alpha work.
+**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. Two parallel tracks: (1) calibration/quality (bias measurement, quality map B-sequence), (2) Alpha features (cost reduction, test/tuning mode).
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** - Completed plans, reviews, and historical documentation
@@ -17,119 +17,136 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (12 files)
+## Active Documents (17 files)
 
-### ClaimBoundary Pipeline Architecture (2026-02-15)
+### Architecture Reference
+
+#### ClaimBoundary Pipeline Architecture (2026-02-15)
 **Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
 - **Document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 - **Type:** Architecture Reference
-- **Scope:** Complete 5-stage pipeline with LLM debate pattern. All 5 stages operational, 853 tests passing.
+- **Scope:** Complete 5-stage pipeline with LLM debate pattern. All 5 stages operational, 1001 tests passing.
 - **Decisions:** 9/9 closed (D1-D9). Implementation complete.
-- **Related:** [Current_Status.md](../STATUS/Current_Status.md) for live status; [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md) (archived — all phases done)
+- **Related:** [Current_Status.md](../STATUS/Current_Status.md) for live status
 
-### Claim Fidelity Fix (2026-02-18)
+---
+
+### Calibration & Quality Track (9 files)
+
+#### Political Bias Calibration Harness (2026-02-20)
+**Status:** 🔧 Baseline locked; A-3 gate NO-GO; B-sequence paused
+- **Document:** [Calibration_Harness_Design_2026-02-20.md](Calibration_Harness_Design_2026-02-20.md)
+- **Type:** Pipeline Quality / Bias Measurement
+- **Scope:** Reusable harness for mirrored-claim bias measurement and A/B comparison.
+- **Implementation:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json`
+- **Remaining:** Pass A-3 gate (two 10/10 cross-provider full runs), then B-sequence.
+
+#### Decision Log D1-D5 — Calibration + Debate (2026-02-21)
+**Status:** 🔧 Active decision reference
+- **Document:** [Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md](Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md)
+- **Type:** Decision Record
+- **Scope:** D1-D5 decisions for calibration/debate system. Phase 1 scope locked.
+
+#### Phase 1 Immediate Execution Spec (2026-02-21)
+**Status:** 🔧 A-1/A-2 executed; A-3 gate NO-GO
+- **Document:** [Phase1_Immediate_Execution_Spec_2026-02-21.md](Phase1_Immediate_Execution_Spec_2026-02-21.md)
+- **Type:** Execution Specification
+- **Scope:** A-1 (report semantics), A-2a/b/c (run-blocker fixes). A-3 gate criteria defined.
+- **Remaining:** A-3 re-run after Anthropic credit issue resolved.
+
+#### A-3 Cross-Provider Gate 1 Result (2026-02-22)
+**Status:** ❌ NO-GO — Re-run needed
+- **Document:** [A3_CrossProvider_Gate1_Result_2026-02-22.md](A3_CrossProvider_Gate1_Result_2026-02-22.md)
+- **Type:** Gate Result
+- **Scope:** Run #2 failed (7/10 pairs, Anthropic credit exhaustion). meanDegradationRateDelta exceeds 5.0.
+
+#### Debate System Continuation Plan (2026-02-21)
+**Status:** 🔧 Active — A-sequence in progress, B-sequence pending A-3 gate
+- **Document:** [Debate_System_Continuation_Plan_2026-02-21.md](Debate_System_Continuation_Plan_2026-02-21.md)
+- **Type:** Execution Plan
+- **Scope:** Full delivery buckets: A-sequence (stabilization), B-sequence (quality improvements), C-sequence (architecture).
+
+#### Debate Iteration Analysis (2026-02-21)
+**Status:** ✅ Analysis complete — Reference for debate decisions
+- **Document:** [Debate_Iteration_Analysis_2026-02-21.md](Debate_Iteration_Analysis_2026-02-21.md)
+- **Type:** Architecture Analysis
+- **Scope:** Analysis of whether to change debate structure. One B-3 add-on candidate identified.
+
+#### Cross-Provider Challenger Separation (2026-02-20)
+**Status:** ✅ Implemented; stabilization in progress
+- **Document:** [Cross_Provider_Challenger_Separation_2026-02-20.md](Cross_Provider_Challenger_Separation_2026-02-20.md)
+- **Type:** Pipeline Quality / Debate Architecture
+- **Scope:** Provider-level role routing (`debateProfile`, provider overrides, fallback warnings).
+- **Remaining:** Complete cross-provider quality gates and decision-grade A/B package.
+
+#### Report Quality Opportunity Map (2026-02-22)
+**Status:** 🔧 B-5a done, B-4/B-6/B-7/B-8/B-5b implemented — Quality track active
+- **Document:** [Report_Quality_Opportunity_Map_2026-02-22.md](Report_Quality_Opportunity_Map_2026-02-22.md)
+- **Type:** Quality Roadmap
+- **Scope:** B-sequence quality improvements (query strategy, annotations, explanation quality, model tiers).
+- **Related:** [Decision_QualityMap_B4-B8_2026-02-22.md](Decision_QualityMap_B4-B8_2026-02-22.md)
+
+#### Captain Decisions — Quality Map B4-B8 (2026-02-22)
+**Status:** ✅ Decisions locked
+- **Document:** [Decision_QualityMap_B4-B8_2026-02-22.md](Decision_QualityMap_B4-B8_2026-02-22.md)
+- **Type:** Decision Record
+- **Scope:** Implementation order (B-5a → B-4 → B-6 → B-7 → B-8 → B-5b), sequential merge policy, A6 independent review protocol.
+
+---
+
+### Active Execution State (2 files)
+
+#### Calibration Cost Optimization Review Plan (2026-02-22)
+**Status:** 🧭 Proposal — Awaiting review
+- **Document:** [Calibration_Cost_Optimization_Review_Plan_2026-02-22.md](Calibration_Cost_Optimization_Review_Plan_2026-02-22.md)
+- **Type:** Cost Optimization / Review Plan
+- **Scope:** Two-lane run policy (Gate lane vs Smoke lane) for calibration cost reduction.
+
+#### Plan Pause Status (2026-02-22)
+**Status:** 📋 Active checkpoint
+- **Document:** [Plan_Pause_Status_2026-02-22.md](Plan_Pause_Status_2026-02-22.md)
+- **Type:** Execution State
+- **Scope:** Documents stable checkpoint after Code_Review_2026-02-22b fixes. Build + tests green.
+
+---
+
+### Pipeline Quality (1 file)
+
+#### Claim Fidelity Fix (2026-02-18)
 **Status:** 🔧 Phase 1+2 Committed — Phase 3 NOT Committed — Phase 4 Pending
 - **Document:** [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
 - **Type:** Pipeline Quality / P0 Bug Fix
-- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence instead of user input (claim drift). Phases 1+2 committed (`8d66ee7`). Phase 3 (evidence payload compression, 120-char topicSignal) applied but **not committed**. Phase 4 (validation against baseline scenarios with real LLM calls) pending.
+- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence (claim drift). Phases 1+2 committed (`8d66ee7`). Phase 3 applied but not committed. Phase 4 (validation) pending.
 - **Remaining:** Phase 3 commit + Phase 4 validation (needs Captain approval)
-- **Handoff:** [Handoffs/2026-02-18_Lead_Developer_Claim_Fidelity.md](../AGENTS/Handoffs/2026-02-18_Lead_Developer_Claim_Fidelity.md)
 
-### API Cost Reduction Strategy (2026-02-13)
+---
+
+### Alpha Feature Proposals (4 files)
+
+#### API Cost Reduction Strategy (2026-02-13)
 **Status:** Draft — Awaiting Implementation
 - **Document:** [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md)
 - **Type:** Cost Optimization / Strategy
 - **Scope:** Batch API (50% off), prompt caching (90% off), NPO/OSS credit programs ($11K+/year)
 - **Note:** Alpha priority #1. Strategies apply to the CB pipeline.
 
-### Test/Tuning Mode Design (2026-02-17)
+#### Test/Tuning Mode Design (2026-02-17)
 **Status:** 🧭 Proposal — Pending Approval
 - **Document:** [TestTuning_Mode_Design_2026-02-17.md](TestTuning_Mode_Design_2026-02-17.md)
 - **Type:** Feature Design / Admin Tooling
 - **Scope:** Test/tuning workflow for pipeline — run partial stages, manage test data, experiment without affecting production jobs
 
-### Test/Tuning UI Design (2026-02-17)
+#### Test/Tuning UI Design (2026-02-17)
 **Status:** 🧭 Proposal — Pending Approval
 - **Document:** [TestTuning_UI_Design_2026-02-17.md](TestTuning_UI_Design_2026-02-17.md)
 - **Type:** Feature Design / UI
 - **Scope:** UI design for the Test/Tuning Mode (companion to the mode design above)
 
-### Runtime Issues Analysis (2026-02-17)
+#### Runtime Issues Analysis (2026-02-17)
 **Status:** 🧭 Draft — Awaiting Review
 - **Document:** [Runtime_Issues_Analysis_2026-02-17.md](Runtime_Issues_Analysis_2026-02-17.md)
 - **Type:** Architecture Analysis / Infrastructure
 - **Scope:** Post-CB v1.0 runtime issues — provider saturation, queue behavior, structural weaknesses. Input for Alpha architectural planning.
-
-### Political Bias Mitigation — Stammbach/Ash (2026-02-19)
-**Status:** ✅ Implemented and superseded by execution-phase docs
-- **Document:** [Political_Bias_Mitigation_2026-02-19.md](Political_Bias_Mitigation_2026-02-19.md)
-- **Type:** Pipeline Quality / Bias Mitigation
-- **Scope:** Original implementation plan and rationale for C8/C10/C13/C18-era controls.
-- **Origin:** `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
-- **Use now:** Historical implementation context only.
-
-### Political Bias Calibration Harness (2026-02-20)
-**Status:** 🔧 Baseline locked; cross-provider stabilization in progress (Phase 1 A-1..A-3)
-- **Document:** [Calibration_Harness_Design_2026-02-20.md](Calibration_Harness_Design_2026-02-20.md)
-- **Type:** Pipeline Quality / Bias Measurement
-- **Scope:** Reusable harness for mirrored-claim bias measurement and A/B comparison.
-- **Origin:** Concern C10 (Critical) from Stammbach/Ash EMNLP 2024 review; Action 2 from `Political_Bias_Mitigation_2026-02-19.md`
-- **Implementation:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json`, `test/calibration/political-bias.test.ts`
-- **Current references:** `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`, `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
-- **Remaining:** Pass A-3 gate (two 10/10 cross-provider full runs), then B-sequence (`B-1 -> B-3 -> B-2`).
-
-### Code Review: 2026-02-22b (runIntent + summarizeFailureCause)
-**Status:** ✅ Review Complete — GO to commit (no new blockers; 2 carried M findings still open)
-- **Document:** [Code_Review_2026-02-22b.md](Code_Review_2026-02-22b.md)
-- **Type:** Code Review / Quality Assurance
-- **Scope:** Working-tree changes since 2026-02-22 review. 0C, 0H, 0M new findings; 2L new. Carried: CR-M1 (Math.max), CR-M2 (legacy JSON guard). `runIntent` gate/smoke field, `summarizeFailureCause()`, file naming, QAReport refresh.
-- **Remaining:** CR-M1, CR-M2 (carried). CR2-L1 (runIntent optional type). `FH_CALIBRATION_RUN_INTENT` env var to document.
-
-### Code Review: 2026-02-22 (Report Significance Notice)
-**Status:** ✅ Review Complete — GO to commit (2 optional pre-commit fixes)
-- **Document:** [Code_Review_2026-02-22.md](Code_Review_2026-02-22.md)
-- **Type:** Code Review / Quality Assurance
-- **Scope:** Changes since edb6a50. Committed changes docs-only. Uncommitted: `renderSignificanceNotice()` + CSS, `refresh-bias-report-html.ts`, `calibration-runner.test.ts`. 4 findings (0C, 0H, 2M, 2L). SR degradation check verified end-to-end correct.
-- **Remaining:** CR-M1 (Math.max denominator trivial fix), CR-M2 (legacy JSON guard). Post-commit: unify DEGRADATION_WARNING_TYPES, expand test coverage.
-
-### Code Review: Pre-A-3 Phase-1 Focused (2026-02-21)
-**Status:** ✅ Review Complete — GO for A-3 (no blocking findings)
-- **Document:** [Code_Review_Pre_A3_Phase1_2026-02-21.md](Code_Review_Pre_A3_Phase1_2026-02-21.md)
-- **Type:** Code Review / Gate Validation
-- **Scope:** Commits `2c5ffa4` + `edb6a50`. 4 findings (0C, 0H, 2M, 2L). Covers TPM guard/fallback correctness, structured error bubble-up, retry-once scope, report semantics. `resolveOpenAiFallbackModel()` verified correct.
-- **Remaining:** Post-A-3 B-sequence: narrow `isOpenAiTpmError`, full-prompt token estimate for pre-call guard.
-
-### Code Review: Feb 21 (5-Hour Window)
-**Status:** ✅ Review Complete — CRITICAL fix pending (committed test output)
-- **Document:** [Code_Review_2026-02-21b.md](Code_Review_2026-02-21b.md)
-- **Type:** Code Review / Quality Assurance
-- **Scope:** 5 commits (84aad35..574ab66). 11 findings: 1 CRITICAL, 3 HIGH, 4 MEDIUM, 3 LOW. Covers calibration LLM/search transparency, gh-pages redirect infrastructure, viewer improvements.
-- **Key concerns:** 7.8MB of test JSON/HTML blobs committed (gitignore removed), resolveModelName() duplicated with hardcoded model names, path traversal in redirect generator, displayTitle dead code in viewer.
-- **Remaining:** R2-C1 (remove committed blobs + restore .gitignore) is immediate.
-
-### Code Review: Feb 20-21 Changes (2026-02-21)
-**Status:** ✅ Review Complete — Fixes Pending
-- **Document:** [Code_Review_2026-02-21.md](Code_Review_2026-02-21.md)
-- **Type:** Code Review / Quality Assurance
-- **Scope:** 24 commits (Feb 20-21). 53 findings: 6 CRITICAL, 13 HIGH, 21 MEDIUM, 13 LOW. Covers baseless challenge guard, verdict range reporting, cross-provider debate, calibration harness (new module), failure-mode metrics (C18), admin UI gaps, GitHub Actions workflow, prompt changes, and report card infrastructure.
-- **Key concerns:** Loop control bug in baseless enforcement (A1-C1), missing-evidence challenges incorrectly flagged as baseless (A1-H4), rangeReporting missing defaults (A3-C1), test-case term in prompt (A4-C1), calibration thresholds not UCM-configurable (A2-C1), unbounded byTopic cardinality (A3-C2).
-- **Remaining:** Fix implementation per priority table in document. Prompt changes need documented approval (A4-H1).
-
-### Code Review: 23-Hour Changes (2026-02-19)
-**Status:** ✅ Review Complete — Fixes Pending
-- **Document:** [Code_Review_23h_2026-02-19.md](Code_Review_23h_2026-02-19.md)
-- **Type:** Code Review / Quality Assurance
-- **Scope:** Comprehensive review of ~40 commits (Feb 18-19). 46 findings: 3 CRITICAL, 12 HIGH, 17 MEDIUM, 14 LOW. Covers pipeline code, UCM config, UI/reports, infrastructure, and documentation. Includes prioritized fix plan with model tier recommendations.
-- **Key concerns:** XSS in fallback export, verdict label inconsistency, `Calculations.md` 60% stale, CI/CD injection pattern
-- **Remaining:** Fix implementation per priority table in document
-
-### Cross-Provider Challenger Separation (2026-02-20)
-**Status:** ✅ Implemented; now in stabilization/validation cycle
-- **Document:** [Cross_Provider_Challenger_Separation_2026-02-20.md](Cross_Provider_Challenger_Separation_2026-02-20.md)
-- **Type:** Pipeline Quality / Debate Architecture
-- **Scope:** Provider-level role routing (`debateProfile`, provider overrides, fallback warnings).
-- **Origin:** Action #4 follow-up in `Docs/Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md`
-- **Remaining:** Complete cross-provider quality gates and decision-grade A/B package.
 
 ---
 
@@ -168,31 +185,24 @@ When adding new work to this folder:
 
 ## Cleanup History
 
+**2026-02-22 (Code Review + Quality Map Review Archival)**: Full WIP audit. Archived 17 files.
+- Code reviews (8): All GO verdicts, all findings addressed in code commits
+- Quality Map reviews (3): R1/R2/R3 consumed by `Decision_QualityMap_B4-B8_2026-02-22.md`
+- Process docs (6): Political Bias Mitigation (done), GhPages Alignment (done), Review Circles (done), CrossProvider Execution Report (superseded), Codex PreSwitch Review (done)
+- Kept 17 files: Architecture reference, calibration/quality track (9), execution state (2), claim fidelity (1), Alpha proposals (4)
+
 **2026-02-21 (Review Packet Archival)**: Archived superseded calibration review-prep packet after decisions were locked.
 - Moved to ARCHIVE:
   - `Review_Round_Packet_Calibration_Debate_2026-02-21.md` (superseded by Decision Log + Phase1 Execution Spec + Continuation Plan)
 
 **2026-02-19 (POC Closure Consolidation)**: Full WIP audit at POC completion. Cleaned to Alpha-only forward-looking work.
-- Archived 11 files (all completed assessments, delivered plans, resolved audits):
-  - `UCM_Configuration_Audit_2026-02-17.md` (DONE — all 24 CB params added)
-  - `UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md` (design done, code review in Backlog)
-  - Schema Validation group (5 files): `LLM_Schema_Validation_Failures_Analysis.md`, `LLM_Expert_Review_Schema_Validation.md`, `Lead_Architect_Schema_Assessment_2026-02-18.md`, `Schema_Validation_Fix_Multi_Agent_Plan.md`, `Schema_Validation_Implementation_Status_2026-02-18.md` (remaining items #4-6 in Backlog)
-  - `QA_Review_Findings_2026-02-12.md` (dead code list tracked in Backlog)
-  - `Vector_DB_Assessment.md` (assessment done — stay SQLite; in Backlog Future Research)
-  - `Shadow_Mode_Architecture.md` (far future; in Backlog Future Research)
-  - `Storage_DB_Caching_Strategy.md` (defer decisions agreed)
+- Archived 11 files (all completed assessments, delivered plans, resolved audits)
 - Kept 7 files: CB Architecture reference, Claim Fidelity (Phase 3+4 pending), API Cost Strategy, TestTuning Mode/UI designs, Runtime Issues Analysis
 
 **2026-02-18 (Post-CB + Code Review Consolidation)**: Full WIP audit after CB pipeline v1.0 completion and code review sprint
-- Archived 17 files:
-  - CB implementation process docs (DONE — CB pipeline v1.0 complete): `CB_Execution_State.md`, `CB_Implementation_Plan_2026-02-17.md`, `CB_Implementation_Plan_REVIEW_PROMPT.md`, `CB_Phase_Prompts.md`, `CB_Implementation_Prompts.md`, `CB_Review_Fixes_2026-02-17.md`, `CB_Codex_Review_Fixes_{2,3,4,5}_2026-02-17.md`
-  - Code review process docs (DONE — all 5 phases complete): `Code_Review_Fixes_2026-02-18.md`, `Code_Review_Fixes_Agent_Prompts.md`
-  - Search implementation docs (DONE — cache, multi-provider, circuit breaker all shipped): `Search_Cache_MultiProvider_Implementation.md`, `Search_Provider_Testing_Integration.md`, `Brave_Search_Setup.md`
-  - `Job_Cancellation_Delete_Implementation.md` (DONE — implemented)
-  - `Pass2_Claim_Quality_Issues_2026-02-18.md` (SUPERSEDED — claim fidelity fix covers this)
+- Archived 17 files (CB implementation, code review sprint, search hardening, job cancellation)
 
-**2026-02-16 (ClaimBoundary Consolidation)**: Full audit per Consolidate WIP Procedure (AGENTS.md)
-- Archived 11 files (4 ClaimBoundary process docs + 6 superseded pipeline plans + 2 Captain decisions)
+**2026-02-16 (ClaimBoundary Consolidation)**: Archived 11 files (ClaimBoundary process docs + superseded pipeline plans)
 
 **2026-02-13 (WIP Trimming + Consolidation)**: Trimmed 5 bloated files; archived 7 more; added 7 unlisted to README
 
@@ -210,12 +220,14 @@ When adding new work to this folder:
 - ✅ Active design proposals awaiting prioritization
 - ✅ Future research / enhancement proposals
 - ✅ Technical assessments for decision-making
+- ✅ Active execution plans and decision records
 
 **WIP folder is NOT for:**
 - ❌ Completed work (move to ARCHIVE)
 - ❌ Implementation tasks (add to Backlog.md)
 - ❌ Bug reports (create GitHub issues)
 - ❌ Meeting notes (use appropriate location)
+- ❌ Completed code reviews (move to ARCHIVE after findings addressed)
 
 **Keep WIP lean**: If a document hasn't been referenced in 3 months and isn't blocking a decision, consider archiving it.
 
