@@ -3791,17 +3791,6 @@ describe("B-8: explanation quality check", () => {
       expect(findings.hasLimitations).toBe(false);
     });
 
-    it("should detect numeric score in headline as confidence statement", () => {
-      const narrative: VerdictNarrative = {
-        headline: "MOSTLY-TRUE — 78 confidence",
-        evidenceBaseSummary: "8 items from 4 sources",
-        keyFinding: "Evidence supports the claim.",
-        limitations: "Some limitations exist in the dataset.",
-      };
-      const findings = checkExplanationStructure(narrative);
-      expect(findings.hasConfidenceStatement).toBe(true);
-    });
-
     it("should detect percentage in headline as confidence statement", () => {
       const narrative: VerdictNarrative = {
         headline: "Verdict: 72% truth assessment",
@@ -3824,6 +3813,17 @@ describe("B-8: explanation quality check", () => {
       expect(findings.hasConfidenceStatement).toBe(true);
     });
 
+    it("should NOT false-positive on bare numbers in headline (year, count)", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Analysis of 12 sources from 2024",
+        evidenceBaseSummary: "12 items",
+        keyFinding: "Some finding.",
+        limitations: "Limited scope.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasConfidenceStatement).toBe(false);
+    });
+
     it("should detect ALL-CAPS verdict label in non-English headline", () => {
       const narrative: VerdictNarrative = {
         headline: "Analyse: VRAI — Bewertung abgeschlossen",
@@ -3833,6 +3833,28 @@ describe("B-8: explanation quality check", () => {
       };
       const findings = checkExplanationStructure(narrative);
       expect(findings.hasVerdictCategory).toBe(true);
+    });
+
+    it("should detect sentence-case hyphenated verdict label", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Mostly-true overall",
+        evidenceBaseSummary: "8 items from 4 sources",
+        keyFinding: "Evidence supports the claim.",
+        limitations: "Geographic limitations.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasVerdictCategory).toBe(true);
+    });
+
+    it("should NOT detect verdict category in plain prose headline", () => {
+      const narrative: VerdictNarrative = {
+        headline: "Analysis complete",
+        evidenceBaseSummary: "5 items",
+        keyFinding: "Some finding.",
+        limitations: "Limited scope.",
+      };
+      const findings = checkExplanationStructure(narrative);
+      expect(findings.hasVerdictCategory).toBe(false);
     });
   });
 

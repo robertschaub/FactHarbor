@@ -4347,15 +4347,15 @@ export function checkExplanationStructure(
     hasCitedEvidence: narrative.evidenceBaseSummary.length > 0
       && /\d+/.test(narrative.evidenceBaseSummary),
     // Check if verdict label or percentage is in headline (language-neutral: match ALL-CAPS
-    // tokens like TRUE, MOSTLY-TRUE, MIXED, FAUX, VRAI, or any digit%)
+    // tokens like TRUE, MOSTLY-TRUE, or hyphenated compounds like Mostly-True in any case)
     hasVerdictCategory: narrative.headline.length > 0
       && (/\b[A-Z][A-Z-]{2,}\b/.test(narrative.headline)
+        || /\b\w+-\w+\b/.test(narrative.headline)
         || /\d+%/.test(narrative.headline)),
     // Check if confidence/numeric score appears in headline or key finding (language-neutral:
-    // match percentage patterns or digit-based scores, not English confidence synonyms)
+    // match percentage patterns or fraction scores, not bare numbers which cause false positives)
     hasConfidenceStatement: /\d+%/.test(narrative.headline)
-      || /\d+\s*\/\s*\d+/.test(narrative.headline + " " + narrative.keyFinding)
-      || /\b\d{1,3}\b/.test(narrative.headline),
+      || /\d+\s*\/\s*\d+/.test(narrative.headline + " " + narrative.keyFinding),
     // Check if limitations section is non-empty
     hasLimitations: narrative.limitations.length > 5,
   };
