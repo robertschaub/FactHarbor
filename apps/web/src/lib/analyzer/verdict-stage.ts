@@ -907,7 +907,12 @@ function parseChallengeType(raw: unknown): ChallengeResponse["challengeType"] {
 function parseMisleadingness(raw: unknown): CBClaimVerdict["misleadingness"] | undefined {
   const valid = ["not_misleading", "potentially_misleading", "highly_misleading"];
   if (raw === undefined || raw === null) return undefined;
-  return valid.includes(String(raw)) ? String(raw) as CBClaimVerdict["misleadingness"] : undefined;
+  const str = String(raw);
+  if (!valid.includes(str)) {
+    if (str.length > 0) console.warn(`[VerdictStage] B-7: unexpected misleadingness value "${str}", dropping`);
+    return undefined;
+  }
+  return str as CBClaimVerdict["misleadingness"];
 }
 
 function parseSeverity(raw: unknown): "high" | "medium" | "low" {

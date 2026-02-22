@@ -4358,7 +4358,7 @@ export function checkExplanationStructure(
     // match percentage patterns or fraction scores, not bare numbers which cause false positives)
     hasConfidenceStatement: /\d+%/.test(narrative.headline)
       || /\d+\s*\/\s*\d+/.test(narrative.headline + " " + narrative.keyFinding),
-    // Check if limitations section is non-empty
+    // Check if limitations section has substantive content (>5 chars excludes "None", "N/A", etc.)
     hasLimitations: narrative.limitations.length > 5,
   };
 }

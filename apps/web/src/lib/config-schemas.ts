@@ -395,7 +395,7 @@ export const PipelineConfigSchema = z.object({
   claimAnnotationMode: z.enum(["off", "verifiability", "verifiability_and_misleadingness"]).optional()
     .describe("Claim annotation mode: off (default), verifiability (adds verifiability field at Stage 1), verifiability_and_misleadingness (adds both)"),
   explanationQualityMode: z.enum(["off", "structural", "rubric"]).optional()
-    .describe("Explanation quality check mode: off (default), structural (Tier 1 deterministic checks), rubric (Tier 1 + Tier 2 LLM evaluation)"),
+    .describe("Explanation quality check mode: off (default), structural (Tier 1 deterministic checks), rubric (Tier 1 + Tier 2 LLM rubric via configured provider — cost depends on llmProvider setting)"),
   gate1GroundingRetryThreshold: z.number().min(0).max(1).optional()
     .describe("If >X% of claims fail Gate 1, trigger retry loop (default: 0.5)"),
 
