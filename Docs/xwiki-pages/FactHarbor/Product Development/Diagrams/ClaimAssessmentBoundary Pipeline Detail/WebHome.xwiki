@@ -3,7 +3,7 @@
 {{info}}
 **Current Architecture (v2.11.0+):** The ClaimAssessmentBoundary pipeline is the production default pipeline. Source: ##claimboundary-pipeline.ts## and ##verdict-stage.ts##. For architecture reference, see [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]].
 
-Updated 2026-02-22 — Sequence diagram and LLM Call Budget enriched from architecture spec; Stage 4 verdict steps verified against ##verdict-stage.ts##.
+Updated 2026-02-22 — B-sequence quality features (B-5a structured challenger, B-4 pro/con queries, B-6 verifiability annotation, B-7 misleadingness, B-8 explanation quality) documented in flowchart, sequence diagram, and LLM Call Budget.
 {{/info}}
 
 {{mermaid}}
@@ -19,6 +19,7 @@ flowchart TB
         PRELIM_SEARCH["[WEB] Preliminary Search<br/>Grounding pass (2 queries x 5 sources per claim)"]
         PRELIM_EXTRACT["[LLM] Preliminary Evidence<br/>Extract evidence from prelim sources"]
         GATE1["Gate 1: Claim Validation<br/>Filter opinion/prediction/vague<br/>Central claims auto-pass"]
+        ANNOTATE["Verifiability Annotation (B-6)<br/>claimAnnotationMode: off|verifiability|...<br/>Assigns high/medium/low/none per claim"]
         CLAIMS_OUT["AtomicClaim[] (5-15 claims)"]
     end
 
@@ -27,6 +28,7 @@ flowchart TB
         SUFFICIENCY["Claim Sufficiency Check<br/>claimSufficiencyThreshold (default: 3)"]
         CONTRADICTION["Contradiction Search<br/>Reserved iterations (default: 2)"]
         DECIDE_NEXT["decideNextResearch()<br/>Priority: unsufficient > central > high-harm"]
+        QUERY_GEN["[LLM] generateResearchQueries() (B-4)<br/>queryStrategyMode: legacy|pro_con<br/>pro_con: interleaved supporting/refuting<br/>Shared budget (max 3/call)"]
         SEARCH["[WEB] searchWebWithProvider()"]
         RELEVANCE["[LLM] classifyRelevance()<br/>Primary / secondary / unrelated"]
         FETCH["[WEB] fetchSourceContent()"]
@@ -48,8 +50,8 @@ flowchart TB
         ADVOCATE["[LLM] Step 1: Advocate Verdict (Sonnet)<br/>Initial verdicts for all claims<br/>with per-boundary signals"]
         SELF_CONSIST{"selfConsistencyMode?"}
         SC_CHECK["[LLM] Step 2: Self-Consistency (Sonnet x2)<br/>Re-run at temp=0.3, measure spread"]
-        CHALLENGE["[LLM] Step 3: Adversarial Challenge (Sonnet)<br/>Argue against emerging verdicts"]
-        RECONCILE["[LLM] Step 4: Reconciliation (Sonnet)<br/>Final verdicts incorporating challenges"]
+        CHALLENGE["[LLM] Step 3: Adversarial Challenge (B-5a)<br/>Structured 5-point analysis (Sonnet):<br/>provenance, bidirectional challenge,<br/>coverage gaps, boundary agreement,<br/>quality asymmetry — evidence IDs mandatory"]
+        RECONCILE["[LLM] Step 4: Reconciliation (Sonnet)<br/>Final verdicts incorporating challenges<br/>+ misleadingness assessment (B-7)<br/>when claimAnnotationMode includes it"]
         VERDICT_VAL["[LLM] Step 5: Verdict Validation (Haiku x2)<br/>Grounding check + direction check"]
         STRUCT_CHECK["Structural Consistency Check<br/>(deterministic)"]
         VERDICTS_OUT["CBClaimVerdict[]"]
@@ -59,6 +61,7 @@ flowchart TB
         TRIANG_STEP["computeTriangulationScore()<br/>Cross-boundary agreement per claim"]
         WEIGHTED_AGG["Weighted Aggregation<br/>Centrality x harm x confidence x<br/>triangulation x derivative weights"]
         NARRATIVE["[LLM] generateVerdictNarrative() (Sonnet)<br/>Headline, key finding, limitations"]
+        EXPLAIN_QC["Explanation Quality Check (B-8)<br/>explanationQualityMode: off|structural|rubric<br/>Tier 1: structural (deterministic)<br/>Tier 2: rubric (LLM — Haiku, 5 dimensions)"]
         GATE4["Gate 4: buildQualityGates()<br/>Classify confidence tiers"]
         ENVELOPE["Result Envelope<br/>schemaVersion: 3.0.0-cb"]
     end
@@ -69,14 +72,16 @@ flowchart TB
     DECOMPOSE --> PRELIM_SEARCH
     PRELIM_SEARCH --> PRELIM_EXTRACT
     PRELIM_EXTRACT --> GATE1
-    GATE1 --> CLAIMS_OUT
+    GATE1 --> ANNOTATE
+    ANNOTATE --> CLAIMS_OUT
 
     CLAIMS_OUT --> RESEARCH_LOOP
     RESEARCH_LOOP --> SUFFICIENCY
     SUFFICIENCY -->|"insufficient"| DECIDE_NEXT
     SUFFICIENCY -->|"sufficient"| CONTRADICTION
     CONTRADICTION --> DECIDE_NEXT
-    DECIDE_NEXT --> SEARCH
+    DECIDE_NEXT --> QUERY_GEN
+    QUERY_GEN --> SEARCH
     SEARCH --> RELEVANCE
     RELEVANCE --> FETCH
     FETCH --> SR_PREFETCH
@@ -105,7 +110,8 @@ flowchart TB
     VERDICTS_OUT --> TRIANG_STEP
     TRIANG_STEP --> WEIGHTED_AGG
     WEIGHTED_AGG --> NARRATIVE
-    NARRATIVE --> GATE4
+    NARRATIVE --> EXPLAIN_QC
+    EXPLAIN_QC --> GATE4
     GATE4 --> ENVELOPE
 
     style Stage1 fill:#e8f5e9,stroke:#2e7d32,color:#000
@@ -119,10 +125,15 @@ flowchart TB
 
 * **Evidence-emergent boundaries:** ClaimAssessmentBoundaries emerge from evidence clustering (Stage 3), not pre-detected
 * **5-step LLM debate:** Each verdict goes through structured debate (advocate > self-consistency > adversarial challenge > reconciliation > validation). Steps 2+3 run in parallel.
+* **Structured adversarial analysis (B-5a):** Step 3 challenger performs 5-point analysis — evidence provenance, bidirectional challenge, coverage gaps, boundary agreement scrutiny, quality asymmetry. Every challenge point must cite specific evidence IDs; baseless challenges are discounted by the reconciler.
+* **Pro/con query separation (B-4):** UCM ##queryStrategyMode## ("legacy" or "pro_con"). In pro_con mode, research queries are split into supporting and refuting variants, interleaved within a shared budget (max 3 per call).
+* **Verifiability annotation (B-6):** UCM ##claimAnnotationMode## controls optional per-claim verifiability assessment (high/medium/low/none) at Gate 1. Independent of claim category — evaluates fact-checkability.
+* **Misleadingness detection (B-7):** When ##claimAnnotationMode## = "verifiability_and_misleadingness", the reconciler (Step 4) assesses misleadingness independently of truthPercentage. A claim can be true yet misleading (cherry-picked, missing context, false causation).
+* **Explanation quality checks (B-8):** UCM ##explanationQualityMode## ("off", "structural", "rubric"). Tier 1: deterministic structural checks (evidence cited, verdict stated, confidence, limitations). Tier 2: LLM rubric evaluation (clarity, completeness, neutrality, evidence support, hedging — scored 1-5 each).
 * **Self-consistency checking:** Optional re-run with temperature variance to detect unstable verdicts (stable/moderate/unstable spread thresholds)
 * **Triangulation scoring:** Cross-boundary agreement assessment (strong/moderate/weak/conflicted levels)
 * **Quality gates:** Gate 1 (claim validation) and Gate 4 (verdict confidence distribution) are mandatory checkpoints
-* **UCM-configurable:** 24 pipeline parameters organized by stage, editable in Admin UI
+* **UCM-configurable:** Pipeline parameters organized by stage, editable in Admin UI
 
 == Comparison to Legacy Pipelines ==
 
@@ -167,11 +178,13 @@ sequenceDiagram
     Pipeline->>Pipeline: filterCentralClaims()
     Pipeline->>LLM: [LLM] Gate 1: validateClaims(centralClaims) — Haiku
     LLM-->>Pipeline: Gate1Result
+    Note right of Pipeline: B-6: If claimAnnotationMode != "off",<br/>verifiability (high/medium/low/none)<br/>retained on each AtomicClaim
 
     Note over Pipeline: Stage 2: RESEARCH
     loop For each research iteration
-        Pipeline->>LLM: [LLM] generateSearchQueries(claim) — Haiku
-        LLM-->>Pipeline: SearchQuery[]
+        Pipeline->>LLM: [LLM] generateSearchQueries(claim, queryStrategyMode) — Haiku
+        Note right of Pipeline: B-4: queryStrategyMode="pro_con"<br/>splits into supporting + refuting variants,<br/>interleaved, shared budget (max 3/call)
+        LLM-->>Pipeline: SearchQuery[] (with optional variantType)
         Pipeline->>Search: [Search] execute(queries)
         Search-->>Pipeline: SearchResult[]
         Pipeline->>LLM: [LLM] classifyRelevance(results) — Haiku
@@ -203,11 +216,13 @@ sequenceDiagram
         LLM-->>Pipeline: ConsistencyResult[] (spread per claim)
     and
         Pipeline->>LLM: [LLM] Step 3: adversarialChallenge(advocateVerdicts) — Sonnet
-        LLM-->>Pipeline: ChallengeDocument (per-claim challenges)
+        Note right of Pipeline: B-5a: Structured 5-point analysis —<br/>provenance, bidirectional challenge,<br/>coverage gaps, boundary agreement,<br/>quality asymmetry. Evidence IDs mandatory.
+        LLM-->>Pipeline: ChallengeDocument (per-claim challenges with evidence IDs)
     end
 
     Pipeline->>LLM: [LLM] Step 4: reconciliation(verdicts + challenges + consistency) — Sonnet
-    LLM-->>Pipeline: Final ClaimVerdict[] (with challenge responses)
+    Note right of Pipeline: B-7: If claimAnnotationMode includes<br/>misleadingness, reconciler assesses<br/>misleadingness independently of truth%
+    LLM-->>Pipeline: Final ClaimVerdict[] (with challenge responses + optional misleadingness)
     Pipeline->>LLM: [LLM] Step 5a: validateVerdictGrounding(verdicts, evidence) — Haiku
     Pipeline->>LLM: [LLM] Step 5b: validateVerdictDirection(verdicts, evidence) — Haiku
     Pipeline->>Pipeline: structuralConsistencyCheck()
@@ -219,6 +234,12 @@ sequenceDiagram
     Pipeline->>Pipeline: weightedAggregation(verdicts, triangulation, derivatives)
     Pipeline->>LLM: [LLM] generateVerdictNarrative(verdicts, boundaries, matrix) — Sonnet
     LLM-->>Pipeline: VerdictNarrative
+    Note right of Pipeline: B-8: If explanationQualityMode != "off",<br/>run structural check (deterministic).<br/>If "rubric", also LLM evaluation (Haiku).
+    Pipeline->>Pipeline: checkExplanationStructure(narrative)
+    opt explanationQualityMode = "rubric"
+        Pipeline->>LLM: [LLM] evaluateExplanationRubric(narrative) — Haiku
+        LLM-->>Pipeline: ExplanationRubricScores (5 dimensions, 1-5 each)
+    end
     Pipeline->>Pipeline: assembleReport(claims, evidence, boundaries, verdicts, narrative)
     Pipeline->>API: [Ext] submitResults(jobId, report)
     API-->>UI: Job complete (poll/webhook)
@@ -246,8 +267,9 @@ sequenceDiagram
 | Step 4: Reconciliation | 1 | Sonnet | Final verdicts incorporating challenges + consistency
 | Step 5: Validation | 2 (grounding + direction) | Haiku | Validate verdict quality
 | Verdict Narrative | 1 | Sonnet | Generate structured VerdictNarrative for overall assessment
+| Explanation Quality Rubric (B-8) | 0 or 1 | Haiku | LLM rubric evaluation (5 dimensions) — only when ##explanationQualityMode## = "rubric"
 
-//Expected total: 18-37 LLM calls per analysis. The 5-7 added calls for the debate pattern + narrative (advocate + 0-2 consistency + challenger + reconciliation + narrative) are offset by eliminating context detection, canonicalization, refinement, and supplemental context calls.//
+//Expected total: 18-38 LLM calls per analysis. The 5-7 added calls for the debate pattern + narrative (advocate + 0-2 consistency + challenger + reconciliation + narrative) are offset by eliminating context detection, canonicalization, refinement, and supplemental context calls. B-8 rubric adds 0-1 Haiku call.//
 
 == Related Documentation ==
 

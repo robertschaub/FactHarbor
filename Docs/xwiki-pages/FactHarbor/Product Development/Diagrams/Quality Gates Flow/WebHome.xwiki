@@ -1,14 +1,14 @@
 {{info}}
 **Current Implementation (CB Pipeline v2.11.0+)** — Quality gates in the ClaimAssessmentBoundary pipeline. Gate 1 validates claims after extraction (Stage 1), Structural Consistency Check runs after verdict (Stage 4), and Gate 4 assesses verdict confidence before aggregation (Stage 5).
 
-Updated 2026-02-22 per ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, and ##quality-gates.ts##.
+Updated 2026-02-22 per ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, and ##quality-gates.ts##. Added B-6 verifiability annotation (Gate 1) and B-8 explanation quality check (Stage 5).
 {{/info}}
 
 = Quality Gates Flow =
 
 == Overview ==
 
-The ClaimAssessmentBoundary pipeline enforces three quality checkpoints. **Gate 1** filters non-verifiable or unfaithful claims before research begins. The **Structural Consistency Check** validates deterministic invariants after the verdict debate. **Gate 4** classifies verdict confidence into tiers for publication decisions.
+The ClaimAssessmentBoundary pipeline enforces three quality checkpoints plus two optional quality features. **Gate 1** filters non-verifiable or unfaithful claims before research begins, with optional verifiability annotation (B-6). The **Structural Consistency Check** validates deterministic invariants after the verdict debate. **Gate 4** classifies verdict confidence into tiers for publication decisions. The **Explanation Quality Check** (B-8) optionally validates narrative quality after aggregation.
 
 {{mermaid}}
 flowchart TB
@@ -19,6 +19,7 @@ flowchart TB
         FAIL1["Filtered claims\n(infidelity, opinion,\nprediction, low specificity)"]
         RESCUE{{"Safety Net\nAll filtered?"}}
         RESCUED["Rescue highest-centrality\nclaim (prevent empty pipeline)"]
+        VERIF["B-6: Verifiability Annotation\n(claimAnnotationMode)\nhigh|medium|low|none per claim"]
     end
 
     subgraph Stage23["Stage 2–3: RESEARCH + CLUSTER"]
@@ -40,6 +41,9 @@ flowchart TB
 
     subgraph Stage5["Stage 5: AGGREGATE"]
         AGG["Aggregation +\nVerdict Narrative"]
+        EQC{{"B-8: Explanation\nQuality Check\n(explanationQualityMode)"}}
+        EQC_STRUCT["Tier 1: Structural\n(deterministic — 4 checks)"]
+        EQC_RUBRIC["Tier 2: Rubric\n(LLM — Haiku, 5 dimensions)"]
     end
 
     CLAIMS --> GATE1
@@ -49,7 +53,8 @@ flowchart TB
     RESCUE -->|"Yes: all filtered"| RESCUED
     RESCUED --> PASS1
     RESCUE -->|"No: some passed"| PASS1
-    PASS1 --> EVIDENCE
+    PASS1 --> VERIF
+    VERIF --> EVIDENCE
     EVIDENCE --> VERDICTS
     VERDICTS --> STEP5
     STEP5 --> STRUCT
@@ -64,6 +69,10 @@ flowchart TB
     MEDIUM --> AGG
     LOW --> AGG
     INSUF --> AGG
+    AGG --> EQC
+    EQC -->|"structural"| EQC_STRUCT
+    EQC -->|"rubric"| EQC_STRUCT
+    EQC_STRUCT -->|"rubric mode"| EQC_RUBRIC
 
     style Stage1 fill:#e8f5e9,stroke:#2e7d32,color:#000
     style Stage23 fill:#e3f2fd,stroke:#1565c0,color:#000
@@ -71,7 +80,7 @@ flowchart TB
     style Stage5 fill:#f3e5f5,stroke:#7b1fa2,color:#000
 {{/mermaid}}
 
-//Quality gates in the ClaimAssessmentBoundary pipeline: Gate 1 filters non-verifiable and evidence-contaminated claims before research, Structural Consistency Check validates verdict integrity (non-blocking), Gate 4 classifies verdict confidence based on evidence count, source quality, agreement, and self-consistency spread.//
+//Quality gates in the ClaimAssessmentBoundary pipeline: Gate 1 filters non-verifiable and evidence-contaminated claims before research (with optional B-6 verifiability annotation), Structural Consistency Check validates verdict integrity (non-blocking), Gate 4 classifies verdict confidence based on evidence count, source quality, agreement, and self-consistency spread. B-8 Explanation Quality Check optionally validates narrative quality after aggregation.//
 
 ----
 
@@ -149,6 +158,20 @@ If **all claims** are filtered by Gate 1 (would result in an empty pipeline), th
 1. Then by **centrality** (high > medium > low)
 
 This ensures the pipeline always produces a result, even when input quality is poor.
+
+=== Verifiability Annotation (B-6) ===
+
+After Gate 1 filtering, if UCM ##claimAnnotationMode## is not "off", each surviving AtomicClaim receives a **verifiability** assessment:
+
+|= Level |= Meaning
+| **high** | Directly checkable against available evidence (data, studies, official records)
+| **medium** | Partially checkable — some aspects verifiable, others depend on interpretation or unavailable data
+| **low** | Difficult to check — predictions, subjective assessments, or evidence unlikely to be public
+| **none** | Pure value judgment, preference, or unfalsifiable statement
+
+**Key property:** Verifiability is **independent of claim category**. A factual claim can have low verifiability (too vague to research), and an evaluative claim can have high verifiability (contains checkable sub-assertions).
+
+**UCM control:** ##claimAnnotationMode## = "off" (default) | "verifiability" | "verifiability_and_misleadingness". When "off", verifiability is computed but stripped from the output.
 
 === Decomposition Retry Path (deferred to v1.1) ===
 
@@ -314,6 +337,52 @@ Gate 1 and Gate 4 statistics are recorded in ##QualityGates## and persisted in t
 | ##publishable## | HIGH + MEDIUM count (publishable verdicts)
 
 //The ##QualityGates.passed## flag is true when Gate 1 overall passes (at least one claim survives) AND at least one verdict is publishable (HIGH or MEDIUM confidence).//
+
+----
+
+== Explanation Quality Check (B-8) ==
+
+Runs after Stage 5 aggregation and verdict narrative generation. Validates the quality of the ##VerdictNarrative## — the structured explanation shown to users. Controlled by UCM ##explanationQualityMode##.
+
+=== Modes ===
+
+|= Mode |= Behavior |= LLM Cost
+| **off** (default) | No quality check | 0 calls
+| **structural** | Tier 1 only — deterministic structural checks | 0 calls
+| **rubric** | Tier 1 + Tier 2 — structural checks plus LLM rubric evaluation | 1 Haiku call
+
+=== Tier 1: Structural Findings (deterministic) ===
+
+Four boolean checks on the narrative text:
+
+|= Check |= Field |= What It Detects
+| **Evidence cited** | ##hasCitedEvidence## | Narrative references evidence quantities (numeric references like "14 items", "9 sources")
+| **Verdict stated** | ##hasVerdictCategory## | Verdict label or type is explicitly stated (Unicode-aware: ALL-CAPS tokens, title-case, or percentage)
+| **Confidence statement** | ##hasConfidenceStatement## | Confidence level mentioned (percentage like "72%" or fraction like "4/5")
+| **Limitations acknowledged** | ##hasLimitations## | Limitations section is substantive (> 5 characters, excluding "None" / "N/A")
+
+=== Tier 2: Rubric Scores (LLM — Haiku) ===
+
+Five dimensions, each scored 1–5:
+
+|= Dimension |= What It Measures
+| **Clarity** | Is the explanation understandable? Avoids jargon, ambiguity, convoluted phrasing?
+| **Completeness** | Addresses all claims? Evidence summary references actual quantities?
+| **Neutrality** | Balanced and impartial? Avoids loaded language or implicit bias?
+| **Evidence Support** | Cites specific evidence? Explains how evidence supports the conclusion?
+| **Appropriate Hedging** | Includes appropriate caveats? Avoids overconfidence?
+
+**Overall score:** Mean of the 5 dimension scores.
+
+**Quality flags:** String array detecting specific issues (e.g., "overconfident_language", "missing_counterevidence", "vague_key_finding", "no_limitations_acknowledged").
+
+=== Output ===
+
+Attached to ##OverallAssessment.explanationQualityCheck## (optional):
+
+* ##mode##: "structural" or "rubric"
+* ##structuralFindings##: 4 boolean checks (always present)
+* ##rubricScores##: 5 dimension scores + overall + flags (only when mode = "rubric")
 
 ----
 
