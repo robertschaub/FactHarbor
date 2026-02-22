@@ -654,13 +654,13 @@ export const PipelineConfigSchema = z.object({
     data.researchZeroYieldBreakThreshold = 2;
   }
   if (data.claimAnnotationMode === undefined) {
-    data.claimAnnotationMode = "off";
+    data.claimAnnotationMode = "verifiability_and_misleadingness";
   }
   if (data.explanationQualityMode === undefined) {
-    data.explanationQualityMode = "off";
+    data.explanationQualityMode = "rubric";
   }
   if (data.queryStrategyMode === undefined) {
-    data.queryStrategyMode = "legacy";
+    data.queryStrategyMode = "pro_con";
   }
   if (data.perClaimQueryBudget === undefined) {
     data.perClaimQueryBudget = 8;
@@ -843,9 +843,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   maxTotalTokens: 750000, // v2.11.1 reduced to 500000; Captain decision 2026-02-19: 750000
   maxTokensPerCall: 100000,
   enforceBudgets: false,
-  claimAnnotationMode: "off",
-  explanationQualityMode: "off",
-  queryStrategyMode: "legacy",
+  claimAnnotationMode: "verifiability_and_misleadingness",
+  explanationQualityMode: "rubric",
+  queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,
 
   // Gap-driven research (Pipeline Phase 1)

@@ -190,7 +190,7 @@ describe("PipelineConfigSchema", () => {
     const result = PipelineConfigSchema.safeParse(config);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.queryStrategyMode).toBe("legacy");
+      expect(result.data.queryStrategyMode).toBe("pro_con");
       expect(result.data.perClaimQueryBudget).toBe(8);
     }
   });
@@ -222,7 +222,7 @@ describe("PipelineConfigSchema", () => {
     const result = PipelineConfigSchema.safeParse(config);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.claimAnnotationMode).toBe("off");
+      expect(result.data.claimAnnotationMode).toBe("verifiability_and_misleadingness");
     }
   });
 
@@ -253,7 +253,7 @@ describe("PipelineConfigSchema", () => {
     const result = PipelineConfigSchema.safeParse(config);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.explanationQualityMode).toBe("off");
+      expect(result.data.explanationQualityMode).toBe("rubric");
     }
   });
 
@@ -647,9 +647,9 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalIterations).toBe(10); // v2.11.1: reduced from 20
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(750000); // Captain decision 2026-02-19: restored to 750000
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
-      expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("off");
-      expect(DEFAULT_PIPELINE_CONFIG.explanationQualityMode).toBe("off");
-      expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("legacy");
+      expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("verifiability_and_misleadingness");
+      expect(DEFAULT_PIPELINE_CONFIG.explanationQualityMode).toBe("rubric");
+      expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("pro_con");
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
     });
   });

@@ -26,9 +26,9 @@ const args = [
   testName,
 ];
 
-const command = process.platform === "win32" ? "vitest.cmd" : "vitest";
-const result = spawnSync(command, args, {
+const result = spawnSync("vitest", args, {
   stdio: "inherit",
+  shell: true,
   env: {
     ...process.env,
     FH_CALIBRATION_RUN_INTENT: lane,

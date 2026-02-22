@@ -101,12 +101,13 @@
   "gate1GroundingRetryThreshold": 0.5,
   "claimSufficiencyThreshold": 3,
   "contradictionReservedIterations": 1,
-  "claimAnnotationMode": "off",
-  "explanationQualityMode": "off",
-  "queryStrategyMode": "legacy",
+  "claimAnnotationMode": "verifiability_and_misleadingness",
+  "explanationQualityMode": "rubric",
+  "queryStrategyMode": "pro_con",
   "perClaimQueryBudget": 8,
   "maxClaimBoundaries": 6,
   "boundaryCoherenceMinimum": 0.3,
   "selfConsistencyMode": "full",
-  "selfConsistencyTemperature": 0.3
+  "selfConsistencyTemperature": 0.3,
+  "debateProfile": "cross-provider"
 }
