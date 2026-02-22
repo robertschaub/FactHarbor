@@ -507,17 +507,18 @@ def main():
     nojekyll_path = output_dir / '.nojekyll'
     nojekyll_path.write_text('', encoding='utf-8')
 
-    # Regenerate reports manifest (Docs/TESTREPORTS/reports-manifest.json)
+    # Regenerate reports manifest and include in gh-pages output
     reports_dir = repo_root / 'Docs' / 'TESTREPORTS'
     if reports_dir.is_dir():
         try:
             from generate_reports_manifest import generate_manifest
             print(f'Updating reports manifest from {reports_dir} ...')
             manifest = generate_manifest(reports_dir)
-            manifest_path = reports_dir / 'reports-manifest.json'
-            with open(manifest_path, 'w', encoding='utf-8') as f:
-                json.dump(manifest, f, ensure_ascii=False, indent=2)
-            print(f'  Wrote {manifest_path} ({len(manifest["reports"])} reports)')
+            # Write to gh-pages output (viewer fetches from same origin)
+            gh_manifest_path = output_dir / 'reports-manifest.json'
+            with open(gh_manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(manifest, f, ensure_ascii=False)
+            print(f'  Wrote {gh_manifest_path} ({len(manifest["reports"])} reports)')
         except ImportError:
             print('  Skipping reports manifest (generate_reports_manifest.py not found)')
         except Exception as e:
