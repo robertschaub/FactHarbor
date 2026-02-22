@@ -1,10 +1,7 @@
 = Analysis Test Reports =
 
-Archived outputs from AKEL pipeline test runs, stored in [[##Docs/TESTREPORTS/##>>https://github.com/robertschaub/FactHarbor/tree/main/Docs/TESTREPORTS]] on GitHub. Reports capture the complete analysis result for a given input claim, including verdict, evidence items, ClaimAssessmentBoundary breakdowns, challenge responses, sources, and quality gate outcomes.
+Archived outputs from test runs. Reports capture the complete analysis result for a given input claim, including verdict, evidence items, ClaimAssessmentBoundary breakdowns, challenge responses, sources, and quality gate outcomes.
 
-* **HTML reports** -- self-contained rendered reports that open directly in the browser (via htmlpreview.github.io). Contains the full verdict narrative, per-boundary findings, evidence tables, and pipeline metadata.
-* **PDF reports** -- exported analysis snapshots. Open on GitHub.
-* **JSON files** -- raw job result payloads as returned by the API. Useful for debugging, regression comparison, and data analysis.
 
 ----
 
