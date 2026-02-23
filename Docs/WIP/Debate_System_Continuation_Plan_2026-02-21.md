@@ -1,5 +1,7 @@
 # Debate System Continuation Plan (Executable, Post-Baseline, 2026-02-21)
 
+**Execution status (2026-02-23):** A-1/A-2 ✅ done. A-3 ❌ NO-GO (blocked on Anthropic credits). B-1 through B-8/B-5b ✅ all implemented and code-reviewed. C-sequence deferred (backlog).
+
 ## 1) Delivery Buckets
 
 ### Strategy guardrail (applies to all buckets)

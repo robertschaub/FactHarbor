@@ -2,11 +2,14 @@
 
 **Chair:** Lead Architect (Claude Opus 4.6)
 
-## Execution Initiated (Phase 1 Only)
+## Execution Status (updated 2026-02-23)
 
-- Phase 1 implementation spec prepared: `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
-- Scope locked to `A-1`, `A-2a`, `A-2b`, `A-2c` (no `B-*` work before `A-3` gate passes)
-- Lead Dev delegation brief included in the Phase 1 spec
+- Phase 1 implementation spec: `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`
+- A-1/A-2: ✅ Done. A-3: ❌ NO-GO (Anthropic credit exhaustion, 7/10 pairs). Re-run required.
+- B-sequence (B-1 through B-8/B-5b): ✅ All implemented and code-reviewed (2026-02-22/23).
+- D5 evidence controls (sufficiency gate, evidence partitioning, contrarian retrieval): ✅ Implemented.
+- C-sequence: Deferred (backlog).
+- Remaining: A-3 re-run, B-sequence validation with real data, Verdict Accuracy Test Set.
 
 ---
 

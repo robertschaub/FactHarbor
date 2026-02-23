@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-22 (Consolidated: 17 files archived, 17 retained)
-**Status**: 18 active files — Alpha forward-looking work + active calibration/quality track
+**Last Updated**: 2026-02-23 (Consolidated: 8 files archived, 1 moved to MARKETING, 12 retained)
+**Status**: 12 active files — Calibration/quality track + Alpha feature proposals
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. Two parallel tracks: (1) calibration/quality (bias measurement, quality map B-sequence), (2) Alpha features (cost reduction, test/tuning mode).
+**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. B-sequence quality improvements (B-4 through B-8/B-5b) are implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing are implemented. Two tracks remain: (1) calibration stabilization (A-3 gate re-run, validation with real data), (2) Alpha features (cost reduction, test/tuning mode).
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** - Completed plans, reviews, and historical documentation
@@ -17,35 +17,23 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (17 files)
+## Active Documents (13 files)
 
-### Architecture Reference
+### Calibration & Quality Track (6 files)
 
-#### ClaimBoundary Pipeline Architecture (2026-02-15)
-**Status:** ✅ **IMPLEMENTED (v1.0, 2026-02-17)** — Retained as the definitive architectural reference
-- **Document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
-- **Type:** Architecture Reference
-- **Scope:** Complete 5-stage pipeline with LLM debate pattern. All 5 stages operational, 1001 tests passing.
-- **Decisions:** 9/9 closed (D1-D9). Implementation complete.
-- **Related:** [Current_Status.md](../STATUS/Current_Status.md) for live status
-
----
-
-### Calibration & Quality Track (9 files)
-
-#### Political Bias Calibration Harness (2026-02-20)
-**Status:** 🔧 Baseline locked; A-3 gate NO-GO; B-sequence paused
-- **Document:** [Calibration_Harness_Design_2026-02-20.md](Calibration_Harness_Design_2026-02-20.md)
-- **Type:** Pipeline Quality / Bias Measurement
-- **Scope:** Reusable harness for mirrored-claim bias measurement and A/B comparison.
-- **Implementation:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json`
-- **Remaining:** Pass A-3 gate (two 10/10 cross-provider full runs), then B-sequence.
+#### Bias Pairs Redesign v3.0.0 (2026-02-23)
+**Status:** 🧭 Ready for Review
+- **Document:** [Bias_Pairs_Redesign_v3_2026-02-23.md](Bias_Pairs_Redesign_v3_2026-02-23.md)
+- **Type:** Test Design / Calibration
+- **Scope:** Replace 5 asymmetric bias pairs with clean mirrors. Add per-pair `expectedSkewPp` and deviation-based metric. Findings: pipeline is correct, evidence landscape is asymmetric, contrarian retrieval already works.
+- **Action:** Review new pair designs, expectedSkew values, and metric changes.
 
 #### Decision Log D1-D5 — Calibration + Debate (2026-02-21)
-**Status:** 🔧 Active decision reference
+**Status:** 🔧 Active execution tracker — A-sequence blocked, B-sequence done
 - **Document:** [Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md](Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md)
 - **Type:** Decision Record
-- **Scope:** D1-D5 decisions for calibration/debate system. Phase 1 scope locked.
+- **Scope:** D1-D5 decisions for calibration/debate system. Action Register tracks 11 items.
+- **Progress:** A-1/A-2 done. B-1 through B-8 implemented. A-3 blocked (Anthropic credits).
 
 #### Phase 1 Immediate Execution Spec (2026-02-21)
 **Status:** 🔧 A-1/A-2 executed; A-3 gate NO-GO
@@ -54,66 +42,35 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** A-1 (report semantics), A-2a/b/c (run-blocker fixes). A-3 gate criteria defined.
 - **Remaining:** A-3 re-run after Anthropic credit issue resolved.
 
-#### A-3 Cross-Provider Gate 1 Result (2026-02-22)
-**Status:** ❌ NO-GO — Re-run needed
-- **Document:** [A3_CrossProvider_Gate1_Result_2026-02-22.md](A3_CrossProvider_Gate1_Result_2026-02-22.md)
-- **Type:** Gate Result
-- **Scope:** Run #2 failed (7/10 pairs, Anthropic credit exhaustion). meanDegradationRateDelta exceeds 5.0.
-
 #### Debate System Continuation Plan (2026-02-21)
-**Status:** 🔧 Active — A-sequence in progress, B-sequence pending A-3 gate
+**Status:** 🔧 A-sequence blocked; B-sequence implemented; C-sequence backlog
 - **Document:** [Debate_System_Continuation_Plan_2026-02-21.md](Debate_System_Continuation_Plan_2026-02-21.md)
 - **Type:** Execution Plan
 - **Scope:** Full delivery buckets: A-sequence (stabilization), B-sequence (quality improvements), C-sequence (architecture).
+- **Progress:** B-1 through B-8/B-5b all implemented and code-reviewed. A-3 blocked on credits. C-sequence deferred.
 
 #### Debate Iteration Analysis (2026-02-21)
-**Status:** ✅ Analysis complete — Reference for debate decisions
+**Status:** ✅ Analysis complete — B-3 re-reconciliation candidate pending decision
 - **Document:** [Debate_Iteration_Analysis_2026-02-21.md](Debate_Iteration_Analysis_2026-02-21.md)
 - **Type:** Architecture Analysis
 - **Scope:** Analysis of whether to change debate structure. One B-3 add-on candidate identified.
 
-#### Cross-Provider Challenger Separation (2026-02-20)
-**Status:** ✅ Implemented; stabilization in progress
-- **Document:** [Cross_Provider_Challenger_Separation_2026-02-20.md](Cross_Provider_Challenger_Separation_2026-02-20.md)
-- **Type:** Pipeline Quality / Debate Architecture
-- **Scope:** Provider-level role routing (`debateProfile`, provider overrides, fallback warnings).
-- **Remaining:** Complete cross-provider quality gates and decision-grade A/B package.
-
 #### Report Quality Opportunity Map (2026-02-22)
-**Status:** 🔧 B-5a done, B-4/B-6/B-7/B-8/B-5b implemented — Quality track active
+**Status:** 🔧 B-sequence (B-4 through B-8/B-5b) implemented — Verdict Accuracy Test Set pending
 - **Document:** [Report_Quality_Opportunity_Map_2026-02-22.md](Report_Quality_Opportunity_Map_2026-02-22.md)
 - **Type:** Quality Roadmap
 - **Scope:** B-sequence quality improvements (query strategy, annotations, explanation quality, model tiers).
-- **Related:** [Decision_QualityMap_B4-B8_2026-02-22.md](Decision_QualityMap_B4-B8_2026-02-22.md)
-
-#### Captain Decisions — Quality Map B4-B8 (2026-02-22)
-**Status:** ✅ Decisions locked
-- **Document:** [Decision_QualityMap_B4-B8_2026-02-22.md](Decision_QualityMap_B4-B8_2026-02-22.md)
-- **Type:** Decision Record
-- **Scope:** Implementation order (B-5a → B-4 → B-6 → B-7 → B-8 → B-5b), sequential merge policy, A6 independent review protocol.
-
-#### Code Review: D5/B-1/UI/Calibration (2026-02-23)
-**Status:** ✅ Review Complete — GO (1H trivial fix, 3M, 3L)
-- **Document:** [Code_Review_D5_B1_UI_2026-02-23.md](Code_Review_D5_B1_UI_2026-02-23.md)
-- **Type:** Code Review / Quality Assurance
-- **Scope:** 11 commits + uncommitted. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval), B-1 runtime role tracing, UI warning triage, calibration canary mode, bias-pairs v2.0.0, model-usage utility. 1009 tests passing, build clean.
-- **Remaining:** D5-H1 (`as any` cast → add type field). D5-M1 (UNVERIFIED truthPct semantics). UI-M1 (move set to module scope).
+- **Remaining:** Verdict Accuracy Test Set (separate medium-effort track, 20-30 claims with ground truth).
 
 ---
 
-### Active Execution State (2 files)
+### Active Execution State (1 file)
 
 #### Calibration Cost Optimization Review Plan (2026-02-22)
 **Status:** 🧭 Proposal — Awaiting review
 - **Document:** [Calibration_Cost_Optimization_Review_Plan_2026-02-22.md](Calibration_Cost_Optimization_Review_Plan_2026-02-22.md)
 - **Type:** Cost Optimization / Review Plan
 - **Scope:** Two-lane run policy (Gate lane vs Smoke lane) for calibration cost reduction.
-
-#### Plan Pause Status (2026-02-22)
-**Status:** 📋 Active checkpoint
-- **Document:** [Plan_Pause_Status_2026-02-22.md](Plan_Pause_Status_2026-02-22.md)
-- **Type:** Execution State
-- **Scope:** Documents stable checkpoint after Code_Review_2026-02-22b fixes. Build + tests green.
 
 ---
 
@@ -128,7 +85,14 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### Alpha Feature Proposals (4 files)
+### Alpha Feature Proposals (5 files)
+
+#### Model Auto-Resolution Plan (2026-02-23)
+**Status:** 🧭 Planned — High priority
+- **Document:** [Model_Auto_Resolution_Plan.md](Model_Auto_Resolution_Plan.md)
+- **Type:** Architecture / Maintenance
+- **Scope:** Eliminate all hardcoded model version strings from code and UCM. UCM stores tier aliases; code auto-resolves via provider `-latest` aliases. ~15 files.
+
 
 #### API Cost Reduction Strategy (2026-02-13)
 **Status:** Draft — Awaiting Implementation
@@ -191,6 +155,17 @@ When adding new work to this folder:
 ---
 
 ## Cleanup History
+
+**2026-02-23 (B-sequence + D5 Complete Archival)**: Full WIP audit. Archived 8 files, moved 1 to MARKETING.
+- Architecture reference (1): CB Pipeline Architecture archived (v1.0 fully implemented, historical reference)
+- Completed designs (3): Cross-Provider Separation (implemented), QualityMap B4-B8 Decisions (all items implemented), Calibration Harness (phases 1-3 done, phase 4 deferred to Backlog)
+- Gate results (1): A-3 Cross-Provider Gate 1 Result (NO-GO documented, retry tracked in Phase1 Spec)
+- Code reviews (1): D5/B-1/UI/Calibration review (GO, all findings addressed)
+- Superseded (1): Plan Pause Status (superseded by D5/B-1/B-sequence progress)
+- Extracted to Backlog (1): Next_For_Report_Quality (2 new items: B-sequence validation, metrics integration)
+- Moved to MARKETING (1): LinkedIn Article (social media draft, not engineering WIP)
+- 3 unlisted files discovered and processed (LinkedIn Article, Next_For_Report_Quality, Model_Auto_Resolution_Plan)
+- Kept 12 files: Calibration/quality track (5), execution state (1), claim fidelity (1), Alpha proposals (5)
 
 **2026-02-22 (Code Review + Quality Map Review Archival)**: Full WIP audit. Archived 17 files.
 - Code reviews (8): All GO verdicts, all findings addressed in code commits

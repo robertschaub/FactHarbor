@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 22, 2026 (POC declared complete `v1.0.0-poc`; all remaining work is Alpha scope)
+**Last Updated**: February 23, 2026 (WIP consolidation: B-sequence + D5 done, 2 new items added, 2 items marked done)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -39,6 +39,17 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 ---
 
+## Recently Completed (February 23, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **D5 evidence controls**: Sufficiency gate (min items + source types), evidence partitioning (institutional→advocate, general→challenger), contrarian retrieval (targeted searches for underrepresented evidence). All UCM-configurable. | Analyzer / Quality | 2026-02-23 | [Code_Review_D5_B1_UI_2026-02-23.md](../ARCHIVE/Code_Review_D5_B1_UI_2026-02-23.md) |
+| ✅ **B-1 runtime role tracing**: `callContext: { debateRole, promptKey }` on all 5 debate roles. `runtimeRoleModels` in resultJson meta. Calibration report renders Runtime Role Usage table with mismatch detection. | Analyzer / Observability | 2026-02-23 | [Code_Review_D5_B1_UI_2026-02-23.md](../ARCHIVE/Code_Review_D5_B1_UI_2026-02-23.md) |
+| ✅ **UI warning triage**: Three-tier split — provider issues (collapsed banner), quality warnings (prominent), operational notes (collapsed). `WarningCard` extracted as reusable component. | Web UI | 2026-02-23 | [Code_Review_D5_B1_UI_2026-02-23.md](../ARCHIVE/Code_Review_D5_B1_UI_2026-02-23.md) |
+| ✅ **Calibration v2**: Canary mode (single-pair smoke test), bias-pairs v2.0.0 (negated→affirmative counter-positions), preflight config check, B-sequence default activation. | Calibration | 2026-02-23 | [Code_Review_D5_B1_UI_2026-02-23.md](../ARCHIVE/Code_Review_D5_B1_UI_2026-02-23.md) |
+| ✅ **Model usage utility**: `model-usage.ts` — extracts and deduplicates all LLM model names from analysis results. Used in job page badge and HTML report. | Analyzer / Observability | 2026-02-23 | Commit `25752ff` |
+| ✅ **WIP consolidation**: Archived 8 files (CB Architecture, Cross-Provider, QualityMap Decisions, Calibration Harness, A3 Gate Result, Plan Pause, Code Review, quality priorities). 12 files retained. | Documentation | 2026-02-23 | [WIP/README.md](../WIP/README.md) |
+
 ## Recently Completed (February 22, 2026)
 
 | Description | Domain | Completed | Reference |
@@ -53,7 +64,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
-| ✅ **Calibration review hardening (2026-02-22b + carried fixes)**: `runIntent` metadata made legacy-safe (optional type), lane scripts now explicitly stamp run intent (`FH_CALIBRATION_RUN_INTENT` via smoke/gate runner), provider-attribution denominator cleanup, and legacy report refresh guard for missing `failureModes`. | Calibration / Reliability | 2026-02-22 | [Code_Review_2026-02-22b.md](../ARCHIVE/Code_Review_2026-02-22b.md), [Plan_Pause_Status_2026-02-22.md](../WIP/Plan_Pause_Status_2026-02-22.md) |
+| ✅ **Calibration review hardening (2026-02-22b + carried fixes)**: `runIntent` metadata made legacy-safe (optional type), lane scripts now explicitly stamp run intent (`FH_CALIBRATION_RUN_INTENT` via smoke/gate runner), provider-attribution denominator cleanup, and legacy report refresh guard for missing `failureModes`. | Calibration / Reliability | 2026-02-22 | [Code_Review_2026-02-22b.md](../ARCHIVE/Code_Review_2026-02-22b.md), [Plan_Pause_Status_2026-02-22.md](../ARCHIVE/Plan_Pause_Status_2026-02-22.md) |
 | ✅ **Calibration gate/smoke lane policy + wiring**: Added canonical run policy, consolidated significance tiers, and implemented `runIntent` metadata (`gate`/`smoke`) with lane-specific artifact prefixes. | Calibration / Governance | 2026-02-22 | [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |
 | ✅ **Calibration report model & search transparency**: Reports now show LLM provider, tiering, pipeline models, debate profile with per-role tier/provider/model, and search provider config. Backfilled all 5 existing reports. Pipeline `meta.modelsUsed` populated. Per-side search providers in pair cards. | Calibration / Observability | 2026-02-21 | Plan: `gentle-snuggling-quokka.md` |
 
