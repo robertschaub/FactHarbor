@@ -334,8 +334,10 @@ export class MetricsCollector {
     // Pricing as of Jan 2026 (approximate)
     const pricing: Record<string, { input: number; output: number }> = {
       // Anthropic
+      'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
       'claude-sonnet-4-20250514': { input: 3, output: 15 },
       'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
+      'claude-haiku-4-5-20251001': { input: 1, output: 5 },
       'claude-3-5-haiku-20241022': { input: 1, output: 5 },
       'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
       

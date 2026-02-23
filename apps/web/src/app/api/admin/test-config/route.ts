@@ -11,8 +11,9 @@ import { mistral } from "@ai-sdk/mistral";
 import { generateText } from "ai";
 import { getConfig } from "@/lib/config-storage";
 import { getCacheStats } from "@/lib/search-cache";
-import { getAllProviderStats } from "@/lib/search-circuit-breaker";
+import { getAllProviderStats, getProviderStats } from "@/lib/search-circuit-breaker";
 import { checkAdminKey } from "@/lib/auth";
+import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -282,7 +283,7 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
 
   try {
     const result = await generateText({
-      model: anthropic("claude-3-5-haiku-20241022"),
+      model: anthropic(ANTHROPIC_MODELS.budget.modelId),
       prompt: "Reply with just the word 'OK'",
       maxOutputTokens: 10,
     });
@@ -446,9 +447,10 @@ async function testSerpApi(shouldTest: boolean): Promise<TestResult> {
   }
 
   try {
-    const url = `https://serpapi.com/search.json?engine=google&q=test&num=1&api_key=${apiKey}`;
+    // Use the account endpoint — validates the key without burning a search credit
+    const url = `https://serpapi.com/account.json?api_key=${apiKey}`;
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -463,12 +465,13 @@ async function testSerpApi(shouldTest: boolean): Promise<TestResult> {
     }
 
     const data = await response.json();
+    const remaining = data.total_searches_left ?? "unknown";
 
     return {
       service: "SerpAPI",
       status: "success",
       message: "SerpAPI key is valid",
-      details: `Test search returned ${data.organic_results?.length || 0} results`,
+      details: `Searches remaining: ${remaining}`,
       configUrl: "https://serpapi.com/manage-api-key",
     };
   } catch (error: any) {
@@ -513,10 +516,22 @@ async function testGoogleCse(shouldTest: boolean): Promise<TestResult> {
     };
   }
 
+  // Skip live call if circuit breaker is OPEN — saves daily quota
+  const gcseCircuit = getProviderStats("google-cse");
+  if (gcseCircuit && gcseCircuit.state === "open") {
+    return {
+      service: "Google Custom Search",
+      status: "error",
+      message: "Google CSE circuit breaker is OPEN (skipped live test to save quota)",
+      details: `${gcseCircuit.consecutiveFailures} consecutive failures. Credentials are configured.`,
+      configUrl: "https://developers.google.com/custom-search/v1/introduction",
+    };
+  }
+
   try {
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=test&num=1`;
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -580,14 +595,45 @@ async function testBrave(shouldTest: boolean): Promise<TestResult> {
     };
   }
 
+  // Skip live call if circuit breaker is OPEN — saves search credits
+  const braveCircuit = getProviderStats("brave");
+  if (braveCircuit && braveCircuit.state === "open") {
+    return {
+      service: "Brave Search API",
+      status: "error",
+      message: "Brave circuit breaker is OPEN (skipped live test to save credits)",
+      details: `${braveCircuit.consecutiveFailures} consecutive failures. Key is configured.`,
+      configUrl: "https://api-dashboard.search.brave.com",
+    };
+  }
+
   try {
+    // Use count=1 to minimize credit usage; detect 402 as quota exhaustion
     const url = "https://api.search.brave.com/res/v1/web/search?q=test&count=1";
     const response = await fetch(url, {
       headers: {
         "X-Subscription-Token": apiKey,
       },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(5000),
     });
+
+    if (response.status === 402) {
+      let quotaDetails = "Usage limit exceeded";
+      try {
+        const errData = await response.json();
+        const meta = errData?.error?.meta;
+        if (meta) {
+          quotaDetails = `Spend: $${meta.current_spend}/$${meta.usage_limit} (${meta.plan} plan)`;
+        }
+      } catch { /* ignore parse error */ }
+      return {
+        service: "Brave Search API",
+        status: "error",
+        message: `Brave quota exhausted (402)`,
+        details: quotaDetails,
+        configUrl: "https://api-dashboard.search.brave.com",
+      };
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

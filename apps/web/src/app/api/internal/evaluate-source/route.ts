@@ -45,6 +45,7 @@ import {
   type FactualRating,
 } from "@/lib/source-reliability-config";
 import { getEnv, checkRunnerKey } from "@/lib/auth";
+import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
@@ -755,7 +756,7 @@ async function detectSourceLanguage(domain: string): Promise<string | null> {
         SR_TRANSLATION_TIMEOUT_MS,
         () =>
           generateText({
-            model: anthropic("claude-3-5-haiku-20241022"),
+            model: anthropic(ANTHROPIC_MODELS.budget.modelId),
             prompt: `What is the primary publication language of this webpage content?
 Return ONLY the language name in English (e.g., "German", "French", "Russian", "English").
 If uncertain, return "English".
@@ -915,7 +916,7 @@ Output format (JSON only, no markdown):
       SR_TRANSLATION_TIMEOUT_MS,
       () =>
         generateText({
-          model: anthropic("claude-3-5-haiku-20241022"),
+          model: anthropic(ANTHROPIC_MODELS.budget.modelId),
           prompt,
           temperature: 0,
           maxOutputTokens: 800,
@@ -2328,7 +2329,7 @@ async function evaluateWithModel(
   const temperature = getDeterministicTemperature(0.3);
 
   const modelName = modelProvider === "anthropic"
-    ? "claude-3-5-haiku-20241022"
+    ? ANTHROPIC_MODELS.budget.modelId
     : SR_OPENAI_MODEL;
 
   debugLog(`[SR-Eval] Calling ${modelProvider} (${modelName}) for ${domain}...`);

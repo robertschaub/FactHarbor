@@ -20,6 +20,30 @@ The following documents had valuable content extracted and merged into active do
 
 ## What's Archived
 
+### WIP Consolidation (2026-02-23) — B-sequence Complete, D5 Controls, Architecture Reference
+
+**Description**: Archived 8 completed WIP files after B-sequence (B-4 through B-8/B-5b) and D5 evidence controls were implemented and code-reviewed. All code review findings addressed. Moved 1 non-WIP file to `Docs/MARKETING/`. Extracted 2 backlog items from quality prioritization doc.
+
+**Completed design/implementation docs** (7 files — DONE):
+1. `ClaimBoundary_Pipeline_Architecture_2026-02-15.md` — Definitive CB pipeline architecture reference. v1.0 fully implemented (v2.11.0). All 9 decisions closed. Retained in ARCHIVE as historical reference.
+2. `Cross_Provider_Challenger_Separation_2026-02-20.md` — Per-role provider overrides design. Fully implemented: `debateProfile: "cross-provider"` in defaults, B-1 runtime tracing confirms routing.
+3. `Decision_QualityMap_B4-B8_2026-02-22.md` — Captain decisions for B-4 through B-8 implementation order. All B-items implemented and code-reviewed.
+4. `Calibration_Harness_Design_2026-02-20.md` — Political bias calibration harness design. Phases 1-3 complete. Phase 4 (Admin UI) deferred → Backlog.
+5. `A3_CrossProvider_Gate1_Result_2026-02-22.md` — A-3 gate NO-GO result. 7/10 pairs due to Anthropic credit exhaustion. Retry tracked in Phase1_Immediate_Execution_Spec.
+6. `Plan_Pause_Status_2026-02-22.md` — Temporary checkpoint, superseded by D5/B-1/B-sequence implementation progress.
+7. `Next_For_Report_Quality.md` — Quality work prioritization. 2 new items extracted to Backlog (B-sequence validation, metrics integration). 3 items already tracked.
+
+**Code reviews** (1 file — all findings addressed):
+8. `Code_Review_D5_B1_UI_2026-02-23.md` — D5 evidence controls, B-1 runtime tracing, UI warning triage, calibration v2. GO verdict (0C/1H/3M/3L). All findings fixed in commits.
+
+**Non-WIP file moved** (not archived):
+- `Likedin Article.md` → `Docs/MARKETING/` (social media draft, not engineering WIP)
+
+**Remaining WIP (12 files — forward-looking):**
+Calibration/quality track (Decision Log, Phase1 Spec, Continuation Plan, Quality Map, Debate Analysis, Cost Optimization Plan), Claim Fidelity (Phase 3+4), Alpha proposals (API Cost, TestTuning Mode/UI, Runtime Issues).
+
+---
+
 ### WIP Consolidation (2026-02-22) — Code Reviews, Quality Map Reviews, Process Docs
 
 **Description**: Archived 17 completed/superseded WIP files. All code review findings addressed in subsequent commits. Quality Map reviews consumed by Captain Decision doc. Process and execution docs completed.
