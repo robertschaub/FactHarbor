@@ -5,10 +5,10 @@
 ## Execution Status (updated 2026-02-23)
 
 - Phase 1 implementation spec: `Docs/ARCHIVE/Phase1_Immediate_Execution_Spec_2026-02-21.md` (archived)
-- A-1/A-2: ✅ Done. A-3: ⏭️ Skipped by Captain decision (Anthropic credits unavailable; fixture evolved to v3.2.0 making original A-3 criteria stale).
+- A-1/A-2: ✅ Done. A-3: ⏭️ Skipped by Captain decision (Anthropic credits unavailable; fixture evolved to v3.3.0 making original A-3 criteria stale).
 - B-sequence (B-1 through B-8/B-5b): ✅ All implemented and code-reviewed (2026-02-22/23).
 - D5 evidence controls (sufficiency gate, evidence partitioning, contrarian retrieval): ✅ Implemented.
-- Framing-symmetry calibration v3.2.0: ✅ Diagnostic gate, direction check, accuracy-control bypass committed.
+- Framing-symmetry calibration v3.3.0: ✅ Diagnostic gate, direction check, accuracy-control bypass committed.
 - C-sequence: Deferred (backlog).
 - Remaining: B-sequence validation with real data, Verdict Accuracy Test Set (both in Backlog).
 
@@ -117,7 +117,7 @@ Phase 3: BACKLOG (C-1, C-2, C-3)               Re-evaluated at gate
 | 2 | Fix `nuclear-energy-fr` `undefined.value` crash with failing test | Lead Dev | Immediate | 2026-02-24 | Test green + pair completes | Needs repro locally |
 | 3 | Add OpenAI TPM guard: pre-call estimate + `gpt-4.1` → `gpt-4.1-mini` fallback | Lead Dev | Immediate | 2026-02-25 | No TPM fatals in full run | OpenAI tier limits may vary |
 | 4 | Failure diagnostics in pair result JSON (class, msg, stack, stage, provider) | Lead Dev | Immediate | 2026-02-25 | Failed pairs have structured errors | None |
-| 5 | ~~Run cross-provider full ×2~~ ⏭️ **Skipped** — Captain decision (credits unavailable, fixture evolved to v3.2.0) | Lead Dev | ~~Immediate~~ | ~~2026-02-27~~ | ~~Two decision-grade artifacts~~ | Depends on #2, #3 |
+| 5 | ~~Run cross-provider full ×2~~ ⏭️ **Skipped** — Captain decision (credits unavailable, fixture evolved to v3.3.0) | Lead Dev | ~~Immediate~~ | ~~2026-02-27~~ | ~~Two decision-grade artifacts~~ | Depends on #2, #3 |
 | 6 | Instrument per-call verdict-stage tracing + `meta.runtimeRoleModels` + HTML table | Lead Dev | Soon | 2026-03-04 | Report shows actual per-role execution | Depends on #5 |
 | 7 | Implement evidence sufficiency gate (≥3 items, ≥2 sourceTypes) | LLM Expert | Soon | 2026-03-07 | Gate active, INSUFFICIENT_EVIDENCE verdicts produced when triggered | None |
 | 8 | Implement source-type evidence partitioning for debate roles | LLM Expert + Lead Dev | Soon | 2026-03-09 | Advocate/challenger receive partitioned evidence | Depends on #7 |

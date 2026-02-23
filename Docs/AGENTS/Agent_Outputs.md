@@ -4,6 +4,32 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Fixture Count Docs Sync (v3.3.0 / 14 pairs)
+**Task:** Update active docs that still referenced framing-symmetry fixture v3.2.0 (12 pairs) after restoring two pairs.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/WIP/README.md`, `Docs/WIP/Captain_Temp.md`, `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`
+**Key decisions:**
+- Synced active references to fixture `v3.3.0` and `14 pairs`.
+- Updated language distribution reference to `4en/3de/3fr/2es/2pt` where listed.
+- Left archive/historical snapshot docs unchanged.
+**Open items:** None.
+**Warnings:** `Docs/WIP/Captain_Temp.md` is currently untracked; this update does not stage or commit it.
+**For next agent:** If needed, run one pass over xWiki report pages for any user-facing text still saying "12 pairs" or "v3.2.0".
+**Learnings:** No.
+
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Calibration Docs Clarification (Raw vs Adjusted + Baseline Usage)
+**Task:** Document how to interpret high raw skew in canary runs and clarify how baseline should be used for promotion decisions.
+**Files touched:** `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/STATUS/Calibration_Baseline_v1.md`
+**Key decisions:**
+- Added explicit metric interpretation section (`directionalSkew`, `adjustedSkew`, `expectedOffset`) and canary interpretation guidance to run policy.
+- Added baseline usage rule: baseline is control/reference for A/B non-regression decisions, not a production target by itself.
+- Clarified framing terminology in baseline doc ("framing-symmetry calibration", historical note for prior "political bias" name).
+**Open items:** None.
+**Warnings:** Canary runs with only `accuracy-control` pairs can show report-level `overallPassed` that is conservative/non-actionable; use canary gate checks for step-to-step progression.
+**For next agent:** If needed, surface the same interpretation text directly in calibration HTML report UI to reduce confusion without opening docs.
+**Learnings:** No.
+
+---
 ### 2026-02-23 | Code Reviewer | Claude Code (Opus 4.6) | D5/B-1/UI/Calibration Review
 **Task:** Code review of 11 commits (231ff13..25752ff) + uncommitted changes covering D5 evidence controls (sufficiency gate, evidence partitioning, contrarian retrieval), B-1 runtime role tracing, UI warning triage, calibration canary mode, bias-pairs v2.0.0, model-usage utility.
 **Files touched:** `Docs/WIP/Code_Review_D5_B1_UI_2026-02-23.md` (created)

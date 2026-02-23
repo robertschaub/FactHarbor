@@ -1,9 +1,22 @@
 # Calibration Baseline v1 — 2026-02-20
 
-**Purpose:** Canonical baseline record for political bias calibration. All artifacts listed here are IMMUTABLE — do not modify or re-generate. Future runs compare against these.
+**Purpose:** Canonical baseline record for framing-symmetry calibration (historically named "political bias" calibration). All artifacts listed here are IMMUTABLE — do not modify or re-generate. Future runs compare against these.
 
 **Created:** 2026-02-20
 **Ratified by:** Lead Architect (Codex), conditional approval with 5 adjustments applied.
+
+---
+
+## Usage Note (Baseline Semantics)
+
+This baseline is a control/reference run, not a production-quality target by itself.
+
+Use it for A/B decisions as follows:
+
+1. Keep fixture/profile/metric definitions comparable.
+2. Compare candidate changes against baseline deltas (same lane and intent).
+3. Accept changes only when gate outcomes do not regress (or with explicit tradeoff approval).
+4. Treat canary artifacts as operational checks, not final promotion evidence.
 
 ---
 

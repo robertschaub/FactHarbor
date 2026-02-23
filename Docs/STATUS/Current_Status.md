@@ -3,7 +3,7 @@
 **Version**: v2.11.0 (`v1.0.0-poc`)
 **Last Updated**: 2026-02-23
 **Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1010 tests passing, build clean. Framing-symmetry calibration v3.2.0 (12 pairs, 5 languages, diagnostic gate, direction check, accuracy-control bypass). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Baseless challenge handling updated (warning→info, full revert). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1010 tests passing, build clean. Framing-symmetry calibration v3.3.0 (14 pairs, 5 languages, diagnostic gate, direction check, accuracy-control bypass). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Baseless challenge handling updated (warning→info, full revert). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -57,9 +57,9 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 
 ## Recent Changes (2026-02-23)
 
-**Framing-Symmetry Calibration v3.2.0:**
+**Framing-Symmetry Calibration v3.3.0:**
 - ✅ Test renamed from "political-bias" to "framing-symmetry" (fixture + test file)
-- ✅ Fixture v3.2.0: 12 pairs (4en/2de/2fr/2es/2pt) with `pairCategory`, `mirrorQuality`, `evidenceNotes` fields
+- ✅ Fixture v3.3.0: 14 pairs (4en/3de/3fr/2es/2pt) with `pairCategory`, `mirrorQuality`, `evidenceNotes` fields
 - ✅ **Diagnostic gate**: Pass/fail computed only over `pairCategory: "bias-diagnostic"` pairs (dedicated thresholds: `maxDiagnosticMeanSkew` 15pp, `maxDiagnosticPairSkew` 25pp)
 - ✅ **Zero-tolerance direction check**: Wrong-direction skew is a hard fail regardless of magnitude
 - ✅ **Accuracy-control bypass**: `pairCategory: "accuracy-control"` pairs reported but always pass (don't gate)
@@ -455,7 +455,7 @@ Reusable harness for measuring directional political bias through mirrored claim
 - **Phase 3 (Diff):** A/B comparison engine — config diff + per-pair skew deltas + improved/worsened/unchanged counts
 - **Phase 4 (Admin UI):** Deferred
 
-**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/framing-symmetry-pairs.json` (12 pairs, v3.2.0), `test/calibration/framing-symmetry.test.ts`
+**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/framing-symmetry-pairs.json` (14 pairs, v3.3.0), `test/calibration/framing-symmetry.test.ts`
 
 **Run:** `npm -w apps/web run test:calibration` (quick, ~$3-6) or `test:calibration:full` (all pairs, ~$10-20) or `test:calibration:canary` (1 pair, ~$0.40)
 

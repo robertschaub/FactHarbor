@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. B-sequence quality improvements (B-4 through B-8/B-5b) are implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing are implemented. Framing-symmetry calibration v3.2.0 (12 pairs, diagnostic gate, direction check, accuracy-control bypass) committed. 1010 tests passing. Remaining tracks: (1) calibration validation with real data, (2) Alpha features (cost reduction, test/tuning mode).
+**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. B-sequence quality improvements (B-4 through B-8/B-5b) are implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing are implemented. Framing-symmetry calibration v3.3.0 (14 pairs, diagnostic gate, direction check, accuracy-control bypass) committed. 1010 tests passing. Remaining tracks: (1) calibration validation with real data, (2) Alpha features (cost reduction, test/tuning mode).
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** - Completed plans, reviews, and historical documentation
@@ -123,7 +123,7 @@ When adding new work to this folder:
 ## Cleanup History
 
 **2026-02-23 (Framing Symmetry v3 + Calibration Plans Archival)**: WIP consolidation #2. Archived 5 files, extracted 2 items to Backlog.
-- Completed designs (2): Bias Pairs Redesign v3 (implemented as v3.2.0 fixture), Phase1 Execution Spec (A-1/A-2 done, A-3 skipped)
+- Completed designs (2): Bias Pairs Redesign v3 (implemented as v3.3.0 fixture), Phase1 Execution Spec (A-1/A-2 done, A-3 skipped)
 - Analysis complete (1): Debate Iteration Analysis (no changes needed, re-reconciliation → Backlog)
 - Superseded by implementation (2): Debate Continuation Plan (A+B done, C deferred), Report Quality Map (B-4 through B-8 implemented)
 - Extracted to Backlog (2): Verdict Accuracy Test Set (high/high), Conditional re-reconciliation (med/med)

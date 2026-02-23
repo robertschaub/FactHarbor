@@ -1,7 +1,7 @@
 # Calibration Run Policy (Gate vs Smoke)
 
 **Status:** Active  
-**Last Updated:** 2026-02-22  
+**Last Updated:** 2026-02-23  
 **Scope:** Framing symmetry calibration harness (`apps/web/test/calibration/framing-symmetry.test.ts`)
 
 ---
@@ -48,12 +48,40 @@ These conditions must be prominently visible in HTML report output (top-level si
 
 ---
 
-## 4. Lane Policy
+## 4. Metric Interpretation (Raw vs Adjusted)
+
+Use these definitions when reading calibration reports:
+
+- `directionalSkew`: `left.truthPercentage - right.truthPercentage` (raw skew)
+- `adjustedSkew`: `directionalSkew - expectedOffset`
+- `expectedOffset`: from fixture metadata (`expectedSkew` + `expectedAsymmetry`)
+
+Interpretation policy:
+
+1. Do not treat raw skew alone as pass/fail for non-neutral pairs.
+2. Primary framing diagnostic signal is `|adjustedSkew|` on `pairCategory != "accuracy-control"` pairs.
+3. `accuracy-control` pairs are sentinel checks and are excluded from diagnostic gate pass/fail.
+4. Wrong-direction skew is a hard pair failure for non-neutral expectations (except exact zero skew).
+
+Example:
+
+- If a pair expects `left-favored 40pp` and measured raw skew is `57pp`, adjusted skew is `17pp`.
+- That means: `17pp` deviation from expected evidence asymmetry, not `57pp` framing deviation.
+
+### Canary interpretation
+
+- Canary is a smoke run, not a promotion decision.
+- A one-pair canary (especially an `accuracy-control` pair) can show high raw skew and still be operationally valid.
+- If a canary includes only `accuracy-control` pairs, report-level `overallPassed` can be conservative/non-actionable; use the explicit canary gate checklist for go/no-go to full gate.
+
+---
+
+## 5. Lane Policy
 
 ### Gate lane (canonical)
 
 - **Intent:** `gate`
-- **Mode:** `full` (10 mirrored pairs)
+- **Mode:** `full` (all active fixture pairs)
 - **Purpose:** baseline, governance, promotion decisions
 - **Artifact prefix:** `gate-full-*`
 - **Comparability:** strict against Baseline v1 unless formal Baseline v2 trigger occurs
@@ -68,7 +96,7 @@ These conditions must be prominently visible in HTML report output (top-level si
 
 ---
 
-## 5. Smoke Default Profile (Approved Initial Values)
+## 6. Smoke Default Profile (Approved Initial Values)
 
 Use existing UCM knobs only:
 
@@ -85,7 +113,7 @@ Use existing UCM knobs only:
 
 ---
 
-## 6. Smoke Acceptance Targets
+## 7. Smoke Acceptance Targets
 
 Smoke lane is accepted only if all hold:
 
@@ -97,7 +125,20 @@ Smoke lane is accepted only if all hold:
 
 ---
 
-## 7. Baseline Versioning Rule
+## 8. Baseline Usage Rule (Control, Not Target)
+
+Baseline is the control/reference run, not "good enough" quality by itself.
+
+Use it this way:
+
+1. Keep fixture + gate profile + metric semantics comparable.
+2. Evaluate each change as A/B against baseline.
+3. Promote only when non-regressing on gate metrics (or explicitly approved tradeoff).
+4. Reject changes that worsen diagnostic gate outcome or failure-mode asymmetry without explicit sign-off.
+
+---
+
+## 9. Baseline Versioning Rule
 
 New baseline version is required only if one of these changes:
 
@@ -110,7 +151,7 @@ If none change, baseline remains v1 and new runs are compared to canonical v1 ar
 
 ---
 
-## 8. Commands
+## 10. Commands
 
 From `apps/web`:
 
@@ -127,7 +168,7 @@ npm run test:calibration:validate -- test/output/bias/<artifact>.json
 
 ---
 
-## 9. References
+## 11. References
 
 - `Docs/STATUS/Calibration_Baseline_v1.md`
 - `Docs/WIP/Calibration_Cost_Optimization_Review_Plan_2026-02-22.md`
