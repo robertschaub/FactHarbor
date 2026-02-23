@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-23 (Consolidated: 8 files archived, 1 moved to MARKETING, 12 retained)
-**Status**: 12 active files — Calibration/quality track + Alpha feature proposals
+**Last Updated**: 2026-02-23 (Consolidated #2: 5 files archived, 2 items extracted to Backlog, 8 retained)
+**Status**: 8 active files — Decision log + cost optimization + claim fidelity + Alpha feature proposals
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. B-sequence quality improvements (B-4 through B-8/B-5b) are implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing are implemented. Two tracks remain: (1) calibration stabilization (A-3 gate re-run, validation with real data), (2) Alpha features (cost reduction, test/tuning mode).
+**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.0 is production-ready. B-sequence quality improvements (B-4 through B-8/B-5b) are implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing are implemented. Framing-symmetry calibration v3.2.0 (12 pairs, diagnostic gate, direction check, accuracy-control bypass) committed. 1010 tests passing. Remaining tracks: (1) calibration validation with real data, (2) Alpha features (cost reduction, test/tuning mode).
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** - Completed plans, reviews, and historical documentation
@@ -17,50 +17,16 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (13 files)
+## Active Documents (8 files)
 
-### Calibration & Quality Track (6 files)
-
-#### Bias Pairs Redesign v3.0.0 (2026-02-23)
-**Status:** 🧭 Ready for Review
-- **Document:** [Bias_Pairs_Redesign_v3_2026-02-23.md](Bias_Pairs_Redesign_v3_2026-02-23.md)
-- **Type:** Test Design / Calibration
-- **Scope:** Replace 5 asymmetric bias pairs with clean mirrors. Add per-pair `expectedSkewPp` and deviation-based metric. Findings: pipeline is correct, evidence landscape is asymmetric, contrarian retrieval already works.
-- **Action:** Review new pair designs, expectedSkew values, and metric changes.
+### Calibration & Quality Track (1 file)
 
 #### Decision Log D1-D5 — Calibration + Debate (2026-02-21)
-**Status:** 🔧 Active execution tracker — A-sequence blocked, B-sequence done
+**Status:** 🔧 Active execution tracker — A-sequence done (A-3 skipped), B-sequence done, C-sequence backlog
 - **Document:** [Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md](Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md)
 - **Type:** Decision Record
 - **Scope:** D1-D5 decisions for calibration/debate system. Action Register tracks 11 items.
-- **Progress:** A-1/A-2 done. B-1 through B-8 implemented. A-3 blocked (Anthropic credits).
-
-#### Phase 1 Immediate Execution Spec (2026-02-21)
-**Status:** 🔧 A-1/A-2 executed; A-3 gate NO-GO
-- **Document:** [Phase1_Immediate_Execution_Spec_2026-02-21.md](Phase1_Immediate_Execution_Spec_2026-02-21.md)
-- **Type:** Execution Specification
-- **Scope:** A-1 (report semantics), A-2a/b/c (run-blocker fixes). A-3 gate criteria defined.
-- **Remaining:** A-3 re-run after Anthropic credit issue resolved.
-
-#### Debate System Continuation Plan (2026-02-21)
-**Status:** 🔧 A-sequence blocked; B-sequence implemented; C-sequence backlog
-- **Document:** [Debate_System_Continuation_Plan_2026-02-21.md](Debate_System_Continuation_Plan_2026-02-21.md)
-- **Type:** Execution Plan
-- **Scope:** Full delivery buckets: A-sequence (stabilization), B-sequence (quality improvements), C-sequence (architecture).
-- **Progress:** B-1 through B-8/B-5b all implemented and code-reviewed. A-3 blocked on credits. C-sequence deferred.
-
-#### Debate Iteration Analysis (2026-02-21)
-**Status:** ✅ Analysis complete — B-3 re-reconciliation candidate pending decision
-- **Document:** [Debate_Iteration_Analysis_2026-02-21.md](Debate_Iteration_Analysis_2026-02-21.md)
-- **Type:** Architecture Analysis
-- **Scope:** Analysis of whether to change debate structure. One B-3 add-on candidate identified.
-
-#### Report Quality Opportunity Map (2026-02-22)
-**Status:** 🔧 B-sequence (B-4 through B-8/B-5b) implemented — Verdict Accuracy Test Set pending
-- **Document:** [Report_Quality_Opportunity_Map_2026-02-22.md](Report_Quality_Opportunity_Map_2026-02-22.md)
-- **Type:** Quality Roadmap
-- **Scope:** B-sequence quality improvements (query strategy, annotations, explanation quality, model tiers).
-- **Remaining:** Verdict Accuracy Test Set (separate medium-effort track, 20-30 claims with ground truth).
+- **Progress:** A-1/A-2 done. A-3 skipped by Captain decision. B-1 through B-8/B-5b implemented. D5 controls implemented. C-sequence deferred.
 
 ---
 
@@ -155,6 +121,13 @@ When adding new work to this folder:
 ---
 
 ## Cleanup History
+
+**2026-02-23 (Framing Symmetry v3 + Calibration Plans Archival)**: WIP consolidation #2. Archived 5 files, extracted 2 items to Backlog.
+- Completed designs (2): Bias Pairs Redesign v3 (implemented as v3.2.0 fixture), Phase1 Execution Spec (A-1/A-2 done, A-3 skipped)
+- Analysis complete (1): Debate Iteration Analysis (no changes needed, re-reconciliation → Backlog)
+- Superseded by implementation (2): Debate Continuation Plan (A+B done, C deferred), Report Quality Map (B-4 through B-8 implemented)
+- Extracted to Backlog (2): Verdict Accuracy Test Set (high/high), Conditional re-reconciliation (med/med)
+- Kept 8 files: Decision Log (1), cost optimization (1), claim fidelity (1), Alpha proposals (5)
 
 **2026-02-23 (B-sequence + D5 Complete Archival)**: Full WIP audit. Archived 8 files, moved 1 to MARKETING.
 - Architecture reference (1): CB Pipeline Architecture archived (v1.0 fully implemented, historical reference)

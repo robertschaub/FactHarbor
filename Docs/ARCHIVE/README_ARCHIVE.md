@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-23 (WIP consolidation — 8 completed files archived, B-sequence and D5 work done)
+**Last Updated**: 2026-02-23 (WIP consolidation #2 — 5 files archived, framing-symmetry v3 + diagnostic gate complete)
 
 ---
 
@@ -19,6 +19,27 @@ The following documents had valuable content extracted and merged into active do
 ---
 
 ## What's Archived
+
+### WIP Consolidation #2 (2026-02-23) — Framing Symmetry v3, Calibration Redesign, Debate Plans
+
+**Description**: Archived 5 WIP files after framing-symmetry v3.2.0 fixture, diagnostic gate, direction check, and accuracy-control bypass were implemented. Calibration test renamed from "political-bias" to "framing-symmetry". Extracted 2 forward items to Backlog (Verdict Accuracy Test Set, conditional re-reconciliation).
+
+**Completed design docs** (2 files — DONE):
+1. `Bias_Pairs_Redesign_v3_2026-02-23.md` — Framing symmetry fixture redesign. v3.0.0 design implemented; fixture evolved to v3.2.0 (12 pairs: 4en/2de/2fr/2es/2pt). Diagnostic gate, direction check, accuracy-control bypass all committed. Open questions (§9) are operational notes for future fixture tuning — no blocking decisions remain.
+2. `Phase1_Immediate_Execution_Spec_2026-02-21.md` — A-1/A-2 execution spec. All A-items (A-1 report semantics, A-2a crash fix, A-2b TPM guard, A-2c diagnostics) implemented. A-3 was NO-GO (Anthropic credits) — Captain has decided to skip A-3 re-run, tracked in Decision Log.
+
+**Analysis complete, findings absorbed** (1 file — DONE):
+3. `Debate_Iteration_Analysis_2026-02-21.md` — Analysis of whether to change debate structure. Conclusion: don't change now (C13 evidence pool is the bottleneck, not debate topology). B-3 re-reconciliation add-on candidate → extracted to Backlog as "Conditional re-reconciliation".
+
+**Execution plans superseded by implementation** (2 files — DONE):
+4. `Debate_System_Continuation_Plan_2026-02-21.md` — A/B/C delivery buckets. A-sequence done (A-1/A-2 complete, A-3 skipped). B-sequence done (B-1 through B-8/B-5b all implemented). C-sequence deferred to Backlog (tracked in Decision Log D3). Superseded by actual implementation progress.
+5. `Report_Quality_Opportunity_Map_2026-02-22.md` — Quality-first priority reorder. B-sequence (B-4 through B-8) all implemented per this plan's recommendations. Verdict Accuracy Test Set → extracted to Backlog as high/high item.
+
+**Forward content extracted to Backlog:**
+- Verdict Accuracy Test Set (from Quality Map §5) — 20-30 claims with ground truth, `verdictAccuracyRate` metric
+- Conditional re-reconciliation (from Debate Iteration Analysis §5) — B-3 add-on, UCM-flagged, default off
+
+---
 
 ### WIP Consolidation (2026-02-23) — B-sequence Complete, D5 Controls, Architecture Reference
 

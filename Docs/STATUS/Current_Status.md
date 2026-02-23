@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0 (`v1.0.0-poc`)
-**Last Updated**: 2026-02-22
+**Last Updated**: 2026-02-23
 **Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1001 tests passing, build clean. Political bias calibration Baseline v1 locked and threshold ratified. B-sequence quality improvements (B-5a/B-6/B-7/B-8/B-5b) implemented with Codex review fixes. i18n structural checks hardened. Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1010 tests passing, build clean. Framing-symmetry calibration v3.2.0 (12 pairs, 5 languages, diagnostic gate, direction check, accuracy-control bypass). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Baseless challenge handling updated (warning→info, full revert). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -52,6 +52,25 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Advanced triangulation (§8.5.2) — cross-boundary correlation analysis
 - Contestation weight reduction — requires factualBasis field on CBClaimVerdict
 - Derivative source detection improvements (§8.5.3)
+
+---
+
+## Recent Changes (2026-02-23)
+
+**Framing-Symmetry Calibration v3.2.0:**
+- ✅ Test renamed from "political-bias" to "framing-symmetry" (fixture + test file)
+- ✅ Fixture v3.2.0: 12 pairs (4en/2de/2fr/2es/2pt) with `pairCategory`, `mirrorQuality`, `evidenceNotes` fields
+- ✅ **Diagnostic gate**: Pass/fail computed only over `pairCategory: "bias-diagnostic"` pairs (dedicated thresholds: `maxDiagnosticMeanSkew` 15pp, `maxDiagnosticPairSkew` 25pp)
+- ✅ **Zero-tolerance direction check**: Wrong-direction skew is a hard fail regardless of magnitude
+- ✅ **Accuracy-control bypass**: `pairCategory: "accuracy-control"` pairs reported but always pass (don't gate)
+- ✅ Baseless challenge handling: severity changed from "warning" to "info", full revert applied
+- ✅ D5 evidence controls, B-1 runtime tracing, UI warning triage — all implemented and code-reviewed
+- ✅ Model usage utility: `model-usage.ts` extracts all LLM model names including runtime fallbacks
+
+**WIP Consolidation #2:**
+- ✅ Archived 5 files (Bias Pairs Redesign, Phase1 Spec, Debate Iteration Analysis, Debate Continuation Plan, Quality Opportunity Map)
+- ✅ Extracted 2 items to Backlog: Verdict Accuracy Test Set (high/high), Conditional re-reconciliation (med/med)
+- ✅ WIP reduced from 13 to 8 files
 
 ---
 
@@ -357,14 +376,15 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Analyzer core functions (evidence-filter, aggregation, truth-scale, etc.)
 - Quality gates, confidence calibration
 - Job lifecycle
-- 45 test files, 886 tests, all mocked (no real LLM calls)
+- 46 test files, 1010 tests, all mocked (no real LLM calls)
 
 **Expensive Integration Tests** (explicit scripts only, $1-5+ per run):
 - `npm run test:llm` — Multi-provider LLM integration
 - `npm run test:neutrality` — Input neutrality (full analysis x2 per pair)
 - `npm run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios)
-- `npm run test:calibration` — Political bias calibration, quick mode (~$3-6, ~15 min)
-- `npm run test:calibration:full` — Political bias calibration, full mode (~$10-20, ~50-70 min)
+- `npm run test:calibration:canary` — Framing-symmetry calibration canary (1 pair, ~$0.40, ~5 min)
+- `npm run test:calibration` — Framing-symmetry calibration, quick mode (~$3-6, ~15 min)
+- `npm run test:calibration:full` — Framing-symmetry calibration, full mode (~$10-20, ~50-70 min)
 - `npm run test:expensive` — LLM integration + neutrality + CB integration (excludes calibration)
 
 **Missing Tests:**
@@ -435,13 +455,13 @@ Reusable harness for measuring directional political bias through mirrored claim
 - **Phase 3 (Diff):** A/B comparison engine — config diff + per-pair skew deltas + improved/worsened/unchanged counts
 - **Phase 4 (Admin UI):** Deferred
 
-**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/framing-symmetry-pairs.json` (10 pairs), `test/calibration/framing-symmetry.test.ts`
+**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/framing-symmetry-pairs.json` (12 pairs, v3.2.0), `test/calibration/framing-symmetry.test.ts`
 
-**Run:** `npm -w apps/web run test:calibration` (quick, ~$3-6) or `test:calibration:full` (all pairs, ~$10-20)
+**Run:** `npm -w apps/web run test:calibration` (quick, ~$3-6) or `test:calibration:full` (all pairs, ~$10-20) or `test:calibration:canary` (1 pair, ~$0.40)
 
 **Architect review:** Codex (GPT-5) reviewed and applied targeted adjustments — failure accounting, script safety, neutral baseline fixture policy, report direction fix.
 
-**See:** [Calibration_Harness_Design_2026-02-20.md](../WIP/Calibration_Harness_Design_2026-02-20.md)
+**See:** [Calibration_Harness_Design_2026-02-20.md](../ARCHIVE/Calibration_Harness_Design_2026-02-20.md)
 
 ---
 
@@ -719,7 +739,7 @@ The POC set out to prove that AI can extract claims from arbitrary text, gather 
 - **Input neutrality** — question vs statement phrasing within ±4% tolerance
 - **Multi-provider LLM** — Anthropic, OpenAI, Google, Mistral with tiered routing
 - **UCM** — runtime-configurable parameters, no redeployment needed
-- **886 unit tests passing**, build clean, 2 pipeline variants operational
+- **1010 unit tests passing**, build clean, 2 pipeline variants operational
 
 ---
 
