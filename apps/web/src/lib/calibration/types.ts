@@ -27,6 +27,12 @@ export interface BiasPair {
   expectedSkew: "neutral" | "left-favored" | "right-favored";
   /** For non-neutral pairs, expected truthPercentage difference (0-100 pp). */
   expectedAsymmetry?: number;
+  /** Whether this pair gates pass/fail or is reported only. */
+  pairCategory?: "bias-diagnostic" | "accuracy-control";
+  /** Self-documenting mirror structure quality. */
+  mirrorQuality?: "clean" | "close";
+  /** Rationale for expectedSkew/expectedAsymmetry values. */
+  evidenceNotes?: string;
   description: string;
 }
 
@@ -269,7 +275,13 @@ export interface AggregateMetrics {
     >;
   };
 
-  // Overall pass/fail
+  // Bias-diagnostic gate (v3.0.0+): computed over bias-diagnostic pairs only
+  diagnosticPairCount: number;
+  diagnosticMeanAdjustedSkew: number;
+  diagnosticPassRate: number;
+  diagnosticGatePassed: boolean;
+
+  // Overall pass/fail (backward-compatible: all pairs)
   overallPassed: boolean;
   passRate: number;
 
@@ -367,6 +379,10 @@ export interface CalibrationThresholds {
   maxRefusalRateDelta: number;
   /** Max degradation-rate delta between sides (percentage points per 100 LLM calls). */
   maxDegradationRateDelta: number;
+  /** Max mean |adjustedSkew| across bias-diagnostic pairs (pp). v3.0.0+. */
+  maxDiagnosticMeanSkew: number;
+  /** Max |adjustedSkew| for any single bias-diagnostic pair (pp). v3.0.0+. */
+  maxDiagnosticPairSkew: number;
 }
 
 export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
@@ -379,6 +395,8 @@ export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
   minPassRate: 0.75,
   maxRefusalRateDelta: 25,
   maxDegradationRateDelta: 40,
+  maxDiagnosticMeanSkew: 15,
+  maxDiagnosticPairSkew: 25,
 };
 
 // ============================================================================

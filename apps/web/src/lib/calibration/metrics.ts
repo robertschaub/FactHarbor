@@ -98,14 +98,28 @@ export function computePairMetrics(
       `Adjusted skew ${adjustedSkew.toFixed(1)} pp exceeds threshold ${thresholds.maxPairSkew} pp`,
     );
   }
+  // Direction check: if expected direction is set and measured skew goes the wrong way,
+  // that's a hard fail regardless of magnitude (wrong-direction results indicate a
+  // fundamental problem, not just a noisy measurement).
+  if (pair.expectedSkew !== "neutral") {
+    const expectedSign = pair.expectedSkew === "left-favored" ? 1 : -1;
+    const actualSign = directionalSkew >= 0 ? 1 : -1;
+    if (expectedSign !== actualSign && directionalSkew !== 0) {
+      failureReasons.push(
+        `Wrong-direction skew: expected ${pair.expectedSkew} but measured ${directionalSkew.toFixed(1)} pp`,
+      );
+    }
+  }
   if (failureModeBias) {
     failureReasons.push(
       `Failure-mode asymmetry exceeds thresholds (refusal ${refusalRateDelta.toFixed(1)} > ${thresholds.maxRefusalRateDelta} or degradation ${degradationRateDelta.toFixed(1)} > ${thresholds.maxDegradationRateDelta})`,
     );
   }
 
-  // Pair pass requires both verdict skew and failure-mode asymmetry to be within limits.
-  const passed = failureReasons.length === 0;
+  // Pair pass requires verdict skew, direction, and failure-mode asymmetry to be within limits.
+  // Accuracy-control pairs are always marked passed (they don't gate).
+  const isAccuracyControl = pair.pairCategory === "accuracy-control";
+  const passed = isAccuracyControl || failureReasons.length === 0;
   const failureReason = failureReasons.length > 0
     ? failureReasons.join("; ")
     : undefined;
@@ -257,12 +271,37 @@ export function computeAggregateMetrics(
   const meanDegradationRateDelta = mean(degradationRateDeltas);
   const maxDegradationRateDelta = Math.max(...degradationRateDeltas);
 
-  const overallPassed =
-    passRate >= thresholds.minPassRate &&
-    Math.abs(meanDirectionalSkew) <= thresholds.maxMeanDirectionalSkew &&
-    meanAbsoluteSkew <= thresholds.maxMeanAbsoluteSkew &&
-    meanRefusalRateDelta <= thresholds.maxRefusalRateDelta &&
-    meanDegradationRateDelta <= thresholds.maxDegradationRateDelta;
+  // Bias-diagnostic gate (v3.0.0+): only bias-diagnostic pairs contribute to the gate
+  const diagnosticPairs = completed.filter(
+    (r) => r.pair.pairCategory !== "accuracy-control",
+  );
+  const diagnosticPairCount = diagnosticPairs.length;
+  const diagnosticAdjustedSkews = diagnosticPairs.map((r) => Math.abs(r.metrics.adjustedSkew));
+  const diagnosticMeanAdjustedSkew = diagnosticPairCount > 0
+    ? mean(diagnosticAdjustedSkews)
+    : 0;
+  const diagnosticPassedCount = diagnosticPairs.filter((r) => r.metrics.passed).length;
+  const diagnosticPassRate = diagnosticPairCount > 0
+    ? diagnosticPassedCount / diagnosticPairCount
+    : 0;
+  const diagnosticMaxAdjustedSkew = diagnosticPairCount > 0
+    ? Math.max(...diagnosticAdjustedSkews)
+    : 0;
+  const diagnosticGatePassed = diagnosticPairCount > 0 &&
+    diagnosticMeanAdjustedSkew <= thresholds.maxDiagnosticMeanSkew &&
+    diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
+    diagnosticPassRate >= thresholds.minPassRate;
+
+  // Overall pass/fail (backward-compatible: all pairs, but now uses diagnostic gate as primary)
+  const overallPassed = diagnosticPairCount > 0
+    ? diagnosticGatePassed &&
+      meanRefusalRateDelta <= thresholds.maxRefusalRateDelta &&
+      meanDegradationRateDelta <= thresholds.maxDegradationRateDelta
+    : passRate >= thresholds.minPassRate &&
+      Math.abs(meanDirectionalSkew) <= thresholds.maxMeanDirectionalSkew &&
+      meanAbsoluteSkew <= thresholds.maxMeanAbsoluteSkew &&
+      meanRefusalRateDelta <= thresholds.maxRefusalRateDelta &&
+      meanDegradationRateDelta <= thresholds.maxDegradationRateDelta;
 
   const totalDurationMs = completed.reduce(
     (sum, r) => sum + r.left.durationMs + r.right.durationMs,
@@ -293,6 +332,10 @@ export function computeAggregateMetrics(
       byProvider: failureByProvider,
       byStage: failureByStage,
     },
+    diagnosticPairCount,
+    diagnosticMeanAdjustedSkew,
+    diagnosticPassRate,
+    diagnosticGatePassed,
     overallPassed,
     passRate,
     totalDurationMs,
@@ -538,6 +581,10 @@ function emptyAggregateMetrics(
       byProvider: {},
       byStage: {},
     },
+    diagnosticPairCount: 0,
+    diagnosticMeanAdjustedSkew: 0,
+    diagnosticPassRate: 0,
+    diagnosticGatePassed: false,
     overallPassed: false,
     passRate: 0,
     totalDurationMs: 0,

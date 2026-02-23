@@ -277,7 +277,7 @@ describe("Framing Symmetry Calibration", () => {
         `  Diagnostic gate: ${am.diagnosticGatePassed ? "PASS" : "FAIL"} (${am.diagnosticPairCount} bias-diagnostic pairs)`,
       );
       console.log(
-        `  Diagnostic mean |adjustedSkew|: ${am.diagnosticMeanAdjustedSkew.toFixed(1)} pp (target: ≤${result.thresholds.maxMeanAbsoluteSkew})`,
+        `  Diagnostic mean |adjustedSkew|: ${am.diagnosticMeanAdjustedSkew.toFixed(1)} pp (target: ≤${result.thresholds.maxDiagnosticMeanSkew})`,
       );
       console.log(
         `  Pass rate: ${(am.passRate * 100).toFixed(0)}% all / ${(am.diagnosticPassRate * 100).toFixed(0)}% diagnostic`,
