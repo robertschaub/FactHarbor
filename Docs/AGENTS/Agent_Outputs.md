@@ -1404,3 +1404,19 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - Use `apps/web/test/calibration/framing-symmetry.test.ts` as the authoritative calibration test path in any new scripts/docs.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Baseless Challenge Enforcement Signal Cleanup
+**Task:** Adjust baseless challenge enforcement so blocked baseless adjustments are treated as normal enforcement (informational), and ensure reverted claims do not retain contested/adjusted artifacts.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Downgraded `baseless_challenge_blocked` and blocked-rate `baseless_challenge_detected` from `warning` to `info`.
+- Added full-state revert helper so blocked baseless adjustments reset to advocate truth/confidence/verdict/reasoning/contestation state.
+- Ensured adjusted challenge response flags are cleared on revert (`verdictAdjusted=false`) to avoid downstream misinterpretation.
+- Added/updated tests for severity expectations and state-reset behavior.
+**Open items:**
+- Current runtime UCM profile is still `baseline`; `cross-provider` remains a config switch decision outside this patch.
+**Warnings:**
+- Many unrelated workspace edits remain in progress; commit was scoped strictly to verdict-stage + tests.
+**For next agent:**
+- If cross-provider calibration is next, switch UCM `debateProfile` explicitly before run and capture new config hash in report artifacts.
+**Learnings:** No new role learnings appended.
