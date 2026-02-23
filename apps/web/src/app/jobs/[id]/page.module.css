@@ -150,6 +150,42 @@
   background-color: #fff;
 }
 
+/* Provider issue indicator — subtle, collapsed */
+.providerIssueBanner {
+  margin: 8px 0 10px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  font-size: 12px;
+}
+
+.providerIssueSummary {
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+}
+
+.providerIssueSummary:hover {
+  color: #374151;
+}
+
+.providerIssueList {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.providerIssueList li {
+  margin: 3px 0;
+}
+
+.providerIssueList strong {
+  color: #4b5563;
+  font-weight: 500;
+}
+
 .reportDamageBanner {
   margin: 10px 0 14px;
   padding: 12px;

@@ -39,6 +39,25 @@ import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
 
+// Provider issues (LLM/search call errors, even if recovered via fallback)
+// shown as a top-of-page indicator, not inside the report.
+const PROVIDER_ISSUE_TYPES = new Set([
+  "llm_provider_error",
+  "search_provider_error",
+  "structured_output_failure",
+  "debate_provider_fallback",
+  "search_fallback",
+  "source_reliability_error",
+  "source_fetch_failure",
+  "source_fetch_degradation",
+  "evidence_filter_degradation",
+  "grounding_check_degraded",
+  "direction_validation_degraded",
+  "explanation_quality_rubric_failed",
+  "verdict_batch_retry",
+  "verdict_partial_recovery",
+]);
+
 // Module-level helper — browser-safe (client component, only called from event handlers)
 function escapeHtml(str: string): string {
   const div = document.createElement("div");
@@ -397,7 +416,9 @@ export default function JobPage() {
   const claimVerdicts = result?.claimVerdicts || [];
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
-  const analysisWarnings = result?.analysisWarnings || [];  // P1: Analysis warnings for UI
+  const allAnalysisWarnings: any[] = result?.analysisWarnings || [];
+  const providerIssues = allAnalysisWarnings.filter((w: any) => PROVIDER_ISSUE_TYPES.has(w?.type));
+  const analysisWarnings = allAnalysisWarnings.filter((w: any) => !PROVIDER_ISSUE_TYPES.has(w?.type));
   const reportIntegrity = result?.meta?.reportIntegrity;
   const reportDamagedWarning = analysisWarnings.find((w: any) => w?.type === "report_damaged");
   const isReportDamaged =
@@ -432,8 +453,8 @@ export default function JobPage() {
   const evidenceItems = result?.evidenceItems || [];
 
   // ClaimAssessmentBoundary schema detection (Phase 3)
-  const isCBSchema = result?._schemaVersion === "3.0.0-cb" ||
-                     result?.meta?.schemaVersion === "3.0.0-cb" ||
+  const isCBSchema = (typeof result?._schemaVersion === "string" && result._schemaVersion.endsWith("-cb")) ||
+                     (typeof result?.meta?.schemaVersion === "string" && result.meta.schemaVersion.endsWith("-cb")) ||
                      result?.meta?.pipeline === "claimboundary";
   const claimBoundaries = result?.claimBoundaries || [];
 
@@ -822,6 +843,21 @@ export default function JobPage() {
                   originalInput={job?.inputValue || ""}
                   transformedInput={impliedClaim}
                 />
+              )}
+
+              {providerIssues.length > 0 && (
+                <details className={styles.providerIssueBanner}>
+                  <summary className={styles.providerIssueSummary}>
+                    {providerIssues.length} provider issue{providerIssues.length !== 1 ? 's' : ''} occurred during analysis (fallbacks used)
+                  </summary>
+                  <ul className={styles.providerIssueList}>
+                    {providerIssues.map((w: any, idx: number) => (
+                      <li key={`pi-${idx}`}>
+                        <strong>{w.type}:</strong> {w.message}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               )}
 
               {isReportDamaged && (

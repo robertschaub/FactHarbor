@@ -4,10 +4,9 @@
  * (verdict direction mismatches, structured output failures, budget exceeded, etc.)
  */
 
-import React from 'react';
 import styles from './FallbackReport.module.css';
 import type { FallbackSummary } from '@/lib/analyzer/classification-fallbacks';
-import type { AnalysisWarning } from '@/lib/analyzer/types';
+import type { AnalysisWarning, AnalysisWarningType } from '@/lib/analyzer/types';
 
 interface FallbackReportProps {
   summary: FallbackSummary | undefined;
@@ -57,6 +56,39 @@ const SEVERITY_ICONS: Record<AnalysisWarning["severity"], string> = {
   info: "ℹ️",
 };
 
+/**
+ * Warning types that directly indicate report quality degradation.
+ * Shown prominently regardless of severity level.
+ * All other warning types are treated as operational/informational
+ * and collapsed by default.
+ */
+const QUALITY_DEGRADING_TYPES = new Set<AnalysisWarningType>([
+  // Critical failures (provider issues are filtered out at page level)
+  "report_damaged",
+  "no_successful_sources",
+  "source_acquisition_collapse",
+  // Evidence quality
+  "evidence_pool_imbalance",
+  "low_evidence_count",
+  "low_source_count",
+  "context_without_evidence",
+  "recency_evidence_gap",
+  // Verdict quality
+  "verdict_direction_mismatch",
+  "grounding_check",
+  "verdict_fallback_partial",
+  "analysis_generation_failed",
+  "contested_verdict_range",
+  // Execution quality
+  "budget_exceeded",
+  "query_budget_exhausted",
+]);
+
+/** Quality-affecting if the warning type directly degrades report quality. */
+function isQualityAffecting(warning: AnalysisWarning): boolean {
+  return QUALITY_DEGRADING_TYPES.has(warning.type);
+}
+
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -76,6 +108,45 @@ function getWarningHints(warning: AnalysisWarning): string[] {
   return Array.from(new Set(combined));
 }
 
+function WarningCard({ warning }: { warning: AnalysisWarning }) {
+  const hints = getWarningHints(warning);
+  return (
+    <div className={`${styles.warningItem} ${styles[`severity_${warning.severity}`]}`}>
+      <span className={styles.warningIcon}>{SEVERITY_ICONS[warning.severity]}</span>
+      <div className={styles.warningContent}>
+        <span className={styles.warningType}>
+          {WARNING_TYPE_LABELS[warning.type] || warning.type}
+        </span>
+        <p className={styles.warningMessage}>{warning.message}</p>
+        {Array.isArray((warning.details as any)?.issues) && (warning.details as any).issues.length > 0 && (
+          <ul className={styles.warningIssueList}>
+            {(warning.details as any).issues.slice(0, 4).map((issue: any, idx: number) => (
+              <li key={`issue-${idx}`}>
+                <strong>{issue?.type || "issue"}:</strong> {issue?.message || "No message"}
+              </li>
+            ))}
+          </ul>
+        )}
+        {hints.length > 0 && (
+          <ul className={styles.warningHintList}>
+            {hints.slice(0, 3).map((hint, hintIdx) => (
+              <li key={`hint-${hintIdx}`}>{hint}</li>
+            ))}
+          </ul>
+        )}
+        {warning.details && Object.keys(warning.details).length > 0 && (
+          <details className={styles.warningDetails}>
+            <summary>Details</summary>
+            <pre className={styles.detailsJson}>
+              {JSON.stringify(warning.details, null, 2)}
+            </pre>
+          </details>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function FallbackReport({ summary, analysisWarnings = [] }: FallbackReportProps) {
   const hasFallbacks = summary && summary.totalFallbacks > 0;
   const hasWarnings = analysisWarnings.length > 0;
@@ -89,13 +160,14 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
     ? Object.entries(summary.fallbacksByField).filter(([_, count]) => count > 0)
     : [];
 
-  // Determine overall severity (errors > warnings > info)
-  const hasErrors = analysisWarnings.some(w => w.severity === "error");
-  const hasWarningLevel = analysisWarnings.some(w => w.severity === "warning");
-  const overallSeverity = hasErrors ? "error" : (hasWarningLevel || hasFallbacks) ? "warning" : "info";
+  // Split warnings into quality-affecting (prominent) vs operational (collapsed)
+  const qualityWarnings = analysisWarnings.filter(isQualityAffecting);
+  const operationalWarnings = analysisWarnings.filter(w => !isQualityAffecting(w));
 
-  // Count total issues
-  const totalIssues = (summary?.totalFallbacks || 0) + analysisWarnings.length;
+  const hasErrors = qualityWarnings.some(w => w.severity === "error");
+
+  // Count only quality-affecting issues in the header
+  const qualityIssueCount = qualityWarnings.length + (summary?.totalFallbacks || 0);
 
   return (
     <div className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''}`}>
@@ -114,55 +186,32 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
         </svg>
         <div className={styles.content}>
           <h3 className={styles.title}>
-            Analysis Quality Issues ({totalIssues})
+            {qualityIssueCount > 0
+              ? `Analysis Quality Issues (${qualityIssueCount})`
+              : `Analysis Notes`}
           </h3>
 
-          {/* Analysis Warnings Section */}
-          {hasWarnings && (
+          {/* Quality-affecting warnings — always visible */}
+          {qualityWarnings.length > 0 && (
             <div className={styles.warningsSection}>
-              {analysisWarnings.map((warning, index) => (
-                <div
-                  key={index}
-                  className={`${styles.warningItem} ${styles[`severity_${warning.severity}`]}`}
-                >
-                  <span className={styles.warningIcon}>{SEVERITY_ICONS[warning.severity]}</span>
-                  <div className={styles.warningContent}>
-                    <span className={styles.warningType}>
-                      {WARNING_TYPE_LABELS[warning.type] || warning.type}
-                    </span>
-                    <p className={styles.warningMessage}>{warning.message}</p>
-                    {Array.isArray((warning.details as any)?.issues) && (warning.details as any).issues.length > 0 && (
-                      <ul className={styles.warningIssueList}>
-                        {(warning.details as any).issues.slice(0, 4).map((issue: any, idx: number) => (
-                          <li key={`issue-${idx}`}>
-                            <strong>{issue?.type || "issue"}:</strong> {issue?.message || "No message"}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {(() => {
-                      const hints = getWarningHints(warning);
-                      if (hints.length === 0) return null;
-                      return (
-                        <ul className={styles.warningHintList}>
-                          {hints.slice(0, 3).map((hint, hintIdx) => (
-                            <li key={`hint-${hintIdx}`}>{hint}</li>
-                          ))}
-                        </ul>
-                      );
-                    })()}
-                    {warning.details && Object.keys(warning.details).length > 0 && (
-                      <details className={styles.warningDetails}>
-                        <summary>Details</summary>
-                        <pre className={styles.detailsJson}>
-                          {JSON.stringify(warning.details, null, 2)}
-                        </pre>
-                      </details>
-                    )}
-                  </div>
-                </div>
+              {qualityWarnings.map((warning, index) => (
+                <WarningCard key={`q-${index}`} warning={warning} />
               ))}
             </div>
+          )}
+
+          {/* Operational/informational warnings — collapsed */}
+          {operationalWarnings.length > 0 && (
+            <details className={styles.operationalSection}>
+              <summary className={styles.operationalSummary}>
+                {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''} (not affecting report quality)
+              </summary>
+              <div className={styles.warningsSection}>
+                {operationalWarnings.map((warning, index) => (
+                  <WarningCard key={`o-${index}`} warning={warning} />
+                ))}
+              </div>
+            </details>
           )}
 
           {/* Classification Fallbacks Section */}

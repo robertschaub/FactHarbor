@@ -35,11 +35,39 @@ import type {
   ConsistencyResult,
   CoverageMatrix,
   EvidenceItem,
+  SourceType,
   TriangulationScore,
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
 import type { LLMProviderType } from "@/lib/config-schemas";
+
+// ============================================================================
+// D5 CONTROL 2: SOURCE TYPE PARTITIONS
+// ============================================================================
+
+/**
+ * Institutional source types — higher methodological rigor, formal review processes.
+ * Routed to advocate + self-consistency roles when partitioning is enabled.
+ */
+const INSTITUTIONAL_SOURCE_TYPES: ReadonlySet<SourceType> = new Set([
+  "peer_reviewed_study",
+  "fact_check_report",
+  "government_report",
+  "legal_document",
+  "organization_report",
+]);
+
+/**
+ * General source types — broader information landscape, journalistic sources.
+ * Routed to challenger role when partitioning is enabled.
+ */
+const GENERAL_SOURCE_TYPES: ReadonlySet<SourceType> = new Set([
+  "news_primary",
+  "news_secondary",
+  "expert_statement",
+  "other",
+]);
 
 // ============================================================================
 // CONFIGURATION (UCM-configurable thresholds)
@@ -121,6 +149,14 @@ export interface VerdictStageConfig {
   /** Harm levels that trigger the confidence floor. Default: ["critical", "high"]. */
   highHarmFloorLevels: Array<"critical" | "high" | "medium" | "low">;
 
+  /**
+   * D5 Control 2: Evidence partitioning — route institutional sources to advocate,
+   * general sources to challenger. Reconciler and validator see full pool.
+   * Falls back to full pool if either partition has <2 items.
+   * Default: true.
+   */
+  evidencePartitioningEnabled: boolean;
+
   /** Range reporting configuration (Stammbach/Ash Action #6). */
   rangeReporting?: {
     enabled: boolean;
@@ -157,6 +193,7 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
   },
   debateModelProviders: {},
   highHarmFloorLevels: ["critical", "high"],
+  evidencePartitioningEnabled: true,
 };
 
 // ============================================================================
@@ -182,6 +219,8 @@ export type LLMCallFn = (
     providerOverride?: LLMProviderType;
     /** Override the specific model name for this call (e.g., "gpt-4.1"). */
     modelOverride?: string;
+    /** B-1: Runtime role tracing — identifies which debate role this call serves. */
+    callContext?: { debateRole: string; promptKey: string };
   }
 ) => Promise<unknown>;
 
@@ -211,18 +250,42 @@ export async function runVerdictStage(
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
 ): Promise<CBClaimVerdict[]> {
+  // D5 Control 2: Evidence partitioning for structural advocate independence
+  let advocateEvidence = evidence;
+  let challengerEvidence = evidence;
+
+  if (config.evidencePartitioningEnabled) {
+    const institutional = evidence.filter(e => INSTITUTIONAL_SOURCE_TYPES.has(e.sourceType as SourceType));
+    const general = evidence.filter(e => !e.sourceType || GENERAL_SOURCE_TYPES.has(e.sourceType as SourceType));
+
+    // Fallback: if either partition has <2 items, both roles get full pool
+    if (institutional.length >= 2 && general.length >= 2) {
+      advocateEvidence = institutional;
+      challengerEvidence = general;
+      console.info(
+        `[VerdictStage] D5 evidence partitioning active: advocate=${institutional.length} institutional, ` +
+        `challenger=${general.length} general (of ${evidence.length} total)`
+      );
+    } else {
+      console.info(
+        `[VerdictStage] D5 evidence partitioning fallback: institutional=${institutional.length}, ` +
+        `general=${general.length} — both roles get full pool (${evidence.length})`
+      );
+    }
+  }
+
   // Step 1: Advocate Verdict
   const advocateVerdicts = await advocateVerdict(
-    claims, evidence, boundaries, coverageMatrix, llmCall, config
+    claims, advocateEvidence, boundaries, coverageMatrix, llmCall, config
   );
 
   // Steps 2 & 3: Run in parallel
   const [consistencyResults, challengeDoc] = await Promise.all([
-    selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config),
-    adversarialChallenge(advocateVerdicts, evidence, boundaries, llmCall, config),
+    selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config),
+    adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config),
   ]);
 
-  // Step 4: Reconciliation (with evidence for challenge validation)
+  // Step 4: Reconciliation — reconciler sees FULL evidence (needs complete picture)
   const { verdicts: reconciledVerdicts, validatedChallengeDoc } = await reconcileVerdicts(
     advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config
   );
@@ -302,7 +365,7 @@ export async function advocateVerdict(
       boundaries: coverageMatrix.boundaries,
       counts: coverageMatrix.counts,
     },
-  }, { tier: config.debateModelTiers.advocate, providerOverride: config.debateModelProviders.advocate });
+  }, { tier: config.debateModelTiers.advocate, providerOverride: config.debateModelProviders.advocate, callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" } });
 
   // Parse LLM result into CBClaimVerdict[]
   const rawVerdicts = result as Array<Record<string, unknown>>;
@@ -391,8 +454,8 @@ export async function selfConsistencyCheck(
   };
 
   const [run2, run3] = await Promise.all([
-    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency }),
-    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency, callContext: { debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" } }),
+    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency, callContext: { debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" } }),
   ]);
 
   const run2Verdicts = run2 as Array<Record<string, unknown>>;
@@ -447,7 +510,7 @@ export async function adversarialChallenge(
     })),
     evidenceItems: evidence,
     claimBoundaries: boundaries,
-  }, { tier: config.debateModelTiers.challenger, providerOverride: config.debateModelProviders.challenger });
+  }, { tier: config.debateModelTiers.challenger, providerOverride: config.debateModelProviders.challenger, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
 
   return parseChallengeDocument(result);
 }
@@ -490,7 +553,7 @@ export async function reconcileVerdicts(
     })),
     challenges: validatedChallengeDoc.challenges,
     consistencyResults,
-  }, { tier: config.debateModelTiers.reconciler, providerOverride: config.debateModelProviders.reconciler });
+  }, { tier: config.debateModelTiers.reconciler, providerOverride: config.debateModelProviders.reconciler, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
 
   const rawReconciled = result as Array<Record<string, unknown>>;
 
@@ -565,7 +628,7 @@ export async function validateVerdicts(
         contradictingEvidenceIds: v.contradictingEvidenceIds,
       })),
       evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
-    }, { tier: validationTier, providerOverride: validationProvider }),
+    }, { tier: validationTier, providerOverride: validationProvider, callContext: { debateRole: "validation", promptKey: "VERDICT_GROUNDING_VALIDATION" } }),
     llmCall("VERDICT_DIRECTION_VALIDATION", {
       verdicts: verdicts.map((v) => ({
         claimId: v.claimId,
@@ -578,7 +641,7 @@ export async function validateVerdicts(
         statement: e.statement,
         claimDirection: e.claimDirection,
       })),
-    }, { tier: validationTier, providerOverride: validationProvider }),
+    }, { tier: validationTier, providerOverride: validationProvider, callContext: { debateRole: "validation", promptKey: "VERDICT_DIRECTION_VALIDATION" } }),
   ]);
 
   // Parse validation results and log issues (non-blocking per §8.4)
@@ -1110,12 +1173,12 @@ export function enforceBaselessChallengePolicy(
     return verdict;
   });
 
-  // Surface enforcement metrics as structured warning (Finding 2 fix)
-  if (totalAdjustments > 0) {
+  // Surface enforcement metrics only when something was actually blocked
+  if (baselessCount > 0) {
     const rate = baselessCount / totalAdjustments;
     warnings?.push({
       type: "baseless_challenge_detected",
-      severity: baselessCount > 0 ? "warning" : "info",
+      severity: "warning",
       message: `Baseless challenge enforcement: ${baselessCount}/${totalAdjustments} adjustments blocked (rate: ${(rate * 100).toFixed(1)}%).`,
       details: { baselessAdjustmentRate: rate, blockedCount: baselessCount, totalAdjustments },
     });

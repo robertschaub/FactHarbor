@@ -986,7 +986,7 @@ describe("Configurable debate model tiers", () => {
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions).toEqual({ tier: "haiku" });
+    expect(callOptions).toMatchObject({ tier: "haiku" });
   });
 
   it("selfConsistencyCheck should use config.debateModelTiers.selfConsistency", async () => {
@@ -1036,7 +1036,7 @@ describe("Configurable debate model tiers", () => {
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions).toEqual({ tier: "haiku" });
+    expect(callOptions).toMatchObject({ tier: "haiku" });
   });
 
   it("reconcileVerdicts should use config.debateModelTiers.reconciler", async () => {
@@ -1065,7 +1065,7 @@ describe("Configurable debate model tiers", () => {
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions).toEqual({ tier: "haiku" });
+    expect(callOptions).toMatchObject({ tier: "haiku" });
   });
 
   it("default config should use sonnet for debate roles and haiku for validation", () => {
@@ -1126,6 +1126,245 @@ describe("Configurable debate model tiers", () => {
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
     expect(callOptions.tier).toBe("opus");
+  });
+});
+
+// ============================================================================
+// B-1: RUNTIME ROLE TRACING (callContext)
+// ============================================================================
+
+describe("B-1 Runtime role tracing", () => {
+  const claims = [createAtomicClaim()];
+  const evidence = [createEvidenceItem()];
+  const boundaries = [createClaimBoundary()];
+  const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+  it("advocateVerdict passes callContext with debateRole='advocate'", async () => {
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG);
+
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.callContext).toEqual({
+      debateRole: "advocate",
+      promptKey: "VERDICT_ADVOCATE",
+    });
+  });
+
+  it("adversarialChallenge passes callContext with debateRole='challenger'", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
+    await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG);
+
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.callContext).toEqual({
+      debateRole: "challenger",
+      promptKey: "VERDICT_CHALLENGER",
+    });
+  });
+
+  it("reconcileVerdicts passes callContext with debateRole='reconciler'", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_RECONCILIATION: reconciliationResponse() });
+    await reconcileVerdicts(advocateVerdictsList, { challenges: [] }, [], [], mockLLM, DEFAULT_VERDICT_STAGE_CONFIG);
+
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.callContext).toEqual({
+      debateRole: "reconciler",
+      promptKey: "VERDICT_RECONCILIATION",
+    });
+  });
+
+  it("validateVerdicts passes callContext with debateRole='validation' for both grounding and direction", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    });
+    await validateVerdicts(verdicts, [createEvidenceItem()], mockLLM, DEFAULT_VERDICT_STAGE_CONFIG);
+
+    expect(mockLLM).toHaveBeenCalledTimes(2);
+    const groundingContext = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2].callContext;
+    const directionContext = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2].callContext;
+    expect(groundingContext).toEqual({ debateRole: "validation", promptKey: "VERDICT_GROUNDING_VALIDATION" });
+    expect(directionContext).toEqual({ debateRole: "validation", promptKey: "VERDICT_DIRECTION_VALIDATION" });
+  });
+
+  it("selfConsistencyCheck passes callContext with debateRole='selfConsistency'", async () => {
+    const advocateVerdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      selfConsistencyMode: "full",
+    };
+    await selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, mockLLM, config);
+
+    // selfConsistencyCheck makes 2 parallel calls
+    expect(mockLLM).toHaveBeenCalledTimes(2);
+    const call1Context = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2].callContext;
+    const call2Context = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2].callContext;
+    expect(call1Context).toEqual({ debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" });
+    expect(call2Context).toEqual({ debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" });
+  });
+});
+
+// ============================================================================
+// D5 CONTROL 2: EVIDENCE PARTITIONING
+// ============================================================================
+
+describe("D5 Control 2: Evidence partitioning", () => {
+  const claims = [createAtomicClaim()];
+  const boundaries = [createClaimBoundary()];
+
+  it("advocate receives institutional evidence, challenger receives general evidence", async () => {
+    // Create mixed evidence pool
+    const institutional1 = createEvidenceItem({ id: "EV_I1", sourceType: "peer_reviewed_study" });
+    const institutional2 = createEvidenceItem({ id: "EV_I2", sourceType: "government_report" });
+    const general1 = createEvidenceItem({ id: "EV_G1", sourceType: "news_primary" });
+    const general2 = createEvidenceItem({ id: "EV_G2", sourceType: "expert_statement" });
+    const allEvidence = [institutional1, institutional2, general1, general2];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, allEvidence);
+
+    // Track what evidence each role received
+    const advocateEvidenceIds: string[] = [];
+    const challengerEvidenceIds: string[] = [];
+
+    const mockLLM = vi.fn(async (promptKey: string, input: Record<string, unknown>) => {
+      const evidenceItems = input.evidenceItems as any[] ?? [];
+      if (promptKey === "VERDICT_ADVOCATE") {
+        for (const e of evidenceItems) advocateEvidenceIds.push(e.id);
+        return advocateResponse();
+      }
+      if (promptKey === "VERDICT_CHALLENGER") {
+        for (const e of evidenceItems) challengerEvidenceIds.push(e.id);
+        return challengeResponse();
+      }
+      if (promptKey === "VERDICT_RECONCILIATION") return reconciliationResponse();
+      if (promptKey === "VERDICT_GROUNDING_VALIDATION") return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      if (promptKey === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      return {};
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      selfConsistencyMode: "disabled",
+      evidencePartitioningEnabled: true,
+    };
+
+    await runVerdictStage(claims, allEvidence, boundaries, coverageMatrix, mockLLM, config);
+
+    // Advocate should only see institutional evidence
+    expect(advocateEvidenceIds).toContain("EV_I1");
+    expect(advocateEvidenceIds).toContain("EV_I2");
+    expect(advocateEvidenceIds).not.toContain("EV_G1");
+    expect(advocateEvidenceIds).not.toContain("EV_G2");
+
+    // Challenger should only see general evidence
+    expect(challengerEvidenceIds).toContain("EV_G1");
+    expect(challengerEvidenceIds).toContain("EV_G2");
+    expect(challengerEvidenceIds).not.toContain("EV_I1");
+    expect(challengerEvidenceIds).not.toContain("EV_I2");
+  });
+
+  it("falls back to full pool when one partition has <2 items", async () => {
+    // Only 1 institutional item — should fall back
+    const institutional = createEvidenceItem({ id: "EV_I1", sourceType: "peer_reviewed_study" });
+    const general1 = createEvidenceItem({ id: "EV_G1", sourceType: "news_primary" });
+    const general2 = createEvidenceItem({ id: "EV_G2", sourceType: "expert_statement" });
+    const allEvidence = [institutional, general1, general2];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, allEvidence);
+
+    const advocateEvidenceIds: string[] = [];
+
+    const mockLLM = vi.fn(async (promptKey: string, input: Record<string, unknown>) => {
+      const evidenceItems = input.evidenceItems as any[] ?? [];
+      if (promptKey === "VERDICT_ADVOCATE") {
+        for (const e of evidenceItems) advocateEvidenceIds.push(e.id);
+        return advocateResponse();
+      }
+      if (promptKey === "VERDICT_CHALLENGER") return challengeResponse();
+      if (promptKey === "VERDICT_RECONCILIATION") return reconciliationResponse();
+      if (promptKey === "VERDICT_GROUNDING_VALIDATION") return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      if (promptKey === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      return {};
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      selfConsistencyMode: "disabled",
+      evidencePartitioningEnabled: true,
+    };
+
+    await runVerdictStage(claims, allEvidence, boundaries, coverageMatrix, mockLLM, config);
+
+    // Fallback: advocate sees ALL evidence
+    expect(advocateEvidenceIds).toContain("EV_I1");
+    expect(advocateEvidenceIds).toContain("EV_G1");
+    expect(advocateEvidenceIds).toContain("EV_G2");
+  });
+
+  it("no partitioning when disabled", async () => {
+    const institutional = createEvidenceItem({ id: "EV_I1", sourceType: "peer_reviewed_study" });
+    const general = createEvidenceItem({ id: "EV_G1", sourceType: "news_primary" });
+    const allEvidence = [institutional, general];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, allEvidence);
+
+    const advocateEvidenceIds: string[] = [];
+
+    const mockLLM = vi.fn(async (promptKey: string, input: Record<string, unknown>) => {
+      const evidenceItems = input.evidenceItems as any[] ?? [];
+      if (promptKey === "VERDICT_ADVOCATE") {
+        for (const e of evidenceItems) advocateEvidenceIds.push(e.id);
+        return advocateResponse();
+      }
+      if (promptKey === "VERDICT_CHALLENGER") return challengeResponse();
+      if (promptKey === "VERDICT_RECONCILIATION") return reconciliationResponse();
+      if (promptKey === "VERDICT_GROUNDING_VALIDATION") return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      if (promptKey === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      return {};
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      selfConsistencyMode: "disabled",
+      evidencePartitioningEnabled: false,
+    };
+
+    await runVerdictStage(claims, allEvidence, boundaries, coverageMatrix, mockLLM, config);
+
+    // Disabled: advocate sees ALL evidence
+    expect(advocateEvidenceIds).toContain("EV_I1");
+    expect(advocateEvidenceIds).toContain("EV_G1");
   });
 });
 
@@ -1614,11 +1853,10 @@ describe("enforceBaselessChallengePolicy", () => {
 
     // NOT reverted (mixed provenance)
     expect(result[0].truthPercentage).toBe(68);
-    // Warnings: 1 advisory + 1 metrics
-    expect(warnings).toHaveLength(2);
+    // Warnings: 1 advisory only (no summary when baselessCount=0)
+    expect(warnings).toHaveLength(1);
     expect(warnings[0].type).toBe("baseless_challenge_detected");
     expect(warnings[0].severity).toBe("info");
-    expect(warnings[1].details).toBeDefined(); // metrics warning
   });
 
   it("should compute baselessAdjustmentRate correctly", () => {

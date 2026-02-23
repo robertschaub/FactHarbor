@@ -262,3 +262,31 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* Operational notes — collapsed by default */
+.operationalSection {
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 0.5rem;
+}
+
+.operationalSummary {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+}
+
+.operationalSummary:hover {
+  color: #374151;
+  text-decoration: underline;
+}
+
+.operationalSection .warningsSection {
+  margin-top: 0.5rem;
+}
+
+.operationalSection .warningItem {
+  opacity: 0.85;
+}
