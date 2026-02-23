@@ -24,6 +24,7 @@ import type {
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
+  ClaimVerdict7Point,
   ClaimAssessmentBoundary,
   CoverageMatrix,
   EvidenceItem,
@@ -156,6 +157,7 @@ export async function runClaimBoundaryAnalysis(
       originalInput: input.inputValue,
       originalText: "",
       inputType: input.inputType,
+      pipelineStartMs: Date.now(),
       understanding: null,
       evidenceItems: [],
       sources: [],
@@ -176,6 +178,9 @@ export async function runClaimBoundaryAnalysis(
       const p = provider?.trim();
       runtimeModelsUsed.add(p ? `${p}:${modelName}` : modelName);
     };
+
+    // B-1: Per-role runtime tracing — captures what actually ran for each debate role
+    const runtimeRoleTraces: Array<{ debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }> = [];
 
     // Stage 1: Extract Claims
     checkAbortSignal(input.jobId);
@@ -221,6 +226,64 @@ export async function runClaimBoundaryAnalysis(
         `[Pipeline] Evidence pool imbalance detected: ${evidenceBalance.supporting}S/${evidenceBalance.contradicting}C/${evidenceBalance.neutral}N ` +
         `(${direction}: ${majorityPct}%, ${majorityCount}/${directional} directional, threshold: ${Math.round(skewThreshold * 100)}%)`
       );
+
+      // D5 Control 3: Contrarian Retrieval — seek underrepresented evidence
+      const contrarianEnabled = initialCalcConfig.contrarianRetrievalEnabled ?? true;
+      const contrarianMaxQueries = initialCalcConfig.contrarianMaxQueriesPerClaim ?? 2;
+      if (contrarianEnabled && contrarianMaxQueries > 0) {
+        const contrarianStartMs = Date.now();
+        const contrarianCeilingPct = initialCalcConfig.contrarianRuntimeCeilingPct ?? 15;
+        const pipelineElapsedMs = contrarianStartMs - (state.pipelineStartMs ?? contrarianStartMs);
+        const timeBudgetMs = initialPipelineConfig.researchTimeBudgetMs ?? 10 * 60 * 1000;
+        const ceilingMs = timeBudgetMs * (contrarianCeilingPct / 100);
+        const withinBudget = isNaN(pipelineElapsedMs) || pipelineElapsedMs < (timeBudgetMs - ceilingMs);
+
+        if (withinBudget) {
+          onEvent("Running contrarian evidence search...", 58);
+          console.info(`[Pipeline] D5 Control 3: Starting contrarian retrieval (max ${contrarianMaxQueries} queries/claim)`);
+
+          const beforeCount = state.evidenceItems.length;
+          try {
+            // Run contrarian iteration for each claim (limited by contrarianMaxQueries per claim)
+            for (const claim of understanding.atomicClaims) {
+              await runResearchIteration(
+                claim,
+                "contrarian",
+                initialSearchConfig,
+                initialPipelineConfig,
+                contrarianMaxQueries,
+                new Date().toISOString().split("T")[0],
+                state,
+              );
+            }
+          } catch (contrarianError) {
+            // Fail-open: contrarian retrieval errors are non-fatal
+            console.warn("[Pipeline] D5 contrarian retrieval failed (non-fatal):", contrarianError);
+            state.warnings.push({
+              type: "evidence_pool_imbalance" as const,
+              severity: "info" as const,
+              message: `Contrarian retrieval failed: ${contrarianError instanceof Error ? contrarianError.message : String(contrarianError)}. Continuing with existing evidence pool.`,
+            });
+          }
+
+          const newItems = state.evidenceItems.length - beforeCount;
+          const contrarianDurationMs = Date.now() - contrarianStartMs;
+          console.info(
+            `[Pipeline] D5 contrarian retrieval complete: ${newItems} new items in ${Math.round(contrarianDurationMs / 1000)}s`
+          );
+
+          // Re-assess evidence balance after contrarian pass
+          if (newItems > 0) {
+            const rebalanced = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
+            console.info(
+              `[Pipeline] Post-contrarian balance: ${rebalanced.supporting}S/${rebalanced.contradicting}C/${rebalanced.neutral}N ` +
+              `(skewed: ${rebalanced.isSkewed})`
+            );
+          }
+        } else {
+          console.info("[Pipeline] D5 contrarian retrieval skipped: approaching runtime ceiling");
+        }
+      }
     }
 
     // Stage 3: Cluster Boundaries
@@ -237,6 +300,32 @@ export async function runClaimBoundaryAnalysis(
       boundaries,
       state.evidenceItems
     );
+
+    // D5 Control 1: Evidence Sufficiency Gate — per-claim evidence check
+    const sufficiencyMinItems = initialCalcConfig.evidenceSufficiencyMinItems ?? 3;
+    const sufficiencyMinSourceTypes = initialCalcConfig.evidenceSufficiencyMinSourceTypes ?? 2;
+    const insufficientClaimIds = new Set<string>();
+    for (const claim of understanding.atomicClaims) {
+      const claimEvidence = state.evidenceItems.filter(
+        e => e.relevantClaimIds?.includes(claim.id)
+      );
+      const distinctSourceTypes = new Set(
+        claimEvidence.map(e => e.sourceType).filter(Boolean)
+      );
+      if (claimEvidence.length < sufficiencyMinItems || distinctSourceTypes.size < sufficiencyMinSourceTypes) {
+        insufficientClaimIds.add(claim.id);
+        state.warnings.push({
+          type: "insufficient_evidence",
+          severity: "warning",
+          message: `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
+            `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +
+            `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}). ` +
+            `Verdict set to UNVERIFIED.`,
+        });
+      }
+    }
+    const sufficientClaims = understanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));
+    const insufficientClaims = understanding.atomicClaims.filter(c => insufficientClaimIds.has(c.id));
 
     // Build resolved verdict config early so diversity + credential checks use it
     const resolvedVerdictConfig = buildVerdictStageConfig(initialPipelineConfig, initialCalcConfig);
@@ -257,15 +346,46 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Generating verdicts...", 70);
     startPhase("verdict");
-    const claimVerdicts = await generateVerdicts(
-      understanding.atomicClaims,
-      state.evidenceItems,
-      boundaries,
-      coverageMatrix,
-      undefined, // llmCall — use production default
-      state.warnings,
-      recordRuntimeModelUsage,
-    );
+    const roleTraceRecorder = (trace: { debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }) => {
+      runtimeRoleTraces.push(trace);
+    };
+
+    // D5 Control 1: Only send sufficient claims through verdict stage
+    const verdictInputClaims = insufficientClaimIds.size > 0 ? sufficientClaims : understanding.atomicClaims;
+    const sufficientVerdicts = verdictInputClaims.length > 0
+      ? await generateVerdicts(
+          verdictInputClaims,
+          state.evidenceItems,
+          boundaries,
+          coverageMatrix,
+          undefined, // llmCall — use production default
+          state.warnings,
+          recordRuntimeModelUsage,
+          roleTraceRecorder,
+        )
+      : [];
+
+    // D5 Control 1: Create UNVERIFIED verdicts for insufficient claims
+    const insufficientVerdicts: CBClaimVerdict[] = insufficientClaims.map(claim => ({
+      id: `CV_${claim.id}`,
+      claimId: claim.id,
+      truthPercentage: 50,
+      verdictReason: "insufficient_evidence",
+      verdict: "UNVERIFIED" as ClaimVerdict7Point,
+      confidence: 0,
+      reasoning: "Insufficient evidence to produce a reliable verdict. " +
+        "This claim did not meet the minimum evidence requirements (items or source type diversity).",
+      harmPotential: "low" as const,
+      isContested: false,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+      boundaryFindings: [],
+      consistencyResult: { claimId: claim.id, percentages: [50], average: 50, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak" as const, factor: 1.0 },
+    }));
+
+    const claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
     endPhase("verdict");
 
     // B-7: Strip misleadingness fields if annotation mode doesn't include them
@@ -306,6 +426,7 @@ export async function runClaimBoundaryAnalysis(
             initialPipelineConfig,
             state.warnings,
             recordRuntimeModelUsage,
+            roleTraceRecorder,
           );
           qualityCheck.rubricScores = await evaluateExplanationRubric(
             assessment.verdictNarrative,
@@ -344,11 +465,29 @@ export async function runClaimBoundaryAnalysis(
     recordRuntimeModelUsage(extractModel.provider, extractModel.modelName);
     recordRuntimeModelUsage(verdictModel.provider, verdictModel.modelName);
 
+    // B-1: Aggregate runtime role traces into per-role summary
+    const runtimeRoleModels: Record<string, { provider: string; model: string; tier: string; callCount: number; fallbackUsed: boolean }> = {};
+    for (const trace of runtimeRoleTraces) {
+      const existing = runtimeRoleModels[trace.debateRole];
+      if (existing) {
+        existing.callCount++;
+        if (trace.fallbackUsed) existing.fallbackUsed = true;
+      } else {
+        runtimeRoleModels[trace.debateRole] = {
+          provider: trace.provider,
+          model: trace.model,
+          tier: trace.tier,
+          callCount: 1,
+          fallbackUsed: trace.fallbackUsed,
+        };
+      }
+    }
+
     // Wrap assessment in resultJson structure (no AnalysisContext references)
     const resultJson = {
-      _schemaVersion: "3.0.0-cb", // ClaimAssessmentBoundary pipeline schema
+      _schemaVersion: "3.2.0-cb", // ClaimAssessmentBoundary pipeline schema
       meta: {
-        schemaVersion: "3.0.0-cb",
+        schemaVersion: "3.2.0-cb",
         generatedUtc: new Date().toISOString(),
         pipeline: "claimboundary",
         llmProvider: initialPipelineConfig.llmProvider ?? "anthropic",
@@ -359,6 +498,7 @@ export async function runClaimBoundaryAnalysis(
           verdict: verdictModel.modelName,
         },
         modelsUsedAll: Array.from(runtimeModelsUsed),
+        runtimeRoleModels,
         searchProvider: initialSearchConfig.provider,
         searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
         inputType: input.inputType,
@@ -2120,7 +2260,7 @@ export function consumeClaimQueryBudget(
  */
 export async function runResearchIteration(
   targetClaim: AtomicClaim,
-  iterationType: "main" | "contradiction",
+  iterationType: "main" | "contradiction" | "contrarian",
   searchConfig: SearchConfig,
   pipelineConfig: PipelineConfig,
   maxSourcesPerIteration: number,
@@ -2132,6 +2272,7 @@ export async function runResearchIteration(
     console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`);
     return;
   }
+  const evidenceCountBeforeIteration = state.evidenceItems.length;
 
   // 1. Generate search queries via LLM (Haiku)
   const queries = await generateResearchQueries(
@@ -2143,6 +2284,7 @@ export async function runResearchIteration(
     remainingBudget,
   );
   state.llmCalls++;
+  const generatedQueryCount = queries.length;
 
   for (const queryObj of queries) {
     if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
@@ -2240,11 +2382,20 @@ export async function runResearchIteration(
       // 9. Evidence filter (deterministic safety net)
       const { kept } = filterByProbativeValue(rawEvidence);
 
-      // 10. Add to state
+      // 10. Tag search strategy and add to state
+      if (iterationType === "contrarian") {
+        for (const item of kept) {
+          item.searchStrategy = "contrarian";
+        }
+      } else if (iterationType === "contradiction") {
+        for (const item of kept) {
+          item.searchStrategy = "contradiction";
+        }
+      }
       state.evidenceItems.push(...kept);
 
-      // Track contradiction sources
-      if (iterationType === "contradiction") {
+      // Track contradiction/contrarian sources
+      if (iterationType === "contradiction" || iterationType === "contrarian") {
         state.contradictionSourcesFound += fetchedSources.length;
       }
     } catch (err) {
@@ -2273,6 +2424,13 @@ export async function runResearchIteration(
       }
     }
   }
+
+  if (iterationType === "contrarian") {
+    const newItems = state.evidenceItems.length - evidenceCountBeforeIteration;
+    console.info(
+      `[Pipeline] D5 contrarian: claim ${targetClaim.id} -> ${generatedQueryCount} queries generated, ${newItems} new items`,
+    );
+  }
 }
 
 /**
@@ -2281,7 +2439,7 @@ export async function runResearchIteration(
  */
 export async function generateResearchQueries(
   claim: AtomicClaim,
-  iterationType: "main" | "contradiction",
+  iterationType: "main" | "contradiction" | "contrarian",
   existingEvidence: EvidenceItem[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
@@ -3463,6 +3621,7 @@ export async function generateVerdicts(
   llmCall?: LLMCallFn,
   warnings?: AnalysisWarning[],
   modelUsageRecorder?: (provider: string, modelName: string) => void,
+  roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }) => void,
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -3485,7 +3644,7 @@ export async function generateVerdicts(
 
   // Production LLM call wiring — use injected or create from UCM.
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
-  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder);
+  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder, roleTraceRecorder);
 
   return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings);
 }
@@ -3550,6 +3709,7 @@ export function buildVerdictStageConfig(
       validation: explicitProviders?.validation ?? profileProviders?.validation,
     },
     highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
+    evidencePartitioningEnabled: calcConfig.evidencePartitioningEnabled ?? true,
     rangeReporting: calcConfig.rangeReporting
       ? {
           enabled: calcConfig.rangeReporting.enabled,
@@ -3598,11 +3758,12 @@ export function createProductionLLMCall(
   pipelineConfig: PipelineConfig,
   warnings?: AnalysisWarning[],
   onModelUsed?: (provider: string, modelName: string) => void,
+  onRoleTrace?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }) => void,
 ): LLMCallFn {
   return async (
     promptKey: string,
     input: Record<string, unknown>,
-    options?: { tier?: "sonnet" | "haiku" | "opus"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string },
+    options?: { tier?: "sonnet" | "haiku" | "opus"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string; callContext?: { debateRole: string; promptKey: string } },
   ): Promise<unknown> => {
     const startTime = Date.now();
     const stage = "stage4_verdict";
@@ -3735,6 +3896,19 @@ export function createProductionLLMCall(
     }
 
     // 4. Call AI SDK
+    // B-1: Record per-role trace before making the call
+    const fallbackUsed = effectiveProviderOverride === undefined && options?.providerOverride !== undefined;
+    if (options?.callContext && onRoleTrace) {
+      onRoleTrace({
+        debateRole: options.callContext.debateRole,
+        promptKey: options.callContext.promptKey,
+        provider: model.provider,
+        model: model.modelName,
+        tier: tier,
+        fallbackUsed,
+      });
+    }
+
     let result: any;
     const callModel = async (activeModel: typeof model): Promise<any> => {
       onModelUsed?.(activeModel.provider, activeModel.modelName);

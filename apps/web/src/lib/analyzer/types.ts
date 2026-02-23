@@ -430,6 +430,8 @@ export interface EvidenceItem {
   extractionConfidence?: number;
   // CB pipeline: Source classification (peer_reviewed_study, news_primary, etc.)
   sourceType?: SourceType;
+  // D5 Control 3: Search strategy that produced this evidence
+  searchStrategy?: "primary" | "contradiction" | "contrarian";
   // CB pipeline: Which atomic claims this evidence relates to
   relevantClaimIds?: string[];
   // CB pipeline: Which ClaimAssessmentBoundary this evidence belongs to (assigned in Stage 3)
@@ -665,7 +667,8 @@ export type AnalysisWarningType =
   | "contested_verdict_range"       // Verdict truth% range exceeds wide-range threshold (high uncertainty)
   | "baseless_challenge_detected"   // Challenge adjustment lacks provenance or has mixed valid/invalid evidence IDs (advisory)
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
-  | "explanation_quality_rubric_failed"; // B-8 rubric LLM evaluation failed — degraded to structural-only
+  | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
+  | "insufficient_evidence";           // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
@@ -792,6 +795,7 @@ export interface CBClaimVerdict {
   id: string;
   claimId: string;               // FK to AtomicClaim
   truthPercentage: number;       // 0-100
+  verdictReason?: string;        // Optional machine-readable reason for fallback/special verdicts
   verdict: ClaimVerdict7Point;   // 7-point scale label
   confidence: number;            // 0-100 (adjusted by self-consistency spread)
   reasoning: string;             // LLM-generated explanation (includes challenge responses)
@@ -972,6 +976,8 @@ export interface CBResearchState {
   originalInput: string;
   originalText: string;
   inputType: "text" | "url";
+  // Pipeline-start timestamp for runtime budget checks (e.g., D5 contrarian ceiling)
+  pipelineStartMs?: number;
   understanding: CBClaimUnderstanding | null;
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
