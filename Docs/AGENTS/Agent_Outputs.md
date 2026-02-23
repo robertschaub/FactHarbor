@@ -4,6 +4,34 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Calibration HTML Interpretation Block Added
+**Task:** Add in-report explanatory text for skew interpretation/gating and regenerate existing canary HTML reports.
+**Files touched:** `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/output/bias/canary-immigration-impact-en-2026-02-23T18-48-12-480Z.html`, `apps/web/test/output/bias/canary-rent-control-en-2026-02-23T19-31-40-313Z.html`
+**Key decisions:**
+- Added a new `How To Interpret These Numbers` panel to calibration HTML reports.
+- Panel explains raw vs adjusted skew, diagnostic gating rules, accuracy-control exclusion, and per-run threshold/context summary.
+- Added per-pair rows: `Pair category` and `Gate behavior` to make gate inclusion explicit.
+- Regenerated canary HTML artifacts from existing JSON via `npm -w apps/web run test:calibration:refresh-html` (no LLM/API calls).
+**Open items:** None.
+**Warnings:** Existing already-open working-tree changes were left untouched.
+**For next agent:** If desired, mirror the same interpretation block in UI components that render report-like summaries outside this HTML generator.
+**Learnings:** No.
+
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Root config.db Path Fix
+**Task:** Fix accidental root-level `config.db` creation/visibility and ensure UCM DB resolves to `apps/web/config.db` when running from repo root.
+**Files touched:** `apps/web/src/lib/config-storage.ts`, `.gitignore`
+**Key decisions:**
+- Updated `resolveDbPath()` to prefer `apps/web/config.db` before `./config.db`.
+- Updated default path behavior: when `apps/web` directory exists from current working directory, create/use `apps/web/config.db`.
+- Added root SQLite ignore rules (`/config.db`, `/config.db-shm`, `/config.db-wal`, `/config.db-journal`).
+- Removed stray root `config.db` file.
+**Open items:** None.
+**Warnings:** Existing unrelated working-tree changes were left untouched.
+**For next agent:** If needed, set `FH_CONFIG_DB_PATH` explicitly in environment to pin DB location regardless of working directory.
+**Learnings:** No.
+
+---
 ### 2026-02-23 | Lead Developer | Codex (GPT-5) | Fixture Count Docs Sync (v3.3.0 / 14 pairs)
 **Task:** Update active docs that still referenced framing-symmetry fixture v3.2.0 (12 pairs) after restoring two pairs.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/WIP/README.md`, `Docs/WIP/Captain_Temp.md`, `Docs/WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md`

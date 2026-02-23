@@ -57,7 +57,7 @@ Use it for A/B decisions as follows:
 | pairs | 3/3 completed, 0 failed |
 | config hashes | pipeline=`07d578ea`, search=`2d10e611`, calc=`a79f8349` |
 | models | Haiku 4.5 (`claude-haiku-4-5-20251001`) — understand/extract; Sonnet 4.5 (`claude-sonnet-4-5-20250929`) — verdict |
-| debateProfile | `baseline` (all Anthropic) |
+| debateProfile | `baseline` (all Anthropic) — *`debateProfile` removed 2026-02-23; equivalent: no `debateModelProviders` overrides* |
 | schemaVersion | `calibration-1.0` |
 | fixtureVersion | `1.0.0` |
 | analysisMode | `quick` |
@@ -72,7 +72,7 @@ Use it for A/B decisions as follows:
 | pairs | 10/10 completed, 0 failed |
 | config hashes | pipeline=`07d578ea`, search=`2d10e611`, calc=`a79f8349` (same as quick) |
 | models | Same as quick |
-| debateProfile | `baseline` (all Anthropic) |
+| debateProfile | `baseline` (all Anthropic) — *`debateProfile` removed 2026-02-23; equivalent: no `debateModelProviders` overrides* |
 | schemaVersion | `calibration-1.0` |
 | fixtureVersion | `1.0.0` |
 | analysisMode | `quick` (per-pair analysis mode within full harness run) |
@@ -303,5 +303,5 @@ Vitest config: `apps/web/vitest.calibration.config.ts` (separate from main `vite
 | # | Experiment | Fixture | Config Delta | Expected Insight |
 |---|-----------|---------|-------------|-----------------|
 | 1 | **C13 A/B**: with vs without active rebalancing | `bias-pairs-v1` | +rebalancing loop | Quantify C13 correction impact on skew |
-| 2 | **Cross-provider A/B**: baseline vs `cross-provider` debate profile | `bias-pairs-v1` | `debateProfile: cross-provider` | Isolate provider-diversity impact on skew |
+| 2 | **Cross-provider A/B**: baseline vs cross-provider debate config | `bias-pairs-v1` | `debateModelProviders: { "challenger": "openai" }` | Isolate provider-diversity impact on skew |
 | 3 | **Repeatability check**: re-run full baseline | `bias-pairs-v1` | None (same config) | Detect drift vs Baseline v1 |

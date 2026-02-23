@@ -59,7 +59,9 @@ All five items are stabilization prerequisites. No architectural risk, no sequen
 | **Gate 3: C13 correction** | B-3 A/B shows ≥30% `meanAbsoluteSkew` reduction without quality regression (`passRate` ≥30%, `failureModeBiasCount` =0, improvement in ≥2 languages). Cost caps met. | Knowledge-diversity-lite doesn't measurably reduce skew, or cost ceiling exceeded |
 | **Gate 4: Decision memo** | B-2 conclusion reviewed and approved by Captain | Memo not written or not approved |
 
-**Promotion scope:** This policy governs changing the default `debateProfile` from `baseline` to `cross-provider` or `max-diversity`, and enabling knowledge-diversity-lite controls by default. Feature-flagged or explicit per-run config overrides are not blocked.
+**Promotion scope:** This policy governs changing the default debate role configuration (via `debateModelProviders`) from baseline (no overrides) to cross-provider (e.g., `{ "challenger": "openai" }`) or max-diversity, and enabling knowledge-diversity-lite controls by default. Feature-flagged or explicit per-run config overrides are not blocked.
+
+> **Note (2026-02-23):** `debateProfile` presets were removed. Roles are now configured directly via `debateModelTiers` and `debateModelProviders`. The promotion policy still applies — it governs changing the default pipeline config's provider overrides.
 
 ---
 

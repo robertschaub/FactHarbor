@@ -126,7 +126,7 @@ flowchart LR
 |-----------|-----------|-----------|------------|
 | **Debate structure** | Dynamic rounds until convergence | **Single-round only** (`debate.py` is empty, 0 bytes) | 5-step: advocate(3×) → challenge → reconcile → validate; ~7 verdict LLM calls |
 | **Advocate count** | 5-6 (IPCC, WMO, AbsCC, S1000, GPT-4o, [NIPCC]) | **3 only** (IPCC, WMO, NIPCC) — AbsCC/S1000/GPT-4o not implemented | 1 advocate role, 3 temperature-varied runs + 1 challenger |
-| **Advocate diversity source** | Knowledge-base separation (5 corpora) | Knowledge-base separation (3 corpora) | Model/provider separation (4 debate profiles) |
+| **Advocate diversity source** | Knowledge-base separation (5 corpora) | Knowledge-base separation (3 corpora) | Model/provider separation (per-role `debateModelTiers` + `debateModelProviders`) |
 | **Adversarial role** | Corpus-backed contrarian (NIPCC) | Same — NIPCC advocate uses same prompt, just different corpus | Prompt-directed challenger (same evidence pool) |
 | **Mediator behavior** | Asks follow-up questions, drives iterative reassessment | **Single-pass synthesis** — prompt describes iteration but code doesn't implement it | Single-pass reconciliation decision |
 | **Evidence source** | Curated RAG corpora (IPCC, WMO, abstracts) | In-memory LlamaIndex VectorStoreIndex, rebuilt each run | Live web search (iterative, up to 10 rounds) |

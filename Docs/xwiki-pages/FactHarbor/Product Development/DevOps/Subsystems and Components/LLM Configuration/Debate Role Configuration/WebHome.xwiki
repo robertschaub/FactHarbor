@@ -13,12 +13,17 @@ Role structure is fixed:
 
 Behavior is configurable per role (tier and provider) through UCM PipelineConfig.
 
-=== Recommended Starting Point (post-baseline) ===
+=== Recommended Starting Point (cross-provider) ===
 
-After baseline measurement, recommended first default candidate:
-* ##debateProfile = "cross-provider"##
+The current default config sets ##challenger## to OpenAI for structural independence:
 
-Why this is the best starting point:
+{{code language="json"}}
+{
+  "debateModelProviders": { "challenger": "openai" }
+}
+{{/code}}
+
+Why this is recommended:
 * Introduces structural independence where it matters most (challenger role)
 * Keeps blast radius small (only challenger provider changes)
 * Preserves current debate flow and tier strategy
@@ -61,24 +66,22 @@ Role-to-step mapping:
 {{code language="json"}}
 {
   "llmProvider": "anthropic",
-  "debateProfile": "cross-provider",
-  "debateModelTiers": {
-    "challenger": "sonnet",
-    "validation": "haiku"
+  "debateModelProviders": {
+    "challenger": "openai"
   }
 }
 {{/code}}
 
 === What this executes as ===
 
-Assuming default model mappings:
+Assuming default model mappings and default tiers (sonnet for debate, haiku for validation):
 
 |= Role |= Tier |= Provider |= Sub-model used
-| ##advocate## | sonnet | anthropic (inherited) | ##claude-sonnet-4-5-20250929##
-| ##selfConsistency## | sonnet | anthropic (inherited) | ##claude-sonnet-4-5-20250929##
-| ##challenger## | sonnet | openai (from ##cross-provider##) | ##gpt-4.1##
-| ##reconciler## | sonnet | anthropic (inherited) | ##claude-sonnet-4-5-20250929##
-| ##validation## | haiku | anthropic (inherited) | ##claude-haiku-4-5-20251001##
+| ##advocate## | sonnet | anthropic (global) | ##claude-sonnet-4-5-20250929##
+| ##selfConsistency## | sonnet | anthropic (global) | ##claude-sonnet-4-5-20250929##
+| ##challenger## | sonnet | openai (explicit) | ##gpt-4.1##
+| ##reconciler## | sonnet | anthropic (global) | ##claude-sonnet-4-5-20250929##
+| ##validation## | haiku | anthropic (global) | ##claude-haiku-4-5-20251001##
 
 Execution order:
 1. Advocate generates initial verdict.
@@ -91,12 +94,11 @@ Execution order:
 
 == Where to Configure ==
 
-Configure in Admin -> Config -> Pipeline:
+Configure in Admin -> Config -> Pipeline (JSON editor):
 
-* ##debateProfile##
-* ##debateModelTiers##
-* ##debateModelProviders##
-* ##llmProvider## (global fallback provider)
+* ##debateModelTiers## — per-role model tier
+* ##debateModelProviders## — per-role provider override
+* ##llmProvider## — global fallback provider
 
 All of these are runtime config values (no code change required).
 
@@ -106,38 +108,28 @@ All of these are runtime config values (no code change required).
 
 Effective role config is resolved in this order:
 
-1. Explicit per-role overrides:
-** ##debateModelTiers##
-** ##debateModelProviders##
-1. Profile preset:
-** ##debateProfile##
+1. Explicit per-role values:
+** ##debateModelTiers## (per-role)
+** ##debateModelProviders## (per-role)
 1. Hardcoded defaults:
 ** debate tiers: sonnet for debate roles, haiku for validation
 ** providers: inherit global ##llmProvider##
 
 ----
 
-== Built-in Profiles ==
+== Common Configurations ==
 
-|= debateProfile |= Role Intent |= Notes
-| ##baseline## | All roles Anthropic, same-tier debate | Default behavior
-| ##tier-split## | Challenger on haiku tier (same provider) | Lower cost
-| ##cross-provider## | Challenger provider = OpenAI | Provider diversity
-| ##max-diversity## | Challenger = OpenAI, selfConsistency = Google | Maximum provider diversity
-
-Example:
-
-{{code language="json"}}
-{
-  "debateProfile": "cross-provider"
-}
-{{/code}}
+|= Configuration |= debateModelTiers |= debateModelProviders |= Notes
+| **Baseline** (default) | (omit — all defaults) | (omit — all inherit global) | All roles same provider+tier
+| **Tier-split** | ##{ "challenger": "haiku" }## | (omit) | Lower cost challenger
+| **Cross-provider** | (omit) | ##{ "challenger": "openai" }## | Provider diversity
+| **Max-diversity** | (omit) | ##{ "challenger": "openai", "selfConsistency": "google" }## | Maximum provider diversity
 
 ----
 
-== Per-Role Override Example ==
+== Full Role Map Example ==
 
-You can use a profile and still override one role, or define the full role map explicitly.
+Define the complete role map explicitly.
 
 {{code language="json"}}
 {
@@ -207,7 +199,7 @@ Both warnings are expected signals for calibration/governance review.
 
 {{code language="powershell"}}
 cd apps/web
-npx tsx -e "import { loadPipelineConfig, loadCalcConfig } from './src/lib/config-loader.ts'; import { buildVerdictStageConfig } from './src/lib/analyzer/claimboundary-pipeline.ts'; (async () => { const p = await loadPipelineConfig('default'); const c = await loadCalcConfig('default'); const v = buildVerdictStageConfig(p.config as any, c.config as any); console.log(JSON.stringify({ llmProvider: (p.config as any).llmProvider, debateProfile: (p.config as any).debateProfile ?? null, debateModelTiers: v.debateModelTiers, debateModelProviders: v.debateModelProviders }, null, 2)); })();"
+npx tsx -e "import { loadPipelineConfig, loadCalcConfig } from './src/lib/config-loader.ts'; import { buildVerdictStageConfig } from './src/lib/analyzer/claimboundary-pipeline.ts'; (async () => { const p = await loadPipelineConfig('default'); const c = await loadCalcConfig('default'); const v = buildVerdictStageConfig(p.config as any, c.config as any); console.log(JSON.stringify({ llmProvider: (p.config as any).llmProvider, debateModelTiers: v.debateModelTiers, debateModelProviders: v.debateModelProviders }, null, 2)); })();"
 {{/code}}
 
 ----

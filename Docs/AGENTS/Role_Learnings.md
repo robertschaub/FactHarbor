@@ -169,6 +169,7 @@ After completing a task, if you discovered something that would help future agen
 **Category:** gotcha
 **Learning:** When debate profiles used `providers: {}` (empty), profile semantics depended on the global `llmProvider` — changing `llmProvider` from `anthropic` to `openai` would silently change what all profile-resolved debate roles used. Fix: profiles must populate all 5 provider fields explicitly. This also simplifies the diversity check: with all providers explicit, no sentinel/global-comparison logic is needed for profile-resolved configs. The sentinel is only needed for the no-profile backward-compatible path where providers are truly `undefined` (inherit global).
 **Files:** `apps/web/src/lib/config-schemas.ts` (DEBATE_PROFILES), `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (checkDebateTierDiversity)
+**Superseded (2026-02-23):** `debateProfile` presets removed entirely. Roles configured directly via `debateModelTiers` + `debateModelProviders`. The intent-stability problem no longer exists because there is no profile indirection layer.
 
 ### 2026-02-20 — Runtime warning emission requires a collector pattern when LLMCallFn contract is fixed
 **Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)

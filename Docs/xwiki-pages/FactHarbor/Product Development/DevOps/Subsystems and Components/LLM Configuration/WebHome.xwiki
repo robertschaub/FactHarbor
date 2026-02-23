@@ -61,9 +61,8 @@ If present in your ##.env## file, it will be ignored.
 === Debate Role Configuration (Verdict Stage) ===
 
 Debate roles are configured in PipelineConfig via:
-* ##debateProfile##
-* ##debateModelTiers##
-* ##debateModelProviders##
+* ##debateModelTiers## — per-role model tier (haiku/sonnet/opus)
+* ##debateModelProviders## — per-role LLM provider override
 
 See the dedicated guide:
 [[Debate Role Configuration>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.Debate Role Configuration.WebHome]]

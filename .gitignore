@@ -76,6 +76,10 @@ obj/
 Thumbs.db
 
 # SQLite
+/config.db
+/config.db-shm
+/config.db-wal
+/config.db-journal
 apps/api/*.db
 apps/api/*.db-shm
 apps/api/*.db-wal
