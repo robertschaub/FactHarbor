@@ -96,6 +96,9 @@ export interface SideResult {
   // Model information per debate role
   modelsUsed: Record<string, string>;
 
+  // B-1: Runtime role tracing — actual provider/model per debate role
+  runtimeRoleModels?: Record<string, { provider: string; model: string; tier: string; callCount: number; fallbackUsed: boolean }>;
+
   // Warnings from pipeline
   warnings: CalibrationWarning[];
 

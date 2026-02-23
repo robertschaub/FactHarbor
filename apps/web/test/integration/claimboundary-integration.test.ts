@@ -56,11 +56,11 @@ function loadEnvFile(filePath: string): void {
 // SCHEMA VALIDATION HELPERS
 // ============================================================================
 
-/** Validate the top-level resultJson structure matches 3.0.0-cb spec */
+/** Validate the top-level resultJson structure matches 3.x.0-cb spec */
 function assertCBSchema(resultJson: Record<string, any>): void {
   // Schema version
-  expect(resultJson._schemaVersion).toBe("3.0.0-cb");
-  expect(resultJson.meta.schemaVersion).toBe("3.0.0-cb");
+  expect(resultJson._schemaVersion).toBe("3.2.0-cb");
+  expect(resultJson.meta.schemaVersion).toBe("3.2.0-cb");
   expect(resultJson.meta.pipeline).toBe("claimboundary");
 
   // Core assessment fields

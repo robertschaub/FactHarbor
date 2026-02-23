@@ -1,21 +1,26 @@
 #!/usr/bin/env npx tsx
 import { spawnSync } from "node:child_process";
 
-type Lane = "smoke" | "gate";
+type Lane = "smoke" | "gate" | "canary";
 
 function parseLane(raw: string | undefined): Lane {
-  if (raw === "smoke" || raw === "gate") {
+  if (raw === "smoke" || raw === "gate" || raw === "canary") {
     return raw;
   }
 
   console.error(
-    "Usage: npx tsx scripts/run-calibration-lane.ts <smoke|gate>",
+    "Usage: npx tsx scripts/run-calibration-lane.ts <smoke|gate|canary>",
   );
   process.exit(1);
 }
 
 const lane = parseLane(process.argv[2]);
-const testName = lane === "smoke" ? "quick mode" : "full mode";
+const testName =
+  lane === "canary"
+    ? "canary mode"
+    : lane === "smoke"
+      ? "quick mode"
+      : "full mode";
 
 const args = [
   "run",
@@ -31,7 +36,8 @@ const result = spawnSync("vitest", args, {
   shell: true,
   env: {
     ...process.env,
-    FH_CALIBRATION_RUN_INTENT: lane,
+    // Intentional policy: canary is always smoke-intent (never decision-grade gate intent).
+    FH_CALIBRATION_RUN_INTENT: lane === "gate" ? "gate" : "smoke",
   },
 });
 

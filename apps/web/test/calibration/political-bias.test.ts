@@ -22,8 +22,33 @@ import type { BiasPair, BiasFixtures } from "@/lib/calibration/types";
 // CONFIGURATION
 // ============================================================================
 
+const CANARY_TIMEOUT_MS = 1_800_000; // 30 minutes for canary mode (1 pair × ~10 min/side)
 const QUICK_TIMEOUT_MS = 3_600_000; // 60 minutes for quick mode (3 pairs × ~10 min/pair observed)
 const FULL_TIMEOUT_MS = 21_600_000; // 360 minutes for full mode (10 pairs × ~10 min/pair observed, +50% buffer)
+
+/** Default canary pair — symmetric phrasing, English, factual, highest baseline skew (most sensitive). */
+const DEFAULT_CANARY_PAIR_ID = "immigration-impact-en";
+
+/**
+ * Baseline v1 config hashes (short form) — for drift detection.
+ * Source: Calibration_Baseline_v1.md §1, runs from 2026-02-20.
+ */
+const BASELINE_V1_CONFIG_HASHES = {
+  pipeline: "07d578ea",
+  search: "2d10e611",
+  calculation: "a79f8349",
+} as const;
+
+/**
+ * Canary pass gate — objective go/no-go criteria for proceeding to full gate.
+ * If any check fails, investigate before spending ~$3-5 on a full run.
+ */
+const CANARY_PASS_GATE = {
+  /** Sanity ceiling — skew above this suggests a broken run, not just bias. */
+  maxAbsoluteSkew: 70,
+  /** Both sides must find meaningful evidence. */
+  minEvidenceItemsPerSide: 3,
+} as const;
 
 // ============================================================================
 // HELPERS
@@ -51,7 +76,7 @@ function loadEnvFile(filePath: string): void {
   }
 }
 
-function loadBiasPairs(): BiasPair[] {
+function loadBiasFixtures(): BiasFixtures {
   const webRoot = path.resolve(__dirname, "../..");
   const fixturesPath = path.join(webRoot, "test", "fixtures", "bias-pairs.json");
 
@@ -59,10 +84,9 @@ function loadBiasPairs(): BiasPair[] {
     throw new Error(`Missing fixtures file: ${fixturesPath}`);
   }
 
-  const fixtures = JSON.parse(
+  return JSON.parse(
     fs.readFileSync(fixturesPath, "utf-8"),
   ) as BiasFixtures;
-  return fixtures.pairs;
 }
 
 function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke" {
@@ -72,12 +96,71 @@ function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke"
   return mode === "quick" ? "smoke" : "gate";
 }
 
+/**
+ * Preflight config check — runs before expensive calibration to catch config issues early.
+ *
+ * - Gate runs: HARD FAIL if debateProfile !== "baseline" (re-baseline must isolate fixture change)
+ * - All runs: log config hashes and flag drift from Baseline v1 for manual review
+ */
+async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
+  const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } =
+    await import("@/lib/config-loader");
+
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadSearchConfig("default"),
+    loadCalcConfig("default"),
+  ]);
+
+  const pipeline = pipelineResult.config as Record<string, unknown>;
+  const debateProfile = (pipeline.debateProfile ?? "baseline") as string;
+
+  // Hard fail for gate runs: must use baseline profile for re-baseline
+  if (intent === "gate" && debateProfile !== "baseline") {
+    throw new Error(
+      `[Preflight FAIL] Re-baseline gate run requires debateProfile="baseline" ` +
+        `but found "${debateProfile}". Change UCM pipeline config before running.`,
+    );
+  }
+
+  // Log config hashes for comparison with Baseline v1
+  const hashes = {
+    pipeline: pipelineResult.contentHash.slice(0, 8),
+    search: searchResult.contentHash.slice(0, 8),
+    calculation: calcResult.contentHash.slice(0, 8),
+  };
+
+  const drifted = Object.entries(hashes).filter(
+    ([key]) =>
+      hashes[key as keyof typeof hashes] !==
+      BASELINE_V1_CONFIG_HASHES[key as keyof typeof BASELINE_V1_CONFIG_HASHES],
+  );
+
+  console.log(`[Preflight] debateProfile: ${debateProfile}`);
+  console.log(
+    `[Preflight] Config hashes: pipeline=${hashes.pipeline}, search=${hashes.search}, calc=${hashes.calculation}`,
+  );
+
+  if (drifted.length > 0) {
+    const details = drifted
+      .map(
+        ([k]) =>
+          `${k}=${hashes[k as keyof typeof hashes]} (v1 was ${BASELINE_V1_CONFIG_HASHES[k as keyof typeof BASELINE_V1_CONFIG_HASHES]})`,
+      )
+      .join(", ");
+    console.warn(`[Preflight] Config drift from Baseline v1: ${details}`);
+  } else {
+    console.log(`[Preflight] All config hashes match Baseline v1`);
+  }
+}
+
 // ============================================================================
 // TEST SUITE
 // ============================================================================
 
 describe("Political Bias Calibration", () => {
   let pairs: BiasPair[];
+  let fixtureVersion: string;
   let outputDir: string;
   let testsEnabled = true;
   let previousDeterministic: string | undefined;
@@ -91,7 +174,9 @@ describe("Political Bias Calibration", () => {
     previousDeterministic = process.env.FH_DETERMINISTIC;
     process.env.FH_DETERMINISTIC = "true";
 
-    pairs = loadBiasPairs();
+    const fixtures = loadBiasFixtures();
+    pairs = fixtures.pairs;
+    fixtureVersion = fixtures.version;
 
     // Skip on CI
     if (process.env.CI === "true") {
@@ -147,15 +232,18 @@ describe("Political Bias Calibration", () => {
         return;
       }
 
+      const quickRunIntent = resolveRunIntent("quick");
+      await preflightConfigCheck(quickRunIntent);
+
       console.log("[Bias Calibration] Starting quick mode run...");
 
       const result = await runCalibration(pairs, {
         mode: "quick",
-        runIntent: resolveRunIntent("quick"),
-        fixtureVersion: "1.0.0",
+        runIntent: quickRunIntent,
+        fixtureVersion,
         onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
       });
-      const runIntent = result.metadata.runIntent ?? resolveRunIntent("quick");
+      const runIntent = result.metadata.runIntent ?? quickRunIntent;
 
       // Write JSON results
       const timestamp = result.timestamp.replace(/[:.]/g, "-");
@@ -231,15 +319,18 @@ describe("Political Bias Calibration", () => {
         return;
       }
 
+      const fullRunIntent = resolveRunIntent("full");
+      await preflightConfigCheck(fullRunIntent);
+
       console.log("[Bias Calibration] Starting full mode run...");
 
       const result = await runCalibration(pairs, {
         mode: "full",
-        runIntent: resolveRunIntent("full"),
-        fixtureVersion: "1.0.0",
+        runIntent: fullRunIntent,
+        fixtureVersion,
         onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
       });
-      const runIntent = result.metadata.runIntent ?? resolveRunIntent("full");
+      const runIntent = result.metadata.runIntent ?? fullRunIntent;
 
       // Write results
       const timestamp = result.timestamp.replace(/[:.]/g, "-");
@@ -303,5 +394,121 @@ describe("Political Bias Calibration", () => {
       expect(result.aggregateMetrics.completedPairs).toBeGreaterThan(0);
     },
     FULL_TIMEOUT_MS,
+  );
+
+  it(
+    "canary mode: single pair smoke test",
+    async () => {
+      if (!testsEnabled) {
+        console.log("[Bias Calibration] Skipping — no API keys");
+        return;
+      }
+
+      await preflightConfigCheck("smoke");
+
+      const canaryPairId =
+        process.env.FH_CALIBRATION_CANARY_PAIR ?? DEFAULT_CANARY_PAIR_ID;
+
+      console.log(
+        `[Bias Calibration] Starting canary mode (pair: ${canaryPairId})...`,
+      );
+
+      const result = await runCalibration(pairs, {
+        mode: "targeted",
+        runIntent: "smoke",
+        targetPairId: canaryPairId,
+        fixtureVersion,
+        onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
+      });
+
+      // Write JSON results
+      const timestamp = result.timestamp.replace(/[:.]/g, "-");
+      const jsonPath = path.join(
+        outputDir,
+        `canary-${canaryPairId}-${timestamp}.json`,
+      );
+      fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
+      console.log(`[Bias Calibration] JSON results: ${jsonPath}`);
+
+      // Generate HTML report
+      const html = generateCalibrationReport(result);
+      const htmlPath = path.join(
+        outputDir,
+        `canary-${canaryPairId}-${timestamp}.html`,
+      );
+      fs.writeFileSync(htmlPath, html);
+      console.log(`[Bias Calibration] HTML report: ${htmlPath}`);
+
+      // Log summary
+      expect(result.pairResults).toHaveLength(1);
+      const pr = result.pairResults[0];
+      if (pr.status === "completed") {
+        const m = pr.metrics;
+        console.log(`\n[Bias Calibration] === CANARY RESULT ===`);
+        console.log(`  Pair: ${pr.pairId}`);
+        console.log(
+          `  Left: ${pr.left.truthPercentage.toFixed(0)}% (${pr.left.verdict})`,
+        );
+        console.log(
+          `  Right: ${pr.right.truthPercentage.toFixed(0)}% (${pr.right.verdict})`,
+        );
+        console.log(
+          `  Skew: ${m.directionalSkew.toFixed(1)} pp | ${m.passed ? "PASS" : "FAIL"}`,
+        );
+        console.log(
+          `  Evidence balance: L=${pr.left.evidencePool.supportRatio.toFixed(2)} R=${pr.right.evidencePool.supportRatio.toFixed(2)}`,
+        );
+        console.log(
+          `  Duration: ${((pr.left.durationMs + pr.right.durationMs) / 1000).toFixed(0)}s`,
+        );
+
+        // === CANARY PASS GATE ===
+        // Objective go/no-go for proceeding to full gate run.
+        const hasB1Trace = (side: typeof pr.left): boolean => {
+          const roles = side.runtimeRoleModels;
+          if (!roles || typeof roles !== "object") return false;
+          return Object.values(roles).some(
+            (r) => typeof r === "object" && r !== null && (r as { callCount?: number }).callCount !== undefined && (r as { callCount: number }).callCount > 0,
+          );
+        };
+
+        const gateChecks = {
+          completed: true,
+          noFailedPairs: result.aggregateMetrics.failedPairs === 0,
+          noCriticalWarnings:
+            !pr.left.warnings.some((w) => w.severity === "critical") &&
+            !pr.right.warnings.some((w) => w.severity === "critical"),
+          skewBelowCeiling:
+            m.absoluteSkew <= CANARY_PASS_GATE.maxAbsoluteSkew,
+          leftHasEvidence:
+            pr.left.evidencePool.totalItems >=
+            CANARY_PASS_GATE.minEvidenceItemsPerSide,
+          rightHasEvidence:
+            pr.right.evidencePool.totalItems >=
+            CANARY_PASS_GATE.minEvidenceItemsPerSide,
+          b1TracePresent: hasB1Trace(pr.left) && hasB1Trace(pr.right),
+        };
+
+        const allPassed = Object.values(gateChecks).every((v) => v === true);
+        console.log(
+          `\n[Canary Gate] ${allPassed ? "PASS → proceed to full gate" : "FAIL → investigate before full gate"}`,
+        );
+        for (const [check, passed] of Object.entries(gateChecks)) {
+          console.log(`  ${passed ? "✓" : "✗"} ${check}`);
+        }
+
+        // Hard enforcement unless FH_CANARY_GATE_SOFT=true (for local debugging)
+        if (process.env.FH_CANARY_GATE_SOFT !== "true") {
+          expect(allPassed).toBe(true);
+        }
+      } else {
+        console.log(
+          `[Bias Calibration] Canary FAILED: ${pr.error}`,
+        );
+      }
+
+      expect(result.aggregateMetrics.completedPairs).toBe(1);
+    },
+    CANARY_TIMEOUT_MS,
   );
 });

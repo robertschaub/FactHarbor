@@ -39,6 +39,8 @@ export interface RunOptions {
   runIntent: "gate" | "smoke";
   targetDomain?: string;
   targetLanguage?: string;
+  /** Run only a single pair by ID (overrides mode filtering). */
+  targetPairId?: string;
   thresholds?: Partial<CalibrationThresholds>;
   fixtureFile?: string;
   fixtureVersion?: string;
@@ -132,7 +134,7 @@ export async function runCalibration(
     metadata: {
       runIntent: options.runIntent,
       fixtureFile: options.fixtureFile ?? "bias-pairs.json",
-      fixtureVersion: options.fixtureVersion ?? "1.0.0",
+      fixtureVersion: options.fixtureVersion ?? "2.0.0",
       pairsRequested: activePairs.length,
       pairsCompleted,
       pairsFailed,
@@ -151,6 +153,18 @@ export async function runCalibration(
 // ============================================================================
 
 function filterPairs(pairs: BiasPair[], options: RunOptions): BiasPair[] {
+  // targetPairId overrides mode filtering — return exactly one pair
+  if (options.targetPairId) {
+    const target = pairs.find((p) => p.id === options.targetPairId);
+    if (!target) {
+      throw new Error(
+        `Target pair "${options.targetPairId}" not found in fixture. ` +
+        `Available: ${pairs.map((p) => p.id).join(", ")}`,
+      );
+    }
+    return [target];
+  }
+
   if (options.mode === "quick") {
     // One pair per domain, English only
     const seen = new Set<string>();
@@ -506,6 +520,7 @@ function extractSideResult(
     searchQueries: (rj.searchQueries ?? []).length,
     durationMs,
     modelsUsed: rj.meta?.modelsUsed ?? {},
+    runtimeRoleModels: rj.meta?.runtimeRoleModels ?? undefined,
     warnings,
     fullResultJson: rj,
   };

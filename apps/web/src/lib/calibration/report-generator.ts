@@ -39,6 +39,7 @@ ${CSS}
 ${renderHeader(result)}
 ${renderSignificanceNotice(result)}
 ${renderLLMAndSearchConfig(result)}
+${renderRuntimeRoleUsage(result)}
 ${renderVerdictBanner(result, passClass, passLabel)}
 ${renderAggregatePanel(result)}
 ${renderFailureModePanel(result)}
@@ -329,6 +330,107 @@ function renderLLMAndSearchConfigFromRaw(r: CalibrationRunResult): string {
       <p class="text-muted">Debate role resolution not available for this report. Profile: <strong>${esc(debateProfile)}</strong></p>
     </div>
   </div>
+</section>`;
+}
+
+/**
+ * B-1: Runtime Role Usage table — shows actual provider/model per debate role
+ * across all completed pair sides. Highlights mismatches vs configured roles.
+ */
+function renderRuntimeRoleUsage(r: CalibrationRunResult): string {
+  // Collect runtime role data from all completed pair sides
+  const completedPairs = r.pairResults.filter(
+    (pr): pr is Extract<PairResult, { status: "completed" }> => pr.status === "completed"
+  );
+
+  if (completedPairs.length === 0) return "";
+
+  // Aggregate: role → { provider:model → { count, fallbackCount, sides } }
+  const roleAgg: Record<string, Record<string, { count: number; fallbackCount: number; sides: string[] }>> = {};
+
+  for (const pair of completedPairs) {
+    for (const sideResult of [pair.left, pair.right]) {
+      const roleModels = sideResult.runtimeRoleModels;
+      if (!roleModels) continue;
+      for (const [role, info] of Object.entries(roleModels)) {
+        if (!roleAgg[role]) roleAgg[role] = {};
+        const key = `${info.provider}:${info.model}`;
+        if (!roleAgg[role][key]) {
+          roleAgg[role][key] = { count: 0, fallbackCount: 0, sides: [] };
+        }
+        roleAgg[role][key].count += info.callCount;
+        if (info.fallbackUsed) roleAgg[role][key].fallbackCount++;
+        const sideLabel = `${pair.pairId}/${sideResult.side}`;
+        if (!roleAgg[role][key].sides.includes(sideLabel)) {
+          roleAgg[role][key].sides.push(sideLabel);
+        }
+      }
+    }
+  }
+
+  if (Object.keys(roleAgg).length === 0) {
+    return `
+<section class="panel">
+  <h2>Runtime Role Usage <span class="text-muted">(B-1)</span></h2>
+  <p class="text-muted">No runtime role trace data available. Pipeline may predate B-1 tracing.</p>
+</section>`;
+  }
+
+  // Compare with configured debate roles
+  const configured = r.configSnapshot.resolvedLLM?.debateRoles ?? {};
+
+  const roleOrder = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"];
+  let rows = "";
+  let mismatchCount = 0;
+
+  for (const role of roleOrder) {
+    const models = roleAgg[role];
+    if (!models) continue;
+
+    const configuredInfo = configured[role];
+    const configuredKey = configuredInfo ? `${configuredInfo.provider}:${configuredInfo.model}` : null;
+
+    for (const [providerModel, stats] of Object.entries(models)) {
+      const [provider, ...modelParts] = providerModel.split(":");
+      const model = modelParts.join(":");
+      const isMismatch = configuredKey && providerModel !== configuredKey;
+      if (isMismatch) mismatchCount++;
+
+      const mismatchFlag = isMismatch ? ` <span class="badge badge-warning">MISMATCH</span>` : "";
+      const fallbackFlag = stats.fallbackCount > 0
+        ? ` <span class="badge badge-warning">${stats.fallbackCount} fallback(s)</span>`
+        : "";
+
+      rows += `<tr>
+        <td>${esc(role)}</td>
+        <td>${esc(provider)}${mismatchFlag}</td>
+        <td class="mono">${esc(model)}</td>
+        <td class="text-center">${stats.count}</td>
+        <td class="text-center">${fallbackFlag || "-"}</td>
+      </tr>`;
+    }
+  }
+
+  const statusBadge = mismatchCount > 0
+    ? `<span class="badge badge-warning">${mismatchCount} mismatch(es) vs configured</span>`
+    : `<span class="badge badge-pass">All roles match config</span>`;
+
+  return `
+<section class="panel">
+  <h2>Runtime Role Usage <span class="text-muted">(B-1)</span> ${statusBadge}</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Debate Role</th>
+        <th>Actual Provider</th>
+        <th>Actual Model</th>
+        <th class="text-center">Call Count</th>
+        <th class="text-center">Fallbacks</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <p class="text-muted">Aggregated across ${completedPairs.length * 2} side runs (${completedPairs.length} pairs). Mismatches indicate runtime fallback to a different provider/model than configured.</p>
 </section>`;
 }
 
@@ -975,6 +1077,17 @@ th { color: var(--text-muted); font-size: 0.85em; font-weight: 600; }
   font-size: 0.85em;
 }
 .config-badge strong { color: var(--accent); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.badge-warning { background: rgba(230, 81, 0, 0.3); color: var(--warn); }
+.badge-pass { background: rgba(46, 125, 50, 0.3); color: var(--pass); }
 
 .external-provider { color: var(--warn); }
 
