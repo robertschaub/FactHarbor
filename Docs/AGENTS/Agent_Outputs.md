@@ -4,6 +4,14 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-23 | Code Reviewer | Claude Code (Opus 4.6) | D5/B-1/UI/Calibration Review
+**Task:** Code review of 11 commits (231ff13..25752ff) + uncommitted changes covering D5 evidence controls (sufficiency gate, evidence partitioning, contrarian retrieval), B-1 runtime role tracing, UI warning triage, calibration canary mode, bias-pairs v2.0.0, model-usage utility.
+**Files touched:** `Docs/WIP/Code_Review_D5_B1_UI_2026-02-23.md` (created)
+**Key decisions:** GO — 0C, 1H (trivial `as any` fix), 3M, 3L. All well-structured with good test coverage (1009 tests, clean build).
+**Open items:** D5-H1 (add `_pipelineStartMs` to type — trivial). D5-M1 (UNVERIFIED truthPercentage: 50 semantics). UI-M1 (move PROVIDER_ISSUE_TYPES to module scope). D5-M2 (log contrarian queries for effectiveness monitoring).
+**For next agent:** D5 Controls are UCM-configurable (6 new CalcConfig params). Evidence partitioning uses hardcoded source type sets — structural constants, AGENTS.md compliant. Schema bumped to 3.2.0-cb. Bias pairs v2.0.0 eliminates negation confound. Canary mode enables single-pair fast iteration.
+
+---
 ### 2026-02-22 | Lead Developer | Codex (GPT-5) | Final Docs Consolidation Review + Multi-Commit Pack
 **Task:** Perform a final quick review of latest Lead Architect docs changes and commit all pending work in multiple logical commits.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`
@@ -1363,4 +1371,21 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 - Verification commands (`npm test`, `npm -w apps/web run build`) were intentionally not run in this step per user preference.
 **For next agent:**
 - If extending this to Monolithic Dynamic, add runtime model tracking there and include `meta.modelsUsedAll` for parity.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | D5/B1/UI Calibration Follow-up Fixes
+**Task:** Implement review follow-ups: D5-H1 type safety, UI-M1 provider-issue set hoist, D5-M2 contrarian effectiveness logging, CAL-L1 canary intent documentation.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/scripts/run-calibration-lane.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `pipelineStartMs?: number` to `CBResearchState` and removed `_pipelineStartMs` `as any` usage.
+- Hoisted `PROVIDER_ISSUE_TYPES` to module scope in jobs page to avoid per-render set allocation.
+- Added contrarian retrieval telemetry log line per claim: generated query count + net new evidence items.
+- Kept D5-M1 behavior unchanged per direction (`truthPercentage: 50` + `verdict: UNVERIFIED` + `confidence: 0`).
+- Clarified lane policy comment: canary always maps to smoke intent.
+**Open items:**
+- Optional future enhancement (deferred): add explicit `verdictReason`/sentinel reason for UNVERIFIED insufficient-evidence verdicts.
+**Warnings:**
+- Workspace contains many pre-existing uncommitted changes; this update modified only the listed files.
+**For next agent:**
+- Re-review D5-H1/UI-M1/D5-M2/CAL-L1 findings against this patch; then decide whether to include D5-M1 `verdictReason` type extension in a separate change.
 **Learnings:** No new role learnings appended.

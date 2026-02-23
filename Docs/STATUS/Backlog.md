@@ -16,7 +16,7 @@
 
 The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1001 tests passing.
 
-**Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
+**Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
 
 | Step | Description | Domain | Urgency | Status | Notes |
@@ -35,7 +35,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Advanced triangulation | Cross-boundary correlation analysis | Architecture §8.5.2 |
 | Contestation weight reduction | Requires `factualBasis` field on CBClaimVerdict | Legacy getClaimWeight() incompatibility |
 | Derivative detection improvements | Enhanced derivative source identification | Architecture §8.5.3 |
-| UCM model defaults for non-Anthropic providers | OpenAI/Google/Mistral model IDs are hardcoded in `llm.ts`, `model-tiering.ts`, `calibration/runner.ts`. Add per-provider UCM fields (e.g., `modelVerdictOpenAI`) or a provider→tier→modelId map so admins can tune without code changes. Anthropic already UCM-managed via `modelUnderstand`/`modelVerdict`/`modelOpus`. Comment at `llm.ts:105` notes this as P1D. | Code review 2026-02-22 |
+| **Model auto-resolution (no hardcoded version strings)** | Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases ("haiku", "sonnet"); code auto-resolves via `model-resolver.ts` using provider `-latest` aliases. Covers all providers (Anthropic, OpenAI, Google). Supersedes the narrower "non-Anthropic UCM defaults" item. ~15 files, ~4-6h. **Plan:** [`Docs/WIP/Model_Auto_Resolution_Plan.md`](../WIP/Model_Auto_Resolution_Plan.md) | Stale model incident 2026-02-23 |
 
 ---
 
@@ -131,9 +131,11 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
-| **D1-D5 execution pause checkpoint**: Broader analysis/discussion hold is active. Resume implementation only from stable checkpoint after decision sync; avoid advancing B-* while pause is active. | Governance / Execution | high | high | [Plan_Pause_Status_2026-02-22.md](../WIP/Plan_Pause_Status_2026-02-22.md), [Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md](../WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md) |
-| **Per-stage model tracking in pipeline**: `meta.modelsUsed` now captures understand/extractEvidence/verdict model names. Still missing: per-debate-role actual model tracking (advocate, challenger, etc.) and per-LLM-call cost attribution. Current implementation resolves models at config snapshot time; runtime tracking would detect fallback scenarios. Partial fix landed 2026-02-21 (Steps 1-7 of calibration model transparency). | Analyzer / Observability | high | high | Plan: `gentle-snuggling-quokka.md` |
-| **C13 active rebalancing**: Implement evidence-pool rebalancing loop (beyond current detection). A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1 without quality regression. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
+| **Validate B-sequence features with real runs**: All B-sequence improvements (pro_con queries, verifiability/misleadingness annotations, rubric scoring) are implemented but untested with real data. Run 2-3 analyses with UCM features enabled (~$3-5). This is the missing feedback loop. | Analyzer / Quality | high | high | [Next_For_Report_Quality.md](../ARCHIVE/Next_For_Report_Quality.md) item 1 |
+| **Metrics integration**: Wire metrics infrastructure into `analyzer.ts` (15-30 min). Essential for observability into LLM call counts, latency, and cost per analysis. | Analyzer / Observability | high | high | [Next_For_Report_Quality.md](../ARCHIVE/Next_For_Report_Quality.md) item 5 |
+| ~~**D1-D5 execution pause checkpoint**~~: Pause lifted. B-sequence implemented (B-4 through B-8/B-5b), D5 controls implemented, code reviews complete. Execution tracker: [Decision_Log_D1-D5](../WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md). | Governance / Execution | ~~high~~ done | high | [Plan_Pause_Status_2026-02-22.md](../ARCHIVE/Plan_Pause_Status_2026-02-22.md) |
+| ~~**Per-stage model tracking in pipeline**~~: B-1 runtime role tracing implemented — `callContext: { debateRole, promptKey }` on all 5 debate roles, `runtimeRoleModels` in resultJson meta, calibration report renders Runtime Role Usage table with mismatch detection. Per-LLM-call cost attribution still missing. | Analyzer / Observability | ~~high~~ done | high | [Code_Review_D5_B1_UI_2026-02-23.md](../ARCHIVE/Code_Review_D5_B1_UI_2026-02-23.md) |
+| **C13 active rebalancing**: D5 Control 3 (contrarian retrieval) implemented — runs targeted searches when evidence pool imbalance detected. Full rebalancing loop (A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1) still needs validation with real runs. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Cross-provider A/B calibration run**: Run `bias-pairs-v1` under `cross-provider` debate profile and diff against Baseline v1 to isolate provider-diversity impact on skew. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) |
 | **C17 adversarial benchmark + fail policy**: Build dedicated prompt-injection benchmark (≥10 scenarios, ≥2 languages) with ≥90% pass target and explicit fail-open/fail-closed policy. | Security / Quality | med | high | [Stammbach §5.3 item 5](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Claim Fidelity Phase 4 — Validation**: Run baseline validation scenarios with real LLM calls to confirm Phases 1-3 fix eliminates claim drift. | Analyzer / Quality | med | high | [WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md) Phase 4 |

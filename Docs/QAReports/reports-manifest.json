@@ -7,15 +7,8 @@
       "pairs": 3,
       "debateProfile": "baseline",
       "date": "2026-02-20",
-      "model": "claude-sonnet-4-5-20250929"
-    },
-    "full-2026-02-20T15-00-21-961Z.html": {
-      "type": "calibration",
-      "mode": "full",
-      "pairs": "0/10 (credit balance failure)",
-      "debateProfile": "baseline",
-      "date": "2026-02-20",
-      "model": "claude-sonnet-4-5-20250929"
+      "model": "claude-sonnet-4-5-20250929",
+      "note": "Baseline v1 quick run (3/3 pairs)"
     },
     "full-2026-02-20T21-32-24-288Z.html": {
       "type": "calibration",
@@ -23,11 +16,12 @@
       "pairs": "10/10",
       "debateProfile": "baseline",
       "date": "2026-02-20",
-      "model": "claude-sonnet-4-5-20250929"
+      "model": "claude-sonnet-4-5-20250929",
+      "note": "Baseline v1 canonical full run"
     },
     "full-2026-02-20T21-32-24-288Z.json": {
       "type": "calibration-data",
-      "note": "Canonical baseline JSON — structured data for A/B comparison with future runs",
+      "note": "Baseline v1 canonical JSON — structured data for A/B comparison with future runs",
       "mode": "full",
       "pairs": "10/10",
       "debateProfile": "baseline",
@@ -35,75 +29,34 @@
       "model": "claude-sonnet-4-5-20250929",
       "meanAbsoluteSkew": "35.06pp"
     },
-    "run-2026-02-21T11-14-21-464Z.html": {
-      "type": "calibration",
-      "mode": "quick",
-      "pairs": 3,
-      "debateProfile": "cross-provider",
-      "date": "2026-02-21",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
-    },
-    "full-2026-02-21T13-49-27-929Z.html": {
-      "type": "calibration",
-      "mode": "full",
-      "pairs": "6/10 (3 OpenAI TPM failures, 1 bug)",
-      "debateProfile": "cross-provider",
-      "date": "2026-02-21",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
-    },
     "full-2026-02-22T00-20-49-691Z.html": {
       "type": "calibration",
       "mode": "full",
       "pairs": "10/10",
       "debateProfile": "cross-provider",
       "date": "2026-02-22",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
+      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
+      "note": "First 10/10 cross-provider run (A-3 experiment)"
     },
     "full-2026-02-22T00-20-49-691Z.json": {
       "type": "calibration-data",
-      "note": "A-3 run 1 structured output (cross-provider, full).",
+      "note": "Cross-provider 10/10 structured output — reference for cross-provider investigation (Step 5)",
       "mode": "full",
       "pairs": "10/10",
       "debateProfile": "cross-provider",
       "date": "2026-02-22",
       "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
       "meanAbsoluteSkew": "44.29pp"
-    },
-    "full-2026-02-22T02-45-34-034Z.html": {
-      "type": "calibration",
-      "mode": "full",
-      "pairs": "7/10 (3 failed)",
-      "debateProfile": "cross-provider",
-      "date": "2026-02-22",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
-    },
-    "full-2026-02-22T02-45-34-034Z.json": {
-      "type": "calibration-data",
-      "note": "A-3 run 2 structured output (cross-provider, full) with partial completion.",
-      "mode": "full",
-      "pairs": "7/10",
-      "debateProfile": "cross-provider",
-      "date": "2026-02-22",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
-      "meanAbsoluteSkew": "36.51pp"
-    },
-    "smoke-quick-2026-02-22T09-12-23-573Z.html": {
-      "type": "calibration",
-      "mode": "quick",
-      "pairs": "3/3",
-      "debateProfile": "cross-provider",
-      "date": "2026-02-22",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)"
-    },
-    "smoke-quick-2026-02-22T09-12-23-573Z.json": {
-      "type": "calibration-data",
-      "note": "Smoke lane quick run (cross-provider).",
-      "mode": "quick",
-      "pairs": "3/3",
-      "debateProfile": "cross-provider",
-      "date": "2026-02-22",
-      "model": "claude-sonnet-4-5-20250929 + gpt-4.1 (challenger)",
-      "meanAbsoluteSkew": "45.33pp"
     }
+  },
+  "cleanup": {
+    "date": "2026-02-23",
+    "removed": [
+      "full-2026-02-20T15-00-21-961Z.html (0/10 credit failure)",
+      "run-2026-02-21T11-14-21-464Z.html (quick cross-provider, superseded)",
+      "full-2026-02-21T13-49-27-929Z.html (6/10 partial, superseded)",
+      "full-2026-02-22T02-45-34-034Z.html+json (7/10 partial, superseded)",
+      "smoke-quick-2026-02-22T09-12-23-573Z.html+json (quick smoke, superseded)"
+    ]
   }
 }

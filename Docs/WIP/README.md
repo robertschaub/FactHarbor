@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-02-22 (Consolidated: 17 files archived, 17 retained)
-**Status**: 17 active files — Alpha forward-looking work + active calibration/quality track
+**Status**: 18 active files — Alpha forward-looking work + active calibration/quality track
 
 ---
 
@@ -91,6 +91,13 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [Decision_QualityMap_B4-B8_2026-02-22.md](Decision_QualityMap_B4-B8_2026-02-22.md)
 - **Type:** Decision Record
 - **Scope:** Implementation order (B-5a → B-4 → B-6 → B-7 → B-8 → B-5b), sequential merge policy, A6 independent review protocol.
+
+#### Code Review: D5/B-1/UI/Calibration (2026-02-23)
+**Status:** ✅ Review Complete — GO (1H trivial fix, 3M, 3L)
+- **Document:** [Code_Review_D5_B1_UI_2026-02-23.md](Code_Review_D5_B1_UI_2026-02-23.md)
+- **Type:** Code Review / Quality Assurance
+- **Scope:** 11 commits + uncommitted. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval), B-1 runtime role tracing, UI warning triage, calibration canary mode, bias-pairs v2.0.0, model-usage utility. 1009 tests passing, build clean.
+- **Remaining:** D5-H1 (`as any` cast → add type field). D5-M1 (UNVERIFIED truthPct semantics). UI-M1 (move set to module scope).
 
 ---
 
