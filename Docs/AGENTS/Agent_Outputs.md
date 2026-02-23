@@ -1420,3 +1420,19 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If cross-provider calibration is next, switch UCM `debateProfile` explicitly before run and capture new config hash in report artifacts.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Rename Bias Fixture to Framing Symmetry Filename
+**Task:** Align calibration fixture filename with framing-symmetry terminology after fixture update, and update runtime/test/status references.
+**Files touched:** `apps/web/test/fixtures/framing-symmetry-pairs.json` (renamed from `bias-pairs.json`), `apps/web/src/lib/calibration/runner.ts`, `apps/web/test/calibration/framing-symmetry.test.ts`, `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/STATUS/Current_Status.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Renamed fixture file to `framing-symmetry-pairs.json` for terminology consistency with calibration test lane.
+- Updated fixture path in test loader and runner metadata default (`fixtureFile`).
+- Updated active status docs to point to the new fixture filename.
+- Kept fixture content as provided by the current update (no semantic rewrites in this patch).
+**Open items:**
+- `runner.ts` still carries pre-existing local behavior where `fixtureVersion` default is `"unknown"`; this commit did not alter that behavior beyond path alignment.
+**Warnings:**
+- Repo still contains unrelated in-progress changes (WIP docs/calibration files/config DB) not included in this commit.
+**For next agent:**
+- Use `apps/web/test/fixtures/framing-symmetry-pairs.json` as canonical fixture path in any new scripts/docs.
+**Learnings:** No new role learnings appended.
