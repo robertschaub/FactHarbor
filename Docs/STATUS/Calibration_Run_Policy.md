@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Last Updated:** 2026-02-22  
-**Scope:** Political bias calibration harness (`apps/web/test/calibration/political-bias.test.ts`)
+**Scope:** Framing symmetry calibration harness (`apps/web/test/calibration/framing-symmetry.test.ts`)
 
 ---
 

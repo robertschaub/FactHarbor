@@ -153,7 +153,7 @@ Recommended unit test targets:
   - warning emission payload
 - `apps/web/test/unit/lib/calibration-metrics.test.ts` or new calibration runner unit
   - failed pair diagnostics shape/backcompat
-- `apps/web/test/calibration/political-bias.test.ts`
+- `apps/web/test/calibration/framing-symmetry.test.ts`
   - only if needed for targeted non-expensive structural assertions (avoid full expensive execution)
 
 ## 5) Lead Dev Delegation Brief (copy/paste)

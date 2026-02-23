@@ -26,7 +26,7 @@ const args = [
   "run",
   "--config",
   "vitest.calibration.config.ts",
-  "test/calibration/political-bias.test.ts",
+  "test/calibration/framing-symmetry.test.ts",
   "-t",
   testName,
 ];

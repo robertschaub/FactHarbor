@@ -102,7 +102,7 @@ These targets are non-gating but mandatory for smoke-lane acceptance.
 1. Add smoke run command(s) and naming convention (`calibration:smoke`).
 2. Add lane labels in metadata/report (`runIntent: gate|smoke`) with explicit wiring:
    - Extend `runCalibration(..., options)` with `runIntent: "gate" | "smoke"` (required).
-   - In `test/calibration/political-bias.test.ts`, pass:
+   - In `test/calibration/framing-symmetry.test.ts`, pass:
      - full mode -> `runIntent: "gate"`
      - quick mode -> `runIntent: "smoke"` for smoke command, `"gate"` for current canonical quick if retained.
    - Surface `runIntent` in both JSON metadata and HTML header.

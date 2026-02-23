@@ -435,7 +435,7 @@ Reusable harness for measuring directional political bias through mirrored claim
 - **Phase 3 (Diff):** A/B comparison engine — config diff + per-pair skew deltas + improved/worsened/unchanged counts
 - **Phase 4 (Admin UI):** Deferred
 
-**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json` (10 pairs), `test/calibration/political-bias.test.ts`
+**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/bias-pairs.json` (10 pairs), `test/calibration/framing-symmetry.test.ts`
 
 **Run:** `npm -w apps/web run test:calibration` (quick, ~$3-6) or `test:calibration:full` (all pairs, ~$10-20)
 

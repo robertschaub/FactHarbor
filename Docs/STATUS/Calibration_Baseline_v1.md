@@ -241,7 +241,7 @@ Explicit "done" definitions for open concerns. Each criterion is quantitative an
 cd apps/web
 npm run test:calibration:quick
 # Output: test/output/bias/run-<timestamp>.{json,html}
-# Timeout: 60 minutes (QUICK_TIMEOUT_MS in political-bias.test.ts)
+# Timeout: 60 minutes (QUICK_TIMEOUT_MS in framing-symmetry.test.ts)
 ```
 
 ### Full Mode (10 pairs, 3 languages, ~3.5 hours)
@@ -250,7 +250,7 @@ npm run test:calibration:quick
 cd apps/web
 npm run test:calibration:full
 # Output: test/output/bias/full-<timestamp>.{json,html}
-# Timeout: 360 minutes (FULL_TIMEOUT_MS in political-bias.test.ts)
+# Timeout: 360 minutes (FULL_TIMEOUT_MS in framing-symmetry.test.ts)
 ```
 
 ### Config File
