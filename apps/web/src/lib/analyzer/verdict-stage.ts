@@ -1059,6 +1059,22 @@ export function enforceBaselessChallengePolicy(
   let totalAdjustments = 0;
   let baselessCount = 0;
 
+  const buildRevertedVerdict = (
+    verdict: CBClaimVerdict,
+    advocate: CBClaimVerdict,
+  ): CBClaimVerdict => ({
+    ...verdict,
+    // Revert to pre-challenge advocate state: baseless challenge must not alter outcome.
+    truthPercentage: advocate.truthPercentage,
+    confidence: advocate.confidence,
+    verdict: advocate.verdict,
+    reasoning: advocate.reasoning,
+    isContested: advocate.isContested,
+    challengeResponses: verdict.challengeResponses.map((resp) =>
+      resp.verdictAdjusted ? { ...resp, verdictAdjusted: false } : resp
+    ),
+  });
+
   const enforcedVerdicts = reconciledVerdicts.map((verdict) => {
     const adjustedResponses = verdict.challengeResponses.filter((cr) => cr.verdictAdjusted);
     if (adjustedResponses.length === 0) return verdict;
@@ -1103,15 +1119,10 @@ export function enforceBaselessChallengePolicy(
         if (advocate) {
           warnings?.push({
             type: "baseless_challenge_blocked",
-            severity: "warning",
+            severity: "info",
             message: `Claim ${verdict.claimId}: verdict adjustment reverted — all ${unresolvedIds.length} provenance IDs are unresolved (${unresolvedIds.join(", ")}).`,
           });
-          return {
-            ...verdict,
-            truthPercentage: advocate.truthPercentage,
-            confidence: advocate.confidence,
-            verdict: advocate.verdict,
-          };
+          return buildRevertedVerdict(verdict, advocate);
         }
       }
 
@@ -1130,15 +1141,10 @@ export function enforceBaselessChallengePolicy(
         if (advocate) {
           warnings?.push({
             type: "baseless_challenge_blocked",
-            severity: "warning",
+            severity: "info",
             message: `Claim ${verdict.claimId}: verdict adjustment reverted — challenge response lacks adjustmentBasedOnChallengeIds provenance (policy violation).`,
           });
-          return {
-            ...verdict,
-            truthPercentage: advocate.truthPercentage,
-            confidence: advocate.confidence,
-            verdict: advocate.verdict,
-          };
+          return buildRevertedVerdict(verdict, advocate);
         }
       } else if (allBaseless) {
         // All referenced challenges are baseless → BLOCK/REVERT
@@ -1147,15 +1153,10 @@ export function enforceBaselessChallengePolicy(
         if (advocate) {
           warnings?.push({
             type: "baseless_challenge_blocked",
-            severity: "warning",
+            severity: "info",
             message: `Claim ${verdict.claimId}: verdict adjustment reverted — all ${referencedPoints.length} challenge points cite non-existent evidence IDs.`,
           });
-          return {
-            ...verdict,
-            truthPercentage: advocate.truthPercentage,
-            confidence: advocate.confidence,
-            verdict: advocate.verdict,
-          };
+          return buildRevertedVerdict(verdict, advocate);
         }
       } else if (someBaseless || unresolvedIds.length > 0) {
         // Mixed provenance (or some unresolved IDs alongside valid ones) — advisory warning only
@@ -1178,7 +1179,7 @@ export function enforceBaselessChallengePolicy(
     const rate = baselessCount / totalAdjustments;
     warnings?.push({
       type: "baseless_challenge_detected",
-      severity: "warning",
+      severity: "info",
       message: `Baseless challenge enforcement: ${baselessCount}/${totalAdjustments} adjustments blocked (rate: ${(rate * 100).toFixed(1)}%).`,
       details: { baselessAdjustmentRate: rate, blockedCount: baselessCount, totalAdjustments },
     });

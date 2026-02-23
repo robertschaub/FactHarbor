@@ -1756,7 +1756,9 @@ describe("enforceBaselessChallengePolicy", () => {
     // Warnings: 1 blocked + 1 metrics
     expect(warnings).toHaveLength(2);
     expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[0].severity).toBe("info");
     expect(warnings[1].type).toBe("baseless_challenge_detected"); // metrics warning
+    expect(warnings[1].severity).toBe("info");
     expect(warnings[1].details).toBeDefined();
   });
 
@@ -1785,6 +1787,7 @@ describe("enforceBaselessChallengePolicy", () => {
     // Warnings: 1 blocked + 1 metrics
     expect(warnings).toHaveLength(2);
     expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[0].severity).toBe("info");
     expect(warnings[0].message).toContain("provenance");
   });
 
@@ -1818,6 +1821,7 @@ describe("enforceBaselessChallengePolicy", () => {
     // Warnings: 1 blocked (with unresolved IDs message) + 1 metrics
     expect(warnings).toHaveLength(2);
     expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[0].severity).toBe("info");
     expect(warnings[0].message).toContain("unresolved");
     expect(warnings[0].message).toContain("CP_NONEXISTENT_0");
   });
@@ -1910,6 +1914,46 @@ describe("enforceBaselessChallengePolicy", () => {
     expect(metricsWarning!.details!.baselessAdjustmentRate).toBeCloseTo(0.5); // 1 of 2 adjustments
     expect(metricsWarning!.details!.blockedCount).toBe(1);
     expect(metricsWarning!.details!.totalAdjustments).toBe(2);
+    expect(metricsWarning!.severity).toBe("info");
+  });
+
+  it("should reset contested/adjusted state when a baseless adjustment is blocked", () => {
+    const advocate = makeVerdict("AC_01", 75, 80, [
+      { challengeType: "assumption", response: "Original", verdictAdjusted: false },
+    ]);
+    const reconciled = {
+      ...makeVerdict("AC_01", 60, 65, [
+        {
+          challengeType: "assumption",
+          response: "Adjusted based on baseless challenge",
+          verdictAdjusted: true,
+          adjustmentBasedOnChallengeIds: ["CP_AC_01_0"],
+        },
+      ]),
+      reasoning: "Reconciler changed verdict from challenge",
+      isContested: true,
+    };
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Baseless challenge",
+          evidenceIds: ["EV_FAKE"],
+          severity: "high",
+          challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_FAKE"] },
+        }],
+      }],
+    };
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], []);
+
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].confidence).toBe(80);
+    expect(result[0].isContested).toBe(false);
+    expect(result[0].reasoning).toBe("test");
+    expect(result[0].challengeResponses.every((r) => !r.verdictAdjusted)).toBe(true);
   });
 
   // Multilingual guardrail: enforcement should work identically across languages
