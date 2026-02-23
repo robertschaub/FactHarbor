@@ -2316,100 +2316,53 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     expect(result.debateModelProviders.validation).toBeUndefined();
   });
 
-  // Debate profile preset tests — profiles define explicit provider intent
-  it("debateProfile 'baseline' should use all-sonnet debate + haiku validation, all anthropic providers", () => {
-    const result = buildVerdictStageConfig({ debateProfile: "baseline" } as any, {} as any);
+  // Explicit per-role config tests (debateProfile removed — roles configured directly)
+  it("explicit per-role tiers should override defaults", () => {
+    const result = buildVerdictStageConfig({
+      debateModelTiers: { challenger: "haiku" as const },
+    } as any, {} as any);
 
-    expect(result.debateModelTiers.advocate).toBe("sonnet");
-    expect(result.debateModelTiers.challenger).toBe("sonnet");
-    expect(result.debateModelTiers.reconciler).toBe("sonnet");
-    expect(result.debateModelTiers.selfConsistency).toBe("sonnet");
-    expect(result.debateModelTiers.validation).toBe("haiku");
-    // All providers explicitly anthropic (intent-stable, independent of global llmProvider)
-    expect(result.debateModelProviders.advocate).toBe("anthropic");
-    expect(result.debateModelProviders.challenger).toBe("anthropic");
-    expect(result.debateModelProviders.reconciler).toBe("anthropic");
-    expect(result.debateModelProviders.selfConsistency).toBe("anthropic");
-    expect(result.debateModelProviders.validation).toBe("anthropic");
-  });
-
-  it("debateProfile 'tier-split' should use haiku for challenger, all anthropic providers", () => {
-    const result = buildVerdictStageConfig({ debateProfile: "tier-split" } as any, {} as any);
-
-    expect(result.debateModelTiers.advocate).toBe("sonnet");
     expect(result.debateModelTiers.challenger).toBe("haiku");
+    // Others keep defaults
+    expect(result.debateModelTiers.advocate).toBe("sonnet");
     expect(result.debateModelTiers.reconciler).toBe("sonnet");
     expect(result.debateModelTiers.validation).toBe("haiku");
-    expect(result.debateModelProviders.advocate).toBe("anthropic");
-    expect(result.debateModelProviders.challenger).toBe("anthropic");
   });
 
-  it("debateProfile 'cross-provider' should set challenger to openai, others anthropic", () => {
-    const result = buildVerdictStageConfig({ debateProfile: "cross-provider" } as any, {} as any);
-
-    expect(result.debateModelTiers.challenger).toBe("sonnet");
-    expect(result.debateModelProviders.challenger).toBe("openai");
-    expect(result.debateModelProviders.advocate).toBe("anthropic");
-    expect(result.debateModelProviders.reconciler).toBe("anthropic");
-  });
-
-  it("debateProfile 'max-diversity' should set challenger=openai, selfConsistency=google, rest anthropic", () => {
-    const result = buildVerdictStageConfig({ debateProfile: "max-diversity" } as any, {} as any);
+  it("explicit per-role providers should be set directly", () => {
+    const result = buildVerdictStageConfig({
+      debateModelProviders: { challenger: "openai" as const, selfConsistency: "google" as const },
+    } as any, {} as any);
 
     expect(result.debateModelProviders.challenger).toBe("openai");
     expect(result.debateModelProviders.selfConsistency).toBe("google");
-    expect(result.debateModelProviders.advocate).toBe("anthropic");
-    expect(result.debateModelProviders.reconciler).toBe("anthropic");
-    expect(result.debateModelProviders.validation).toBe("anthropic");
+    // Others stay undefined (inherit global)
+    expect(result.debateModelProviders.advocate).toBeUndefined();
+    expect(result.debateModelProviders.reconciler).toBeUndefined();
+    expect(result.debateModelProviders.validation).toBeUndefined();
   });
 
-  it("explicit debateModelTiers should override profile defaults", () => {
-    const pipelineConfig = {
-      debateProfile: "cross-provider",
-      debateModelTiers: { challenger: "haiku" as const },
-    } as any;
-    const result = buildVerdictStageConfig(pipelineConfig, {} as any);
-
-    // Profile says challenger=sonnet, but explicit override says haiku
-    expect(result.debateModelTiers.challenger).toBe("haiku");
-    // Profile provider still applies (not overridden)
-    expect(result.debateModelProviders.challenger).toBe("openai");
-  });
-
-  it("explicit debateModelProviders should override profile defaults", () => {
-    const pipelineConfig = {
-      debateProfile: "cross-provider",
-      debateModelProviders: { challenger: "mistral" as const },
-    } as any;
-    const result = buildVerdictStageConfig(pipelineConfig, {} as any);
-
-    // Profile says challenger=openai, but explicit override says mistral
-    expect(result.debateModelProviders.challenger).toBe("mistral");
-    // Profile tier still applies
-    expect(result.debateModelTiers.challenger).toBe("sonnet");
-    // Non-overridden roles still get profile defaults
-    expect(result.debateModelProviders.advocate).toBe("anthropic");
-  });
-
-  it("no debateProfile should use hardcoded defaults (backward compatible)", () => {
+  it("no config should use hardcoded defaults", () => {
     const result = buildVerdictStageConfig({} as any, {} as any);
 
     expect(result.debateModelTiers.advocate).toBe("sonnet");
     expect(result.debateModelTiers.challenger).toBe("sonnet");
     expect(result.debateModelTiers.validation).toBe("haiku");
-    // No profile → no provider overrides
     expect(result.debateModelProviders.challenger).toBeUndefined();
     expect(result.debateModelProviders.advocate).toBeUndefined();
   });
 
-  it("profile semantics should be independent of global llmProvider", () => {
-    // Even with global provider set to openai, baseline profile should resolve to anthropic
-    const result = buildVerdictStageConfig({ debateProfile: "baseline", llmProvider: "openai" } as any, {} as any);
+  it("combined tier and provider overrides should apply independently", () => {
+    const result = buildVerdictStageConfig({
+      debateModelTiers: { challenger: "haiku" as const },
+      debateModelProviders: { challenger: "mistral" as const },
+    } as any, {} as any);
 
-    expect(result.debateModelProviders.advocate).toBe("anthropic");
-    expect(result.debateModelProviders.challenger).toBe("anthropic");
-    expect(result.debateModelProviders.reconciler).toBe("anthropic");
-    expect(result.debateModelProviders.selfConsistency).toBe("anthropic");
+    expect(result.debateModelTiers.challenger).toBe("haiku");
+    expect(result.debateModelProviders.challenger).toBe("mistral");
+    // Others use defaults
+    expect(result.debateModelTiers.advocate).toBe("sonnet");
+    expect(result.debateModelProviders.advocate).toBeUndefined();
   });
 });
 
@@ -3539,32 +3492,34 @@ describe("checkDebateTierDiversity", () => {
     expect(warning).not.toBeNull();
   });
 
-  it("resolved cross-provider profile should have provider diversity", () => {
-    // Simulates what buildVerdictStageConfig produces for cross-provider profile:
-    // advocate=anthropic, selfConsistency=anthropic, challenger=openai, reconciler=anthropic
-    const resolved = buildVerdictStageConfig({ debateProfile: "cross-provider" } as any, {} as any);
+  it("cross-provider config should have provider diversity", () => {
+    const resolved = buildVerdictStageConfig({
+      debateModelProviders: { challenger: "openai" },
+    } as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
-    expect(warning).toBeNull(); // challenger=openai vs others=anthropic
+    expect(warning).toBeNull(); // challenger=openai vs others=undefined
   });
 
-  it("resolved baseline profile should warn (all anthropic, all sonnet)", () => {
-    // Baseline resolves to all-anthropic, all-sonnet → degenerate
-    const resolved = buildVerdictStageConfig({ debateProfile: "baseline" } as any, {} as any);
+  it("no overrides should warn (all same tier, no provider diversity)", () => {
+    const resolved = buildVerdictStageConfig({} as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
     expect(warning).not.toBeNull();
   });
 
-  it("resolved tier-split profile should not warn (mixed tiers)", () => {
-    // tier-split: challenger=haiku, others=sonnet → tier diversity
-    const resolved = buildVerdictStageConfig({ debateProfile: "tier-split" } as any, {} as any);
+  it("tier-split config should not warn (mixed tiers)", () => {
+    const resolved = buildVerdictStageConfig({
+      debateModelTiers: { challenger: "haiku" },
+    } as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
     expect(warning).toBeNull();
   });
 
-  it("resolved max-diversity profile should not warn (multiple provider overrides)", () => {
-    const resolved = buildVerdictStageConfig({ debateProfile: "max-diversity" } as any, {} as any);
+  it("max-diversity config should not warn (multiple provider overrides)", () => {
+    const resolved = buildVerdictStageConfig({
+      debateModelProviders: { challenger: "openai", selfConsistency: "google" },
+    } as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
-    expect(warning).toBeNull(); // challenger=openai, selfConsistency=google
+    expect(warning).toBeNull();
   });
 });
 
@@ -3658,7 +3613,7 @@ describe("checkDebateProviderCredentials", () => {
     }
   });
 
-  it("should detect missing credentials from profile-resolved providers", () => {
+  it("should detect missing credentials from explicitly configured providers", () => {
     const savedOpenAI = process.env.OPENAI_API_KEY;
     const savedGoogle = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     const savedGoogleAlt = process.env.GOOGLE_API_KEY;
@@ -3666,10 +3621,11 @@ describe("checkDebateProviderCredentials", () => {
     delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     delete process.env.GOOGLE_API_KEY;
     try {
-      // Simulate resolved max-diversity profile: challenger=openai, selfConsistency=google
-      const resolved = buildVerdictStageConfig({ debateProfile: "max-diversity" } as any, {} as any);
+      // Max-diversity equivalent: challenger=openai, selfConsistency=google
+      const resolved = buildVerdictStageConfig({
+        debateModelProviders: { challenger: "openai", selfConsistency: "google" },
+      } as any, {} as any);
       const warnings = checkDebateProviderCredentials(resolved);
-      // Should flag openai (challenger) and google (selfConsistency) as missing credentials
       const flaggedRoles = warnings.map(w => w.details?.role);
       expect(flaggedRoles).toContain("challenger");
       expect(flaggedRoles).toContain("selfConsistency");

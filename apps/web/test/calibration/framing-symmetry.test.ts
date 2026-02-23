@@ -99,7 +99,7 @@ function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke"
 /**
  * Preflight config check — runs before expensive calibration to catch config issues early.
  *
- * - Gate runs: HARD FAIL if debateProfile !== "baseline" (re-baseline must isolate fixture change)
+ * - Gate runs: HARD FAIL if debateModelProviders has any overrides (re-baseline must isolate fixture change)
  * - All runs: log config hashes and flag drift from Baseline v1 for manual review
  */
 async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
@@ -113,13 +113,14 @@ async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
   ]);
 
   const pipeline = pipelineResult.config as Record<string, unknown>;
-  const debateProfile = (pipeline.debateProfile ?? "baseline") as string;
 
-  // Hard fail for gate runs: must use baseline profile for re-baseline
-  if (intent === "gate" && debateProfile !== "baseline") {
+  // Hard fail for gate runs: must have no provider overrides (baseline behavior)
+  const providers = pipeline.debateModelProviders as Record<string, string> | undefined;
+  const hasProviderOverrides = providers && Object.values(providers).some(v => v != null);
+  if (intent === "gate" && hasProviderOverrides) {
     throw new Error(
-      `[Preflight FAIL] Re-baseline gate run requires debateProfile="baseline" ` +
-        `but found "${debateProfile}". Change UCM pipeline config before running.`,
+      `[Preflight FAIL] Re-baseline gate run requires no debateModelProviders overrides ` +
+        `but found ${JSON.stringify(providers)}. Clear UCM pipeline config before running.`,
     );
   }
 
@@ -136,7 +137,7 @@ async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
       BASELINE_V1_CONFIG_HASHES[key as keyof typeof BASELINE_V1_CONFIG_HASHES],
   );
 
-  console.log(`[Preflight] debateProfile: ${debateProfile}`);
+  console.log(`[Preflight] debateModelProviders: ${JSON.stringify(providers ?? {})}`);
   console.log(
     `[Preflight] Config hashes: pipeline=${hashes.pipeline}, search=${hashes.search}, calc=${hashes.calculation}`,
   );

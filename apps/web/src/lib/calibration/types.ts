@@ -320,7 +320,7 @@ export interface CalibrationRunResult {
         extractEvidence: string;
         verdict: string;
       };
-      debateProfile: string;
+      debateProfile?: string; // Legacy: kept optional for backward compat with older JSON reports
       debateRoles: Record<string, { tier: string; provider: string; model: string }>;
     };
     /** Resolved search configuration — provider mode and available providers. */

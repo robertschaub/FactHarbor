@@ -42,7 +42,7 @@ function main() {
     if (!data.configSnapshot.resolvedLLM) {
       const pipe = data.configSnapshot.pipeline as PipelineConfig;
       data.configSnapshot.resolvedLLM = resolveLLMConfig(pipe);
-      console.log(`  + Added resolvedLLM (profile: ${data.configSnapshot.resolvedLLM.debateProfile})`);
+      console.log(`  + Added resolvedLLM`);
     } else {
       console.log(`  = resolvedLLM already present`);
     }

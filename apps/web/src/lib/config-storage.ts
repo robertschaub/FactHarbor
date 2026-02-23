@@ -44,10 +44,12 @@ function resolveDbPath(): string {
     return process.env.FH_CONFIG_DB_PATH;
   }
 
-  // Check multiple possible locations based on where server is started from
+  // Check known project locations based on where server is started from.
+  // Prefer apps/web/config.db when running from repo root to avoid creating
+  // an accidental root-level config.db.
   const possiblePaths = [
-    path.resolve(process.cwd(), "config.db"),           // If started from apps/web
     path.resolve(process.cwd(), "apps/web/config.db"),  // If started from repo root
+    path.resolve(process.cwd(), "config.db"),           // If started from apps/web
   ];
 
   for (const p of possiblePaths) {
@@ -56,7 +58,14 @@ function resolveDbPath(): string {
     }
   }
 
-  // Default to ./config.db (will be created if it doesn't exist)
+  // Default path:
+  // - from repo root: create apps/web/config.db
+  // - otherwise: create ./config.db in current working directory
+  const repoWebDir = path.resolve(process.cwd(), "apps/web");
+  if (fs.existsSync(repoWebDir)) {
+    return path.resolve(repoWebDir, "config.db");
+  }
+
   return path.resolve(process.cwd(), "config.db");
 }
 

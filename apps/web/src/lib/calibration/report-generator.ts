@@ -41,6 +41,7 @@ ${renderSignificanceNotice(result)}
 ${renderLLMAndSearchConfig(result)}
 ${renderRuntimeRoleUsage(result)}
 ${renderVerdictBanner(result, passClass, passLabel)}
+${renderInterpretationGuide(result)}
 ${renderAggregatePanel(result)}
 ${renderFailureModePanel(result)}
 ${renderStageBiasHeatmap(result)}
@@ -252,7 +253,6 @@ function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
       <span class="config-badge">Global Provider: <strong>${esc(resolved.provider)}</strong></span>
       <span class="config-badge">Role Provider Mode: <strong>${esc(roleProviderMode)}</strong></span>
       <span class="config-badge">Tiering: <strong>${resolved.tiering ? "ON" : "OFF"}</strong></span>
-      <span class="config-badge">Debate Profile: <strong>${esc(resolved.debateProfile)}</strong></span>
       <span class="config-badge">Search Mode: <strong>${esc(searchMode)}</strong></span>
     </div>
   </div>
@@ -298,7 +298,6 @@ function renderLLMAndSearchConfigFromRaw(r: CalibrationRunResult): string {
   const modelUnderstand = String(pipe.modelUnderstand ?? "unknown");
   const modelExtract = String(pipe.modelExtractEvidence ?? "unknown");
   const modelVerdict = String(pipe.modelVerdict ?? "unknown");
-  const debateProfile = String(pipe.debateProfile ?? "baseline");
   const searchMode = String(search.provider ?? "auto");
 
   return `
@@ -309,7 +308,6 @@ function renderLLMAndSearchConfigFromRaw(r: CalibrationRunResult): string {
       <span class="config-badge">Global Provider: <strong>${esc(provider)}</strong></span>
       <span class="config-badge">Role Provider Mode: <strong>unknown</strong></span>
       <span class="config-badge">Tiering: <strong>${tiering ? "ON" : "OFF"}</strong></span>
-      <span class="config-badge">Debate Profile: <strong>${esc(debateProfile)}</strong></span>
       <span class="config-badge">Search Mode: <strong>${esc(searchMode)}</strong></span>
     </div>
   </div>
@@ -327,7 +325,7 @@ function renderLLMAndSearchConfigFromRaw(r: CalibrationRunResult): string {
     </div>
     <div class="breakdown-table">
       <h3>Debate Roles</h3>
-      <p class="text-muted">Debate role resolution not available for this report. Profile: <strong>${esc(debateProfile)}</strong></p>
+      <p class="text-muted">Debate role resolution not available for this report (legacy format).</p>
     </div>
   </div>
 </section>`;
@@ -454,6 +452,46 @@ function renderVerdictBanner(
     Mean directional skew: <strong>${am.meanDirectionalSkew.toFixed(1)} pp</strong> (${skewDir})
     &nbsp;|&nbsp; Pass rate: <strong>${(am.passRate * 100).toFixed(0)}%</strong>
   </div>
+</section>`;
+}
+
+function renderInterpretationGuide(r: CalibrationRunResult): string {
+  const am = r.aggregateMetrics;
+  const t = r.thresholds;
+  const diagnosticOnly = am.diagnosticPairCount > 0;
+  const canaryLike = am.totalPairs <= 1 || r.metadata.mode === "targeted";
+
+  return `
+<section class="panel interpretation-panel">
+  <h2>How To Interpret These Numbers</h2>
+  <ul class="interp-list">
+    <li><strong>Raw skew</strong> (<code>directionalSkew</code>) = left truth% minus right truth%.</li>
+    <li><strong>Adjusted skew</strong> (<code>adjustedSkew</code>) = raw skew minus fixture expected asymmetry.</li>
+    <li>The framing diagnostic gate uses <strong>|adjustedSkew|</strong> on <strong>bias-diagnostic</strong> pairs.</li>
+    <li><strong>Accuracy-control</strong> pairs are reported for health checks but excluded from gate pass/fail.</li>
+  </ul>
+
+  <div class="interp-note">
+    Diagnostic thresholds: mean |adjustedSkew| ≤ <strong>${t.maxDiagnosticMeanSkew} pp</strong>,
+    max pair |adjustedSkew| ≤ <strong>${t.maxDiagnosticPairSkew} pp</strong>,
+    diagnostic pass rate ≥ <strong>${(t.minPassRate * 100).toFixed(0)}%</strong>.
+  </div>
+
+  <div class="interp-note">
+    This run: diagnostic pairs = <strong>${am.diagnosticPairCount}</strong>,
+    diagnostic mean |adjustedSkew| = <strong>${am.diagnosticMeanAdjustedSkew.toFixed(1)} pp</strong>,
+    diagnostic gate = <strong>${am.diagnosticGatePassed ? "PASS" : "FAIL"}</strong>.
+  </div>
+
+  ${diagnosticOnly ? "" : `
+  <div class="interp-note interp-warn">
+    No bias-diagnostic pairs in this run. Overall PASS/FAIL may be non-actionable for promotion decisions.
+  </div>`}
+
+  ${canaryLike ? `
+  <div class="interp-note">
+    Canary/single-pair runs are operational smoke checks. Use full gate runs for promotion/governance decisions.
+  </div>` : ""}
 </section>`;
 }
 
@@ -683,6 +721,10 @@ function renderPairCard(pr: PairResult, maxSkew: number): string {
   }
 
   const m = pr.metrics;
+  const pairCategory = pr.pair.pairCategory ?? "bias-diagnostic";
+  const gatingBehavior = pairCategory === "accuracy-control"
+    ? "report-only (excluded from diagnostic gate)"
+    : "included in diagnostic gate";
   const cardClass = m.passed ? "pair-pass" : "pair-fail";
   const skewPct = Math.min(Math.abs(m.directionalSkew) / maxSkew, 2) * 50;
   const skewDir =
@@ -752,6 +794,8 @@ function renderPairCard(pr: PairResult, maxSkew: number): string {
         <tr><td>Refusal rate delta</td><td>${m.failureModes.refusalRateDelta.toFixed(1)} pp ${m.stageIndicators.failureModeBias ? "⚠" : ""}</td></tr>
         <tr><td>Degradation rate L/R</td><td>${m.failureModes.left.degradationRate.toFixed(1)} / ${m.failureModes.right.degradationRate.toFixed(1)} pp</td></tr>
         <tr><td>Degradation rate delta</td><td>${m.failureModes.degradationRateDelta.toFixed(1)} pp ${m.stageIndicators.failureModeBias ? "⚠" : ""}</td></tr>
+        <tr><td>Pair category</td><td>${esc(pairCategory)}</td></tr>
+        <tr><td>Gate behavior</td><td>${esc(gatingBehavior)}</td></tr>
         <tr><td>Expected skew</td><td>${esc(pr.pair.expectedSkew)}${pr.pair.expectedAsymmetry ? ` (${pr.pair.expectedAsymmetry} pp)` : ""}</td></tr>
       </table>
     </div>
@@ -932,6 +976,34 @@ header h1 { font-size: 1.6em; margin-bottom: 12px; color: var(--accent); }
 }
 .panel h2 { font-size: 1.2em; margin-bottom: 16px; color: var(--accent); }
 .panel h3 { font-size: 1em; margin-bottom: 8px; color: var(--text); }
+
+.interpretation-panel code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+
+.interp-list {
+  margin: 0 0 12px 0;
+  padding-left: 18px;
+}
+
+.interp-list li {
+  margin: 4px 0;
+}
+
+.interp-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.interp-note.interp-warn {
+  border-color: var(--warn);
+  background: #3a2a12;
+}
 
 .metrics-grid {
   display: grid;

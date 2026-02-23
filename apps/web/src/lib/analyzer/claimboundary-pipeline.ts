@@ -70,8 +70,7 @@ import { loadAndRenderSection } from "./prompt-loader";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
-import { DEBATE_PROFILES } from "@/lib/config-schemas";
-import type { PipelineConfig, SearchConfig, CalcConfig, DebateProfile, LLMProviderType } from "@/lib/config-schemas";
+import type { PipelineConfig, SearchConfig, CalcConfig, LLMProviderType } from "@/lib/config-schemas";
 
 // Metrics integration
 import {
@@ -2986,9 +2985,9 @@ export function assessEvidenceBalance(
  * Check whether all 4 configurable debate roles lack structural independence.
  * Validation tier is excluded — it's a fixed-purpose check, not part of the debate.
  *
- * Accepts a resolved VerdictStageConfig (with profile + explicit overrides already applied)
- * so that warnings are correct regardless of whether config came from a debateProfile,
- * explicit overrides, or hardcoded defaults.
+ * Accepts a resolved VerdictStageConfig (with explicit overrides already applied)
+ * so that warnings are correct regardless of whether config came from explicit
+ * overrides or hardcoded defaults.
  *
  * Structural independence exists when at least one of:
  *   - Tier diversity: not all 4 debate roles use the same tier
@@ -3658,9 +3657,8 @@ export async function generateVerdicts(
  * Maps UCM config field names to VerdictStageConfig structure.
  *
  * Resolution order for tiers and providers:
- *   1. Explicit debateModelTiers / debateModelProviders (per-field overrides)
- *   2. debateProfile preset (named combination)
- *   3. Hardcoded defaults (sonnet for debate, haiku for validation, no provider override)
+ *   1. Explicit debateModelTiers / debateModelProviders (per-field)
+ *   2. Hardcoded defaults (sonnet for debate, haiku for validation, no provider override)
  */
 export function buildVerdictStageConfig(
   pipelineConfig: PipelineConfig,
@@ -3672,16 +3670,7 @@ export function buildVerdictStageConfig(
     unstable: 20,
   };
 
-  // Resolve debate profile base (if set)
-  const profileName = pipelineConfig.debateProfile as DebateProfile | undefined;
-  const profile = profileName ? DEBATE_PROFILES[profileName] : undefined;
-
-  // Tiers: explicit > profile > defaults
-  const profileTiers = profile?.tiers;
   const explicitTiers = pipelineConfig.debateModelTiers;
-
-  // Providers: explicit > profile > defaults (empty)
-  const profileProviders = profile?.providers;
   const explicitProviders = pipelineConfig.debateModelProviders;
 
   return {
@@ -3695,18 +3684,18 @@ export function buildVerdictStageConfig(
     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
     highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
     debateModelTiers: {
-      advocate: explicitTiers?.advocate ?? profileTiers?.advocate ?? "sonnet",
-      selfConsistency: explicitTiers?.selfConsistency ?? profileTiers?.selfConsistency ?? "sonnet",
-      challenger: explicitTiers?.challenger ?? profileTiers?.challenger ?? "sonnet",
-      reconciler: explicitTiers?.reconciler ?? profileTiers?.reconciler ?? "sonnet",
-      validation: explicitTiers?.validation ?? profileTiers?.validation ?? "haiku",
+      advocate: explicitTiers?.advocate ?? "sonnet",
+      selfConsistency: explicitTiers?.selfConsistency ?? "sonnet",
+      challenger: explicitTiers?.challenger ?? "sonnet",
+      reconciler: explicitTiers?.reconciler ?? "sonnet",
+      validation: explicitTiers?.validation ?? "haiku",
     },
     debateModelProviders: {
-      advocate: explicitProviders?.advocate ?? profileProviders?.advocate,
-      selfConsistency: explicitProviders?.selfConsistency ?? profileProviders?.selfConsistency,
-      challenger: explicitProviders?.challenger ?? profileProviders?.challenger,
-      reconciler: explicitProviders?.reconciler ?? profileProviders?.reconciler,
-      validation: explicitProviders?.validation ?? profileProviders?.validation,
+      advocate: explicitProviders?.advocate,
+      selfConsistency: explicitProviders?.selfConsistency,
+      challenger: explicitProviders?.challenger,
+      reconciler: explicitProviders?.reconciler,
+      validation: explicitProviders?.validation,
     },
     highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
     evidencePartitioningEnabled: calcConfig.evidencePartitioningEnabled ?? true,

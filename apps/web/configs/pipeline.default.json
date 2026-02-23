@@ -109,5 +109,5 @@
   "boundaryCoherenceMinimum": 0.3,
   "selfConsistencyMode": "full",
   "selfConsistencyTemperature": 0.3,
-  "debateProfile": "cross-provider"
+  "debateModelProviders": { "challenger": "openai" }
 }

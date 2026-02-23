@@ -11,7 +11,6 @@ function createPipelineConfig(
     modelUnderstand: "claude-haiku-4-5-20251001",
     modelExtractEvidence: "claude-haiku-4-5-20251001",
     modelVerdict: "claude-sonnet-4-5-20250929",
-    debateProfile: "baseline",
     ...overrides,
   } as PipelineConfig;
 }

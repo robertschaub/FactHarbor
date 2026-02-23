@@ -13,7 +13,7 @@ import {
   loadSearchConfig,
   loadCalcConfig,
 } from "@/lib/config-loader";
-import { DEBATE_PROFILES, type PipelineConfig } from "@/lib/config-schemas";
+import type { PipelineConfig } from "@/lib/config-schemas";
 import {
   OPENAI_MODELS,
   GOOGLE_MODELS,
@@ -220,8 +220,7 @@ async function captureConfigSnapshot(): Promise<
  * Resolve the full LLM configuration including per-role debate models.
  * Applies the same resolution logic as the pipeline:
  *   1. Explicit debateModelTiers / debateModelProviders
- *   2. debateProfile preset
- *   3. Hardcoded defaults
+ *   2. Hardcoded defaults (sonnet for debate, haiku for validation)
  *
  * Exported for use by the backfill script.
  */
@@ -232,19 +231,19 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
   const modelExtractEvidence = config.modelExtractEvidence ?? "claude-haiku-4-5-20251001";
   const modelVerdict = config.modelVerdict ?? "claude-sonnet-4-5-20250929";
   const modelOpus = config.modelOpus ?? modelVerdict; // B-5b: fallback to modelVerdict
-  const debateProfile = (config.debateProfile ?? "baseline") as string;
 
-  // Resolve debate role tiers and providers from profile + explicit overrides
-  const profile = DEBATE_PROFILES[debateProfile as keyof typeof DEBATE_PROFILES] ?? DEBATE_PROFILES.baseline;
   const explicitTiers = config.debateModelTiers;
   const explicitProviders = config.debateModelProviders;
 
   const roles = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"] as const;
+  const defaultTiers: Record<string, string> = {
+    advocate: "sonnet", selfConsistency: "sonnet", challenger: "sonnet", reconciler: "sonnet", validation: "haiku",
+  };
   const debateRoles: Record<string, { tier: string; provider: string; model: string }> = {};
 
   for (const role of roles) {
-    const tier = explicitTiers?.[role] ?? profile.tiers[role] ?? "sonnet";
-    const roleProvider = explicitProviders?.[role] ?? profile.providers[role] ?? provider;
+    const tier = explicitTiers?.[role] ?? defaultTiers[role];
+    const roleProvider = explicitProviders?.[role] ?? provider;
     const model = resolveModelName(tier, roleProvider, tiering, modelUnderstand, modelVerdict, modelOpus);
     debateRoles[role] = { tier, provider: roleProvider, model };
   }
@@ -253,7 +252,6 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
     provider,
     tiering,
     models: { understand: modelUnderstand, extractEvidence: modelExtractEvidence, verdict: modelVerdict },
-    debateProfile,
     debateRoles,
   };
 }
