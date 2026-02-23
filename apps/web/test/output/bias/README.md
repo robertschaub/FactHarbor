@@ -1,28 +1,19 @@
 # Calibration Report Output (gitignored)
 
-This directory is the **runtime output** for calibration bias test runs.
-Files here are ephemeral and excluded from git via `.gitignore`.
+This directory is the **active runtime output** for Framing Symmetry Calibration runs.
 
-## After a calibration run completes
+## Active vs Deprecated
 
-Copy reports to the **tracked** location so they are preserved in git:
+- Active (v3+): `apps/web/test/output/bias/`
+- Deprecated (pre-v3 fixture): `apps/web/test/output/bias/deprecated/pre-v3-fixture/`
 
-| File type | Destination | Purpose |
-|-----------|-------------|---------|
-| `.html` (calibration reports) | `Docs/QAReports/` | Internal QA — bias measurement results |
-| `.json` (calibration data) | `Docs/QAReports/` | Structured data for A/B comparison between runs |
+Pre-v3 artifacts were archived to avoid confusion with current gate decisions.
 
-## Manifest files
+## Promotion to tracked QA folder
 
-At the destination directories there is a `reports-manifest.json`. Add an entry for each new report:
+Copy selected v3+ artifacts to:
+- `Docs/QAReports/` (active tracked reports)
+- Legacy archived reports remain under `Docs/QAReports/deprecated/pre-v3-fixture/`
 
-- **`Docs/QAReports/reports-manifest.json`** — calibration entries with `type`, `mode`, `pairs`, `debateProfile`, `date`, `model`
-
-## Which JSON files to keep
-
-Not every JSON needs to be committed. Commit a JSON when:
-- It is a **canonical baseline** (first successful full run of a new debate profile)
-- It will be used for **A/B comparison** with future runs via `CalibrationComparisonResult`
-- The run introduced a **significant config change** worth preserving
-
-Mark canonical baselines with `"type": "calibration-data"` in the manifest.
+Update:
+- `Docs/QAReports/reports-manifest.json` for active v3+ entries only.

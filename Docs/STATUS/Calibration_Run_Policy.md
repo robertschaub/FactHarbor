@@ -15,6 +15,8 @@ Define a cost-controlled execution policy that preserves baseline comparability:
 
 This document also consolidates current run outcomes and significance tiering.
 
+> Legacy note (2026-02-23): pre-v3 fixture artifacts were archived under `Docs/QAReports/deprecated/pre-v3-fixture/` and are non-gating historical references.
+
 ---
 
 ## 2. Consolidated Run Registry

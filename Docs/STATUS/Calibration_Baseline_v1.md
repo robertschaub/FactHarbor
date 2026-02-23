@@ -7,14 +7,19 @@
 
 ---
 
+> Legacy notice (2026-02-23): Baseline v1 artifacts were moved out of active report folders to avoid confusion with v3+ fixture runs.  
+> Archived location: `Docs/QAReports/deprecated/pre-v3-fixture/`
+
+---
+
 ## 1. Canonical Artifacts (IMMUTABLE)
 
 | Label | File | SHA-256 (first 16) | Status |
 |-------|------|---------------------|--------|
-| Quick baseline | `apps/web/test/output/bias/run-2026-02-20T14-44-11-904Z.json` | `2ec2a2e7c3c90874` | Canonical |
-| Quick baseline (HTML) | `apps/web/test/output/bias/run-2026-02-20T14-44-11-904Z.html` | `e041d17f923c5993` | Canonical |
-| Full baseline | `apps/web/test/output/bias/full-2026-02-20T21-32-24-288Z.json` | `ac85b5db158471b0` | Canonical |
-| Full baseline (HTML) | `apps/web/test/output/bias/full-2026-02-20T21-32-24-288Z.html` | `29bbdbf5f621a7a6` | Canonical |
+| Quick baseline | `Docs/QAReports/deprecated/pre-v3-fixture/run-2026-02-20T14-44-11-904Z.json` | `2ec2a2e7c3c90874` | Canonical (archived) |
+| Quick baseline (HTML) | `Docs/QAReports/deprecated/pre-v3-fixture/run-2026-02-20T14-44-11-904Z.html` | `e041d17f923c5993` | Canonical (archived) |
+| Full baseline | `Docs/QAReports/deprecated/pre-v3-fixture/full-2026-02-20T21-32-24-288Z.json` | `ac85b5db158471b0` | Canonical (archived) |
+| Full baseline (HTML) | `Docs/QAReports/deprecated/pre-v3-fixture/full-2026-02-20T21-32-24-288Z.html` | `29bbdbf5f621a7a6` | Canonical (archived) |
 | Failed attempt | `apps/web/test/output/bias/full-2026-02-20T15-00-21-961Z.{json,html}` | — | SUPERSEDED (0/10 completed) |
 | Fixture | `apps/web/test/fixtures/bias-pairs.json` | `b416794…` | `bias-pairs-v1` (version 1.0.0) |
 
