@@ -18,6 +18,7 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 | Research network, people, projects, debate landscape | [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) | 10+ papers, 13 debate frameworks, 10 additional learnings. Search strategy matters more than debate architecture. |
 | Meeting prep for Elliott Ash | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | EMNLP 2024 paper, Ash portfolio, FactHarbor SWOA, calibration status, meeting questions. |
 | Why evidence-following appears politically biased | [Epistemic Asymmetry](Truth_Seeking.md) | The information environment is not politically symmetric. This is a property of reality, not a pipeline bug. |
+| **Multi-source evidence retrieval spec** | [**Multi-Source Evidence Retrieval**](../Specification/Multi_Source_Evidence_Retrieval.md) | Wikipedia + Semantic Scholar + Google Fact Check Tools API. All free, ~8 hours implementation. Addresses #1 gap (C13 evidence asymmetry). |
 
 ---
 
@@ -33,11 +34,11 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 |-----------|-----------|----------------|-----|
 | **Multi-agent debate** | 5-step working implementation | ED2D (EMNLP 2025) — research only | **FH leads** — only working MAD implementation |
 | **Calibration methodology** | C18 hard gate, C13 rebalancing | No published equivalent | **FH leads** — publishable contribution |
-| **Evidence retrieval** | Web search only | KG²RAG, Tool-MAD (tool-diverse agents) | **FH lags** — #1 quality bottleneck |
+| **Evidence retrieval** | Web search only → [multi-source spec](../Specification/Multi_Source_Evidence_Retrieval.md) | KG²RAG, Tool-MAD (tool-diverse agents) | **FH lags** — #1 quality bottleneck; spec ready |
 | **Monitoring scale** | User-submitted claims only | Full Fact AI: 350K sentences/day | **FH lags** — no detection layer |
 | **Cross-provider debate** | Anthropic, OpenAI, Google, Mistral | No competitor compares providers | **FH unique** |
 
-The #1 gap to close: evidence retrieval (C13 = 8/10 pairs). The #1 cooperation target: Full Fact — they have monitoring scale, we have verdict automation they deliberately don't build.
+The #1 gap to close: evidence retrieval (C13 = 8/10 pairs). **Specification ready:** [Multi-Source Evidence Retrieval](../Specification/Multi_Source_Evidence_Retrieval.md) — adds Wikipedia, Semantic Scholar, and Google Fact Check Tools API at zero cost, ~8 hours implementation. The #1 cooperation target: Full Fact — they have monitoring scale, we have verdict automation they deliberately don't build.
 
 Full analysis: [Global Fact-Checking Landscape 2026](Global_FactChecking_Landscape_2026.md)
 

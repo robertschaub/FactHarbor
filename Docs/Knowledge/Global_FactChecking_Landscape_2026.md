@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-22
 **Scope:** Comprehensive survey of AI-based and human fact-checking systems worldwide
-**Cross-references:** [Executive Summary](EXECUTIVE_SUMMARY.md) | [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md)
+**Cross-references:** [Executive Summary](EXECUTIVE_SUMMARY.md) | [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) | [Multi-Source Evidence Retrieval Spec](../Specification/Multi_Source_Evidence_Retrieval.md)
 **Research method:** Three parallel agents (Opus + 2x Sonnet) covering AI systems, non-AI organizations, and emerging technology. 100+ sources consulted.
 
 > **How to use this document:** Start with the Executive Summary below for the key takeaways and prioritized actions. Then §1 (Rankings) for the most sophisticated systems, §2 for three concepts to learn from, §3 for the landscape map, §4 for detailed profiles, §5 for cooperation strategy.

@@ -5,7 +5,7 @@
 **Key paper:** [LiveFC: Live Fact-Checking of Audio Streams (WSDM 2025)](https://arxiv.org/abs/2408.07448)
 **Reviewed by:** Claude Opus 4.6 (2026-02-22)
 
-> **Related docs:** [Full Fact AI](FullFact_AI_Lessons_for_FactHarbor.md) for the complementary monitoring-focused approach, [Global Landscape](Global_FactChecking_Landscape_2026.md) for competitive positioning, [Executive Summary](EXECUTIVE_SUMMARY.md) for prioritized action items.
+> **Related docs:** [Full Fact AI](FullFact_AI_Lessons_for_FactHarbor.md) for the complementary monitoring-focused approach, [Global Landscape](Global_FactChecking_Landscape_2026.md) for competitive positioning, [Executive Summary](EXECUTIVE_SUMMARY.md) for prioritized action items, [Multi-Source Evidence Retrieval Spec](../Specification/Multi_Source_Evidence_Retrieval.md) for the implementation plan derived from these lessons.
 
 ---
 
@@ -243,7 +243,7 @@ This is the sharpest strategic comparison across the three systems:
 
 Factiverse proves that querying 6+ sources in parallel with deduplication and cross-encoder ranking is technically feasible in a startup-sized team. Their approach directly addresses FactHarbor's C13 evidence pool asymmetry.
 
-**For FactHarbor:** Adopt the pattern: claim → research questions → parallel multi-source search → deduplicate → cross-encoder rank. Priority sources: web search (existing), academic papers (Semantic Scholar API — free), Wikipedia (free), FactiSearch equivalent (ClaimReview database or Google Fact Check Tools API). This maps to Priority #8 (debate-triggered re-search) and #10 (tool-diverse advocates).
+**For FactHarbor:** Adopt the pattern: claim → research questions → parallel multi-source search → deduplicate → cross-encoder rank. Priority sources: web search (existing), academic papers (Semantic Scholar API — free), Wikipedia (free), FactiSearch equivalent (ClaimReview database or Google Fact Check Tools API). This maps to Priority #8 (debate-triggered re-search) and #10 (tool-diverse advocates). **Specification written:** [Multi-Source Evidence Retrieval](../Specification/Multi_Source_Evidence_Retrieval.md) — full API analysis, cost assessment, implementation plan (~8 hours, $0 cost).
 
 ### Lesson 2: Claim Decomposition Before Search
 

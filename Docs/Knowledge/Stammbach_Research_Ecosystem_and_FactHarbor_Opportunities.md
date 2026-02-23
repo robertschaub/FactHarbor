@@ -1,7 +1,7 @@
 # Research Ecosystem: Stammbach, Ash, Leippold — and FactHarbor Opportunities
 
 **Source:** Academic papers, GitHub repositories, institutional profiles
-**Cross-references:** [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
+**Cross-references:** [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | [Executive Summary](EXECUTIVE_SUMMARY.md) | [Multi-Source Evidence Retrieval Spec](../Specification/Multi_Source_Evidence_Retrieval.md)
 **Reviewed by:** Claude Opus 4.6 (2026-02-21)
 
 > **How to use this document:** Start with §1 (People) to know who's who, then §2 (Pipeline) to see how their projects fit together. §3 has individual project summaries. §4 covers the Climate+Tech ecosystem. §5 surveys the broader debate literature. §6 lists learnings for FactHarbor. §7-8 cover collaboration and outreach.
@@ -561,7 +561,7 @@ Beyond the 11 Climinator-specific lessons in [Climinator Analysis](Climinator_Le
 
 ### L-I: Strong Agent Quality Over Debate Structure
 
-**From "Can LLM Agents Really Debate?"** The dominant predictor of debate success is initial reasoning quality, not structural factors. Create a `strong-challenger` debate profile where the challenger uses Opus or equivalent. The current `tier-split` profile uses Haiku for challenger — the opposite of what this research recommends.
+**From "Can LLM Agents Really Debate?"** The dominant predictor of debate success is initial reasoning quality, not structural factors. Configure a strong-challenger setup via `debateModelTiers: { "challenger": "opus" }` in UCM. The tier-split configuration (`{ "challenger": "haiku" }`) uses Haiku for challenger — the opposite of what this research recommends.
 
 **Effort:** Low. Config change + calibration run.
 
