@@ -1635,6 +1635,55 @@ describe("validateChallengeEvidence", () => {
     expect(result.challenges[0].challengePoints[1].challengeValidation!.evidenceIdsValid).toBe(false);
   });
 
+  it("should mark IDs invalid when evidence exists but belongs to a different claim", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", relevantClaimIds: ["AC_02"] }),
+    ];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Cross-claim evidence reference",
+          evidenceIds: ["EV_01", "EV_02"],
+          severity: "medium",
+        }],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, evidence);
+    const cp = result.challenges[0].challengePoints[0];
+    expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.challengeValidation!.validIds).toEqual(["EV_01"]);
+    expect(cp.challengeValidation!.invalidIds).toEqual(["EV_02"]);
+  });
+
+  it("should treat IDs as valid when relevance metadata is absent", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: undefined }),
+    ];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Legacy evidence without relevantClaimIds",
+          evidenceIds: ["EV_01"],
+          severity: "low",
+        }],
+      }],
+    };
+
+    const result = validateChallengeEvidence(challengeDoc, evidence);
+    const cp = result.challenges[0].challengePoints[0];
+    expect(cp.challengeValidation!.evidenceIdsValid).toBe(true);
+    expect(cp.challengeValidation!.validIds).toEqual(["EV_01"]);
+    expect(cp.challengeValidation!.invalidIds).toEqual([]);
+  });
+
   // Multilingual guardrail: validation is ID-based, not language-dependent
   it("should produce identical validation regardless of challenge description language (en/de/fr)", () => {
     const evidence = [
@@ -1826,7 +1875,7 @@ describe("enforceBaselessChallengePolicy", () => {
     expect(warnings[0].message).toContain("CP_NONEXISTENT_0");
   });
 
-  it("should emit advisory warning only for mixed provenance (some valid, some baseless)", () => {
+  it("should revert when provenance is mixed (some valid, some baseless)", () => {
     const advocate = makeVerdict("AC_01", 75, 80);
     const reconciled = makeVerdict("AC_01", 68, 72, [
       {
@@ -1855,12 +1904,50 @@ describe("enforceBaselessChallengePolicy", () => {
 
     const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], warnings);
 
-    // NOT reverted (mixed provenance)
-    expect(result[0].truthPercentage).toBe(68);
-    // Warnings: 1 advisory only (no summary when baselessCount=0)
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0].type).toBe("baseless_challenge_detected");
+    // Reverted (mixed provenance includes baseless component)
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].confidence).toBe(80);
+    // Warnings: 1 blocked + 1 metrics summary
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0].type).toBe("baseless_challenge_blocked");
     expect(warnings[0].severity).toBe("info");
+    expect(warnings[0].message).toContain("mixed provenance");
+    expect(warnings[1].type).toBe("baseless_challenge_detected");
+    expect(warnings[1].details?.blockedCount).toBe(1);
+  });
+
+  it("should revert when adjusted response exists but challenge document has no matching claim block", () => {
+    const advocate = makeVerdict("AC_01", 75, 80);
+    const reconciled = makeVerdict("AC_01", 60, 65, [
+      {
+        challengeType: "assumption",
+        response: "Adjusted",
+        verdictAdjusted: true,
+        adjustmentBasedOnChallengeIds: ["CP_AC_01_0"],
+      },
+    ]);
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        // Different claim ID to simulate missing block for AC_01
+        claimId: "AC_02",
+        challengePoints: [{
+          id: "CP_AC_02_0",
+          type: "assumption",
+          description: "Different claim",
+          evidenceIds: ["EV_01"],
+          severity: "low",
+          challengeValidation: { evidenceIdsValid: true, validIds: ["EV_01"], invalidIds: [] },
+        }],
+      }],
+    };
+    const warnings: AnalysisWarning[] = [];
+
+    const result = enforceBaselessChallengePolicy([reconciled], challengeDoc, [advocate], warnings);
+
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].confidence).toBe(80);
+    expect(warnings[0].type).toBe("baseless_challenge_blocked");
+    expect(warnings[0].message).toContain("no challenge points");
   });
 
   it("should compute baselessAdjustmentRate correctly", () => {

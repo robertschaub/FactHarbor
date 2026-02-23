@@ -1008,16 +1008,36 @@ export function validateChallengeEvidence(
   challengeDoc: ChallengeDocument,
   evidence: EvidenceItem[],
 ): ChallengeDocument {
-  const evidenceIdSet = new Set(evidence.map((e) => e.id));
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
 
   return {
     challenges: challengeDoc.challenges.map((c) => ({
       ...c,
       challengePoints: c.challengePoints.map((cp) => {
-        const validIds = cp.evidenceIds.filter((id) => evidenceIdSet.has(id));
-        const invalidIds = cp.evidenceIds.filter((id) => !evidenceIdSet.has(id));
+        const validIds: string[] = [];
+        const invalidIds: string[] = [];
+        for (const id of cp.evidenceIds) {
+          const item = evidenceById.get(id);
+          if (!item) {
+            invalidIds.push(id);
+            continue;
+          }
+
+          // Structural relevance check: when an evidence item is claim-scoped,
+          // it must include the challenged claim ID.
+          if (
+            Array.isArray(item.relevantClaimIds) &&
+            item.relevantClaimIds.length > 0 &&
+            !item.relevantClaimIds.includes(c.claimId)
+          ) {
+            invalidIds.push(id);
+            continue;
+          }
+
+          validIds.push(id);
+        }
         const validation: ChallengeValidation = {
-          evidenceIdsValid: invalidIds.length === 0 && cp.evidenceIds.length > 0,
+          evidenceIdsValid: invalidIds.length === 0 && validIds.length > 0,
           validIds,
           invalidIds,
         };
@@ -1038,7 +1058,7 @@ export interface BaselessEnforcementResult {
  * Post-reconciliation check:
  * - If verdictAdjusted=true AND all referenced challenge points have zero valid evidence IDs → REVERT
  * - If verdictAdjusted=true AND provenance missing/ambiguous → REVERT (policy violation)
- * - If mixed (some valid, some baseless) → advisory warning only, no revert
+ * - If mixed (some valid, some baseless/unresolved) → REVERT (cannot isolate baseless influence)
  *
  * Satisfies AGENTS.md: "Evidence-weighted contestation — baseless challenges MUST NOT reduce truth% or confidence."
  */
@@ -1085,7 +1105,19 @@ export function enforceBaselessChallengePolicy(
     const claimChallenges = validatedChallengeDoc.challenges.find(
       (c) => c.claimId === verdict.claimId,
     );
-    if (!claimChallenges) return verdict;
+    if (!claimChallenges) {
+      baselessCount += adjustedResponses.length;
+      const advocate = advocateVerdicts.find((a) => a.claimId === verdict.claimId);
+      if (advocate) {
+        warnings?.push({
+          type: "baseless_challenge_blocked",
+          severity: "info",
+          message: `Claim ${verdict.claimId}: verdict adjustment reverted — no challenge points were provided for this claim.`,
+        });
+        return buildRevertedVerdict(verdict, advocate);
+      }
+      return verdict;
+    }
 
     for (const cr of adjustedResponses) {
       // Determine which challenge points drove this adjustment
@@ -1154,20 +1186,26 @@ export function enforceBaselessChallengePolicy(
           warnings?.push({
             type: "baseless_challenge_blocked",
             severity: "info",
-            message: `Claim ${verdict.claimId}: verdict adjustment reverted — all ${referencedPoints.length} challenge points cite non-existent evidence IDs.`,
+            message: `Claim ${verdict.claimId}: verdict adjustment reverted — all ${referencedPoints.length} challenge points cite invalid evidence IDs.`,
           });
           return buildRevertedVerdict(verdict, advocate);
         }
       } else if (someBaseless || unresolvedIds.length > 0) {
-        // Mixed provenance (or some unresolved IDs alongside valid ones) — advisory warning only
+        // Mixed provenance (or unresolved IDs alongside valid ones) cannot isolate
+        // baseless influence from the final adjustment. Enforce strict policy.
+        baselessCount++;
         const detail = unresolvedIds.length > 0
           ? ` (${unresolvedIds.length} unresolved provenance IDs: ${unresolvedIds.join(", ")})`
           : "";
-        warnings?.push({
-          type: "baseless_challenge_detected",
-          severity: "info",
-          message: `Claim ${verdict.claimId}: some challenge points cite non-existent evidence IDs (mixed provenance — not reverted).${detail}`,
-        });
+        const advocate = advocateVerdicts.find((a) => a.claimId === verdict.claimId);
+        if (advocate) {
+          warnings?.push({
+            type: "baseless_challenge_blocked",
+            severity: "info",
+            message: `Claim ${verdict.claimId}: verdict adjustment reverted — mixed provenance includes invalid evidence references.${detail}`,
+          });
+          return buildRevertedVerdict(verdict, advocate);
+        }
       }
     }
 

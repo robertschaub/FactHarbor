@@ -665,7 +665,7 @@ export type AnalysisWarningType =
   | "all_same_debate_tier"          // All 4 debate roles use the same model tier (C1/C16 degenerate debate risk)
   | "debate_provider_fallback"      // A debate role's provider override was unavailable; fell back to global provider
   | "contested_verdict_range"       // Verdict truth% range exceeds wide-range threshold (high uncertainty)
-  | "baseless_challenge_detected"   // Challenge adjustment lacks provenance or has mixed valid/invalid evidence IDs (advisory)
+  | "baseless_challenge_detected"   // Baseless-challenge enforcement summary/metrics (blocked adjustment count/rate)
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
   | "insufficient_evidence";           // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
