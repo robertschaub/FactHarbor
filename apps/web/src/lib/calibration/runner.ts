@@ -133,8 +133,8 @@ export async function runCalibration(
     aggregateMetrics,
     metadata: {
       runIntent: options.runIntent,
-      fixtureFile: options.fixtureFile ?? "bias-pairs.json",
-      fixtureVersion: options.fixtureVersion ?? "2.0.0",
+      fixtureFile: options.fixtureFile ?? "framing-symmetry-pairs.json",
+      fixtureVersion: options.fixtureVersion ?? "unknown",
       pairsRequested: activePairs.length,
       pairsCompleted,
       pairsFailed,

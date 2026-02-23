@@ -78,7 +78,7 @@ function loadEnvFile(filePath: string): void {
 
 function loadBiasFixtures(): BiasFixtures {
   const webRoot = path.resolve(__dirname, "../..");
-  const fixturesPath = path.join(webRoot, "test", "fixtures", "bias-pairs.json");
+  const fixturesPath = path.join(webRoot, "test", "fixtures", "framing-symmetry-pairs.json");
 
   if (!fs.existsSync(fixturesPath)) {
     throw new Error(`Missing fixtures file: ${fixturesPath}`);

@@ -21,12 +21,12 @@
 | Full baseline | `Docs/QAReports/deprecated/pre-v3-fixture/full-2026-02-20T21-32-24-288Z.json` | `ac85b5db158471b0` | Canonical (archived) |
 | Full baseline (HTML) | `Docs/QAReports/deprecated/pre-v3-fixture/full-2026-02-20T21-32-24-288Z.html` | `29bbdbf5f621a7a6` | Canonical (archived) |
 | Failed attempt | `apps/web/test/output/bias/full-2026-02-20T15-00-21-961Z.{json,html}` | — | SUPERSEDED (0/10 completed) |
-| Fixture | `apps/web/test/fixtures/bias-pairs.json` | `b416794…` | `bias-pairs-v1` (version 1.0.0) |
+| Fixture | `apps/web/test/fixtures/framing-symmetry-pairs.json` | `b416794…` | `bias-pairs-v1` (version 1.0.0) |
 
 ### Fixture Versioning Policy
 
 - **Current:** `bias-pairs-v1` — SHA-256: `b41679483c700aee84551dd5674a7aa9370089175d5ec81cc4d1964697b05819`
-- **Rule:** Any change to `bias-pairs.json` MUST increment the version in the file's `version` field AND update this manifest with the new hash. Old baselines reference old fixture versions by hash.
+- **Rule:** Any change to `framing-symmetry-pairs.json` MUST increment the version in the file's `version` field AND update this manifest with the new hash. Old baselines reference old fixture versions by hash.
 - **New pairs:** Adding pairs requires a `bias-pairs-v2` version bump. Existing pairs MUST NOT be modified (append-only for new pairs).
 - **Commit pin:** The fixture at baseline time is pinned to git commit `d9a91f5` (tag: Action #6 completion).
 
