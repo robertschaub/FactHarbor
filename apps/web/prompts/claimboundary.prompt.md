@@ -292,7 +292,9 @@ ${expectedEvidenceProfile}
 ```
 ${iterationType}
 ```
-(One of: "main", "contradiction")
+(One of: "main", "contradiction", "contrarian")
+
+When `iterationType` is `"contrarian"`, the evidence pool has been found to be directionally imbalanced. Generate queries that specifically seek evidence in the **opposite direction** to the current majority. If existing evidence mostly supports the claim, search for credible refutations, contradicting data, or dissenting expert views. If existing evidence mostly contradicts, search for supporting evidence, corroborating data, or confirmatory studies. Focus on high-quality, authoritative sources that could genuinely challenge the current evidence consensus.
 
 **Query Strategy Mode:**
 ```

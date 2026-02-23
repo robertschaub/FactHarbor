@@ -100,5 +100,8 @@
     "threshold": 0.5,
     "reductionFactor": 0.3,
     "floorRatio": 0.1
-  }
+  },
+  "evidenceSufficiencyMinItems": 3,
+  "evidenceSufficiencyMinSourceTypes": 2,
+  "evidencePartitioningEnabled": true
 }

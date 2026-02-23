@@ -1240,6 +1240,54 @@ export const CalcConfigSchema = z.object({
   evidenceBalanceMinDirectional: z.number().int().min(1).max(20).optional(),
 
   /**
+   * D5 Control 1: Evidence Sufficiency Gate — minimum evidence items per claim.
+   * Claims with fewer mapped evidence items are set to UNVERIFIED (confidence 0).
+   * Default 3.
+   */
+  evidenceSufficiencyMinItems: z.number().int().min(1).max(20).optional(),
+
+  /**
+   * D5 Control 1: Evidence Sufficiency Gate — minimum distinct source types per claim.
+   * Claims with fewer distinct sourceType values in their evidence are set to UNVERIFIED (confidence 0).
+   * Default 2.
+   */
+  evidenceSufficiencyMinSourceTypes: z.number().int().min(1).max(10).optional(),
+
+  /**
+   * D5 Control 2: Evidence Partitioning — route institutional sources to advocate
+   * and general sources to challenger for structural independence.
+   * When enabled, advocate sees institutional evidence (peer_reviewed_study,
+   * fact_check_report, government_report, legal_document, organization_report)
+   * and challenger sees general evidence (news_primary, news_secondary,
+   * expert_statement, other). Reconciler and validator always see full pool.
+   * Falls back to full pool if either partition has <2 items.
+   * Default: true.
+   */
+  evidencePartitioningEnabled: z.boolean().optional(),
+
+  /**
+   * D5 Control 3: Contrarian Retrieval — enabled flag.
+   * When evidence pool imbalance is detected, trigger additional searches
+   * seeking evidence in the underrepresented direction.
+   * Default: true.
+   */
+  contrarianRetrievalEnabled: z.boolean().optional(),
+
+  /**
+   * D5 Control 3: Maximum contrarian queries generated per claim.
+   * Controls the cost of the contrarian search pass.
+   * Default: 2.
+   */
+  contrarianMaxQueriesPerClaim: z.number().int().min(0).max(4).optional(),
+
+  /**
+   * D5 Control 3: Runtime ceiling for contrarian retrieval as a percentage
+   * of the total pipeline budget. Skip contrarian pass if approaching this limit.
+   * Default: 15 (%).
+   */
+  contrarianRuntimeCeilingPct: z.number().min(5).max(50).optional(),
+
+  /**
    * Harm levels that trigger the high-harm confidence floor.
    * Claims with harmPotential matching any of these levels AND confidence below
    * highHarmMinConfidence will be downgraded to UNVERIFIED.
@@ -1408,6 +1456,12 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   highHarmMinConfidence: 50,
   evidenceBalanceSkewThreshold: 0.8,
   evidenceBalanceMinDirectional: 3,
+  evidenceSufficiencyMinItems: 3,
+  evidenceSufficiencyMinSourceTypes: 2,
+  evidencePartitioningEnabled: true,
+  contrarianRetrievalEnabled: true,
+  contrarianMaxQueriesPerClaim: 2,
+  contrarianRuntimeCeilingPct: 15,
   highHarmFloorLevels: ["critical", "high"],
 };
 
