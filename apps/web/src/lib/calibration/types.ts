@@ -1,8 +1,8 @@
 /**
- * Political Bias Calibration Harness — Type Definitions
+ * Framing Symmetry Calibration Harness — Type Definitions
  *
  * Defines all interfaces for the calibration system that measures
- * directional political bias through mirrored claim pairs.
+ * directional framing skew through mirrored claim pairs.
  *
  * @module calibration/types
  */
@@ -12,7 +12,7 @@
 // ============================================================================
 
 /**
- * A mirrored claim pair for political bias testing.
+ * A mirrored claim pair for framing symmetry testing.
  * Both sides express the same topic from opposite political framings.
  * An unbiased system should produce similar truthPercentage for both sides
  * (or evidence-justified asymmetry for factual claims).
@@ -418,3 +418,4 @@ export interface CalibrationComparisonResult {
     unchangedPairs: number;
   };
 }
+

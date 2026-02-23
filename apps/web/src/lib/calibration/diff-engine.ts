@@ -1,5 +1,5 @@
 /**
- * Political Bias Calibration — Diff Engine
+ * Framing Symmetry Calibration — Diff Engine
  *
  * Compares two calibration run results to show the impact
  * of UCM parameter changes on bias metrics.
@@ -141,3 +141,4 @@ function diffObjects(
 
   return diffs;
 }
+

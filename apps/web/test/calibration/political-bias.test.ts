@@ -1,5 +1,5 @@
 /**
- * Political Bias Calibration Test Suite
+ * Framing Symmetry Calibration Test Suite
  *
  * Runs mirrored political claim pairs through the CB pipeline and measures
  * directional skew. An unbiased system should produce similar verdicts
@@ -158,7 +158,7 @@ async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
 // TEST SUITE
 // ============================================================================
 
-describe("Political Bias Calibration", () => {
+describe("Framing Symmetry Calibration", () => {
   let pairs: BiasPair[];
   let fixtureVersion: string;
   let outputDir: string;
@@ -181,7 +181,7 @@ describe("Political Bias Calibration", () => {
     // Skip on CI
     if (process.env.CI === "true") {
       console.warn(
-        "[Bias Calibration] Skipping on CI — requires real LLM calls",
+        "[Symmetry Calibration] Skipping on CI — requires real LLM calls",
       );
       testsEnabled = false;
       return;
@@ -191,7 +191,7 @@ describe("Political Bias Calibration", () => {
     const hasClaude = !!process.env.ANTHROPIC_API_KEY;
     if (!hasClaude) {
       console.warn(
-        "[Bias Calibration] No ANTHROPIC_API_KEY found, tests will be skipped",
+        "[Symmetry Calibration] No ANTHROPIC_API_KEY found, tests will be skipped",
       );
       testsEnabled = false;
     }
@@ -210,7 +210,7 @@ describe("Political Bias Calibration", () => {
 
   it("should load bias test pairs", () => {
     expect(pairs.length).toBeGreaterThanOrEqual(5);
-    console.log(`[Bias Calibration] Loaded ${pairs.length} test pairs`);
+    console.log(`[Symmetry Calibration] Loaded ${pairs.length} test pairs`);
 
     // Validate pair structure
     for (const pair of pairs) {
@@ -228,14 +228,14 @@ describe("Political Bias Calibration", () => {
     "quick mode: representative pairs pass bias thresholds",
     async () => {
       if (!testsEnabled) {
-        console.log("[Bias Calibration] Skipping — no API keys");
+        console.log("[Symmetry Calibration] Skipping — no API keys");
         return;
       }
 
       const quickRunIntent = resolveRunIntent("quick");
       await preflightConfigCheck(quickRunIntent);
 
-      console.log("[Bias Calibration] Starting quick mode run...");
+      console.log("[Symmetry Calibration] Starting quick mode run...");
 
       const result = await runCalibration(pairs, {
         mode: "quick",
@@ -252,7 +252,7 @@ describe("Political Bias Calibration", () => {
         `${runIntent}-quick-${timestamp}.json`,
       );
       fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
-      console.log(`[Bias Calibration] JSON results: ${jsonPath}`);
+      console.log(`[Symmetry Calibration] JSON results: ${jsonPath}`);
 
       // Generate HTML report
       const html = generateCalibrationReport(result);
@@ -261,11 +261,11 @@ describe("Political Bias Calibration", () => {
         `${runIntent}-quick-${timestamp}.html`,
       );
       fs.writeFileSync(htmlPath, html);
-      console.log(`[Bias Calibration] HTML report: ${htmlPath}`);
+      console.log(`[Symmetry Calibration] HTML report: ${htmlPath}`);
 
       // Log summary
       const am = result.aggregateMetrics;
-      console.log(`\n[Bias Calibration] === RESULTS ===`);
+      console.log(`\n[Symmetry Calibration] === RESULTS ===`);
       console.log(`  Pairs completed: ${am.completedPairs}/${am.totalPairs}`);
       console.log(
         `  Mean directional skew: ${am.meanDirectionalSkew.toFixed(1)} pp (target: ±${result.thresholds.maxMeanDirectionalSkew})`,
@@ -315,14 +315,14 @@ describe("Political Bias Calibration", () => {
     "full mode: all pairs including multilingual variants",
     async () => {
       if (!testsEnabled) {
-        console.log("[Bias Calibration] Skipping — no API keys");
+        console.log("[Symmetry Calibration] Skipping — no API keys");
         return;
       }
 
       const fullRunIntent = resolveRunIntent("full");
       await preflightConfigCheck(fullRunIntent);
 
-      console.log("[Bias Calibration] Starting full mode run...");
+      console.log("[Symmetry Calibration] Starting full mode run...");
 
       const result = await runCalibration(pairs, {
         mode: "full",
@@ -347,12 +347,12 @@ describe("Political Bias Calibration", () => {
       );
       fs.writeFileSync(htmlPath, html);
 
-      console.log(`[Bias Calibration] Full results: ${jsonPath}`);
-      console.log(`[Bias Calibration] Full HTML report: ${htmlPath}`);
+      console.log(`[Symmetry Calibration] Full results: ${jsonPath}`);
+      console.log(`[Symmetry Calibration] Full HTML report: ${htmlPath}`);
 
       // Log per-domain and per-language breakdown
       const am = result.aggregateMetrics;
-      console.log(`\n[Bias Calibration] === FULL RESULTS ===`);
+      console.log(`\n[Symmetry Calibration] === FULL RESULTS ===`);
       console.log(`  Overall: ${am.overallPassed ? "PASS" : "FAIL"}`);
       console.log(
         `  Mean directional skew: ${am.meanDirectionalSkew.toFixed(1)} pp`,
@@ -400,7 +400,7 @@ describe("Political Bias Calibration", () => {
     "canary mode: single pair smoke test",
     async () => {
       if (!testsEnabled) {
-        console.log("[Bias Calibration] Skipping — no API keys");
+        console.log("[Symmetry Calibration] Skipping — no API keys");
         return;
       }
 
@@ -410,7 +410,7 @@ describe("Political Bias Calibration", () => {
         process.env.FH_CALIBRATION_CANARY_PAIR ?? DEFAULT_CANARY_PAIR_ID;
 
       console.log(
-        `[Bias Calibration] Starting canary mode (pair: ${canaryPairId})...`,
+        `[Symmetry Calibration] Starting canary mode (pair: ${canaryPairId})...`,
       );
 
       const result = await runCalibration(pairs, {
@@ -428,7 +428,7 @@ describe("Political Bias Calibration", () => {
         `canary-${canaryPairId}-${timestamp}.json`,
       );
       fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
-      console.log(`[Bias Calibration] JSON results: ${jsonPath}`);
+      console.log(`[Symmetry Calibration] JSON results: ${jsonPath}`);
 
       // Generate HTML report
       const html = generateCalibrationReport(result);
@@ -437,14 +437,14 @@ describe("Political Bias Calibration", () => {
         `canary-${canaryPairId}-${timestamp}.html`,
       );
       fs.writeFileSync(htmlPath, html);
-      console.log(`[Bias Calibration] HTML report: ${htmlPath}`);
+      console.log(`[Symmetry Calibration] HTML report: ${htmlPath}`);
 
       // Log summary
       expect(result.pairResults).toHaveLength(1);
       const pr = result.pairResults[0];
       if (pr.status === "completed") {
         const m = pr.metrics;
-        console.log(`\n[Bias Calibration] === CANARY RESULT ===`);
+        console.log(`\n[Symmetry Calibration] === CANARY RESULT ===`);
         console.log(`  Pair: ${pr.pairId}`);
         console.log(
           `  Left: ${pr.left.truthPercentage.toFixed(0)}% (${pr.left.verdict})`,
@@ -503,7 +503,7 @@ describe("Political Bias Calibration", () => {
         }
       } else {
         console.log(
-          `[Bias Calibration] Canary FAILED: ${pr.error}`,
+          `[Symmetry Calibration] Canary FAILED: ${pr.error}`,
         );
       }
 
@@ -512,3 +512,4 @@ describe("Political Bias Calibration", () => {
     CANARY_TIMEOUT_MS,
   );
 });
+

@@ -1,5 +1,5 @@
 /**
- * Political Bias Calibration Harness — Public API
+ * Framing Symmetry Calibration Harness — Public API
  *
  * @module calibration
  */
@@ -33,3 +33,4 @@ export { generateCalibrationReport } from "./report-generator";
 
 // Diff engine
 export { compareCalibrationRuns } from "./diff-engine";
+

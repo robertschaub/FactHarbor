@@ -1,5 +1,5 @@
 /**
- * Vitest config for political bias calibration tests.
+ * Vitest config for Framing Symmetry Calibration tests.
  * Used by test:calibration and test:calibration:full scripts.
  * Separate from vitest.config.ts so the calibration test is not excluded.
  */
@@ -18,3 +18,4 @@ export default defineConfig({
     },
   },
 });
+

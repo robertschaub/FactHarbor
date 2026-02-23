@@ -1,5 +1,5 @@
 /**
- * Political Bias Calibration — HTML Report Generator
+ * Framing Symmetry Calibration — HTML Report Generator
  *
  * Generates self-contained HTML reports with embedded CSS.
  * No external dependencies. Matches the dark theme of existing test reports.
@@ -28,7 +28,7 @@ export function generateCalibrationReport(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bias Calibration Report — ${result.timestamp}</title>
+<title>Framing Symmetry Calibration Report — ${result.timestamp}</title>
 <style>
 ${CSS}
 </style>
@@ -64,7 +64,7 @@ function renderHeader(r: CalibrationRunResult): string {
 
   return `
 <header>
-  <h1>Political Bias Calibration Report</h1>
+  <h1>Framing Symmetry Calibration Report</h1>
   <div class="meta-grid">
     <div class="meta-item"><span class="label">Run ID</span><span class="value">${esc(r.runId)}</span></div>
     <div class="meta-item"><span class="label">Timestamp</span><span class="value">${esc(r.timestamp)}</span></div>
@@ -1112,3 +1112,4 @@ footer {
   margin-top: 20px;
 }
 `;
+

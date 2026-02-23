@@ -1,5 +1,5 @@
 /**
- * Political Bias Calibration — Runner
+ * Framing Symmetry Calibration — Runner
  *
  * Executes mirrored claim pairs through the CB pipeline,
  * captures results, and computes bias metrics.
@@ -52,7 +52,7 @@ export interface RunOptions {
 }
 
 /**
- * Run the political bias calibration harness.
+ * Run the Framing Symmetry Calibration harness.
  *
  * Executes both sides of each pair through the full CB pipeline,
  * computes per-pair and aggregate bias metrics.
@@ -532,3 +532,4 @@ function generateRunId(): string {
   const rand = Math.random().toString(36).slice(2, 8);
   return `cal-${now}-${rand}`;
 }
+

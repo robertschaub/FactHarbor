@@ -1,5 +1,5 @@
 /**
- * Political Bias Calibration — Metrics Computation
+ * Framing Symmetry Calibration — Metrics Computation
  *
  * Computes per-pair and aggregate bias metrics from calibration run results.
  *
@@ -543,3 +543,4 @@ function emptyAggregateMetrics(
     totalDurationMs: 0,
   };
 }
+
