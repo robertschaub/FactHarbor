@@ -103,5 +103,8 @@
   },
   "evidenceSufficiencyMinItems": 3,
   "evidenceSufficiencyMinSourceTypes": 2,
-  "evidencePartitioningEnabled": true
+  "evidencePartitioningEnabled": true,
+  "contrarianRetrievalEnabled": true,
+  "contrarianMaxQueriesPerClaim": 2,
+  "contrarianRuntimeCeilingPct": 15
 }
