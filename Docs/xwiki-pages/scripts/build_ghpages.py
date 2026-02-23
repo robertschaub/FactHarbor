@@ -507,10 +507,6 @@ def main():
     nojekyll_path = output_dir / '.nojekyll'
     nojekyll_path.write_text('', encoding='utf-8')
 
-    # Generate CNAME for custom domain
-    cname_path = output_dir / 'CNAME'
-    cname_path.write_text('factharbor.ch\n', encoding='utf-8')
-
     # Regenerate reports manifest and include in gh-pages output
     reports_dir = repo_root / 'Docs' / 'TESTREPORTS'
     if reports_dir.is_dir():
