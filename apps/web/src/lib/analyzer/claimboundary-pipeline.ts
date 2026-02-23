@@ -170,6 +170,12 @@ export async function runClaimBoundaryAnalysis(
       onEvent: input.onEvent, // Thread progress callback through to research stage
       warnings: [],
     };
+    const runtimeModelsUsed = new Set<string>();
+    const recordRuntimeModelUsage = (provider?: string, modelName?: string): void => {
+      if (!modelName) return;
+      const p = provider?.trim();
+      runtimeModelsUsed.add(p ? `${p}:${modelName}` : modelName);
+    };
 
     // Stage 1: Extract Claims
     checkAbortSignal(input.jobId);
@@ -258,6 +264,7 @@ export async function runClaimBoundaryAnalysis(
       coverageMatrix,
       undefined, // llmCall — use production default
       state.warnings,
+      recordRuntimeModelUsage,
     );
     endPhase("verdict");
 
@@ -295,7 +302,11 @@ export async function runClaimBoundaryAnalysis(
       };
       if (explanationQualityMode === "rubric") {
         try {
-          const llmCallFn = createProductionLLMCall(initialPipelineConfig, state.warnings);
+          const llmCallFn = createProductionLLMCall(
+            initialPipelineConfig,
+            state.warnings,
+            recordRuntimeModelUsage,
+          );
           qualityCheck.rubricScores = await evaluateExplanationRubric(
             assessment.verdictNarrative,
             understanding.atomicClaims.length,
@@ -329,6 +340,9 @@ export async function runClaimBoundaryAnalysis(
     const verdictModel = getModelForTask("verdict", undefined, initialPipelineConfig);
     const understandModel = getModelForTask("understand", undefined, initialPipelineConfig);
     const extractModel = getModelForTask("extract_evidence", undefined, initialPipelineConfig);
+    recordRuntimeModelUsage(understandModel.provider, understandModel.modelName);
+    recordRuntimeModelUsage(extractModel.provider, extractModel.modelName);
+    recordRuntimeModelUsage(verdictModel.provider, verdictModel.modelName);
 
     // Wrap assessment in resultJson structure (no AnalysisContext references)
     const resultJson = {
@@ -344,6 +358,7 @@ export async function runClaimBoundaryAnalysis(
           extractEvidence: extractModel.modelName,
           verdict: verdictModel.modelName,
         },
+        modelsUsedAll: Array.from(runtimeModelsUsed),
         searchProvider: initialSearchConfig.provider,
         searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
         inputType: input.inputType,
@@ -3447,6 +3462,7 @@ export async function generateVerdicts(
   coverageMatrix: CoverageMatrix,
   llmCall?: LLMCallFn,
   warnings?: AnalysisWarning[],
+  modelUsageRecorder?: (provider: string, modelName: string) => void,
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -3469,7 +3485,7 @@ export async function generateVerdicts(
 
   // Production LLM call wiring — use injected or create from UCM.
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
-  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings);
+  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder);
 
   return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings);
 }
@@ -3581,6 +3597,7 @@ function hasProviderCredentials(provider: LLMProviderType): boolean {
 export function createProductionLLMCall(
   pipelineConfig: PipelineConfig,
   warnings?: AnalysisWarning[],
+  onModelUsed?: (provider: string, modelName: string) => void,
 ): LLMCallFn {
   return async (
     promptKey: string,
@@ -3720,6 +3737,7 @@ export function createProductionLLMCall(
     // 4. Call AI SDK
     let result: any;
     const callModel = async (activeModel: typeof model): Promise<any> => {
+      onModelUsed?.(activeModel.provider, activeModel.modelName);
       return generateText({
         model: activeModel.model,
         messages: [

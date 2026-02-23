@@ -37,6 +37,7 @@ import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
+import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
 
 // Module-level helper — browser-safe (client component, only called from event handlers)
 function escapeHtml(str: string): string {
@@ -464,6 +465,8 @@ export default function JobPage() {
         category: c.sourceType || 'citation',
       }))
     : result?.sources || [];
+  const usedModels = collectUsedModels(result);
+  const usedModelsLabel = formatUsedModels(usedModels);
   const subClaims = result?.understanding?.subClaims || [];
   const tangentialSubClaims = Array.isArray(subClaims)
     ? subClaims.filter((c: any) => c?.thesisRelevance === "tangential")
@@ -716,13 +719,17 @@ export default function JobPage() {
                   </Badge>
                 ) : null;
               })()}
-              {result.meta.llmProvider && (
+              {(usedModels.length > 0 || result.meta.llmProvider) && (
                 <Badge
                   bg="#e3f2fd"
                   color="#1565c0"
-                  title={result.meta.llmModel || result.meta.llmProvider}
+                  title={
+                    usedModels.length > 0
+                      ? `Models used: ${usedModelsLabel}`
+                      : (result.meta.llmModel || result.meta.llmProvider)
+                  }
                 >
-                  🤖 {result.meta.llmProvider}
+                  🤖 {usedModels.length > 0 ? usedModelsLabel : result.meta.llmProvider}
                 </Badge>
               )}
               {pipelineFallback && requestedPipelineVariant !== pipelineVariant && (

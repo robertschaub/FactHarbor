@@ -1348,3 +1348,19 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If fixing review findings, start in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` around the B-6 Pass2 prompt rendering and B-8 quality check blocks, then add/extend tests in `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Model Visibility in Job UI + HTML Report
+**Task:** Ensure all used LLM models are shown in the job UI and generated HTML report, including runtime fallback/override models.
+**Files touched:** `apps/web/src/lib/model-usage.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added shared model-usage utility that resolves model lists from `meta.modelsUsedAll` (runtime), `meta.modelsUsed` (legacy stage map), and legacy single-model fields.
+- Updated UI badge and HTML report header/footer/meta tag to render the full model list instead of a single `llmModel` value.
+- Added runtime tracking in ClaimBoundary pipeline (`meta.modelsUsedAll`) and hooked Stage 4/Stage 5 LLM call paths so fallback models are captured.
+- Kept backward compatibility for older jobs (fallback extraction from existing fields).
+**Open items:**
+- Monolithic Dynamic pipeline still emits single-model meta only; it displays correctly via fallback fields but does not yet emit runtime `modelsUsedAll`.
+**Warnings:**
+- Verification commands (`npm test`, `npm -w apps/web run build`) were intentionally not run in this step per user preference.
+**For next agent:**
+- If extending this to Monolithic Dynamic, add runtime model tracking there and include `meta.modelsUsedAll` for parity.
+**Learnings:** No new role learnings appended.

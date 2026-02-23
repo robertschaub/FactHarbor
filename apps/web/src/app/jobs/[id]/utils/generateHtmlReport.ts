@@ -6,6 +6,8 @@
  * Docs/TESTREPORTS/job-4dd7f840-SRG-Linksdrall.html.
  */
 
+import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -307,6 +309,8 @@ function buildHeader(input: HtmlReportInput): string {
   const meta = result?.meta || {};
   const understanding = result?.understanding;
   const inputType = understanding?.detectedInputType || "claim";
+  const usedModels = collectUsedModels(result);
+  const usedModelsLabel = formatUsedModels(usedModels) || String(meta.llmModel || meta.model || "—");
 
   const llmCalls = meta.llmCalls ?? meta.llmCallCount ?? meta.totalLlmCalls ?? "—";
   const totalSearches = searchQueries.length || result?.researchStats?.totalSearches || 0;
@@ -332,7 +336,7 @@ function buildHeader(input: HtmlReportInput): string {
   <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">${esc(inputType)}</strong></div>
   <div class="pipeline-meta">
     <span class="chip chip-blue">&#127891; ${esc(meta.pipeline || "claimboundary")} pipeline</span>
-    <span class="chip chip-gray">&#129302; ${esc(meta.llmModel || meta.model || "—")}</span>
+    <span class="chip chip-gray">&#129302; ${esc(usedModelsLabel)}</span>
     ${meta.searchProviders ? `<span class="chip chip-gray">&#128269; ${esc(Array.isArray(meta.searchProviders) ? meta.searchProviders.join(" &amp; ") : meta.searchProviders)}</span>` : ""}
     <span class="chip chip-gray">${esc(llmCalls)} LLM calls</span>
     <span class="chip chip-gray">${esc(totalSearches)} searches</span>
@@ -745,10 +749,11 @@ function buildFooter(meta: any, jobId: string): string {
   const now = new Date();
   const pad = (n: number) => n.toString().padStart(2, "0");
   const ts = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())} UTC`;
+  const usedModelsLabel = formatUsedModels(collectUsedModels(meta)) || String(meta?.llmModel || meta?.model || "—");
 
   return `<div class="footer">
   FactHarbor Alpha · ${esc(meta?.pipeline || "claimboundary")} pipeline ${esc(meta?.schemaVersion || "")} · Generated ${ts}
-  <br>Job ${esc(jobId)} · ${esc(meta?.llmModel || meta?.model || "—")} · ${esc(meta?.llmProvider || meta?.provider || "anthropic")}
+  <br>Job ${esc(jobId)} · ${esc(usedModelsLabel)} · ${esc(meta?.llmProvider || meta?.provider || "anthropic")}
 </div>`;
 }
 
@@ -765,6 +770,7 @@ export function generateHtmlReport(input: HtmlReportInput): string {
   const truthPct = norm(result?.truthPercentage ?? input.claimVerdicts?.[0]?.truthPercentage);
   const confPct = norm(result?.confidence ?? input.claimVerdicts?.[0]?.confidence);
   const dateStr = job.createdUtc ? new Date(job.createdUtc).toISOString().slice(0, 10) : "";
+  const usedModelsLabel = formatUsedModels(collectUsedModels(result)) || String(meta.llmModel || meta.model || "");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -776,7 +782,7 @@ export function generateHtmlReport(input: HtmlReportInput): string {
 <meta name="fh:truth" content="${truthPct}">
 <meta name="fh:confidence" content="${confPct}">
 <meta name="fh:date" content="${esc(dateStr)}">
-<meta name="fh:model" content="${esc(meta.llmModel || meta.model || "")}">
+<meta name="fh:model" content="${esc(usedModelsLabel)}">
 <title>FactHarbor Report — ${esc(job.inputValue)}</title>
 ${buildCss()}
 </head>
