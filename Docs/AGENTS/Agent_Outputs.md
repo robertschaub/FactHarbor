@@ -1389,3 +1389,18 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - Re-review D5-H1/UI-M1/D5-M2/CAL-L1 findings against this patch; then decide whether to include D5-M1 `verdictReason` type extension in a separate change.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-23 | Lead Developer | Codex (GPT-5) | Rename Calibration Test: Political -> Framing Symmetry
+**Task:** Rename the calibration test artifact to remove misleading "political" wording and update direct references.
+**Files touched:** `apps/web/test/calibration/framing-symmetry.test.ts` (renamed from `political-bias.test.ts`), `apps/web/scripts/run-calibration-lane.ts`, `apps/web/vitest.config.ts`, `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/STATUS/Current_Status.md`, `Docs/WIP/Phase1_Immediate_Execution_Spec_2026-02-21.md`, `Docs/WIP/Calibration_Cost_Optimization_Review_Plan_2026-02-22.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Kept behavior unchanged; this is a naming/traceability cleanup only.
+- Updated runner and test config paths so existing commands continue to work with the new filename.
+- Updated active status/WIP docs that still referenced the old test path.
+**Open items:**
+- Ongoing fixture redesign in `apps/web/test/fixtures/bias-pairs.json` remains owned by the LLM Expert and was not touched.
+**Warnings:**
+- Repo contains unrelated local modifications and an untracked WIP file; they were intentionally excluded from this commit.
+**For next agent:**
+- Use `apps/web/test/calibration/framing-symmetry.test.ts` as the authoritative calibration test path in any new scripts/docs.
+**Learnings:** No new role learnings appended.
