@@ -1,7 +1,10 @@
-= Analysis Test Reports =
+= FactHarbor Fact-Check Reports =
 
-Archived outputs from test runs. Reports capture the complete analysis result for a given input claim, including verdict, evidence items, ClaimAssessmentBoundary breakdowns, challenge responses, sources, and quality gate outcomes.
+Below are outputs from test runs. Reports capture the complete analysis result for a given input claim, including verdict, evidence items, ClaimAssessmentBoundary breakdowns, challenge responses, sources, and quality gate outcomes.
 
+{{warning}}
+FactHarbor is in pre-release: reports are preliminary and provided 'as is'.
+{{/warning}}
 
 ----
 
