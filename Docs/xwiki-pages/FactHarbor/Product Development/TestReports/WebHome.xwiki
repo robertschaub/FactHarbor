@@ -3,14 +3,13 @@
 Below are outputs from FactHarbor test runs.
 The Reports capture the complete analysis result for a given input claim, including verdict, evidence items, ClaimAssessmentBoundary breakdowns, challenge responses, sources, and quality gate outcomes.
 
-== Reports ==
 {{warning}}
 **FactHarbor** is in pre-release: **reports are preliminary** and provided 'as is'
 {{/warning}}
 
+== Reports ==
 
 {{github-files repo="robertschaub/FactHarbor" path="Docs/TESTREPORTS" /}}
-
 
 {{info}}
 **HTML reports** open via [[htmlpreview.github.io>>https://htmlpreview.github.io/]]
