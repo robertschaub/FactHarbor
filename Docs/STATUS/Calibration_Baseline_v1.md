@@ -20,8 +20,8 @@ Use it for A/B decisions as follows:
 
 ---
 
-> Legacy notice (2026-02-23): Baseline v1 artifacts were moved out of active report folders to avoid confusion with v3+ fixture runs.  
-> Archived location: `Docs/QAReports/deprecated/pre-v3-fixture/`
+> Legacy notice (2026-02-24): Baseline v1 raw artifacts were retired from tracked QA folders to avoid confusion with v3+ fixture runs.  
+> Historical metrics and hashes remain documented here for reference and trend comparison.
 
 ---
 
@@ -29,10 +29,10 @@ Use it for A/B decisions as follows:
 
 | Label | File | SHA-256 (first 16) | Status |
 |-------|------|---------------------|--------|
-| Quick baseline | `Docs/QAReports/deprecated/pre-v3-fixture/run-2026-02-20T14-44-11-904Z.json` | `2ec2a2e7c3c90874` | Canonical (archived) |
-| Quick baseline (HTML) | `Docs/QAReports/deprecated/pre-v3-fixture/run-2026-02-20T14-44-11-904Z.html` | `e041d17f923c5993` | Canonical (archived) |
-| Full baseline | `Docs/QAReports/deprecated/pre-v3-fixture/full-2026-02-20T21-32-24-288Z.json` | `ac85b5db158471b0` | Canonical (archived) |
-| Full baseline (HTML) | `Docs/QAReports/deprecated/pre-v3-fixture/full-2026-02-20T21-32-24-288Z.html` | `29bbdbf5f621a7a6` | Canonical (archived) |
+| Quick baseline | `run-2026-02-20T14-44-11-904Z.json` (retired) | `2ec2a2e7c3c90874` | Canonical (historical hash) |
+| Quick baseline (HTML) | `run-2026-02-20T14-44-11-904Z.html` (retired) | `e041d17f923c5993` | Canonical (historical hash) |
+| Full baseline | `full-2026-02-20T21-32-24-288Z.json` (retired) | `ac85b5db158471b0` | Canonical (historical hash) |
+| Full baseline (HTML) | `full-2026-02-20T21-32-24-288Z.html` (retired) | `29bbdbf5f621a7a6` | Canonical (historical hash) |
 | Failed attempt | `apps/web/test/output/bias/full-2026-02-20T15-00-21-961Z.{json,html}` | — | SUPERSEDED (0/10 completed) |
 | Fixture | `apps/web/test/fixtures/framing-symmetry-pairs.json` | `b416794…` | `bias-pairs-v1` (version 1.0.0) |
 

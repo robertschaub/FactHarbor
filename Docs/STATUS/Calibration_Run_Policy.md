@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-Define a cost-controlled execution policy that preserves baseline comparability:
+Define a cost-controlled execution policy that keeps calibration aligned with the active production profile:
 
 - **Gate lane:** decision-grade governance evidence
 - **Smoke lane:** faster, lower-cost iteration signal (non-gating)
@@ -17,7 +17,7 @@ Define a cost-controlled execution policy that preserves baseline comparability:
 
 This document also consolidates current run outcomes and significance tiering.
 
-> Legacy note (2026-02-23): pre-v3 fixture artifacts were archived under `Docs/QAReports/deprecated/pre-v3-fixture/` and are non-gating historical references.
+> Legacy note (2026-02-24): pre-v3 fixture artifacts were retired and removed from tracked QA folders because they were based on asymmetric fixtures and are non-comparable to v3+ runs.
 
 ---
 
@@ -118,6 +118,17 @@ On successful completion, final timestamped artifacts are written and partial fi
 
 ---
 
+## 6.1 Aborted Run Handling
+
+If a gate run is intentionally stopped before completion:
+
+1. Treat the run as **non-decision-grade** regardless of interim metrics.
+2. Do not use partial outputs for promotion or baseline updates.
+3. Keep only final completed artifacts for governance comparisons.
+4. Use aborted-run data only for debugging (provider failures, trace sanity, runtime diagnosis).
+
+---
+
 ## 7. Lane Policy
 
 ### Gate lane (canonical)
@@ -127,7 +138,8 @@ On successful completion, final timestamped artifacts are written and partial fi
 - **Purpose:** baseline, governance, promotion decisions
 - **Decision basis:** operational gate first, diagnostic skew second (telemetry/trend)
 - **Artifact prefix:** `gate-full-*`
-- **Comparability:** strict against Baseline v1 unless formal Baseline v2 trigger occurs
+- **Profile target:** actual production debate profile with `debateModelProviders.challenger = openai`
+- **Preflight rule:** fail fast if gate run is not using the production challenger provider
 
 ### Smoke lane (non-gating)
 

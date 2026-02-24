@@ -1,9 +1,8 @@
 {
-  "description": "Internal QA calibration reports — framing symmetry calibration (v3+). Legacy pre-v3 artifacts moved to Docs/QAReports/deprecated/pre-v3-fixture/.",
+  "description": "Internal QA calibration reports — framing symmetry calibration (v3+).",
   "reports": {},
-  "deprecation": {
-    "effectiveDate": "2026-02-23",
-    "reason": "Pre-v3 fixture quality (asymmetric pairs) made historical runs non-comparable for current gate decisions.",
-    "legacyLocation": "Docs/QAReports/deprecated/pre-v3-fixture/"
+  "retiredArtifacts": {
+    "purgedDate": "2026-02-24",
+    "reason": "Pre-v3 fixture quality (asymmetric pairs) made historical runs non-comparable and misleading for current gate decisions."
   }
 }

@@ -1511,3 +1511,50 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 - For long gate runs, monitor `test/output/bias/gate-full-latest.partial.json` and `.html` during execution; final timestamped files replace them on success.
 - Use `aggregateMetrics.operationalGatePassed` for run acceptance and `aggregateMetrics.diagnosticGatePassed` for optimization prioritization.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | QA Report Cleanup: Remove Deprecated Pre-v3 Artifacts
+**Task:** Remove obsolete tracked QA report artifacts that were based on pre-v3 asymmetric fixtures and update references to avoid dead links/confusion.
+**Files touched:** `Docs/QAReports/reports-manifest.json`, `Docs/STATUS/Calibration_Baseline_v1.md`, `Docs/STATUS/Calibration_Run_Policy.md`, deleted `Docs/QAReports/deprecated/pre-v3-fixture/*`
+**Key decisions:**
+- Deleted tracked `Docs/QAReports/deprecated/pre-v3-fixture/` artifact set (JSON/HTML/manifest/readme) to eliminate misleading historical reports from active repo docs.
+- Updated top-level QA manifest to use `retiredArtifacts` metadata (purged date + reason) instead of a legacy path reference.
+- Updated baseline/policy docs to keep historical metric/hash context while removing file-path references to deleted artifacts.
+**Open items:**
+- None for this cleanup scope.
+**Warnings:**
+- This removes direct file-level reproducibility for pre-v3 artifacts; only documented hashes/metrics remain.
+**For next agent:**
+- Continue publishing only v3+ framing-symmetry outputs into QA reports; do not reintroduce pre-v3 artifacts.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | Calibration Profile Policy Update (OpenAI Challenger)
+**Task:** Align calibration preflight and status docs with Captain Deputy direction: gate calibration must run on actual production profile using OpenAI challenger.
+**Files touched:** `apps/web/test/calibration/framing-symmetry.test.ts`, `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/STATUS/Current_Status.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added gate preflight enforcement: fail if `debateModelProviders.challenger` is not `openai`.
+- Kept baseline v1 hash logging as historical telemetry only; no baseline-profile enforcement in gate preflight.
+- Updated run policy to state production-aligned gate profile and explicit preflight rule.
+- Updated current status with this calibration profile enforcement change.
+**Open items:**
+- If production challenger provider changes again, update `PRODUCTION_CHALLENGER_PROVIDER` in `framing-symmetry.test.ts` and the policy doc in the same commit.
+**Warnings:**
+- This change is specific to the current production profile decision and intentionally strict for gate runs.
+**For next agent:**
+- Before running `test:calibration:gate`, verify UCM `debateModelProviders.challenger=openai`; otherwise preflight now exits early.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | Calibration Cleanup Follow-up (Abort Policy + Production Preflight Commit)
+**Task:** Finalize calibration cleanup by confirming output folder cleanup, documenting aborted-run handling, and preparing commit for production-profile preflight enforcement.
+**Files touched:** `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/STATUS/Current_Status.md`, `Docs/QAReports/reports-manifest.json`, `Docs/STATUS/Calibration_Baseline_v1.md`, `apps/web/test/calibration/framing-symmetry.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed `apps/web/test/output/bias` has no leftover `.partial`/report artifacts (README only).
+- Added explicit policy: intentionally aborted gate runs are non-decision-grade and debug-only.
+- Kept gate preflight aligned with current production profile (`debateModelProviders.challenger=openai`).
+- Preserved historical baseline metrics/hashes in docs while removing deprecated file-path dependence.
+**Open items:**
+- None.
+**Warnings:**
+- Gate calibration will now fail fast if challenger provider drifts from OpenAI; update the constant + policy together if production profile changes.
+**For next agent:**
+- Use full gate only for milestone decisions; if interrupted, rerun to completion before using results for governance.
+**Learnings:** No new role learnings appended.

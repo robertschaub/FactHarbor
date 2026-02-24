@@ -14,6 +14,8 @@
 - ✅ Split report interpretation into **operational gate** (execution reliability) vs **diagnostic gate** (framing-skew telemetry)
 - ✅ Top-level calibration report verdict now reflects operational status; skew remains visible as optimization signal
 - ✅ Calibration policy document updated with explicit purpose/value and acceptance guidance
+- ✅ Gate calibration preflight now enforces production-aligned profile (`OpenAI` challenger provider)
+- ✅ Aborted gate runs explicitly classified as non-decision-grade in run policy (debug-only use)
 
 ---
 

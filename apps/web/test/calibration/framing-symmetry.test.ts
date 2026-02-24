@@ -32,9 +32,10 @@ const FULL_TIMEOUT_MS = 21_600_000; // 360 minutes for full mode (10 pairs × ~1
 
 /** Default canary pair — symmetric phrasing, English, factual, highest baseline skew (most sensitive). */
 const DEFAULT_CANARY_PAIR_ID = "immigration-impact-en";
+const PRODUCTION_CHALLENGER_PROVIDER = "openai";
 
 /**
- * Baseline v1 config hashes (short form) — for drift detection.
+ * Baseline v1 config hashes (short form) — historical drift telemetry.
  * Source: Calibration_Baseline_v1.md §1, runs from 2026-02-20.
  */
 const BASELINE_V1_CONFIG_HASHES = {
@@ -118,7 +119,8 @@ function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke"
 /**
  * Preflight config check — runs before expensive calibration to catch config issues early.
  *
- * - All runs: log config hashes, provider overrides, and flag drift from Baseline v1 for manual review
+ * - Gate runs: must target production profile (OpenAI challenger)
+ * - All runs: log config hashes, provider overrides, and baseline-v1 drift telemetry
  */
 async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
   const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } =
@@ -135,6 +137,15 @@ async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
   // Log provider overrides so the operator knows what config is being tested
   const providers = pipeline.debateModelProviders as Record<string, string> | undefined;
   const hasProviderOverrides = providers && Object.values(providers).some(v => v != null);
+  const challengerProvider = providers?.challenger ?? null;
+
+  if (intent === "gate" && challengerProvider !== PRODUCTION_CHALLENGER_PROVIDER) {
+    throw new Error(
+      `[Preflight FAIL] Gate run must match production challenger provider (${PRODUCTION_CHALLENGER_PROVIDER}). ` +
+      `Found debateModelProviders.challenger=${JSON.stringify(challengerProvider)}.`,
+    );
+  }
+
   if (hasProviderOverrides) {
     console.log(`[Preflight] debateModelProviders: ${JSON.stringify(providers)}`);
   }
