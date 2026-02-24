@@ -1558,3 +1558,21 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - Use full gate only for milestone decisions; if interrupted, rerun to completion before using results for governance.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | Status Docs Sync (Current Status, Backlog, Baseline)
+**Task:** Investigate recent completed work and synchronize status/backlog documentation plus related calibration baseline references.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/STATUS/Calibration_Baseline_v1.md`
+**Key decisions:**
+- Synced status/backlog to current state (1047 tests passing, Feb 24 delivery set including multi-source retrieval provider layer and calibration gate-policy hardening).
+- Fixed `Backlog.md` section structure after a broken merge so “Recently Completed” and active priority tables are now separated and readable.
+- Updated calibration workstream wording to framing-asymmetry terminology and production-profile gate lane usage (`debateModelProviders.challenger=openai`).
+- Replaced stale WIP links with ARCHIVE links where documents were moved.
+- Updated calibration command references in status docs to canonical smoke/gate lane commands (with legacy aliases noted).
+- Updated search-provider configuration guidance to reflect newly added providers (Brave, Wikipedia, Semantic Scholar, Google Fact Check).
+**Open items:**
+- Run and lock the production-profile baseline v2 gate artifact set once an uninterrupted gate run is available.
+**Warnings:**
+- This pass is documentation-only; no analyzer or test-run behavior was changed.
+**For next agent:**
+- Treat `Calibration_Baseline_v1.md` as historical control context and `Calibration_Run_Policy.md` as the active execution policy.
+**Learnings:** No new role learnings appended.

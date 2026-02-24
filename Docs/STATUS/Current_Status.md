@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0 (`v1.0.0-poc`)
-**Last Updated**: 2026-02-23
+**Last Updated**: 2026-02-24
 **Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1010 tests passing, build clean. Framing-symmetry calibration v3.3.0 (14 pairs, 5 languages, diagnostic gate, direction check, accuracy-control bypass). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Baseless challenge handling updated (warning→info, full revert). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1047 tests passing, build clean. Framing-symmetry calibration v3.3.0 (14 pairs, 5 languages, operational-vs-diagnostic gate split, production-profile preflight). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Multi-source retrieval provider layer (Wikipedia, Semantic Scholar, Google Fact Check) implemented and wired (config-gated). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
@@ -16,6 +16,12 @@
 - ✅ Calibration policy document updated with explicit purpose/value and acceptance guidance
 - ✅ Gate calibration preflight now enforces production-aligned profile (`OpenAI` challenger provider)
 - ✅ Aborted gate runs explicitly classified as non-decision-grade in run policy (debug-only use)
+
+**Multi-source retrieval provider layer (Plan v2.1 Phases 1-4):**
+- ✅ Added search providers: Wikipedia, Semantic Scholar, Google Fact Check (all disabled by default, UCM-configurable)
+- ✅ Wired provider enum/schema/admin config/AUTO search dispatch + circuit-breaker integration
+- ✅ Added env support for `SEMANTIC_SCHOLAR_API_KEY` and `GOOGLE_FACTCHECK_API_KEY`
+- ✅ Added 36 tests for new providers; safe suite now at 1047 tests passing
 
 ---
 
@@ -37,7 +43,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - **Self-consistency checks**: Spread multipliers for verdict stability assessment
 - **Derivative evidence tracking**: Identifies and weights derivative sources
 
-**Design document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
+**Design document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
 
 **All phases complete:**
@@ -130,7 +136,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Input neutrality (question ≈ statement within ±4%)
 - Claim extraction with dependency tracking
 - Temporal reasoning with current date awareness
-- Web search integration (Google CSE, SerpAPI)
+- Web search integration (Google CSE, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
 - Evidence extraction from multiple sources
 - 7-point verdict scale (TRUE to FALSE)
 - MIXED vs UNVERIFIED distinction (confidence-based)
@@ -208,7 +214,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Real-time progress updates via Server-Sent Events (SSE)
 - PDF and HTML content extraction
 - Multi-provider LLM support (Anthropic, OpenAI, Google, Mistral)
-- Multi-provider search support (Google CSE, SerpAPI, Gemini Grounded)
+- Multi-provider search support (Google CSE, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
 - SQLite database for local development
 - Automated retry with exponential backoff
 - **Unified Configuration Management** (v2.9.0 ✅ Complete): Database-backed config system for prompt/search/calculation/pipeline/sr/lexicons, validation, history, rollback, import/export. Analysis settings (including LLM provider selection) now load from UCM with hot-reload. **All phases complete** - job config snapshots + SR modularity interface + admin UI with snapshot tools.
@@ -247,7 +253,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 **CRITICAL**:
 1. ~~**Prompt Optimizations Never Validated**~~: ✅ **RESOLVED** (v2.10.2) - Lead Dev code review complete, format-only principle verified, backward compatibility confirmed.
 2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
-3. **10 search test failures** (introduced in code review sprint Feb 18): `search-cache.test.ts` — `closeSearchCacheDb()` doesn't reset `dbPromise`; `search-brave.test.ts` — `instanceof SearchProviderError` fails across module resets. Fix: `dbPromise = null` in close function; duck-typing `err.name === "SearchProviderError"` in brave tests. ~1h.
+3. ~~**10 search test failures**~~: ✅ **RESOLVED** (safe suite now 1047/1047 passing).
 
 **HIGH**:
 3. **Source Acquisition Recovery Branch**: Phase 1 warning coverage is complete, but Phase 4 stall-recovery behavior is still pending
@@ -335,7 +341,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 | **Pipeline Variants** | ✅ Operational | ClaimAssessmentBoundary (default) + Monolithic Dynamic |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (recommended), OpenAI, Google, Mistral |
 | **LLM Tiering** | ✅ Implemented | Per-task model selection for cost optimization |
-| **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Gemini Grounded |
+| **Search Integration** | ✅ Multi-provider | Google CSE, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check |
 | **Provenance Validation** | ✅ Implemented | All paths validate URL provenance |
 | **PDF/HTML Extraction** | ✅ Working | Timeout handling, redirect following |
 | **Quality Gates** | ⚠️ Partial | Applied, but not displayed in UI |
@@ -388,15 +394,15 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Analyzer core functions (evidence-filter, aggregation, truth-scale, etc.)
 - Quality gates, confidence calibration
 - Job lifecycle
-- 46 test files, 1010 tests, all mocked (no real LLM calls)
+- 51 test files, 1047 tests, all mocked (no real LLM calls)
 
 **Expensive Integration Tests** (explicit scripts only, $1-5+ per run):
 - `npm run test:llm` — Multi-provider LLM integration
 - `npm run test:neutrality` — Input neutrality (full analysis x2 per pair)
 - `npm run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios)
-- `npm run test:calibration:canary` — Framing-symmetry calibration canary (1 pair, ~$0.40, ~5 min)
-- `npm run test:calibration` — Framing-symmetry calibration, quick mode (~$3-6, ~15 min)
-- `npm run test:calibration:full` — Framing-symmetry calibration, full mode (~$10-20, ~50-70 min)
+- `npm run test:calibration:canary` — Framing-symmetry canary (1 pair, operational check)
+- `npm run test:calibration:smoke` (or `npm run test:calibration`) — Smoke lane
+- `npm run test:calibration:gate` (or `npm run test:calibration:full`) — Gate lane (full fixture, decision-grade run)
 - `npm run test:expensive` — LLM integration + neutrality + CB integration (excludes calibration)
 
 **Missing Tests:**
@@ -421,7 +427,11 @@ ANTHROPIC_API_KEY=sk-ant-...
 # Search Provider keys (provider selected in UCM search config)
 SERPAPI_API_KEY=...
 # Or: GOOGLE_CSE_API_KEY=... and GOOGLE_CSE_ID=...
-# NOTE: Without search credentials, all pipelines run without web sources
+# Or: BRAVE_API_KEY=...
+# Optional additional providers:
+# SEMANTIC_SCHOLAR_API_KEY=...
+# GOOGLE_FACTCHECK_API_KEY=...
+# NOTE: Wikipedia provider requires no API key (must be enabled in UCM)
 
 # Internal Keys (must match between web and API)
 FH_ADMIN_KEY=your-secure-admin-key
@@ -456,10 +466,10 @@ Calibration Baseline v1 locked with two canonical runs (quick: 3 English pairs, 
 - **Challenge point IDs**: Explicit `ChallengePoint.id` field (format `CP_{claimId}_{index}`) replaces implicit convention.
 - 943 tests passing, build clean. Commit: `d9a91f5`.
 
-### 2026-02-20 Political Bias Calibration Harness (Phases 1-3)
+### 2026-02-20 Framing-Symmetry Calibration Harness (Phases 1-3)
 **Status: ✅ Implemented**
 
-Reusable harness for measuring directional political bias through mirrored claim pairs. Addresses Concern C10 (Critical) from the Stammbach/Ash EMNLP 2024 paper review.
+Reusable harness for measuring directional framing asymmetry through mirrored claim pairs. Addresses Concern C10 (Critical) from the Stammbach/Ash EMNLP 2024 paper review.
 
 **Implementation:**
 - **Phase 1 (Core):** Types, metrics computation, runner (executes pairs through `runClaimBoundaryAnalysis()`), fixture loader
@@ -467,9 +477,9 @@ Reusable harness for measuring directional political bias through mirrored claim
 - **Phase 3 (Diff):** A/B comparison engine — config diff + per-pair skew deltas + improved/worsened/unchanged counts
 - **Phase 4 (Admin UI):** Deferred
 
-**Files:** `apps/web/src/lib/calibration/` (6 files), `test/fixtures/framing-symmetry-pairs.json` (14 pairs, v3.3.0), `test/calibration/framing-symmetry.test.ts`
+**Files:** `apps/web/src/lib/calibration/` (6 files), `apps/web/test/fixtures/framing-symmetry-pairs.json` (14 pairs, v3.3.0), `apps/web/test/calibration/framing-symmetry.test.ts`
 
-**Run:** `npm -w apps/web run test:calibration` (quick, ~$3-6) or `test:calibration:full` (all pairs, ~$10-20) or `test:calibration:canary` (1 pair, ~$0.40)
+**Run:** `npm -w apps/web run test:calibration:smoke` (smoke lane), `npm -w apps/web run test:calibration:gate` (gate lane, full fixture), or `npm -w apps/web run test:calibration:canary` (single-pair operational check)
 
 **Architect review:** Codex (GPT-5) reviewed and applied targeted adjustments — failure accounting, script safety, neutral baseline fixture policy, report direction fix.
 
@@ -602,7 +612,7 @@ Complete pipeline implementation replacing the Orchestrated pipeline with eviden
 - `apps/web/src/lib/analyzer/verdict-stage.ts` — Verdict module (~680 lines)
 - `apps/web/prompts/claimboundary.prompt.md` — 10 UCM-managed prompt sections
 
-**See:** [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md), [Execution State](../WIP/CB_Execution_State.md)
+**See:** [ClaimBoundary Architecture](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md), [Execution State](../ARCHIVE/CB_Execution_State.md)
 
 ### 2026-02-13 Prompt Externalization to UCM (v2.8.2)
 **Status: ✅ Complete**
@@ -733,7 +743,7 @@ All runtime LLM prompts now load from UCM-managed `.prompt.md` files, compliant 
 | No progress updates | Check `FH_ADMIN_KEY` matches `Admin:Key` |
 | API not starting | DB is auto-created on startup; check API console for DB errors, and (local dev) delete `apps/api/factharbor.db` to recreate |
 | Search not working | Verify Web Search config is enabled in UCM (Admin → Config → Web Search) and the search API key is set |
-| No sources fetched | Configure `SERPAPI_API_KEY` or `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`. See [LLM Configuration](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) |
+| No sources fetched | Configure at least one enabled search provider (`SERPAPI_API_KEY`, `GOOGLE_CSE_API_KEY`+`GOOGLE_CSE_ID`, or `BRAVE_API_KEY`) or enable Wikipedia in UCM. See [LLM Configuration](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) |
 
 ---
 
@@ -751,7 +761,7 @@ The POC set out to prove that AI can extract claims from arbitrary text, gather 
 - **Input neutrality** — question vs statement phrasing within ±4% tolerance
 - **Multi-provider LLM** — Anthropic, OpenAI, Google, Mistral with tiered routing
 - **UCM** — runtime-configurable parameters, no redeployment needed
-- **1010 unit tests passing**, build clean, 2 pipeline variants operational
+- **1047 unit tests passing**, build clean, 2 pipeline variants operational
 
 ---
 
@@ -767,12 +777,12 @@ All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full priori
 5. Security hardening — *before any public deployment*
 
 **See**:
-- [ClaimBoundary Architecture](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
+- [ClaimBoundary Architecture](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
 - [Known Issues](KNOWN_ISSUES.md) for complete bug list
 - [Backlog](Backlog.md) for prioritized task list
 
 ---
 
-**Last Updated**: February 20, 2026
+**Last Updated**: February 24, 2026
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
 **Document Status**: POC declared complete. Remaining work reclassified as Alpha.

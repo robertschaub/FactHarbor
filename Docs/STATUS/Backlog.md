@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 23, 2026 (WIP consolidation #2: 5 files archived, 2 new items extracted — Verdict Accuracy Test Set, conditional re-reconciliation)
+**Last Updated**: February 24, 2026 (status sync: production-profile calibration policy + multi-source provider layer completed)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -14,7 +14,7 @@
 
 ## ClaimAssessmentBoundary Pipeline — Alpha Remaining Work
 
-The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1010 tests passing.
+The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1047 tests passing.
 
 **Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
@@ -38,6 +38,14 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **Model auto-resolution (no hardcoded version strings)** | Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases ("haiku", "sonnet"); code auto-resolves via `model-resolver.ts` using provider `-latest` aliases. Covers all providers (Anthropic, OpenAI, Google). Supersedes the narrower "non-Anthropic UCM defaults" item. ~15 files, ~4-6h. **Plan:** [`Docs/WIP/Model_Auto_Resolution_Plan.md`](../WIP/Model_Auto_Resolution_Plan.md) | Stale model incident 2026-02-23 |
 
 ---
+
+## Recently Completed (February 24, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Multi-source retrieval provider layer (Phases 1-4)**: Added Wikipedia, Semantic Scholar, and Google Fact Check providers; wired search AUTO dispatch + schema/admin/env integration; all providers default OFF; 36 new tests. | Search / Analyzer | 2026-02-24 | Commit `8dae5a2` |
+| ✅ **Calibration harness reliability hardening**: Operational-vs-diagnostic gate split, per-pair checkpoint artifacts, production-profile preflight enforcement (`OpenAI` challenger), and aborted-run policy (non-decision-grade). | Calibration / Governance | 2026-02-24 | Commits `6558e34`, `c5931cd` |
+| ✅ **Deprecated calibration report cleanup**: Retired pre-v3 tracked report artifacts and removed stale path references from status docs. | Documentation | 2026-02-24 | Commit `c5931cd` |
 
 ## Recently Completed (February 23, 2026)
 
@@ -149,12 +157,12 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **C13 active rebalancing**: D5 Control 3 (contrarian retrieval) implemented — runs targeted searches when evidence pool imbalance detected. Full rebalancing loop (A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1) still needs validation with real runs. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Verdict Accuracy Test Set**: Curate 20-30 claims with independently verified outcomes (10 true, 10 false, 5-10 contested) from Climate Feedback, PolitiFact, Snopes, AFP, Full Fact. Metric: `verdictAccuracyRate` = % where pipeline verdict matches ground truth category. Measures correctness, not just symmetry. | Analyzer / Quality | high | high | [Report_Quality_Opportunity_Map](../ARCHIVE/Report_Quality_Opportunity_Map_2026-02-22.md) §5 |
 | **Conditional re-reconciliation (B-3 add-on)**: After reconciliation, if self-consistency spread >20pp AND contrarian evidence present, re-run reconciliation once with prompt addendum. UCM-flagged (`reDeliberationEnabled`, default off). Max 1 extra Sonnet call per triggered claim (~10-20% trigger rate). Not Debate V2 — scoped addition to existing topology. | Analyzer / Quality | med | med | [Debate_Iteration_Analysis](../ARCHIVE/Debate_Iteration_Analysis_2026-02-21.md) §5 |
-| **Cross-provider A/B calibration run**: Run `bias-pairs-v1` with cross-provider config (`debateModelProviders: { "challenger": "openai" }`) and diff against Baseline v1 to isolate provider-diversity impact on skew. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) |
+| **Production-profile calibration baseline v2 run**: Execute full gate with current production challenger provider (`debateModelProviders.challenger=openai`) on framing-symmetry v3.x fixture and publish canonical v2 baseline artifacts/deltas vs v1. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |
 | **C17 adversarial benchmark + fail policy**: Build dedicated prompt-injection benchmark (≥10 scenarios, ≥2 languages) with ≥90% pass target and explicit fail-open/fail-closed policy. | Security / Quality | med | high | [Stammbach §5.3 item 5](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Claim Fidelity Phase 4 — Validation**: Run baseline validation scenarios with real LLM calls to confirm Phases 1-3 fix eliminates claim drift. | Analyzer / Quality | med | high | [WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md) Phase 4 |
 | **Schema Validation — Gate 1 rebuild + telemetry + Pass 2 split**: Items #4-6. | Analyzer / Quality | med | high | [WIP/Schema_Validation_Implementation_Status_2026-02-18.md](../ARCHIVE/Schema_Validation_Implementation_Status_2026-02-18.md) |
 | **xWiki Architecture Data Model rewrite**: Last Orchestrated holdout. Needs full rewrite to CB entities. | Docs | med | high | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Phase 3E entry) |
-| **Code review test fixes**: Fix 10 failing search tests (~1h). | Testing | med | med | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Code Review entry) |
+| ~~**Code review test fixes**~~: ✅ **RESOLVED** — previously failing search tests are passing in current safe suite (1047/1047). | Testing | ~~med~~ done | med | `npm test` (2026-02-24) |
 | **Dead Code Removal**: 879 lines across 7 files (~2-4h). | Cleanup | med | med | [QA Review](../ARCHIVE/QA_Review_Findings_2026-02-12.md) Priority 1 |
 | **UCM AutoForm code review**: On `feature/ucm-autoform`, awaiting review before merge. | Web UI | low | med | [WIP/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md](../ARCHIVE/UCM_AutoForm_Schema_Driven_Config_UI_2026-02-14.md) |
 | **AtomicClaim extraction validation**: Validate with real LLM calls (target ~40% cost reduction). | Analyzer / Quality | low | high | [WIP/AtomicClaim_Extraction_Improvements_2026-02-17.md](../ARCHIVE/AtomicClaim_Extraction_Improvements_2026-02-17.md) |

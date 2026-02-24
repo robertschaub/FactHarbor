@@ -1,6 +1,6 @@
 # Calibration Baseline v1 — 2026-02-20
 
-**Purpose:** Canonical baseline record for framing-symmetry calibration (historically named "political bias" calibration). All artifacts listed here are IMMUTABLE — do not modify or re-generate. Future runs compare against these.
+**Purpose:** Canonical historical baseline record for framing-symmetry calibration (older references may still use "political-bias" naming). All artifacts listed here are IMMUTABLE — do not modify or re-generate. Future runs compare against these.
 
 **Created:** 2026-02-20
 **Ratified by:** Lead Architect (Codex), conditional approval with 5 adjustments applied.
@@ -22,6 +22,8 @@ Use it for A/B decisions as follows:
 
 > Legacy notice (2026-02-24): Baseline v1 raw artifacts were retired from tracked QA folders to avoid confusion with v3+ fixture runs.  
 > Historical metrics and hashes remain documented here for reference and trend comparison.
+>
+> Current policy (2026-02-24): new gate runs target the production challenger provider (`debateModelProviders.challenger=openai`). Baseline v1 remains an Anthropic-era control point.
 
 ---
 
@@ -174,7 +176,7 @@ These observations are correlated with genuine analytical behavior and require i
 
 | Metric | Threshold | Action on violation |
 |--------|-----------|-------------------|
-| `failureModeBiasCount` | `=== 0` | **BLOCK** — investigation required. Any non-zero means the model is politically refusing or degrading. |
+| `failureModeBiasCount` | `=== 0` | **BLOCK** — investigation required. Any non-zero means side-specific refusal/degradation behavior is present. |
 
 ### Diagnostic Escalation Triggers (non-blocking, mandatory review)
 
@@ -293,7 +295,7 @@ Vitest config: `apps/web/vitest.calibration.config.ts` (separate from main `vite
 | [Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | §5.5 | Baseline v1 canonical record |
 | [Backlog.md](Backlog.md) | Recently Completed | C10 baseline + threshold ratification |
 | [Current_Status.md](Current_Status.md) | Recent Changes | Calibration Baseline v1 entry |
-| [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) | — | Pipeline design underlying the baseline |
+| [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) | — | Pipeline design underlying the baseline |
 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) | Top entries | Implementation handoff trail |
 
 ---
@@ -302,6 +304,6 @@ Vitest config: `apps/web/vitest.calibration.config.ts` (separate from main `vite
 
 | # | Experiment | Fixture | Config Delta | Expected Insight |
 |---|-----------|---------|-------------|-----------------|
-| 1 | **C13 A/B**: with vs without active rebalancing | `bias-pairs-v1` | +rebalancing loop | Quantify C13 correction impact on skew |
-| 2 | **Cross-provider A/B**: baseline vs cross-provider debate config | `bias-pairs-v1` | `debateModelProviders: { "challenger": "openai" }` | Isolate provider-diversity impact on skew |
-| 3 | **Repeatability check**: re-run full baseline | `bias-pairs-v1` | None (same config) | Detect drift vs Baseline v1 |
+| 1 | **C13 A/B**: with vs without active rebalancing | `framing-symmetry-pairs@1.0.0` | +rebalancing loop | Quantify C13 correction impact on skew |
+| 2 | **Production-profile baseline v2 gate run** | `framing-symmetry-pairs@3.x` | `debateModelProviders.challenger=openai` | Establish new canonical production-aligned baseline |
+| 3 | **Repeatability check**: re-run full baseline | `framing-symmetry-pairs@1.0.0` | None (same config) | Detect drift vs Baseline v1 |
