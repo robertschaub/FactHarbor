@@ -103,7 +103,7 @@ interface CacheStatusResponse {
 // Search config type
 interface SearchConfig {
   enabled: boolean;
-  provider: "auto" | "google-cse" | "serpapi";
+  provider: "auto" | "google-cse" | "serpapi" | "brave" | "wikipedia" | "semantic-scholar" | "google-factcheck";
   mode: "standard" | "grounded";
   maxResults: number;
   maxSourcesPerIteration: number;

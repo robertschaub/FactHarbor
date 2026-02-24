@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-23 (Consolidated #2: 5 files archived, 2 items extracted to Backlog, 8 retained)
-**Status**: 8 active files — Decision log + cost optimization + claim fidelity + Alpha feature proposals
+**Last Updated**: 2026-02-24 (Added Multi-Source Evidence Retrieval Plan v2.1)
+**Status**: 9 active files — Decision log + cost optimization + claim fidelity + evidence retrieval + Alpha feature proposals
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (8 files)
+## Active Documents (9 files)
 
 ### Calibration & Quality Track (1 file)
 
@@ -48,6 +48,18 @@ For completed work, historical documents, and reference materials, see:
 - **Type:** Pipeline Quality / P0 Bug Fix
 - **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence (claim drift). Phases 1+2 committed (`8d66ee7`). Phase 3 applied but not committed. Phase 4 (validation) pending.
 - **Remaining:** Phase 3 commit + Phase 4 validation (needs Captain approval)
+
+---
+
+### Evidence Retrieval (1 file)
+
+#### Multi-Source Evidence Retrieval Plan v2.1 (2026-02-24)
+**Status:** 🔧 In Progress — Provider layer complete, pipeline integration pending
+- **Document:** [Multi-Source_Evidence_Retrieval_Plan.md](Multi-Source_Evidence_Retrieval_Plan.md)
+- **Type:** Implementation Plan / Evidence Quality
+- **Scope:** Add Wikipedia, Semantic Scholar, and Google Fact Check Tools API as supplementary evidence sources. Addresses C13 evidence pool asymmetry (8/10 calibration pairs).
+- **Progress:** Phases 1, 2, 4 complete (provider layer: 3 providers, config, wiring, 36 tests). Phase 3 pipeline integration (types.ts, prompt, seeding function, preQualifiedUrls) pending.
+- **Spec:** `Docs/Specification/Multi_Source_Evidence_Retrieval.md`
 
 ---
 

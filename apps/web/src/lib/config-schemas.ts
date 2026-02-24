@@ -51,7 +51,7 @@ export interface ValidationResult {
 
 export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
-  provider: z.enum(["auto", "google-cse", "serpapi", "brave"]),
+  provider: z.enum(["auto", "google-cse", "serpapi", "brave", "wikipedia", "semantic-scholar", "google-factcheck"]),
   mode: z.enum(["standard", "grounded"]),
   searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),
@@ -92,7 +92,32 @@ export const SearchConfigSchema = z.object({
       priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
       dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
     }).optional(),
+    wikipedia: z.object({
+      enabled: z.boolean().describe("Enable Wikipedia search provider (no API key required)"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
+      language: z.string().min(2).max(10).optional().describe("Wikipedia language subdomain (default: en)"),
+    }).optional(),
+    semanticScholar: z.object({
+      enabled: z.boolean().describe("Enable Semantic Scholar academic paper search"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
+    }).optional(),
+    googleFactCheck: z.object({
+      enabled: z.boolean().describe("Enable Google Fact Check Tools API provider"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
+      languageCode: z.string().min(2).max(10).optional().describe("BCP-47 language code to filter fact-check reviews (e.g., 'en', 'de'). Unset returns all languages."),
+    }).optional(),
   }).optional().describe("Provider-specific settings"),
+
+  // Fact Check API pipeline integration (direct seeding, not just search)
+  factCheckApi: z.object({
+    enabled: z.boolean().describe("Enable fact-check API direct seeding in pipeline"),
+    maxResultsPerClaim: z.number().int().min(1).max(10).describe("Max fact-check results per atomic claim"),
+    maxAgeDays: z.number().int().min(1).max(3650).describe("Max age of fact-check reviews to include (days)"),
+    fetchFullArticles: z.boolean().describe("Fetch full articles from fact-check URLs for richer evidence"),
+  }).optional().describe("Google Fact Check Tools API pipeline integration settings"),
 
   // Circuit breaker for provider health tracking
   circuitBreaker: z.object({
@@ -140,6 +165,28 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       priority: 2,
       dailyQuotaLimit: 10000, // Adjust based on plan
     },
+    wikipedia: {
+      enabled: false,
+      priority: 3,
+      dailyQuotaLimit: 0, // No API key needed, unlimited
+      language: "en",
+    },
+    semanticScholar: {
+      enabled: false,
+      priority: 3,
+      dailyQuotaLimit: 0, // Free tier: 1 RPS (enforced client-side)
+    },
+    googleFactCheck: {
+      enabled: false,
+      priority: 4,
+      dailyQuotaLimit: 0, // Free tier: 10k/day
+    },
+  },
+  factCheckApi: {
+    enabled: false,
+    maxResultsPerClaim: 5,
+    maxAgeDays: 365,
+    fetchFullArticles: true,
   },
   circuitBreaker: {
     enabled: true,

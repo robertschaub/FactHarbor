@@ -59,15 +59,23 @@ export class SearchProviderError extends Error {
  * Get the actual search provider(s) that will be used
  */
 export function getActiveSearchProviders(config?: SearchConfig): string[] {
-  const provider = (config ?? DEFAULT_SEARCH_CONFIG).provider.toLowerCase();
+  const c = config ?? DEFAULT_SEARCH_CONFIG;
+  const provider = c.provider.toLowerCase();
   if (provider === "serpapi") return ["SerpAPI"];
   if (provider === "google-cse") return ["Google-CSE"];
   if (provider === "brave") return ["Brave"];
+  if (provider === "wikipedia") return ["Wikipedia"];
+  if (provider === "semantic-scholar") return ["Semantic-Scholar"];
+  if (provider === "google-factcheck") return ["Google-FactCheck"];
   if (provider === "auto") {
     const providers: string[] = [];
     if (process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_ID) providers.push("Google-CSE");
     if (process.env.SERPAPI_API_KEY) providers.push("SerpAPI");
     if (process.env.BRAVE_API_KEY) providers.push("Brave");
+    // Wikipedia has no API key — enabled via config only
+    if (c.providers?.wikipedia?.enabled) providers.push("Wikipedia");
+    if (c.providers?.semanticScholar?.enabled) providers.push("Semantic-Scholar");
+    if (process.env.GOOGLE_FACTCHECK_API_KEY && c.providers?.googleFactCheck?.enabled) providers.push("Google-FactCheck");
     return providers.length > 0 ? providers : ["None"];
   }
   return ["Unknown"];
@@ -189,6 +197,87 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       throw err;
     }
   }
+  if (provider === "wikipedia") {
+    console.log("[Search] Using Wikipedia (explicit)");
+
+    if (!isProviderAvailable("Wikipedia", cbConfig)) {
+      errors.push({ provider: "Wikipedia", message: "Circuit breaker OPEN", fatal: true });
+      return { results: [], providersUsed: ["Wikipedia (circuit-open)"], errors };
+    }
+
+    providersUsed.push("Wikipedia");
+    try {
+      const { searchWikipedia } = await import("./search-wikipedia");
+      const results = await applyDomainFilters(searchWikipedia(options), options);
+      console.log(`[Search] Final results from Wikipedia: ${results.length}`);
+      if (results.length > 0) {
+        recordSuccess("Wikipedia", cbConfig);
+      }
+      await cacheSearchResults(options, results, "Wikipedia", cacheConfig);
+      return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
+    } catch (err) {
+      if (err instanceof SearchProviderError) {
+        recordFailure("Wikipedia", err.message, cbConfig);
+        errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
+        return { results: [], providersUsed, errors };
+      }
+      throw err;
+    }
+  }
+  if (provider === "semantic-scholar") {
+    console.log("[Search] Using Semantic Scholar (explicit)");
+
+    if (!isProviderAvailable("Semantic-Scholar", cbConfig)) {
+      errors.push({ provider: "Semantic-Scholar", message: "Circuit breaker OPEN", fatal: true });
+      return { results: [], providersUsed: ["Semantic-Scholar (circuit-open)"], errors };
+    }
+
+    providersUsed.push("Semantic-Scholar");
+    try {
+      const { searchSemanticScholar } = await import("./search-semanticscholar");
+      const results = await applyDomainFilters(searchSemanticScholar(options), options);
+      console.log(`[Search] Final results from Semantic Scholar: ${results.length}`);
+      if (results.length > 0) {
+        recordSuccess("Semantic-Scholar", cbConfig);
+      }
+      await cacheSearchResults(options, results, "Semantic-Scholar", cacheConfig);
+      return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
+    } catch (err) {
+      if (err instanceof SearchProviderError) {
+        recordFailure("Semantic-Scholar", err.message, cbConfig);
+        errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
+        return { results: [], providersUsed, errors };
+      }
+      throw err;
+    }
+  }
+  if (provider === "google-factcheck") {
+    console.log("[Search] Using Google Fact Check (explicit)");
+
+    if (!isProviderAvailable("Google-FactCheck", cbConfig)) {
+      errors.push({ provider: "Google-FactCheck", message: "Circuit breaker OPEN", fatal: true });
+      return { results: [], providersUsed: ["Google-FactCheck (circuit-open)"], errors };
+    }
+
+    providersUsed.push("Google-FactCheck");
+    try {
+      const { searchGoogleFactCheck } = await import("./search-factcheck-api");
+      const results = await applyDomainFilters(searchGoogleFactCheck(options), options);
+      console.log(`[Search] Final results from Google Fact Check: ${results.length}`);
+      if (results.length > 0) {
+        recordSuccess("Google-FactCheck", cbConfig);
+      }
+      await cacheSearchResults(options, results, "Google-FactCheck", cacheConfig);
+      return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
+    } catch (err) {
+      if (err instanceof SearchProviderError) {
+        recordFailure("Google-FactCheck", err.message, cbConfig);
+        errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
+        return { results: [], providersUsed, errors };
+      }
+      throw err;
+    }
+  }
   if (provider === "auto") {
     console.log("[Search] Using AUTO mode with multi-provider fallback + circuit breaker...");
     const results: WebSearchResult[] = [];
@@ -220,6 +309,31 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         name: "Brave",
         priority: config.providers?.brave?.priority ?? 2,
         available: isProviderAvailable("Brave", cbConfig),
+      });
+    }
+    // Wikipedia: no API key needed, enabled via config only (default: disabled)
+    if (config.providers?.wikipedia?.enabled) {
+      providers.push({
+        name: "Wikipedia",
+        priority: config.providers?.wikipedia?.priority ?? 3,
+        available: isProviderAvailable("Wikipedia", cbConfig),
+      });
+    }
+    // Semantic Scholar: works without API key at shared pool rate
+    if (config.providers?.semanticScholar?.enabled) {
+      providers.push({
+        name: "Semantic-Scholar",
+        priority: config.providers?.semanticScholar?.priority ?? 3,
+        available: isProviderAvailable("Semantic-Scholar", cbConfig),
+      });
+    }
+    // Google Fact Check: requires API key
+    const hasGoogleFactCheck = !!process.env.GOOGLE_FACTCHECK_API_KEY;
+    if (hasGoogleFactCheck && config.providers?.googleFactCheck?.enabled) {
+      providers.push({
+        name: "Google-FactCheck",
+        priority: config.providers?.googleFactCheck?.priority ?? 4,
+        available: isProviderAvailable("Google-FactCheck", cbConfig),
       });
     }
 
@@ -258,6 +372,15 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         } else if (providerInfo.name === "Brave") {
           const { searchBrave } = await import("./search-brave");
           providerResults = await searchBrave({ ...options, maxResults: remaining });
+        } else if (providerInfo.name === "Wikipedia") {
+          const { searchWikipedia } = await import("./search-wikipedia");
+          providerResults = await searchWikipedia({ ...options, maxResults: remaining });
+        } else if (providerInfo.name === "Semantic-Scholar") {
+          const { searchSemanticScholar } = await import("./search-semanticscholar");
+          providerResults = await searchSemanticScholar({ ...options, maxResults: remaining });
+        } else if (providerInfo.name === "Google-FactCheck") {
+          const { searchGoogleFactCheck } = await import("./search-factcheck-api");
+          providerResults = await searchGoogleFactCheck({ ...options, maxResults: remaining });
         }
 
         results.push(...providerResults);
@@ -309,7 +432,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     return { results: finalResults, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
   }
 
-  console.error(`[Search] ❌ Unknown provider: "${provider}". Valid options: auto, serpapi, google-cse, brave`);
+  console.error(`[Search] ❌ Unknown provider: "${provider}". Valid options: auto, serpapi, google-cse, brave, wikipedia, semantic-scholar, google-factcheck`);
   return { results: [], providersUsed: ["Unknown"] };
 }
 
