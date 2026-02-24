@@ -15,7 +15,7 @@ Commit templates only:
 - API internal writer endpoints (`/internal/v1/jobs/*`) require `X-Admin-Key` (must match `Admin:Key` in `apps/api/appsettings*.json`).
 
 ## Admin endpoints (cost exposure)
-- `GET /api/admin/test-config` can trigger paid LLM/search calls. Keep it local-only during POC and protect it before any public exposure.
+- `GET /api/admin/test-config` can trigger paid LLM/search calls. Protect with FH_ADMIN_KEY authentication before any public exposure.
 
 ## URL ingestion (SSRF)
 URL fetching must block localhost and private ranges and limit redirects/size.

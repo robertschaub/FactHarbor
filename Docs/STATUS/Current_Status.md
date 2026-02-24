@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
-**Version**: v2.11.0 (`v1.0.0-poc`)
+**Version**: v2.11.0
 **Last Updated**: 2026-02-24
-**Phase**: **POC COMPLETE** — transitioning to Alpha
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1047 tests passing, build clean. Framing-symmetry calibration v3.3.0 (14 pairs, 5 languages, operational-vs-diagnostic gate split, production-profile preflight). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Multi-source retrieval provider layer (Wikipedia, Semantic Scholar, Google Fact Check) implemented and wired (config-gated). Concept proven: end-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Phase**: **Alpha**
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1053 tests passing, build clean. Framing-symmetry calibration v3.3.0 (14 pairs, 5 languages, operational-vs-diagnostic gate split, production-profile preflight). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Multi-source retrieval provider layer (Wikipedia, Semantic Scholar, Google Fact Check) implemented and wired (config-gated). End-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
 
 ---
 
