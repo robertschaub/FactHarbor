@@ -163,15 +163,15 @@ FactHarbor requires API keys from external AI and search providers. You must reg
 |= Provider |= Key |= Required? |= Sign Up
 | **Anthropic** (Claude) | ##ANTHROPIC_API_KEY## | **Yes** | [[console.anthropic.com>>https://console.anthropic.com/]]
 | **OpenAI** | ##OPENAI_API_KEY## | **Yes** | [[platform.openai.com>>https://platform.openai.com/]]
-| **Google Custom Search** | ##GOOGLE_CSE_API_KEY## + ##GOOGLE_CSE_ID## | **Yes** | [[programmablesearchengine.google.com>>https://programmablesearchengine.google.com/]]
+| **Brave Search** | ##BRAVE_API_KEY## | **Recommended** | [[brave.com/search/api>>https://brave.com/search/api]]
+| **Google Custom Search** | ##GOOGLE_CSE_API_KEY## + ##GOOGLE_CSE_ID## | Optional | [[programmablesearchengine.google.com>>https://programmablesearchengine.google.com/]]
+| SerpAPI | ##SERPAPI_API_KEY## | Optional | [[serpapi.com>>https://serpapi.com/]]
+| Google Fact Check | ##GOOGLE_FACTCHECK_API_KEY## | Optional | Google API Console
 | Google Gemini | ##GOOGLE_GENERATIVE_AI_API_KEY## | Optional | [[aistudio.google.com>>https://aistudio.google.com/]]
 | Mistral | ##MISTRAL_API_KEY## | Optional | [[console.mistral.ai>>https://console.mistral.ai/]]
-| SerpAPI | ##SERPAPI_API_KEY## | Optional (fallback search) | [[serpapi.com>>https://serpapi.com/]]
 
 {{info}}
-**Cost note:** These are commercial services with pay-per-use pricing. Both Anthropic and OpenAI offer free trial credits for new accounts. Google CSE provides 100 free queries/day. Typical development usage costs single-digit $/month. See each provider's website for current pricing and free tier details.
-
-**Licensing:** By using these API keys you agree to each provider's terms of service. FactHarbor itself is open source, but the external AI and search services it depends on are commercial products with their own licensing terms.
+**Cost note:** These are commercial services with pay-per-use pricing. Both Anthropic and OpenAI offer free trial credits for new accounts. Brave Search and Google CSE offer free tiers. Typical development usage costs single-digit $/month. See each provider's website for current pricing and free tier details.
 {{/info}}
 
 === Example .env.local ===
@@ -181,9 +181,10 @@ FactHarbor requires API keys from external AI and search providers. You must reg
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 
-# Web search (Google CSE recommended)
-GOOGLE_CSE_API_KEY=...
-GOOGLE_CSE_ID=...
+# Web search (Brave or Google CSE recommended)
+BRAVE_API_KEY=...
+# GOOGLE_CSE_API_KEY=...
+# GOOGLE_CSE_ID=...
 
 # Internal keys (must match API settings)
 FH_API_BASE_URL=http://localhost:5000

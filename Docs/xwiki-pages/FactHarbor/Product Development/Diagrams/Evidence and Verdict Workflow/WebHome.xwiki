@@ -1,5 +1,5 @@
 {{info}}
-**Current Implementation (v2.10.2)** - Simplified model without versioning. Uses 7-point symmetric verdict scale.
+**Current Implementation (v2.11.0+)** - ClaimAssessmentBoundary pipeline. Uses 7-point symmetric verdict scale and 5-step LLM debate pattern.
 {{/info}}
 
 = Evidence and Verdict Data Model =
@@ -7,90 +7,78 @@
 {{mermaid}}
 
 erDiagram
-    CLAIM ||--|| CLAIM_VERDICT : has
-    CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : supported_by
+    ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : receives
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : cited_by
     EVIDENCE_ITEM }o--|| SOURCE : from
+    EVIDENCE_ITEM }o--|| CLAIM_ASSESSMENT_BOUNDARY : clustered_into
 
-    CLAIM {
+    ATOMIC_CLAIM {
         string id_PK
-        string text
-        string type
-        string claimRole
+        string statement
+        string category
         boolean isCentral
-        string_array dependsOn
+        float specificityScore
     }
 
-    CLAIM_VERDICT {
+    CB_CLAIM_VERDICT {
         string id_PK
         string claimId_FK
-        string verdict
-        int truthPercentage
-        int confidence
-        string explanation
-        string_array supportingEvidenceIds
-        string_array opposingEvidenceIds
-        string contestationStatus
-        float harmPotential
+        string verdict "7-point scale"
+        float truthPercentage
+        float confidence
+        string reasoning
+        json boundaryFindings
+        json challengeResponses
     }
 
     EVIDENCE_ITEM {
         string id_PK
-        string sourceId_FK
+        string sourceUrl
         string statement
         string sourceExcerpt
-        string category
-        string claimDirection
-        string contextId
+        string probativeValue "high|medium|low"
+        json evidenceScope
     }
 
     SOURCE {
         string id_PK
-        string title
-        string domain
         string url
         float trackRecordScore
-        string bias
-        string factualReporting
+        string sourceType
     }
 
 {{/mermaid}}
 
-= Verdict Generation Flow =
+= Verdict Generation Flow (Stage 4) =
 
 {{mermaid}}
 
 flowchart TB
-    subgraph Research[Research Phase]
-        EVIDENCE[Collected Evidence]
-        SOURCES[Source Metadata]
+    subgraph Research[Evidence Input]
+        EVIDENCE[Clustered Evidence Items]
+        BOUNDARIES[ClaimAssessmentBoundaries]
     end
 
-    subgraph Analysis[Analysis]
-        WEIGHT[Weight Evidence by source reliability]
-        CONTEST[Check Contestation doubted vs contested]
-        HARM[Assess Harm Potential]
+    subgraph Debate["Stage 4: LLM Debate Pattern (verdict-stage.ts)"]
+        ADV["1. Advocate\n(Build pro-case)"]
+        CONS["2. Consistency\n(Identify unstable areas)"]
+        CHAL["3. Challenger\n(Attack weaknesses)"]
+        RECON["4. Reconciler\n(Synthesize final view)"]
+        VAL["5. Validation\n(Structural & Grounding)"]
+        ADV --> CONS --> CHAL --> RECON --> VAL
     end
 
-    subgraph Verdict[Verdict Generation]
-        CALC[Calculate Truth Percentage]
-        MAP[Map to 7-point Scale]
-        CONF[Assign Confidence]
+    subgraph Finalize["Stage 5: Aggregation"]
+        WEIGHT["Weight by Specificity\nand Probative Value"]
+        TRIANG["Source Triangulation"]
+        NARR["Generate Narrative"]
+        WEIGHT --> TRIANG --> NARR
     end
 
-    subgraph Output[Result]
-        CLAIM_V[Claim Verdict]
-        ARTICLE_V[Article Verdict]
-    end
-
-    EVIDENCE --> WEIGHT
-    SOURCES --> WEIGHT
-    WEIGHT --> CONTEST
-    CONTEST --> HARM
-    HARM --> CALC
-    CALC --> MAP
-    MAP --> CONF
-    CONF --> CLAIM_V
-    CLAIM_V --> ARTICLE_V
+    EVIDENCE --> ADV
+    BOUNDARIES --> ADV
+    VAL --> WEIGHT
+    NARR --> RESULT["AnalysisResult"]
 
 {{/mermaid}}
 

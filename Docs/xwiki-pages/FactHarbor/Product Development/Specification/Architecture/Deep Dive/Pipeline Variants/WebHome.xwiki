@@ -166,11 +166,15 @@ Typical analysis time for a 5-10 claim article:
 
 == Search Provider Requirements ==
 
-Both pipelines use ##searchWebWithProvider()## and require at least one search provider:
+Both pipelines use ##searchWebWithProvider()## and require at least one primary search provider (Brave, SerpAPI, or Google CSE):
 
 |= Provider |= Environment Variables |= Notes
+| **Brave Search** | ##BRAVE_API_KEY## | Privacy-focused (Recommended)
 | **SerpAPI** | ##SERPAPI_API_KEY## | Pay-per-use (~$0.002/search)
 | **Google CSE** | ##GOOGLE_CSE_API_KEY## + ##GOOGLE_CSE_ID## | Free tier: 100 queries/day
+| **Wikipedia** | None | Built-in supplementary
+| **Semantic Scholar** | ##SEMANTIC_SCHOLAR_API_KEY## | Supplementary academic
+| **Google Fact Check** | ##GOOGLE_FACTCHECK_API_KEY## | Supplementary fact-checks
 
 Without search credentials, analysis continues without external sources (LLM internal knowledge only if ##FH_ALLOW_MODEL_KNOWLEDGE=true##).
 

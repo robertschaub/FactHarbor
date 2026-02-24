@@ -1,0 +1,120 @@
+= Verdict Debate Pattern =
+
+{{info}}
+**Developer Reference** — The structured multi-step LLM debate process used in Stage 4 of the ClaimAssessmentBoundary (CB) pipeline to produce high-quality, balanced verdicts.
+
+**Key Files**: ##apps/web/src/lib/analyzer/verdict-stage.ts##, ##apps/web/prompts/claimboundary.prompt.md##
+{{/info}}
+
+== 🎯 Overview ==
+
+FactHarbor replaces simple LLM "zero-shot" adjudication with a structured **5-step adversarial debate pattern**. This design ensures that every verdict is stress-tested by a dedicated "challenger" role before being finalized, significantly reducing the risk of stable model bias and "echo-chamber" reasoning.
+
+{{mermaid}}
+flowchart LR
+    E[Evidence + Boundaries] --> S1[1. Advocate]
+    S1 --> S2[2. Self-Consistency x2]
+    S1 --> S3[3. Adversarial Challenge]
+    S2 --> S4[4. Reconciliation]
+    S3 --> S4
+    S4 --> S5[5. Validation]
+    S5 --> O[Final CBClaimVerdict]
+
+    subgraph "Parallel Execution"
+        S2
+        S3
+    end
+
+    style S1 fill:#e8f5e9,stroke:#2e7d32
+    style S2 fill:#e3f2fd,stroke:#1565c0
+    style S3 fill:#fff3e0,stroke:#e65100
+    style S4 fill:#f3e5f5,stroke:#7b1fa2
+    style S5 fill:#fce4ec,stroke:#c2185b
+{{/mermaid}}
+
+----
+
+== 📋 The 5-Step Process ==
+
+The debate is executed per-claim, integrating all relevant clustered evidence.
+
+=== Step 1: Advocate Verdict ===
+* **Role**: **Advocate** (Sonnet tier)
+* **Task**: Build the strongest evidence-backed case for the most supported interpretation.
+* **Goal**: Establish a high-quality baseline verdict.
+
+=== Step 2: Self-Consistency Check ===
+* **Role**: **Self-Consistency** (Sonnet tier × 2)
+* **Task**: Generate two parallel, independent verdicts for the same claim and evidence.
+* **Goal**: Measure **verdict stability**. A high spread between runs indicates semantic ambiguity or weak evidence, which is used to reduce the final confidence score.
+
+=== Step 3: Adversarial Challenge ===
+* **Role**: **Challenger** (Sonnet/Opus tier)
+* **Task**: Actively argue against the Advocate's verdict. Identify omitted counter-evidence, logical leaps, or over-confidence.
+* **Rule**: Challenges must be **evidence-backed**; rhetorical objections are flagged as "baseless".
+
+=== Step 4: Reconciliation ===
+* **Role**: **Reconciler** (Sonnet tier)
+* **Task**: Synthesize the outputs of Steps 1, 2, and 3 into a final determination.
+* **Goal**: Adjudicate between the Advocate and Challenger, producing the final ##truthPercentage## and ##reasoning## text.
+
+=== Step 5: Verdict Validation ===
+* **Role**: **Validation** (Haiku tier × 2)
+* **Task**: Run two final checks:
+  1. **Grounding**: Verify the reasoning uses only the provided evidence.
+  2. **Direction**: Ensure the truth percentage matches the semantic direction of the reasoning.
+
+----
+
+== 💡 Research Rationale ==
+
+FactHarbor's debate architecture is directly informed by recent research into LLM political alignment and fact-checking reliability:
+
+* **Mitigating Model Bias (Stammbach/Ash EMNLP 2024)**: Research shows that LLMs have measurable political slants. The debate pattern (similar to the "balanced overviews" pattern) forces the system to represent diverse perspectives before synthesis, eliminating false consensus.
+* **Structural Independence**: By separating the **Advocate** and **Challenger** roles (optionally across different providers like Anthropic and OpenAI), we break the "self-corroboration" loop where a single model agrees with its own prior errors.
+* **Climinator Mediator-Advocate**: Inspired by the Mediator-Advocate framework (npj Climate Action 2025), FactHarbor's **Reconciler** acts as the mediator, ensuring that neither the advocate nor the challenger dominates without evidence.
+
+----
+
+== 🛡️ Quality Guards ==
+
+The debate engine includes deterministic guards to ensure adversarial integrity:
+
+=== 1. Baseless Challenge Guard ===
+After Step 4, the system runs ##enforceBaselessChallengePolicy##. If the Challenger adjusted the verdict without citing specific, documented counter-evidence (e.g., mere opinion or political rhetoric), the adjustment is **reverted**. This satisfies the rule: //Baseless challenges MUST NOT reduce truth percentage.//
+
+=== 2. High-Harm Confidence Floor ===
+Claims flagged with ##harmPotential## "high" or "critical" (e.g., medical or safety claims) are subject to a confidence floor. If the debate results in low confidence, the verdict is automatically pushed to **UNVERIFIED**, preventing definitive answers on dangerous topics when evidence is thin.
+
+=== 3. Knowledge-Diversity-Lite (C13 Correction) ===
+Implemented in v2.11.0 to address evidence-pool asymmetry:
+* **Evidence Sufficiency Gate**: Claims with < 3 evidence items or < 2 distinct source types are marked ##INSUFFICIENT_EVIDENCE##.
+* **Source-Type Partitioning**:
+** **Advocate** sees institutional/academic sources (high rigor).
+** **Challenger** sees journalistic/general sources (breadth).
+** **Reconciler** sees the full pool.
+* **Contrarian Retrieval**: Triggers dedicated search queries for counter-evidence when directional imbalance is detected.
+
+----
+
+== ⚙️ Configuration & Tiering ==
+
+Administrators can tune the debate dynamics via UCM (**Admin → Config → Pipeline**):
+
+* **Cross-Provider Debate**: Set ##debateModelProviders.challenger = "openai"## to use GPT-4 as the challenger against Claude's advocate. This provides the highest level of structural diversity.
+* **Model Tiering**:
+** **Premium (Sonnet/Opus)**: Used for reasoning-heavy roles (Advocate, Challenger, Reconciler).
+** **Budget (Haiku)**: Used for high-volume validation tasks (Step 5).
+
+|= Configuration |= Rationale
+| **Baseline** | Standard performance, single provider.
+| **Cross-Provider** | Maximum bias mitigation; prevents single-provider failure modes.
+| **Tier-Split** | Cost-optimized; uses Haiku for the challenger in non-critical jobs.
+
+----
+
+== Related Documentation ==
+
+* [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] — Weighting and aggregation logic.
+* [[LLM Configuration Guide>>FactHarbor.Product Development.DevOps.Subsystems and Components.LLM Configuration.WebHome]] — Setting up providers.
+* [[Stammbach/Ash EMNLP 2024 Analysis>>Docs.Knowledge.Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md]] — Deep dive into the supporting research.

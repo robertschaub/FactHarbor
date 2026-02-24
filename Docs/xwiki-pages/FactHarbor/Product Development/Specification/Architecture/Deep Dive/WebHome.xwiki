@@ -12,6 +12,7 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Twin-path architecture (ClaimAssessmentBoundary + Monolithic Dynamic): invariants, shared primitives, result model, variant selection, configuration | ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, ##monolithic-dynamic.ts##
+| [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] | Structured 5-step adversarial debate pattern: roles (Advocate, Challenger, Reconciler), model tiers, research rationale, and quality guards | ##verdict-stage.ts##, ##claimboundary.prompt.md##
 
 === Quality and Evidence ===
 
@@ -39,10 +40,10 @@ This section contains detailed implementation references for developers and test
 == By Role ==
 
 === Pipeline Developer ===
-Start with: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] → [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] → [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
+Start with: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] → [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] → [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] → [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
 
 === Prompt Engineer ===
-Start with: [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] → [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] → [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]]
+Start with: [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] → [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] → [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] → [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]]
 
 === QA / Tester ===
 Start with: [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] → [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] → [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]]

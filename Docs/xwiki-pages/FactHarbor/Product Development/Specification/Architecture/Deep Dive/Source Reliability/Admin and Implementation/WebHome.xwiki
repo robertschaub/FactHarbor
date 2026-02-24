@@ -82,8 +82,7 @@ export function getTrackRecordData(url: string): CachedReliabilityData | null;
 // Phase 3: Apply to verdicts (sync)
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
-  facts: ExtractedFact[],
-  sources: FetchedSource[]
+     evidence: EvidenceItem[],  sources: FetchedSource[]
 ): ClaimVerdict[];
 
 // Effective weight calculation (used by monolithic pipelines)

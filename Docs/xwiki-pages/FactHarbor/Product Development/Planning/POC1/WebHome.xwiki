@@ -1,5 +1,11 @@
 = POC1: Core Workflow with Quality Gates =
 
+{{warning}}
+**HISTORICAL PLANNING DOCUMENT — 2025**
+
+This document describes the initial POC1 goals. The **Orchestrated pipeline** and **AnalysisContext** terminology described here have been **removed** (v2.11.0) and replaced by the **ClaimAssessmentBoundary pipeline**. This page is retained for historical context.
+{{/warning}}
+
 **Phase Goal:** Prove AKEL can produce credible, quality outputs without manual intervention
 
 **Success Metric:** <10% hallucination rate, quality gates prevent low-confidence publications

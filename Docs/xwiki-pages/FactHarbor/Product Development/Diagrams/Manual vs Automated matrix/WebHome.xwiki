@@ -26,7 +26,7 @@ graph TD
 |= Function |= Details |= Status
 | **Claim Evaluation** | Evidence extraction, source scoring, verdict generation, risk classification, publication | Implemented
 | **Quality Assessment** | Contradiction detection, confidence scoring, pattern recognition, anomaly flagging | Partial (Gates 1 and 4)
-| **Content Management** | KeyFactor generation, evidence linking, source tracking | Implemented
+| **Content Management** | Boundary clustering, evidence linking, source tracking | Implemented
 
 = Human Responsibilities =
 

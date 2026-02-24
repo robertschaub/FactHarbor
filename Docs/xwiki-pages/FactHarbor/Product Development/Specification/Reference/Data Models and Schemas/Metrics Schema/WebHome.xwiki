@@ -35,7 +35,7 @@ interface AnalysisMetrics {
   // Identification
   jobId: string;
   schemaVersion: string;
-  pipelineVariant: 'orchestrated' | 'monolithic-dynamic';
+  pipelineVariant: 'claimboundary' | 'monolithic-dynamic';
   timestamp: Date;
 
   // Performance
@@ -110,8 +110,7 @@ interface LLMCallMetric {
 {{code language="typescript"}}
 interface SearchQueryMetric {
   query: string;
-  provider: 'google-cse' | 'serpapi' | 'gemini-grounded';
-  resultsCount: number;
+     provider: 'google-cse' | 'serpapi' | 'brave' | 'wikipedia' | 'semantic-scholar' | 'google-factcheck' | 'gemini-grounded';  resultsCount: number;
   durationMs: number;
   success: boolean;
   timestamp: Date;
@@ -223,7 +222,7 @@ Delete metrics older than specified days.
 import { createMetricsCollector, persistMetrics } from '@/lib/analyzer/metrics';
 
 // Create collector at start of analysis
-const metrics = createMetricsCollector(jobId, 'orchestrated');
+const metrics = createMetricsCollector(jobId, 'claimboundary');
 
 // Track phases
 metrics.startPhase('understand');

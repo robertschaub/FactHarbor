@@ -20,6 +20,10 @@ flowchart TB
     subgraph SEARCH["Search Providers"]
         CSE["Google Custom\nSearch Engine"]
         SERP["SerpAPI"]
+        BRAVE["Brave Search"]
+        WIKI["Wikipedia"]
+        SCHOLAR["Semantic Scholar"]
+        GFC["Google Fact Check"]
     end
 
     subgraph CONTENT["Content Sources"]
@@ -35,6 +39,10 @@ flowchart TB
     AKEL --> SEARCH_ABS
     SEARCH_ABS -->|"Primary"| CSE
     SEARCH_ABS -->|"Fallback"| SERP
+    SEARCH_ABS -->|"Direct"| BRAVE
+    SEARCH_ABS -->|"Supp"| WIKI
+    SEARCH_ABS -->|"Supp"| SCHOLAR
+    SEARCH_ABS -->|"Supp"| GFC
     AKEL --> RETRIEVAL
     RETRIEVAL --> HTML
     RETRIEVAL --> PDF
@@ -47,4 +55,4 @@ flowchart TB
     style CONTENT fill:#f3e5f5,stroke:#6a1b9a,color:#000
 {{/mermaid}}
 
-//FactHarbor's external dependency map showing integrations with 4 LLM providers, 2 search providers, and web content sources, all routed through abstraction layers and monitored by the provider health system.//
+//FactHarbor's external dependency map showing integrations with 4 LLM providers, 6 search providers, and web content sources, all routed through abstraction layers and monitored by the provider health system.//

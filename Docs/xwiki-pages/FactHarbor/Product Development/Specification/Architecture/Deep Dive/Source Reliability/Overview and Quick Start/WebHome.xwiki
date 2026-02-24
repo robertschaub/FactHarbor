@@ -15,7 +15,7 @@ FactHarbor evaluates source reliability dynamically using LLM-powered assessment
 | **Evaluation** | Sequential LLM refinement (Claude -> OpenAI mini model cross-check)
 | **Storage** | SQLite cache (##source-reliability.db##)
 | **Integration** | Batch prefetch + sync lookup (both pipelines)
-| **Pipelines** | Orchestrated, Monolithic Dynamic
+| **Pipelines** | ClaimAssessmentBoundary, Monolithic Dynamic
 | **Cost Control** | Importance filter + rate limiting
 | **Verdict Impact** | Evidence weighting adjusts truth percentages
 

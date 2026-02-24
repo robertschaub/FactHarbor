@@ -1,0 +1,64 @@
+= AKEL Pipeline Detail (v1.0) =
+
+This is the authoritative technical reference for the **5-Stage ClaimAssessmentBoundary (CB) Pipeline** (formerly AKEL Engine), implemented in ##apps/web/src/lib/analyzer/claimboundary-pipeline.ts##.
+
+== Overview ==
+
+The CB pipeline replaced the Orchestrated pipeline in v2.11.0. It is a linear, evidence-emergent pipeline that discovers analytical frames (Boundaries) from the gathered evidence, rather than forcing claims into pre-defined "AnalysisContexts".
+
+{{mermaid}}
+graph TD
+    Input[User Input] --> S1[Stage 1: Extract AtomicClaims]
+    S1 --> S2[Stage 2: Research Evidence]
+    S2 --> S3[Stage 3: Cluster Boundaries]
+    S3 --> S4[Stage 4: Generate Verdicts]
+    S4 --> S5[Stage 5: Aggregate Assessment]
+    S5 --> Output[Result Object]
+
+    subgraph "Core Logic: apps/web/src/lib/analyzer/"
+        S1 -.-> |"runPass1 (sonnet)"| S1_Code[claimboundary-pipeline.ts]
+        S2 -.-> |"web-search.ts"| S2_Code[web-search.ts]
+        S3 -.-> |"clusterBoundaries"| S3_Code[claimboundary-pipeline.ts]
+        S4 -.-> |"runVerdictStage"| S4_Code[verdict-stage.ts]
+        S5 -.-> |"aggregateVerdicts"| S5_Code[aggregation.ts]
+    end
+{{/mermaid}}
+
+== Pipeline Stages ==
+
+=== Stage 1: Extraction (AtomicClaims) ===
+**Purpose:** Decompose the user input into a set of discrete, verifiable assertions.
+* **Code Reference:** ##runPass1## and ##runPass2## in ##claimboundary-pipeline.ts##.
+* **Logic:** Uses Haiku for broad extraction and Sonnet for refinement/deduplication.
+* **Output:** ##AtomicClaim[]##.
+
+=== Stage 2: Research (Evidence Gathering) ===
+**Purpose:** Fetch high-probative evidence for each claim from external search providers.
+* **Code Reference:** ##searchAcrossProviders## in ##web-search.ts##.
+* **Logic:** Multi-provider fallback (Brave, Google, Bing).
+* **Output:** ##EvidenceItem[]##.
+
+=== Stage 3: Clustering (Boundaries) ===
+**Purpose:** Group claims and evidence into coherent analytical frames based on semantic overlap and EvidenceScope.
+* **Code Reference:** ##clusterClaimsIntoBoundaries## in ##claimboundary-pipeline.ts##.
+* **Logic:** Semantic similarity via ##assessTextSimilarityBatch##.
+* **Output:** ##ClaimAssessmentBoundary[]##.
+
+=== Stage 4: Verdicts (Multi-Step Debate) ===
+**Purpose:** Determine the truth percentage and confidence for each Boundary using a 5-step LLM debate pattern.
+* **Code Reference:** ##runVerdictStage## in ##verdict-stage.ts##.
+* **Logic**: Uses a structured **Advocate → Challenger → Reconciler** pattern to mitigate model bias and ensure balanced adjudication.
+* **Detailed Specification**: See [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] for role definitions, research rationale, and quality guards.
+* **Quality Gate:** Gate 4 (Confidence) is applied here.
+
+=== Stage 5: Aggregation ===
+**Purpose:** Calculate the overall job score by weighting individual Boundary verdicts.
+* **Code Reference:** ##aggregateVerdicts## in ##aggregation.ts##.
+* **Logic:** Weighted average based on claim specificity and probative value.
+
+== Key Code Symbols ==
+* **Main Entry Point:** ##runClaimBoundaryAnalysis##
+* **State Management:** ##AnalysisState## (threads tokens and results through stages)
+* **Configuration:** ##CalcConfig## (from ##config-schemas.ts##)
+
+[[Back to Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]]

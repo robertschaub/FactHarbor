@@ -1,0 +1,42 @@
+= Alpha Roadmap & Success Criteria (v1.0) =
+
+This document defines the transition from **POC (v2.10)** to **Alpha (v2.11+)** and the remaining milestones for the FactHarbor v1.0 release.
+
+== Current Status: Alpha (v2.11.0) ==
+
+The system has successfully transitioned to the **ClaimAssessmentBoundary (CB)** architecture. The legacy Orchestrated pipeline has been removed.
+
+=== Completed Milestones (Alpha Entry) ===
+* **CB Pipeline Implementation:** 5-stage sequential flow operational.
+* **Evidence-Emergent Boundaries:** Manual "AnalysisContext" framing removed.
+* **Multi-Provider Search:** Brave, Google, and Bing fallback logic implemented.
+* **Source Reliability v2:** LLM-powered reliability assessment instead of keyword-based.
+* **Quality Gates:** Gate 1 (Fidelity) and Gate 4 (Confidence) enforced.
+
+== Roadmap to Beta (Q2 2026) ==
+
+The following features are prioritized for the next major milestone.
+
+=== 1. Metric Maturation ===
+* **TIGERScore Integration:** Automated evaluation of **T**ruth, **I**nsight, **G**rounding, **E**vidence, and **R**elevance.
+* **AlignScore:** Measuring alignment between extracted claims and final verdicts.
+* **Refinement:** Transitioning from diagnostic heuristics to robust model-based metrics.
+
+=== 2. Cross-Lingual Robustness ===
+* **Validation:** Ensuring Stage 1 (Extraction) and Stage 4 (Verdict) perform equally well in DE, FR, PT, and ES.
+* **Constraint:** Meaning over wording (no English-only semantic assumptions).
+
+=== 3. Performance & Cost Optimization ===
+* **Haiku 4.5 Tiering:** Moving non-critical classification tasks to lighter models.
+* **Caching:** Aggressive search and LLM result caching.
+
+== Success Criteria (v1.0 Release) ==
+
+| Dimension | Target Metric | Status |
+|-----------|---------------|--------|
+| **Accuracy** | >92% Factually Correct | In Progress |
+| **Neutrality** | <4% Bias Asymmetry | Testing (test:neutrality) |
+| **Reliability** | >85% Confidence in High-Probative Verdicts | In Progress |
+| **Coverage** | Supports 5+ languages out-of-the-box | In Progress |
+
+[[Back to Planning Home>>FactHarbor.Planning.WebHome]]

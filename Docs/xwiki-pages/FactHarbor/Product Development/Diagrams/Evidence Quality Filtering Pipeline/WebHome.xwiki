@@ -14,7 +14,7 @@ flowchart TB
         L2["Layer 2: Provenance Validation<br/>provenance-validation.ts<br/>Reject evidence items missing<br/>valid source URL or excerpt"]
         L3["Layer 3: Tangential Baseless Pruning<br/>aggregation.ts<br/>Remove tangential/irrelevant claims<br/>with insufficient supporting evidence"]
         L4["Layer 4: Thesis Relevance Filtering<br/>aggregation.ts<br/>Non-direct claims get weight=0<br/>via getClaimWeight"]
-        L5["Layer 5: Opinion-Only KeyFactor Pruning<br/>aggregation.ts<br/>Drop KeyFactors with no documented<br/>evidence basis (opinion/unknown)"]
+        L5["Layer 5: Opinion-Only Contestation Pruning<br/>aggregation.ts<br/>Drop contestation with no documented<br/>evidence basis (opinion/unknown)"]
     end
 
     L1 --> L6 --> L7
@@ -67,4 +67,4 @@ These layers are defined in shared modules (##provenance-validation.ts##, ##aggr
 * **Layer 2** (##filterEvidenceByProvenance##): Validates source URL format (HTTP/S) and excerpt presence. Evidence items without valid provenance are rejected before verdict processing.
 * **Layer 3** (##pruneTangentialBaselessClaims##): Removes tangential or irrelevant claims that have fewer than 2 supporting evidence items, or whose evidence lacks medium/high probativeValue.
 * **Layer 4** (##getClaimWeight## / ##calculateWeightedVerdictAverage##): Non-direct claims (##thesisRelevance !== "direct"##) receive weight=0, excluding them from the weighted verdict average.
-* **Layer 5** (##pruneOpinionOnlyFactors##): Drops KeyFactors where ##factualBasis## is "opinion" or "unknown". Only factors with documented evidence ("established" or "disputed") are kept.
+* **Layer 5** (##pruneOpinionOnlyContestation##): Drops contestation markers where ##factualBasis## is "opinion" or "unknown". Only contestation with documented evidence ("established" or "disputed") is kept.

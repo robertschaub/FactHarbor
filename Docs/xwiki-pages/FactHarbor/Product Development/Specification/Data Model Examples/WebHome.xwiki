@@ -1,0 +1,59 @@
+= Data Model & Analysis Examples (v1.0) =
+
+This page provides representative examples of the core data entities used in the **ClaimAssessmentBoundary (CB)** pipeline.
+
+== Core Entities ==
+
+The authoritative TypeScript definitions reside in ##apps/web/src/lib/analyzer/types.ts##.
+
+=== 1. AtomicClaim ===
+Represents a single verifiable assertion extracted from user input.
+
+{{code language="json"}}
+{
+  "id": "claim-001",
+  "statement": "The project reduced CO2 emissions by 15% in 2024.",
+  "category": "environmental",
+  "verifiability": "verifiable",
+  "specificity": 0.85
+}
+{{/code}}
+
+=== 2. EvidenceItem ===
+Represents a piece of evidence retrieved during Stage 2.
+
+{{code language="json"}}
+{
+  "sourceUrl": "https://example.com/report2024",
+  "statement": "Independent audit confirms a 14.8% reduction in carbon footprint.",
+  "probativeValue": "high",
+  "sourceType": "peer_reviewed_study",
+  "evidenceScope": {
+    "methodology": "physical sensor data",
+    "temporal": "2024-Q1 to 2024-Q4"
+  }
+}
+{{/code}}
+
+=== 3. ClaimAssessmentBoundary ===
+The emergent analytical frame that groups compatible claims and evidence.
+
+{{code language="json"}}
+{
+  "id": "boundary-A",
+  "name": "2024 Emission Reduction Impact",
+  "claims": ["claim-001"],
+  "evidence": ["evidence-item-ID"],
+  "verdict": {
+    "truthPercentage": 98,
+    "confidence": 0.92,
+    "explanation": "Extensive evidence supports the claimed reduction within a 0.2% margin of error."
+  }
+}
+{{/code}}
+
+== Code References ==
+* **Schema Definition:** ##AtomicClaimSchema##, ##EvidenceItemSchema##, ##BoundaryVerdictSchema## in ##apps/web/src/lib/analyzer/types.ts##.
+* **Validation:** Zod is used at every stage transition to ensure data integrity.
+
+[[Back to Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]]

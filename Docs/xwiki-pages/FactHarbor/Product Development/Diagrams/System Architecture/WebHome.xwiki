@@ -24,7 +24,7 @@ flowchart TB
 
     subgraph External["External Services"]
         LLM["LLM Providers\nAnthropic, OpenAI, Google, Mistral"]
-        SEARCH["Search Providers\nGoogle CSE, SerpAPI"]
+        SEARCH["Search Providers\nGoogle CSE, SerpAPI, Brave,\nWikipedia, Semantic Scholar,\nGoogle Fact Check"]
     end
 
     BROWSER --> UI

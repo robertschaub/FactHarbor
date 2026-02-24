@@ -34,10 +34,11 @@ FactHarbor supports multiple LLM (Large Language Model) providers and search pro
 |= Provider |= API |= Best For |= Status
 | **Google Custom Search (CSE)** | Free tier available | General web search | Supported
 | **SerpAPI** | Pay-per-use | Reliable Google results | Supported
-| **Gemini Grounded Search** | Built-in | When using Gemini | Experimental (requires ##pipeline.llmProvider=google## + search ##mode=grounded##; only counts as "grounded" when the provider returns grounding metadata/citations)
-| **Brave Search** | API required | Privacy-focused | Not implemented (no adapter in code)
-| **Tavily** | API required | AI-optimized | Not implemented (no adapter in code)
-| **Bing Search** | API required | General web search | Not implemented (no adapter in code)
+| **Brave Search** | API required | Privacy-focused, independent index | Supported
+| **Wikipedia** | Built-in | Broad general knowledge | Supported
+| **Semantic Scholar** | Built-in | Academic and scientific evidence | Supported
+| **Google Fact Check** | API required | Direct access to existing fact-checks | Supported
+| **Gemini Grounded Search** | Built-in | When using Gemini | Experimental (requires ##pipeline.llmProvider=google## + search ##mode=grounded##)
 
 ----
 
@@ -129,6 +130,10 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # Search API Keys (search provider selected in UCM)
 SERPAPI_API_KEY=your-serpapi-key
+BRAVE_API_KEY=your-brave-key
+GOOGLE_FACTCHECK_API_KEY=your-gfc-key
+# Semantic Scholar optionally uses an API key for higher rate limits
+SEMANTIC_SCHOLAR_API_KEY=your-scholar-key
 # Or Google Custom Search:
 # GOOGLE_CSE_API_KEY=your-cse-key
 # GOOGLE_CSE_ID=your-cse-id
@@ -228,6 +233,31 @@ SERPAPI_API_KEY=your-api-key
 
 **Pricing**: ~$0.002 per search
 
+=== Brave Search ===
+
+1. **Sign up**: [[https:~~/~~/brave.com/search/api>>https://brave.com/search/api]]
+1. **Get API Key**: Brave API Dashboard
+1. **Configure in UCM** (Admin → Config → Web Search):
+** ##enabled##: ##true##
+** ##provider##: ##brave## (or ##auto##)
+
+**Environment key**:
+
+{{code language="bash"}}
+BRAVE_API_KEY=your-api-key
+{{/code}}
+
+=== Supplementary Providers ===
+
+Supplementary providers provide specialized knowledge and are always active in ##auto## mode if enabled in UCM.
+
+|= Provider |= Credentials |= Type |= Notes
+| **Wikipedia** | None | Built-in | Broad general knowledge
+| **Semantic Scholar** | Optional | API | Academic and scientific evidence
+| **Google Fact Check** | Required | API | Direct access to existing fact-checks
+
+**Configuration**: Enable per-provider in Admin → Config → Web Search.
+
 === Auto Mode (Recommended) ===
 
 Let FactHarbor choose the best available provider:
@@ -235,9 +265,10 @@ Let FactHarbor choose the best available provider:
 Set the search ##provider## to ##auto## in UCM (Admin → Config → Web Search).
 
 **Behavior**:
-* Tries Google CSE first (if configured)
-* Falls back to SerpAPI for remaining slots
-* Uses Gemini Grounded Search when ##pipeline.llmProvider=google## and search ##mode=grounded## (experimental). If grounding metadata/citations are missing, FactHarbor should fall back to standard search rather than treating model synthesis as evidence.
+* Tries primary providers (Google CSE, SerpAPI, Brave) based on configured priority and availability.
+* Falls back through the primary chain until the max results requirement is met.
+* **Supplementary providers** (Wikipedia, Semantic Scholar, Google Fact Check) are always executed if enabled to provide deep-domain grounding.
+* Uses Gemini Grounded Search when ##pipeline.llmProvider=google## and search ##mode=grounded## (experimental).
 
 === Domain Whitelist ===
 
@@ -382,7 +413,7 @@ Track costs via the admin dashboard (when implemented):
 
 **"No sources were fetched" (All pipelines including Dynamic):**
 
-Both pipelines (Orchestrated and Monolithic Dynamic) require search provider credentials to perform web searches. Without them, the pipeline will:
+Both pipelines (ClaimAssessmentBoundary and Monolithic Dynamic) require search provider credentials to perform web searches. Without them, the pipeline will:
 1. Generate search queries (correctly)
 1. Attempt searches (loop runs but returns empty)
 1. Continue without external sources (LLM uses only internal knowledge)
@@ -391,16 +422,19 @@ Both pipelines (Orchestrated and Monolithic Dynamic) require search provider cre
 
 {{code language="bash"}}
 # Check logs for this message:
-[Search] NO SEARCH PROVIDERS CONFIGURED! Set SERPAPI_API_KEY or GOOGLE_CSE_API_KEY+GOOGLE_CSE_ID
+[Search] NO SEARCH PROVIDERS CONFIGURED! Set BRAVE_API_KEY, SERPAPI_API_KEY or GOOGLE_CSE_API_KEY+GOOGLE_CSE_ID
 {{/code}}
 
-**Solution**: Configure at least one search provider:
+**Solution**: Configure at least one primary search provider:
 
 {{code language="bash"}}
-# Option 1: SerpAPI (simpler setup)
+# Option 1: Brave Search (recommended)
+BRAVE_API_KEY=your-brave-api-key
+
+# Option 2: SerpAPI
 SERPAPI_API_KEY=your-serpapi-key
 
-# Option 2: Google CSE (free tier available)
+# Option 3: Google CSE (free tier available)
 GOOGLE_CSE_API_KEY=your-google-api-key
 GOOGLE_CSE_ID=your-custom-search-engine-id
 {{/code}}
@@ -409,8 +443,8 @@ GOOGLE_CSE_ID=your-custom-search-engine-id
 Look for successful search logs:
 
 {{code language="bash"}}
-[Search] Available providers: Google CSE=true, SerpAPI=true
-[Search] Google CSE returned 4 results, total now: 4
+[Search] Available providers: Google CSE=true, SerpAPI=true, Brave=true, Wikipedia=true
+[Search] Brave returned 4 results, total now: 4
 {{/code}}
 
 === Configuration Validation ===

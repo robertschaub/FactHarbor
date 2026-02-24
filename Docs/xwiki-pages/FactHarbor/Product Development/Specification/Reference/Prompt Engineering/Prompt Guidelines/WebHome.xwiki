@@ -103,15 +103,15 @@ GPT responds exceptionally well to concrete examples:
 Input: "The WHO spokesperson stated that the new variant is more transmissible"
 Output:
 {
-  "subClaims": [
+  "atomicClaims": [
     {
-      "id": "SC1",
+      "id": "AC1",
       "text": "A WHO spokesperson made a public statement...",
       "claimRole": "attribution",
       "centrality": "low"
     },
     {
-      "id": "SC2",
+      "id": "AC2",
       "text": "The new variant is more transmissible...",
       "claimRole": "core",
       "centrality": "high"
@@ -128,7 +128,7 @@ Always enumerate required fields:
 `### REQUIRED OUTPUT FIELDS (All must be present)
 - impliedClaim: string (neutral summary)
 - articleThesis: string (what input asserts)
-- subClaims: array with id, text, claimRole, centrality, isCentral
+- atomicClaims: array with id, text, claimRole, centrality, isCentral
 - researchQueries: array of 4-6 distinct search strings`
 {{/code}}
 
@@ -149,7 +149,7 @@ Use tables to guide verdict scoring:
 
 === Compensation Strategies ===
 
-* **Prevent over-splitting**: Include "If ANY answer is 'no' -> Don't create that context"
+* **Prevent over-splitting**: Include "If ANY answer is 'no' -> Don't create that boundary"
 * **Counter balance drift**: "Do NOT artificially center at 50%"
 * **Ensure schema compliance**: "Use '' for empty strings, NEVER null"
 
@@ -174,8 +174,6 @@ Gemini tends toward verbosity. Always specify limits:
 |-------|---------|
 | impliedClaim | 150 characters |
 | claim text | 150 characters |
-| keyFactors.factor | 12 words |
-| keyFactors.explanation | 20 words |
 | shortAnswer | 25 words |`
 {{/code}}
 
@@ -187,9 +185,9 @@ Structure complex tasks as numbered steps:
 `### NUMBERED PROCESS
 1. Read input completely
 2. Identify claim type (statement vs article)
-3. Extract claims with attribution separation
+3. Extract atomic claims with attribution separation
 4. Assess centrality (expect 1-4 HIGH max)
-5. Detect context boundaries if present
+5. Detect boundary signals if present
 6. Generate 4-6 search queries
 7. Output JSON`
 {{/code}}
@@ -200,10 +198,10 @@ Force validation before output:
 
 {{code language="typescript"}}
 `### SCHEMA CHECKLIST (Verify before output)
-- [ ] id: string (SC1, SC2, etc.)
+- [ ] id: string (AC1, AC2, etc.)
 - [ ] text: string (≤150 chars)
 - [ ] claimRole: "attribution" | "source" | "timing" | "core"
-- [ ] centrality: "high" | "medium" | "low"
+- [ ] centrality: "high" | "medium"
 - [ ] dependsOn: array of claim IDs (or empty [])`
 {{/code}}
 
@@ -237,12 +235,12 @@ Mistral excels at following explicit sequences:
 - Statement about facts → "claim"
 - News article/long text → "article"
 
-**Step 3:** Extract claims using template
+**Step 3:** Extract atomic claims using template
 For each claim found:
-- id: SC{n}
+- id: AC{n}
 - text: [the claim statement]
 - claimRole: [pick: attribution | source | timing | core]
-- centrality: [pick: high | medium | low]`
+- centrality: [pick: high | medium]`
 {{/code}}
 
 ==== 2. Field Templates ====
@@ -252,11 +250,10 @@ Provide exact structure to fill in:
 {{code language="typescript"}}
 `**Step 2c:** Fill verdict template
 {
-  "contextId": "[context ID]",
+  "boundaryId": "[boundary ID]",
   "answer": [0-100 integer],
   "confidence": [0-100 integer],
-  "shortAnswer": "[complete sentence, ≤25 words]",
-  "keyFactors": [array of 3-5 items]
+  "shortAnswer": "[complete sentence, ≤25 words]"
 }`
 {{/code}}
 
@@ -266,7 +263,7 @@ Include explicit pre-output verification:
 
 {{code language="typescript"}}
 `### VALIDATION CHECKLIST
-[ ] All claims have unique IDs (SC1, SC2, etc.)
+[ ] All claims have unique IDs (AC1, AC2, etc.)
 [ ] Core claims separated from attribution
 [ ] Only 1-4 claims marked as "high" centrality
 [ ] 4-6 search queries included
@@ -310,13 +307,13 @@ const budgetModels = [
 {{code language="typescript"}}
 `## FAST MODE
 
-**Task**: Extract claims, generate queries. Skip complex reasoning.
+**Task**: Extract atomic claims, generate queries. Skip complex reasoning.
 
 **Example**:
 Input: "Expert X says Y is harmful"
 Output: 2 claims
-1. {id: "SC1", text: "Expert X made statements about Y", claimRole: "attribution", centrality: "low"}
-2. {id: "SC2", text: "Y is harmful", claimRole: "core", centrality: "high"}
+1. {id: "AC1", text: "Expert X made statements about Y", claimRole: "attribution", centrality: "medium"}
+2. {id: "AC2", text: "Y is harmful", claimRole: "core", centrality: "high"}
 
 **Rules**:
 - Separate WHO SAID from WHAT THEY SAID
@@ -349,9 +346,9 @@ When schema validation fails, provider-specific retry prompts include:
 === Claude Prefill Strings ===
 
 {{code language="typescript"}}
-getClaudePrefill('understand')    // '{"impliedClaim":'
+getClaudePrefill('extract_claims')    // '{"impliedClaim":'
 getClaudePrefill('extract_evidence') // '{"evidenceItems":['
-getClaudePrefill('verdict')       // '{"contextId":'
+getClaudePrefill('generate_verdicts')       // '{"id":'
 {{/code}}
 
 ----

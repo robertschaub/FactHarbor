@@ -12,13 +12,13 @@ flowchart TB
     end
 
     subgraph Step1["Step 1: Understand"]
-        UNDERSTAND["Detect input type\nExtract claims & dependencies\nIdentify analysis contexts\nAssign risk tiers"]
+        UNDERSTAND["Detect input type\nExtract claims & dependencies\nGate 1: Validation"]
         GATE1{{"Gate 1\nClaim Validation"}}
     end
 
     subgraph Step2["Step 2: Research (Iterative)"]
         DECIDE["Generate search\nqueries"]
-        SEARCH["Web Search\n(Google CSE / SerpAPI)"]
+        SEARCH["Web Search\n(multi-provider)"]
         EXTRACT["Fetch sources &\nextract evidence"]
         CHECK{{"Research\ncomplete?"}}
     end

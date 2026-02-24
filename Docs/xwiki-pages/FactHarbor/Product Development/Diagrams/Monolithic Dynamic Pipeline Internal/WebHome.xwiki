@@ -150,7 +150,7 @@ erDiagram
 
 = Differences from Other Pipelines =
 
-|= Aspect |= Orchestrated |= Mono Dynamic
+|= Aspect |= ClaimAssessmentBoundary |= Mono Dynamic
 | Schema | Canonical fixed | Flexible
 | UI | Jobs page | Dynamic viewer
 | Fallback | Default | None

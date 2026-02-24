@@ -23,6 +23,10 @@ flowchart TB
     subgraph SEARCH["Search Providers"]
         CSE["Google CSE"]
         SERP["SerpAPI"]
+        BRAVE["Brave"]
+        WIKI["Wikipedia"]
+        SCHOLAR["Semantic Scholar"]
+        GFC["Google Fact Check"]
     end
 
     USER --> FH

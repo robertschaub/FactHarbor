@@ -35,6 +35,10 @@ flowchart TB
         MISTRAL_P["Mistral (Large, Small)"]
         GCSE["Google Custom Search Engine"]
         SERP["SerpAPI"]
+        BRAVE["Brave Search"]
+        WIKI["Wikipedia"]
+        SCHOLAR["Semantic Scholar"]
+        GFC["Google Fact Check"]
     end
 
     UI_LAYER --> ENGINE

@@ -45,7 +45,7 @@ Evidence and verdicts are protected by a **two-phase defence** system. Phase 1 o
 
 |= Step |= Type |= What It Filters
 | Source Reliability Weighting | Soft (scoring) | Domain credibility score (0.0-1.0) weights evidence strength in aggregation
-| Aggregation Pruning | Hard (code) | Removes tangential baseless claims, zero-weights tangential claims, prunes opinion-only KeyFactors, validates contestation factual basis
+| Aggregation Pruning | Hard (code) | Removes tangential baseless claims, zero-weights tangential claims, validates boundary congruence, validates contestation factual basis
 | Verdict Corrections | Hard (code) | Detects and corrects verdicts that contradict their own evidence
 
 == Source Reliability ==

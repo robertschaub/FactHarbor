@@ -393,9 +393,9 @@ Prompt examples must NEVER contain terms, phrases, or patterns from known test c
 === Environment Variables ===
 
 **Required**:
-* LLM provider API keys (ANTHROPIC_API_KEY, etc.)
-* Search provider keys (SERPAPI_API_KEY, etc.)
-* Internal keys (FH_ADMIN_KEY, FH_INTERNAL_RUNNER_KEY)
+* LLM provider API keys (##ANTHROPIC_API_KEY##, ##OPENAI_API_KEY##, etc.)
+* Search provider keys (##BRAVE_API_KEY##, ##SERPAPI_API_KEY##, ##GOOGLE_CSE_API_KEY##, etc.)
+* Internal keys (##FH_ADMIN_KEY##, ##FH_INTERNAL_RUNNER_KEY##)
 
 **Optional**:
 * Feature flags (UCM: ##pipeline.deterministic##, ##search.enabled##)

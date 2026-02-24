@@ -3,10 +3,10 @@
 {{mermaid}}
 flowchart LR
     subgraph Tasks["Pipeline Tasks"]
-        UNDERSTAND["Understand\n(budget)"]
-        EXTRACT["Extract Evidence\n(budget)"]
-        REFINE["Context Refinement\n(standard)"]
-        VERDICT["Verdict Generation\n(premium)"]
+        UNDERSTAND["Claim Extraction\n(Pass 1: Haiku)"]
+        EXTRACT["Evidence Research\n(Pass 2: Sonnet)"]
+        REFINE["Boundary Clustering\n(Sonnet)"]
+        VERDICT["Verdict Debate\n(Sonnet/Opus)"]
     end
 
     subgraph Tiering["Model Tiering"]

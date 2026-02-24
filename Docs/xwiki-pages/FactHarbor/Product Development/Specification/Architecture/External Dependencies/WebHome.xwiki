@@ -38,10 +38,14 @@ For detailed provider model mapping, tiered routing configuration, and implement
 == Search Providers ==
 
 |= Provider |= Role |= Credentials Required
-| **Google Custom Search Engine** | Primary search | ##GOOGLE_CSE_API_KEY##, ##GOOGLE_CSE_ID##
-| **SerpAPI** | Fallback | ##SERPAPI_API_KEY##
+| **Google CSE** | Primary search | ##GOOGLE_CSE_API_KEY##, ##GOOGLE_CSE_ID##
+| **SerpAPI** | Primary search | ##SERPAPI_API_KEY##
+| **Brave** | Primary search | ##BRAVE_API_KEY##
+| **Wikipedia** | Supplementary | (none required)
+| **Semantic Scholar** | Supplementary | (none required)
+| **Google Fact Check** | Supplementary | ##GOOGLE_FACTCHECK_API_KEY##
 
-**Auto mode** (default): Tries Google CSE first; falls back to SerpAPI on failure. Configurable via ##SearchConfig.provider## (##"auto"##, ##"google-cse"##, or ##"serpapi"##).
+**Auto mode** (default): Prioritizes primary providers (Google CSE, SerpAPI, Brave) based on priority and availability. Supplementary providers (Wikipedia, Semantic Scholar, Google Fact Check) are always executed if enabled to provide deep-domain grounding. Configurable via ##SearchConfig.provider## (##"auto"## or explicit provider key).
 
 == Content Extraction ==
 
