@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-POC with two apps:
+Two apps:
 - `apps/api` — ASP.NET Core API (.NET 8, SQLite). Run: `cd apps/api && dotnet watch run` (port 5000).
 - `apps/web` — Next.js app (UI + analysis pipeline). Run: `cd apps/web && npm run dev` (port 3000).
 

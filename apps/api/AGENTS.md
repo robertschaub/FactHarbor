@@ -29,7 +29,7 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 
 - **No EF migrations.** DB is auto-created via `db.Database.EnsureCreated()` in `Program.cs`.
 - **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for history/audit. Never write to DbContext directly from controllers.
-- **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`. This is a shared-secret POC mechanism, not full AuthN/AuthZ.
+- **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`. This is a shared-secret mechanism, not full AuthN/AuthZ.
 - **RunnerClient has built-in retry.** Exponential backoff with jitter.
 
 ## Configuration (appsettings)
