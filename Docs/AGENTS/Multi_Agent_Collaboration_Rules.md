@@ -594,9 +594,10 @@ File naming: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`
 
 ### 5.3 Input Neutrality
 
-- Questions and equivalent statements MUST yield identical analysis
-- Normalize questions to statements before any analysis
-- Tolerance: verdict difference < 4%
+- Questions and equivalent statements MUST yield identical analysis outcomes
+- LLM-first equivalence: Raw user input passed directly to Stage 1; LLM handles semantic equivalence without deterministic normalization
+- Phrasing (question vs statement) must NOT affect research depth or verdict structure
+- Tolerance: verdict difference <= 4% (due to LLM stochasticity)
 
 ### 5.4 Pipeline Integrity
 

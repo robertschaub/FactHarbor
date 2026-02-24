@@ -27,7 +27,7 @@ Filters and scores extracted evidence items before they are used for verdict gen
 *   **Filtering**: Recommends filtering items that lack concrete relevance or factual basis.
 
 ### 2.3 Context Similarity Analysis (CONTEXT_REFINE / CLUSTER Stage)
-Determines when analytical frames (ClaimAssessmentBoundaries or legacy AnalysisContexts) are semantically equivalent and should be merged.
+Determines when analytical frames (ClaimAssessmentBoundaries) are semantically equivalent and should be merged.
 *   **Task**: Compare two frames and compute a similarity score.
 *   **Decision**: Recommends merging if similarity exceeds thresholds.
 *   **Normalization**: Suggests a canonical name for the merged frame.
