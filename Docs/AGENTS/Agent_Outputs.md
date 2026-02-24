@@ -23,6 +23,19 @@ Agents: append your output below this header using the unified template from AGE
 **Learnings:** yes (summary: Research summaries like the Stammbach/Ash analysis are invaluable for providing the "why" behind complex adversarial architectures).
 
 ---
+### 2026-02-24 | Lead Developer | Gemini CLI | Improve Report Quality (B-6/B-7 Integration)
+**Task:** Improve report quality by surfacing missing B-6 (Verifiability) and B-7 (Misleadingness) backend data to the user, and solving the Aggregate Analysis Verdict Problem.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts`, `Docs/WIP/Report_Quality_Improvement_2026-02-24.md` (created)
+**Key decisions:**
+- Exposed B-7 `misleadingness` flags and tooltips in both the Next.js UI and the HTML export.
+- Surfaced B-6 `verifiability` chips alongside Harm Potential.
+- Modified `VERDICT_NARRATIVE` prompt to explicitly require the LLM to highlight framing manipulation in the `keyFinding`.
+**Open items:** Implement Stage 6 TIGERScore Eval; consider visual sparklines for truth ranges.
+**Warnings:** None.
+**For next agent:** Backend validation data is useless if the UI drops it. Always cross-reference schema fields against `page.tsx` rendering logic when reviewing new pipeline stages.
+**Learnings:** No.
+
+---
 ### 2026-02-24 | Senior Developer | Gemini CLI | Documentation Modernization (Phase 3)
 **Task:** Modernize obsolete documentation, replace historical markers with up-to-date specs, and archive legacy pages.
 **Files touched:**

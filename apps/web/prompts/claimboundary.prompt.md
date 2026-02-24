@@ -908,7 +908,7 @@ Given the final claim verdicts, weighted aggregation results, and boundary infor
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - `headline`: One sentence capturing the overall finding.
 - `evidenceBaseSummary`: Quantitative summary — e.g., "14 evidence items from 9 sources across 3 analytical perspectives."
-- `keyFinding`: The main synthesis in 2–3 sentences. What does the evidence show? This is the "so what."
+- `keyFinding`: The main synthesis in 2–3 sentences. What does the evidence show? This is the "so what." If the underlying facts are true but the overall framing or conclusion of the input is misleading, explicitly state this mismatch here.
 - `boundaryDisagreements`: Only include if boundaries meaningfully diverge. Explain where and why. Omit this field entirely if there is only one boundary or boundaries agree.
 - `limitations`: What the analysis could NOT determine. Be honest about evidence gaps.
 - Keep the narrative concise. Avoid repeating individual claim details — synthesize.

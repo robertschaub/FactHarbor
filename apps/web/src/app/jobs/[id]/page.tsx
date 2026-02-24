@@ -1016,8 +1016,8 @@ export default function JobPage() {
                     // CB pipeline: inject claimText from understanding.atomicClaims
                     const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
                     const matched = atomicClaims.find((ac: any) => ac.id === cv.claimId);
-                    const enrichedCv = matched?.statement && !cv.claimText
-                      ? { ...cv, claimText: matched.statement }
+                    const enrichedCv = matched
+                      ? { ...matched, ...cv, claimText: matched.statement || cv.claimText }
                       : cv;
                     return (
                       <ClaimCard
@@ -1975,6 +1975,7 @@ function ClaimCard({
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         {claim.harmPotential === "high" && <Badge bg="#ffebee" color="#c62828">⚠️ High Harm</Badge>}
+        {claim.verifiability && <Badge bg="#f3e5f5" color="#6a1b9a">🔍 Verifiability: {claim.verifiability.toUpperCase()}</Badge>}
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
@@ -1997,6 +1998,11 @@ function ClaimCard({
             title={getTriangulationTooltip(claim.triangulationScore)}
           >
             {getTriangulationIcon(claim.triangulationScore.level)} {claim.triangulationScore.level.toUpperCase()}
+          </Badge>
+        )}
+        {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
+          <Badge bg="#ffebee" color="#c62828" title={claim.misleadingnessReason}>
+            ⚠️ {claim.misleadingness.replace("_", " ").toUpperCase()}
           </Badge>
         )}
       </div>

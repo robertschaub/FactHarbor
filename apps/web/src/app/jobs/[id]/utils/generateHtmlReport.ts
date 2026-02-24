@@ -459,8 +459,11 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
       ${ac.centrality ? `<span class="chip chip-gray">Centrality: ${esc(ac.centrality)}</span>` : ""}
       ${ac.harmPotential ? `<span class="chip chip-gray">Harm potential: ${esc(ac.harmPotential)}</span>` : ""}
       ${ac.checkWorthiness ? `<span class="chip chip-gray">Check-worthiness: ${esc(ac.checkWorthiness)}</span>` : ""}
+      ${ac.verifiability ? `<span class="chip chip-gray">Verifiability: ${esc(ac.verifiability)}</span>` : ""}
       ${cv.isContested ? `<span class="chip chip-gray">Contested: yes</span>` : ""}
+      ${cv.misleadingness && cv.misleadingness !== "not_misleading" ? `<span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: ${esc(cv.misleadingness)}</span>` : ""}
       ${tri ? `<span class="chip chip-gray">Triangulation: ${esc(tri.level)} (${typeof tri.factor === "number" ? (tri.factor >= 0 ? "+" : "") + tri.factor.toFixed(1) : "—"})</span>` : ""}
+      ${cv.misleadingnessReason ? `<div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ ${esc(cv.misleadingnessReason)}</div>` : ""}
     </div>
     ${bfs.length > 0 ? buildBoundaryFindingsGrid(bfs) : ""}
     ${(cv.reasoning || challenges.length > 0) ? buildReasoningAndChallenges(cv.reasoning, challenges) : ""}
