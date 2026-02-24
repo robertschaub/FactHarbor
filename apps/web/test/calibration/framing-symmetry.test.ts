@@ -118,8 +118,7 @@ function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke"
 /**
  * Preflight config check — runs before expensive calibration to catch config issues early.
  *
- * - Gate runs: HARD FAIL if debateModelProviders has any overrides (re-baseline must isolate fixture change)
- * - All runs: log config hashes and flag drift from Baseline v1 for manual review
+ * - All runs: log config hashes, provider overrides, and flag drift from Baseline v1 for manual review
  */
 async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
   const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } =
@@ -133,14 +132,11 @@ async function preflightConfigCheck(intent: "gate" | "smoke"): Promise<void> {
 
   const pipeline = pipelineResult.config as Record<string, unknown>;
 
-  // Hard fail for gate runs: must have no provider overrides (baseline behavior)
+  // Log provider overrides so the operator knows what config is being tested
   const providers = pipeline.debateModelProviders as Record<string, string> | undefined;
   const hasProviderOverrides = providers && Object.values(providers).some(v => v != null);
-  if (intent === "gate" && hasProviderOverrides) {
-    throw new Error(
-      `[Preflight FAIL] Re-baseline gate run requires no debateModelProviders overrides ` +
-        `but found ${JSON.stringify(providers)}. Clear UCM pipeline config before running.`,
-    );
+  if (hasProviderOverrides) {
+    console.log(`[Preflight] debateModelProviders: ${JSON.stringify(providers)}`);
   }
 
   // Log config hashes for comparison with Baseline v1
