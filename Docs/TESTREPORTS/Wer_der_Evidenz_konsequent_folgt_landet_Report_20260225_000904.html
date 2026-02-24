@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="𝐅𝐚𝐤𝐭𝐞𝐧 𝐮𝐧𝐝 𝐅𝐚𝐥𝐬𝐜𝐡𝐢𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧𝐞𝐧 𝐬𝐢𝐧𝐝 𝐩𝐨𝐥𝐢𝐭𝐢𝐬𝐜𝐡 𝐧𝐢𝐜𝐡𝐭 𝐠𝐥𝐞𝐢𝐜𝐡 𝐯𝐞𝐫𝐭𝐞𝐢𝐥𝐭.
+Wer der Evidenz konsequent folgt, landet deshalb nicht automatisch „in der Mitte“, sondern dort, wo die Belege hinführen.
+Das kann wie eine politische Tendenz wirken">
+<meta name="fh:verdict" content="MOSTLY-TRUE">
+<meta name="fh:truth" content="75">
+<meta name="fh:confidence" content="76">
+<meta name="fh:date" content="2026-02-24">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1-mini, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — 𝐅𝐚𝐤𝐭𝐞𝐧 𝐮𝐧𝐝 𝐅𝐚𝐥𝐬𝐜𝐡𝐢𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧𝐞𝐧 𝐬𝐢𝐧𝐝 𝐩𝐨𝐥𝐢𝐭𝐢𝐬𝐜𝐡 𝐧𝐢𝐜𝐡𝐭 𝐠𝐥𝐞𝐢𝐜𝐡 𝐯𝐞𝐫𝐭𝐞𝐢𝐥𝐭.
+Wer der Evidenz konsequent folgt, landet deshalb nicht automatisch „in der Mitte“, sondern dort, wo die Belege hinführen.
+Das kann wie eine politische Tendenz wirken</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: e79e8ed424904e6ba2700416839ffc98</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-24 21:45 UTC</div>
+      <div>Completed: 2026-02-24 21:59 UTC</div>
+      <div>Duration: ~13 min 36 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">𝐅𝐚𝐤𝐭𝐞𝐧 𝐮𝐧𝐝 𝐅𝐚𝐥𝐬𝐜𝐡𝐢𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧𝐞𝐧 𝐬𝐢𝐧𝐝 𝐩𝐨𝐥𝐢𝐭𝐢𝐬𝐜𝐡 𝐧𝐢𝐜𝐡𝐭 𝐠𝐥𝐞𝐢𝐜𝐡 𝐯𝐞𝐫𝐭𝐞𝐢𝐥𝐭.
+Wer der Evidenz konsequent folgt, landet deshalb nicht automatisch „in der Mitte“, sondern dort, wo die Belege hinführen.
+Das kann wie eine politische Tendenz wirken</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">article</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1-mini, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE</span>
+    <span class="chip chip-gray">32 LLM calls</span>
+    <span class="chip chip-gray">15 searches</span>
+    <span class="chip chip-gray">2 claims · 6 boundaries · 73 evidence items · 26 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-t">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge t-color">MOSTLY-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">Die verfügbare Evidenz zeigt eine überwiegend asymmetrische Verteilung von Desinformation und Falschinformationen mit st…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value t-color">75%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:75%;background:#22543d"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">76%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:76%;background:#4a5568"></div></div>
+      </div>
+      
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">Die verfügbare Evidenz zeigt eine überwiegend asymmetrische Verteilung von Desinformation und Falschinformationen mit stärkerer Konzentration in bestimmten politischen Spektren, insbesondere im rechten und rechtsextremen Bereich. YouTube-Algorithmus-Analysen und parlamentarische Untersuchungen stützen diese Beobachtung deutlich, während Verfassungsschutzberichte ein gemischtes Bild mit Extremismus auf beiden Seiten des politischen Spektrums zeigen. Die Kernaussage wird durch die Evidenz mehrheitlich bestätigt, jedoch zeigen sich methodische Herausforderungen bei der präzisen Quantifizierung und Unterschiede in der Interpretation je nach Untersuchungsrahmen.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Die Behauptung, dass Fakten und Falschinformationen politisch nicht gleich verteilt sind, wird durch die Mehrheit der Evidenz gestützt, bleibt jedoch in einigen Bereichen umstritten.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">Die Analyse stützt sich auf 73 Evidenzeinheiten aus 6 analytischen Perspektiven, darunter YouTube-Algorithmus-Analysen, Verfassungsschutzbeobachtungen, parlamentarische Untersuchungen, empirische Medienforschung, Konsens-Koalitionsanalysen und Desinformations-Wahrnehmungsbefragungen.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">Die verfügbare Evidenz zeigt eine überwiegend asymmetrische Verteilung von Desinformation und Falschinformationen mit stärkerer Konzentration in bestimmten politischen Spektren, insbesondere im rechten und rechtsextremen Bereich. YouTube-Algorithmus-Analysen und parlamentarische Untersuchungen stützen diese Beobachtung deutlich, während Verfassungsschutzberichte ein gemischtes Bild mit Extremismus auf beiden Seiten des politischen Spektrums zeigen. Die Kernaussage wird durch die Evidenz mehrheitlich bestätigt, jedoch zeigen sich methodische Herausforderungen bei der präzisen Quantifizierung und Unterschiede in der Interpretation je nach Untersuchungsrahmen.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">YouTube-Algorithmus-Analyse und EU-Parlament-Untersuchungen zeigen klare Unterstützung für eine asymmetrische Verteilung von Desinformation, während Verfassungsschutz-Extremismusanalysen ein gemischteres Bild mit Extremismus und Desinformation auf verschiedenen Seiten des politischen Spektrums dokumentieren.</div>
+        <div class="disagreement-item">Empirische Medienforschung, Konsens-Koalitionsanalysen und Desinformations-Wahrnehmungsbefragungen lieferten keine direkten Evidenzbeiträge zur Bewertung dieser spezifischen Behauptung, was auf unterschiedliche Forschungsschwerpunkte und methodische Grenzen hinweist.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">Die Analyse konnte keine abschließende Quantifizierung der exakten Verteilung von Falschinformationen über das gesamte politische Spektrum vornehmen. Drei analytische Perspektiven (Fake News Medienkonsum, Konsens-Koalitionsanalyse, Desinformations-Wahrnehmungsbefragungen) lieferten keine verwertbare Evidenz für diese spezifische Behauptung. Zudem fehlen länderübergreifende Vergleichsdaten und longitudinale Studien, die zeitliche Entwicklungen systematisch erfassen. Die zweite untersuchte Behauptung (AC_02) konnte aufgrund unzureichender Evidenz nicht verifiziert werden.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 2</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Fakten und Falschinformationen sind politisch nicht gleich verteilt</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">75%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">76%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: potentially_misleading</span>
+      <span class="chip chip-gray">Triangulation: moderate (+0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ While the claim is substantially true (75%) regarding documented asymmetries in disinformation production and deployment, it is potentially misleading because: (1) It implies a simple binary or unidirectional distribution when evidence shows multi-sided engagement across the political spectrum with varying intensities; (2) The phrasing &#39;Fakten und Falschinformationen&#39; (facts and misinformation) creates a false symmetry suggesting facts are also politically distributed, when the evidence primarily addresses misinformation distribution; (3) Without specifying whether &#39;distribution&#39; refers to production, deployment, consumption, or impact, the claim allows audiences to infer broader conclusions than the evidence supports. A more precise claim would specify &#39;production and deployment of disinformation show measurable asymmetries across political actors, with documented increases in right-wing extremist activity, though multiple ideological groups engage in such activities.&#39;</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · YouTube-Algorithmus-Analyse</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">4 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:85%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Verfassungsschutz Extremismus</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">72%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">78%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:72%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_21 · EU-Parlament Einflussnahme</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">68%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">65%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:68%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_19 · Fake News Medienkonsum</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_11 · Konsens-Koalitionsanalyse</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_15 · Desinformations-Wahrnehmungsbefragungen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(5 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">The reconciled verdict maintains substantial support for the claim &#39;Fakten und Falschinformationen sind politisch nicht gleich verteilt&#39; while incorporating valid challenges and acknowledging evidentiary limitations.
+
+**Challenge Assessment:**
+
+**CP_AC_01_0 (Independence Concern - PARTIALLY ACCEPTED):** The challenge correctly identifies concentration in primary sources (YouTube studies, Verfassungsschutz reports). However, these sources represent distinct institutional actors with different methodologies: state security analysis (Verfassungsschutz), algorithmic research (YouTube studies), and supranational investigation (EU Parliament). While some clustering exists, the sources provide complementary rather than redundant perspectives. Confidence reduced by 6 points to reflect this legitimate concern about source diversity.
+
+**CP_AC_01_1 (Production vs. Distribution Assumption - ACCEPTED):** This is the most substantive challenge. The advocate verdict acknowledges this limitation (&#39;lacks comprehensive quantitative analysis of total volume or consumption patterns&#39;) but may not have sufficiently weighted it. The evidence strongly documents asymmetric *production* and *deployment* by state actors and extremist groups, but the inferential leap to overall *distribution* (including consumption, belief, and impact) requires assumptions. Truth percentage reduced by 3 points to reflect this gap between documented production asymmetry and claimed distribution asymmetry.
+
+**CP_AC_01_2 (Missing Evidence - REJECTED):** This challenge cites six evidence IDs, but three (EV_001, EV_002, EV_003) are invalid/hallucinated. The three valid IDs (EV_1771973489200, EV_1771973489201, EV_1771973489205) were not cited in the advocate verdict, suggesting they may not directly address the claim or were assessed as lower quality. While the absence of CB_19, CB_11, and CB_15 evidence is a legitimate gap (already noted by the advocate), this challenge provides no new valid evidence to contradict the verdict. The gap is acknowledged but does not warrant adjustment beyond what CP_AC_01_1 already addresses. No adjustment made based on this challenge.
+
+**CP_AC_01_3 (Multi-Sided Complexity - PARTIALLY ACCEPTED):** The advocate verdict explicitly addresses this: &#39;disinformation exists across the spectrum but with measurable asymmetries.&#39; The evidence documents both multi-sided engagement AND quantitative asymmetries (24% increase in right-wing extremist personnel, 50% rise in related crimes). The challenge correctly notes complexity but does not invalidate the asymmetry finding. The advocate&#39;s 78% already reflects this nuance. However, the challenge validly questions whether the asymmetry is sufficiently proven given the multi-sided nature. No further adjustment needed as this concern is already incorporated in the advocate&#39;s reasoning and the adjustment from CP_AC_01_1.
+
+**CP_AC_01_4 (Evidence Quality Asymmetry - REJECTED):** This challenge cites three invalid evidence IDs (EV_001, EV_002, EV_003) as examples of &#39;lower-quality studies.&#39; The valid evidence cited (EV_1771973354889, EV_1771973517777, EV_1771973530731) actually supports the claim. The challenge conflates &#39;absence of contradicting evidence&#39; with &#39;bias from evidence quality asymmetry,&#39; but provides no valid contradicting evidence to demonstrate such bias. The advocate verdict appropriately notes the absence of certain evidence types as a limitation. No adjustment warranted.
+
+**Self-Consistency Assessment:** Perfect stability (78/78/78, spread=0) indicates the advocate&#39;s analytical framework is robust and reproducible. This supports maintaining high confidence despite challenges.
+
+**Final Synthesis:** The claim receives strong support from documented asymmetries in state-level operations (CB_03: 85% truth, 90% confidence) and extremist activity (CB_07: 72% truth, 78% confidence, with quantified right-wing growth). The primary valid concern is the inferential gap between production/deployment asymmetry (well-documented) and overall distribution (partially inferred). The adjusted verdict reflects this by reducing truth percentage from 78% to 75% and confidence from 82% to 76%, acknowledging that while asymmetric production is clearly established, comprehensive distribution data across consumption and impact dimensions remains incomplete. The claim is supported but with appropriate epistemic humility regarding the production-to-distribution inference.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Partially accepted. Source concentration exists but represents complementary institutional perspectives (state security, algorithmic research, supranational investigation) rather than pure redundancy. Confidence reduced to reflect legitimate concern about source diversity.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. The inferential leap from documented production/deployment asymmetry to overall distribution asymmetry requires assumptions not fully supported by consumption and impact data. Truth percentage reduced to reflect this gap.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. Challenge cites three hallucinated evidence IDs (EV_001, EV_002, EV_003). While the absence of CB_19, CB_11, CB_15 evidence is a legitimate gap already noted by the advocate, this challenge provides no new valid evidence to warrant additional adjustment beyond CP_AC_01_1.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Partially accepted in principle but no additional adjustment needed. The advocate verdict already explicitly addresses multi-sided complexity while documenting quantitative asymmetries. The concern is valid but already incorporated in the advocate&#39;s 78% assessment and the adjustment from CP_AC_01_1.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. Challenge cites three hallucinated evidence IDs as examples of &#39;lower-quality studies.&#39; Provides no valid contradicting evidence to demonstrate bias from evidence quality asymmetry. The advocate appropriately notes absence of certain evidence types as a limitation.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_02</span>
+    <span class="section-badge">2 of 2</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Wer der Evidenz konsequent folgt, landet nicht automatisch in der politischen Mitte</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val unv-color">50%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">0%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: low</span>
+      <span class="chip chip-gray">Check-worthiness: medium</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      
+      
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+      
+    </div>
+    
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">Insufficient evidence to produce a reliable verdict. This claim did not meet the minimum evidence requirements (items or source type diversity).</div>
+      </div>
+      
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_19<br><span style="font-weight:400;font-size:10px">Fake News Medienkonsum</span></th><th>CB_21<br><span style="font-weight:400;font-size:10px">EU-Parlament Einflussnahme</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">YouTube-Algorithmus-Analyse</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">Verfassungsschutz Extremismus</span></th><th>CB_11<br><span style="font-weight:400;font-size:10px">Konsens-Koalitionsanalyse</span></th><th>CB_15<br><span style="font-weight:400;font-size:10px">Desinformations-Wahrnehmungsbefragungen</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Fakten und Falschinformationen</td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-high">10</span></td><td><span class="cell-val cell-high">9</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-high">6</span></td></tr><tr><td class="claim-col">AC_02 — Wer der Evidenz konsequent fol</td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-mid">4</span></td><td><span class="cell-val cell-high">9</span></td><td><span class="cell-val cell-zero">0</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_19</span><span class="ba-name">Empirische Forschung zu Medienkonsum und Fake News Verbreitung + Beobachtung von Medienverhalten während US-Präsidentschaftswahl 2016</span><span class="ba-ev-count">29 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Empirische Forschung</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">International, mit Fokus auf USA und Großbritannien</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2016 bis Veröffentlichung</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.915</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Empirische Forschung zu Medienkonsum, Verbreitung von Fake News in sozialen Medien und Rolle von Vertrauen in Institutionen; Beobachtung von Medienverhalten, Fake News und Medienberichterstattung während der US-Präsidentschaftswahl 2016</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_21</span><span class="ba-name">Parlamentarische Untersuchung und Entschließung zu Einflussnahme in der EU + Inhaltsanalyse öffentlich-rechtlicher und privatwirtschaftlicher Nachrichtenformate + KI-gestützte Inhaltsanalyse von Social-Media-Kurzvideos</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Parlamentarische Untersuchung und Entschließung</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Europäische Union</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2022-2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.962</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Parlamentarische Entschließung und institutionelle Maßnahmen basierend auf Sonderausschussarbeit zur Untersuchung von Einflussnahme und Desinformation in der EU; Merged: Systematische Inhaltsanalyse von Nachrichtenbeiträgen öffentlich-rechtlicher und privatwirtschaftlicher Medien mit Analyse von Positionierung, Parteienrepräsentation und Themenpräsenz; KI-gestützte Inhaltsanalyse von Kurzvideos auf Instagram und TikTok mit ergänzenden Befragungen und Fokusgruppen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Automatisierte Analyse von YouTube-Empfehlungsalgorithmen + Qualitative Inhaltsanalyse deutschsprachiger Desinformationsvideos + Kritische Analyse systemischer Risiken digitaler Plattformen + Sicherheitspolitische Analyse staatlicher Beeinflussungsaktivitäten</span><span class="ba-ev-count">10 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Automatisierte Aufzeichnung mit manueller Inhaltsanalyse</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Februar 2021</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Automatisierte Aufzeichnung und manuelle Analyse von YouTube-Empfehlungen mit Fokus auf Desinformation und algorithmische Verstärkung; Qualitative Inhaltsanalyse von als desinformativ eingestuften Videos bezüglich Art, Grad, Zielgruppe und Strategien der Desinformation; Merged: Kritische Analyse der gesellschaftlichen Auswirkungen systemischer Risiken auf Online-Plattformen im Kontext demokratischer Prozesse und öffentlichen Diskurses; Sicherheitspolitische und nachrichtendienstliche Analyse von Beeinflussungsaktivitäten, Desinformationskampagnen und Spionage durch staatliche Akteure</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Verfassungsschutzbeobachtung extremistischer Akteure + Interdisziplinäre Forschung zu Desinformation und Extremismus im Netz + Politikwissenschaftliche Analyse internationaler Veränderungen und Außenpolitik + Theoretische Analyse politischer Bildung und Kompetenzmodelle</span><span class="ba-ev-count">13 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Verfassungsschutzbeobachtung und Analyse</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2023-2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.912</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Verfassungsschutzbeobachtung und Analyse von Extremismusmustern, Mobilisierungsstrategien und Desinformationsverbreitung durch verschiedene extremistische Akteure; Interdisziplinäre Forschungsreihen mit Expertenbeiträgen zur Analyse von Desinformationstypen, Verbreitungsformen, Hassrede und Radikalisierung aus psychologischer, politischer, anthropologischer und technologischer Perspektive; Merged: Politikwissenschaftliche Analyse internationaler Veränderungen, Herausforderungen und Empfehlungen für deutsche Außenpolitik; Theoretische Analyse von Politikdidaktik, Kompetenzmodellen und Anforderungen politischer Bildung</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_11</span><span class="ba-name">Historisch-institutionelle Analyse von Konsens und Koalitionsstrukturen + Beobachtung gegenwärtiger Diskursverschiebungen und Parteienreaktionen + Philosophisch-theoretische Kritik des Konsensbegriffs + Literaturanalyse zur politischen Bildung von Kindern</span><span class="ba-ev-count">9 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Historisch-institutionelle Analyse</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Bundesrepublik Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1949-1985, Nachkriegszeit</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.932</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Historische Analyse der Bundesratsgesetzgebung, Koalitionsstrukturen, Konsenspraxis und deren politische Konsequenzen im föderalen System; Beobachtung von Diskursverschiebungen und Analyse der Reaktionen von Mitteparteien auf rechtsextreme Positionen in der Gegenwart; Merged: Philosophische und theoretische Analyse und Kritik des Konsensbegriffs in der Politik und pluralistischer Demokratietheorie; Forschungsbericht basierend auf Literaturanalyse von Studien zur politischen Bildung, Entwicklung politischer Vorstellungen, pädagogischen Interventionen und politischer Sozialisation von Kindern im Grundschulalter</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_15</span><span class="ba-name">Repräsentative Befragungen zur Wahrnehmung von Desinformation nach politischer Ausrichtung + Repräsentative Befragung zur politischen Selbstverortung von Journalisten + Repräsentative Befragungen zu rechtsextremen Einstellungen und Verschwörungsgläubigkeit + Quantitative Inhaltsanalyse von Political Influencern</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Repräsentative Befragung</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2015-2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.935</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Repräsentative und telefonische Befragungen zur Wahrnehmung von Desinformationsquellen und Fake News in verschiedenen Medien nach politischer Ausrichtung; Repräsentative Online-Befragung von Journalisten zur politischen Selbstverortung; Merged: Repräsentative Befragungen (Mitte-Studie) zu rechtsextremen Einstellungen, politischer Selbstverortung, Verschwörungsgläubigkeit, Populismus und autoritären Positionen; Quantitative Inhaltsanalyse von Beiträgen von Political Influencern auf Instagram und TikTok mit Analyse von Desinformation und Kommunikationsstrategien nach politischer Ausrichtung</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">73 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(35 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323800</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In den Nachrichtenformaten von ARD, ZDF und Deutschlandradio nahmen die Berichte insgesamt eher eine sozialstaatliche als eine marktliberale Perspektive ein, und in sieben der neun Formate überwogen liberal-progressive die konservativen Perspektiven.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.stiftung-mercator.de/de/pressemitteilungen/neue-studie-der-uni-mainz-wie-vielfaeltig-und-ausgewogen-berichten-nachrichtenformate-des-oeffentlich-rechtlichen-rundfunks/" target="_blank" rel="noopener noreferrer">Neue Studie der Uni Mainz: Wie vielfältig und ausgewogen berichten Nachrichtenformate des öffentlich-rechtlichen Rundfunks? – Stiftung Mercator</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323801</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In acht der neun untersuchten öffentlich-rechtlichen Formate sowie in allen untersuchten Vergleichsmedien stellten die Redaktionen sowohl Parteien links der Mitte als auch Parteien rechts der Mitte überwiegend negativ dar.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.stiftung-mercator.de/de/pressemitteilungen/neue-studie-der-uni-mainz-wie-vielfaeltig-und-ausgewogen-berichten-nachrichtenformate-des-oeffentlich-rechtlichen-rundfunks/" target="_blank" rel="noopener noreferrer">Neue Studie der Uni Mainz: Wie vielfältig und ausgewogen berichten Nachrichtenformate des öffentlich-rechtlichen Rundfunks? – Stiftung Mercator</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323802</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Populistische und radikale Kräfte erzielen auf Instagram und TikTok geringere Kommunikationserfolge als moderat-demokratische Akteur:innen, wobei populistische und extremistische Akteur:innen besonders erfolgreich ihre Botschaften in algorithmisch ausgespielten Social Media Feeds platzieren.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bertelsmann-stiftung.de/fileadmin/files/user_upload/dpz_how_to_sell_democracy_online__fast__NEU.pdf" target="_blank" rel="noopener noreferrer">dpz how to sell democracy online  fast  NEU</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323803</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">YouTubes Empfehlungsalgorithmen machen öffentlich-rechtliche und etablierte Medienanbieter überdurchschnittlich oft sichtbar, während nur 6 Prozent der untersuchten empfohlenen Inhalte aus potenziell desinformativen Kanälen stammten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/NeueWebsite_0120/Zum_Nachlesen/YouTube-Studie_EmpfehlungenKrisenzeiten_210224.pdf" target="_blank" rel="noopener noreferrer">YouTube Studie EmpfehlungenKrisenzeiten 210224</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323804</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Desinformationen werden durch verschiedene Akteur:innen verbreitet, darunter ausländische staatliche Akteur:innen, politische Parteien, Aktivist:innen und Influencer:innen, mit Motiven von politischer Einflussnahme bis zu kommerziellen Interessen in der digitalen Aufmerksamkeitsökonomie.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dsc.bund.de/DSC/DE/Aktuelles/studien/AuswirkungenSystemischerRisiken.pdf?__blob=publicationFile&amp;v=3" target="_blank" rel="noopener noreferrer">AuswirkungenSystemischerRisiken</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323805</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Desinformationen auf YouTube treten in vielgestaltiger Form auf und eint sie die meist rechtspopulistische Ideologie sowie ein begrenztes Spektrum an Feindbildern.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/NeueWebsite_0120/Zum_Nachlesen/YouTube-Studie_EmpfehlungenKrisenzeiten_210224.pdf" target="_blank" rel="noopener noreferrer">YouTube Studie EmpfehlungenKrisenzeiten 210224</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323806</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Zu den Themen Covid-19-Pandemie und Klimawandel enthielten die YouTube-Empfehlungen zu 14 bis 15 Prozent potenziell desinformative Inhalte, deutlich mehr als zum Thema Migration.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/NeueWebsite_0120/Zum_Nachlesen/YouTube-Studie_EmpfehlungenKrisenzeiten_210224.pdf" target="_blank" rel="noopener noreferrer">YouTube Studie EmpfehlungenKrisenzeiten 210224</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323807</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Ausgehend von desinformativen Startpunkten enthielten die analysierten YouTube-Empfehlungsbäume deutlich mehr potenziell desinformative Inhalte im Vergleich zu neutralen Startpunkten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/NeueWebsite_0120/Zum_Nachlesen/YouTube-Studie_EmpfehlungenKrisenzeiten_210224.pdf" target="_blank" rel="noopener noreferrer">YouTube Studie EmpfehlungenKrisenzeiten 210224</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323808</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Eine konfliktorientierte Verschiebung des öffentlichen Diskurses durch digitale Medien begünstigt einen diskursiven Stil, der durch Gruppenzugehörigkeiten, Konflikte und moralisierende Sprache geprägt ist, von dem Desinformationen profitieren.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dsc.bund.de/DSC/DE/Aktuelles/studien/AuswirkungenSystemischerRisiken.pdf?__blob=publicationFile&amp;v=3" target="_blank" rel="noopener noreferrer">AuswirkungenSystemischerRisiken</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973323809</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Bestimmte Themen (Wirtschaftspolitik) und Parteien (SPD, Grüne) dominierten die Medienberichterstattung in den öffentlich-rechtlichen Nachrichtenformaten im Untersuchungszeitraum.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.stiftung-mercator.de/de/pressemitteilungen/neue-studie-der-uni-mainz-wie-vielfaeltig-und-ausgewogen-berichten-nachrichtenformate-des-oeffentlich-rechtlichen-rundfunks/" target="_blank" rel="noopener noreferrer">Neue Studie der Uni Mainz: Wie vielfältig und ausgewogen berichten Nachrichtenformate des öffentlich-rechtlichen Rundfunks? – Stiftung Mercator</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973354889</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Beeinflussungsaktivitäten und Desinformation werden von verschiedenen staatlichen und staatlich beauftragten Akteuren gezielt eingesetzt, um auf freie Debatten und demokratische Prozesse Einfluss zu nehmen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.newsd.admin.ch/newsd/message/attachments/88281.pdf" target="_blank" rel="noopener noreferrer">88281</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973354890</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Staaten, welche die bestehenden Machtverhältnisse mit Gewalt verteidigen oder verändern wollen, agieren mehr als früher in der Grauzone zwischen bewaffnetem Konflikt und Frieden und setzen gezielt Mittel hybrider Konfliktführung ein, zu denen Desinformation gehört.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.newsd.admin.ch/newsd/message/attachments/88281.pdf" target="_blank" rel="noopener noreferrer">88281</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973354891</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Rechtsextremisten nutzen gezielt Krisen und aktuelle Ereignisse, um ihre eigenen Narrative zu verbreiten und instrumentalisieren diese für ihre politischen Ziele.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2024-06-18-verfassungsschutzbericht-2023.pdf?__blob=publicationFile" target="_blank" rel="noopener noreferrer">2024 06 18 verfassungsschutzbericht 2023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973354892</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Linksextremisten versuchen gezielt, demokratische Diskurse in ihrem Sinne zu verschieben und setzen ihre Bemühungen fort, Protestbewegungen zu beeinflussen mit dem Ziel, deren Protest- und Aktionsformen zu radikalisieren.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2024-06-18-verfassungsschutzbericht-2023.pdf?__blob=publicationFile" target="_blank" rel="noopener noreferrer">2024 06 18 verfassungsschutzbericht 2023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973354893</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fremde Mächte wie Russland, China und Iran setzen ihre Nachrichtendienste umfassend zur Spionage ein und versuchen, illegitim Einfluss auf das Gemeinwesen auszuüben, indem sie gezielt Desinformation verbreiten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2024-06-18-verfassungsschutzbericht-2023.pdf?__blob=publicationFile" target="_blank" rel="noopener noreferrer">2024 06 18 verfassungsschutzbericht 2023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973354894</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Islamisten, säkular-palästinensische Extremisten, türkische Rechtsextremisten sowie deutsche und türkische Linksextremisten treten aus ganz unterschiedlicher Motivation als Mobilisierungstreiber in Erscheinung und nutzen aktuelle Konflikte zur Verbreitung ihrer Narrative.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2024-06-18-verfassungsschutzbericht-2023.pdf?__blob=publicationFile" target="_blank" rel="noopener noreferrer">2024 06 18 verfassungsschutzbericht 2023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973374906</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Desinformation und Misinformation werden durch verschiedene Akteure mit unterschiedlichen Intentionen verbreitet, einschließlich bewusster Falschinformation, manipulativer politischer Werbung und Propaganda, die gezielt zur Beeinflussung eingesetzt werden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.lfk.de/fileadmin/PDFs/Publikationen/Studien/Typen-von-Desinformation-und-Misinformation/typen-von-desinformation-und-misinformation.pdf" target="_blank" rel="noopener noreferrer">typen von desinformation und misinformation</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973374907</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Jihadist_innen und Rechtsextreme verfolgen unterschiedliche Kommunikationsstrategien und Taktiken zur Verbreitung ihrer Inhalte im Netz, was auf eine politisch differenzierte Nutzung von Online-Plattformen hindeutet.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.isdglobal.org/wp-content/uploads/2018/10/ISD-Radicalisation-in-the-Network_Report_German_web.pdf" target="_blank" rel="noopener noreferrer">ISD Radicalisation in the Network Report German web</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973374908</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Desinformation wird durch verschiedene Verbreitungsformen und Strategien verbreitet, einschließlich individueller informeller und formeller Austausch, organisierter Verbreitung und koordiniertem unauthentischem Verhalten, was unterschiedliche politische Akteure betrifft.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.lfk.de/fileadmin/PDFs/Publikationen/Studien/Typen-von-Desinformation-und-Misinformation/typen-von-desinformation-und-misinformation.pdf" target="_blank" rel="noopener noreferrer">typen von desinformation und misinformation</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973402535</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Meinungen setzen Wissen voraus und werden erst durch Wissen fundiert. Mit Wissen kann man Interessen und Überzeugungen besser formulieren, besser mit anderen diskutieren und sich im Falle eines Konfliktes besser behaupten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pedocs.de/volltexte/2016/12009/pdf/Weisseno_et_al_2010_Konzepte_der_Politik_.pdf" target="_blank" rel="noopener noreferrer">Weisseno et al 2010 Konzepte der Politik </a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973402536</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Beteiligung am politischen Geschehen setzt Wissen um Möglichkeiten, um Verfahren und um die Akteure voraus. Schülerinnen und Schüler müssen lernen, Nachrichten zu lesen und ihre Zusammenhänge zu verstehen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pedocs.de/volltexte/2016/12009/pdf/Weisseno_et_al_2010_Konzepte_der_Politik_.pdf" target="_blank" rel="noopener noreferrer">Weisseno et al 2010 Konzepte der Politik </a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973433108</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der starke Konsensualismus der etablierten westdeutschen Politik führt zur Ausgrenzung alternativer Politik, da der Konsensdruck der Bundesländer die Parteien zwingt, sich auf einen breiten Konsens zu einigen, was alternative Positionen systematisch ausschließt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bpb.de/shop/zeitschriften/apuz/archiv/533519/mehrheitsfindung-im-foederalismus-thesen-zum-konsensualismus-der-westdeutschen-politik/" target="_blank" rel="noopener noreferrer">Mehrheitsfindung im Föderalismus. Thesen zum Konsensualismus der westdeutschen Politik | APuZ 35/1985 | bpb.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973433109</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der Konsens der traditionellen Parlamentsparteien (CDU, CSU, SPD, FDP) bewirkt die Ausgrenzung alternativer Politik, was zur Entstehung einer Fundamentalopposition gegen die Praxis der westdeutschen parlamentarischen Mehrheitsdemokratie führte.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bpb.de/shop/zeitschriften/apuz/archiv/533519/mehrheitsfindung-im-foederalismus-thesen-zum-konsensualismus-der-westdeutschen-politik/" target="_blank" rel="noopener noreferrer">Mehrheitsfindung im Föderalismus. Thesen zum Konsensualismus der westdeutschen Politik | APuZ 35/1985 | bpb.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973433110</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Parteien der politischen Mitte haben ihre Politik nach rechts verschoben, was zeigt, dass die Verfolgung von Konsens nicht zu einer stabilen Mittenpolitik führt, sondern zu Verschiebungen der politischen Positionen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.arl-net.de/system/files/pdf/2025-11/arl_journal_02_2025_online_gesamt_2.pdf" target="_blank" rel="noopener noreferrer">arl journal 02 2025 online gesamt 2</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973433111</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Die französische Philosophin Chantal Mouffe kritisiert: &#39;Jeder Konsens der Mitte ist das Ende der Politik&#39;, was darauf hindeutet, dass die Verfolgung von Mittenkonsens politische Alternativen und Debatten blockiert.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.klimafakten.de/kommunikation/kungelei-oder-klare-beweislage-was-ist-das-eigentlich-konsens" target="_blank" rel="noopener noreferrer">Kungelei oder klare Beweislage - was ist das eigentlich, &quot;Konsens&quot;? | klimafakten.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973449692</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Interventionen in der Grundschule können die Entwicklung von Kompetenzen und Einstellungen beeinflussen, einschließlich Unterrichtsinhalte, Unterrichtsformen und Mitwirkung im Schulleben</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2021/KJB_Br%C3%BCgelmann_Exp16KJB_06042021.pdf" target="_blank" rel="noopener noreferrer">KJB Br%C3%BCgelmann Exp16KJB 06042021</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973489201</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Bei rechten Alternativmedien vermuten 61 Prozent der Befragten häufig oder sehr häufig Fake News, bei linken Alternativmedien 41 Prozent.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_15</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bpb.de/shop/zeitschriften/apuz/propaganda-und-desinformation-2025/570919/lauter-luegen-und-fake-news/" target="_blank" rel="noopener noreferrer">Lauter Lügen und Fake News?  | Propaganda und Desinformation | bpb.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973489202</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">76 Prozent der befragten Journalist:innen in der Schweiz positionieren sich links der Mitte – unabhängig davon, ob sie bei privaten oder öffentlichen Medien arbeiten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_15</span>
+          </div>
+          <div class="ev-source-link"><a href="https://digitalcollection.zhaw.ch/server/api/core/bitstreams/216f7d41-8a1a-4117-92ef-c7dba5849fee/content" target="_blank" rel="noopener noreferrer">content</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973489204</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Political Influencer werden nach ihrer politischen Verortung auf einer fünfstufigen Skala (links – eher links – mittig – eher rechts – rechts) klassifiziert, wobei die Analyse zeigt, dass Political Influencer unterschiedliche Kommunikationsstrategien und Desinformationsmuster je nach politischer Ausrichtung aufweisen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_15</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/Forschung/Sonstiges/2025_LFM-NRW_Studienbericht_Political_Influencing.pdf" target="_blank" rel="noopener noreferrer">2025 LFM NRW Studienbericht Political Influencing</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973489205</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">38 Prozent der Befragten vertreten verschwörungsgläubige Positionen, 33 Prozent populistische und 29 Prozent völkisch-autoritär-rebellische Positionen. Ein erheblicher Teil der Befragten vertritt demokratiegefährdende Positionen, die mit einer nationalen Orientierung zur Krisenbewältigung einhergehen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_15</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fes.de/referat-demokratie-gesellschaft-und-innovation/gegen-rechtsextremismus/mitte-studie-2023" target="_blank" rel="noopener noreferrer">Die distanzierte Mitte: Die neue Rechtsextremismus-Studie</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973517774</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fake News werden weniger in der Breite, aber dafür intensiv in bestimmten Kreisen konsumiert und geteilt. Die hier engagierten Personen sind häufig sehr aktive und hochmotivierte Mediennutzer:innen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bpb.de/shop/zeitschriften/izpb/medienkompetenz-355/539986/fake-news-misinformation-desinformation/" target="_blank" rel="noopener noreferrer">Fake News, Misinformation, Desinformation | Medienkompetenz in einer digitalen Welt | bpb.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973517775</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Geringes Vertrauen in politische und mediale Institutionen spielt eine wichtige Rolle bei der Empfänglichkeit für Fake News.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bpb.de/shop/zeitschriften/izpb/medienkompetenz-355/539986/fake-news-misinformation-desinformation/" target="_blank" rel="noopener noreferrer">Fake News, Misinformation, Desinformation | Medienkompetenz in einer digitalen Welt | bpb.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973517776</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Meldungen, die Donald Trump unterstützten oder seine Gegenkandidaten Hillary Clinton kritisierten, generierten besonders viele Klicks. Diese Erkenntnis galt keineswegs nur für Fake News, auch traditionelle Nachrichtenmedien erkannten schnell, dass Meldungen zu Donald Trump die Fernsehquoten und Abo-Zahlen in die Höhe schießen ließen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bpb.de/shop/zeitschriften/izpb/medienkompetenz-355/539986/fake-news-misinformation-desinformation/" target="_blank" rel="noopener noreferrer">Fake News, Misinformation, Desinformation | Medienkompetenz in einer digitalen Welt | bpb.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973517778</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der andauernde Nahostkonflikt entfaltet zudem weiterhin ein hohes Emotionalisierungs- und Mobilisierungspotenzial und trägt so zu einer erhöhten abstrakten Gefährdungslage bei. Der eskalierende Nahostkonflikt wurde auch von Rechtsextremisten genutzt, um ihre migrationsfeindlichen und antisemitischen Positionen verstärkt zu verbreiten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2025-06-10-verfassungsschutzbericht-2024.pdf?__blob=publicationFile&amp;v=9" target="_blank" rel="noopener noreferrer">2025 06 10 verfassungsschutzbericht 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973530731</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Das Europäische Parlament hat einen Sonderausschuss (INGE 2) zur Untersuchung von Einflussnahme aus dem Ausland auf alle demokratischen Prozesse eingesetzt, was darauf hindeutet, dass Desinformation und Falschinformationen gezielt und nicht gleichmäßig in demokratischen Systemen eingesetzt werden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/doceo/document/TA-9-2023-0219_DE.html" target="_blank" rel="noopener noreferrer">Angenommene Texte - Einflussnahme aus dem Ausland auf alle demokratischen Prozesse in der Europäischen Union, einschließlich Desinformation - Donnerstag, 1. Juni 2023</a></div>
+        </div>
+      </div>
+    </details>
+    
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(38 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Internet Research Agency (IRA) engaged with several distinct communities of authentic users on Twitter, primarily conservatives, progressives, and Black people, which exhibited only minimal overlap. These communities were targeted with different types of content tailored to their ideological identities.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">False content was found among the ranks of the most widely-discussed tweets, especially on the right, indicating that political IRA users trafficked in falsehoods alongside factual content and extreme opinions, with false content appearing more prominently on the right side of the political spectrum.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The IRA presented conservatives with outrages committed by liberals, immigrants, CNN, and George Soros; liberals witnessed travesties of the Trump administration, Republicans, and evangelical Christians; and Black users were confronted with racism perpetrated by white police officers. Each group was paired with a specific set of opponents, indicating differential distribution of content across political positions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Politically active communities present substantial vulnerabilities that disinformation agents can exploit. Political content attracts far more engagement than non-political content and appears crafted to exploit intergroup distrust and enmity, with the IRA being less successful in engaging users with hashtag games, health appeals, and general-interest news headlines.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People are more likely to believe content they read or listen to that reflects the same emotions—anger, sadness, or anxiety—that they presently feel, and the more familiar people are with information they remember, including lies, the more likely they are to believe it is true. This suggests differential susceptibility to misinformation based on emotional and cognitive factors.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People view news reporting today as biased and polarized, and they are especially distrustful of news circulated via social media. Trust in news institutions, as well as political and social institutions, is declining in the U.S. as the country becomes more fractured, suggesting differential trust and exposure to information across political divides.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Algorithmic knowledge varied across different sociodemographic factors including political ideology, with individuals possessing higher algorithmic knowledge more inclined to undertake actions to combat misinformation on social media than those lacking such knowledge.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In the United States, political ideology and ethnicity were the primary predictors of algorithmic knowledge, indicating uneven distribution of knowledge about how algorithms filter and present information across political positions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Identity-based hierarchies, particularly race, play a key role in the creation, spread, and uptake of disinformation narratives, with disinformation narratives building on and reifying pre-existing ideologies frequently involving race and inequality.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/critical-disinformation-studies-history-power-and-politics/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/critical-disinformation-studies-history-power-and-politics/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Disinformation narratives resonate with people precisely because they play on appeals to whiteness and other forms of structural power, with examples including QAnon conspiracy theories combining conservative narratives with centuries-old anti-Semitic tropes and fears of migrant caravans playing on white racial fears.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/critical-disinformation-studies-history-power-and-politics/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/critical-disinformation-studies-history-power-and-politics/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The white press historically portrayed Black people as dangerous criminals and justified violence against Black communities, while the Black press presented alternative perspectives and countered racist depictions, demonstrating how different forms of &#39;truth&#39; and knowledge have always co-existed with uneven impacts and values across racial and political lines.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/critical-disinformation-studies-history-power-and-politics/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/critical-disinformation-studies-history-power-and-politics/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Crime attitudes become more strongly linked with immigration attitudes as local ethnic diversity rises, suggesting that exposure to rising local ethnic diversity can give rise to group-centric policy attitudes rather than centrist positions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/british-journal-of-political-science/article/influence-of-local-ethnic-diversity-on-groupcentric-crime-attitudes/865E1BA1F2ECC98D5342E0508FB29801" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/british-journal-of-political-science/article/influence-of-local-ethnic-diversity-on-groupcentric-crime-attitudes/865E1BA1F2ECC98D5342E0508FB29801</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The typically emphasized &#39;top-down&#39; influence on group-centric attitudes by elite actors is complemented by &#39;bottom-up&#39; local processes of experiential learning about group–policy linkages, indicating that following evidence from local experience leads to group-centric rather than centrist political positions.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/british-journal-of-political-science/article/influence-of-local-ethnic-diversity-on-groupcentric-crime-attitudes/865E1BA1F2ECC98D5342E0508FB29801" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/british-journal-of-political-science/article/influence-of-local-ethnic-diversity-on-groupcentric-crime-attitudes/865E1BA1F2ECC98D5342E0508FB29801</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The overall share of Americans who express consistently conservative or consistently liberal opinions has doubled over the past two decades from 10% to 21%, while the center has shrunk from 49% in 1994 to 39% currently.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Today, 92% of Republicans are to the right of the median Democrat, and 94% of Democrats are to the left of the median Republican, compared with 64% and 70% respectively twenty years ago, indicating diminished ideological overlap between the two parties.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Among politically engaged Democrats, 38% are consistent liberals in 2014, up from 8% in 1994; among politically engaged Republicans, 33% express consistently conservative views in 2014, up from 23% in 1994 and 10% a decade prior.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Nearly two-thirds (63%) of consistent conservatives and about half (49%) of consistent liberals say most of their close friends share their political views, compared to just 25% among those with mixed ideological values.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The most ideologically oriented and politically rancorous Americans make their voices heard through greater participation in every stage of the political process, while those in the center remain relatively distant and disengaged.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Professors used student appearance cues (bohemian vs. business casual dress, brown hair vs. pink hair) to ascertain liberal political leaning, but did not rate students significantly differently on logic and likeability based on these appearance cues.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2024.1473967/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2024.1473967/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">There is a mismatch between perceived bias and actual bias in higher education, where the perception of political bias persists even in the face of scarce evidence that liberal professors penalize conservative students or favor liberal ones.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2024.1473967/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2024.1473967/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Research examining political grading bias has generally found that liberal instructors do not assign lower grades to conservative students or higher grades to liberal students, with little evidence uncovered suggesting that conservative students are penalized for their political orientation.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2024.1473967/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/education/articles/10.3389/feduc.2024.1473967/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_022</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A judge should not allow family, social, political, financial, or other relationships to influence judicial conduct or judgment, and should avoid all impropriety and appearance of impropriety in both professional and personal conduct.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.uscourts.gov/administration-policies/judiciary-policies/ethics-policies/code-conduct-united-states-judges" target="_blank" rel="noopener noreferrer">https://www.uscourts.gov/administration-policies/judiciary-policies/ethics-policies/code-conduct-united-states-judges</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_023</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Economic elites and organized groups representing business interests have substantial independent impacts on U.S. government policy, while average citizens and mass-based interest groups have little or no independent influence.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/perspectives-on-politics/article/testing-theories-of-american-politics-elites-interest-groups-and-average-citizens/62327F513959D0A304D4893B382B992B" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/perspectives-on-politics/article/testing-theories-of-american-politics-elites-interest-groups-and-average-citizens/62327F513959D0A304D4893B382B992B</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_024</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Empirical research on policy influence has historically tested the influence of individual sets of actors (average citizens, economic elites, organized interest groups) but until recently could not test contrasting theoretical predictions against each other within a single statistical model.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/perspectives-on-politics/article/testing-theories-of-american-politics-elites-interest-groups-and-average-citizens/62327F513959D0A304D4893B382B992B" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/perspectives-on-politics/article/testing-theories-of-american-politics-elites-interest-groups-and-average-citizens/62327F513959D0A304D4893B382B992B</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_025</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Program evaluation uses systematic data collection and analysis to assess effectiveness and efficiency, with the purpose of continuous improvement and producing findings for decision-making, which differs from research that primarily aims to contribute to generalizable knowledge.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cdc.gov/mmwr/volumes/73/rr/rr7306a1.htm" target="_blank" rel="noopener noreferrer">https://www.cdc.gov/mmwr/volumes/73/rr/rr7306a1.htm</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_026</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Foundations for Evidence-based Policymaking Act of 2018 prioritizes program evaluation as a critical agency function and recognizes urgent needs for evidence about approaches that work best to address current and future challenges.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_19</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cdc.gov/mmwr/volumes/73/rr/rr7306a1.htm" target="_blank" rel="noopener noreferrer">https://www.cdc.gov/mmwr/volumes/73/rr/rr7306a1.htm</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973374909</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hassrede und Radikalisierung im Netz werden durch unterschiedliche Taktiken und Strategien verschiedener extremistischer Gruppen vorangetrieben, was auf eine politisch differenzierte Nutzung von Online-Räumen hindeutet.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.isdglobal.org/wp-content/uploads/2018/10/ISD-Radicalisation-in-the-Network_Report_German_web.pdf" target="_blank" rel="noopener noreferrer">ISD Radicalisation in the Network Report German web</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973402534</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Deutsche Außenpolitik muss sich an belastbaren Partnerschaften und neuen Formen der Verantwortungsteilung ausrichten, wobei auftretende Zielkonflikte nur in offener und transparenter Diskussion ausgehandelt werden können.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.swp-berlin.org/10.18449/2021S15/" target="_blank" rel="noopener noreferrer">Deutsche Außenpolitik im Wandel - Stiftung Wissenschaft und PolitikStiftung Wissenschaft und Politikswp_rebrush_logo</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973402537</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Internationale Machtverschiebungen, Positionsverluste des Westens, wachsender Autoritarismus, Schwächung multilateraler Institutionen und drängende globale Probleme wie der Klimawandel erfordern eine Neuaufstellung deutscher Außenpolitik, die sich an belastbaren Daten und Analysen orientieren muss.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.swp-berlin.org/10.18449/2021S15/" target="_blank" rel="noopener noreferrer">Deutsche Außenpolitik im Wandel - Stiftung Wissenschaft und PolitikStiftung Wissenschaft und Politikswp_rebrush_logo</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973433112</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im Pluralismus gibt es im besten Fall lediglich einen Konsens über die Regeln des Konfliktaustrags, nicht über inhaltliche Positionen, was bedeutet, dass evidenzbasierte Positionen nicht automatisch zur Mittenpolitik führen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.klimafakten.de/kommunikation/kungelei-oder-klare-beweislage-was-ist-das-eigentlich-konsens" target="_blank" rel="noopener noreferrer">Kungelei oder klare Beweislage - was ist das eigentlich, &quot;Konsens&quot;? | klimafakten.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973449690</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Politische Bildungsprozesse sind komplex und schließen sowohl kognitive als auch affektive und motivationale Aspekte ein</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2021/KJB_Br%C3%BCgelmann_Exp16KJB_06042021.pdf" target="_blank" rel="noopener noreferrer">KJB Br%C3%BCgelmann Exp16KJB 06042021</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973449691</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Konzepte und Einstellungen der Grundschulkinder sind wichtige Schritte auf dem Weg zu zunehmend differenzierteren politischen Vorstellungen und Normen</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2021/KJB_Br%C3%BCgelmann_Exp16KJB_06042021.pdf" target="_blank" rel="noopener noreferrer">KJB Br%C3%BCgelmann Exp16KJB 06042021</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973449693</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Studien aus Entwicklungspsychologie und Soziologie untersuchen vielfältige – auch informelle – Einflüsse auf die Vor- und Einstellungen der Kinder, einschließlich beiläufig mitgehörter Äußerungen von Erwachsenen, Gespräche mit Gleichaltrigen und Einflüsse der Medien</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_11</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2021/KJB_Br%C3%BCgelmann_Exp16KJB_06042021.pdf" target="_blank" rel="noopener noreferrer">KJB Br%C3%BCgelmann Exp16KJB 06042021</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973489200</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">55 Prozent der Befragten meinen, dass sowohl aus dem rechten als auch aus dem linken Spektrum Desinformationen verbreitet werden. 25 Prozent verorten die Quelle rechts und 10 Prozent links.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_15</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bertelsmann-stiftung.de/fileadmin/files/Projekte/UpgradeDemocracy/2024_UpDem-Studie-Verunsicherte-OEffentlichkeit_DE.pdf" target="_blank" rel="noopener noreferrer">2024 UpDem Studie Verunsicherte OEffentlichkeit DE</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973489203</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">8 Prozent der Befragten der Mitte-Studie 2022/23 haben eine klar rechtsextreme Orientierung, gegenüber knapp 2 bis 3 Prozent in den Vorjahren. Die politische Selbstverortung von Befragten rechts der Mitte ist von knapp 10 Prozent auf 15,5 Prozent deutlich angestiegen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_15</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.fes.de/referat-demokratie-gesellschaft-und-innovation/gegen-rechtsextremismus/mitte-studie-2023" target="_blank" rel="noopener noreferrer">Die distanzierte Mitte: Die neue Rechtsextremismus-Studie</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973517777</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Das rechtsextremistische Personenpotenzial ist 2024 um knapp ein Viertel gestiegen – von 40.600 auf 50.250 Personen. Die Gesamtzahl rechtsextremistischer Straf- und Gewalttaten stieg 2024 deutlich um fast die Hälfte auf 37.835 an.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2025-06-10-verfassungsschutzbericht-2024.pdf?__blob=publicationFile&amp;v=9" target="_blank" rel="noopener noreferrer">2025 06 10 verfassungsschutzbericht 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973517779</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Russland passt seine Aktivitäten an die veränderten Operationsbedingungen und eigenen Bedarfe immer wieder an und schreckt dabei auch nicht davor zurück, ungeschulte Einzeltäter (&#39;Low-Level-Agenten&#39;) anzuwerben, um zu spionieren und zu sabotieren.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2025-06-10-verfassungsschutzbericht-2024.pdf?__blob=publicationFile&amp;v=9" target="_blank" rel="noopener noreferrer">2025 06 10 verfassungsschutzbericht 2024</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771973530730</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Das Europäische Parlament hat eine Entschließung zur Einflussnahme aus dem Ausland auf alle demokratischen Prozesse in der Europäischen Union, einschließlich Desinformation, angenommen und damit die politische Relevanz und Ungleichverteilung von Desinformation in demokratischen Prozessen anerkannt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/doceo/document/TA-9-2023-0219_DE.html" target="_blank" rel="noopener noreferrer">Angenommene Texte - Einflussnahme aus dem Ausland auf alle demokratischen Prozesse in der Europäischen Union, einschließlich Desinformation - Donnerstag, 1. Juni 2023</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">26 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Neue Studie der Uni Mainz: Wie vielfältig und ausgewogen berichten Nachrichtenformate des öffentlich-rechtlichen Rundfunks? – Stiftung Mercator</span></div>
+        <div class="source-url"><a href="https://www.stiftung-mercator.de/de/pressemitteilungen/neue-studie-der-uni-mainz-wie-vielfaeltig-und-ausgewogen-berichten-nachrichtenformate-des-oeffentlich-rechtlichen-rundfunks/" target="_blank" rel="noopener noreferrer">https://www.stiftung-mercator.de/de/pressemitteilungen/neue-studie-der-uni-mainz-wie-vielfaeltig-und-ausgewogen-berichten-nachrichtenformate-des-oeffentlich-rechtlichen-rundfunks/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Inhaltsanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">dpz how to sell democracy online  fast  NEU</span></div>
+        <div class="source-url"><a href="https://www.bertelsmann-stiftung.de/fileadmin/files/user_upload/dpz_how_to_sell_democracy_online__fast__NEU.pdf" target="_blank" rel="noopener noreferrer">https://www.bertelsmann-stiftung.de/fileadmin/files/user_upload/dpz_how_to_sell_democracy_online__fast__NEU.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Inhaltsanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">YouTube Studie EmpfehlungenKrisenzeiten 210224</span></div>
+        <div class="source-url"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/NeueWebsite_0120/Zum_Nachlesen/YouTube-Studie_EmpfehlungenKrisenzeiten_210224.pdf" target="_blank" rel="noopener noreferrer">https://www.medienanstalt-nrw.de/fileadmin/user_upload/NeueWebsite_0120/Zum_Nachlesen/YouTube-Studie_EmpfehlungenKrisenzeiten_210224.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Inhaltsanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">AuswirkungenSystemischerRisiken</span></div>
+        <div class="source-url"><a href="https://www.dsc.bund.de/DSC/DE/Aktuelles/studien/AuswirkungenSystemischerRisiken.pdf?__blob=publicationFile&amp;v=3" target="_blank" rel="noopener noreferrer">https://www.dsc.bund.de/DSC/DE/Aktuelles/studien/AuswirkungenSystemischerRisiken.pdf?__blob=publicationFile&amp;v=3</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Inhaltsanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">how to sell democracy online fast Das Progressive Zentrum</span></div>
+        <div class="source-url"><a href="https://www.progressives-zentrum.org/wp-content/uploads/2025/09/how_to_sell_democracy_online_fast_Das-Progressive-Zentrum.pdf" target="_blank" rel="noopener noreferrer">https://www.progressives-zentrum.org/wp-content/uploads/2025/09/how_to_sell_democracy_online_fast_Das-Progressive-Zentrum.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Inhaltsanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">88281</span></div>
+        <div class="source-url"><a href="https://www.newsd.admin.ch/newsd/message/attachments/88281.pdf" target="_blank" rel="noopener noreferrer">https://www.newsd.admin.ch/newsd/message/attachments/88281.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen gleich verteilt politisches Spektrum Gegenargument</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">2024 06 18 verfassungsschutzbericht 2023</span></div>
+        <div class="source-url"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2024-06-18-verfassungsschutzbericht-2023.pdf?__blob=publicationFile" target="_blank" rel="noopener noreferrer">https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2024-06-18-verfassungsschutzbericht-2023.pdf?__blob=publicationFile</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen gleich verteilt politisches Spektrum Gegenargument</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">180 2024 VSB 2023 V20240517 BF</span></div>
+        <div class="source-url"><a href="https://www.dsn.gv.at/501/files/VSB/180_2024_VSB_2023_V20240517_BF.pdf" target="_blank" rel="noopener noreferrer">https://www.dsn.gv.at/501/files/VSB/180_2024_VSB_2023_V20240517_BF.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen gleich verteilt politisches Spektrum Gegenargument</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">ISD Radicalisation in the Network Report German web</span></div>
+        <div class="source-url"><a href="https://www.isdglobal.org/wp-content/uploads/2018/10/ISD-Radicalisation-in-the-Network_Report_German_web.pdf" target="_blank" rel="noopener noreferrer">https://www.isdglobal.org/wp-content/uploads/2018/10/ISD-Radicalisation-in-the-Network_Report_German_web.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Desinformation Verbreitung Partei Ideologie Fact-Check Datenanalyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">typen von desinformation und misinformation</span></div>
+        <div class="source-url"><a href="https://www.lfk.de/fileadmin/PDFs/Publikationen/Studien/Typen-von-Desinformation-und-Misinformation/typen-von-desinformation-und-misinformation.pdf" target="_blank" rel="noopener noreferrer">https://www.lfk.de/fileadmin/PDFs/Publikationen/Studien/Typen-von-Desinformation-und-Misinformation/typen-von-desinformation-und-misinformation.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Desinformation Verbreitung Partei Ideologie Fact-Check Datenanalyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Deutsche Außenpolitik im Wandel - Stiftung Wissenschaft und PolitikStiftung Wissenschaft und Politikswp_rebrush_logo</span></div>
+        <div class="source-url"><a href="https://www.swp-berlin.org/10.18449/2021S15/" target="_blank" rel="noopener noreferrer">https://www.swp-berlin.org/10.18449/2021S15/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: wissenschaftlicher Konsens politisches Spektrum Asymmetrie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Weisseno et al 2010 Konzepte der Politik </span></div>
+        <div class="source-url"><a href="https://www.pedocs.de/volltexte/2016/12009/pdf/Weisseno_et_al_2010_Konzepte_der_Politik_.pdf" target="_blank" rel="noopener noreferrer">https://www.pedocs.de/volltexte/2016/12009/pdf/Weisseno_et_al_2010_Konzepte_der_Politik_.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: wissenschaftlicher Konsens politisches Spektrum Asymmetrie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Mehrheitsfindung im Föderalismus. Thesen zum Konsensualismus der westdeutschen Politik | APuZ 35/1985 | bpb.de</span></div>
+        <div class="source-url"><a href="https://www.bpb.de/shop/zeitschriften/apuz/archiv/533519/mehrheitsfindung-im-foederalismus-thesen-zum-konsensualismus-der-westdeutschen-politik/" target="_blank" rel="noopener noreferrer">https://www.bpb.de/shop/zeitschriften/apuz/archiv/533519/mehrheitsfindung-im-foederalismus-thesen-zum-konsensualismus-der-westdeutschen-politik/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidenzbasierte Politik Mitte Konsens Parteien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">arl journal 02 2025 online gesamt 2</span></div>
+        <div class="source-url"><a href="https://www.arl-net.de/system/files/pdf/2025-11/arl_journal_02_2025_online_gesamt_2.pdf" target="_blank" rel="noopener noreferrer">https://www.arl-net.de/system/files/pdf/2025-11/arl_journal_02_2025_online_gesamt_2.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidenzbasierte Politik Mitte Konsens Parteien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Kungelei oder klare Beweislage - was ist das eigentlich, &quot;Konsens&quot;? | klimafakten.de</span></div>
+        <div class="source-url"><a href="https://www.klimafakten.de/kommunikation/kungelei-oder-klare-beweislage-was-ist-das-eigentlich-konsens" target="_blank" rel="noopener noreferrer">https://www.klimafakten.de/kommunikation/kungelei-oder-klare-beweislage-was-ist-das-eigentlich-konsens</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidenzbasierte Politik Mitte Konsens Parteien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_016</span><span class="source-title">KJB Br%C3%BCgelmann Exp16KJB 06042021</span></div>
+        <div class="source-url"><a href="https://www.dji.de/fileadmin/user_upload/bibs2021/KJB_Br%C3%BCgelmann_Exp16KJB_06042021.pdf" target="_blank" rel="noopener noreferrer">https://www.dji.de/fileadmin/user_upload/bibs2021/KJB_Br%C3%BCgelmann_Exp16KJB_06042021.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Wissenschaftsorientierung politische Position Korrelation Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_017</span><span class="source-title">Die distanzierte Mitte: Die neue Rechtsextremismus-Studie</span></div>
+        <div class="source-url"><a href="https://www.fes.de/referat-demokratie-gesellschaft-und-innovation/gegen-rechtsextremismus/mitte-studie-2023" target="_blank" rel="noopener noreferrer">https://www.fes.de/referat-demokratie-gesellschaft-und-innovation/gegen-rechtsextremismus/mitte-studie-2023</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Verteilung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_018</span><span class="source-title">2024 UpDem Studie Verunsicherte OEffentlichkeit DE</span></div>
+        <div class="source-url"><a href="https://www.bertelsmann-stiftung.de/fileadmin/files/Projekte/UpgradeDemocracy/2024_UpDem-Studie-Verunsicherte-OEffentlichkeit_DE.pdf" target="_blank" rel="noopener noreferrer">https://www.bertelsmann-stiftung.de/fileadmin/files/Projekte/UpgradeDemocracy/2024_UpDem-Studie-Verunsicherte-OEffentlichkeit_DE.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Verteilung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_019</span><span class="source-title">content</span></div>
+        <div class="source-url"><a href="https://digitalcollection.zhaw.ch/server/api/core/bitstreams/216f7d41-8a1a-4117-92ef-c7dba5849fee/content" target="_blank" rel="noopener noreferrer">https://digitalcollection.zhaw.ch/server/api/core/bitstreams/216f7d41-8a1a-4117-92ef-c7dba5849fee/content</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Verteilung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_020</span><span class="source-title">Lauter Lügen und Fake News?  | Propaganda und Desinformation | bpb.de</span></div>
+        <div class="source-url"><a href="https://www.bpb.de/shop/zeitschriften/apuz/propaganda-und-desinformation-2025/570919/lauter-luegen-und-fake-news/" target="_blank" rel="noopener noreferrer">https://www.bpb.de/shop/zeitschriften/apuz/propaganda-und-desinformation-2025/570919/lauter-luegen-und-fake-news/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Verteilung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_021</span><span class="source-title">2025 LFM NRW Studienbericht Political Influencing</span></div>
+        <div class="source-url"><a href="https://www.medienanstalt-nrw.de/fileadmin/user_upload/Forschung/Sonstiges/2025_LFM-NRW_Studienbericht_Political_Influencing.pdf" target="_blank" rel="noopener noreferrer">https://www.medienanstalt-nrw.de/fileadmin/user_upload/Forschung/Sonstiges/2025_LFM-NRW_Studienbericht_Political_Influencing.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Falschinformationen politische Ausrichtung Verteilung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_022</span><span class="source-title">Innenministerium Bayern – Sicherheit, Sport und Integration im Freistaat: StMI</span></div>
+        <div class="source-url"><a href="https://www.stmi.bayern.de/" target="_blank" rel="noopener noreferrer">https://www.stmi.bayern.de/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Desinformation gleich verteilt alle politischen Seiten</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_023</span><span class="source-title">Fake News, Misinformation, Desinformation | Medienkompetenz in einer digitalen Welt | bpb.de</span></div>
+        <div class="source-url"><a href="https://www.bpb.de/shop/zeitschriften/izpb/medienkompetenz-355/539986/fake-news-misinformation-desinformation/" target="_blank" rel="noopener noreferrer">https://www.bpb.de/shop/zeitschriften/izpb/medienkompetenz-355/539986/fake-news-misinformation-desinformation/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Desinformation gleich verteilt alle politischen Seiten</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_024</span><span class="source-title">Strategische Rivalität zwischen USA und China - Stiftung Wissenschaft und PolitikStiftung Wissenschaft und Politikswp_logo_en</span></div>
+        <div class="source-url"><a href="https://www.swp-berlin.org/en/publication/strategische-rivalitaet-zwischen-usa-und-china" target="_blank" rel="noopener noreferrer">https://www.swp-berlin.org/en/publication/strategische-rivalitaet-zwischen-usa-und-china</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Desinformation gleich verteilt alle politischen Seiten</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_025</span><span class="source-title">2025 06 10 verfassungsschutzbericht 2024</span></div>
+        <div class="source-url"><a href="https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2025-06-10-verfassungsschutzbericht-2024.pdf?__blob=publicationFile&amp;v=9" target="_blank" rel="noopener noreferrer">https://www.verfassungsschutz.de/SharedDocs/publikationen/DE/verfassungsschutzberichte/2025-06-10-verfassungsschutzbericht-2024.pdf?__blob=publicationFile&amp;v=9</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Desinformation gleich verteilt alle politischen Seiten</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_026</span><span class="source-title">Angenommene Texte - Einflussnahme aus dem Ausland auf alle demokratischen Prozesse in der Europäischen Union, einschließlich Desinformation - Donnerstag, 1. Juni 2023</span></div>
+        <div class="source-url"><a href="https://www.europarl.europa.eu/doceo/document/TA-9-2023-0219_DE.html" target="_blank" rel="noopener noreferrer">https://www.europarl.europa.eu/doceo/document/TA-9-2023-0219_DE.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Fact-Checking Datenbank Partei Ideologie Vergleich</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">15 queries · 3 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>misinformation distribution political spectrum</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Facts and misinformation are distributed unequally across different political po</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>evidence-based reasoning political centrism</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Following evidence consistently does not result in a centrist political position</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>evidence bias political appearance</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Evidence-based conclusions can appear to have a political tendency.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Falschinformationen politische Ausrichtung Inhaltsanalyse Studie</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Falschinformationen gleich verteilt politisches Spektrum Gegenargument</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Desinformation Verbreitung Partei Ideologie Fact-Check Datenanalyse</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>wissenschaftlicher Konsens politisches Spektrum Asymmetrie</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>evidenzbasierte Politik Mitte Konsens Parteien</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Wissenschaftsorientierung politische Position Korrelation Studie</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Falschinformationen politische Ausrichtung Verteilung Studie</td><td>2</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Desinformation gleich verteilt alle politischen Seiten</td><td>2</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Fact-Checking Datenbank Partei Ideologie Vergleich</td><td>2</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">2</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">2</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">2</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">2</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">2</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">73</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">26</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">15</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">32</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-24 23:09 UTC
+  <br>Job e79e8ed424904e6ba2700416839ffc98 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1-mini, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
