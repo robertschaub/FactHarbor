@@ -120,9 +120,16 @@ public class MetricsController : ControllerBase
                 query = query.Where(m => m.CreatedUtc <= endDate.Value);
             }
 
-            var metricsRecords = await query
-                .OrderByDescending(m => m.CreatedUtc)
-                .Take(limit)
+            // Backward-compatible behavior:
+            // - limit > 0: cap result set
+            // - limit <= 0: uncapped (all matching records in range)
+            IQueryable<AnalysisMetrics> orderedQuery = query.OrderByDescending(m => m.CreatedUtc);
+            if (limit > 0)
+            {
+                orderedQuery = orderedQuery.Take(limit);
+            }
+
+            var metricsRecords = await orderedQuery
                 .Select(m => new { m.MetricsJson, m.CreatedUtc })
                 .ToListAsync();
 
@@ -333,6 +340,112 @@ public class MetricsController : ControllerBase
         {
             _logger.LogError(ex, "Error calculating summary statistics");
             return StatusCode(500, new { error = "Failed to calculate summary statistics" });
+        }
+    }
+
+    /// <summary>
+    /// Get quality health time-series data for monitoring F4/F5/F6 findings
+    /// </summary>
+    [HttpGet("quality-health")]
+    public async Task<IActionResult> GetQualityHealth(
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
+        [FromQuery] int limit = 100)
+    {
+        try
+        {
+            var query = _db.AnalysisMetrics.AsQueryable();
+
+            if (startDate.HasValue)
+                query = query.Where(m => m.CreatedUtc >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(m => m.CreatedUtc <= endDate.Value);
+
+            var records = await query
+                .OrderByDescending(m => m.CreatedUtc)
+                .Take(limit)
+                .Select(m => new { m.JobId, m.MetricsJson, m.CreatedUtc })
+                .ToListAsync();
+
+            var timeSeries = new List<object>();
+            double f4RateSum = 0, f5RateSum = 0;
+            int f6ActiveCount = 0, f6ImbalanceCount = 0;
+            int validCount = 0;
+
+            foreach (var record in records)
+            {
+                try
+                {
+                    var doc = JsonDocument.Parse(record.MetricsJson);
+                    if (!doc.RootElement.TryGetProperty("qualityHealth", out var qh))
+                        continue;
+
+                    var f4Rate = qh.TryGetProperty("f4_rejectionRate", out var f4r) ? ReadDouble(f4r) : 0;
+                    var f5Rate = qh.TryGetProperty("f5_blockRate", out var f5r) ? ReadDouble(f5r) : 0;
+                    var f6Active = qh.TryGetProperty("f6_partitioningActive", out var f6a) &&
+                                   f6a.ValueKind == JsonValueKind.True;
+                    var f6Imbalance = qh.TryGetProperty("f6_poolImbalanceDetected", out var f6i) &&
+                                      f6i.ValueKind == JsonValueKind.True;
+
+                    timeSeries.Add(new
+                    {
+                        jobId = record.JobId,
+                        timestamp = record.CreatedUtc,
+                        f4 = new
+                        {
+                            insufficientClaims = qh.TryGetProperty("f4_insufficientClaims", out var f4ic) ? ReadInt(f4ic) : 0,
+                            totalClaims = qh.TryGetProperty("f4_totalClaims", out var f4tc) ? ReadInt(f4tc) : 0,
+                            rejectionRate = f4Rate,
+                        },
+                        f5 = new
+                        {
+                            baselessBlocked = qh.TryGetProperty("f5_baselessBlocked", out var f5bb) ? ReadInt(f5bb) : 0,
+                            totalAdjustments = qh.TryGetProperty("f5_totalAdjustments", out var f5ta) ? ReadInt(f5ta) : 0,
+                            blockRate = f5Rate,
+                        },
+                        f6 = new
+                        {
+                            partitioningActive = f6Active,
+                            institutionalCount = qh.TryGetProperty("f6_institutionalCount", out var f6inst) ? ReadInt(f6inst) : 0,
+                            generalCount = qh.TryGetProperty("f6_generalCount", out var f6gen) ? ReadInt(f6gen) : 0,
+                            poolImbalanceDetected = f6Imbalance,
+                            balanceRatio = qh.TryGetProperty("f6_balanceRatio", out var f6br) && f6br.ValueKind == JsonValueKind.Number
+                                ? ReadDouble(f6br) : (double?)null,
+                        },
+                    });
+
+                    f4RateSum += f4Rate;
+                    f5RateSum += f5Rate;
+                    if (f6Active) f6ActiveCount++;
+                    if (f6Imbalance) f6ImbalanceCount++;
+                    validCount++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse quality health from metrics record for job {JobId}", record.JobId);
+                }
+            }
+
+            // Reverse to chronological order for charting
+            timeSeries.Reverse();
+
+            return Ok(new
+            {
+                count = validCount,
+                timeSeries,
+                aggregates = new
+                {
+                    f4_avgRejectionRate = validCount > 0 ? f4RateSum / validCount : 0,
+                    f5_avgBlockRate = validCount > 0 ? f5RateSum / validCount : 0,
+                    f6_partitioningActiveRate = validCount > 0 ? (double)f6ActiveCount / validCount : 0,
+                    f6_poolImbalanceRate = validCount > 0 ? (double)f6ImbalanceCount / validCount : 0,
+                },
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating quality health metrics");
+            return StatusCode(500, new { error = "Failed to calculate quality health metrics" });
         }
     }
 

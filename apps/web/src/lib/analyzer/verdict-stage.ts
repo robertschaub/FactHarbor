@@ -259,19 +259,25 @@ export async function runVerdictStage(
     const general = evidence.filter(e => !e.sourceType || GENERAL_SOURCE_TYPES.has(e.sourceType as SourceType));
 
     // Fallback: if either partition has <2 items, both roles get full pool
-    if (institutional.length >= 2 && general.length >= 2) {
+    const partitionActive = institutional.length >= 2 && general.length >= 2;
+    if (partitionActive) {
       advocateEvidence = institutional;
       challengerEvidence = general;
-      console.info(
-        `[VerdictStage] D5 evidence partitioning active: advocate=${institutional.length} institutional, ` +
-        `challenger=${general.length} general (of ${evidence.length} total)`
-      );
-    } else {
-      console.info(
-        `[VerdictStage] D5 evidence partitioning fallback: institutional=${institutional.length}, ` +
-        `general=${general.length} — both roles get full pool (${evidence.length})`
-      );
     }
+
+    // Emit structured partition stats for quality health monitoring
+    warnings?.push({
+      type: "evidence_partition_stats",
+      severity: "info",
+      message: `D5 evidence partitioning ${partitionActive ? "active" : "fallback"}: ` +
+        `${institutional.length} institutional, ${general.length} general (of ${evidence.length} total).`,
+      details: {
+        partitioningActive: partitionActive,
+        institutionalCount: institutional.length,
+        generalCount: general.length,
+        totalEvidence: evidence.length,
+      },
+    });
   }
 
   // Step 1: Advocate Verdict

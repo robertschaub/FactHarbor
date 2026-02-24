@@ -14,6 +14,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
@@ -441,6 +442,15 @@ export default function JobPage() {
     reportDamagedWarning?.details?.recommendedNextStep ||
     reportDamageHints[0] ||
     "Resolve critical warning causes and rerun analysis.";
+  const qualityWarnings = analysisWarnings.filter(
+    (w: any) => w?.severity === "error" || w?.severity === "warning",
+  );
+  const fallbackCount = classificationFallbacks?.totalFallbacks ?? 0;
+  const hasQualityDegradationStatus =
+    isReportDamaged ||
+    providerIssues.length > 0 ||
+    qualityWarnings.length > 0 ||
+    fallbackCount > 0;
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
@@ -843,6 +853,20 @@ export default function JobPage() {
                   originalInput={job?.inputValue || ""}
                   transformedInput={impliedClaim}
                 />
+              )}
+
+              {hasQualityDegradationStatus && (
+                <div className={styles.qualityStatusBanner}>
+                  <div className={styles.qualityStatusText}>
+                    Quality-degrading status detected for this report.
+                  </div>
+                  <div className={styles.qualityStatusMeta}>
+                    {providerIssues.length} provider issue{providerIssues.length !== 1 ? "s" : ""} · {qualityWarnings.length} warning/error signal{qualityWarnings.length !== 1 ? "s" : ""} · {fallbackCount} fallback{fallbackCount !== 1 ? "s" : ""}
+                  </div>
+                  <Link href="/admin/quality-health" className={styles.qualityStatusLink}>
+                    Open Analysis Monitoring dashboard
+                  </Link>
+                </div>
               )}
 
               {providerIssues.length > 0 && (

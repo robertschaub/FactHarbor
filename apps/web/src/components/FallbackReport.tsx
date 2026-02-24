@@ -37,6 +37,10 @@ const WARNING_TYPE_LABELS: Record<string, string> = {
   confidence_calibration: "Confidence Calibration",
   low_source_count: "Low Source Count",
   grounding_check: "Grounding Check",
+  insufficient_evidence: "Insufficient Evidence (F4)",
+  baseless_challenge_blocked: "Baseless Challenge Blocked (F5)",
+  baseless_challenge_detected: "Baseless Challenges Detected (F5)",
+  evidence_partition_stats: "Evidence Partitioning (F6)",
 };
 
 const WARNING_TYPE_HINTS: Record<string, string> = {
@@ -48,6 +52,9 @@ const WARNING_TYPE_HINTS: Record<string, string> = {
   recency_evidence_gap: "Add fresh date-anchored evidence for recency-sensitive claims.",
   grounding_check: "Verify reasoning is explicitly linked to cited evidence IDs.",
   evidence_filter_degradation: "Inspect evidence-filter LLM failures; heuristic fallback may lower precision.",
+  insufficient_evidence: "This claim lacks sufficient evidence for a confident verdict. Consider broadening search scope or adding more sources.",
+  baseless_challenge_blocked: "A verdict adjustment was reverted because the challenge lacked supporting evidence.",
+  baseless_challenge_detected: "Multiple baseless challenges were detected and blocked during verdict aggregation.",
 };
 
 const SEVERITY_ICONS: Record<AnalysisWarning["severity"], string> = {
@@ -67,13 +74,16 @@ const QUALITY_DEGRADING_TYPES = new Set<AnalysisWarningType>([
   "report_damaged",
   "no_successful_sources",
   "source_acquisition_collapse",
-  // Evidence quality
+  // Evidence quality (F4: sufficiency, F6: balance)
+  "insufficient_evidence",
   "evidence_pool_imbalance",
   "low_evidence_count",
   "low_source_count",
   "context_without_evidence",
   "recency_evidence_gap",
-  // Verdict quality
+  // Verdict quality (F5: baseless challenge enforcement)
+  "baseless_challenge_blocked",
+  "baseless_challenge_detected",
   "verdict_direction_mismatch",
   "grounding_check",
   "verdict_fallback_partial",

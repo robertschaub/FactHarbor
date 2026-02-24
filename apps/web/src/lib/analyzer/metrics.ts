@@ -78,6 +78,20 @@ export interface FailureModeMetrics {
   byTopic: Record<string, FailureModeCounter>;
 }
 
+export interface QualityHealthMetrics {
+  f4_insufficientClaims: number;
+  f4_totalClaims: number;
+  f4_rejectionRate: number;
+  f5_baselessBlocked: number;
+  f5_totalAdjustments: number;
+  f5_blockRate: number;
+  f6_partitioningActive: boolean;
+  f6_institutionalCount: number;
+  f6_generalCount: number;
+  f6_poolImbalanceDetected: boolean;
+  f6_balanceRatio: number | null;
+}
+
 export interface SchemaComplianceMetric {
   understand: {
     success: boolean;
@@ -135,6 +149,9 @@ export interface AnalysisMetrics {
 
   // Failure-mode observability (C18 instrumentation)
   failureModes: FailureModeMetrics;
+
+  // Quality health monitoring (F4/F5/F6 from investigation report)
+  qualityHealth?: QualityHealthMetrics;
   
   // Costs (estimated)
   estimatedCostUSD: number;
@@ -261,6 +278,13 @@ export class MetricsCollector {
    */
   setFailureModes(failureModes: FailureModeMetrics): void {
     this.metrics.failureModes = failureModes;
+  }
+
+  /**
+   * Set quality health metrics (F4/F5/F6 monitoring)
+   */
+  setQualityHealth(qualityHealth: QualityHealthMetrics): void {
+    this.metrics.qualityHealth = qualityHealth;
   }
 
   /**

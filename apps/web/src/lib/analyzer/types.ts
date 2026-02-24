@@ -662,6 +662,7 @@ export type AnalysisWarningType =
   | "verdict_batch_retry"           // Verdict generation recovered via batch retry (claims split into smaller batches)
   | "analysis_generation_failed"    // Dynamic analysis LLM call failed after retries — degraded result returned
   | "evidence_pool_imbalance"       // Evidence pool heavily skewed toward one direction (C13 bias detection)
+  | "evidence_partition_stats"      // D5 Control 2: Evidence partitioning operational stats (institutional vs general split)
   | "all_same_debate_tier"          // All 4 debate roles use the same model tier (C1/C16 degenerate debate risk)
   | "debate_provider_fallback"      // A debate role's provider override was unavailable; fell back to global provider
   | "contested_verdict_range"       // Verdict truth% range exceeds wide-range threshold (high uncertainty)

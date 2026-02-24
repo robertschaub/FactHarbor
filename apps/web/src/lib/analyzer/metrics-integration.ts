@@ -8,7 +8,7 @@
  */
 
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
-import type { FailureModeMetrics, LLMCallMetric, SearchQueryMetric } from './metrics';
+import type { FailureModeMetrics, LLMCallMetric, QualityHealthMetrics, SearchQueryMetric } from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 
 // Global metrics collector (set by initializeMetrics)
@@ -180,6 +180,9 @@ export function recordOutputQuality(result: any): void {
   });
 
   currentMetrics.setFailureModes(buildFailureModeMetrics(result));
+
+  // Quality health metrics (F4/F5/F6 monitoring)
+  currentMetrics.setQualityHealth(buildQualityHealthMetrics(result));
 }
 
 const DEGRADATION_WARNING_TYPES = new Set<string>([
@@ -200,10 +203,11 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
 
 interface WarningShape {
   type?: string;
+  severity?: string;
   details?: Record<string, unknown>;
 }
 
-function buildFailureModeMetrics(result: any): FailureModeMetrics {
+export function buildFailureModeMetrics(result: any): FailureModeMetrics {
   const warnings: WarningShape[] = Array.isArray(result?.analysisWarnings)
     ? result.analysisWarnings
     : Array.isArray(result?.warnings)
@@ -220,9 +224,10 @@ function buildFailureModeMetrics(result: any): FailureModeMetrics {
 
   for (const warning of warnings) {
     const warningType = warning?.type ?? "";
+    const warningSeverity = normalizeWarningSeverity(warning?.severity);
     const details = warning?.details ?? {};
     const refusal = isRefusalWarning(warningType, details);
-    const degradation = refusal || DEGRADATION_WARNING_TYPES.has(warningType);
+    const degradation = refusal || isDegradationWarning(warningType, warningSeverity);
     if (!refusal && !degradation) continue;
 
     const provider = extractProvider(details);
@@ -249,6 +254,30 @@ function buildFailureModeMetrics(result: any): FailureModeMetrics {
   };
 }
 
+function normalizeWarningSeverity(raw: unknown): "error" | "warning" | "info" | "unknown" {
+  if (raw === "error" || raw === "warning" || raw === "info") return raw;
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === "error" || normalized === "warning" || normalized === "info") {
+      return normalized;
+    }
+  }
+  return "unknown";
+}
+
+function isDegradationWarning(
+  warningType: string,
+  severity: "error" | "warning" | "info" | "unknown",
+): boolean {
+  if (severity === "error" || severity === "warning") return true;
+  if (isFallbackWarningType(warningType)) return true;
+  return DEGRADATION_WARNING_TYPES.has(warningType);
+}
+
+function isFallbackWarningType(warningType: string): boolean {
+  return warningType.includes("fallback");
+}
+
 function incrementCounter(
   counters: Record<string, { refusalCount: number; degradationCount: number; totalEvents: number }>,
   key: string,
@@ -266,6 +295,43 @@ function incrementCounter(
   if (refusal) counters[key].refusalCount++;
   if (degradation) counters[key].degradationCount++;
   counters[key].totalEvents++;
+}
+
+export function buildQualityHealthMetrics(result: any): QualityHealthMetrics {
+  const warnings: WarningShape[] = Array.isArray(result?.analysisWarnings)
+    ? result.analysisWarnings
+    : Array.isArray(result?.warnings)
+      ? result.warnings
+      : [];
+  const meta = result?.meta || {};
+
+  // F4: Evidence sufficiency gate
+  const f4Warnings = warnings.filter(w => w.type === "insufficient_evidence");
+  const totalClaims = meta.claimCount || 0;
+
+  // F5: Baseless challenge enforcement
+  const f5PerClaim = warnings.filter(w => w.type === "baseless_challenge_blocked");
+  const f5Aggregate = warnings.find(w => w.type === "baseless_challenge_detected");
+  const f5TotalAdj = (f5Aggregate?.details as any)?.totalAdjustments || 0;
+
+  // F6: Evidence partition stats + pool imbalance
+  const partitionStats = warnings.find(w => w.type === "evidence_partition_stats");
+  const poolImbalance = warnings.some(w => w.type === "evidence_pool_imbalance");
+  const balanceRatio = meta.evidenceBalance?.balanceRatio ?? null;
+
+  return {
+    f4_insufficientClaims: f4Warnings.length,
+    f4_totalClaims: totalClaims,
+    f4_rejectionRate: totalClaims > 0 ? f4Warnings.length / totalClaims : 0,
+    f5_baselessBlocked: f5PerClaim.length,
+    f5_totalAdjustments: f5TotalAdj,
+    f5_blockRate: f5TotalAdj > 0 ? f5PerClaim.length / f5TotalAdj : 0,
+    f6_partitioningActive: (partitionStats?.details as any)?.partitioningActive ?? false,
+    f6_institutionalCount: (partitionStats?.details as any)?.institutionalCount ?? 0,
+    f6_generalCount: (partitionStats?.details as any)?.generalCount ?? 0,
+    f6_poolImbalanceDetected: poolImbalance,
+    f6_balanceRatio: balanceRatio,
+  };
 }
 
 function isRefusalWarning(type: string, details: Record<string, unknown>): boolean {
@@ -303,8 +369,21 @@ function extractStage(type: string, details: Record<string, unknown>): string {
     case "search_provider_error":
     case "search_fallback":
       return "research_search";
+    case "source_fetch_failure":
+    case "source_fetch_degradation":
+    case "no_successful_sources":
+    case "source_acquisition_collapse":
+      return "research_fetch";
+    case "query_budget_exhausted":
+      return "research_budget";
+    case "budget_exceeded":
+      return "analysis_budget";
+    case "source_reliability_error":
+      return "research_sr";
     case "llm_provider_error":
       return "research_llm";
+    case "report_damaged":
+      return "report";
     case "debate_provider_fallback":
     case "all_same_debate_tier":
     case "grounding_check_degraded":
@@ -312,6 +391,8 @@ function extractStage(type: string, details: Record<string, unknown>): string {
     case "verdict_fallback_partial":
     case "verdict_partial_recovery":
     case "verdict_batch_retry":
+    case "explanation_quality_rubric_failed":
+    case "contested_verdict_range":
       return "verdict";
     default:
       return "unknown";

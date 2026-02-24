@@ -395,6 +395,13 @@ export default function AdminPage() {
             Test and validate API keys and service configurations
           </p>
 
+          <Link href="/admin/quality-health" className={styles.btnPrimary} style={{ background: "#8b5cf6" }}>
+            Analysis Monitoring
+          </Link>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            Unified dashboard: quality gates, quality health (F4/F5/F6), failure modes, performance &amp; cost
+          </p>
+
           <button
             onClick={handleExportAll}
             disabled={exporting}

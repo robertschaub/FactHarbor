@@ -150,6 +150,39 @@
   background-color: #fff;
 }
 
+.qualityStatusBanner {
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #b45309;
+  border-radius: 8px;
+  background: #fff7ed;
+}
+
+.qualityStatusText {
+  font-size: 13px;
+  font-weight: 700;
+  color: #9a3412;
+}
+
+.qualityStatusMeta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9a3412;
+}
+
+.qualityStatusLink {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.qualityStatusLink:hover {
+  color: #1e40af;
+}
+
 /* Provider issue indicator — subtle, collapsed */
 .providerIssueBanner {
   margin: 8px 0 10px;
