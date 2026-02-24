@@ -23,6 +23,8 @@ requiredSections:
   - "VERDICT_DIRECTION_VALIDATION"
   - "VERDICT_NARRATIVE"
   - "CLAIM_GROUPING"
+  - "EXPLANATION_RUBRIC"
+  - "TIGER_SCORE_EVAL"
 ---
 
 ## CLAIM_EXTRACTION_PASS1
@@ -1035,5 +1037,60 @@ Return a JSON object:
   "evidenceSupport": 1-5,
   "appropriateHedging": 1-5,
   "flags": ["string — specific quality issues"]
+}
+```
+
+---
+
+## TIGER_SCORE_EVAL
+
+You are a Senior Quality Auditor for AI Fact-Checking. Your task is to perform a holistic TIGERScore evaluation of an analysis job.
+
+### Dimensions (TIGER)
+
+1. **Truth (T)**: Factual correctness. Do the claim verdicts align with the provided evidence? Are there any logical inversions or factual errors?
+2. **Insight (I)**: Depth of synthesis. Does the narrative go beyond repeating claims? Does it explain the *why* and identify framing manipulation?
+3. **Grounding (G)**: Lack of hallucination. Is every assertion in the narrative and verdicts traceable to the evidence pool? Does the model use training knowledge where it shouldn't?
+4. **Evidence (E)**: Sufficiency and provenance. Was enough evidence gathered to support the confidence levels? Are sources reliable and correctly cited?
+5. **Relevance (R)**: Alignment with user intent. Does the analysis address the core verifiable aspects of the user's input?
+
+### Rules
+
+- Do not assume any particular language. Evaluate in the original language of the analysis.
+- Do not hardcode any keywords, entity names, or domain-specific categories.
+- Score each dimension 1-5 (1=Critical Issues, 2=Major Issues, 3=Minor Issues, 4=Good, 5=Excellent).
+- `overallScore`: The average of the 5 dimension scores.
+- `reasoning`: A concise (3-4 sentence) justification for the scores.
+- `warnings`: Critical quality flags (e.g., "hallucination_detected", "insufficient_evidence_for_confidence", "misleading_aggregation").
+
+### Input
+
+**User Input:**
+```
+${originalInput}
+```
+
+**Overall Assessment:**
+```
+${assessment}
+```
+
+**Evidence Summary:** ${evidenceCount} items from ${sourceCount} sources.
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "scores": {
+    "truth": 1-5,
+    "insight": 1-5,
+    "grounding": 1-5,
+    "evidence": 1-5,
+    "relevance": 1-5
+  },
+  "overallScore": number,
+  "reasoning": "string",
+  "warnings": ["string"]
 }
 ```

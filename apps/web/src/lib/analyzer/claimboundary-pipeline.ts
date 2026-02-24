@@ -39,6 +39,7 @@ import type {
   Gate1Stats,
   AnalysisInput,
   SourceType,
+  TIGERScore,
   TriangulationScore,
   VerdictNarrative,
 } from "./types";
@@ -445,6 +446,35 @@ export async function runClaimBoundaryAnalysis(
       }
       assessment.explanationQualityCheck = qualityCheck;
       console.info(`[Stage5] B-8 explanation quality check (${explanationQualityMode}):`, JSON.stringify(qualityCheck));
+    }
+
+    // Stage 6: Holistic TIGERScore evaluation (Beta)
+    if (initialPipelineConfig.tigerScoreMode === "on") {
+      onEvent("Performing holistic TIGERScore quality evaluation...", 95);
+      try {
+        const llmCallFn = createProductionLLMCall(
+          initialPipelineConfig,
+          state.warnings,
+          recordRuntimeModelUsage,
+          roleTraceRecorder,
+        );
+        assessment.tigerScore = await evaluateTigerScore(
+          state.originalInput,
+          assessment,
+          state.evidenceItems.length,
+          state.sources.length,
+          llmCallFn,
+          initialPipelineConfig
+        );
+        console.info("[Stage 6] TIGERScore evaluation complete:", JSON.stringify(assessment.tigerScore));
+      } catch (tigerError) {
+        console.warn("[Stage 6] TIGERScore evaluation failed:", tigerError);
+        state.warnings.push({
+          type: "tiger_score_failed",
+          severity: "warning",
+          message: `Holistic TIGERScore evaluation failed: ${tigerError instanceof Error ? tigerError.message : String(tigerError)}`,
+        });
+      }
     }
 
     onEvent("Analysis complete.", 100);
@@ -4457,6 +4487,66 @@ export async function generateVerdictNarrative(
   }
 
   return VerdictNarrativeOutputSchema.parse(parsed);
+}
+
+/**
+ * Stage 6: Holistic TIGERScore quality evaluation.
+ */
+async function evaluateTigerScore(
+  originalInput: string,
+  assessment: OverallAssessment,
+  evidenceCount: number,
+  sourceCount: number,
+  llmCall: LLMCallFn,
+  pipelineConfig: PipelineConfig,
+): Promise<TIGERScore> {
+  const TigerScoreOutputSchema = z.object({
+    scores: z.object({
+      truth: z.number().min(1).max(5),
+      insight: z.number().min(1).max(5),
+      grounding: z.number().min(1).max(5),
+      evidence: z.number().min(1).max(5),
+      relevance: z.number().min(1).max(5),
+    }),
+    overallScore: z.number(),
+    reasoning: z.string(),
+    warnings: z.array(z.string()),
+  });
+
+  const raw = await llmCall(
+    "TIGER_SCORE_EVAL",
+    {
+      originalInput,
+      assessment: JSON.stringify({
+        verdict: assessment.verdict,
+        truthPercentage: assessment.truthPercentage,
+        confidence: assessment.confidence,
+        narrative: assessment.verdictNarrative,
+        claims: assessment.claimVerdicts.map(cv => ({
+          claimId: cv.claimId,
+          verdict: cv.verdict,
+          truthPercentage: cv.truthPercentage,
+          confidence: cv.confidence,
+          reasoning: cv.reasoning.slice(0, 300) + "..."
+        }))
+      }, null, 2),
+      evidenceCount: String(evidenceCount),
+      sourceCount: String(sourceCount),
+    },
+    {
+      temperature: 0.1, // Low temperature for evaluative scoring
+      tier: "sonnet",   // Use sonnet tier for quality evaluation
+      callContext: { debateRole: "auditor", promptKey: "TIGER_SCORE_EVAL" }
+    }
+  );
+
+  const parsed = TigerScoreOutputSchema.parse(raw);
+  return {
+    scores: parsed.scores,
+    overallScore: parsed.overallScore,
+    reasoning: parsed.reasoning,
+    warnings: parsed.warnings,
+  };
 }
 
 /**

@@ -987,6 +987,13 @@ export default function JobPage() {
                 </section>
               )}
 
+              {/* Holistic quality evaluation (Stage 6) */}
+              {isCBSchema && result?.tigerScore && (
+                <section className={styles.cbSection}>
+                  <TIGERScorePanel tigerScore={result.tigerScore} />
+                </section>
+              )}
+
               {isCBSchema && result?.coverageMatrix && claimVerdicts.length > 0 && claimBoundaries.length > 0 && (
                 <section className={styles.cbSection}>
                   <h3 className={styles.sectionTitle}>Coverage Matrix</h3>
@@ -1111,6 +1118,71 @@ function decodeHtmlEntities(text: string): string {
 
 
 // ============================================================================
+// TIGERScore Panel
+// ============================================================================
+
+function TIGERScorePanel({ tigerScore }: { tigerScore: any }) {
+  if (!tigerScore) return null;
+
+  const getScoreColor = (score: number) => {
+    if (score >= 4.5) return { bg: "#dcfce7", text: "#166534" };
+    if (score >= 3.5) return { bg: "#f0fdf4", text: "#15803d" };
+    if (score >= 2.5) return { bg: "#fef9c3", text: "#854d0e" };
+    return { bg: "#fee2e2", text: "#991b1b" };
+  };
+
+  const overallColor = getScoreColor(tigerScore.overallScore);
+
+  return (
+    <div className={styles.tigerScorePanel}>
+      <div className={styles.tigerHeader}>
+        <h3 className={styles.tigerTitle}>
+          <span>🐅</span> TIGERScore Holistic Evaluation
+        </h3>
+        <div 
+          className={styles.tigerOverallBadge}
+          style={{ backgroundColor: overallColor.bg, color: overallColor.text }}
+        >
+          {tigerScore.overallScore.toFixed(1)} / 5.0
+        </div>
+      </div>
+
+      <div className={styles.tigerGrid}>
+        {[
+          { label: "Truth (T)", val: tigerScore.scores.truth },
+          { label: "Insight (I)", val: tigerScore.scores.insight },
+          { label: "Grounding (G)", val: tigerScore.scores.grounding },
+          { label: "Evidence (E)", val: tigerScore.scores.evidence },
+          { label: "Relevance (R)", val: tigerScore.scores.relevance },
+        ].map((m) => (
+          <div key={m.label} className={styles.tigerMetric}>
+            <div className={styles.tigerMetricLabel}>{m.label}</div>
+            <div className={styles.tigerMetricValue}>
+              {m.val}<span className={styles.tigerMetricMax}>/5</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={styles.tigerReasoning}>
+        <strong>Auditor's Reasoning:</strong><br />
+        {tigerScore.reasoning}
+      </div>
+
+      {tigerScore.warnings?.length > 0 && (
+        <div className={styles.tigerWarnings}>
+          {tigerScore.warnings.map((w: string, i: number) => (
+            <div key={i} className={styles.tigerWarning}>
+              <span>⚠️</span> {w}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // Sources Panel
 // ============================================================================
 
@@ -1213,29 +1285,37 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
   if (!evidenceItems || evidenceItems.length === 0) return null;
 
   // Group evidence items by claim direction and source type
-  const supportingEvidence = evidenceItems.filter((f: any) => f.claimDirection === "supports" && !f.fromOppositeClaimSearch);
-  const contradictingEvidence = evidenceItems.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch);
+  const supportingEvidence = evidenceItems.filter((f: any) => f.claimDirection === "supports" && !f.fromOppositeClaimSearch && f.searchStrategy !== "contrarian");
+  const contradictingEvidence = evidenceItems.filter((f: any) => f.claimDirection === "contradicts" && !f.fromOppositeClaimSearch && f.searchStrategy !== "contrarian");
   // NEW v2.6.29: Evidence from opposite claim search - evidence that supports the inverse claim
   const oppositeClaimEvidence = evidenceItems.filter((f: any) => f.fromOppositeClaimSearch === true);
+  // NEW: Contrarian evidence from triggered re-search
+  const contrarianEvidence = evidenceItems.filter((f: any) => f.searchStrategy === "contrarian");
   const neutralEvidence = evidenceItems.filter((f: any) =>
-    (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch
+    (f.claimDirection === "neutral" || !f.claimDirection) && !f.fromOppositeClaimSearch && f.searchStrategy !== "contrarian"
   );
 
-  const renderEvidenceCard = (item: any, className: string, extraMeta?: ReactNode) => (
-    <div key={item.id || item.statement} className={`${styles.evidenceItem} ${className}`}>
-      <div className={styles.evidenceText}>
-        {item.statement}
-        {item.evidenceScope && (
-          <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
-        )}
+  const renderEvidenceCard = (item: any, className: string, extraMeta?: ReactNode) => {
+    const isContrarian = item.searchStrategy === "contrarian";
+    const finalClassName = isContrarian ? `${styles.evidenceItemContrarian}` : className;
+    
+    return (
+      <div key={item.id || item.statement} className={`${styles.evidenceItem} ${finalClassName}`}>
+        <div className={styles.evidenceText}>
+          {isContrarian && <span style={{ color: '#ed8936', fontWeight: 700, marginRight: '6px' }}>[CONTRARIAN]</span>}
+          {item.statement}
+          {item.evidenceScope && (
+            <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
+          )}
+        </div>
+        <div className={styles.evidenceMeta}>
+          <span className={styles.evidenceCategory}>{item.category}</span>
+          <span className={styles.evidenceSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
+          {extraMeta}
+        </div>
       </div>
-      <div className={styles.evidenceMeta}>
-        <span className={styles.evidenceCategory}>{item.category}</span>
-        <span className={styles.evidenceSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
-        {extraMeta}
-      </div>
-    </div>
-  );
+    );
+  };
 
   // Renders a list of evidence items, grouping by methodology/EvidenceScope when applicable
   const renderEvidenceList = (items: any[], className: string, extraMeta?: (item: any) => ReactNode) => {
@@ -1266,8 +1346,24 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
         <span className={styles.evidenceStatSupporting}>✅ {supportingEvidence.length} supporting</span>
         <span className={styles.evidenceStatContradicting}>❌ {contradictingEvidence.length} contradicting</span>
         <span className={styles.evidenceStatOpposite}>🔄 {oppositeClaimEvidence.length} opposite claim</span>
+        <span className={styles.evidenceStatContrarian}>🔍 {contrarianEvidence.length} contrarian</span>
         <span className={styles.evidenceStatNeutral}>➖ {neutralEvidence.length} neutral</span>
       </div>
+
+      {/* NEW: Contrarian Evidence - triggered by pool imbalance */}
+      {contrarianEvidence.length > 0 && (
+        <div className={styles.evidenceSection}>
+          <h4 className={styles.evidenceSectionTitle} style={{ color: '#ed8936' }}>
+            🔍 Contrarian Evidence ({contrarianEvidence.length})
+          </h4>
+          <p style={{ fontSize: '12px', color: '#666', fontStyle: 'italic', marginBottom: '12px' }}>
+            These evidence items were gathered specifically to address a detected imbalance in the evidence pool.
+          </p>
+          <div className={styles.evidenceList}>
+            {renderEvidenceList(contrarianEvidence, styles.evidenceItemContrarian)}
+          </div>
+        </div>
+      )}
 
       {/* NEW v2.6.29: Opposite Claim Evidence - displayed prominently */}
       {oppositeClaimEvidence.length > 0 && (
@@ -1949,6 +2045,43 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummar
   );
 }
 
+// ============================================================================
+// Visual Truth Meter
+// ============================================================================
+
+function VisualTruthMeter({
+  truth,
+  range
+}: {
+  truth: number;
+  range?: { min: number; max: number };
+}) {
+  return (
+    <div className={styles.visualTruthMeter}>
+      <div className={styles.meterContainer}>
+        {range && (
+          <div
+            className={styles.meterRange}
+            style={{
+              left: `${range.min}%`,
+              width: `${range.max - range.min}%`
+            }}
+          />
+        )}
+        <div
+          className={styles.meterMark}
+          style={{ left: `${truth}%` }}
+        />
+      </div>
+      <div className={styles.meterLabels}>
+        <span>0%</span>
+        <span className={styles.meterValueLabel}>{truth}%</span>
+        <span>100%</span>
+      </div>
+    </div>
+  );
+}
+
 function ClaimCard({
   claim,
   claimBoundaries = [],
@@ -2008,6 +2141,9 @@ function ClaimCard({
       </div>
       <div className={styles.claimLabel}>Claim Being Evaluated:</div>
       <div className={styles.claimText}>"{claim.claimText}"</div>
+      
+      <VisualTruthMeter truth={claimTruth} range={claim.truthPercentageRange} />
+
       <div className={`${styles.claimReasoning}${(claim.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{claim.reasoning}</div>
       {claim.isContested && claim.contestedBy && (
         <div className={styles.claimContestation}>

@@ -201,6 +201,31 @@ a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
 .small-meter-val{font-size:24px;font-weight:800}
 .small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
 .small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
 .reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
 details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
 details summary::-webkit-details-marker{display:none}
@@ -374,8 +399,12 @@ function buildVerdictBanner(input: HtmlReportInput): string {
         <div class="meter-label">Confidence</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${conf}%;background:#4a5568"></div></div>
       </div>
-      ${result?.truthPercentageRange ? `<div style="font-size:11px;color:#a0aec0;margin-top:4px">Range: ${result.truthPercentageRange.min}%–${result.truthPercentageRange.max}%</div>` : ""}
     </div>
+    
+    <div style="margin-top:20px">
+      ${buildVisualTruthMeter(truthPct, result?.truthPercentageRange)}
+    </div>
+
     ${keyFinding && keyFinding.length > 120 ? `<div style="max-width:380px">
       <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
       <div style="font-size:13px;color:#cbd5e0;line-height:1.6">${esc(keyFinding)}</div>
@@ -451,9 +480,11 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
           <div class="small-meter-val" style="color:#a0aec0">${conf}%</div>
           <div class="small-meter-label">Confidence</div>
         </div>
-        ${cv.truthPercentageRange ? `<div class="small-meter"><div class="small-meter-val" style="color:#a0aec0;font-size:10px">${cv.truthPercentageRange.min}%–${cv.truthPercentageRange.max}%</div><div class="small-meter-label">Range</div></div>` : ""}
       </div>
     </div>
+
+    ${buildVisualTruthMeter(tp, cv.truthPercentageRange)}
+
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
       ${ac.category ? `<span class="chip chip-gray">Category: ${esc(ac.category)}</span>` : ""}
       ${ac.centrality ? `<span class="chip chip-gray">Centrality: ${esc(ac.centrality)}</span>` : ""}
@@ -760,6 +791,67 @@ function buildFooter(meta: any, jobId: string): string {
 </div>`;
 }
 
+function buildTigerScore(tiger: any): string {
+  if (!tiger) return "";
+  
+  const getScoreColor = (score: number) => {
+    if (score >= 4.5) return { bg: "#1c4532", text: "#68d391" };
+    if (score >= 3.5) return { bg: "#1a3626", text: "#48bb78" };
+    if (score >= 2.5) return { bg: "#2d2a1a", text: "#f6ad55" };
+    return { bg: "#2d1a1a", text: "#fc8181" };
+  };
+
+  const colors = getScoreColor(tiger.overallScore);
+
+  return `<!-- TIGERSCORE -->
+<div class="tiger-panel">
+  <div class="tiger-head">
+    <div class="tiger-title">🐅 TIGERScore Holistic Evaluation</div>
+    <div class="tiger-overall" style="background:${colors.bg};color:${colors.text}">
+      ${tiger.overallScore.toFixed(1)} / 5.0
+    </div>
+  </div>
+  <div class="tiger-grid">
+    ${[
+      { label: "Truth (T)", val: tiger.scores.truth },
+      { label: "Insight (I)", val: tiger.scores.insight },
+      { label: "Grounding (G)", val: tiger.scores.grounding },
+      { label: "Evidence (E)", val: tiger.scores.evidence },
+      { label: "Relevance (R)", val: tiger.scores.relevance },
+    ].map(m => `
+      <div class="tiger-metric">
+        <div class="tiger-label">${esc(m.label)}</div>
+        <div class="tiger-val">${m.val}<span class="tiger-max">/5</span></div>
+      </div>
+    `).join("")}
+  </div>
+  <div class="tiger-reason">
+    <strong>Auditor's Reasoning:</strong><br>
+    ${esc(tiger.reasoning)}
+  </div>
+  ${tiger.warnings?.length > 0 ? `
+    <div class="tiger-warn">
+      <span>⚠️</span>
+      <div>${tiger.warnings.map((w: string) => esc(w)).join("<br>")}</div>
+    </div>
+  ` : ""}
+</div>`;
+}
+
+function buildVisualTruthMeter(truth: number, range?: { min: number; max: number }): string {
+  return `<div class="vm-container">
+    <div class="vm-bar">
+      ${range ? `<div class="vm-range" style="left:${range.min}%;width:${range.max - range.min}%"></div>` : ""}
+      <div class="vm-mark" style="left:${truth}%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">${truth}%</span>
+      <span>100%</span>
+    </div>
+  </div>`;
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -794,6 +886,7 @@ ${buildCss()}
 ${buildHeader(input)}
 ${buildVerdictBanner(input)}
 ${buildVerdictNarrative(narrative)}
+${buildTigerScore(result?.tigerScore)}
 ${buildClaimVerdicts(input)}
 ${buildClaimBoundariesSection(input)}
 ${buildEvidenceSection(input.evidenceItems, input.claimVerdicts)}

@@ -669,7 +669,8 @@ export type AnalysisWarningType =
   | "baseless_challenge_detected"   // Baseless-challenge enforcement summary/metrics (blocked adjustment count/rate)
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
-  | "insufficient_evidence";           // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
+  | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
+  | "tiger_score_failed";              // Stage 6: Holistic TIGERScore evaluation failed
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
@@ -1034,6 +1035,25 @@ export interface ExplanationQualityCheck {
 }
 
 /**
+ * TIGERScore: Comprehensive analytical quality evaluation.
+ * T: Truth, I: Insight, G: Grounding, E: Evidence, R: Relevance.
+ *
+ * @since ClaimAssessmentBoundary pipeline v1 (Stage 6)
+ */
+export interface TIGERScore {
+  scores: {
+    truth: number;               // 1-5: factual correctness
+    insight: number;             // 1-5: depth of synthesis
+    grounding: number;           // 1-5: lack of hallucination
+    evidence: number;            // 1-5: sufficiency and provenance
+    relevance: number;           // 1-5: alignment with user intent
+  };
+  overallScore: number;          // Weighted average 1-5
+  reasoning: string;             // Qualitative justification
+  warnings: string[];            // Critical quality flags
+}
+
+/**
  * OverallAssessment: Final aggregated result of the ClaimAssessmentBoundary pipeline.
  *
  * @since ClaimAssessmentBoundary pipeline v1
@@ -1053,4 +1073,6 @@ export interface OverallAssessment {
   truthPercentageRange?: TruthPercentageRange;
   /** B-8: Explanation quality check result (when explanationQualityMode !== "off"). */
   explanationQualityCheck?: ExplanationQualityCheck;
+  /** Stage 6: Holistic TIGERScore evaluation (Beta). */
+  tigerScore?: TIGERScore;
 }
