@@ -20,8 +20,9 @@ export function generateCalibrationReport(
   result: CalibrationRunResult,
 ): string {
   const am = result.aggregateMetrics;
-  const passClass = am.overallPassed ? "pass" : "fail";
-  const passLabel = am.overallPassed ? "PASS" : "FAIL";
+  const operationalPassed = am.operationalGatePassed ?? am.overallPassed;
+  const passClass = operationalPassed ? "pass" : "fail";
+  const passLabel = operationalPassed ? "OPERATIONAL PASS" : "OPERATIONAL FAIL";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -438,19 +439,22 @@ function renderVerdictBanner(
   passLabel: string,
 ): string {
   const am = r.aggregateMetrics;
+  const operationalPassed = am.operationalGatePassed ?? am.overallPassed;
   const skewDir =
     am.meanDirectionalSkew > 0
       ? "favors left"
       : am.meanDirectionalSkew < 0
         ? "favors right"
         : "balanced";
+  const diagnosticLabel = am.diagnosticGatePassed ? "PASS" : "FAIL";
 
   return `
 <section class="verdict-banner ${passClass}">
   <div class="verdict-label">${passLabel}</div>
   <div class="verdict-detail">
-    Mean directional skew: <strong>${am.meanDirectionalSkew.toFixed(1)} pp</strong> (${skewDir})
-    &nbsp;|&nbsp; Pass rate: <strong>${(am.passRate * 100).toFixed(0)}%</strong>
+    Execution reliability: <strong>${operationalPassed ? "stable" : "degraded"}</strong>
+    &nbsp;|&nbsp; Diagnostic gate: <strong>${diagnosticLabel}</strong>
+    &nbsp;|&nbsp; Mean directional skew: <strong>${am.meanDirectionalSkew.toFixed(1)} pp</strong> (${skewDir})
   </div>
 </section>`;
 }
@@ -460,6 +464,7 @@ function renderInterpretationGuide(r: CalibrationRunResult): string {
   const t = r.thresholds;
   const diagnosticOnly = am.diagnosticPairCount > 0;
   const canaryLike = am.totalPairs <= 1 || r.metadata.mode === "targeted";
+  const operationalPassed = am.operationalGatePassed ?? am.overallPassed;
 
   return `
 <section class="panel interpretation-panel">
@@ -481,6 +486,11 @@ function renderInterpretationGuide(r: CalibrationRunResult): string {
     This run: diagnostic pairs = <strong>${am.diagnosticPairCount}</strong>,
     diagnostic mean |adjustedSkew| = <strong>${am.diagnosticMeanAdjustedSkew.toFixed(1)} pp</strong>,
     diagnostic gate = <strong>${am.diagnosticGatePassed ? "PASS" : "FAIL"}</strong>.
+  </div>
+
+  <div class="interp-note">
+    Operational gate (execution reliability) = <strong>${operationalPassed ? "PASS" : "FAIL"}</strong>.
+    This gate uses completion/failure-mode stability, not skew thresholds.
   </div>
 
   ${diagnosticOnly ? "" : `
@@ -515,11 +525,11 @@ function renderAggregatePanel(r: CalibrationRunResult): string {
   <div class="metrics-grid">
     <div class="metric">
       <span class="metric-value ${Math.abs(am.meanDirectionalSkew) <= t.maxMeanDirectionalSkew ? "pass" : "fail"}">${am.meanDirectionalSkew.toFixed(1)} pp</span>
-      <span class="metric-label">Mean Directional Skew (±${t.maxMeanDirectionalSkew})</span>
+      <span class="metric-label">Mean Directional Skew (diagnostic, ±${t.maxMeanDirectionalSkew})</span>
     </div>
     <div class="metric">
       <span class="metric-value ${am.meanAbsoluteSkew <= t.maxMeanAbsoluteSkew ? "pass" : "fail"}">${am.meanAbsoluteSkew.toFixed(1)} pp</span>
-      <span class="metric-label">Mean Absolute Skew (≤${t.maxMeanAbsoluteSkew})</span>
+      <span class="metric-label">Mean Absolute Skew (diagnostic, ≤${t.maxMeanAbsoluteSkew})</span>
     </div>
     <div class="metric">
       <span class="metric-value">${am.maxAbsoluteSkew.toFixed(1)} pp</span>
@@ -1184,4 +1194,3 @@ footer {
   margin-top: 20px;
 }
 `;
-

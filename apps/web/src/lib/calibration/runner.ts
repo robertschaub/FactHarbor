@@ -49,6 +49,11 @@ export interface RunOptions {
     pairIndex: number,
     totalPairs: number,
   ) => void;
+  /**
+   * Optional checkpoint callback invoked after each pair (success or failure).
+   * Used by long-running lanes to persist partial artifacts.
+   */
+  onCheckpoint?: (partialResult: CalibrationRunResult) => void | Promise<void>;
 }
 
 /**
@@ -71,6 +76,7 @@ export async function runCalibration(
 
   // Snapshot config at start (for reproducibility)
   const configSnapshot = await captureConfigSnapshot();
+  const runId = generateRunId();
 
   // Run pairs sequentially (avoids search provider contention)
   const pairResults: PairResult[] = [];
@@ -118,34 +124,37 @@ export async function runCalibration(
         activePairs.length,
       );
     }
+
+    if (options.onCheckpoint) {
+      const partialResult = buildRunResult(
+        runId,
+        new Date().toISOString(),
+        options,
+        activePairs,
+        configSnapshot,
+        pairResults,
+        thresholds,
+      );
+      try {
+        await options.onCheckpoint(partialResult);
+      } catch (checkpointError) {
+        console.warn(
+          "[Calibration] Checkpoint callback failed:",
+          checkpointError,
+        );
+      }
+    }
   }
 
-  const aggregateMetrics = computeAggregateMetrics(pairResults, thresholds);
-  const pairsCompleted = pairResults.filter((r) => r.status === "completed").length;
-  const pairsFailed = pairResults.length - pairsCompleted;
-
-  return {
-    runId: generateRunId(),
-    timestamp: new Date().toISOString(),
-    runMode: options.mode,
+  return buildRunResult(
+    runId,
+    new Date().toISOString(),
+    options,
+    activePairs,
     configSnapshot,
     pairResults,
-    aggregateMetrics,
-    metadata: {
-      runIntent: options.runIntent,
-      fixtureFile: options.fixtureFile ?? "framing-symmetry-pairs.json",
-      fixtureVersion: options.fixtureVersion ?? "unknown",
-      pairsRequested: activePairs.length,
-      pairsCompleted,
-      pairsFailed,
-      pairsSkipped: 0,
-      mode: options.mode,
-      targetDomain: options.targetDomain,
-      targetLanguage: options.targetLanguage,
-      schemaVersion: "calibration-1.0",
-    },
     thresholds,
-  };
+  );
 }
 
 // ============================================================================
@@ -188,6 +197,43 @@ function filterPairs(pairs: BiasPair[], options: RunOptions): BiasPair[] {
 
   // "full" mode — all pairs
   return pairs;
+}
+
+function buildRunResult(
+  runId: string,
+  timestamp: string,
+  options: RunOptions,
+  activePairs: BiasPair[],
+  configSnapshot: CalibrationRunResult["configSnapshot"],
+  pairResults: PairResult[],
+  thresholds: CalibrationThresholds,
+): CalibrationRunResult {
+  const aggregateMetrics = computeAggregateMetrics(pairResults, thresholds);
+  const pairsCompleted = pairResults.filter((r) => r.status === "completed").length;
+  const pairsFailed = pairResults.length - pairsCompleted;
+
+  return {
+    runId,
+    timestamp,
+    runMode: options.mode,
+    configSnapshot,
+    pairResults: [...pairResults],
+    aggregateMetrics,
+    metadata: {
+      runIntent: options.runIntent,
+      fixtureFile: options.fixtureFile ?? "framing-symmetry-pairs.json",
+      fixtureVersion: options.fixtureVersion ?? "unknown",
+      pairsRequested: activePairs.length,
+      pairsCompleted,
+      pairsFailed,
+      pairsSkipped: Math.max(0, activePairs.length - pairResults.length),
+      mode: options.mode,
+      targetDomain: options.targetDomain,
+      targetLanguage: options.targetLanguage,
+      schemaVersion: "calibration-1.0",
+    },
+    thresholds,
+  };
 }
 
 async function captureConfigSnapshot(): Promise<
@@ -530,4 +576,3 @@ function generateRunId(): string {
   const rand = Math.random().toString(36).slice(2, 8);
   return `cal-${now}-${rand}`;
 }
-

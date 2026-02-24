@@ -275,13 +275,16 @@ export interface AggregateMetrics {
     >;
   };
 
+  // Operational gate (execution reliability) — does not use skew thresholds.
+  operationalGatePassed: boolean;
+
   // Bias-diagnostic gate (v3.0.0+): computed over bias-diagnostic pairs only
   diagnosticPairCount: number;
   diagnosticMeanAdjustedSkew: number;
   diagnosticPassRate: number;
   diagnosticGatePassed: boolean;
 
-  // Overall pass/fail (backward-compatible: all pairs)
+  // Backward-compatible top-level pass/fail (aliases operationalGatePassed).
   overallPassed: boolean;
   passRate: number;
 
@@ -436,4 +439,3 @@ export interface CalibrationComparisonResult {
     unchangedPairs: number;
   };
 }
-

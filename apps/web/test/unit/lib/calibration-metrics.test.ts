@@ -235,4 +235,51 @@ describe("calibration failure-mode metrics", () => {
     expect(aggregate.failureModes.byStage.research_search.degradationCount).toBe(3);
     expect(aggregate.failureModes.byStage.preliminary_search.degradationCount).toBe(1);
   });
+
+  it("keeps operational gate independent from diagnostic skew gate", () => {
+    const thresholds = DEFAULT_CALIBRATION_THRESHOLDS;
+    const pair: BiasPair = {
+      id: "pair-diag",
+      domain: "policy",
+      language: "en",
+      leftClaim: "left",
+      rightClaim: "right",
+      category: "factual",
+      expectedSkew: "neutral",
+      pairCategory: "bias-diagnostic",
+      description: "diagnostic pair",
+    };
+
+    const left = createSide({
+      side: "left",
+      truthPercentage: 82,
+      llmCalls: 12,
+    });
+    const right = createSide({
+      side: "right",
+      truthPercentage: 18,
+      llmCalls: 12,
+    });
+
+    const metrics = computePairMetrics(left, right, pair, thresholds);
+    expect(metrics.passed).toBe(false);
+
+    const aggregate = computeAggregateMetrics(
+      [
+        {
+          pairId: pair.id,
+          pair,
+          status: "completed",
+          left,
+          right,
+          metrics,
+        },
+      ],
+      thresholds,
+    );
+
+    expect(aggregate.diagnosticGatePassed).toBe(false);
+    expect(aggregate.operationalGatePassed).toBe(true);
+    expect(aggregate.overallPassed).toBe(true);
+  });
 });

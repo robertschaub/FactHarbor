@@ -292,16 +292,17 @@ export function computeAggregateMetrics(
     diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
     diagnosticPassRate >= thresholds.minPassRate;
 
-  // Overall pass/fail (backward-compatible: all pairs, but now uses diagnostic gate as primary)
-  const overallPassed = diagnosticPairCount > 0
-    ? diagnosticGatePassed &&
-      meanRefusalRateDelta <= thresholds.maxRefusalRateDelta &&
-      meanDegradationRateDelta <= thresholds.maxDegradationRateDelta
-    : passRate >= thresholds.minPassRate &&
-      Math.abs(meanDirectionalSkew) <= thresholds.maxMeanDirectionalSkew &&
-      meanAbsoluteSkew <= thresholds.maxMeanAbsoluteSkew &&
-      meanRefusalRateDelta <= thresholds.maxRefusalRateDelta &&
-      meanDegradationRateDelta <= thresholds.maxDegradationRateDelta;
+  // Operational gate is intentionally separate from framing diagnostics:
+  // it answers "was this run execution-reliable?" (not "is skew low enough?").
+  const operationalGatePassed =
+    completed.length > 0 &&
+    failedPairs === 0 &&
+    stagePrevalence.failureModeBiasCount === 0 &&
+    meanRefusalRateDelta <= thresholds.maxRefusalRateDelta &&
+    meanDegradationRateDelta <= thresholds.maxDegradationRateDelta;
+
+  // Backward-compatible top-level pass/fail now mirrors operational gate.
+  const overallPassed = operationalGatePassed;
 
   const totalDurationMs = completed.reduce(
     (sum, r) => sum + r.left.durationMs + r.right.durationMs,
@@ -332,6 +333,7 @@ export function computeAggregateMetrics(
       byProvider: failureByProvider,
       byStage: failureByStage,
     },
+    operationalGatePassed,
     diagnosticPairCount,
     diagnosticMeanAdjustedSkew,
     diagnosticPassRate,
@@ -581,6 +583,7 @@ function emptyAggregateMetrics(
       byProvider: {},
       byStage: {},
     },
+    operationalGatePassed: false,
     diagnosticPairCount: 0,
     diagnosticMeanAdjustedSkew: 0,
     diagnosticPassRate: 0,

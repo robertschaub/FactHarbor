@@ -110,4 +110,45 @@ describe("runCalibration failure diagnostics", () => {
     expect(pair?.status).toBe("completed");
     expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(3);
   });
+
+  it("emits a checkpoint result after each pair", async () => {
+    vi.mocked(runClaimBoundaryAnalysis)
+      .mockResolvedValueOnce({
+        resultJson: {
+          truthPercentage: 60,
+          confidence: 70,
+          verdict: "LEANING-TRUE",
+          evidenceItems: [],
+          sources: [],
+        },
+        reportMarkdown: "",
+      } as any)
+      .mockResolvedValueOnce({
+        resultJson: {
+          truthPercentage: 40,
+          confidence: 68,
+          verdict: "LEANING-FALSE",
+          evidenceItems: [],
+          sources: [],
+        },
+        reportMarkdown: "",
+      } as any);
+
+    const checkpoints: Array<{ completed: number; failed: number }> = [];
+
+    const result = await runCalibration(PAIRS, {
+      mode: "full",
+      runIntent: "gate",
+      onCheckpoint: (partialResult) => {
+        checkpoints.push({
+          completed: partialResult.metadata.pairsCompleted,
+          failed: partialResult.metadata.pairsFailed,
+        });
+      },
+    });
+
+    expect(result.pairResults[0]?.status).toBe("completed");
+    expect(checkpoints).toHaveLength(1);
+    expect(checkpoints[0]).toEqual({ completed: 1, failed: 0 });
+  });
 });

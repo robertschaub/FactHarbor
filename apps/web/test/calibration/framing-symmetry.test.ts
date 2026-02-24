@@ -16,7 +16,11 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCalibration } from "@/lib/calibration/runner";
 import { generateCalibrationReport } from "@/lib/calibration/report-generator";
-import type { BiasPair, BiasFixtures } from "@/lib/calibration/types";
+import type {
+  BiasPair,
+  BiasFixtures,
+  CalibrationRunResult,
+} from "@/lib/calibration/types";
 
 // ============================================================================
 // CONFIGURATION
@@ -87,6 +91,21 @@ function loadBiasFixtures(): BiasFixtures {
   return JSON.parse(
     fs.readFileSync(fixturesPath, "utf-8"),
   ) as BiasFixtures;
+}
+
+function safeUnlink(filePath: string): void {
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+}
+
+function writeRunArtifacts(
+  result: CalibrationRunResult,
+  jsonPath: string,
+  htmlPath: string,
+): void {
+  fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
+  fs.writeFileSync(htmlPath, generateCalibrationReport(result));
 }
 
 function resolveRunIntent(mode: "quick" | "full" | "targeted"): "gate" | "smoke" {
@@ -237,12 +256,29 @@ describe("Framing Symmetry Calibration", () => {
       await preflightConfigCheck(quickRunIntent);
 
       console.log("[Symmetry Calibration] Starting quick mode run...");
+      const quickPartialJsonPath = path.join(
+        outputDir,
+        `${quickRunIntent}-quick-latest.partial.json`,
+      );
+      const quickPartialHtmlPath = path.join(
+        outputDir,
+        `${quickRunIntent}-quick-latest.partial.html`,
+      );
+      safeUnlink(quickPartialJsonPath);
+      safeUnlink(quickPartialHtmlPath);
 
       const result = await runCalibration(pairs, {
         mode: "quick",
         runIntent: quickRunIntent,
         fixtureVersion,
         onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
+        onCheckpoint: (partialResult) => {
+          writeRunArtifacts(
+            partialResult,
+            quickPartialJsonPath,
+            quickPartialHtmlPath,
+          );
+        },
       });
       const runIntent = result.metadata.runIntent ?? quickRunIntent;
 
@@ -252,16 +288,14 @@ describe("Framing Symmetry Calibration", () => {
         outputDir,
         `${runIntent}-quick-${timestamp}.json`,
       );
-      fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
-      console.log(`[Symmetry Calibration] JSON results: ${jsonPath}`);
-
-      // Generate HTML report
-      const html = generateCalibrationReport(result);
       const htmlPath = path.join(
         outputDir,
         `${runIntent}-quick-${timestamp}.html`,
       );
-      fs.writeFileSync(htmlPath, html);
+      writeRunArtifacts(result, jsonPath, htmlPath);
+      safeUnlink(quickPartialJsonPath);
+      safeUnlink(quickPartialHtmlPath);
+      console.log(`[Symmetry Calibration] JSON results: ${jsonPath}`);
       console.log(`[Symmetry Calibration] HTML report: ${htmlPath}`);
 
       // Log summary
@@ -278,12 +312,15 @@ describe("Framing Symmetry Calibration", () => {
         `  Diagnostic gate: ${am.diagnosticGatePassed ? "PASS" : "FAIL"} (${am.diagnosticPairCount} bias-diagnostic pairs)`,
       );
       console.log(
+        `  Operational gate: ${am.operationalGatePassed ? "PASS" : "FAIL"} (execution reliability)`,
+      );
+      console.log(
         `  Diagnostic mean |adjustedSkew|: ${am.diagnosticMeanAdjustedSkew.toFixed(1)} pp (target: ≤${result.thresholds.maxDiagnosticMeanSkew})`,
       );
       console.log(
         `  Pass rate: ${(am.passRate * 100).toFixed(0)}% all / ${(am.diagnosticPassRate * 100).toFixed(0)}% diagnostic`,
       );
-      console.log(`  Overall: ${am.overallPassed ? "PASS" : "FAIL"}`);
+      console.log(`  Overall (compat): ${am.overallPassed ? "PASS" : "FAIL"}`);
       console.log(
         `  Duration: ${(am.totalDurationMs / 1000).toFixed(0)}s`,
       );
@@ -301,7 +338,7 @@ describe("Framing Symmetry Calibration", () => {
         }
       }
 
-      // Assertions — use diagnostic gate as primary
+      // Assertions — operational integrity only
       expect(result.aggregateMetrics.completedPairs).toBeGreaterThan(0);
       expect(
         result.aggregateMetrics.completedPairs + result.aggregateMetrics.failedPairs,
@@ -322,12 +359,29 @@ describe("Framing Symmetry Calibration", () => {
       await preflightConfigCheck(fullRunIntent);
 
       console.log("[Symmetry Calibration] Starting full mode run...");
+      const fullPartialJsonPath = path.join(
+        outputDir,
+        `${fullRunIntent}-full-latest.partial.json`,
+      );
+      const fullPartialHtmlPath = path.join(
+        outputDir,
+        `${fullRunIntent}-full-latest.partial.html`,
+      );
+      safeUnlink(fullPartialJsonPath);
+      safeUnlink(fullPartialHtmlPath);
 
       const result = await runCalibration(pairs, {
         mode: "full",
         runIntent: fullRunIntent,
         fixtureVersion,
         onProgress: (msg) => console.log(`  [Calibration] ${msg}`),
+        onCheckpoint: (partialResult) => {
+          writeRunArtifacts(
+            partialResult,
+            fullPartialJsonPath,
+            fullPartialHtmlPath,
+          );
+        },
       });
       const runIntent = result.metadata.runIntent ?? fullRunIntent;
 
@@ -337,14 +391,13 @@ describe("Framing Symmetry Calibration", () => {
         outputDir,
         `${runIntent}-full-${timestamp}.json`,
       );
-      fs.writeFileSync(jsonPath, JSON.stringify(result, null, 2));
-
-      const html = generateCalibrationReport(result);
       const htmlPath = path.join(
         outputDir,
         `${runIntent}-full-${timestamp}.html`,
       );
-      fs.writeFileSync(htmlPath, html);
+      writeRunArtifacts(result, jsonPath, htmlPath);
+      safeUnlink(fullPartialJsonPath);
+      safeUnlink(fullPartialHtmlPath);
 
       console.log(`[Symmetry Calibration] Full results: ${jsonPath}`);
       console.log(`[Symmetry Calibration] Full HTML report: ${htmlPath}`);
@@ -352,7 +405,9 @@ describe("Framing Symmetry Calibration", () => {
       // Log per-domain and per-language breakdown
       const am = result.aggregateMetrics;
       console.log(`\n[Symmetry Calibration] === FULL RESULTS ===`);
-      console.log(`  Overall: ${am.overallPassed ? "PASS" : "FAIL"}`);
+      console.log(
+        `  Operational gate: ${am.operationalGatePassed ? "PASS" : "FAIL"}`,
+      );
       console.log(
         `  Diagnostic gate: ${am.diagnosticGatePassed ? "PASS" : "FAIL"} (${am.diagnosticPairCount} bias-diagnostic pairs)`,
       );
@@ -362,6 +417,7 @@ describe("Framing Symmetry Calibration", () => {
       console.log(
         `  Mean directional skew: ${am.meanDirectionalSkew.toFixed(1)} pp (all pairs, raw)`,
       );
+      console.log(`  Overall (compat): ${am.overallPassed ? "PASS" : "FAIL"}`);
 
       console.log(`\n  Per-domain:`);
       for (const [domain, stats] of Object.entries(am.perDomain)) {
@@ -523,4 +579,3 @@ describe("Framing Symmetry Calibration", () => {
     CANARY_TIMEOUT_MS,
   );
 });
-

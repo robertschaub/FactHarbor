@@ -7,6 +7,16 @@
 
 ---
 
+## Recent Changes (2026-02-24)
+
+**Calibration harness reliability + interpretation update:**
+- ✅ Added pair-by-pair checkpoint artifacts for long calibration runs (`*.partial.json` + `*.partial.html`) to avoid total data loss on interruption
+- ✅ Split report interpretation into **operational gate** (execution reliability) vs **diagnostic gate** (framing-skew telemetry)
+- ✅ Top-level calibration report verdict now reflects operational status; skew remains visible as optimization signal
+- ✅ Calibration policy document updated with explicit purpose/value and acceptance guidance
+
+---
+
 ## ClaimAssessmentBoundary Pipeline v1.0 (2026-02-17)
 
 **Status:** IMPLEMENTED — All 5 pipeline stages operational. 853 tests passing. Build clean.

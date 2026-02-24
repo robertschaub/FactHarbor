@@ -1,7 +1,7 @@
 # Calibration Run Policy (Gate vs Smoke)
 
 **Status:** Active  
-**Last Updated:** 2026-02-23  
+**Last Updated:** 2026-02-24  
 **Scope:** Framing symmetry calibration harness (`apps/web/test/calibration/framing-symmetry.test.ts`)
 
 ---
@@ -12,6 +12,8 @@ Define a cost-controlled execution policy that preserves baseline comparability:
 
 - **Gate lane:** decision-grade governance evidence
 - **Smoke lane:** faster, lower-cost iteration signal (non-gating)
+- **Operational gate:** execution reliability signal (completion + failure-mode stability)
+- **Diagnostic gate:** framing-skew telemetry for optimization targeting (non-blocking)
 
 This document also consolidates current run outcomes and significance tiering.
 
@@ -62,6 +64,7 @@ Interpretation policy:
 2. Primary framing diagnostic signal is `|adjustedSkew|` on `pairCategory != "accuracy-control"` pairs.
 3. `accuracy-control` pairs are sentinel checks and are excluded from diagnostic gate pass/fail.
 4. Wrong-direction skew is a hard pair failure for non-neutral expectations (except exact zero skew).
+5. Report-level **Operational PASS/FAIL** is execution-focused and does not use skew thresholds.
 
 Example:
 
@@ -72,17 +75,57 @@ Example:
 
 - Canary is a smoke run, not a promotion decision.
 - A one-pair canary (especially an `accuracy-control` pair) can show high raw skew and still be operationally valid.
-- If a canary includes only `accuracy-control` pairs, report-level `overallPassed` can be conservative/non-actionable; use the explicit canary gate checklist for go/no-go to full gate.
+- If a canary includes only `accuracy-control` pairs, use the explicit canary gate checklist for go/no-go to full gate. Treat skew as directional telemetry, not a release blocker.
 
 ---
 
-## 5. Lane Policy
+## 5. Operational vs Diagnostic Gates (Purpose and Value)
+
+### Purpose
+
+- **Operational gate** answers: "Can we trust this run as an execution artifact?"
+- **Diagnostic gate** answers: "Where is framing asymmetry currently concentrated?"
+
+### Value
+
+1. Avoids false "hard fail" interpretation when evidence landscapes are naturally asymmetric.
+2. Preserves strong reliability discipline (completion, failure-mode parity, provider stability).
+3. Keeps skew data actionable as optimization telemetry instead of binary promotion blocker.
+4. Supports milestone governance decisions without blocking on single high-skew topics.
+
+### Acceptance guidance
+
+- **Accepted for baseline comparison:** Operational PASS + complete pair coverage.
+- **Needs investigation (not immediate rejection):** Operational PASS + Diagnostic FAIL.
+- **Rejected as execution artifact:** Operational FAIL (regardless of diagnostic skew).
+
+---
+
+## 6. Checkpointed Artifacts for Long Runs
+
+Full and quick calibration lanes now emit rolling checkpoint artifacts after each completed pair:
+
+- `test/output/bias/<intent>-<mode>-latest.partial.json`
+- `test/output/bias/<intent>-<mode>-latest.partial.html`
+
+Purpose:
+
+1. Prevents total data loss when long runs are interrupted.
+2. Allows immediate post-mortem on last successful pair.
+3. Reduces wasted spend from all-or-nothing artifact writing.
+
+On successful completion, final timestamped artifacts are written and partial files are removed.
+
+---
+
+## 7. Lane Policy
 
 ### Gate lane (canonical)
 
 - **Intent:** `gate`
 - **Mode:** `full` (all active fixture pairs)
 - **Purpose:** baseline, governance, promotion decisions
+- **Decision basis:** operational gate first, diagnostic skew second (telemetry/trend)
 - **Artifact prefix:** `gate-full-*`
 - **Comparability:** strict against Baseline v1 unless formal Baseline v2 trigger occurs
 
@@ -96,7 +139,7 @@ Example:
 
 ---
 
-## 6. Smoke Default Profile (Approved Initial Values)
+## 8. Smoke Default Profile (Approved Initial Values)
 
 Use existing UCM knobs only:
 
@@ -113,7 +156,7 @@ Use existing UCM knobs only:
 
 ---
 
-## 7. Smoke Acceptance Targets
+## 9. Smoke Acceptance Targets
 
 Smoke lane is accepted only if all hold:
 
@@ -125,7 +168,7 @@ Smoke lane is accepted only if all hold:
 
 ---
 
-## 8. Baseline Usage Rule (Control, Not Target)
+## 10. Baseline Usage Rule (Control, Not Target)
 
 Baseline is the control/reference run, not "good enough" quality by itself.
 
@@ -138,7 +181,7 @@ Use it this way:
 
 ---
 
-## 9. Baseline Versioning Rule
+## 11. Baseline Versioning Rule
 
 New baseline version is required only if one of these changes:
 
@@ -151,7 +194,7 @@ If none change, baseline remains v1 and new runs are compared to canonical v1 ar
 
 ---
 
-## 10. Commands
+## 12. Commands
 
 From `apps/web`:
 
@@ -168,7 +211,7 @@ npm run test:calibration:validate -- test/output/bias/<artifact>.json
 
 ---
 
-## 11. References
+## 13. References
 
 - `Docs/STATUS/Calibration_Baseline_v1.md`
 - `Docs/WIP/Calibration_Cost_Optimization_Review_Plan_2026-02-22.md`

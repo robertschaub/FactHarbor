@@ -1490,3 +1490,24 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - Use `apps/web/test/fixtures/framing-symmetry-pairs.json` as canonical fixture path in any new scripts/docs.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | Calibration Harness: Operational Gate Split + Pair Checkpointing
+**Task:** Implement calibration harness improvements so skew stays diagnostic (non-blocking), execution reliability is clearly separated, and long runs persist partial artifacts after each pair.
+**Files touched:** `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/calibration/framing-symmetry.test.ts`, `apps/web/test/unit/lib/calibration-metrics.test.ts`, `apps/web/test/unit/lib/calibration-runner-failures.test.ts`, `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/STATUS/Current_Status.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `operationalGatePassed` to aggregate metrics and changed top-level `overallPassed` semantics to mirror operational reliability (backward-compatible field retained).
+- Kept framing skew as explicit diagnostic telemetry via existing `diagnosticGatePassed` + adjusted-skew metrics.
+- Added `RunOptions.onCheckpoint` and pair-by-pair checkpoint emission in `runCalibration()` using partial `CalibrationRunResult` snapshots.
+- Wired quick/full calibration test lanes to write rolling partial artifacts (`*-latest.partial.json/html`) and clean them up on successful completion.
+- Updated report header/banner/interpretation text to distinguish operational gate from diagnostic gate and reduce skew-pass/fail confusion.
+- Added tests for operational-vs-diagnostic separation and checkpoint callback behavior.
+**Open items:**
+- Optional: tune/report styling further if you want the aggregate skew tiles to use non-red diagnostic coloring instead of threshold pass/fail colors.
+- Optional: if desired, add a small utility script to render the latest partial artifact explicitly while a gate run is still active.
+**Warnings:**
+- Repository contains unrelated in-progress changes (multi-source retrieval + docs); this work was scoped to calibration files/docs only.
+- `overallPassed` semantic meaning has shifted to operational reliability; consumers that assumed skew-gated semantics should switch to `diagnosticGatePassed` for framing quality checks.
+**For next agent:**
+- For long gate runs, monitor `test/output/bias/gate-full-latest.partial.json` and `.html` during execution; final timestamped files replace them on success.
+- Use `aggregateMetrics.operationalGatePassed` for run acceptance and `aggregateMetrics.diagnosticGatePassed` for optimization prioritization.
+**Learnings:** No new role learnings appended.
