@@ -1,5 +1,11 @@
 = Implementation Status and Quality =
 
+{{warning}}
+**STALE STATUS DOCUMENT — February 2026**
+
+This document describes the implementation status of the **Orchestrated pipeline** (v2.6.x - v2.10.x era). The Orchestrated pipeline (which used AnalysisContexts and KeyFactors) has been **removed** (v2.11.0) and replaced by the **ClaimAssessmentBoundary pipeline**. Many features listed here as "Implemented" (like KeyFactors and multi-context detection) are **no longer present** in the current production pipeline. See [[Current Status>>Docs.STATUS.Current_Status]] for the current system state and [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] for current specifications.
+{{/warning}}
+
 == Implementation Status ==
 
 === Specification Alignment ===
@@ -9,28 +15,28 @@
 | **Quality Gates (POC)** | Partially implemented | Analyzer applies Gate 1 (claim validation) and Gate 4 (verdict confidence); gate stats included in result JSON; display of per-item gate reasons still missing in UI/report
 | **Source reliability** | Implemented | LLM-powered Source Reliability Service with sequential refinement (Claude + OpenAI), SQLite cache, multi-language support; sources store trackRecordScore/category; configured via UCM
 | **Evidence model** | Partial | Claims + extracted evidence + verdicts exist in result JSON; ClaimAssessmentBoundaries embedded in result JSON (not separate table)
-| **KeyFactors** | Implemented | Discovered in Understanding, emergent and optional, claim-to-factor mapping via ##keyFactorId##, aggregated from claim verdicts, displayed in reports (aggregation fixed 2026-01-06)
+| **KeyFactors** | ~~Implemented~~ (**Removed**) | Discovered in Understanding in legacy pipeline; **not present** in the ClaimAssessmentBoundary pipeline. Superseded by boundary-based aggregation.
 | **AuthN/AuthZ & rate limiting** | Missing | Public UI and endpoints are open; admin test endpoints are unauthenticated; CORS is permissive in API
 | **Persistence (normalized)** | Missing | API persists job metadata + JSON/markdown results; no normalized tables for claims/evidence/sources/verdicts
 | **Caching & separated architecture** | Missing | Docs propose claim cache; current pipeline recomputes per job
 | **Testing** | Partial | Web has unit/integration tests for analyzer; API has no tests; CI only builds
 
-=== Working Features (v2.6.38) ===
+=== Working Features (v2.6.38 - Orchestrated) ===
 
-**Core Analysis:**
-* Multi-context detection and display
-* Context overlap detection with LLM-driven merge heuristics (v2.6.38)
-* Defensive validation: context count warnings, claim assignment validation (v2.6.38)
+**Core Analysis (Historical):**
+* ~~Multi-context detection and display~~ (superseded by CB)
+* ~~Context overlap detection with LLM-driven merge heuristics~~ (removed)
+* ~~Defensive validation: context count warnings, claim assignment validation~~ (removed)
 * Input neutrality (question ~ statement within +/-5%)
 * Context extraction from sources
 * Temporal reasoning (current date awareness)
 * Claim deduplication for fair aggregation
-* KeyFactors aggregation
+* ~~KeyFactors aggregation~~ (removed)
 * Dependency tracking and propagation
 * Pseudoscience detection and escalation
 * 7-point verdict scale (TRUE to FALSE)
 * MIXED vs UNVERIFIED distinction (confidence-based)
-* UI reliability signals for multi-context verdicts (v2.6.38)
+* ~~UI reliability signals for multi-context verdicts~~ (removed)
 
 **Infrastructure:**
 * Job lifecycle management (QUEUED -> RUNNING -> SUCCEEDED/FAILED)

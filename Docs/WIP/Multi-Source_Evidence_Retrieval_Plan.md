@@ -21,7 +21,9 @@
 | **Phase 3.4** | seedEvidenceFromFactCheckApi() | ❌ PENDING | Pipeline integration in claimboundary-pipeline.ts |
 | **Phase 3.5** | preQualifiedUrls + safeguards | ❌ PENDING | MSR-M3 age gate, MSR-M4 dedup/linking |
 | **Phase 3.6** | Pipeline integration tests | ❌ PENDING | Age gate, linked evidence ID tests |
-| **Phase 4** | Wire up all providers | ✅ COMPLETE | config-schemas, web-search, .env.example, admin UI |
+| **Phase 4** | Wire up all providers | ✅ COMPLETE | config-schemas, web-search, .env.example, admin UI type |
+| **Phase 4b** | UCM schema + provider code for hardcoded values | ❌ PENDING | abstractMaxChars, rateLimitIntervalMs, per-provider timeoutMs |
+| **Phase 4c** | Admin UI — provider config form fields | ❌ PENDING | Provider dropdown, per-provider settings, factCheckApi section |
 | **Phase 5** | Verification | ⏳ PARTIAL | 1045 tests passing, build clean. Prompt reseed pending. |
 
 **Tests:** 1045 passing (was 1009 before MSR). Build clean.
@@ -360,6 +362,51 @@ Updated provider union: `"auto" | "google-cse" | "serpapi" | "brave" | "wikipedi
 
 ---
 
+## Phase 4b: UCM Schema + Provider Code (quality-affecting hardcoded values) ❌ PENDING
+
+**Review ref:** `Docs/WIP/MSR_Review_UCM_AgentRules_2026-02-24.md`
+
+Three hardcoded values in provider code influence report quality and must be UCM-configurable per AGENTS.md Configuration Placement rules.
+
+### 4b.1 Add UCM fields to `config-schemas.ts`
+
+Add to `providers.semanticScholar` schema:
+- `abstractMaxChars: z.number().int().min(100).max(2000).optional()` — Max characters for abstract snippet (default: 500)
+- `rateLimitIntervalMs: z.number().int().min(500).max(10000).optional()` — Min ms between S2 API calls (default: 1100)
+
+Add to each provider schema (`wikipedia`, `semanticScholar`, `googleFactCheck`):
+- `timeoutMs: z.number().int().min(1000).max(60000).optional()` — Per-provider timeout override (falls back to global)
+
+Update defaults accordingly.
+
+### 4b.2 Wire UCM values into provider code
+
+- `search-semanticscholar.ts`: Read `abstractMaxChars` and `rateLimitIntervalMs` from config
+- All three providers: Read per-provider `timeoutMs` with fallback chain
+
+### 4b.3 Tests for UCM-driven values (+3 tests)
+
+---
+
+## Phase 4c: Admin UI — Provider Config Form Fields ❌ PENDING
+
+**Issue:** The `SearchConfigForm` in `page.tsx` only exposes basic search settings. Does NOT expose multi-provider config or factCheckApi settings. Provider dropdown only shows 3 of 7 options.
+
+### 4c.1 Update provider dropdown to include all 7 providers
+
+### 4c.2 Add "Provider Settings" collapsible section
+
+Per-provider fields for all 6 providers: enabled, priority, timeout override.
+Plus provider-specific: Wikipedia language, S2 abstractMaxChars + rateLimitIntervalMs, FactCheck languageCode.
+
+### 4c.3 Add "Fact Check API" section
+
+Fields: enabled, maxResultsPerClaim, maxAgeDays, fetchFullArticles.
+
+**Note:** Pre-existing UI gap — existing providers (Brave, Google CSE, SerpAPI) also lack per-provider form fields. Phase 4c addresses ALL providers in one pass.
+
+---
+
 ## Phase 5: Verification ⏳ PARTIAL
 
 1. ✅ **`npm test`** — 1045 tests passing (was 1009 before MSR; +36 new tests)
@@ -385,8 +432,17 @@ Updated provider union: `"auto" | "google-cse" | "serpapi" | "brave" | "wikipedi
 | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` | MODIFY | ❌ | +seedEvidenceFromFactCheckApi(), +preQualifiedUrls |
 | `apps/web/prompts/claimboundary.prompt.md` | MODIFY | ❌ | +NORMALIZE_FACTCHECK_RATING section |
 | `apps/web/.env.example` | MODIFY | ✅ | +2 API key entries |
-| `apps/web/src/app/admin/config/page.tsx` | MODIFY | ✅ | Provider union type |
-| **Total** | 6 new, 7 modified | **9/13 done** | Provider layer complete; pipeline pending |
+| `apps/web/src/app/admin/config/page.tsx` | MODIFY | ⏳ | Provider union ✅; form fields ❌ (Phase 4c) |
+| **Total** | 6 new, 7 modified | **8/13 done** | Provider layer complete; pipeline + UCM/UI pending |
+
+**Phase 4b additions** (already-listed files, additional changes):
+- `config-schemas.ts`: +`abstractMaxChars`, `rateLimitIntervalMs`, per-provider `timeoutMs`
+- `search-semanticscholar.ts`: Wire config for truncation + rate limit
+- All providers: Wire per-provider timeout
+- Tests: +3 for UCM-driven values
+
+**Phase 4c additions:**
+- `page.tsx`: +Provider Settings section, +Fact Check API section, +full dropdown (~150 lines)
 
 ---
 
@@ -424,6 +480,16 @@ Per AGENTS.md, all text interpretation MUST use LLM. Single batched Haiku call n
 ### All providers disabled by default
 
 Opt-in via UCM Admin. No surprise behavior for existing deployments.
+
+### AGENTS.md LLM Intelligence rule — compliance verified (2026-02-24)
+
+All three providers audited. No violations:
+- **HTML stripping** (Wikipedia): structural plumbing, not semantic
+- **Title enrichment** (S2): metadata formatting, not interpretation
+- **Snippet construction** (FactCheck): template concatenation of structured API fields — does NOT classify, score, or interpret meaning. Semantic interpretation of `textualRating` correctly deferred to LLM in Phase 3.4.
+- **No keyword lists, regex classification, or deterministic scoring** in any provider
+
+Full audit: `Docs/WIP/MSR_Review_UCM_AgentRules_2026-02-24.md`
 
 ---
 

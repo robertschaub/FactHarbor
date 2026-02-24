@@ -1,5 +1,11 @@
 = POC Specification =
 
+{{warning}}
+**HISTORICAL SPECIFICATION — POC Phases (2025-2026)**
+
+This section contains specifications for the initial Proof of Concept phases. The **Orchestrated pipeline** described here (which used AnalysisContexts and KeyFactors) has been **removed** (v2.11.0) and replaced by the **ClaimAssessmentBoundary pipeline**. These documents are retained for historical context on the project's evolution. See [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]] for current production specifications.
+{{/warning}}
+
 **This section contains detailed specifications for FactHarbor POC phases.**
 
 **Core Philosophy:** Prove the AKEL automation works before building production features. Each POC phase validates critical technical capabilities.
@@ -54,7 +60,7 @@ See [[POC Requirements>>FactHarbor.Product Development.Specification.POC.Require
 == POC vs. Full System ==
 
 |= Feature |= POC1 (Actual) |= POC2 |= Full System
-| AnalysisContexts | ✅ Implemented (multi-context detection + KeyFactors) | ✅ + Persistence | ✅ + Enhanced
+| AnalysisContexts | ~~✅ Implemented (multi-context detection + KeyFactors)~~ | **Superseded by CB** | ✅ ClaimAssessmentBoundary
 | Evidence Display | ✅ With sources + quality scoring | ✅ Enhanced | ✅ + ML validation
 | Quality Gates | ✅ Gate 1 (Claim Validation) + Gate 4 (Verdict Confidence) | ✅ + Gates 2 & 3 | ✅ + ML validation
 | Database | 🟡 SQLite | ✅ PostgreSQL | ✅ + Redis + S3
