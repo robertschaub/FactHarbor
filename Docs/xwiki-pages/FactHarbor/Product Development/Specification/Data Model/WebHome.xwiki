@@ -11,7 +11,7 @@ This page describes the **target normalised data model** — the evolutionary go
 
 **Related pages:**
 * [[Architecture Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] — Current implementation ERDs and entity landscape
-* [[Data Models and Schemas (Reference)>>FactHarbor.Product Development.Specification.Reference.Data Models and Schemas.WebHome]] — LLM schema mappings and metrics schema definitions
+* [[CB Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.CB Pipeline Detail.WebHome]] — ClaimAssessmentBoundary pipeline stages
 * [[POC1 API & Schemas>>FactHarbor.Product Development.Specification.POC.API-and-Schemas.WebHome]] — POC API contract and endpoint specifications
 {{/warning}}
 
@@ -19,124 +19,88 @@ FactHarbor's target data model is **simple, focused, and designed for automated 
 
 == 1. Core Entities ==
 
-=== 1.1 ClaimVerdict (normalised from JSON) ===
+=== 1.1 AtomicClaim (normalised from JSON) ===
 
-**Current**: Embedded in ##AnalysisResult## JSON blob (see [[Architecture Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]]).
+**Current**: Embedded in ##CBClaimUnderstanding## JSON blob.
 **Target**: Normalised into PostgreSQL table.
 
-Per-claim assessment with truth percentage on the 7-point scale, confidence, and evidence references. Linked to an AnalysisContext and optional KeyFactor. For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Target Database)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
+A single verifiable assertion extracted from user input. Only central claims (high/medium centrality) survive the extraction filter. AtomicClaims are the primary analytical unit.
+
+**Key fields**:
+* **statement**: The verifiable assertion text
+* **category**: factual, evaluative, or procedural
+* **centrality**: high or medium
+* **harmPotential**: critical, high, medium, or low
+* **expectedEvidenceProfile** (JSONB): Methodologies, metrics, and source types expected for verification.
+
+=== 1.2 CBClaimVerdict (normalised from JSON) ===
+
+**Current**: Embedded in ##OverallAssessment## JSON blob.
+**Target**: Normalised into PostgreSQL table.
+
+One verdict per AtomicClaim. Contains the final truth percentage, 7-point scale rating, confidence, and reasoning. Includes per-boundary findings and adversarial challenge results.
+
+**Key fields**:
+* **truthPercentage** (int 0-100): Weighted average truth score
+* **rating**: TRUE, MOSTLY-TRUE, LEANING-TRUE, MIXED, UNVERIFIED, LEANING-FALSE, MOSTLY-FALSE, or FALSE
+* **confidence** (int 0-100): Final confidence score
+* **reasoning** (text): Detailed explanation including debate reconciliation
+* **truthPercentageRange** (JSONB): Plausible range [min, max]
+* **misleadingness**: not_misleading, potentially_misleading, or highly_misleading (B-7)
 
 ==== Performance Optimisation: Denormalised Fields ====
 
 **Rationale**: Claims system is 95% reads, 5% writes. Denormalising common data reduces joins and improves query performance by 70%.
 **Additional cached fields in claims table**:
+* **boundary_summary** (JSONB): Summary of findings from each ClaimAssessmentBoundary
+ * Avoids joining boundary findings table for preview
 * **evidence_summary** (JSONB): Top 5 most relevant evidence snippets with scores
- * Avoids joining evidence table for listing/preview
- * Updated when evidence is added/removed
- * Format: ##[{"text": "...", "source": "...", "relevance": 0.95}, ...]##
 * **source_names** (TEXT[]): Array of source names for quick display
- * Avoids joining through evidence to sources
- * Updated when sources change
- * Format: ##["New York Times", "Nature Journal", ...]##
-* **context_count** (INTEGER): Number of AnalysisContexts for this analysis
- * Quick metric without counting rows
- * Updated when contexts detected
 * **cache_updated_at** (TIMESTAMP): When denormalised data was last refreshed
- * Helps invalidate stale caches
- * Triggers background refresh if too old
-**Update Strategy**:
-* **Immediate**: Update on re-analysis (system-triggered)
-* **Deferred**: Update via background job (non-critical)
-* **Invalidation**: Clear cache when source data or UCM config changes significantly
-**Trade-offs**:
-* 70% fewer joins on common queries
-* Much faster claim list/search pages
-* Better user experience
-* Small storage increase (~10%)
-* Need to keep caches in sync
 
-=== 1.2 EvidenceItem (normalised from JSON) ===
+=== 1.3 EvidenceItem (normalised from JSON) ===
 
-**Current**: Embedded in ##AnalysisResult## JSON blob.
+**Current**: Embedded in ##CBResearchState## / ##OverallAssessment## JSON blobs.
 **Target**: Normalised into PostgreSQL table.
 
-Extracted evidence from a source document, with category, direction (supports/contradicts/neutral), probativeValue, and optional EvidenceScope metadata. For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Research Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
+Extracted evidence from a source document, with quality metadata (probativeValue, scopeQuality, sourceType, derivative tracking). Linked to a specific **ClaimAssessmentBoundary** post-clustering.
 
-=== 1.3 FetchedSource (normalised from JSON) ===
+**Key fields**:
+* **statement**: The extracted evidence text
+* **claimDirection**: supports, contradicts, or neutral (relative to the user claim)
+* **probativeValue**: high, medium, or low
+* **searchStrategy**: primary, contradiction, or contrarian (D5)
+* **evidenceScope** (JSONB): Methodology, temporal, boundaries, and geographic metadata
+* **claimBoundaryId**: FK to the assigned ClaimAssessmentBoundary
 
-**Current**: Embedded in ##AnalysisResult## JSON blob. Source reliability cached in ##source-reliability.db##.
-**Target**: Normalised into PostgreSQL table with dedicated reliability tracking.
+=== 1.4 ClaimAssessmentBoundary (normalised from JSON) ===
 
-Web source fetched during research, with LLM-evaluated reliability score (0.0-1.0), optional multi-model consensus, and fetch metadata. For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Research Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
-
-==== Source Reliability Scoring ====
-
-**Current implementation (v2.6.40+):** Source reliability uses a **Pure LLM + Cache architecture**. Sources are batch-evaluated via LLM calls during analysis, cached in SQLite with configurable TTL, and used synchronously. Multi-model consensus (Claude + GPT) is supported. See [[Source Reliability>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]].
-
-**7-band credibility scale** (0.0-1.0):
-* Authoritative (0.90+), Highly Credible (0.80-0.89), Credible (0.70-0.79), Moderately Credible (0.60-0.69), Mixed (0.50-0.59), Low Credibility (0.30-0.49), Unreliable (<0.30)
-
-==== Source Scoring Architecture ====
-
-**Critical design principle**: Prevent circular dependencies between source scoring and claim analysis.
-
-**Current approach** (LLM + Cache):
-* Sources evaluated on-demand via LLM during analysis
-* Evaluations cached in SQLite with configurable TTL (default 90 days)
-* Multi-model consensus for stability
-* AKEL pipeline reads scores synchronously — never updates them during analysis
-
-**Target enhancement** (Background Refresh):
-
-In addition to on-demand evaluation, a background job can periodically refresh stale scores:
-
-{{code language="typescript"}}
-// Target: Background refresh of stale source evaluations
-async function refreshStaleSourceScores(): Promise<void> {
-  // Find evaluations approaching TTL expiry
-  const staleDomains = await getDomainsNearingExpiry(daysRemaining: 7);
-  for (const domain of staleDomains) {
-    // Re-evaluate using current LLM + consensus
-    const evaluation = await evaluateSourceReliability(domain);
-    // Update cache with fresh score
-    await cacheReliabilityScore(domain, evaluation);
-  }
-  // Runs as scheduled background job
-  // Never during claim analysis
-}
-{{/code}}
-
-**Key Principles** (current and target):
-* **Scoring and analysis are temporally separated**: Source scoring is cached/scheduled; claim analysis is real-time
-* **One-way data flow during processing**: Claims READ source scores, never WRITE them
-* **Audit trail**: Log all score changes, track score history, explainable calculations
-
-=== 1.4 AnalysisContext (normalised from JSON) ===
-
-**Current**: Embedded in ##ClaimUnderstanding## within the ##AnalysisResult## JSON blob.
+**Current**: Created post-research in Stage 3; stored in ##OverallAssessment## JSON blob.
 **Target**: Normalised into PostgreSQL table.
 
-**Purpose**: Bounded analytical frame for evaluating claims from different perspectives. Each AnalysisContext represents a specific analytical dimension detected during the Understanding phase. Carries subject, temporal scope, status, outcome, and domain-specific metadata (JSONB). For field-level detail see [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] and [[Entity Views (Understanding Phase)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
+**Purpose**: Evidence-emergent grouping of compatible EvidenceScopes. Defines a coherent analytical lens (e.g., "Well-to-Wheel analysis" vs "Tailpipe-only analysis").
 
-**How Found**: Input analysis → Context detection → Create AnalysisContext → Link claims to contexts
+**Key fields**:
+* **name**: Human-readable label (e.g., "WTW Analyses")
+* **description**: What this boundary represents
+* **methodology / geographic / temporal**: Dominant metadata derived from constituent scopes
+* **internalCoherence**: 0-1 clustering quality metric
 
-**Example**:
-For article "Bolsonaro trial analysis":
-* AnalysisContext 1: "TSE Criminal Trial (2023)" — legal proceedings context
-* AnalysisContext 2: "Political Impact on Democracy" — political analysis context
-* AnalysisContext 3: "Electoral System Integrity" — institutional context
+**How Found**: Research → Scope clustering → Create ClaimAssessmentBoundary → Assign evidence to boundaries.
 
-**Target Evolution**: Many-to-many relationship can be added if cross-analysis context sharing is needed. For current implementation, contexts are embedded per-analysis.
+=== 1.5 BoundaryFinding (normalised from JSON) ===
 
-=== 1.5 ClaimVerdict Detail ===
+**Current**: Embedded in ##CBClaimVerdict##.
+**Target**: Normalised into PostgreSQL table.
 
-**Purpose**: Assessment of a claim within a specific AnalysisContext. Each ClaimVerdict provides a truth percentage on the 7-point scale with confidence and evidence references.
+**Purpose**: Per-boundary quantitative signals within a claim verdict. Provides nuance when different methodological boundaries yield different conclusions about the same claim.
 
-**Core fields** (see Section 1.1 above for full field list):
-* **truthPercentage** (int 0-100): Calibrated truth score mapped to 7-point verdict scale
-* **confidence** (int 0-100): System confidence in this assessment
-* **reasoning** (text): Human-readable explanation
-* **supportingEvidenceIds** (text[]): References to EvidenceItems that support this verdict
+**Key fields**:
+* **boundaryId**: FK to ClaimAssessmentBoundary
+* **claimVerdictId**: FK to CBClaimVerdict
+* **truthPercentage**: Per-boundary truth assessment
+* **confidence**: Per-boundary confidence
+* **evidenceDirection**: supports, contradicts, mixed, or neutral
 
 **Immutability**: Analysis outputs (including verdicts) are immutable. To improve verdict quality, update UCM configuration and trigger re-analysis. Each analysis job records the UCM config snapshot used.
 
@@ -243,16 +207,16 @@ Fields: entity_id, reported_by, issue_type, status, resolution_note
 == 2. Versioning Strategy ==
 
 **Analysis Data Is Immutable**:
-* **ClaimVerdicts, EvidenceItems, AnalysisContexts**: Created once per analysis job, never modified
-* **FetchedSources**: Reliability scores updated via cache TTL refresh (not during analysis)
-* **QualityMetric**: Time-series data (each record is a point in time)
-* **ErrorPattern**: System improvement queue (status tracked)
+* **AtomicClaims, CBClaimVerdicts, EvidenceItems, ClaimAssessmentBoundaries**: Created once per analysis job, never modified.
+* **FetchedSources**: Reliability scores updated via cache TTL refresh (not during analysis).
+* **QualityMetric**: Time-series data (each record is a point in time).
+* **ErrorPattern**: System improvement queue (status tracked).
 
 **UCM Configuration Is Versioned**:
-* Every config change creates a new immutable blob in ##config_blobs##
-* ##config_active## tracks which config version is currently in use
-* ##config_usage## links each analysis job to the config snapshot used
-* Complete config history preserved — blobs never deleted
+* Every config change creates a new immutable blob in ##config_blobs##.
+* ##config_active## tracks which config version is currently in use.
+* ##config_usage## links each analysis job to the config snapshot used.
+* Complete config history preserved — blobs never deleted.
 
 **Example**:
 {{{
@@ -274,33 +238,41 @@ UCM Config V2: prompt_template = "Analyze the following claim with focus on sour
 
 **STORE (in PostgreSQL):**
 
-==== ClaimVerdicts (Current State) ====
-* **What**: claimText, type, isCentral, truthPercentage, confidence, verdict, reasoning, supportingEvidenceIds
+==== AtomicClaims (Current State) ====
+* **What**: statement, category, centrality, harmPotential, expectedEvidenceProfile
 * **Why**: Core entity, must be persistent
 * **Size**: ~1 KB per claim
-* **Growth**: Linear with claims
+* **Decision**: STORE - Essential
+
+==== CBClaimVerdicts (Current State) ====
+* **What**: truthPercentage, rating, confidence, reasoning, truthPercentageRange, misleadingness, challengeResponses
+* **Why**: Final analytical output
+* **Size**: ~2 KB per verdict
 * **Decision**: STORE - Essential
 
 ==== EvidenceItems (All Records) ====
-* **What**: statement, category, sourceId, sourceExcerpt, probativeValue, sourceAuthority, evidenceBasis
+* **What**: statement, category, sourceId, sourceExcerpt, probativeValue, sourceAuthority, evidenceBasis, evidenceScope, claimBoundaryId
 * **Why**: Hard to re-gather, reproducibility
 * **Size**: ~2 KB per evidence (with excerpt)
-* **Growth**: 3-10 evidence per claim
+* **Growth**: 5-15 evidence per claim
 * **Decision**: STORE - Essential for reproducibility
+
+==== ClaimAssessmentBoundaries ====
+* **What**: name, description, methodology, geographic, temporal, internalCoherence
+* **Why**: Defines the analytical perspectives used
+* **Size**: ~1 KB per boundary × 2-5 boundaries average
+* **Decision**: STORE - Essential for multi-perspective analysis
 
 ==== FetchedSources (Track Records) ====
 * **What**: url, domain, trackRecordScore, trackRecordConfidence, trackRecordConsensus
 * **Why**: Continuously evaluated, cached with TTL
 * **Size**: ~500 bytes per source
-* **Growth**: Slow (limited number of sources)
+* **Growth**: Slow (limited number of unique sources)
 * **Decision**: STORE - Essential for quality
 
 ==== UCM Config History ====
 * **What**: config_blobs (immutable), config_active (activation pointers), config_usage (per-job snapshots)
 * **Why**: Audit trail, reproducibility, config rollback
-* **Size**: ~5 KB per config version
-* **Growth**: Linear with config changes (infrequent — admin-driven)
-* **Retention**: Config blobs never deleted (complete history)
 * **Decision**: STORE - Essential for reproducibility and audit
 
 ==== Flags (User Reports) ====
@@ -319,25 +291,17 @@ UCM Config V2: prompt_template = "Analyze the following claim with focus on sour
 * **What**: metric_type, category, value, target, timestamp
 * **Why**: Trend analysis, cannot recreate historical metrics
 * **Size**: ~200 bytes per metric
-* **Retention**: 2 years hot, then aggregate and archive
 * **Decision**: STORE - Essential for monitoring
 
 **STORE (Computed Once, Then Cached):**
 
-==== Analysis Summary ====
-* **What**: Neutral text summary of claim analysis (200-500 words)
-* **Computed**: Once by AKEL when claim first analysed
-* **Recomputed**: Only when system significantly improves OR UCM config changes
-* **Why store**: Expensive to regenerate ($0.01-0.05 per analysis), doesn't change often
-* **Size**: ~2 KB per claim
+==== VerdictNarrative ====
+* **What**: Structured narrative summary (headline, key finding, limitations)
+* **Computed**: Once by AKEL at the end of Stage 5
+* **Recomputed**: Only when re-analysis is triggered
+* **Why store**: Expensive to regenerate, central to the final report
+* **Size**: ~2 KB per analysis
 * **Decision**: STORE (cached) - Cost-effective
-
-==== AnalysisContexts ====
-* **What**: Detected analytical frames with metadata
-* **Current design**: Embedded in result JSON
-* **Target**: Normalised into PostgreSQL table
-* **Size**: ~1 KB per context × 2-5 contexts average
-* **Decision**: STORE - Essential for multi-perspective analysis
 
 **COMPUTE DYNAMICALLY (Never Store):**
 
@@ -357,38 +321,30 @@ UCM Config V2: prompt_template = "Analyze the following claim with focus on sour
 
 | Data Type | Storage | Compute | Size per Claim | Decision | Rationale |
 |-----------|---------|---------|----------------|----------|-----------|
-| ClaimVerdict | Yes | - | 1 KB | STORE | Essential |
-| EvidenceItem | Yes | - | 2 KB x 5 = 10 KB | STORE | Reproducibility |
+| AtomicClaim | Yes | - | 1 KB | STORE | Essential |
+| CBClaimVerdict | Yes | - | 2 KB | STORE | Final result |
+| EvidenceItem | Yes | - | 2 KB x 10 = 20 KB | STORE | Reproducibility |
 | FetchedSource | Yes | - | 500 B (shared) | STORE | Track record |
 | UCM config history | Yes | - | 5 KB per version | STORE | Reproducibility |
-| Analysis summary | Yes | Once | 2 KB | STORE (cached) | Cost-effective |
-| AnalysisContext | Yes | Once | 1 KB x 3 | STORE | Essential |
+| VerdictNarrative | Yes | Once | 2 KB | STORE (cached) | Cost-effective |
+| ClaimAssessmentBoundary | Yes | Once | 1 KB x 3 | STORE | Essential |
 | Flags | Yes | - | 500 B x 10% | STORE | Improvement |
 | ErrorPatterns | Yes | - | 1 KB (global) | STORE | Learning |
 | QualityMetrics | Yes | - | 200 B (time series) | STORE | Trending |
-| Search results | - | Yes | - | COMPUTE + 15min cache | Dynamic |
-| Aggregations | - | Yes | - | COMPUTE + 1hr cache | Derivable |
 
-**Total storage per claim**: ~18 KB (without flags)
+**Total storage per claim**: ~30 KB (with related evidence and boundaries)
 **For 1 million claims**:
-* **Storage**: ~18 GB (manageable)
-* **PostgreSQL**: ~$50/month (standard instance)
-* **Redis cache**: ~$20/month (1 GB instance)
-* **S3 archives**: ~$5/month (old data)
-* **Total**: ~$75/month infrastructure
-
-**LLM cost savings by caching**:
-* Analysis summary stored: Save $0.03 per claim = $30K per 1M claims
-* Source reliability cached (current TTL): Save LLM evaluation costs per domain
-* **Total savings**: ~$35K per 1M claims vs recomputing every time
+* **Storage**: ~30 GB (manageable)
+* **PostgreSQL**: ~$80/month
+* **Total**: ~$110/month infrastructure
 
 === Recomputation Triggers ===
 
 **When to mark cached data as stale and recompute:**
-1. **UCM config updated** → Mark affected analyses stale, trigger re-analysis
-2. **Source trackRecordScore changes >0.10** → Recompute: confidence, verdict
-3. **New evidence sources available** → Trigger re-analysis for affected claims
-4. **Quality gate thresholds changed** → Re-evaluate existing verdicts against new thresholds
+1. **UCM config updated** → Mark affected analyses stale, trigger re-analysis.
+2. **Source trackRecordScore changes >0.10** → Recompute confidence and verdict.
+3. **New evidence sources available** → Trigger re-analysis for affected claims.
+4. **Quality gate thresholds changed** → Re-evaluate existing verdicts against new thresholds.
 
 **Recomputation strategy**:
 * **Eager**: Immediately re-analyse (for targeted UCM config changes)
@@ -415,11 +371,11 @@ UCM Config V2: prompt_template = "Analyze the following claim with focus on sour
 
 == 3. Key Simplifications ==
 
-* **Two content states only**: Published, Hidden
-* **Three user roles only**: Reader, UCM Administrator, Moderator
-* **Immutable analysis data**: No data editing or versioning — improve via UCM config
-* **UCM config versioning**: Content-addressed immutable blobs with per-job snapshots
-* **Source reliability**: LLM + Cache with TTL-based refresh
+* **Two content states only**: Published, Hidden.
+* **Three user roles only**: Reader, UCM Administrator, Moderator.
+* **Immutable analysis data**: No data editing or versioning — improve via UCM config.
+* **UCM config versioning**: Content-addressed immutable blobs with per-job snapshots.
+* **Source reliability**: LLM + Cache with TTL-based refresh.
 
 == 4. Target Database Schema ==
 
@@ -432,10 +388,12 @@ The following ERD visualises all target database tables — existing (green), ta
 For field-level detail of all target tables, see [[Entity Views (Target Database)>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]].
 
 |= Table |= Status |= Purpose
-| ##claim_verdicts## | Target | Normalised from JSON — per-claim assessments
+| ##atomic_claims## | Target | Normalised from JSON — central assertions
+| ##cb_claim_verdicts## | Target | Normalised from JSON — per-claim assessments
+| ##boundary_findings## | Target | Normalised from JSON — per-boundary nuance
 | ##evidence_items## | Target | Normalised from JSON — extracted evidence
+| ##claim_assessment_boundaries## | Target | Normalised from JSON — analytical frames
 | ##fetched_sources## | Target | Normalised from JSON — web sources with reliability scores
-| ##analysis_contexts## | Target | Normalised from JSON — bounded analytical frames
 | ##users## | Planned | User accounts (Alpha phase)
 | ##config_blobs## | Exists | Immutable config versions (content-addressed)
 | ##config_active## | Exists | Currently active config per type
@@ -446,8 +404,8 @@ For field-level detail of all target tables, see [[Entity Views (Target Database
 
 === 4.2 What's NOT Stored (Computed on-the-fly) ===
 
-* **Aggregated statistics**: Computed from base data
-* **Search results**: Generated from Elasticsearch index
+* **Aggregated statistics**: Computed from base data.
+* **Search results**: Generated from Elasticsearch index.
 
 === 4.3 Cache Layer (Redis) ===
 
@@ -478,7 +436,7 @@ For field-level detail of all target tables, see [[Entity Views (Target Database
 **Indexed for search**:
 * Claim assertions (full-text)
 * Evidence statements (full-text)
-* AnalysisContext descriptions (full-text)
+* ClaimAssessmentBoundary descriptions (full-text)
 * Source domains (autocomplete)
 
 Synchronised from PostgreSQL via change data capture or periodic sync.

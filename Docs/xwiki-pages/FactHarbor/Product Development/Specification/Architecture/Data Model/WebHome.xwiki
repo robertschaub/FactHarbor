@@ -19,13 +19,13 @@ The ClaimAssessmentBoundary pipeline produces a hierarchy of entities: the input
 == Entity Descriptions ==
 
 |= Entity |= Purpose |= Source Interface |= Key Relationships
-| **CBClaimUnderstanding** | Stage 1 output: decomposition of input into AtomicClaims with Gate 1 stats and preliminary evidence | ##types.ts:942## | Parent of AtomicClaim[]; contains gate1Stats, preliminaryEvidence
+| **CBClaimUnderstanding** | Stage 1 output: decomposition of input into AtomicClaims with Gate 1 stats, preliminary evidence, and KeyFactors | ##types.ts:942## | Parent of AtomicClaim[]; contains gate1Stats, preliminaryEvidence, and keyFactors[]
 | **AtomicClaim** | Single verifiable assertion extracted from user input; the analytical unit. Only central claims (high/medium centrality) survive extraction. | ##types.ts:715## | Receives CBClaimVerdict[]; has centrality, harmPotential, groundingQuality, expectedEvidenceProfile
 | **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes; the top-level analytical frame. Created post-research by clustering EvidenceScopes. | ##types.ts:747## | Contains EvidenceItem[] and constituentScopes[]; referenced by BoundaryFinding[]; has internalCoherence
 | **CBClaimVerdict** | Per-claim verdict with truth percentage, confidence, reasoning, boundary findings, challenge responses, and misleadingness assessment | ##types.ts:791## | References EvidenceItem[] (supporting + contradicting); contains BoundaryFinding[], ConsistencyResult, ChallengeResponse[], TriangulationScore, TruthPercentageRange
-| **EvidenceItem** | Extracted statement from a web source with quality metadata (probativeValue, scopeQuality, sourceType, derivative tracking) | ##types.ts:385## | References FetchedSource; assigned to ClaimAssessmentBoundary via claimBoundaryId; has EvidenceScope
+| **EvidenceItem** | Extracted statement with quality metadata (probativeValue, searchStrategy, scopeQuality, sourceType, derivative tracking) | ##types.ts:385## | References FetchedSource; assigned to ClaimAssessmentBoundary via claimBoundaryId; has EvidenceScope
 | **FetchedSource** | Web source with URL, content, and source reliability score (0.0-1.0 from LLM evaluation, with confidence and consensus) | ##types.ts:447## | Referenced by EvidenceItem[]
-| **OverallAssessment** | Final aggregated result: weighted truth percentage, verdict, confidence, narrative, coverage matrix, quality gates, explanation quality check | ##types.ts:1035## | Aggregates CBClaimVerdict[], ClaimAssessmentBoundary[]; has VerdictNarrative, CoverageMatrix, QualityGates, ExplanationQualityCheck, TruthPercentageRange
+| **OverallAssessment** | Final aggregated result: weighted truth percentage, verdict, confidence, narrative, coverage matrix, quality gates, and explanation quality check | ##types.ts:1035## | Aggregates CBClaimVerdict[], ClaimAssessmentBoundary[]; has VerdictNarrative, CoverageMatrix, QualityGates, ExplanationQualityCheck, TruthPercentageRange
 | **VerdictNarrative** | Structured narrative: headline, evidence base summary, key finding, boundary disagreements, limitations | ##types.ts:927## | Contained by OverallAssessment
 
 === Additional Entities ===
