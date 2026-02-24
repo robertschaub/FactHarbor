@@ -1,3 +1,5 @@
+{{warning}}**STALE DIAGRAM:** This diagram reflects the legacy Orchestrated pipeline (removed in v2.11.0). It is retained for historical context only. For the current architecture, see [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]].{{/warning}}
+
 = KeyFactor Entity Model =
 
 {{warning}}
@@ -113,3 +115,4 @@ erDiagram
 Contestation is **embedded in KEY_FACTOR_VERDICT**, not a separate entity. When ##isContested## is true, ##contestedBy## and ##contestationReason## describe the dissent. The ##factualBasis## field (established / disputed / opinion / unknown) indicates the epistemological status of the factor's conclusion.
 
 //For full field-level detail see [[Entity Views>>FactHarbor.Product Development.Diagrams.Entity Views.WebHome]]. For the complete analysis entity chain see [[Analysis Entity Model ERD>>FactHarbor.Product Development.Diagrams.Analysis Entity Model ERD.WebHome]].//
+

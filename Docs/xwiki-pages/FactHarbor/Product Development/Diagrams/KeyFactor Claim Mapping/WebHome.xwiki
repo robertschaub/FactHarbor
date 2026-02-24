@@ -1,3 +1,5 @@
+{{warning}}**STALE DIAGRAM:** This diagram reflects the legacy Orchestrated pipeline (removed in v2.11.0). It is retained for historical context only. For the current architecture, see [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]].{{/warning}}
+
 = KeyFactor Claim Mapping =
 
 {{mermaid}}
@@ -23,3 +25,4 @@ graph TD
     style C6 fill:#fff3e0,color:#000
     style C7 fill:#fff3e0,color:#000
 {{/mermaid}}
+

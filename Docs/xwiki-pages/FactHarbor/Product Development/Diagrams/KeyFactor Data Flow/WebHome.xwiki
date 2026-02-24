@@ -1,3 +1,5 @@
+{{warning}}**STALE DIAGRAM:** This diagram reflects the legacy Orchestrated pipeline (removed in v2.11.0). It is retained for historical context only. For the current architecture, see [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]].{{/warning}}
+
 = KeyFactor Data Flow =
 
 {{mermaid}}
@@ -31,3 +33,4 @@ flowchart TD
 {{/mermaid}}
 
 //KeyFactors are discovered in the Understand step and guide research. Verdicts are aggregated per factor in the Verdict step.//
+
