@@ -51,7 +51,7 @@ export interface ValidationResult {
 
 export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
-  provider: z.enum(["auto", "google-cse", "serpapi", "brave", "wikipedia", "semantic-scholar", "google-factcheck"]),
+  provider: z.enum(["auto", "google-cse", "serpapi", "brave"]),
   mode: z.enum(["standard", "grounded"]),
   searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),
@@ -233,7 +233,7 @@ export const PipelineConfigSchema = z.object({
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
   llmEvidenceQuality: z.boolean().describe("Use LLM for evidence quality assessment"),
 
-  llmContextSimilarity: z.boolean().optional().describe("DEPRECATED: Use LLM for context similarity analysis (orchestrated pipeline only)"),
+  llmContextSimilarity: z.boolean().optional().describe("Use LLM for context similarity analysis (orchestrated pipeline only)"),
 
   llmVerdictValidation: z.boolean().describe("Use LLM for verdict validation (inversion/harm detection)"),
 
@@ -750,10 +750,10 @@ export type LLMProviderType = "anthropic" | "openai" | "google" | "mistral";
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
   llmProvider: "anthropic",
-  llmTiering: false, // v2.9.0: Default to off for backwards compatibility
+  llmTiering: true,
   modelUnderstand: "claude-haiku-4-5-20251001",
   modelExtractEvidence: "claude-haiku-4-5-20251001",
-  modelVerdict: "claude-opus-4-6",
+  modelVerdict: "claude-sonnet-4-5-20250929",
   modelOpus: "claude-opus-4-6", // B-5b: explicit Opus model ID for opus debate tier
 
   // LLM text analysis (all enabled by default per v2.8.3)

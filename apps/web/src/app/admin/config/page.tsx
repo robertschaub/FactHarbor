@@ -103,7 +103,7 @@ interface CacheStatusResponse {
 // Search config type
 interface SearchConfig {
   enabled: boolean;
-  provider: "auto" | "google-cse" | "serpapi" | "brave" | "wikipedia" | "semantic-scholar" | "google-factcheck";
+  provider: "auto" | "google-cse" | "serpapi" | "brave";
   mode: "standard" | "grounded";
   maxResults: number;
   maxSourcesPerIteration: number;
@@ -111,6 +111,7 @@ interface SearchConfig {
   dateRestrict: "y" | "m" | "w" | null;
   domainWhitelist: string[];
   domainBlacklist: string[];
+  providers?: Record<string, any>;
 }
 
 // Calculation config type (simplified for form)
@@ -210,6 +211,14 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   dateRestrict: null,
   domainWhitelist: [],
   domainBlacklist: [],
+  providers: {
+    googleCse: { enabled: true, priority: 1 },
+    serpapi: { enabled: false, priority: 2 },
+    brave: { enabled: false, priority: 2 },
+    wikipedia: { enabled: false, priority: 3, language: "en" },
+    semanticScholar: { enabled: false, priority: 3 },
+    googleFactCheck: { enabled: false, priority: 4 },
+  },
 };
 
 const DEFAULT_CALC_CONFIG: CalcConfig = {
@@ -364,6 +373,23 @@ function SearchConfigForm({
     onChange({ ...config, [key]: value });
   };
 
+  const updateProviderField = (providerKey: string, field: string, value: any) => {
+    const currentProviders = config.providers || {};
+    onChange({
+      ...config,
+      providers: {
+        ...currentProviders,
+        [providerKey]: {
+          ...currentProviders[providerKey],
+          [field]: value,
+        },
+      },
+    });
+  };
+
+  const primaryProviders = ["googleCse", "serpapi", "brave"];
+  const supplementaryProviders = ["wikipedia", "semanticScholar", "googleFactCheck"];
+
   return (
     <div className={styles.formSection}>
       <h3 className={styles.formSectionTitle}>Search Settings</h3>
@@ -385,17 +411,18 @@ function SearchConfigForm({
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Provider</label>
+        <label className={styles.formLabel}>Primary Provider</label>
         <select
           className={styles.formInput}
           value={config.provider}
           onChange={(e) => updateField("provider", e.target.value as SearchConfig["provider"])}
         >
-          <option value="auto">Auto (prefer available)</option>
+          <option value="auto">Auto (sequential primary fallback)</option>
           <option value="google-cse">Google CSE</option>
           <option value="serpapi">SerpAPI</option>
+          <option value="brave">Brave</option>
         </select>
-        <div className={styles.formHelp}>Search API to use. Auto selects first available based on configured API keys.</div>
+        <div className={styles.formHelp}>Main search engine. Supplementary providers (below) run alongside the primary provider.</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -413,7 +440,7 @@ function SearchConfigForm({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Max Results</label>
+          <label className={styles.formLabel}>Max Results (Primary)</label>
           <input
             type="number"
             className={styles.formInput}
@@ -425,7 +452,7 @@ function SearchConfigForm({
               updateField("maxResults", isNaN(v) ? 6 : v);
             }}
           />
-          <div className={styles.formHelp}>Search results per query (default: 6). Higher = more evidence but slower.</div>
+          <div className={styles.formHelp}>Search results per query (default: 6).</div>
         </div>
 
         <div className={styles.formGroup}>
@@ -441,7 +468,7 @@ function SearchConfigForm({
               updateField("maxSourcesPerIteration", isNaN(v) ? 4 : v);
             }}
           />
-          <div className={styles.formHelp}>Max sources fetched per research round (default: 4). Affects cost and depth.</div>
+          <div className={styles.formHelp}>Max sources fetched per research round (default: 4).</div>
         </div>
 
         <div className={styles.formGroup}>
@@ -458,7 +485,7 @@ function SearchConfigForm({
               updateField("timeoutMs", isNaN(v) ? 12000 : v);
             }}
           />
-          <div className={styles.formHelp}>Max wait per source fetch (default: 12000ms). Lower = faster but may miss slow sites.</div>
+          <div className={styles.formHelp}>Max wait per source fetch.</div>
         </div>
       </div>
 
@@ -474,7 +501,6 @@ function SearchConfigForm({
           <option value="m">Past month</option>
           <option value="w">Past week</option>
         </select>
-        <div className={styles.formHelp}>Filter search results by recency. Useful for current events; leave open for historical claims.</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -486,7 +512,6 @@ function SearchConfigForm({
           placeholder="e.g., reuters.com, apnews.com"
           onChange={(e) => updateField("domainWhitelist", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
         />
-        <div className={styles.formHelp}>Only search these domains. Leave empty to search all. Use for domain-specific analysis (e.g., .gov only).</div>
       </div>
 
       <div className={styles.formGroup}>
@@ -498,7 +523,96 @@ function SearchConfigForm({
           placeholder="e.g., example.com, spam.net"
           onChange={(e) => updateField("domainBlacklist", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
         />
-        <div className={styles.formHelp}>Never search these domains. Use to exclude known unreliable sources.</div>
+      </div>
+
+      <h3 className={styles.formSectionTitle} style={{ marginTop: 24 }}>Primary Search Engines</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Configure which engines are available for primary search and their priority in &quot;auto&quot; mode.
+      </p>
+      <div className={styles.providerGrid}>
+        {primaryProviders.map((providerKey) => {
+          const providerConfig = config.providers?.[providerKey] || { enabled: false, priority: 5 };
+          return (
+            <div key={providerKey} className={styles.providerCard}>
+              <strong className={styles.providerTitle}>{providerKey}</strong>
+              <div className={styles.formGroup} style={{ flexGrow: 1 }}>
+                <label className={styles.formLabel}>
+                  <input
+                    type="checkbox"
+                    checked={providerConfig.enabled}
+                    onChange={(e) => updateProviderField(providerKey, "enabled", e.target.checked)}
+                    style={{ marginRight: 8 }}
+                  />
+                  Enabled
+                </label>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Priority</label>
+                <input
+                  type="number"
+                  className={styles.formInput}
+                  value={providerConfig.priority}
+                  min={1}
+                  max={10}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    updateProviderField(providerKey, "priority", isNaN(v) ? 1 : v);
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <h3 className={styles.formSectionTitle} style={{ marginTop: 24 }}>Supplementary Sources (Additional)</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        These sources run <strong>alongside</strong> the primary provider if enabled. They help find academic papers, fact-check reviews, and encyclopedia entries.
+      </p>
+      <div className={styles.providerGrid}>
+        {supplementaryProviders.map((providerKey) => {
+          const providerConfig = config.providers?.[providerKey] || { enabled: false, priority: 5 };
+          return (
+            <div key={providerKey} className={styles.providerCard}>
+              <strong className={styles.providerTitle}>{providerKey}</strong>
+              <div className={styles.formGroup} style={{ flexGrow: 1 }}>
+                <label className={styles.formLabel}>
+                  <input
+                    type="checkbox"
+                    checked={providerConfig.enabled}
+                    onChange={(e) => updateProviderField(providerKey, "enabled", e.target.checked)}
+                    style={{ marginRight: 8 }}
+                  />
+                  Enabled
+                </label>
+              </div>
+              {/* Extra fields for specific providers */}
+              {providerKey === 'wikipedia' && (
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Language</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={providerConfig.language || 'en'}
+                    onChange={(e) => updateProviderField(providerKey, "language", e.target.value)}
+                  />
+                </div>
+              )}
+              {providerKey === 'googleFactCheck' && (
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Language Code</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={providerConfig.languageCode || ''}
+                    placeholder="e.g., en"
+                    onChange={(e) => updateProviderField(providerKey, "languageCode", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

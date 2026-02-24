@@ -7,6 +7,8 @@
  * @module config-schemas.test
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   ConfigType,
@@ -520,7 +522,7 @@ describe("getDefaultConfig function", () => {
     const result = getDefaultConfig("pipeline");
     expect(result).toBeTruthy();
     const parsed = JSON.parse(result);
-    expect(parsed.llmTiering).toBe(false); // v2.9.0: Default to off for backwards compatibility
+    expect(parsed.llmTiering).toBe(true);
     expect(parsed.analysisMode).toBe("quick"); // v2.9.0: Default to quick mode for backwards compatibility
   });
 
@@ -553,8 +555,8 @@ describe("parseTypedConfig function", () => {
   it("parses and returns typed pipeline config", () => {
     const content = JSON.stringify(DEFAULT_PIPELINE_CONFIG);
     const result = parseTypedConfig("pipeline", content);
-    expect(result.llmTiering).toBe(false); // v2.9.0: Default to off for backwards compatibility
-    expect(result.modelVerdict).toBe("claude-opus-4-6");
+    expect(result.llmTiering).toBe(true);
+    expect(result.modelVerdict).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("parses and returns typed SR config", () => {
@@ -632,7 +634,7 @@ describe("Default Config Values", () => {
     it("has correct model defaults from .env.example", () => {
       expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("claude-haiku-4-5-20251001");
       expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("claude-haiku-4-5-20251001");
-      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-opus-4-6");
+      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-sonnet-4-5-20250929");
     });
 
     it("has LLM text analysis enabled by default (v2.8.3)", () => {
@@ -666,5 +668,27 @@ describe("Default Config Values", () => {
       expect(DEFAULT_SR_CONFIG.skipPlatforms).toContain("blogspot.");
       expect(DEFAULT_SR_CONFIG.skipTlds).toContain("xyz");
     });
+  });
+
+  describe("seed file drift detection", () => {
+    const seedPath = path.resolve(__dirname, "../../../configs/pipeline.default.json");
+    const seed = JSON.parse(fs.readFileSync(seedPath, "utf-8"));
+
+    const criticalFields = [
+      "llmProvider",
+      "llmTiering",
+      "modelUnderstand",
+      "modelExtractEvidence",
+      "modelVerdict",
+      "defaultPipelineVariant",
+    ] as const;
+
+    for (const field of criticalFields) {
+      it(`DEFAULT_PIPELINE_CONFIG.${field} matches seed file`, () => {
+        expect((DEFAULT_PIPELINE_CONFIG as Record<string, unknown>)[field]).toBe(
+          seed[field],
+        );
+      });
+    }
   });
 });
