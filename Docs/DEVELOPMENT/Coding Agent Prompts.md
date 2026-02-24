@@ -25,6 +25,11 @@ And analyze the current source code.
 - Report to .md file and fix found issues automatically if you can.
 
 ---
+Rule for Agents: 
+Allways write any longer information (plans and reviews and status) into .md file (into WIP folder by default) 
+So that no information gest lost on the way, and so that information exchange between Agents is allways available and efficient.
+Multi agent collaboration shall be possible all the time, so that another agent can jump in and participate at any time. Only short info exchange is not needed to be written into file.
+---
 
 ## Tasks Pending:
 --
