@@ -48,10 +48,10 @@ FactHarbor includes multiple safeguards against echo chambers and filter bubbles
 * System checks for echo chamber patterns in source clusters
 * Flags tribal or ideological source clustering
 * Requires diverse perspectives across political/ideological spectrum
-**Multiple Scenarios**:
-* Claims are evaluated under different interpretations
-* Reveals how assumptions change conclusions
-* Makes disagreements understandable, not divisive
+**Multiple ClaimAssessmentBoundaries**:
+* Claims are evaluated across different analytical frames (Boundaries) discovered from evidence.
+* Reveals how different methodologies or time periods change conclusions.
+* Makes disagreements understandable, not divisive.
 **Transparent Reasoning**:
 * All assumptions, definitions, and boundaries are explicit
 * Evidence chains are traceable

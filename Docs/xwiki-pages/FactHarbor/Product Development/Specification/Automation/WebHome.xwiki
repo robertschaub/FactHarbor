@@ -1,7 +1,7 @@
 = Automation =
 
 {{warning}}
-**POC1 Implementation Status (February 2026):** This page describes the **target automation architecture** for FactHarbor at production maturity. In POC1 (v2.6.40+), the following are **implemented**: core AKEL claim analysis pipeline (7-step orchestrated), 2 quality gates (Gate 1 + Gate 4), multi-provider LLM support, A/B testing, and source reliability scoring. The following are **not yet implemented**: risk tiers (A/B/C), publication states, moderation system, human review queue, and automation level progression (Release 0.5/1.0/2.0).
+**POC1 Implementation Status (February 2026):** This page describes the **target automation architecture** for FactHarbor at production maturity. The **ClaimAssessmentBoundary pipeline** (v2.11.0+) is the current production implementation. The following are **implemented**: 5-stage AKEL analysis pipeline (Extract → Research → Cluster → Verdict → Aggregate), 2 quality gates (Gate 1 + Gate 4), multi-provider LLM support, A/B testing, and source reliability scoring. The following are **not yet implemented**: risk tiers (A/B/C), publication states, moderation system, human review queue, and automation level progression (Release 0.5/1.0/2.0).
 {{/warning}}
 
 **How FactHarbor scales through automated claim evaluation.**
@@ -11,7 +11,7 @@ FactHarbor is **automation-first**: AKEL (AI Knowledge Extraction Layer) makes a
 * **Scale**: Can process millions of claims
 * **Consistency**: Same evaluation criteria applied uniformly
 * **Transparency**: Algorithms are auditable
-* **Speed**: Results in <20 seconds typically
+* **Speed**: Results in <60 seconds typically
 See [[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philosophy.WebHome]] for detailed principles.
 == 2. Claim Processing Flow ==
 === 2.1 User Submits Claim ===
@@ -21,19 +21,19 @@ See [[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philoso
 * Queues for AKEL processing
 === 2.2 AKEL Processing ===
 **AKEL automatically:**
-1. Parses claim into testable components
+1. Parses input into AtomicClaims
 2. Extracts evidence from sources
-3. Scores source credibility
-4. Evaluates claim against evidence
-5. Generates verdict with confidence score
+3. Clusters evidence into ClaimAssessmentBoundaries
+4. Evaluates claims against evidence (LLM debate pattern)
+5. Generates verdicts with confidence scores
 6. Assigns risk tier (A/B/C)
 7. Publishes result
-**Processing time**: Typically <20 seconds
+**Processing time**: Typically <60 seconds
 **No human approval required** - publication is automatic
 === 2.3 Content States ===
 **Processing**: AKEL working on claim (not visible to public)
 **Published**: AKEL completed evaluation (public)
-* Verdict displayed with confidence score
+* Verdict displayed with 7-point scale and confidence score
 * Evidence and sources shown
 * Risk tier indicated
 * Users can report issues
@@ -45,70 +45,44 @@ See [[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philoso
 
 == 2.5 LLM-Based Processing Architecture ==
 
-FactHarbor delegates complex reasoning and analysis tasks to Large Language Models (LLMs). The architecture evolves from POC to production:
+FactHarbor delegates complex reasoning and analysis tasks to Large Language Models (LLMs). The architecture uses the **ClaimAssessmentBoundary** pipeline.
 
-=== Actual POC1 Implementation: 7-Step Orchestrated Pipeline ===
+=== Actual Production Implementation: 5-Stage ClaimAssessmentBoundary Pipeline ===
 
-1. **UNDERSTAND** — Claim decomposition, AnalysisContext detection, KeyFactor generation
-2. **RESEARCH** — Web search query generation and execution
-3. **EVIDENCE** — Source fetching, evidence extraction with quality filtering
-4. **CONTEXT REFINEMENT** — Supplemental claims/contexts discovery
-5. **VERDICTS** — Per-context verdict generation with 7-point verdict scale
-6. **SUMMARY** — Multi-context aggregation and two-panel summary
-7. **REPORT** — Final markdown report with quality gate checks
+1. **Stage 1: EXTRACT CLAIMS** — Two-pass evidence-grounded claim extraction (Haiku + Sonnet) with Gate 1 validation
+2. **Stage 2: RESEARCH** — Claim-driven iteration loop with contradiction search and EvidenceScope extraction
+3. **Stage 3: CLUSTER BOUNDARIES** — LLM-driven EvidenceScope clustering into ClaimAssessmentBoundaries
+4. **Stage 4: GENERATE VERDICTS** — 5-step LLM debate pattern (advocate → challenger → reconciliation → self-consistency → validation)
+5. **Stage 5: AGGREGATE ASSESSMENT** — Triangulation scoring, weighted aggregation, and VerdictNarrative generation
 
 **Characteristics:**
-* Multi-step workflow with explicit quality gates between phases
-* Multi-provider LLM support via Vercel AI SDK (Anthropic, OpenAI, Google, Mistral)
-* Model tiering: different models for understand, extract_evidence, and verdict phases
-* Iterative research with configurable search depth
-* 7-layer evidence quality defense
+* **Evidence-emergent boundaries**: Analytical frames (ClaimAssessmentBoundaries) are created AFTER research, not pre-defined.
+* **LLM debate pattern**: Adversarial reconciliation ensures high-quality verdicts.
+* **Multi-provider LLM support**: via Vercel AI SDK (Anthropic, OpenAI, Google, Mistral).
+* **Model tiering**: Different models for extraction (Haiku/Flash) and reasoning (Sonnet/Pro).
+* **7-layer evidence quality defense**: Probative value, source authority, and extraction confidence.
 
-=== Target Production Three-Phase Approach ===
+=== Removed: Orchestrated Pipeline (v2.6.x - v2.10.x) ===
 
-**Phase 1: Claim Extraction + Validation**
-* Extract distinct verifiable claims
-* Validate claim clarity and uniqueness
-* Remove duplicates and vague claims
-
-**Phase 2: Evidence Gathering (Parallel)**
-* For each claim independently:
- * Find supporting and contradicting evidence
- * Identify authoritative sources
- * Cluster EvidenceScopes into ClaimAssessmentBoundaries
-* Validation: Check evidence quality and source validity
-* Error containment: Issues in one claim don't affect others
-
-**Phase 3: Verdict Generation (Parallel)**
-* For each claim:
- * Generate verdict based on validated evidence
- * Assess confidence and risk level
- * Flag low-confidence results for human review
-* Validation: Check verdict consistency with evidence
-
-**Advantages:**
-* Error containment between phases
-* Clear quality gates and validation
-* Observable metrics per phase
-* Scalable (parallel processing across claims)
-* Adaptable (can optimize each phase independently)
+The previous 7-step orchestrated pipeline (UNDERSTAND → RESEARCH → EVIDENCE → CONTEXT REFINEMENT → VERDICTS → SUMMARY → REPORT) used **AnalysisContexts** and **KeyFactors**. This was removed in v2.11.0 and replaced by the more robust ClaimAssessmentBoundary architecture.
 
 === LLM Task Delegation ===
 
 All complex cognitive tasks are delegated to LLMs:
 * **Claim Extraction**: Understanding context, identifying distinct claims
 * **Evidence Finding**: Analyzing sources, assessing relevance
-* **Evidence Boundary Clustering**: Grouping compatible EvidenceScopes into ClaimAssessmentBoundaries
+* **Boundary Clustering**: Grouping compatible EvidenceScopes into ClaimAssessmentBoundaries
 * **Source Evaluation**: Assessing reliability and authority
-* **Verdict Generation**: Synthesizing evidence into conclusions
+* **Verdict Generation**: Synthesizing evidence into conclusions via debate
 * **Risk Assessment**: Evaluating potential impact
 
 === Error Mitigation ===
 
-Research shows sequential LLM calls face compound error risks. FactHarbor mitigates this through:
-* **Validation gates** between phases
-* **Confidence thresholds** for quality control
-* **Parallel processing** to avoid error propagation across claims
+FactHarbor mitigates LLM error risks through:
+* **Validation gates** (Gate 1, Gate 4) between phases
+* **Adversarial challenge** (Challenger role) in verdict generation
+* **Self-consistency checks** (verdict spread)
+* **Triangulation factor** (cross-boundary agreement)
 * **Human review queue** for low-confidence verdicts
 * **Independent claim processing** - errors in one claim don't cascade to others
 
@@ -141,11 +115,10 @@ Risk tiers classify claims by potential impact and guide audit sampling rates.
 == 4. Quality Gates ==
 AKEL applies quality gates before publication. If any fail, claim is **flagged** (not blocked - still published).
 **Quality gates**:
-* Sufficient evidence extracted (≥2 sources)
+* Sufficient evidence extracted (Gate 4)
 * Sources meet minimum credibility threshold
 * Confidence score calculable
-* No detected manipulation patterns
-* Claim parseable into testable form
+* Claim parseable into factual form (Gate 1)
 **Failed gates**: Claim published with flag for moderator review
 == 5. Automation Levels ==
 {{include reference="FactHarbor.Product Development.Diagrams.Automation Level.WebHome"/}}

@@ -47,23 +47,23 @@ User submits → Duplicate detection → Categorization → Processing queue →
 
 == 2.5 Claim Analysis Workflow ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.Claim and Scenario Workflow.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome"/}}
 
 == 3. Automated Analysis Workflow ==
 {{{
 Claim from queue
 ↓
-Evidence gathering (AKEL)
+1. Extract Claims (Stage 1)
 ↓
-Source evaluation (track record check)
+2. Research Evidence (Stage 2)
 ↓
-Evidence clustering + ClaimAssessmentBoundary formation
+3. Cluster Boundaries (Stage 3)
 ↓
-Verdict synthesis
+4. Generate Verdicts (Stage 4)
 ↓
-Risk assessment
+5. Aggregate Assessment (Stage 5)
 ↓
-Quality gates (confidence > 40%? risk < 80%?)
+Quality gates (Gate 1, Gate 4)
 ↓
 Publish OR Flag for improvement
 }}}
@@ -113,7 +113,7 @@ Error detected → Categorize → Root cause → Improvement queue → Pattern a
 New algorithm → Split traffic (90% control, 10% test) → Run test period → Compare metrics → Deploy if better
 }}}
 == 9. Quality Monitoring Workflow ==
-**Continuous**: Calculate metrics, detect anomalies
+**Continuous**: Calculate [[System Performance Metrics>>FactHarbor.Product Development.Specification.System-Performance-Metrics.WebHome]], detect anomalies via dashboard
 **Recurring**: Update source track records, aggregate error patterns
 **Periodic**: System improvement cycle, performance review
 == 10. Source Track Record Workflow ==

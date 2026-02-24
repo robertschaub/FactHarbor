@@ -1,4 +1,4 @@
-{{info title="Version 2.10.2"}}
+{{info title="Version 2.11.0"}}
 This document describes the **Specification** of FactHarbor. It is a working draft. See [[Project Status>>FactHarbor.Product Development.Planning.Project Status.WebHome]] for current development phase.
 {{/info}}
 
@@ -31,7 +31,7 @@ FactHarbor introduces structure, transparency, and evidence-based reasoning. It 
 
 == 3. Core Concepts ==
 
-* **Claim**: A statement needing structured verification.
+* **AtomicClaim**: A single verifiable assertion extracted from user input.
 * **ClaimAssessmentBoundary**: An evidence-emergent grouping of compatible EvidenceScopes — yielding a separate verdict per boundary.
 * **EvidenceItem**: A piece of evidence extracted from a source, with provenance and reliability scoring.
 * **Verdict**: An evidence-based rating on a 7-point scale, per claim and per ClaimAssessmentBoundary.
@@ -41,12 +41,12 @@ FactHarbor introduces structure, transparency, and evidence-based reasoning. It 
 
 == 4. How It Works ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.Claim and Scenario Lifecycle (Overview).WebHome"/}}
+{{include reference="FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome"/}}
 
 FactHarbor follows an automated analysis lifecycle:
 
-1. **Submission** — User submits a URL or text. Claims are automatically extracted and normalised.
-2. **Analysis** — AKEL researches evidence from the web, evaluates source reliability, and generates structured verdicts.
+1. **Submission** — User submits a URL or text. AtomicClaims are automatically extracted and normalised.
+2. **Analysis** — AKEL researches evidence from the web, clusters compatible evidence into ClaimAssessmentBoundaries, and generates structured verdicts.
 3. **Quality gates** — Automated gates validate claims (Gate 1) and assess verdict confidence (Gate 4).
 4. **Publication** — Results that pass quality gates are published with confidence scores, source quality indicators, and clear AI-generated labeling.
 5. **System improvement** — Quality improves through system changes (code, prompts, configuration) — analysis data is immutable.
@@ -61,7 +61,7 @@ This specification is organised from conceptual overview to implementation detai
 
 //What the system does — for stakeholders, new team members, and anyone wanting to understand FactHarbor.//
 
-* [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] — AI analysis engine: claim extraction, evidence research, verdict generation
+* [[AKEL (Historical)>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] — Original AI analysis engine summary (superseded by CB Pipeline)
 * [[Requirements>>FactHarbor.Product Development.Requirements.WebHome]] — Functional requirements, user needs, roles & content states
 * [[Data Model>>FactHarbor.Product Development.Specification.Data Model.WebHome]] — Entity relationships and target schema
 * [[Workflows>>FactHarbor.Product Development.Specification.Workflows.WebHome]] — Claim submission and analysis lifecycle
@@ -72,7 +72,7 @@ This specification is organised from conceptual overview to implementation detai
 
 //How it's built — for developers and architects.//
 
-* [[Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System design, AKEL pipeline, quality & trust, storage, security
+* [[Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]] — System design, AKEL pipeline (CB), quality & trust, storage, security
 * [[Architecture Deep Dives>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] — Implementation details: pipeline variants, quality gates, source reliability, calculations
 
 === Reference ===
@@ -81,9 +81,10 @@ This specification is organised from conceptual overview to implementation detai
 
 * [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]] — Authoritative glossary and field mappings
 * [[Data Models and Schemas>>FactHarbor.Product Development.Specification.Reference.Data Models and Schemas.WebHome]] — Schema definitions and LLM response mappings
+* [[Data Model Examples>>FactHarbor.Product Development.Specification.Data Model Examples.WebHome]] — Current sample data structures (AtomicClaim, Boundary, EvidenceItem)
 * [[Prompt Engineering>>FactHarbor.Product Development.Specification.Reference.Prompt Engineering.WebHome]] — Prompt design guidelines and provider-specific formatting
 * [[FAQ>>FactHarbor.Product Development.Specification.FAQ.WebHome]] — Frequently asked questions
-* [[Data Examples>>FactHarbor.Product Development.Specification.Examples.WebHome]] — Sample data structures across the entity model
+* [[Data Examples (Historical)>>Docs.ARCHIVE.FactHarbor.Product Development.Specification.Legacy Examples]] — Legacy sample data structures (Orchestrated era)
 * [[Review & Data Use>>FactHarbor.Product Development.Specification.Review & Data Use.WebHome]] — Data usage policies
 
 === Diagrams ===

@@ -19,7 +19,7 @@ The ClaimAssessmentBoundary pipeline produces a hierarchy of entities: the input
 == Entity Descriptions ==
 
 |= Entity |= Purpose |= Source Interface |= Key Relationships
-| **CBClaimUnderstanding** | Stage 1 output: decomposition of input into AtomicClaims with Gate 1 stats, preliminary evidence, and KeyFactors | ##types.ts:942## | Parent of AtomicClaim[]; contains gate1Stats, preliminaryEvidence, and keyFactors[]
+| **CBClaimUnderstanding** | Stage 1 output: decomposition of input into AtomicClaims with Gate 1 stats and preliminary evidence | ##types.ts:942## | Parent of AtomicClaim[]; contains gate1Stats and preliminaryEvidence
 | **AtomicClaim** | Single verifiable assertion extracted from user input; the analytical unit. Only central claims (high/medium centrality) survive extraction. | ##types.ts:715## | Receives CBClaimVerdict[]; has centrality, harmPotential, groundingQuality, expectedEvidenceProfile
 | **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes; the top-level analytical frame. Created post-research by clustering EvidenceScopes. | ##types.ts:747## | Contains EvidenceItem[] and constituentScopes[]; referenced by BoundaryFinding[]; has internalCoherence
 | **CBClaimVerdict** | Per-claim verdict with truth percentage, confidence, reasoning, boundary findings, challenge responses, and misleadingness assessment | ##types.ts:791## | References EvidenceItem[] (supporting + contradicting); contains BoundaryFinding[], ConsistencyResult, ChallengeResponse[], TriangulationScore, TruthPercentageRange

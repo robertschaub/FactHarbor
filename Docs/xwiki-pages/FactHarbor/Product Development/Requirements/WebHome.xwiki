@@ -397,19 +397,18 @@ This section defines specific features that fulfill user needs.
 * Risk score: Automated calculation
 * Complexity: Simple, moderate, complex
 
-=== 8.2 Scenario System ===
+=== 8.2 Boundary System ===
 
-==== FR4 — Scenario Generation ====
+==== FR4 — ClaimAssessmentBoundary Generation ====
 
 **Fulfills**: UN-2 (Context-dependent verification), UN-3 (Article summary with FactHarbor analysis summary), UN-8 (Understanding disagreement)
 
-**Automated scenario creation**:
-* AKEL analyzes claim and generates likely scenarios (use-cases and contexts)
-* Each scenario includes: assumptions, definitions, boundaries, evidence context
-* Users can flag incorrect scenarios
-* System learns from corrections
+**Automated boundary clustering**:
+* AKEL analyzes evidence and clusters compatible EvidenceScopes into ClaimAssessmentBoundaries
+* Each boundary represents a coherent analytical frame (methodology, temporal, geographic)
+* Users can view findings per boundary to understand how different frames affect the outcome
 
-**Key Concept**: Scenarios represent different interpretations or contexts (e.g., "Clinical trials with healthy adults" vs. "Real-world data with diverse populations")
+**Key Concept**: ClaimAssessmentBoundaries are evidence-emergent, created after research to organize evidence into compatible analytical lenses.
 
 ==== FR5 — Evidence Linking ====
 
@@ -419,15 +418,16 @@ This section defines specific features that fulfill user needs.
 * Relevance scoring
 * Contradiction detection
 * Source quality assessment
+* Automatic assignment to ClaimAssessmentBoundaries based on EvidenceScope
 
-==== FR6 — Scenario Comparison ====
+==== FR6 — Boundary Comparison ====
 
 **Fulfills**: UN-3 (Article summary with FactHarbor analysis summary), UN-8 (Understanding disagreement)
 
-* Side-by-side comparison interface
-* Highlight key differences between scenarios
-* Show evidence supporting each scenario
-* Display confidence scores per scenario
+* Multi-boundary verdict display
+* Highlight differences in findings across boundaries
+* Show evidence supporting each boundary
+* Display confidence and truth scores per boundary Finding
 
 === 8.3 Verdicts & Analysis ===
 
@@ -435,15 +435,15 @@ This section defines specific features that fulfill user needs.
 
 **Fulfills**: UN-1 (Trust score), UN-2 (Verification verdicts), UN-3 (Article summary with FactHarbor analysis summary), UN-13 (Cite verdicts)
 
-* AKEL generates verdict based on evidence within each scenario
-* **Likelihood range** displayed (e.g., "0.70-0.85 (likely true)") - NOT binary true/false
-* **Uncertainty factors** explicitly listed (e.g., "Small sample sizes", "Long-term effects unknown")
+* AKEL generates verdict based on evidence via 5-step debate pattern
+* **Likelihood range** displayed (e.g., "70-85% (likely true)") - NOT binary true/false
+* **Uncertainty factors** explicitly listed via self-consistency spread
 * Confidence score displayed prominently
 * Source quality indicators shown
-* Contradictions noted
+* Triangulation between boundaries noted
 * Uncertainty acknowledged
 
-**Key Innovation**: Detailed probabilistic verdicts with explicit uncertainty, not binary judgments
+**Key Innovation**: Detailed probabilistic verdicts with explicit uncertainty and multi-perspective findings (via boundaries).
 
 ==== FR8 — Time Evolution ====
 
@@ -985,6 +985,10 @@ Multi-layer AI quality gates to detect hallucinations, low-confidence results, a
 * ✅ 95% uptime over 30-day period
 
 === NFR13: Quality Metrics Transparency ===
+
+{{warning}}
+**Implementation Status (Alpha):** The quality dashboard and specific metrics like TIGERScore and AlignScore are **not yet implemented**. Current quality monitoring is performed via manual audit and the [[Framing-Symmetry Calibration Harness>>Docs.STATUS.Calibration_Run_Policy]]. Production metrics will be automated in future phases.
+{{/warning}}
 
 **Fulfills:** User trust, transparency, continuous improvement, IFCN methodology transparency
 
