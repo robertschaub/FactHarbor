@@ -24,7 +24,9 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 ## Getting Started
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites (including API keys), setup, and how to run the application locally.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites, setup, and how to run the application locally.
+
+For detailed configuration of internal keys and service synchronization, see **[Environment Setup & Internal Keys](Docs/DEVELOPMENT/Environment_Setup.md)**.
 
 **Tech stack:** Next.js + ASP.NET Core + LLM orchestration (Anthropic, OpenAI, Google, Mistral)
 ## License
