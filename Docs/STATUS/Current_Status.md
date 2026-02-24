@@ -177,7 +177,8 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - **Telemetry**: Built-in metrics for success rates, latency
 - **Bug Fix (v2.8.1)**: Counter-claim detection removed from verdict prompt (was overriding better understand-phase detection)
 - **Prompt Files**: Located in `apps/web/prompts/text-analysis/` with README documentation
-- See: [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
+- - See: [LLM Text Analysis Pipeline Deep Analysis](../ARCHIVE/REVIEWS/LLM_Text_Analysis_Pipeline_Deep_Analysis.md)
+- - See: [LLM Classification System Architecture](../ARCHITECTURE/LLM_Classification_System.md)
 
 **Shared Module Architecture:**
 - `scopes.ts`: Context detection (`detectScopes()`, `formatDetectedScopesHint()`)

@@ -34,9 +34,12 @@ apps/web/prompts/
 ├── claimboundary.prompt.md         # ClaimAssessmentBoundary pipeline prompts (13 sections)
 ├── monolithic-dynamic.prompt.md    # Monolithic Dynamic pipeline prompts (7 sections)
 ├── source-reliability.prompt.md    # Source reliability evaluation prompts
-└── text-analysis/                  # LLM text analysis pipeline prompts
-    ├── *.prompt.md
-    └── README.md
+└── text-analysis/                  # LLM text analysis pipeline prompts (v2.9)
+    ├── text-analysis-input.prompt.md
+    ├── text-analysis-evidence.prompt.md
+    ├── text-analysis-context.prompt.md
+    ├── text-analysis-verdict.prompt.md
+    └── text-analysis-counter-claim.prompt.md
 ```
 
 Each `.prompt.md` file has YAML frontmatter (version, pipeline, variables, requiredSections) followed by `## SECTION_NAME` headers with prompt content. The `loadAndRenderSection(pipeline, sectionName, variables)` function extracts and renders sections with variable substitution.
@@ -279,6 +282,7 @@ function detectProvider(modelName: string): ProviderType {
 
 ## Related Documentation
 
+- [LLM Classification System](./LLM_Classification_System.md) - Deep dive into semantic analysis calls
 - [OUTPUT_SCHEMAS.md](../../apps/web/src/lib/analyzer/prompts/OUTPUT_SCHEMAS.md) - Centralized JSON schema reference for all LLM phases
 - [LLM Configuration Guide](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) - User-facing provider setup
 - [LLM Schema Mapping](../xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data%20Models%20and%20Schemas/LLM%20Schema%20Mapping/WebHome.xwiki) - TypeScript to LLM output mapping
