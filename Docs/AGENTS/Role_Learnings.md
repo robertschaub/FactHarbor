@@ -195,6 +195,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** LLM self-evaluation of its own output (e.g., "rate the quality of this narrative") is unreliable for dimensions like clarity, completeness, and logical coherence — precisely the dimensions that matter for explanation quality. The model tends to rate same-family output higher. Better approach: decompose quality into structural checks (evidence citation count, counter-evidence addressed, length bounds) which are deterministic and zero-cost, then add rubric-based LLM eval with explicit scoring dimensions (not open-ended). Treat scores as diagnostic until validated against human evaluation.
 **Files:** N/A (design principle for B-8 and similar post-hoc quality evaluations)
 
+### 2026-02-24 — Required Reading must reference authoritative sources, never archived docs
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** Role Required Reading lists must point to authoritative, up-to-date documents — never to `Docs/ARCHIVE/`. Archived docs are historical snapshots that may be stale. When an authoritative xWiki page exists for the same topic, always reference that instead. During the agent knowledge restructuring, we found 8 references to `Docs/ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` in role files and AGENTS.md, while the xWiki pages (`Pipeline Variants/WebHome.xwiki`, `AKEL Pipeline/WebHome.xwiki`) had comprehensive, up-to-date content (updated 2026-02-22). Tool-specific config files also had stale references to removed code (`orchestrated.ts`) that drifted because they duplicated content rather than pointing to the canonical source. Lesson: thin pointers > partial copies; authoritative xWiki > archived markdown.
+**Files:** `Docs/AGENTS/Roles/*.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules/00-factharbor-rules.md`
+
 ## Product Strategist
 
 _(No entries yet)_

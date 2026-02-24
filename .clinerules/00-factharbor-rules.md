@@ -34,7 +34,6 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 ## Cline-Specific Notes
 
 - Prefer reading files before editing — do not guess at code structure.
-- `apps/web/src/lib/analyzer/orchestrated.ts` is ~13,600 lines — navigate carefully.
 - All DB writes must go through `JobService` (not direct DbContext access).
 - Internal endpoints use header auth: `X-Admin-Key`, `X-Runner-Key`.
 
@@ -50,9 +49,9 @@ Kimi K2 may not know FactHarbor conventions. Follow the terminology section abov
 
 ## Roles
 
-When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role definition to load from `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 and which documents to read.
+When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.
 
-**Context-budget note:** If loading all Required Reading exceeds your context window, load only the role entry from §2 and defer document reads until needed for the specific task.
+**Context-budget note:** If loading all Required Reading exceeds your context window, load only the role file and defer document reads until needed for the specific task.
 
 ## Agent Exchange Protocol
 

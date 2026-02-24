@@ -366,7 +366,7 @@ Now proceed with your task as Senior Developer.
 ## Goals
 - Analyze why report quality has degraded after recent terminology cleanup
 - Identify specific prompts or code changes that may have caused issues
-- Assess whether AnalysisContext vs EvidenceScope distinction is causing problems
+- Assess whether ClaimAssessmentBoundary vs EvidenceScope distinction (including legacy AnalysisContext carryover) is causing problems
 - Propose solutions to restore quality while maintaining correct terminology
 
 ---

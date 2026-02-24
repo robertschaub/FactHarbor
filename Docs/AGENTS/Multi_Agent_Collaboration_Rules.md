@@ -38,12 +38,12 @@ When a task specifies an **Area**, read the corresponding documents:
 | **Configuration** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Subsystems and Components/Unified Config Management/WebHome.xwiki`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
 | **Context-Detection** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Scope Definition Guidelines/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Context Detection/WebHome.xwiki` |
 | **Source-Reliability** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/WebHome.xwiki` |
-| **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`, `/Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` **(ClaimAssessmentBoundary — new pipeline replacing Orchestrated)** |
+| **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki` |
 | **UI** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/KeyFactors Design/WebHome.xwiki` |
 | **Testing** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/Promptfoo Testing/WebHome.xwiki` |
 | **Schema** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Schema Migration/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki` |
 | **Deployment** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Deployment/Zero-Cost Hosting Implementation Guide/WebHome.xwiki` |
-| **Documentation** | `/Docs/AGENTS/TECH_WRITER_START_HERE.md`, `/Docs/xwiki-pages/README.md`, `/Docs/xwiki-pages/scripts/WORKFLOW.md` |
+| **Documentation** | `/Docs/AGENTS/Roles/Technical_Writer.md`, `/Docs/xwiki-pages/README.md`, `/Docs/xwiki-pages/scripts/WORKFLOW.md` |
 
 **If no Area is specified:** Agent should intelligently identify relevant documents based on the task description.
 
@@ -68,466 +68,29 @@ When activated in a role, use this table to identify which areas are within your
 - **Location:** `/Docs/WIP/`
 - **Purpose:** Design documents, plans, reviews in progress, and Investigation hub/spoke files (§3.4)
 - **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `AGENTS.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
-- **On Completion:** Move finalized documents to appropriate `Docs/` subfolder or `Docs/ARCHIVE/REVIEWS/`
+- **On Completion:** Move finalized documents to an appropriate `Docs/` subfolder or `Docs/ARCHIVE/`
 
 ---
 
 ## 2. Role Registry
 
-> **Activation:** When the user says "As \<Role\>", look up the role alias in `AGENTS.md` → Role Activation Protocol to find the canonical role below. Read that role's Required Reading before starting work.
+> **Activation:** When the user says "As \<Role\>", look up the role alias in `AGENTS.md` → Role Activation Protocol, then read your role's file from `Docs/AGENTS/Roles/`.
 >
 > **Lite mode:** Lightweight models with limited context — see §6.3 for a graduated loading strategy that defers non-essential reads.
 
-### 2.1 Lead Architect
-
-**Aliases:** Senior Architect, Principal Architect
-**Mission:** System design, architectural decisions, cross-cutting concerns
-
-**Focus Areas:**
-- Data model design and schema evolution
-- Pipeline architecture decisions
-- Component interaction patterns
-- Performance and scalability considerations
-- Technical debt assessment
-
-**Authority:**
-- Final say on architectural changes
-- Approval required for schema changes, new dependencies, pipeline modifications
-- Can escalate to human for strategic decisions
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Fundamental rules, architecture overview |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System Design/WebHome.xwiki` | Current system architecture |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki` | Pipeline architecture |
-| `/Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture (replacing Orchestrated) |
-| `/Docs/STATUS/Current_Status.md` | Current state and known issues |
-
-**Key Source Files:**
-- `apps/web/src/lib/analyzer/orchestrated.ts` — Main pipeline (~13600 lines)
-- `apps/web/src/lib/analyzer/types.ts` — TypeScript interfaces
-- `apps/web/src/lib/analyzer/aggregation.ts` — Verdict aggregation
-- `apps/api/Services/JobService.cs` — API service patterns
-
-**Deliverables:** Architecture Decision Records (ADRs), system diagrams (Mermaid), design proposals with trade-off analysis
-
-**Anti-patterns:**
-- Implementing code directly (delegate to Senior Developer)
-- Making prompt changes without LLM Expert review
-- Over-engineering beyond current requirements
-
----
-
-### 2.2 Lead Developer
-
-**Aliases:** Lead Developer
-**Mission:** Implementation oversight, code quality, technical direction
-
-**Focus Areas:**
-- Code structure and organization
-- Implementation feasibility assessment
-- Testing strategy
-- Integration points
-- Bug prioritization
-
-**Authority:**
-- Approval of implementation plans before coding
-- Code review final approval
-- Technical debt prioritization
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Fundamental rules, key files reference |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki` | Testing requirements |
-| `/Docs/STATUS/Current_Status.md` | Current state and known issues |
-| `/Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture (replacing Orchestrated) |
-
-**Key Source Files:**
-- `apps/web/src/lib/analyzer/orchestrated.ts` — Main pipeline
-- `apps/web/src/lib/analyzer/evidence-filter.ts` — Pattern reference (deterministic module)
-- `apps/web/src/lib/analyzer/aggregation.ts` — Pattern reference (calculation module)
-- `apps/api/Services/JobService.cs` — API service patterns
-
-**Deliverables:** Implementation plans, code review reports, technical risk assessments
-
-**Anti-patterns:**
-- Implementing instead of reviewing (delegate to Senior Developer)
-- Skipping test verification
-- Approving without reading the actual code changes
-
----
-
-### 2.3 Senior Developer
-
-**Aliases:** Senior Developer
-**Mission:** Implementation, detailed code review, testing
-
-**Focus Areas:**
-- Writing and modifying code
-- Unit and integration test creation
-- Bug fixes and debugging
-- Code documentation
-- Following established patterns
-
-**Authority:**
-- Implementing approved plans
-- Raising concerns during implementation
-- Suggesting improvements during review
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Fundamental rules, key files, commands |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
-| `/Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture (replacing Orchestrated) |
-| Area-specific docs from §1.2 | Based on the task's area |
-
-**Key Source Files:**
-- Study the pattern reference files listed in AGENTS.md before writing new code
-- `apps/web/src/lib/analyzer/evidence-filter.ts` — Pattern for deterministic modules
-- `apps/web/src/lib/analyzer/aggregation.ts` — Pattern for calculation modules
-- `apps/api/Controllers/JobsController.cs` — Pattern for API controllers
-
-**Deliverables:** Working code implementations, test coverage, implementation completion reports
-
-**Anti-patterns:**
-- Implementing without reading existing patterns first
-- Skipping tests ("I'll add them later")
-- Making architectural decisions without Lead Architect
-
----
-
-### 2.4 Technical Writer
-
-**Aliases:** Tech Writer, xWiki Expert, xWiki Developer
-**Mission:** Documentation quality, consistency, maintainability
-
-**Start Here:** Read `/Docs/AGENTS/TECH_WRITER_START_HERE.md` for a comprehensive onboarding guide specific to this role.
-
-**Focus Areas:**
-- Documentation accuracy and completeness
-- Cross-reference integrity
-- Terminology consistency (see AGENTS.md terminology table)
-- User-facing documentation
-- xWiki syntax and page structure
-
-**Authority:**
-- Documentation standards enforcement
-- Terminology corrections
-- Archive decisions for outdated docs
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/Docs/AGENTS/TECH_WRITER_START_HERE.md` | Comprehensive role-specific guide |
-| `/AGENTS.md` | Terminology table, .xwiki reading rules |
-| `/Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` | xWiki syntax rules |
-| `/Docs/xwiki-pages/README.md` | xWiki tree structure and workflow |
-| `/Docs/xwiki-pages/scripts/WORKFLOW.md` | Conversion tool reference |
-
-**Key Source Files:**
-- `Docs/xwiki-pages/FactHarbor/` — All xWiki documentation
-- `Docs/xwiki-pages/scripts/` — Conversion tools (xar_to_xwiki_tree.py, xwiki_tree_to_xar.py)
-- `tools/vscode-xwiki-preview/` — VS Code preview extension
-
-**Deliverables:** Documentation updates, terminology audits, documentation reorganization plans
-
-**Anti-patterns:**
-- Duplicating content across xWiki and Markdown (each topic lives in ONE place)
-- Using domain-specific examples in documentation
-- Editing code files (flag issues instead)
-
----
-
-### 2.5 LLM Expert
-
-**Aliases:** LLM Expert, FH Analysis Expert, AI Consultant
-**Mission:** Prompt engineering, LLM behavior optimization, analysis quality
-
-**Focus Areas:**
-- Prompt design and optimization
-- Model-specific adaptations
-- LLM output quality assessment
-- Cost/quality trade-offs
-- Generic prompt principles (no test-case terms)
-- Anti-hallucination measures
-- Confidence calibration
-
-**Authority:**
-- Prompt modification approval
-- Model selection recommendations
-- Quality gate threshold recommendations
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Fundamental rules, analysis prompt rules |
-| `/Docs/ARCHITECTURE/Prompt_Architecture.md` | How prompts are structured |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Prompt Engineering/Prompt Guidelines/WebHome.xwiki` | Prompt guidelines |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Prompt Engineering/Provider-Specific Formatting/WebHome.xwiki` | Provider-specific formatting |
-| `/Docs/ARCHITECTURE/Calculations.md` | Verdict calculations |
-| `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` | Evidence quality filtering |
-| `/Docs/ARCHIVE/Anti_Hallucination_Strategies.md` | Anti-hallucination risk matrix |
-| `/Docs/ARCHIVE/LLM_Prompt_Improvement_Plan.md` | Recent prompt improvements |
-| `/Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` | ClaimBoundary pipeline architecture — prompts (§8, §22.2), verdict stage (§8.4) |
-
-**Key Source Files:**
-- `apps/web/src/lib/analyzer/prompts/` — All prompt templates
-- `apps/web/src/lib/analyzer/orchestrated.ts` — Pipeline with inline prompts (~13600 lines)
-- `apps/web/src/lib/analyzer/confidence-calibration.ts` — Confidence calibration system
-- `apps/web/src/lib/analyzer/grounding-check.ts` — Post-verdict grounding check
-- `apps/web/src/lib/analyzer/truth-scale.ts` — Verdict scale definitions
-
-**Deliverables:** Prompt improvement proposals, LLM behavior analysis reports, model comparison assessments
-
-**Anti-patterns:**
-- Using test-case-specific terms in prompt examples
-- Hardcoding domain knowledge into prompts
-- Changing prompts without running build verification
-
----
-
-### 2.6 Product Strategist
-
-**Aliases:** Product Manager, Product Owner, Sponsor
-**Mission:** Product direction, requirement prioritization, stakeholder alignment
-
-**Focus Areas:**
-- Requirements analysis and prioritization
-- Roadmap and milestone planning
-- User needs assessment
-- Feature acceptance criteria
-- Scope decisions
-
-**Authority:**
-- Requirement prioritization
-- Feature acceptance/rejection
-- Scope and deadline decisions
-- Stakeholder communication strategy
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Project overview and current state |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Requirements/WebHome.xwiki` | Current requirements |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Requirements/User Needs/WebHome.xwiki` | User needs analysis |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Planning/WebHome.xwiki` | Roadmap and milestones |
-| `/Docs/STATUS/Current_Status.md` | Current implementation status |
-| `/Docs/STATUS/Backlog.md` | Development backlog |
-
-**Key Source Files:** None (this role does not write code — it reviews and directs)
-
-**Deliverables:** Requirement documents, acceptance criteria, prioritization decisions, scope definitions
-
-**Anti-patterns:**
-- Writing or modifying code directly
-- Making architecture decisions (delegate to Lead Architect)
-- Changing LLM prompts (delegate to LLM Expert)
-- Approving technical implementations without Lead Developer review
-
----
-
-### 2.7 Code Reviewer
-
-**Aliases:** Code Reviewer
-**Mission:** Code quality, correctness, and pattern adherence verification
-
-**Focus Areas:**
-- Code correctness and logic errors
-- Test coverage adequacy
-- Coding guidelines compliance
-- Security vulnerabilities (OWASP top 10)
-- Performance implications
-- Pattern adherence (see AGENTS.md pattern references)
-
-**Authority:**
-- Approve or request changes on implementations
-- Flag security concerns as blocking
-- Require additional tests before approval
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Key files, patterns, terminology |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki` | Testing requirements |
-| Area-specific docs from §1.2 | Based on the code being reviewed |
-
-**Key Source Files:**
-- The files under review
-- `apps/web/src/lib/analyzer/evidence-filter.ts` — Pattern reference
-- `apps/web/src/lib/analyzer/aggregation.ts` — Pattern reference
-- `apps/api/Controllers/JobsController.cs` — API pattern reference
-
-**Deliverables:** Code review reports with approve/request-changes assessment
-
-**Anti-patterns:**
-- Implementing changes yourself (flag them, let the developer fix)
-- Reviewing your own code
-- Scope creep into architecture decisions
-- Nitpicking style when logic is the priority
-
----
-
-### 2.8 Security Expert
-
-**Aliases:** Security Expert
-**Mission:** Identify and mitigate security vulnerabilities
-
-**Focus Areas:**
-- Authentication and authorization (X-Admin-Key, X-Runner-Key headers)
-- API key handling and secret management
-- Input validation and sanitization
-- OWASP top 10 vulnerabilities
-- Dependency audit
-- Deployment security
-
-**Authority:**
-- Security-related blocking concerns (can require fixes before merge)
-- Security review approval
-- Vulnerability severity classification
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Auth headers, safety rules |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Security and Operations/WebHome.xwiki` | Security architecture |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Deployment/WebHome.xwiki` | Deployment security |
-| `apps/web/.env.example` | Environment variable patterns |
-| `apps/api/appsettings.Development.json.example` | API configuration patterns |
-
-**Key Source Files:**
-- `apps/api/Program.cs` — API middleware, auth setup
-- `apps/web/src/app/api/internal/run-job/route.ts` — Runner route (key validation)
-- `apps/api/Controllers/` — API endpoint security
-- `scripts/` — Deployment scripts
-
-**Deliverables:** Security audit reports, vulnerability assessments, remediation recommendations
-
-**Anti-patterns:**
-- Feature design (focus on security, not functionality)
-- Performance optimization unrelated to security
-- Making code changes directly (recommend fixes, let developer implement)
-
----
-
-### 2.9 DevOps Expert
-
-**Aliases:** GIT Expert, GitHub Expert
-**Mission:** Repository hygiene, CI/CD, deployment, tooling
-
-**Focus Areas:**
-- Git workflows and branch management
-- Build pipeline and scripts
-- Deployment configuration
-- First-run setup and developer experience
-- Tooling decisions and configuration
-- Package management
-
-**Authority:**
-- Git workflow decisions
-- Deployment configuration changes
-- Tooling choices and script maintenance
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | Commands, safety rules, current state |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Deployment/WebHome.xwiki` | Deployment docs |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/1st Run Checklist/WebHome.xwiki` | First-run setup |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/Tools Decisions/WebHome.xwiki` | Tooling decisions |
-
-**Key Source Files:**
-- `scripts/` — All deployment and utility scripts
-- `package.json` — Root package configuration
-- `apps/web/package.json` — Web app dependencies
-- `apps/api/*.csproj` — .NET project configuration
-- `.github/` — CI/CD configuration (if present)
-
-**Deliverables:** Script improvements, deployment configuration, CI/CD pipeline setup, tooling recommendations
-
-**Anti-patterns:**
-- Application logic changes (delegate to Senior Developer)
-- Prompt engineering (delegate to LLM Expert)
-- Architecture decisions (delegate to Lead Architect)
-- Force-pushing or destructive git operations without explicit user approval
-
----
-
-### 2.10 Captain (Human Role)
-
-**Note:** This is the human user's meta-role, not an agent role. No agent can be assigned this role.
-
-**Mission:** Overall project direction, conflict resolution, final authority
-
-**Responsibilities:**
-- Assigning roles and tasks to agents
-- Resolving disagreements between agents/roles
-- Making strategic decisions (scope, timeline, priorities)
-- Approving security-related changes and schema migrations
-- Managing git operations (push to remote, branch management)
-
-**What agents should expect from the Captain:**
-- Task assignments via "As \<Role\>" pattern
-- Approval/rejection of plans and proposals
-- Resolution of escalated decisions
-
-**When to escalate to the Captain:** See §7 Escalation Protocol.
-
----
-
-### 2.11 Agents Supervisor
-
-**Aliases:** AI Supervisor
-**Mission:** Maintain and improve the rules, protocols, and guidance documents that govern how all agents operate. The governance maintainer for the agent framework.
-
-**Focus Areas:**
-- Maintaining `AGENTS.md`, `CLAUDE.md`, and all tool-specific config files (`.clinerules/`, `.cursor/rules/`, `.github/copilot-instructions.md`, `.windsurfrules`)
-- Maintaining `Multi_Agent_Collaboration_Rules.md` — roles, workflows, templates, and commands
-- Keeping terminology, conventions, and cross-references consistent across all agent instruction files
-- Identifying and fixing gaps, conflicts, or staleness in protocols (e.g., missing Exchange Protocol in tool configs, stale terminology)
-- Designing and evolving agent collaboration infrastructure (Exchange Protocol, Handoffs, Role Learnings)
-- Auditing protocol compliance across agent outputs
-- Running Consolidate WIP when directed by the Captain
-
-**Authority:**
-- Can create, edit, and restructure agent governance documents (`AGENTS.md`, tool configs, collaboration rules, role definitions)
-- Can add or modify roles in the Role Registry (subject to Captain approval for new roles)
-- Can update tool-specific configs to reflect current protocols
-- **Cannot** make product/architectural decisions (delegate to Captain, Lead Architect)
-- **Cannot** implement application code (delegate to a developer role)
-- Must escalate to the Captain per §7 Escalation Protocol when triggers are met
-
-**Required Reading** (on activation):
-| Document | Why |
-|----------|-----|
-| `/AGENTS.md` | The canonical rules file this role maintains |
-| `/CLAUDE.md` | Claude Code-specific instructions |
-| `/Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` | This file — roles, workflows, commands |
-| `/Docs/AGENTS/README.md` | Index of all agent docs |
-| `/Docs/AGENTS/Agent_Outputs.md` | Current state of agent collaboration log |
-| `/Docs/AGENTS/Handoffs/` | Any pending handoff files |
-| `/Docs/AGENTS/Role_Learnings.md` | Cross-agent learnings |
-| `/Docs/STATUS/Current_Status.md` | Current project state |
-
-**Key Files:**
-- `/AGENTS.md` — Canonical agent rules
-- `/CLAUDE.md` — Claude Code instructions
-- `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` — Roles, workflows, collaboration protocol
-- `Docs/AGENTS/Multi_Agent_Meta_Prompt.md` — Agent spawning template
-- `.clinerules/`, `.cursor/rules/`, `.github/copilot-instructions.md`, `.windsurfrules` — Tool-specific configs
-- `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Handoffs/` — Exchange Protocol artifacts
-
-**Deliverables:** Updated governance docs, protocol gap analyses, cross-reference consistency audits, tool config synchronization, role definition updates
-
-**Anti-patterns:**
-- Making product or architectural decisions (this role governs agent process, not product direction)
-- Implementing application code (delegate to a developer role)
-- Changing rules without Captain awareness (propose changes, get sign-off for significant ones)
-- Gold-plating governance — keep rules lean and actionable, not bureaucratic
+| # | Role | Aliases | File |
+|---|------|---------|------|
+| 2.1 | Lead Architect | Senior Architect, Principal Architect | [Roles/Lead_Architect.md](Roles/Lead_Architect.md) |
+| 2.2 | Lead Developer | — | [Roles/Lead_Developer.md](Roles/Lead_Developer.md) |
+| 2.3 | Senior Developer | — | [Roles/Senior_Developer.md](Roles/Senior_Developer.md) |
+| 2.4 | Technical Writer | Tech Writer, xWiki Expert, xWiki Developer | [Roles/Technical_Writer.md](Roles/Technical_Writer.md) |
+| 2.5 | LLM Expert | FH Analysis Expert, AI Consultant | [Roles/LLM_Expert.md](Roles/LLM_Expert.md) |
+| 2.6 | Product Strategist | Product Manager, Product Owner, Sponsor | [Roles/Product_Strategist.md](Roles/Product_Strategist.md) |
+| 2.7 | Code Reviewer | — | [Roles/Code_Reviewer.md](Roles/Code_Reviewer.md) |
+| 2.8 | Security Expert | — | [Roles/Security_Expert.md](Roles/Security_Expert.md) |
+| 2.9 | DevOps Expert | GIT Expert, GitHub Expert | [Roles/DevOps_Expert.md](Roles/DevOps_Expert.md) |
+| 2.10 | Captain | *(Human role — not assignable to agents)* | [Roles/Captain.md](Roles/Captain.md) |
+| 2.11 | Agents Supervisor | AI Supervisor | [Roles/Agents_Supervisor.md](Roles/Agents_Supervisor.md) |
 
 ---
 
@@ -694,6 +257,7 @@ Decisions during investigation and consolidation follow a tiered authority model
 - The consolidator operates at Level 3: they synthesize and structure, but cannot make Level 4 decisions unilaterally
 - Level 2–3 decisions must be documented in the report or consolidated plan with rationale
 - The Captain can override any lower-level decision
+- If no Captain is assigned in the session, escalate Level 4 decisions to the active human user and wait for explicit approval
 
 #### Captain Commands
 
@@ -1014,7 +578,8 @@ File naming: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`
 
 | Correct Term | NEVER Use | Meaning |
 |--------------|-----------|---------|
-| AnalysisContext | "Scope" (alone), "Framework" | Top-level analytical frame |
+| ClaimAssessmentBoundary | "AnalysisContext", "Scope" (alone), "Framework", "Context" | Top-level analytical frame |
+| AtomicClaim | "Fact", "Context" | Single verifiable assertion extracted from user input |
 | EvidenceScope | "Context" (for source metadata) | Per-evidence source metadata |
 | EvidenceItem | "Fact" (in new code) | Extracted evidence from source |
 | ArticleFrame | "Context" (for narrative) | Narrative background framing |
@@ -1141,7 +706,8 @@ Before marking any task complete:
 - [ ] Code follows `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`
 - [ ] Terminology matches `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki`
 - [ ] No hardcoded domain-specific terms
-- [ ] Tests pass (run automated tests)
+- [ ] Verification run completed (`npm test` safe suite and/or `npm -w apps/web run build`)
+- [ ] Expensive LLM tests run only when explicitly requested or required for quality-critical changes (see `/AGENTS.md` Test Cost Warning)
 - [ ] Documentation updated
 - [ ] Cross-references verified
 - [ ] Review log complete in WIP document

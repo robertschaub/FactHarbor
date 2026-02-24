@@ -4,6 +4,16 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-24 | LLM Expert | Claude Code (Opus) | Agent Knowledge Files Restructured
+**Task:** Analyze options for better agent knowledge organization, document decision, and execute file restructuring (Option 5).
+**Files touched:** Created 11 files in `Docs/AGENTS/Roles/`, created `Docs/WIP/Agent_Knowledge_Restructuring_2026-02-24.md`. Edited `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.windsurfrules`, `AGENTS.md`, `Docs/AGENTS/README.md`, `Docs/AGENTS/TECH_WRITER_START_HERE.md`, `Docs/AGENTS/Role_Code_Review_Agent.md`.
+**Key decisions:** (1) Split 11 role definitions from Multi_Agent_Collaboration_Rules.md §2 into per-role files in `Docs/AGENTS/Roles/`. (2) Made tool-specific files thin pointers instead of partial copies. (3) Slimmed CLAUDE.md by removing content duplicated in AGENTS.md (both are auto-loaded by Claude Code). (4) Fixed stale `orchestrated.ts` references in 3 files. (5) Recommended MCP Knowledge Server as medium-term improvement (not implemented yet).
+**Open items:** (1) Medium-term: implement MCP Knowledge Server (Option 4) for dynamic context loading. (2) Redirect files (TECH_WRITER_START_HERE.md, Role_Code_Review_Agent.md) can be deleted in a future cleanup once references are confirmed clear.
+**Warnings:** The `Docs/AGENTS/Roles/Technical_Writer.md` file has an outdated terminology reference ("AnalysisContext" on original TECH_WRITER_START_HERE.md line 98 was not in the merged content — already omitted). Verify no other files reference the old TECH_WRITER_START_HERE.md path directly.
+**For next agent:** Role activation now reads per-role files from `Docs/AGENTS/Roles/<RoleName>.md` instead of scanning Multi_Agent_Collaboration_Rules.md §2. The collaboration rules file still contains §1 (global references), §3-§8 (workflows, protocols, model guidelines, escalation, quality). Full decision analysis: `Docs/WIP/Agent_Knowledge_Restructuring_2026-02-24.md`.
+**Learnings:** No (this is a governance/documentation task, not a code pattern discovery).
+
+---
 ### 2026-02-23 | Lead Developer | Codex (GPT-5) | Calibration HTML Interpretation Block Added
 **Task:** Add in-report explanatory text for skew interpretation/gating and regenerate existing canary HTML reports.
 **Files touched:** `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/output/bias/canary-immigration-impact-en-2026-02-23T18-48-12-480Z.html`, `apps/web/test/output/bias/canary-rent-control-en-2026-02-23T19-31-40-313Z.html`
@@ -1575,4 +1585,23 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 - This pass is documentation-only; no analyzer or test-run behavior was changed.
 **For next agent:**
 - Treat `Calibration_Baseline_v1.md` as historical control context and `Calibration_Run_Policy.md` as the active execution policy.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | Agent Rules Consistency Hardening
+**Task:** Apply targeted consistency improvements to Codex agent rules based on identified gaps (terminology conflict, stale paths, precedence ambiguity, test-policy ambiguity, and no-Captain fallback).
+**Files touched:** `AGENTS.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `Docs/AGENTS/Roles/Lead_Architect.md`, `Docs/AGENTS/Roles/Lead_Developer.md`, `Docs/AGENTS/Roles/Senior_Developer.md`, `Docs/AGENTS/Roles/LLM_Expert.md`, `Docs/AGENTS/Multi_Agent_Meta_Prompt.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit instruction precedence hierarchy to `AGENTS.md` to reduce cross-doc conflicts.
+- Added explicit fallback rule: when no Captain role is active, the human user is the approval authority.
+- Repointed stale `ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md` references to the existing archived architecture file.
+- Aligned collaboration-rule terminology with current ClaimAssessmentBoundary terminology (removed AnalysisContext as top-level current term).
+- Clarified verification policy in quality checklist: safe suite/build by default, expensive LLM tests only when explicitly required.
+- Updated WIP completion guidance to use existing `Docs/ARCHIVE/` destination (removed non-existent `Docs/ARCHIVE/REVIEWS/` target).
+**Open items:**
+- Historical references to `AnalysisContext` remain in archival/handoff history docs by design; these were not rewritten in this pass.
+**Warnings:**
+- The architecture reference now points to an archived markdown document; if a new authoritative xWiki replacement is designated later, these links should be updated together in one sweep.
+**For next agent:**
+- Use `AGENTS.md` precedence + fallback rules as the operational source when tool prompts or role docs conflict.
+- If further cleanup is desired, run a scoped pass for active (non-archive) docs that still mention `AnalysisContext` as current terminology.
 **Learnings:** No new role learnings appended.

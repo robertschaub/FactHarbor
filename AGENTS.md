@@ -5,6 +5,19 @@ Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/A
 
 ---
 
+## Instruction Precedence
+
+When instructions conflict, apply this order (highest first):
+1. Closest path-specific `AGENTS.md` (e.g., `apps/api/AGENTS.md`)
+2. Repository root `/AGENTS.md`
+3. Active role file in `Docs/AGENTS/Roles/`
+4. `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` and other collaboration docs
+5. Tool-specific config wrappers (`CLAUDE.md`, Copilot/Cursor/Cline rules)
+
+If still ambiguous, ask the active human user before proceeding.
+
+---
+
 ## Fundamental Rules
 
 ### Generic by Design
@@ -66,7 +79,7 @@ These rules apply specifically to the LLM prompts used in the analysis pipeline 
 
 | Term | Meaning | Variable names | NEVER call it |
 |------|---------|---------------|---------------|
-| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
+| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
 | **AtomicClaim** | Single verifiable assertion extracted from user input. The analytical unit in the ClaimAssessmentBoundary pipeline. | `atomicClaim`, `atomicClaims` | "context", "fact" |
 | **EvidenceScope** | Per-evidence source metadata (methodology, temporal bounds) | `evidenceScope` | "context" |
 | **EvidenceItem** | Extracted evidence from a source (NOT a verified fact) | — | "fact" (in new code) |
@@ -199,12 +212,14 @@ When starting any new task, every agent MUST:
 2. **Check role and model**: Identify your current role and underlying LLM model. If either is a poor match for the task (e.g., a lightweight model assigned deep architectural reasoning, or a Technical Writer role asked to implement code), inform the Captain and propose a better-suited role, model tier, or both. Reference the Model-Class Guidelines in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6 for tier strengths.
 3. **Recommend if not**: Tell the user which agent/tool to use, why, what context it needs (files to read, decisions already made), and any work completed so far.
 
+If no Captain role is actively assigned in the session, treat the active human user as the Captain for escalation and approval decisions.
+
 ### Role Activation Protocol
 
 When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 
 1. **Look up the role** in the alias table below → find the canonical role name
-2. **Read required documents** listed for that role in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2 Role Registry
+2. **Read your role's file** from `Docs/AGENTS/Roles/<RoleName>.md` — contains mission, focus areas, authority, required reading, key source files, deliverables, and anti-patterns
 3. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
 4. **Acknowledge**: State your role, focus areas, and which docs you've loaded
 5. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
@@ -212,25 +227,25 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 
 **Role Alias Quick-Reference:**
 
-| User Says | Maps To | Registry Section |
-|-----------|---------|-----------------|
-| "Senior Architect", "Principal Architect" | Lead Architect | §2.1 |
-| "Lead Developer" | Lead Developer | §2.2 |
-| "Senior Developer" | Senior Developer | §2.3 |
-| "Tech Writer", "xWiki Expert", "xWiki Developer" | Technical Writer | §2.4 |
-| "LLM Expert", "AI Consultant", "FH Analysis Expert" | LLM Expert | §2.5 |
-| "Product Manager", "Product Owner", "Sponsor" | Product Strategist | §2.6 |
-| "Code Reviewer" | Code Reviewer | §2.7 |
-| "Security Expert" | Security Expert | §2.8 |
-| "GIT Expert", "GitHub Expert" | DevOps Expert | §2.9 |
-| "Agents Supervisor", "AI Supervisor" | Agents Supervisor | §2.11 |
+| User Says | Maps To | Role File |
+|-----------|---------|-----------|
+| "Senior Architect", "Principal Architect" | Lead Architect | `Docs/AGENTS/Roles/Lead_Architect.md` |
+| "Lead Developer" | Lead Developer | `Docs/AGENTS/Roles/Lead_Developer.md` |
+| "Senior Developer" | Senior Developer | `Docs/AGENTS/Roles/Senior_Developer.md` |
+| "Tech Writer", "xWiki Expert", "xWiki Developer" | Technical Writer | `Docs/AGENTS/Roles/Technical_Writer.md` |
+| "LLM Expert", "AI Consultant", "FH Analysis Expert" | LLM Expert | `Docs/AGENTS/Roles/LLM_Expert.md` |
+| "Product Manager", "Product Owner", "Sponsor" | Product Strategist | `Docs/AGENTS/Roles/Product_Strategist.md` |
+| "Code Reviewer" | Code Reviewer | `Docs/AGENTS/Roles/Code_Reviewer.md` |
+| "Security Expert" | Security Expert | `Docs/AGENTS/Roles/Security_Expert.md` |
+| "GIT Expert", "GitHub Expert" | DevOps Expert | `Docs/AGENTS/Roles/DevOps_Expert.md` |
+| "Agents Supervisor", "AI Supervisor" | Agents Supervisor | `Docs/AGENTS/Roles/Agents_Supervisor.md` |
 
 **If the role is NOT in the table above:**
 1. Tell the user which existing role is closest (if any) and ask whether to use that one
 2. If no close match: read `/AGENTS.md` + `/Docs/STATUS/Current_Status.md` as baseline, then ask the user what documents and source files are relevant for this role
 3. Proceed with steps 3-5 above once clarified
 
-Full role definitions, required reading, and area-to-document mapping: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
+Full role definitions: `Docs/AGENTS/Roles/`. Shared workflows, area-to-document mapping, and protocols: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
 
 ### Working Principles
 
@@ -391,10 +406,11 @@ Provide a summary:
 | Task Type | Best Tool | Why |
 |-----------|-----------|-----|
 | Complex architecture, multi-step reasoning | Claude Code (Opus) | Deep reasoning, plan mode |
+| Fast implementation, parallel tasks | Codex (GPT) | Reads `AGENTS.md` natively, cloud sandbox |
 | Inline code completions | GitHub Copilot | Fast, context-aware |
 | Multi-file refactors with preview | Cursor (Composer) | Visual diff, multi-file edits |
 | Autonomous multi-step workflows | Cline | Runs commands, creates files autonomously |
-| Documentation + diagrams | Agent with TECH_WRITER role | See `Docs/AGENTS/TECH_WRITER_START_HERE.md` |
+| Documentation + diagrams | Agent with TECH_WRITER role | See `Docs/AGENTS/Roles/Technical_Writer.md` |
 | .NET API work | Any agent | Read `apps/api/AGENTS.md` first |
 | xWiki documentation | Any agent | Read `Docs/AGENTS/AGENTS_xWiki.md` first |
 
@@ -413,7 +429,7 @@ Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/we
 
 ## Current State (Pre-release, targeting v1.0)
 
-Pipeline variants: ClaimAssessmentBoundary (default, production), Monolithic Dynamic (alternative). Orchestrated was removed in v2.11.0 (replaced by ClaimAssessmentBoundary). Monolithic Canonical was removed in v2.10.x. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+Pipeline variants: ClaimAssessmentBoundary (default, production), Monolithic Dynamic (alternative). Orchestrated was removed in v2.11.0 (replaced by ClaimAssessmentBoundary). Monolithic Canonical was removed in v2.10.x. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`.
 
 LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
 

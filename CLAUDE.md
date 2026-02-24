@@ -1,6 +1,6 @@
 # Claude Code instructions — FactHarbor
 
-Project rules, terminology, and architecture: @AGENTS.md
+Full project rules, terminology, and architecture: @AGENTS.md (auto-loaded alongside this file — do not duplicate content here).
 
 ## Project overview
 
@@ -15,7 +15,7 @@ Two apps + one tool:
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
 3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
 
-> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 853 tests passing. See `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md`.
+> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 853 tests passing. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 
@@ -40,39 +40,17 @@ Two apps + one tool:
 - Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
 - **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
 
-## Publishing (gh-pages)
-
-**CI owns gh-pages. Agents must NEVER push to the gh-pages branch directly.**
-- To publish: `git push` to `main` — CI deploys automatically with `DOCS_ANALYTICS_URL`
-- To re-trigger CI without a content change: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`
-- Pushing manually to gh-pages overwrites the CI build and **breaks analytics** (the secret is not available locally)
-- **NEVER `git checkout gh-pages`** in the main working tree — it disrupts other agents and tools. If you must inspect or test the gh-pages branch locally, use a worktree: `git worktree add ../fh-ghpages gh-pages` (and `git worktree remove ../fh-ghpages` when done).
-
-## Patterns & conventions
-
-- Internal endpoints: idempotent, guarded by `X-Admin-Key` / `X-Runner-Key` headers.
-- Use `JobService` for all DB changes (appends `JobEventEntity` for audit history).
-- DB auto-created via `EnsureCreated()` — no migrations in this POC.
-- Platform: Windows. Use PowerShell-compatible commands.
-
 ## Safety
 
 - No production data access. No secrets in commits.
 - No destructive git commands unless explicitly asked.
 - Do not overwrite `apps/api/factharbor.db` unless asked.
+- Platform: Windows. Use PowerShell-compatible commands.
 
 ## Roles & Multi-Agent Workflow
 
 When user assigns a role with "As \<Role\>", follow the Role Activation Protocol in `AGENTS.md`.
-Role definitions and required reading: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §2.
-
-## Agent handoff
-
-If another tool would be better, say so and explain what context it needs:
-- **Cursor Composer**: multi-file refactors with visual diff.
-- **GitHub Copilot**: inline completions.
-- **Cline**: autonomous multi-step workflows.
-Full reference: `/AGENTS.md` Agent Handoff Protocol.
+Role definitions: `Docs/AGENTS/Roles/`. Shared workflows and protocols: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
 
 ## Workflow
 

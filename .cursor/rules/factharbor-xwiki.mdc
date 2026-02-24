@@ -18,4 +18,4 @@ Read `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full xWiki syntax rule
 ## Rules
 - Preserve existing syntax when editing.
 - Each document lives in ONE authoritative format (`.md` or `.xwiki`, not both).
-- Follow terminology from `/AGENTS.md` (AnalysisContext, EvidenceScope, EvidenceItem).
+- Follow terminology from `/AGENTS.md` (ClaimAssessmentBoundary, EvidenceScope, EvidenceItem).
