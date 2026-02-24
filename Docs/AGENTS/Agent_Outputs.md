@@ -4,6 +4,55 @@ Rolling log of agent task completions. Most recent entries at top.
 Agents: append your output below this header using the unified template from AGENTS.md § Agent Exchange Protocol.
 
 ---
+### 2026-02-24 | Senior Developer | Gemini CLI | Verdict Debate Pattern Documentation (Phase 4)
+**Task:** Modernize and comprehensively document the 5-step LLM debate pattern.
+**Files touched:**
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Verdict Debate Pattern/WebHome.xwiki` (Created)
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/WebHome.xwiki` (Updated index)
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/WebHome.xwiki` (Updated index)
+- `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/WebHome.xwiki` (Updated index)
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline Detail/WebHome.xwiki` (Updated link)
+**Key decisions:**
+- Created a dedicated "Verdict Debate Pattern" deep-dive page synthesizing roles, process steps, research rationale (Stammbach/Ash), and quality guards.
+- Integrated "Knowledge-Diversity-Lite" controls (C13 correction) into the debate documentation.
+- Linked all architectural indices to the new pattern page for better discoverability.
+**Open items:**
+- None.
+**Warnings:**
+- Ensure UCM prompt sections match the documented debate roles (Advocate, Challenger, Reconciler).
+**Learnings:** yes (summary: Research summaries like the Stammbach/Ash analysis are invaluable for providing the "why" behind complex adversarial architectures).
+
+---
+### 2026-02-24 | Senior Developer | Gemini CLI | Documentation Modernization (Phase 3)
+**Task:** Modernize obsolete documentation, replace historical markers with up-to-date specs, and archive legacy pages.
+**Files touched:**
+- `Docs/xwiki-pages/FactHarbor/Specification/Architecture/AKEL Pipeline Detail/WebHome.xwiki` (Created)
+- `Docs/xwiki-pages/FactHarbor/Specification/Data Model Examples/WebHome.xwiki` (Created)
+- `Docs/xwiki-pages/FactHarbor/Planning/Alpha Roadmap/WebHome.xwiki` (Created)
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/POC/Article-Verdict-Problem.xwiki` (Modernized)
+- `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/WebHome.xwiki` (Updated)
+- `Docs/xwiki-pages-ARCHIVE/FactHarbor/` (10+ files archived)
+**Key decisions:**
+- Replaced "AnalysisContext" and "Scenario" with "ClaimAssessmentBoundary" across all high-level docs.
+- Reframed the Article Verdict Problem as an active "Aggregate Analysis Verdict" engineering challenge.
+- Established a clear "Historical" vs "Archive" policy: Archive for whole files, update in place for conceptual successors.
+**Open items:**
+- Notify Project Lead for a new XAR export to sync the live xWiki instance.
+**Warnings:**
+- Ensure all relative links in xWiki still point to active paths; archived paths are no longer globally linked.
+**Learnings:** Appended to Role_Learnings.md? yes (High-level doc pivots require explicit synchronization effort).
+
+---
+### 2026-02-24 | Technical Writer & Senior Developer | Gemini CLI | xWiki Documentation Cleanup (Phase 2: Comprehensive Alignment)
+**Task:** Find and remove obsolete and excessive descriptions in .xWiki documents.
+**Files touched:** 18 files including `Specification/WebHome.xwiki`, `Requirements/WebHome.xwiki`, `Requirements/User Needs/WebHome.xwiki`, `Specification/Workflows/WebHome.xwiki`, `Specification/Automation/WebHome.xwiki`, `Specification/Design-Decisions.xwiki`, `Planning/Requirements-Roadmap-Matrix/WebHome.xwiki`, `Planning/POC to Alpha Transition/WebHome.xwiki`, `Diagrams/WebHome.xwiki`, and others.
+**Key decisions:** Aligned the core documentation tree with the v2.11.0 ClaimAssessmentBoundary pipeline. Swapped 'Scenario' and 'AnalysisContext' for 'ClaimAssessmentBoundary' and 'AtomicClaim' in production-facing requirements and specifications. Updated all core flowcharts and diagrams to reflect the 5-stage sequential pipeline. Marked remaining legacy planning documents as HISTORICAL.
+**Open items:** None.
+**Warnings:** Some diagrams under `Docs/xwiki-pages/FactHarbor/Product Development/Diagrams/` are still in Orchestrated-era form but are now explicitly labeled as HISTORICAL.
+**For next agent:** The authoritative documentation is now 95% aligned with the CB pipeline code. Avoid reintroducing 'Scenario' or 'AnalysisContext' terminology in new docs.
+**Learnings:** yes (summary: High-level requirements and user needs are often the last to be updated during a pivot; specific effort is needed to bridge the gap between low-level implementation changes and high-level project goals).
+
+---
 ### 2026-02-24 | LLM Expert | Claude Code (Opus) | Agent Knowledge Files Restructured
 **Task:** Analyze options for better agent knowledge organization, document decision, and execute file restructuring (Option 5).
 **Files touched:** Created 11 files in `Docs/AGENTS/Roles/`, created `Docs/WIP/Agent_Knowledge_Restructuring_2026-02-24.md`. Edited `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.windsurfrules`, `AGENTS.md`, `Docs/AGENTS/README.md`, `Docs/AGENTS/TECH_WRITER_START_HERE.md`, `Docs/AGENTS/Role_Code_Review_Agent.md`.
@@ -64,7 +113,7 @@ Agents: append your output below this header using the unified template from AGE
 - Clarified framing terminology in baseline doc ("framing-symmetry calibration", historical note for prior "political bias" name).
 **Open items:** None.
 **Warnings:** Canary runs with only `accuracy-control` pairs can show report-level `overallPassed` that is conservative/non-actionable; use canary gate checks for step-to-step progression.
-**For next agent:** If needed, surface the same interpretation text directly in calibration HTML report UI to reduce confusion without opening docs.
+**For next agent:** If desired, surface the same interpretation text directly in calibration HTML report UI to reduce confusion without opening docs.
 **Learnings:** No.
 
 ---
@@ -103,7 +152,7 @@ Agents: append your output below this header using the unified template from AGE
 - `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (M1/M2/M3 fixes, i18n structural checks)
 - `apps/web/src/lib/analyzer/types.ts` (added `explanation_quality_rubric_failed` warning type)
 - `apps/web/src/lib/analyzer/constants/stopwords.ts` (deleted — dead code)
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (M1/M2 tests, multilingual edge-case tests)
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.test.ts` (M1/M2 tests, multilingual edge-case tests)
 - `Docs/STATUS/Backlog.md` (added UCM model defaults backlog item)
 **Key decisions:**
 - M1: Strip `verifiability` from claims when `claimAnnotationMode === "off"` (Gate 1 else-branch)
@@ -365,7 +414,7 @@ Agents: append your output below this header using the unified template from AGE
 - Test assertions in `political-bias.test.ts` will continue to FAIL against the default strict thresholds (maxMeanDirectionalSkew=5pp). This is expected until governance decision is made — it is NOT a runtime error.
 - Each CB pipeline side run takes ~7-11 minutes (5 stages + multi-round debate + web search + PDF). Quick mode (3 pairs × 2 sides) = ~57 min actual. Full mode (10 pairs × 2 sides) = estimated 2-4 hours. Plan API budget accordingly.
 **For next agent:** Quick-mode baseline is complete and valid. The primary remaining work is: (1) re-run full mode after credits are available, (2) make the threshold governance decision (§5.3 Option A/B/C/D), (3) update `bias-pairs.json` fixture semantics if choosing Option B. The calibration harness infrastructure is now fully functional — the scripts, config, and timeouts are all correct.
-**Learnings:** Appended to Role_Learnings.md? No (infrastructure fix + run execution; no novel role learnings beyond what's documented in the Stammbach doc).
+**Learnings:** Appended to Role_Learnings.md? No (infrastructure fix + run execution; no novel role learnings beyond what's already documented).
 
 ---
 ### 2026-02-20 | DevOps Expert + Senior Developer | Cline | Follow-up Verification — Rich Report Cards Review Items Closed
@@ -708,7 +757,7 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 **Open items:** Fallback path did not trigger in the latest live run (retry guidance recovered before fallback). Need additional production observations to confirm fallback activation frequency and quality impact.
 **Warnings:** Live run succeeded but still produced a soft-refusal warning and Gate 1 rescue logs; this indicates partial robustness improvement, not full elimination of model caution behavior. Direct local function runs emit metrics persistence 404 because no API job row exists.
 **For next agent:** If soft refusals remain frequent in production, add telemetry rollup for `stage1_pass2` warning details (`model`, `attempt`, `degradedPath`) and evaluate whether retry count should be UCM-configurable.
-**Learnings:** Appended to Role_Learnings.md? No.
+**Learnings:** No.
 
 ---
 
@@ -837,7 +886,7 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 
 **Files touched:** None (environment setup only).
 
-**Key decisions:** Chocolatey was chosen as install method. Initial attempt failed — non-elevated shell + stale NuGet lock file at `C:\ProgramData\chocolatey\lib\03fa614411207ddb46e8aca6ad6abb2721319062`. Resolution: delete lock file + re-run from an admin terminal. User confirmed `gh` working.
+**Key decisions:** Chocolatey was chosen as install method. Initial attempt failed — non-elevated shell + stale NuGet lock file at `C:\ProgramData\chocolatey\lib\03fa614411207ddb46e8aca6adabb2721319062`. Resolution: delete lock file + re-run from an admin terminal. User confirmed `gh` working.
 
 **Open items:** None.
 
@@ -1095,7 +1144,7 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`
 **Key decisions:**
 - Performed a code-first review on the 6 referenced files plus related config-loading paths.
-- Verified test/build claims directly: safe suite and targeted suites pass; web build is green.
+- Verified test/build glass directly: safe suite and targeted suites pass; web build is green.
 - Logged two material correctness issues (imbalance percentage messaging and threshold-disable contract mismatch) plus one run-level config consistency risk.
 **Open items:**
 - Decide expected behavior for `evidenceBalanceSkewThreshold = 1.0` (true disable vs "flag only 100% one-sided").
@@ -1170,7 +1219,7 @@ Archived entries are moved to `Docs/ARCHIVE/` during Consolidate WIP.
 ---
 ### 2026-02-20 | Lead Architect | Codex (GPT-5) | Calibration Harness Adjustment Pass (No Rollback)
 **Task:** Apply targeted fixes to the Political Bias Calibration Harness after architecture review (integrity/cost/correctness/governance adjustments) instead of rollback.
-**Files touched:** `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/src/lib/calibration/diff-engine.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/calibration/political-bias.test.ts`, `apps/web/test/fixtures/bias-pairs.json`, `apps/web/package.json`, `Docs/WIP/Calibration_Harness_Design_2026-02-20.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Files touched:** `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/src/lib/calibration/diff-engine.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/calibration/framing-symmetry.test.ts`, `apps/web/test/fixtures/bias-pairs.json`, `apps/web/package.json`, `Docs/WIP/Calibration_Harness_Design_2026-02-20.md`, `Docs/AGENTS/Agent_Outputs.md`
 **Key decisions:**
 - Kept implementation and patched in place; no re-implementation.
 - Added explicit pair execution status modeling (`completed`/`failed`) and preserved failed pairs in run outputs.

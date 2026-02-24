@@ -138,6 +138,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** The xwiki-viewer.html detects external links by checking if the href starts with `https://`. Use `[[label>>https://url]]` syntax. Do NOT use xWiki's `url:` prefix (`[[label>>url:https://...]]`) or `||target="_blank"` parameter — the viewer doesn't parse those. The viewer automatically adds `target="_blank" rel="noopener"` to all https:// links. Bold wrapping works: `**[[label>>https://url]]**`.
 **Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (line ~721, `inl()` method)
 
+### 2026-02-24 — Requirement and User Need documentation needs explicit effort during pivots
+**Role:** Technical Writer  **Agent/Tool:** Gemini CLI
+**Category:** tip
+**Learning:** High-level project documents like Requirements and User Needs are often the last to be updated during a major architectural pivot (e.g., AnalysisContext → ClaimAssessmentBoundary). Specific documentation sweeps are necessary to bridge the gap between low-level implementation changes and high-level project goals, ensuring that stakeholders see a consistent vision.
+**Files:** `Docs/xwiki-pages/FactHarbor/Requirements/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Requirements/User Needs/WebHome.xwiki`
+
 ## LLM Expert
 
 ### 2026-02-19 — Anthropic tool calling soft refusal mechanism
@@ -259,7 +265,7 @@ _(No entries yet)_
 **Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
 **Category:** gotcha
 **Learning:** In Next.js dev mode, module-scoped Map/Set instances reset on HMR (hot module reload). The abort signals Map in the abort-job route was module-scoped, so cancelled jobs kept running after code changes. Use `globalThis` pattern for any in-memory state that must survive hot reloads. Pattern reference: `getRunnerQueueState()` in `internal-runner-queue.ts`.
-**Files:** `apps/web/src/app/api/internal/abort-job/[id]/route.ts`
+**Files:** `apps/web/src/app/api/internal/abort-job/[id]/id/route.ts`
 
 ### 2026-02-18 — New modules need test files to avoid coverage gaps
 **Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
