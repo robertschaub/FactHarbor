@@ -118,6 +118,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Pass 2 claim extraction has 11+ required fields per claim with 6 strict enums and nested objects. LLMs fail schema validation ~5-10% of the time on complex schemas (enum capitalization, missing nested arrays, string-vs-number type confusion). Adding retry (3 attempts, exponential backoff, temperature variation +0.05/attempt) is cheap insurance — a single extra LLM call costs ~$0.01 but prevents a full job failure. The schema's `.catch()` defaults and case normalization (added by another agent) are complementary: retry handles complete parse failures, `.catch()` handles partial field-level issues.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
 
+### 2026-02-24 — Use .geminiignore to optimize file discovery and token usage
+**Role:** Senior Developer  **Agent/Tool:** Gemini CLI
+**Category:** tip
+**Learning:** In projects with large build artifacts (.next, bin, obj, test-output), a `.geminiignore` file is essential. It prevents the agent from indexing irrelevant files, which reduces noise in directory listings and saves tokens during codebase-wide operations. This is especially important for Next.js and .NET projects where build directories are deep and contains thousands of files.
+**Files:** `.geminiignore`
+
+### 2026-02-24 — Foundational GEMINI.md bridges system instructions with project mandates
+**Role:** Senior Developer  **Agent/Tool:** Gemini CLI
+**Category:** useful-pattern
+**Learning:** Creating a `GEMINI.md` file that references the project's central `AGENTS.md` ensures that the agent prioritizes project-specific engineering standards over its general system defaults from the start of every session. This "thin pointer" pattern maintains a single source of truth while providing tool-specific entry points.
+**Files:** `GEMINI.md`, `AGENTS.md`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

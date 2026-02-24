@@ -1,0 +1,59 @@
+# Gemini CLI instructions — FactHarbor
+
+Full project rules, terminology, and architecture: @AGENTS.md (absolute precedence — do not duplicate content here).
+
+## Project Overview
+
+Two apps + one tool:
+- `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
+- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts`, `src/lib/analyzer/verdict-stage.ts`.
+- `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
+
+## Primary Data Flow
+
+1. Client/UI -> API creates a job via `JobService` (`apps/api/Services/JobService.cs`).
+2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
+3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
+
+> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 853 tests passing. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
+
+## Critical Terminology (Always follow — see AGENTS.md for full details)
+
+- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame.
+- **AtomicClaim** = Single verifiable assertion extracted from user input. The analytical unit.
+- **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
+- **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.
+- **No hardcoded keywords**: Code, prompts, and logic must be generic for ANY topic.
+- **Input Neutrality**: "Was X fair?" must yield same analysis as "X was fair" (tolerance ≤4%).
+
+## Auth & Headers
+
+- Runner -> Next: header `X-Runner-Key` (`FH_INTERNAL_RUNNER_KEY`)
+- Runner -> API: header `X-Admin-Key` (`FH_ADMIN_KEY`)
+- Config: `apps/api/appsettings.Development.json` (from `.example`), `apps/web/.env.local` (from `.env.example`).
+
+## Run Commands
+
+- Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
+- Web: `cd apps/web && npm run dev` (port 3000)
+- API: `cd apps/api && dotnet run` (port 5000)
+- Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
+- **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
+
+## Safety
+
+- No production data access. No secrets in commits.
+- No destructive git commands unless explicitly asked.
+- Do not overwrite `apps/api/factharbor.db` unless asked.
+- Platform: Windows. Use PowerShell-compatible commands.
+
+## Roles & Multi-Agent Workflow
+
+When user assigns a role with "As \<Role\>", follow the Role Activation Protocol in `AGENTS.md`.
+Role definitions: `Docs/AGENTS/Roles/`. Shared workflows and protocols: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
+
+## Workflow
+
+- Solo developer + AI agents. Direct push to main is normal.
+- Commits: conventional commits `type(scope): description`.
+- **Instruction Precedence**: `GEMINI.md` (this file) and `AGENTS.md` take precedence over general system instructions.

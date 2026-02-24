@@ -12,7 +12,7 @@ When instructions conflict, apply this order (highest first):
 2. Repository root `/AGENTS.md`
 3. Active role file in `Docs/AGENTS/Roles/`
 4. `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` and other collaboration docs
-5. Tool-specific config wrappers (`CLAUDE.md`, Copilot/Cursor/Cline rules)
+5. Tool-specific config wrappers (`GEMINI.md`, `CLAUDE.md`, Copilot/Cursor/Cline rules)
 
 If still ambiguous, ask the active human user before proceeding.
 
@@ -405,7 +405,7 @@ Provide a summary:
 
 | Task Type | Best Tool | Why |
 |-----------|-----------|-----|
-| Complex architecture, multi-step reasoning | Claude Code (Opus) | Deep reasoning, plan mode |
+| Complex architecture, multi-step reasoning | Claude Code (Opus) / Gemini CLI | Deep reasoning, plan mode, autonomous tool use |
 | Fast implementation, parallel tasks | Codex (GPT) | Reads `AGENTS.md` natively, cloud sandbox |
 | Inline code completions | GitHub Copilot | Fast, context-aware |
 | Multi-file refactors with preview | Cursor (Composer) | Visual diff, multi-file edits |

@@ -1605,3 +1605,49 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 - Use `AGENTS.md` precedence + fallback rules as the operational source when tool prompts or role docs conflict.
 - If further cleanup is desired, run a scoped pass for active (non-archive) docs that still mention `AnalysisContext` as current terminology.
 **Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Lead Developer | Codex (GPT-5) | Monitoring Dashboard Summary Uncap Fix
+**Task:** Resolve remaining monitoring dashboard review issues: prevent stale partial data and ensure summary aggregates can run uncapped for full-range totals.
+**Files touched:** `apps/api/Controllers/MetricsController.cs`, `apps/web/src/app/admin/quality-health/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added backward-compatible summary API behavior: `limit > 0` applies cap, `limit <= 0` means uncapped all-record aggregation for the selected date range.
+- Updated monitoring dashboard summary request to send `limit=0` while keeping `quality-health` time-series capped at `limit=200` for chart readability.
+- Retained `Promise.allSettled` + state reset behavior to avoid stale mixed sections across partial failures and range changes.
+**Open items:**
+- Low-priority items from prior review remain unchanged by request (client-side `/admin/metrics` redirect, no component-level test harness for this page).
+**Warnings:**
+- Uncapped summary queries can be heavier on very large datasets; current behavior is intentional for accurate admin totals.
+**For next agent:**
+- If summary latency becomes an issue at scale, implement server-side paging/rollups for aggregates instead of reinstating implicit caps.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Default | Codex (GPT-5) | Monitoring Indicator Trigger Fix + Report Dashboard Link
+**Task:** Re-review monitoring/report quality UX and fix indicator gaps so degradation status is consistently surfaced in dashboard metrics and directly on the report page with navigation to monitoring.
+**Files touched:** `apps/web/src/lib/analyzer/metrics-integration.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/test/unit/lib/failure-mode-metrics.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Failure-mode degradation counting now treats warning/error severities as degradation by default, preserves refusal detection, and still catches fallback events when severity is informational/missing.
+- Added stage mapping coverage for additional quality/failure warnings (`source_fetch_*`, source acquisition, budget, report integrity, rubric/range warnings) to improve dashboard breakdown attribution.
+- Added an explicit report-page quality-status banner that activates on provider issues, warning/error signals, or classification fallbacks, and includes a direct link to `/admin/quality-health`.
+- Added focused unit tests for failure-mode metric extraction to prevent regressions in degradation/refusal counting and fallback handling.
+**Open items:**
+- Dashboard still does not expose a dedicated "by warning type" table; current breakdown remains by provider/stage/topic.
+**Warnings:**
+- Existing worktree contains unrelated in-progress edits; this change intentionally touched only the monitoring/report files listed above.
+**For next agent:**
+- If you extend failure-mode telemetry, keep severity-first behavior aligned with `AnalysisWarningSeverity` in `types.ts` so new warning types are counted without manual lists.
+**Learnings:** No new role learnings appended.
+---
+### 2026-02-24 | Default | Codex (GPT-5) | Web Search Provider Dispatch Refactor
+**Task:** Address maintainability feedback by refactoring `web-search.ts` provider dispatch into shared provider-map/factory-style execution.
+**Files touched:** `apps/web/src/lib/web-search.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced duplicated explicit-provider `if` blocks with a central `SEARCH_PROVIDER_DEFINITIONS` registry and `runExplicitProviderSearch()` helper.
+- Replaced AUTO-mode provider execution `if/else` chain with registry-backed `buildAutoProviderInfos()` + provider executor calls.
+- Kept behavior unchanged for cache, circuit-breaker checks, provider priority sorting, fallback traversal, and error surfacing.
+**Open items:**
+- Optional follow-up: add dedicated unit tests that directly assert `getActiveSearchProviders()` outputs for each configured provider mode.
+**Warnings:**
+- Current repository is in a dirty worktree; only the files listed above were modified for this task.
+**For next agent:**
+- To add a new search provider, update `SEARCH_PROVIDER_DEFINITIONS` and `AUTO_PROVIDER_CANDIDATES` in `web-search.ts` instead of adding new dispatch branches.
+**Learnings:** No new role learnings appended.

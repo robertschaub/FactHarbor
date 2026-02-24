@@ -59,6 +59,7 @@ All tool configs reference `/AGENTS.md` as the single source of truth. Most are 
 
 | Tool | Config Location | Notes |
 |------|----------------|-------|
+| Gemini CLI | `/GEMINI.md` | Auto-loaded as foundational mandate alongside `AGENTS.md` |
 | Codex (GPT) | `/AGENTS.md` (native) | Reads `AGENTS.md` directly — no separate config needed |
 | Claude Code | `/CLAUDE.md` | Auto-loaded into system prompt alongside `AGENTS.md` |
 | GitHub Copilot | `/.github/copilot-instructions.md` | Auto-loaded in VS Code |

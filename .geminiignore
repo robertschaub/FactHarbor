@@ -1,0 +1,30 @@
+# FactHarbor Gemini Ignore
+
+# Build artifacts
+bin/
+obj/
+.next/
+dist/
+build/
+out/
+gh-pages-build/
+
+# Dependencies
+node_modules/
+
+# Databases and temporary files
+*.db
+*.db-shm
+*.db-wal
+.cache/
+.cache-version
+test-output/
+
+# Logs and secrets
+*.log
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/

@@ -9,7 +9,7 @@
 
 ## Purpose
 
-This document defines the rules, roles, and workflow for multi-agent collaboration on FactHarbor development tasks. It establishes a structured approach where multiple LLM agents (via Claude Code, Cursor, Cline, GitHub Copilot, and other tools) work collaboratively through defined roles to plan, review, implement, and validate changes.
+This document defines the rules, roles, and workflow for multi-agent collaboration on FactHarbor development tasks. It establishes a structured approach where multiple LLM agents (via Claude Code, Cursor, Cline, Gemini CLI, GitHub Copilot, and other tools) work collaboratively through defined roles to plan, review, implement, and validate changes.
 
 ---
 
@@ -22,6 +22,7 @@ All agents MUST read and adhere to these foundational documents before starting 
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **AGENTS.md** | `/AGENTS.md` | Fundamental coding rules, architecture reference, safety rules |
+| **GEMINI.md** | `/GEMINI.md` | Gemini CLI-specific instructions and foundational mandates |
 | **Coding Guidelines** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards, testing requirements, prompt engineering |
 | **Terminology Reference** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki` | Authoritative glossary for all technical terms |
 | **Architecture Overview** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System Design/WebHome.xwiki` | System architecture, data models, component interactions |
@@ -617,7 +618,7 @@ After any code change:
 
 > **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve.
 
-### 6.1 High-Capability Models (e.g., Claude Opus, GPT-o3, Gemini 2.5 Pro)
+### 6.1 High-Capability Models (e.g., Claude Opus, GPT-o3, Gemini 2.0 Pro)
 
 **Strengths:** Deep reasoning, complex analysis, nuanced understanding, large context
 **Best For:** Architecture decisions, complex investigations, quality gates, trade-off analysis
@@ -626,7 +627,7 @@ After any code change:
 - Excellent for multi-step planning and code review
 - Good at finding edge cases in implementations
 
-### 6.2 Mid-Tier Models (e.g., Claude Sonnet, GPT-4.1, Gemini 2.5 Flash)
+### 6.2 Mid-Tier Models (e.g., Claude Sonnet, GPT-4.1, Gemini 2.0 Flash)
 
 **Strengths:** Balanced cost/capability, good reasoning, fast iteration
 **Best For:** Standard reviews, documentation, routine implementation, iterative review cycles
@@ -635,7 +636,7 @@ After any code change:
 - Efficient for documentation tasks
 - Good default for most development work
 
-### 6.3 Lightweight Models (e.g., Claude Haiku, GPT-4.1 mini, Kimi K2)
+### 6.3 Lightweight Models (e.g., Claude Haiku, GPT-4.1 mini, Kimi K2, Gemini 1.5 Flash)
 
 **Strengths:** Fast, cost-effective, good for bulk operations
 **Best For:** Fast iterations, autonomous workflows (Cline), bulk operations, extract/understand tasks
