@@ -3,12 +3,12 @@
 {{mermaid}}
 flowchart LR
     subgraph Gates["Quality Gates"]
-        G1["Gate 1\nClaim Validation\n(UNDERSTAND phase)"]
-        G4["Gate 4\nVerdict Confidence\n(VERDICT phase)"]
+        G1["Gate 1\nClaim Validation\n(Stage 1)"]
+        G4["Gate 4\nVerdict Confidence\n(Stage 5)"]
     end
 
     subgraph Defense["Evidence Quality"]
-        EF["7-Layer Defense\nagainst low-quality\nevidence"]
+        EF["Probative Value Filtering\n(Stage 2)"]
     end
 
     subgraph Trust["Source Trust"]

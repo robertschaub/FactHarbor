@@ -2,43 +2,57 @@
 
 {{mermaid}}
 flowchart TB
-    INPUT["User Input\n(text or URL)"] --> STEP1
+    INPUT["User Input\n(text or URL)"] --> STAGE1
 
-    subgraph STEP1["1. Understand"]
-        CLAIMS["Extract claims\nwith dependencies"]
-        CONTEXTS["Detect analysis\ncontexts"]
-        FACTORS["Discover\nKeyFactors"]
+    subgraph STAGE1["1. Extract Claims"]
+        CLAIMS["Extract AtomicClaims\n(Pass 1 + Pass 2)"]
         GATE1{{"Gate 1\nClaim Validation"}}
-        CLAIMS --> GATE1
-        CONTEXTS ~~~ FACTORS
+        FIDELITY["Fidelity & Specificity\nFiltering"]
+        CLAIMS --> GATE1 --> FIDELITY
     end
 
-    STEP1 --> STEP2
+    STAGE1 --> STAGE2
 
-    subgraph STEP2["2. Research (iterative)"]
-        QUERY["Generate\nsearch queries"]
+    subgraph STAGE2["2. Research Evidence"]
+        QUERY["Generate pro/con\nsearch queries"]
         FETCH["Fetch & parse\nsources"]
-        FILTER["Filter evidence\n(7-layer defense)"]
+        FILTER["Filter evidence\n(probativeValue)"]
         QUERY --> FETCH --> FILTER
-        FILTER -.->|"gaps remain"| QUERY
+        FILTER -.->|"sufficiency check"| QUERY
     end
 
-    STEP2 --> STEP3
+    STAGE2 --> STAGE3
 
-    subgraph STEP3["3. Verdict"]
-        PERCLAIM["Per-claim verdicts\n(7-point scale)"]
-        AGG["Aggregate weighted\nverdicts"]
-        GATE4{{"Gate 4\nConfidence Assessment"}}
-        PERCLAIM --> AGG --> GATE4
+    subgraph STAGE3["3. Cluster Boundaries"]
+        SCOPES["Extract EvidenceScopes\n(methodology, temporal)"]
+        CLUSTER["Cluster into emergent\nClaimAssessmentBoundaries"]
+        SCOPES --> CLUSTER
     end
 
-    STEP3 --> STEP4["4. Summary"] --> STEP5["5. Report"] --> RESULT["AnalysisResult\n+ Markdown Report"]
+    STAGE3 --> STAGE4
 
-    style STEP1 fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style STEP2 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style STEP3 fill:#fff9c4,stroke:#f9a825,color:#000
-    style STEP4 fill:#f3e5f5,stroke:#6a1b9a,color:#000
-    style STEP5 fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    subgraph STAGE4["4. Generate Verdicts"]
+        DEBATE["LLM Debate Pattern\n(Advocate/Challenger/Reconciler)"]
+        CONSISTENCY["Self-consistency\n& grounding check"]
+        DEBATE --> CONSISTENCY
+    end
+
+    STAGE4 --> STAGE5
+
+    subgraph STAGE5["5. Aggregate & Report"]
+        TRIANG["Triangulation & Weighted\nAggregation"]
+        GATE4{{"Gate 4\nConfidence Tiering"}}
+        REPORT["Structured Report\n(Narrative & Findings)"]
+        TRIANG --> GATE4 --> REPORT
+    end
+
+    STAGE5 --> RESULT["AnalysisResult\n(schema 3.0.0-cb)"]
+
+    style STAGE1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style STAGE2 fill:#fff9c4,stroke:#f57f17,color:#000
+    style STAGE3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style STAGE4 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style STAGE5 fill:#fce4ec,stroke:#c2185b,color:#000
 {{/mermaid}}
 
-//The 5-step AKEL analysis pipeline with quality gates. Step 2 (Research) is iterative. Gate 1 validates claims; Gate 4 assesses verdict confidence.//
+//The 5-stage ClaimAssessmentBoundary analysis pipeline with quality gates. Stage 2 (Research) is iterative. Gate 1 validates claims; Stage 4 uses a structured LLM debate; Stage 5 aggregates results into a final narrative.//

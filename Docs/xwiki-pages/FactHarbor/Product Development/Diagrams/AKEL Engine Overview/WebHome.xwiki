@@ -9,9 +9,9 @@ flowchart LR
 
     subgraph AKEL["AKEL Analysis Engine"]
         direction TB
-        U["Understand\nclaims & contexts"]
+        U["Extract\nAtomicClaims"]
         R["Research\nevidence from web"]
-        V["Evaluate\nverdicts & confidence"]
+        V["Cluster Boundaries\n& Evaluate Verdicts"]
         S["Report\ntransparent output"]
         U --> R --> V --> S
     end
