@@ -43,6 +43,8 @@ export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<
     return [];
   }
 
+  // API key in query string (required by Google Fact Check API).
+  // Never log full params.toString() — use urlForLog pattern below.
   const params = new URLSearchParams({
     query: options.query,
     pageSize: String(Math.min(options.maxResults, 100)),
@@ -170,6 +172,8 @@ export async function queryFactCheckApi(query: string, options: FactCheckQueryOp
     return { claims: [] };
   }
 
+  // API key in query string (required by Google Fact Check API).
+  // Never log full params.toString() — use urlForLog pattern if adding request logging.
   const params = new URLSearchParams({
     query,
     key: apiKey,

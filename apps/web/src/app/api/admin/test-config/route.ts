@@ -27,6 +27,7 @@ type TestResult = {
 };
 
 export async function GET(request: NextRequest) {
+  // TODO(alpha): remove dev auth bypass — enforce X-Admin-Key in all environments
   // NOTE: This route is accessible from the browser at /admin/test-config
   // Admin page protection should be handled by middleware/layout, not header-based auth
   // Skip admin key check for browser-based requests

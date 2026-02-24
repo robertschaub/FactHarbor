@@ -32,6 +32,10 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 // MSR-M2: Concurrency-safe serialized async queue rate limiter.
 // Each call chains onto `pending`, guaranteeing 1.1s gaps even under concurrent invocations.
 // First call proceeds immediately (lastCallTime=0 → elapsed is huge → delay=0).
+//
+// Runtime assumption: single long-lived Node.js process (not edge/serverless).
+// Cold restarts safely reset the chain (first call proceeds immediately).
+// Hot module replacement during dev may break the chain (non-critical, dev-only).
 const MIN_INTERVAL_MS = 1100;
 let pending: Promise<void> = Promise.resolve();
 let lastCallTime = 0;
