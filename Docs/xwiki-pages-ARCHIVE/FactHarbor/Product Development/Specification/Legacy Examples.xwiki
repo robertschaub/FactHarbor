@@ -1,9 +1,18 @@
 = Data Examples =
 
-{{info}}
-**Current Implementation** — These examples use the current data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT. All data is stored as JSON in SQLite. See [[Core Data Model ERD>>FactHarbor.Product Development.Diagrams.Core Data Model ERD.WebHome]] for the entity diagram and [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome]] for the verdict generation flow.
+{{warning}}
+**HISTORICAL EXAMPLES — Orchestrated Pipeline (v2.6.x - v2.10.x era)**
 
-**Note:** Examples include ##opposingEvidenceIds## (on CLAIM_VERDICT) and ##bias## (on SOURCE) which are planned Phase 2 fields not yet in the current code. The ##methodology## field on ANALYSIS_CONTEXT is stored within the ##metadata## JSON in the current implementation. Updated 2026-02-08 per documentation audit.
+These examples use the legacy data model entities (AnalysisContext, KeyFactor, SubClaim) from the removed **Orchestrated pipeline**. These have been **superseded** by the **ClaimAssessmentBoundary pipeline** (v2.11.0+) which uses AtomicClaims, ClaimAssessmentBoundaries, and EvidenceItems. These examples are retained for historical reference only.
+
+For **current** examples and entity definitions, see:
+* [[Boundary Clustering Examples>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] (Stage 3 examples)
+* [[Data Model Entities>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]] (current entity definitions)
+* [[Scope Definition Guidelines>>FactHarbor.Product Development.DevOps.Guidelines.Scope Definition Guidelines.WebHome]] (EvidenceScope examples)
+{{/warning}}
+
+{{info}}
+**Historical Reference** — These examples use the legacy data model entities: ARTICLE, CLAIM, EVIDENCE_ITEM, SOURCE, ANALYSIS_CONTEXT, CLAIM_VERDICT, and ARTICLE_VERDICT.
 {{/info}}
 
 The following examples illustrate complete, realistic FactHarbor data objects across the current entity model. Each example shows the full pipeline output: from ARTICLE through CLAIMs, EVIDENCE_ITEMs, SOURCEs, ANALYSIS_CONTEXTs, to CLAIM_VERDICTs and the ARTICLE_VERDICT.

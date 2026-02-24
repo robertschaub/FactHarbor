@@ -22,9 +22,9 @@
 | FR1 | Claim Intake | In scope | **COMPLETE** | URL + text + PDF input, format validation
 | FR2 | Claim Normalization | Implicit | **COMPLETE** | Input neutrality (question == statement within +/-5%)
 | FR3 | Claim Classification | Gate 1 | **COMPLETE** | LLM text analysis classifies claim types
-| FR4 | Analysis Summary | In scope | **COMPLETE+** | Two-panel summary, multi-context, article verdict
+| FR4 | Analysis Summary | In scope | **COMPLETE+** | Two-panel summary, multi-boundary, article verdict
 | FR5 | Evidence Linking | In scope | **COMPLETE+** | Web search, source extraction, provenance validation, probative value scoring
-| FR6 | Scenario Comparison | Deferred | **EVOLVED** | Now uses AnalysisContext multi-context detection (more sophisticated)
+| FR6 | Boundary Comparison | Deferred | **EVOLVED** | Now uses ClaimAssessmentBoundary multi-perspective detection (more sophisticated)
 | FR7 | Automated Verdicts | In scope | **COMPLETE+** | 7-point scale, dependency tracking, contestation, harm potential
 | FR12 | Two-Panel Summary | In scope | **COMPLETE** | Summary + analysis panels in UI
 | NFR11 | Quality Gates | Gates 1+4 | **COMPLETE** | Gate 1 (Claim Validation) + Gate 4 (Verdict Confidence)
@@ -48,7 +48,7 @@ Development has significantly exceeded the original POC1 scope. Many features or
 | Multi-provider LLM | NFR14 enhancement | **COMPLETE** — Anthropic, OpenAI, Google, Mistral via Vercel AI SDK
 | Source Reliability Scoring | Part of evidence quality | **COMPLETE** — LLM evaluation + multi-model consensus + in-memory cache
 | Evidence Quality Filtering | Part of quality framework | **COMPLETE** — 7-layer defense with probativeValue, sourceType classification
-| Context-Aware Analysis | Conditional on POC1 experiments | **COMPLETE** — AnalysisContext detection is standard feature, not experimental
+| Context-Aware Analysis | Conditional on POC1 experiments | **COMPLETE** — ClaimAssessmentBoundary detection is standard feature, not experimental
 | Quality Metrics Dashboard | NFR13 | **BUILT** — At ##/admin/metrics##, but no data (metrics not integrated)
 | LLM Text Analysis Pipeline | Part of quality framework | **COMPLETE** — 4 analysis points: input classification, evidence quality, context similarity, verdict validation
 
@@ -64,7 +64,7 @@ Development has significantly exceeded the original POC1 scope. Many features or
 === 2.3 Implication ===
 
 {{warning}}
-**Continuing to call this "POC1" understates what has been built.** The phase boundaries defined in V0.9.70 are meaningless against v2.10.2 reality. Documentation says "deferred to POC2" for features that are already implemented and operational. This creates confusion in every document that references the original roadmap.
+**Continuing to call this "POC1" understates what has been built.** The phase boundaries defined in V0.9.70 are meaningless against v2.11.0 reality. Documentation says "deferred to POC2" for features that are already implemented and operational. This creates confusion in every document that references the original roadmap.
 {{/warning}}
 
 == 3. POC Completion ==
@@ -79,12 +79,12 @@ The POC was closed based on demonstrated working software rather than formal bas
 
 |= Criterion |= Evidence
 | End-to-end pipeline works | ClaimAssessmentBoundary pipeline v1.0 — all 5 stages operational
-| Automated claim analysis | Claims extracted, evidence gathered, verdicts generated with LLM debate pattern
+| Automated claim analysis | AtomicClaims extracted, evidence gathered, verdicts generated with LLM debate pattern
 | Quality gates enforced | Gate 1 (claim validation) + Gate 4 (confidence) operational
 | Source reliability | LLM-based evaluation with multi-model consensus and caching
 | Input neutrality | Question vs statement within +/-4% tolerance (empirically tested)
-| Code quality | 853 unit tests passing, build clean
-| Architecture | Evidence-emergent boundaries, UCM configuration, multi-provider LLM
+| Code quality | 1047 unit tests passing, build clean
+| Architecture | Evidence-emergent ClaimAssessmentBoundaries, UCM configuration, multi-provider LLM
 
 The original POC1 success criteria (##hallucination rate <10%##, ##average quality score >=7.0##) were defined for a much simpler system. The current system has evolved far beyond those original goals (see Section 2). Formal baseline testing is deferred to Alpha as a quality-improvement exercise, not a POC gate.
 
@@ -109,14 +109,14 @@ The current roadmap was defined at V0.9.70 when:
 * Quality gates were planned but not implemented
 * "Scenarios" were the core analytical concept
 
-Now at v2.10.2:
+Now at v2.11.0:
 
-* Multi-step orchestrated pipeline with 7 phases
+* 5-stage ClaimAssessmentBoundary pipeline
 * Multi-provider LLM with model tiering
 * Full config management with hot-reload
 * LLM-based source reliability with multi-model consensus
 * Quality gates implemented and code-enforced
-* AnalysisContexts + KeyFactors (bounded analytical frames with decomposition questions)
+* ClaimAssessmentBoundaries (evidence-emergent groupings)
 
 **The original phase boundaries (POC1 -> POC2 -> Beta 0 -> V1.0) are meaningless.**
 
@@ -158,7 +158,7 @@ Now at v2.10.2:
 | Caching | None beyond SR | Claim + URL caching (see [[Storage Architecture>>FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome]])
 | Testing | Manual only | Promptfoo + baseline + metrics
 | Config | Hot-reload ready | Validated in production-like conditions
-| Phase label | "POC1 v2.10.2" | "Alpha 0.1"
+| Phase label | "POC1 v2.11.0" | "Alpha 0.1"
 | Documentation | Outdated POC specs | Updated to reflect actual state
 
 == 5. Revised POC2 Assessment ==
@@ -167,10 +167,10 @@ Now at v2.10.2:
 
 |= POC2 Goal |= Status |= Still Needed? |= Recommendation
 | **Gate 2: Evidence Relevance** | NOT IMPLEMENTED | MAYBE | Reassess after baseline — may be handled by existing probativeValue filtering
-| **Gate 3: Scenario Coherence** | NOT IMPLEMENTED | PROBABLY NOT | Now uses AnalysisContexts with overlap detection already built in.
+| **Gate 3: Scenario Coherence** | NOT IMPLEMENTED | PROBABLY NOT | Now uses ClaimAssessmentBoundaries with overlap detection already built in.
 | **Evidence Deduplication (FR54)** | NOT IMPLEMENTED | YES (eventually) | Defer to Beta — needs normalized DB schema (PostgreSQL)
 | **Quality Metrics Dashboard (NFR13)** | BUILT (not integrated) | YES | Integrate metrics now (15-30 min); dashboard already exists
-| **Context-Aware Analysis** | COMPLETE | No | Standard feature since v2.6.40+
+| **Context-Aware Analysis** | COMPLETE | No | Standard feature since v2.11.0
 | **<5% hallucination rate** | UNKNOWN | YES — as a target | Measure first, then improve if needed
 
 === 5.2 Recommendation ===
@@ -184,7 +184,7 @@ Instead:
 1. Run baseline test to establish quality metrics
 1. Based on data, decide which quality improvements matter most
 1. Gate 2 (Evidence Relevance) — may be partially covered by probativeValue scoring; validate empirically
-1. Gate 3 (Scenario Coherence) — obsolete as written; AnalysisContext overlap detection serves a similar purpose
+1. Gate 3 (Scenario Coherence) — obsolete as written; ClaimAssessmentBoundary overlap detection serves a similar purpose
 1. Evidence deduplication — valuable but needs PostgreSQL; defer to Beta
 
 == 6. Agreed Roadmap ==

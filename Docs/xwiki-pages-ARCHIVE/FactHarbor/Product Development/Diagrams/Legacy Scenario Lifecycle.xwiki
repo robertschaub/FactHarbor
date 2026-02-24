@@ -1,9 +1,9 @@
 = Claim and Scenario Lifecycle (Overview) =
 
 {{warning}}
-**Partially Outdated — Orchestrated Pipeline terminology (v2.10.x)**
+**HISTORICAL DIAGRAM — Orchestrated Pipeline (v2.6.x - v2.10.x era)**
 
-This diagram uses Orchestrated pipeline terms (Context Refinement, Per-Context Verdicts, KeyFactor Analysis, Cross-Context Aggregation). In the current ClaimAssessmentBoundary pipeline, Stage 3 clusters evidence into ClaimAssessmentBoundaries, and Stage 4 generates verdicts per boundary via the Advocate→Challenger→Reconciliation debate pattern. A full diagram refresh is needed to reflect CB pipeline stages accurately.
+This diagram describes the lifecycle of claims and contexts in the **Orchestrated pipeline**. The **Scenario** and **AnalysisContext** entities have been **removed** (v2.11.0) and replaced by **ClaimAssessmentBoundaries** (evidence-emergent groupings). The lifecycle now follows the 5-stage ClaimAssessmentBoundary pipeline: Extract → Research → Cluster → Verdict → Aggregate.
 {{/warning}}
 
 {{mermaid}}

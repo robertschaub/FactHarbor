@@ -1,25 +1,28 @@
 = Requirements Roadmap Matrix =
 
+{{warning}}
+**HISTORICAL PLANNING DOCUMENT — February 2026**
+
+This document represents the project roadmap as envisioned during the initial POC phases. The **POC** and **POC2** goals have been **superseded** by the **Alpha** phase delivery of the **ClaimAssessmentBoundary pipeline** (v2.11.0). The terminology used here (AnalysisContext, Scenarios) has been replaced by AtomicClaims and ClaimAssessmentBoundaries. This document is retained for historical context on the requirement progression.
+{{/warning}}
+
 **Last Updated:** 2026-02-07
 **Version:** 4.1 (Updated phase definitions)
-**Status:** Authoritative Source
+**Status:** Historical (Superseded by Alpha)
 
 {{info}}
-**Purpose:** This is the single source of truth for:
+**Purpose:** This is the historical record for:
 * Requirement-to-phase mapping
 * Implementation levels (Basic → Enhanced → Complete)
 * Importance and Urgency prioritization
 * User Needs fulfillment by phase
-
-All other documents reference this matrix rather than duplicating information.
 {{/info}}
 
-== Phase Definitions ==
+== Phase Definitions (Historical) ==
 
 |= Phase |= Goal |= Key Focus
-| **POC** | Prove AI can analyze claims automatically | Core workflow + quality gates + AnalysisContext detection (**Feature-complete at v2.10.2**, pending baseline test)
-| **POC2** | Improve reliability and robustness | Merged into Alpha/Beta
-| **Alpha** | Quality measurement + optimization | Baseline testing, caching, quality improvements based on empirical data
+| **POC** | Prove AI can analyze claims automatically | Core workflow + quality gates (**Complete at v1.0.0-poc**)
+| **Alpha** | Quality measurement + optimization | ClaimAssessmentBoundary pipeline, Framing-Symmetry calibration, baseline testing, quality improvements (**Current Phase**)
 | **Beta** | User testing with limited audience | Production readiness, user features, security, PostgreSQL
 | **V1.0** | Public production launch | IFCN compliance, search visibility
 | **V1.x** | Feature expansion | Advanced capabilities, browser extensions

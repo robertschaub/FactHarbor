@@ -1,14 +1,14 @@
-{{warning}}
-**STALE — Orchestrated Pipeline Era (v2.10.x)**
+= Claim and Scenario Workflow (Historical) =
 
-This workflow diagram was created for the Orchestrated pipeline. It shows ##DetectContexts## and ##KeyFactors## steps in Step 1 — these were removed in v2.11.0. The ClaimAssessmentBoundary pipeline replaced them: AtomicClaims are extracted in Stage 1; ClaimAssessmentBoundaries emerge from evidence clustering in Stage 3. The "KeyFactors (Replaces Scenarios)" section below is historical. See [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]] for current architecture.
+{{warning}}
+**HISTORICAL DIAGRAM — Orchestrated Pipeline (v2.6.x - v2.10.x era)**
+
+This workflow diagram was created for the **Orchestrated pipeline**. It shows **AnalysisContexts** and **KeyFactors** steps in Step 1 — these were **removed** in v2.11.0. The **ClaimAssessmentBoundary pipeline** replaced them: AtomicClaims are extracted in Stage 1; ClaimAssessmentBoundaries emerge from evidence clustering in Stage 3. See [[ClaimAssessmentBoundary Pipeline Detail>>FactHarbor.Product Development.Diagrams.ClaimAssessmentBoundary Pipeline Detail.WebHome]] for current production architecture.
 {{/warning}}
 
 {{info}}
-**Historical Reference (v2.10.x)** — This diagram shows the Orchestrated-era pipeline. Step 1 used **AnalysisContexts** (bounded analytical frames) and **KeyFactors** (decomposition questions). Both were removed in v2.11.0.
+**Historical Reference** — This diagram shows the Orchestrated-era pipeline. Step 1 used **AnalysisContexts** (bounded analytical frames) and **KeyFactors** (decomposition questions). Both were removed in v2.11.0.
 {{/info}}
-
-= Claim Analysis Workflow =
 
 {{mermaid}}
 
@@ -58,20 +58,20 @@ graph TB
 
 {{/mermaid}}
 
-== Quality Gates (Implemented) ==
+== Quality Gates (Historical) ==
 
 |= Gate |= Name |= Purpose |= Pass Criteria
 | **Gate 1** | Claim Validation | Filter non-factual claims | Factual, opinion score 0.3 or less, specificity 0.3 or more
 | **Gate 4** | Verdict Confidence | Ensure sufficient evidence | 2 or more sources, avg quality 0.6 or more, agreement 60% or more
 
-//Gates 2 (Contradiction Search) and 3 (Uncertainty Quantification) are not yet implemented.//
+//Note: These gate criteria apply to the legacy Orchestrated pipeline.//
 
-== KeyFactors (Replaces Scenarios) ==
+== KeyFactors (Historical Concept) ==
 
-**KeyFactors** are optional decomposition questions discovered during the understanding phase:
+**KeyFactors** were optional decomposition questions discovered during the understanding phase in the Orchestrated pipeline:
 * Not stored as separate entities
-* Help break down complex claims into checkable sub-questions
-* See [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] for design rationale
+* Helped break down complex claims into checkable sub-questions
+* See [[KeyFactors Design (Historical)>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] for design rationale
 
 == 7-Point Verdict Scale ==
 
