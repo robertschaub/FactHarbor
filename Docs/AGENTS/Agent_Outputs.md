@@ -2,6 +2,17 @@
 
 
 ---
+### 2026-02-25 | Technical Writer | Gemini CLI | Add links to Draft Verein statutes
+**Task:** Added links to the German and English draft Verein statutes from xWiki documentation.
+**Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Legal Framework/WebHome.xwiki, Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Transparency-Policy.xwiki
+**Key decisions:** Added a new 'Draft Statutes' section to the Legal Framework page and updated the core transparency items list in the Transparency Policy with links to the GitHub-hosted draft statutes.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify link functionality in xWiki preview.
+**Learnings:** None
+
+
+---
 ### 2026-02-25 | Technical Writer | Gemini CLI | Update project stage from POC to Alpha
 **Task:** Updated documentation to state 'Alpha' instead of 'POC' for current project stage.
 **Files touched:** Docs/xwiki-pages/FactHarbor/
