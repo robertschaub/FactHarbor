@@ -19,22 +19,18 @@ function logTask(role, title, task, files, decisions, openItems, warnings, nextA
 
     try {
         if (!fs.existsSync(logPath)) {
-            fs.writeFileSync(logPath, '# Agent Task Completions
-
-' + entry);
+            fs.writeFileSync(logPath, '# Agent Task Completions\n\n' + entry);
         } else {
             // Append after the header
             let content = fs.readFileSync(logPath, 'utf8');
             if (content.includes('---')) {
                 // Insert after the first header if it exists, or just append
-                const lines = content.split('
-');
+                const lines = content.split('\n');
                 let headerIndex = lines.findIndex(l => l.startsWith('# '));
                 if (headerIndex === -1) headerIndex = -1;
                 
                 lines.splice(headerIndex + 2, 0, entry);
-                fs.writeFileSync(logPath, lines.join('
-'));
+                fs.writeFileSync(logPath, lines.join('\n'));
             } else {
                 fs.appendFileSync(logPath, entry);
             }
