@@ -1120,10 +1120,12 @@ async function renderPreview(){
       let manifest = null;
       if(manifestFile){
         try {
+          // Cache-bust to avoid stale manifest after deploy (GitHub Pages max-age=600)
+          const cb = '?v=' + new Date().getTime();
           // Try same-origin first (gh-pages deploy includes manifest), fall back to raw.githubusercontent
-          let mResp = await fetch('reports-manifest.json');
+          let mResp = await fetch('reports-manifest.json' + cb);
           if(!mResp.ok){
-            mResp = await fetch(`https://raw.githubusercontent.com/${repo}/main/${ghPath}/reports-manifest.json`);
+            mResp = await fetch(`https://raw.githubusercontent.com/${repo}/main/${ghPath}/reports-manifest.json` + cb);
           }
           if(mResp.ok) manifest = await mResp.json();
         } catch(e){ /* manifest fetch failed, fall back to plain table */ }
