@@ -1,7 +1,7 @@
 = FactHarbor Cooperation Opportunities Report =
 
 **Prepared for:** FactHarbor Project
-**Date:** December 21, 2025
+**Date:** February 25, 2026
 **Research Scope:** Global fact-checking ecosystem, funding organizations, academic institutions, technology platforms, and civic tech networks
 
 ----
@@ -16,6 +16,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * **Academic Validation:** Emerging research (ED2D, Tool-MAD) validates FactHarbor's multi-agent debate (MAD) architecture as the state-of-the-art for automated reasoning.
 * **Funding Shift:** Grants are moving toward **financial sustainability** and **cross-sector partnerships** (Journalism Science Alliance, IFCN SUSTAIN Fund).
 * **Research Frontier:** Multi-source evidence retrieval (Factiverse model) is the #1 technical requirement to close the evidence asymmetry gap.
+* **Legal Readiness:** Draft statutes for the **Swiss Verein** are complete, enabling the immediate pursuit of Swiss-based innovation grants (Innosuisse).
 
 ----
 
@@ -1174,13 +1175,13 @@ FactHarbor enters a mature but evolving fact-checking ecosystem with a unique va
 
 ----
 
-**Report Prepared By:** Claude (Anthropic)
-**Date:** December 21, 2025
+**Report Prepared By:** Gemini CLI (AI Assistant)
+**Date:** February 25, 2026
 **Based On:**
 
-* FactHarbor V0.9.69 Specification
-* Comprehensive Fact-Checking Research Report (50+ sources)
-* 60+ web search results across 7 categories
+* FactHarbor V1.1.0 Specification
+* Complete Draft Vereinsstatuten (EN/DE)
+* A-3 Gate Results (Calibration Research)
 * Analysis of 443 global fact-checking organizations
 
 **Confidentiality:** Internal use - may be shared with potential partners as needed
