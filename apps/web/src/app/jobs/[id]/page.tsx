@@ -60,9 +60,12 @@ const PROVIDER_ISSUE_TYPES = new Set([
   "verdict_partial_recovery",
 ]);
 
-const NON_DEGRADING_PROVIDER_FALLBACK_TYPES = new Set([
+const NON_DEGRADING_PROVIDER_WARNING_TYPES = new Set([
   "debate_provider_fallback",
   "search_fallback",
+  // Per-query fetch misses are noisy and expected at web scale.
+  // Only aggregate fetch degradation should trip the prominent quality banner.
+  "source_fetch_failure",
 ]);
 
 type WarningSeverity = "error" | "warning" | "info" | "unknown";
@@ -79,10 +82,11 @@ function normalizeWarningSeverity(raw: unknown): WarningSeverity {
 }
 
 function isDegradingProviderIssue(warning: any): boolean {
+  if (NON_DEGRADING_PROVIDER_WARNING_TYPES.has(warning?.type)) return false;
   const severity = normalizeWarningSeverity(warning?.severity);
   if (severity === "error" || severity === "warning") return true;
   if (severity === "info") return false;
-  return !NON_DEGRADING_PROVIDER_FALLBACK_TYPES.has(warning?.type);
+  return true;
 }
 
 // Module-level helper — browser-safe (client component, only called from event handlers)
