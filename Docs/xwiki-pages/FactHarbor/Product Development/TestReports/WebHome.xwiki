@@ -10,7 +10,3 @@ The Reports capture the complete analysis result for a given input claim, includ
 == Reports ==
 
 {{github-files repo="robertschaub/FactHarbor" path="Docs/TESTREPORTS" /}}
-
-{{info}}
-**HTML reports** open via [[htmlpreview.github.io>>https://htmlpreview.github.io/]]
-{{/info}}
