@@ -20,9 +20,14 @@ graph TD
     
     DL -->|"Manage"| SC
     
-    DEV -->|"Implement"| AKEL["Application & Services"]
+    subgraph AS ["Application & Services"]
+        AKEL["Core Logic & Infrastructure"]
+        CFG["UCM System Config"]
+    end
+    
+    DEV -->|"Implement"| AKEL
     MOD -->|"Moderate"| CNT["Claims & Evidence"]
-    UA -->|"Configure"| CFG["UCM System Config"]
+    UA -->|"Configure"| CFG
     
     USR["Registered Users"] -->|"Submit/Flag"| CNT
     RED["Readers / Guests"] -->|"Browse/View"| CNT
@@ -33,6 +38,7 @@ graph TD
     style DL fill:#fff5e1,stroke:#f57c00
     style AUD fill:#f8f9fa,stroke:#343a40
     style SC fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    style AS fill:#fff3e0,stroke:#f57c00,stroke-width:2px
 {{/mermaid}}
 
 == Structure Summary ==
@@ -44,6 +50,7 @@ graph TD
 * **Domain Leads**: Operational execution leads for R&D, Operations, Community, and Finance.
 * **Staff & Contributors**: The collective operational workforce managed by Domain Leads. Individuals in the following roles are members of this group:
     * **Developers / Core Ops**: Build and maintain the Application & Services and the technical infrastructure.
-    * **UCM Administrators**: Manage system configuration and prompt architecture.
+    * **UCM Administrators**: Manage system configuration and prompt architecture within the Application & Services.
     * **Moderators**: Handle system-flagged content escalations and system gaming.
+* **Application & Services**: The technical platform consisting of the core reasoning logic (AKEL), infrastructure, and the Unified Config Management (UCM) system.
 * **Readers & Users**: Interact with the platform while remaining subject to community guidelines and automated moderation.
