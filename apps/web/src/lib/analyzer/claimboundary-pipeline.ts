@@ -221,7 +221,7 @@ export async function runClaimBoundaryAnalysis(
       const majorityPct = Math.round(Math.max(evidenceBalance.balanceRatio, 1 - evidenceBalance.balanceRatio) * 100);
       state.warnings.push({
         type: "evidence_pool_imbalance",
-        severity: "warning",
+        severity: "info",
         message: `Evidence pool is heavily skewed toward ${direction} evidence (${majorityPct}%, ${majorityCount} of ${directional} directional items). ` +
           `${evidenceBalance.supporting} supporting, ${evidenceBalance.contradicting} contradicting, ${evidenceBalance.neutral} neutral out of ${evidenceBalance.total} total.`,
       });

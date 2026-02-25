@@ -55,6 +55,7 @@ const WARNING_TYPE_HINTS: Record<string, string> = {
   insufficient_evidence: "This claim lacks sufficient evidence for a confident verdict. Consider broadening search scope or adding more sources.",
   baseless_challenge_blocked: "A verdict adjustment was reverted because the challenge lacked supporting evidence.",
   baseless_challenge_detected: "Multiple baseless challenges were detected and blocked during verdict aggregation.",
+  evidence_pool_imbalance: "This is directional telemetry and can occur naturally on one-sided evidence topics.",
 };
 
 const SEVERITY_ICONS: Record<AnalysisWarning["severity"], string> = {
@@ -76,7 +77,6 @@ const QUALITY_DEGRADING_TYPES = new Set<AnalysisWarningType>([
   "source_acquisition_collapse",
   // Evidence quality (F4: sufficiency, F6: balance)
   "insufficient_evidence",
-  "evidence_pool_imbalance",
   "low_evidence_count",
   "low_source_count",
   "context_without_evidence",
@@ -283,8 +283,16 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
           )}
 
           <div className={styles.note}>
-            <strong>Note:</strong> These issues may affect result accuracy.
-            {hasFallbacks && " Frequent fallbacks indicate LLM reliability issues."}
+            {qualityIssueCount > 0 ? (
+              <>
+                <strong>Note:</strong> These issues may affect result accuracy.
+                {hasFallbacks && " Frequent fallbacks indicate LLM reliability issues."}
+              </>
+            ) : (
+              <>
+                <strong>Note:</strong> Operational notes only. No direct report-quality degradation signals detected.
+              </>
+            )}
           </div>
         </div>
       </div>
