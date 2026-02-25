@@ -3,9 +3,9 @@
 {{mermaid}}
 graph TD
     GA[General Assembly / Members] -->|Elects| GT[Governing Team / Board]
-    GA -->|Appoints| AUD[Auditor]
+    GA -.->|May Appoint| AUD[Auditor (Optional)]
     
-    AUD -->|Financial Oversight| GT
+    AUD -.->|Financial Oversight| GT
     
     GS[Governance Steward] -.->|Procedural Oversight| GT
     GS -.->|Procedural Oversight| DL[Domain Leads]
@@ -31,9 +31,9 @@ graph TD
 
 == Structure Summary ==
 
-* **General Assembly (Members)**: The supreme body; elects the Board and appoints the Auditor.
+* **General Assembly (Members)**: The supreme body; elects the Board and may appoint an Auditor.
 * **Governing Team (Board)**: Strategic oversight, policy setting, and appointments.
-* **Auditor**: Independent financial oversight of the Board and organization.
+* **Auditor (Optional)**: Provides independent financial oversight. Not mandatory by Swiss law for associations of FactHarbor's current size.
 * **Governance Steward**: Safeguards neutrality and fairness of all processes.
 * **Domain Leads**: Operational execution across R&D, Operations, Community, and Finance.
 * **UCM Administrators**: Manage core system configuration and prompt architecture under Domain Lead oversight.
