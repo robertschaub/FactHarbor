@@ -9,9 +9,9 @@
 
 == Executive Summary ==
 
-The fact-checking landscape in 2025 is experiencing significant disruption. Meta's withdrawal from third-party fact-checking, funding challenges from USAID cuts, and the shift toward crowdsourced models (Community Notes) have created both challenges and opportunities. FactHarbor's **Evidence Model approach** addresses fundamental gaps that existing solutions fail to fill.
+The fact-checking landscape in 2026 is experiencing significant disruption. Meta's withdrawal from US third-party fact-checking, Google's removal of ClaimReview from search, and the shift toward "Funnel Architectures" (processing millions of sentences to find checkworthy claims) have redefined the field. **FactHarbor is currently the only system with a working multi-agent debate (MAD) implementation for fact-checking.** While research frameworks like **ED2D (EMNLP 2025)** and **Tool-MAD (2026)** validate the debate-centric approach, FactHarbor is uniquely positioned with a functional pipeline and a rigorous calibration methodology (C18/C13).
 
-**Key Finding:** No current solution provides transparent, boundary-based, probabilistic fact-checking with explicit assumptions—FactHarbor's core differentiation.
+**Key Finding:** No current solution provides transparent, boundary-based, probabilistic fact-checking with explicit assumptions—FactHarbor's core differentiation. However, FactHarbor must close the **evidence retrieval gap** identified in recent benchmarks (C13 evidence asymmetry).
 
 ----
 
@@ -20,19 +20,19 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 === 1.1 Traditional Fact-Checking Organizations ===
 
 |=Organization|=Approach|=Limitations
-|**PolitiFact**|Human expert review, Truth-O-Meter (6-point scale)|Binary/scalar verdicts; no explicit assumptions; criticized for subjective selection; ~21% "Half True" verdicts show nuance difficulty
-|**Snopes**|Human review, 5-point scale + special categories|Context-dependent ratings inconsistent; no structured reasoning transparency
-|**FactCheck.org**|Academic/journalistic review|Limited scale; no scenario-based analysis
-|**Full Fact (UK)**|Human + AI tools for claim detection|Tools support humans, don't produce structured models
+|**Full Fact (UK)**|AI-assisted monitoring funnel (350k sentences/day)|**Market leader in monitoring scale**; licensed to 45 orgs in 30 countries; **AI assists, humans decide** (deliberately avoids automated verdicts).
+|**AFP Fact Check**|Global wire service model; 140 journalists in 80 countries|Commercial sustainability; post-US Meta TPFC exit leader in international markets.
+|**BBC Verify**|OSINT-heavy; satellite imagery, social media forensics|High technical sophistication; "Verify Live" UX innovation; human-only judgment.
+|**PolitiFact / Snopes**|Human expert review; truth scales|Binary/scalar verdicts; no structured reasoning transparency; perceived political bias issues.
 
-**Market Data:**
+**Market Data (2026):**
 
-* 443 active fact-checking projects globally (down 2% from 2024)
-* ~160 projects relied on Meta partnerships (now at risk)
-* Fact-check volume down 6% in 2025 (38,000 vs 40,500 ClaimReview-tagged articles)
+* **Funding Crisis:** Google ended all support for major orgs (Oct 2025), causing >GBP 1M/year losses for leaders like Full Fact.
+* **Platform Retreat:** Meta ended US TPFC (Jan 2025); Google removed ClaimReview from Search (June 2025).
+* **Prebunking Shift:** Shift from reactive debunking to proactive "inoculation" (EFCSN/Full Fact "Prebunking at Scale").
 
 {{info}}
-**Gap Identified:** All traditional fact-checkers produce **verdicts without transparent reasoning chains**. They answer "what" but not "under what assumptions" or "in which contexts."
+**Gap Identified:** Traditional leaders have solved the **detection problem** (finding claims at scale) but leave the **verdict problem** manually handled. This creates a structural complementarity for FactHarbor's automated verdict engine.
 {{/info}}
 
 ----
@@ -40,21 +40,19 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 === 1.2 Automated/AI-Powered Fact-Checking ===
 
 |=Tool|=Capability|=Limitations
-|**ClaimBuster**|Claim detection and prioritization from text|Does NOT verify claims; only identifies check-worthiness; Squash (verification) was shut down as "not ready"
-|**Google Fact Check Tools**|ClaimReview aggregation, fact-check markup|Aggregates existing verdicts; doesn't produce new analysis
-|**Full Fact AI**|Real-time monitoring, claim detection|Detection-focused; still requires human verdict
-|**Winston AI / Originality.AI**|AI content detection|Focus on AI-generated content, not factual verification
-|**LLM-based systems**|GPT/Claude for fact-checking|Poor calibration; overconfident; lack citation grounding
+|**Factiverse (Norway)**|Live broadcast fact-checking (sub-30s latency); 110-140 languages|Uses discriminative models (XLM-RoBERTa) for speed; sacrifices reasoning depth and nuance; context loss in live audio.
+|**Full Fact AI (PASTEL)**|Checkworthiness via LLM questions + linear regression|Focuses on prioritization for humans; does not produce end-to-end automated verdicts.
+|**ClaimBuster**|Claim detection and prioritization (0.0-1.0 score)|Only identifies check-worthiness; verification component (Squash) was a documented failure.
+|**LLM-based systems**|GPT/Claude/Perplexity for fact-checking|**Confidence Paradox:** Small models are overconfident/wrong; large models are accurate but lack systematic calibration/grounding.
 
-**Academic Research Shows:**
+**Current Technological Frontier:**
 
-* "Holy grail" of fully automated fact-checking remains elusive
-* Key obstacles: "elusive nature of truth claims, rigidity of binary epistemology, data scarcity, algorithmic deficiencies, transparency issues"
-* Squash (ClaimBuster-based) shut down—"making too many mistakes"
-* LLMs show 73% confidence scores but are "overconfident and unreliable"
+* **Sub-30s Latency (Factiverse):** Achieved via fine-tuned classification models, but at the cost of "explanatory power."
+* **Multi-Source Retrieval:** Factiverse uses 6 parallel sources (Semantic Scholar, Google Fact Check API, etc.) to combat evidence asymmetry.
+* **PASTEL Pattern:** Using LLMs as "feature extractors" (answering simple yes/no questions) rather than final judges is the emerging standard for checkworthiness.
 
 {{info}}
-**Gap Identified:** Automated tools either **detect claims only** (no verdicts) or produce **ungrounded, overconfident verdicts**. None generate structured Evidence Models with scenario-based analysis.
+**Gap Identified:** Deployed automated tools either focus on **real-time speed (Factiverse)** or **monitoring scale (Full Fact)**. None combine FactHarbor's deep multi-agent debate reasoning with systematic calibration.
 {{/info}}
 
 ----
@@ -79,16 +77,17 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 
 ----
 
-=== 1.4 Emerging AI Approaches (Research Stage) ===
+=== 1.4 Emerging AI Approaches (Research Frontier) ===
 
 |=Approach|=Status|=Relevance
-|**CLUE (Uncertainty Explanation)**|Research paper|First to explain sources of uncertainty in multi-evidence fact-checking—aligns with FactHarbor philosophy
-|**AmbiFC Dataset**|Academic|Recognizes ambiguous claims need nuanced handling
-|**Climinator (Climate)**|Domain-specific|Multi-source debating framework for climate claims
-|**AVeriTeC**|Research project|Evidence-based verification with justifications
+|**ED2D (EMNLP 2025)**|Research paper|5-stage structured debate (Opening/Rebuttal/Free Debate/Closing/Judgment); retrieves new evidence *during* debate.
+|**Tool-MAD (Jan 2026)**|Research paper|Multi-agent debate where each agent has a distinct specialized tool (Knowledge Graph, Academic Search, News).
+|**KG²RAG / GraphRAG**|Research / OSS (MSFT)|Knowledge graph-guided retrieval; follows semantic relationships to reduce hallucinations (18% reduction).
+|**AVeriTeC Benchmark**|2025 Shared Task|Standardized 4,568-claim dataset for evaluating end-to-end evidence-based verification.
+|**Climinator**|Climate Domain|Mediator-Advocate debate framework; validates that contrarian behavior should emerge from the "adversarial corpus" (NIPCC).
 
 {{info}}
-**Gap Identified:** Academic research validates the need for **uncertainty communication, evidence-based justifications, and nuanced verdicts**, but no production-ready tool implements this.
+**Gap Identified:** Academic research has moved to **iterative, tool-augmented, and graph-guided debate**, confirming FactHarbor's MAD architecture is the correct path. However, FactHarbor lags in **dynamic evidence retrieval** (re-searching during debate).
 {{/info}}
 
 ----
@@ -119,50 +118,47 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 * **Problem:** Creates filter bubbles in fact-checking itself
 * **FactHarbor Solution:** Mandatory contradiction search as quality gate
 
-=== Gap 5: No Ecosystem Infrastructure ===
+=== Gap 5: Evidence Pool Asymmetry (C13) ===
 
-* **Current State:** Each organization's verdicts are siloed
-* **Problem:** No interoperability, no standard for structured fact-check data
-* **FactHarbor Solution:** Open-source Evidence Models + ClaimReview integration + federation capability
+* **Current State:** Search engines return popular or partisan results, creating one-sided evidence pools.
+* **Problem:** Even a sophisticated debate system cannot produce a neutral verdict from biased input evidence.
+* **FactHarbor Solution:** Mandatory "Contrarian Search" pass + multi-source retrieval (Semantic Scholar, Google Fact Check API) to ensure evidence diversity.
 
 === Gap 6: Scalability vs. Quality Trade-off ===
 
-* **Current State:** Human review = quality but doesn't scale; AI = scale but unreliable
-* **Problem:** Neither approach works for the volume of misinformation
-* **FactHarbor Solution:** AI-generated with quality gates + risk-based publication tiers + human escalation for high-risk
+* **Current State:** Human review (Full Fact/AFP) = high quality but low scale; AI (Factiverse) = high scale but lacks depth/explanation.
+* **Problem:** No system currently achieves **high-depth automated verdicts** at monitoring scale.
+* **FactHarbor Solution:** AI-automated multi-agent debate + "Funnel Architecture" (Haiku-tier verifiability gate) + risk-based human escalation.
 
-=== Gap 7: Real-Time Verification ===
+=== Gap 7: Ecosystem Infrastructure & Compliance ===
 
-* **Current State:** Traditional fact-checks take hours/days
-* **Problem:** Misinformation spreads faster than corrections
-* **FactHarbor Solution:** 10-30 second analysis target for POC; structured output for immediate use
+* **Current State:** Siloed verdicts and no standardized structured data. New regulations (EU AI Act Aug 2025) demand bias auditing.
+* **Problem:** Compliance is difficult without a systematic calibration framework.
+* **FactHarbor Solution:** Open-source Evidence Models + **C18/C13 Calibration Methodology** (systematic bias auditing).
 
 ----
 
 == 3. Competitor Weaknesses to Exploit ==
 
-=== 3.1 PolitiFact/Snopes Weaknesses ===
+=== 3.1 Full Fact AI (The Monitor) ===
 
-* ~30% of matching claims receive different ratings (pre-adjustment)
-* "Half True" and "Mixture" verdicts used 17-21% of time, indicating methodology struggles with nuance
-* Perceived political bias undermines trust (both sides claim bias)
-* No machine-readable output beyond ClaimReview tags
+* **Structural Gap:** Deliberately avoids automated verdicts; human fact-checkers remain the bottleneck.
+* **Platform Dependency:** Previously 100% Google/GCP dependent; funding crisis (Oct 2025) exposes sustainability risk of Big Tech grants.
 
 {{success}}
-**Opportunity:** FactHarbor can partner with/enhance these organizations, not compete
+**Opportunity:** FactHarbor is the natural **verdict engine** for Full Fact's monitoring frontend—they find claims, we automate the initial deep-reasoning verdict.
 {{/success}}
 
-=== 3.2 ClaimBuster Weakness ===
+=== 3.2 Factiverse (The Broadcaster) ===
 
-* "The first-ever end-to-end fact-checking system" claim misleading—verification component (Squash) failed
-* Limited to claim detection; no verdict production
-* Text-only (no multimodal)
+* **Latency vs. Depth:** 30s latency requirement forces use of classification models over generative reasoning; lacks nuance and detailed explanation.
+* **Context Loss:** Live audio transcription often loses nuances that text-based analysis (FactHarbor) captures.
 
 {{success}}
-**Opportunity:** FactHarbor can integrate ClaimBuster's claim detection API as input source
+**Opportunity:** FactHarbor's multi-agent debate provides the **depth and evidence-weighted contestation** that real-time systems sacrifice for speed.
 {{/success}}
 
-=== 3.3 Community Notes Weaknesses ===
+=== 3.3 Community Notes (The Crowd) ===
 
 * "Not really scalable for the amount of media being consumed"
 * Bridging algorithm creates delays
@@ -190,10 +186,12 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 
 === What Makes FactHarbor Different ===
 
-|=Feature|=Traditional|=Automated|=Crowdsourced|=**FactHarbor**
-|**Verdict Type**|Categorical|Categorical|Text note|**Probabilistic + Scenario-based**
+|=Feature|=Traditional|=Automated (Speed)|=Crowdsourced|=**FactHarbor**
+|**Verdict Type**|Categorical|NLI Class|Text note|**Probabilistic + Scenario-based**
 |**Transparency**|Article explains|Black box|Varies|**Full reasoning chain**
-|**Assumptions**|Implicit|None|None|**Explicit in each scenario**
+|**Multi-Agent Debate**|None|None|None|**Yes (5-step MAD)**
+|**Multi-Source Retrieval**|Manual|Yes (Factiverse)|No|**Yes (Wikipedia+Scholar+Web)**
+|**Debate-Triggered Re-search**|No|No|No|**Priority #8 (ED2D pattern)**
 |**Confidence**|None|Uncalibrated|None|**Stated with factors**
 |**Contradiction Check**|Sometimes|Rarely|Never|**Mandatory**
 |**Output Format**|Article|Score|Free text|**Structured Evidence Model**
@@ -226,35 +224,33 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 === 5.2 Partnership Opportunities ===
 
 |=Partner Type|=Value Proposition|=Examples
-|Fact-checking orgs|Provide structured methodology + scale|Full Fact, IFCN members
-|Academic institutions|Research platform + novel approach|ETH Zurich, Duke Reporters' Lab
-|Media organizations|API integration for embedded fact-checking|News publishers
-|Educators|Critical thinking curriculum|Universities, schools
+|**Monitoring Leaders**|FactHarbor as verdict backend for their monitoring|Full Fact AI, Factiverse
+|**Ecosystem Integration**|Structured ClaimReview producer for search/social|Google, Meta, IFCN
+|**Academic/Research**|Real-world testbed for debate protocols|ED2D authors, ETH Zurich (Ash)
+|**Newsroom Workflows**|Deep-reasoning tool for investigative journalism|BBC Verify, NRK
 
 === 5.3 Competitive Moats to Build ===
 
-1. **ClaimReview Integration:** First Evidence Model producer with full ClaimReview export
-1. **Federation Protocol:** Enable decentralized fact-checking network
-1. **Quality Data Set:** Well-labeled Evidence Models for AI training
-1. **Domain Expertise:** Build deep capability in high-risk domains (health, finance, elections)
+1. **Multi-Source Evidence Resilience:** Close the C13 gap by adding Semantic Scholar and Google Fact Check API.
+1. **Calibration Leadership:** Establish C18/C13 as the industry standard for automated fact-checking transparency.
+1. **Debate-Triggered Re-search:** Implement the ED2D pattern to become the first production system with dynamic retrieval.
 
 === 5.4 Market Timing Advantages ===
 
-* Meta exit creates demand for alternatives
-* USAID cuts reduce funding for traditional approaches → need for efficient solutions
-* AI reliability concerns → transparency value increases
-* Growing awareness that binary verdicts don't work for complex claims
+* Meta exit creates demand for independent tools
+* Google removal of ClaimReview rich results → need for new infrastructure
+* Big Tech funding cuts for fact-checkers (Full Fact crisis) → need for efficient automation
+* AI Act (Aug 2025) → demand for auditable, calibrated fact-checking
 
 ----
 
 == 6. Competitive Threats to Monitor ==
 
 |=Threat|=Risk Level|=Mitigation
-|**Full Fact expands AI**|Medium|Partner early; our scenario approach is more advanced
-|**Google enhances Fact Check Tools**|Medium|Focus on production capability, not just aggregation
-|**Academic tools productionize**|Low-Medium|Move faster; POC demonstrates viability
-|**Community Notes improves**|Low|Different value prop (systematic vs. crowdsourced)
-|**New AI fact-checker startup**|Medium|Open source moat; methodology transparency
+|**Full Fact / Factiverse Partnership**|High|Move faster on verdict automation; maintain cross-provider lead.
+|**Academic Debate Systems (ED2D/Tool-MAD)**|Medium-High|Engage authors; offer FactHarbor as their real-world implementation.
+|**Google/Meta "In-House" MAD**|Medium|Open-source moat; focus on neutral, cross-provider calibration.
+|**EU AI Act Compliance (Competitors)**|Medium|Establish C18/C13 as the standard first.
 
 ----
 
@@ -262,28 +258,28 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 
 === Market Gaps Summary ===
 
-1. No existing tool provides **scenario-based, probabilistic fact-checking**
-1. Transparency in reasoning is universally missing
-1. Automated tools fail at reliable verification; humans can't scale
-1. The "Holy Grail" remains unfilled because everyone pursues binary answers
+1. **Automation Frontier:** No system currently achieves deep automated verdicts at monitoring scale.
+1. **Dynamic Retrieval:** No production system retrieves new evidence *during* the debate (ED2D pattern).
+1. **Calibration:** Systematic bias measurement (C18/C13) is a unique FactHarbor asset.
+1. **Infrastructure Vacuum:** Big Tech retreat creates an urgent need for independent, open-source infrastructure.
 
 === FactHarbor's Opportunity ===
 
-FactHarbor is **uniquely positioned** to fill the gap between:
+FactHarbor is **uniquely positioned** at the research frontier:
 
-* Human fact-checkers (high quality, low scale)
-* Automated systems (low quality, high scale)
-* Crowdsourced systems (variable quality, medium scale)
+* **Monitoring Leaders** (Full Fact) provide the scale but lack automated verdicts.
+* **Real-time Leaders** (Factiverse) provide the speed but lack deep reasoning.
+* **Research Leaders** (ED2D/Tool-MAD) provide the theory but lack a working pipeline.
 
-By producing **structured Evidence Models with explicit boundaries, assumptions, and probabilistic verdicts**, FactHarbor offers something no competitor provides: **transparent reasoning at scale**.
+By producing **structured Evidence Models with multi-agent debate and systematic calibration**, FactHarbor offers the "Holy Grail" of fact-checking: **transparent reasoning at scale**.
 
 === Recommended Next Steps ===
 
-1. **POC Validation:** Demonstrate Evidence Model quality with 30-article test set
-1. **IFCN/EFCSN Outreach:** Present methodology to fact-checking community
-1. **ClaimReview Export:** Ensure Evidence Models generate valid ClaimReview for ecosystem integration
-1. **Academic Partnership:** Engage ETH Zurich or similar for methodology validation
-1. **Differentiation Messaging:** "Not another verdict—a truth landscape"
+1. **Close Evidence Gap (C13):** Implement multi-source retrieval (Wikipedia, Semantic Scholar, Google Fact Check API) to ensure evidence diversity.
+1. **Evaluate against AVeriTeC:** Benchmark the pipeline against the industry-standard dataset to validate quality vs. the field.
+1. **Partner with Full Fact:** Explore a "detection-to-verdict" pipeline partnership to achieve production monitoring scale.
+1. **Implement Dynamic Retrieval:** Adopt the ED2D pattern of debate-triggered re-search to fix evidence gaps in real-time.
+1. **Regulatory Positioning:** Document C18/C13 methodology for EU AI Act transparency compliance.
 
 ----
 

@@ -6,6 +6,11 @@
   width: 100%;
 }
 
+.bannerInfo {
+  background-color: #eff6ff;
+  border-bottom-color: #93c5fd;
+}
+
 .content {
   max-width: 1200px;
   margin: 0 auto;
@@ -21,6 +26,10 @@
   line-height: 1;
 }
 
+.iconInfo {
+  color: #1d4ed8;
+}
+
 .text {
   flex: 1;
 }
@@ -30,6 +39,10 @@
   color: #856404;
   font-size: 14px;
   margin-bottom: 4px;
+}
+
+.titleInfo {
+  color: #1e40af;
 }
 
 .message {
@@ -55,10 +68,14 @@
   color: #721c24;
 }
 
+.providerBadgeInfo {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
 .timestamp {
   margin-top: 4px;
   font-size: 11px;
   color: #856404;
   opacity: 0.8;
 }
-

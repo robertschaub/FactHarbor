@@ -1,7 +1,8 @@
 = Workflows =
 
 {{info}}
-**Implementation Status:** Only the Claim Submission (Section 2) and Automated Analysis (Section 3) workflows are implemented in the current POC. Sections 4-11 describe the **target production architecture** (Beta/V1.0). See [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for the implemented pipeline.
+**Implementation Status:** Only the Claim Submission (Section 2) and Automated Analysis (Section 3) workflows are implemented in the current Alpha.
+ Sections 4-11 describe the **target production architecture** (Beta/V1.0). See [[AKEL>>FactHarbor.Product Development.Specification.AI Knowledge Extraction Layer (AKEL).WebHome]] for the implemented pipeline.
 {{/info}}
 
 FactHarbor workflows are **simple, automated, focused on continuous improvement**.

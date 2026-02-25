@@ -40,6 +40,12 @@ const PROVIDER_MESSAGES: Record<string, string> = {
   serpapi: "SerpAPI unavailable \u2014 using fallback provider",
 };
 
+const FALLBACK_ONLY_PROVIDER_NAMES = new Set([
+  "google_cse",
+  "brave",
+  "serpapi",
+]);
+
 export function SystemHealthBanner() {
   const [health, setHealth] = useState<HealthState | null>(null);
 
@@ -79,6 +85,10 @@ export function SystemHealthBanner() {
 
   const hasProviderIssues = unhealthyProviders.length > 0;
   const isPaused = health.systemPaused;
+  const hasOnlyFallbackProviderIssues =
+    hasProviderIssues &&
+    unhealthyProviders.every((provider) => FALLBACK_ONLY_PROVIDER_NAMES.has(provider.name));
+  const showAsInfo = hasOnlyFallbackProviderIssues && !isPaused;
 
   // Nothing to show when all healthy
   if (!hasProviderIssues && !isPaused) return null;
@@ -88,9 +98,14 @@ export function SystemHealthBanner() {
     : "unknown time";
 
   return (
-    <div className={styles.banner} role="alert">
+    <div
+      className={`${styles.banner}${showAsInfo ? ` ${styles.bannerInfo}` : ""}`}
+      role={showAsInfo ? "status" : "alert"}
+    >
       <div className={styles.content}>
-        <div className={styles.icon}>&#9888;</div>
+        <div className={`${styles.icon}${showAsInfo ? ` ${styles.iconInfo}` : ""}`}>
+          {showAsInfo ? "ℹ" : "⚠"}
+        </div>
         <div className={styles.text}>
           {isPaused && (
             <>
@@ -103,12 +118,17 @@ export function SystemHealthBanner() {
             </>
           )}
           {hasProviderIssues && !isPaused && (
-            <div className={styles.title}>Provider issues detected</div>
+            <div className={`${styles.title}${showAsInfo ? ` ${styles.titleInfo}` : ""}`}>
+              {showAsInfo ? "Provider fallback active (informational)" : "Provider issues detected"}
+            </div>
           )}
           {unhealthyProviders.length > 0 && (
             <div className={styles.details}>
               {unhealthyProviders.map((p) => (
-                <div key={p.name} className={styles.providerBadge}>
+                <div
+                  key={p.name}
+                  className={`${styles.providerBadge}${showAsInfo ? ` ${styles.providerBadgeInfo}` : ""}`}
+                >
                   {PROVIDER_MESSAGES[p.name] ?? `${p.name}: ${p.state}`}
                 </div>
               ))}

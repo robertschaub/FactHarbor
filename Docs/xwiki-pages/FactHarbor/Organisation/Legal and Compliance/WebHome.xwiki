@@ -1,23 +1,43 @@
-= Legal and Compliance =
+= Legal & Compliance =
 
-Legal frameworks, licensing, contributor agreements, and financial governance for FactHarbor.
+FactHarbor's legal foundations, financial governance, and public commitments.
 
-== Legal Foundations ==
+== 1. Legal Foundations ==
 
-* [[Legal Framework>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome]] — Organisational form, IP, data protection, and contracts
-* [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]] — Licence choices, transparency commitments, and repository standards
+* **[[Legal Framework>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome]]**
+Our organisational form (Swiss Association), intellectual property, and data protection strategy.
 
-== Contributor Agreements ==
+* **[[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]**
+Our commitment to open source (AGPL/MIT) and how it protects our mission.
 
-* [[Contributor License Agreement (CLA)>>FactHarbor.Organisation.Legal and Compliance.CLA.WebHome]] — Copyright, licence grants, and contributor types
+* **[[Contributor License Agreement (CLA)>>FactHarbor.Organisation.Legal and Compliance.CLA.WebHome]]**
+How we manage copyright and license grants for contributions to the project.
 
-== Financial Governance ==
+== 2. Public Policies ==
 
-* [[Finance and Compliance>>FactHarbor.Organisation.Legal and Compliance.Finance and Compliance.WebHome]] — Funding principles, budgeting, and internal controls
-* [[Large Donations Policy>>FactHarbor.Organisation.Legal and Compliance.Large Donations Policy.WebHome]] — The 20% rule, editorial firewall, and donation governance
-* [[Reimbursable Expenses>>FactHarbor.Organisation.Legal and Compliance.Reimbursable Expenses.WebHome]] — Expense tracking and transparency ledger
+The formal rules that protect our users and define our commitments to the public.
 
-== Related ==
+* **[[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]]**
+How we process and protect user data under Swiss and international law.
 
-* [[Governance>>FactHarbor.Organisation.Governance.WebHome]] — Organisational model and decision processes
-* [[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]] — Openness and accountability commitments
+* **[[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]**
+Our commitment to auditability, open data, and open decision-making.
+
+* **[[Terms of Service>>FactHarbor.Organisation.Legal and Compliance.Terms-of-Service]]**
+The legal agreement for interacting with the FactHarbor platform.
+
+* **[[Security Policy>>FactHarbor.Organisation.Legal and Compliance.Security-Policy]]**
+Principles for system integrity, vulnerability reporting, and incident response.
+
+== 3. Financial Governance ==
+
+How we manage resources to ensure long-term independence and survival.
+
+* **[[Finance and Compliance>>FactHarbor.Organisation.Legal and Compliance.Finance and Compliance.WebHome]]**
+Our non-profit budgeting process, internal controls, and reporting.
+
+* **[[Large Donations Policy>>FactHarbor.Organisation.Legal and Compliance.Large Donations Policy.WebHome]]**
+The rules protecting our independence from donor influence (the 20% rule).
+
+* **[[Reimbursable Expenses>>FactHarbor.Organisation.Legal and Compliance.Reimbursable Expenses.WebHome]]**
+Guidelines for expense management and our public transparency ledger.

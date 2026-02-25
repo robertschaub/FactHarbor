@@ -2,6 +2,61 @@
 
 
 ---
+### 2026-02-25 | Technical Writer | Gemini CLI | Update project stage from POC to Alpha
+**Task:** Updated documentation to state 'Alpha' instead of 'POC' for current project stage.
+**Files touched:** Docs/xwiki-pages/FactHarbor/
+**Key decisions:** Replaced 'POC' and 'Proof of Concept' with 'Alpha' in current-state documents (Strategy, Planning, Workflows, Transition Model). Preserved 'POC' in historical/archived specification sections. Preserved 'Proof of Concept' where it refers to specific grant names (e.g., BRIDGE Proof of Concept).
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify project status page accuracy.
+**Learnings:** None
+
+
+---
+### 2026-02-25 | Technical Writer | Gemini CLI | Update Cooperation Opportunities with 2026 findings
+**Task:** Updated cooperation strategies based on recent knowledge base research and global landscape survey.
+**Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki
+**Key decisions:** Updated Executive Summary, prioritized Full Fact (#1) and Factiverse. Added ETH Zurich (Elliott Ash) and AVeriTeC (Stammbach) as key academic targets. Included new 2026 funding initiatives (IFCN SUSTAIN, Journalism Science Alliance). Stated explicit preconditions for top-tier opportunities.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify link integrity in xWiki.
+**Learnings:** Ensured alignment with recent KB findings and strategic priorities.
+
+
+---
+### 2026-02-25 | Technical Writer | Gemini CLI | Update Competitive Analysis with recent findings
+**Task:** Updated competitive analysis to include Factiverse, Full Fact AI, and research frontiers like ED2D and Tool-MAD.
+**Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Competitive Analysis/WebHome.xwiki
+**Key decisions:** Updated Executive Summary, Competitive Landscape, Critical Market Gaps, Competitor Weaknesses, Unique Positioning, Strategic Recommendations, and Conclusion. Included insights on funnel architectures, multi-source retrieval, and debate-triggered re-search.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify link integrity in xWiki.
+**Learnings:** Ensured alignment with recent KB findings.
+
+
+---
+### 2026-02-25 | Technical Writer | Gemini CLI | Refined tree hierarchy of Organisation xWiki documentation
+**Task:** Physically moved policy files and updated all internal links to improve tree hierarchy.
+**Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/
+**Key decisions:** Moved Privacy-Policy, Security-Policy, Terms-of-Service, and Transparency-Policy from 'How-We-Work-Together' to 'Legal and Compliance' in the filesystem. Updated 21+ internal links across multiple files to ensure zero broken links.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify link integrity in xWiki.
+**Learnings:** Ensured filesystem matches logical navigation.
+
+
+---
+### 2026-02-25 | Technical Writer | Gemini CLI | Improve Structure of Organisation xWiki documentation
+**Task:** Restructured the Organisation domain for better human readability.
+**Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/
+**Key decisions:** Restructured root WebHome to follow a logical narrative (Strategy -> Culture -> Governance -> Legal). Reorganised How We Work Together to focus on culture and internal collaboration. Centralised all public-facing policies in Legal & Compliance for a more professional structure.
+**Open items:** None
+**Warnings:** Consider if further cross-linking between Strategy and Product Development is needed.
+**For next agent:** Verify navigation flow in xWiki preview.
+**Learnings:** None
+
+
+---
 ### 2026-02-25 | Technical Writer | Gemini CLI | Improve readability of Organisation xWiki documentation
 **Task:** Updated Governance and Strategy docs for readability, terminology consistency (Boundaries, AtomicClaims), and spelling (Organisational).
 **Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/

@@ -8,17 +8,14 @@
 
 == Executive Summary ==
 
-FactHarbor's innovative Evidence Model approach and automation-first philosophy position it uniquely in the fact-checking ecosystem. This report identifies **120+ specific cooperation opportunities** across seven strategic categories, prioritized by alignment with FactHarbor's mission, technical architecture, and Swiss nonprofit status.
+FactHarbor's innovative Evidence Model approach and automation-first philosophy position it uniquely in the 2026 fact-checking ecosystem. As major platforms like Meta and Google retreat from direct fact-checking support, the demand for independent, automated, and transparent verification tools has reached a critical point.
 
-**Key Findings:**
+**Key Findings (2026 Update):**
 
-* **443 active fact-checking organisations globally**
- provide a vast network for collaboration
-* **170+ IFCN-verified signatories** represent quality partners for methodology validation
-* **61 EFCSN members** offer European collaboration opportunities, particularly important given FactHarbor's Swiss base
-* **Multiple funding sources** available totaling potential access to $500M+ in grants
-* **Strong academic interest** in automated fact-checking with established research centers
-* **Technology integration paths** through ClaimReview schema and Google/Meta partnerships
+* **Structural Complementarity:** Large-scale monitoring systems (Full Fact AI) surface claims but lack automated verdicts. FactHarbor fills this "verdict gap."
+* **Academic Validation:** Emerging research (ED2D, Tool-MAD) validates FactHarbor's multi-agent debate (MAD) architecture as the state-of-the-art for automated reasoning.
+* **Funding Shift:** Grants are moving toward **financial sustainability** and **cross-sector partnerships** (Journalism Science Alliance, IFCN SUSTAIN Fund).
+* **Research Frontier:** Multi-source evidence retrieval (Factiverse model) is the #1 technical requirement to close the evidence asymmetry gap.
 
 ----
 
@@ -41,7 +38,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * **Website:** https:~/~/www.poynter.org/ifcn/
 * **Next Steps:**
 *1. Review IFCN Code of Principles compliance (FactHarbor already aligns well)
-*1. Apply for signatory status once POC demonstrates capability
+*1. Apply for signatory status once Alpha demonstrates capability
 *1. Engage with IFCN's Global Fact Check Fund partnership opportunities
 
 ==== **European Fact-Checking Standards Network (EFCSN)** ====
@@ -65,20 +62,19 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 === 1.2 Leading Fact-Checking Organizations (Priority: HIGH) ===
 
-==== **Full Fact (UK)** ====
+==== **Full Fact (UK) — #1 Strategic Priority** ====
 
-* **Type:** Independent charity, IFCN & EFCSN verified
-* **Innovation:** Full Fact AI used by 40+ organizations
-* **Technology:** BERT-based claim detection, live monitoring
-* **Cooperation Potential:**
-** **Technology Partnership:** Integrate Full Fact AI for claim detection
-** **Methodology Exchange:** Share boundary-based approach for their evaluation.
-** **Academic Collaboration:** They work with academic partners on claim detection research
-** **Open Source:** They have WordPress ClaimReview plugin - could integrate
-* **Contact:** Via website contact form
-* **Website:** https:~/~/fullfact.org/
-* **Academic Partners:** University College London, University of Sheffield
-* **Why This Matters:** Full Fact is the leading UK fact-checker with proven AI tools that FactHarbor could integrate or collaborate with
+* **Type:** Independent charity, world leader in AI monitoring scale
+* **Status:** Facing significant funding crisis (>£1M loss from Google/Meta exits)
+* **Cooperation Potential (MOST BENEFICIAL):**
+** **"Detection-to-Verdict" Pipeline:** Position FactHarbor as the automated verdict engine for Full Fact's monitoring layer (350k sentences/day).
+** **Methodology Exchange:** Share FactHarbor's MAD calibration (C18/C13) for their upcoming "Prebunking at Scale" initiatives.
+** **PASTEL Integration:** Learn from their LLM-as-feature-extractor pattern for checkworthiness.
+* **Preconditions:**
+*1. Functional Alpha demonstrating automated verdicts on a standard dataset (e.g. AVeriTeC).
+*1. Documented C18/C13 calibration results to prove neutrality.
+* **Key Contact:** Andrew Dudfield (Head of AI)
+* **Website:** https:~/~/fullfact.ai/
 
 ==== **dpa Fact-Checking (Germany/Austria/Switzerland)** ====
 
@@ -96,16 +92,17 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * **Key Contact:** Teresa Dapp, Head of Fact-Checking Editorial
 * **Next Steps:** Reach out to discuss Swiss market collaboration and technology integration
 
-==== **AFP Fact Check** ====
+==== **Factiverse (Norway) — High Priority** ====
 
-* **Scope:** Global, multiple languages
-* **Network:** Part of Agence France-Presse news agency
-* **IFCN Status:** Verified signatory
-* **Cooperation Potential:**
-** **French Language:** Critical for Swiss French speakers
-** **Global Reach:** Could amplify FactHarbor analyses
-** **Technology Partnership:** They use AI tools and may benefit from Evidence Model approach
-* **Website:** https:~/~/factcheck.afp.com/
+* **Type:** B2B SaaS startup (University of Stavanger spin-off)
+* **Strength:** Real-time broadcast fact-checking, multi-source evidence retrieval (6 parallel sources).
+* **Cooperation Potential (BENEFICIAL):**
+** **Academic Benchmarking:** Joint study comparing their NLI-based verdicts (speed) vs. FactHarbor's MAD verdicts (depth).
+** **Evidence Retrieval:** Potential re-use of their FactIR or FactiSearch frameworks.
+* **Preconditions:**
+*1. Reach out via academic channels (Dr. Vinay Setty) to avoid commercial filters.
+*1. Offer FactHarbor as a deep-reasoning research testbed.
+* **Website:** https:~/~/www.factiverse.ai/
 
 ==== **FactCheck.org (USA)** ====
 
@@ -206,16 +203,27 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 ** **Training Resources:** They develop training for newsrooms
 * **Website:** https:~/~/shorensteincenter.org/
 
-==== **ETH Zurich / University of Zurich (Switzerland)** ====
+==== **ETH Zurich — Elliott Ash Group (Switzerland)** ====
 
-* **Departments:** Computer Science, Computational Social Science
-* **Swiss Advantage:** Local Swiss institution
-* **Cooperation Potential:**
-** **Swiss Academic Partnership:** Local credibility and funding access
-** **Student Projects:** Master's theses on Evidence Model methodology
-** **Research Validation:** Academic papers on FactHarbor approach
-** **BRIDGE Funding:** Joint applications for Swiss research grants
-* **Next Steps:** Identify NLP/computational journalism researchers at ETH Zurich
+* **Focus:** Computational Social Science, NLP, political bias measurement.
+* **Cooperation Potential (MOST BENEFICIAL):**
+** **Calibration Validation:** Use FactHarbor's C18/C13 methodology as a real-world testbed for LLM political alignment research.
+** **Swiss Funding:** Primary research partner for Innosuisse / BRIDGE grants.
+* **Preconditions:**
+*1. Solidified baseline data from A-3 gate.
+*1. Professional research proposal for joint calibration study.
+* **Key Contact:** Elliott Ash (Associate Professor)
+
+==== **AVeriTeC / Stammbach (Princeton CITP)** ====
+
+* **Focus:** Large-scale evidence retrieval and end-to-end fact verification.
+* **Cooperation Potential (BENEFICIAL):**
+** **Benchmark Participation:** Evaluate FactHarbor against the AVeriTeC 4,568-claim dataset.
+** **Multi-Source Research:** Collaborate on "data-centric" fact-checking and knowledge base selection.
+* **Preconditions:**
+*1. Integration of Semantic Scholar and Google Fact Check APIs (Multi-source spec).
+*1. Capability to run AVeriTeC formatted datasets through the pipeline.
+* **Key Contact:** Dominik Stammbach
 
 ==== **Stanford Internet Observatory** ====
 
@@ -276,38 +284,30 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 * **Application:** Rolling applications, check https:~/~/knightfoundation.org/apply/
 * **Next Steps:** Monitor Knight Prototype Fund announcements, prepare application highlighting FactHarbor's innovative Evidence Model
 
-==== **Google News Initiative - Global Fact Check Fund** ====
+==== **Global Fact Check Fund: SUSTAIN (Round 2, 2026)** ====
 
-* **Budget:** $12M over three years (partnership with IFCN)
-* **Tiers:**
-** BUILD: Up to $25K
-** GROW: Up to $50K
-** ENGAGE: Up to $100K
-* **Eligibility:**
-** IFCN verified signatories (primary)
-** Non-signatories endorsed by IFCN members (secondary)
-* **Focus:**
-** Fact-checking capacity building
-** Technology development
-** Audience engagement
-* **Cooperation Potential:**
-** **GROW Track:** Scale FactHarbor platform with $50K grant
-** **Technology Partnership:** Google Fact Check Tools integration
-** **ClaimReview Implementation:** Critical for Google search visibility
-* **Next Steps:**
-*1. Achieve IFCN signatory status OR get endorsement from existing signatory
-*1. Apply for GROW or ENGAGE funding round
-* **Contact:** Through IFCN (factchecknet@poynter.org)
+* **Grant Amount:** $30,000 USD
+* **Eligibility:** Verified signatories of IFCN Code of Principles.
+* **Focus:** Core operational support and building long-term business models post-Meta TPFC exit.
+* **Next Steps:** Monitor mid-February 2026 opening.
+
+==== **Journalism Science Alliance (2026 Call)** ====
+
+* **Deadline:** March 23, 2026
+* **Grant Amount:** €10,000 - €50,000
+* **Focus:** Cross-sector partnerships between media and research institutions (matches FactHarbor + ETH profile).
+
+==== **EMIF SAFE Initiative** ====
+
+* **Deadline:** February 27, 2026 (Annual cycles)
+* **Grant Amount:** Up to €10,000
+* **Focus:** Emergency support and protection for verification professionals.
 
 ==== **Meta (Facebook) Fact-Checking Program** ====
 
-* **Status:** Transitioning away from IFCN model (2025)
-* **Historical Budget:** Funded 160+ fact-checking organizations globally
-* **Current State:** Moving to "Community Notes" model similar to X/Twitter
-* **Cooperation Potential:**
-** **Uncertain:** May not be available as traditional funding source
-** **Alternative:** Position FactHarbor as community notes infrastructure
-* **Note:** Monitor Meta's evolving approach to fact-checking
+* **Status:** **Officially ended US Third-Party Fact-Checking (Jan 2025)**.
+* **Transition:** Moving to user-driven "Community Notes" model.
+* **Cooperation Potential (BENEFICIAL):** Position FactHarbor as the "bridging algorithm" or verification backend for their community notes pilot.
 
 === 3.2 Swiss Funding Sources (Priority: HIGH) ===
 
@@ -461,7 +461,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 *1. Apply for Fact Check Markup Tool access
 *1. Submit sitemap to Google
 * **Technical Docs:** https:~/~/developers.google.com/fact-check/
-* **Next Steps:** Priority implementation in POC
+* **Next Steps:** Priority implementation in Alpha
 
 ==== **ClaimReview Project - Duke Reporters' Lab** ====
 
@@ -718,37 +718,40 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 == 8. STRATEGIC PRIORITY MATRIX ==
 
-=== Tier 1: Foundation ===
+=== Tier 1: Foundation (High Priority) ===
 
-**Critical for POC success and credibility:**
+**Critical for Alpha success and industry positioning:**
 
 1. (((
-**ClaimReview Implementation** (Google/Duke)
+**Full Fact AI "Detection-to-Verdict" Partnership**
 
-* Technical: Essential for search visibility
-* Scope: Moderate development effort
-* Impact: HIGH - enables discovery by users
+* Purpose: Achieve monitoring scale by acting as the verdict backend.
+* Action: Prepare demo of automated verdicts on Full Fact's checkworthy claims.
+* Precondition: Functional MAD pipeline + C18 baseline.
+* Impact: **MOST BENEFICIAL** - solves FactHarbor's scale gap.
 )))
 1. (((
-**IFCN Signatory Application Prep**
+**ETH Zurich (Elliott Ash) Calibration Study**
 
-* Strategic: Industry credibility
-* Timeline: Review requirements, prepare docs
-* Impact: HIGH - unlocks funding and partnerships
+* Purpose: Academic validation of FactHarbor's neutrality methodology.
+* Action: Joint research proposal on C18/C13 bias measurement.
+* Precondition: Finished A-3 gate results.
+* Impact: **HIGH** - enables Swiss Innosuisse funding.
 )))
 1. (((
-**ETH Zurich Research Contact**
+**AVeriTeC Benchmark Participation**
 
-* Purpose: Innosuisse grant application
-* Timeline: Identify faculty, initial meeting
-* Impact: HIGH - enables Swiss funding
+* Purpose: Objective quality validation against the research field.
+* Action: Run FactHarbor pipeline on AVeriTeC dataset.
+* Precondition: Implement Multi-source Evidence Retrieval spec.
+* Impact: **HIGH** - industry-standard performance proof.
 )))
 1. (((
-**dpa Fact-Checking Outreach**
+**ClaimReview Implementation**
 
-* Purpose: Swiss market collaboration
-* Timeline: Email introduction
-* Impact: MEDIUM - Swiss language fact-checking partner
+* Purpose: Technical integration with Google and IFCN ecosystem.
+* Action: Automated generation of ClaimReview metadata for all reports.
+* Impact: **HIGH** - technical prerequisite for all media partnerships.
 )))
 
 === Tier 2: Growth ===
@@ -782,7 +785,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 **Full Fact Technology Discussion**
 
 * Purpose: Explore AI tool integration
-* Timeline: After POC demonstration
+* Timeline: After Alpha demonstration
 * Impact: MEDIUM - proven technology partnership
 )))
 
@@ -816,7 +819,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 **SRG SSR Pilot Partnership**
 
 * Purpose: Swiss public broadcasting integration
-* Timeline: After POC proves capability
+* Timeline: After Alpha proves capability
 * Impact: HIGH - major Swiss media partnership
 )))
 
@@ -1021,7 +1024,7 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 **Goal: Establish credibility and core partnerships**
 
-1. ✅ Implement ClaimReview schema in POC
+1. ✅ Implement ClaimReview schema in Alpha
 1. ✅ Create GitHub organization and publish initial code
 1. ✅ Draft IFCN signatory application (don't submit yet)
 

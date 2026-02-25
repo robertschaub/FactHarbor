@@ -8,8 +8,7 @@ This checklist documents prerequisite tasks that must be completed before FactHa
 == 2. Critical Tasks (MUST Complete Before Launch) ==
 These tasks are mandatory for legal compliance and core functionality.
 === 2.1 Legal & Compliance ===
-| Task | Status | Notes |
-|------|--------|-------|
+|= Task |= Status |= Notes |
 | **Engage Swiss legal advisor for policy review** | ⬜ Not Started | Review all policies, bylaws |
 | **Draft and adopt Verein bylaws (statutes)** | ⬜ Not Started | Required for legal existence |
 | **Appoint founding board (minimum two members)** | ⬜ Not Started | Can include yourself |
@@ -19,8 +18,7 @@ These tasks are mandatory for legal compliance and core functionality.
 | **Conduct initial DPIA for AKEL system** | ⬜ Not Started | Can use templates |
 | **Set effective dates for policies** | ⬜ Not Started | Privacy & Transparency |
 === 2.2 Technical Implementation ===
-| Task | Status | Notes |
-|------|--------|-------|
+|= Task |= Status |= Notes |
 | **Implement opt-in cookie consent banner** | ⬜ Not Started | Open source libraries available |
 | **Build user data export functionality** | ⬜ Not Started | JSON/CSV export |
 | **Build account deletion functionality** | ⬜ Not Started | With grace period |
@@ -29,8 +27,7 @@ These tasks are mandatory for legal compliance and core functionality.
 | **Implement TLS/HTTPS encryption** | ⬜ Not Started | Let's Encrypt or similar |
 | **Set up security logging** | ⬜ Not Started | One year retention |
 === 2.3 Organisational Infrastructure ===
-| Task | Status | Notes |
-|------|--------|-------|
+|= Task |= Status |= Notes |
 | **Set up contact infrastructure** | ⬜ Not Started | See Section 5 |
 | **Establish document storage** | ⬜ Not Started | Secure storage for bylaws, minutes |
 | **Create incident response plan** | ⬜ Not Started | Brief document |
@@ -39,32 +36,28 @@ These tasks are mandatory for legal compliance and core functionality.
 == 3. Important Tasks (SHOULD Complete Before Launch) ==
 These tasks are strongly recommended before launch.
 === 3.1 Governance & Policy ===
-| Task | Status | Priority |
-|------|--------|----------|
+|= Task |= Status |= Priority |
 | **Appoint DPO (if serving EU users from day 1)** | ⬜ Not Started | HIGH - Can be yourself |
 | **Create Terms of Service** | ⬜ Not Started | HIGH - Adapt templates |
 | **Create basic Security Policy** | ⬜ Not Started | MEDIUM |
 | **Create simple CLA** | ⬜ Not Started | HIGH - Adapt existing |
 | **Document internal escalation** | ⬜ Not Started | LOW |
 === 3.2 Technical & Operational ===
-| Task | Status | Priority |
-|------|--------|----------|
+|= Task |= Status |= Priority |
 | **Set up vulnerability disclosure** | ⬜ Not Started | HIGH |
 | **Implement 2FA** | ⬜ Not Started | MEDIUM |
 | **Create user documentation** | ⬜ Not Started | HIGH |
 | **Set up monitoring** | ⬜ Not Started | HIGH |
 | **Set up backup systems** | ⬜ Not Started | HIGH |
 === 3.3 Licensing & Open Source ===
-| Task | Status | Priority |
-|------|--------|----------|
+|= Task |= Status |= Priority |
 | **Decide: Code licensing model** | ⬜ Not Started | HIGH - MIT vs MIT+AGPL |
 | **Create LICENSE files** | ⬜ Not Started | HIGH |
 | **Set up code repository** | ⬜ Not Started | HIGH |
 | **Create CONTRIBUTING.md** | ⬜ Not Started | MEDIUM |
 == 4. Recommended Tasks (Can Be Post-Launch) ==
 These can wait until after launch or until team grows.
-| Task | Priority | Notes |
-|------|----------|-------|
+|= Task |= Priority |= Notes |
 | **Trademark registration** | MEDIUM | When budget allows |
 | **Penetration testing** | MEDIUM | When feasible |
 | **Transparency Committee** | LOW | When team grows |
@@ -116,15 +109,13 @@ At minimum, you need contact methods for:
 == 6. Decision Points ==
 Strategic decisions needed before implementation:
 === 6.1 Critical Decisions ===
-| Decision | Options | Consideration |
-|----------|---------|---------------|
+|= Decision |= Options |= Consideration |
 | **Serve EU users day 1?** | Yes/No/Later | Affects DPO requirement |
 | **Code licensing** | MIT / MIT+AGPL | Simpler vs. stronger copyleft |
 | **Hosting location** | CH/EU/US | Swiss aligns with mission |
 | **AI model** | Open/API | Infrastructure vs. simplicity |
 === 6.2 Organisational Decisions ===
-| Decision | Options |
-|----------|---------|
+|= Decision |= Options |
 | **Governing Team size** | Two minimum, can expand later |
 | **Governing Team meetings** | Quarterly minimum |
 | **DPO** | Only if/when needed |
@@ -258,8 +249,8 @@ You do need:
 == 15. Version History ==
 * **V0.9.30** (2025-12-17): Adapted for small organization reality
 == 16. Related Documents ==
-* [[Privacy Policy>>FactHarbor.Organisation.How-We-Work-Together.Privacy-Policy]]
-* [[Transparency Policy>>FactHarbor.Organisation.How-We-Work-Together.Transparency-Policy]]
+* [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]]
+* [[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]
 * [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
 * [[Finance & Compliance>>FactHarbor.Organisation.Legal and Compliance.Finance and Compliance.WebHome]]
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]]

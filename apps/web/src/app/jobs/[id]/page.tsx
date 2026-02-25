@@ -60,6 +60,31 @@ const PROVIDER_ISSUE_TYPES = new Set([
   "verdict_partial_recovery",
 ]);
 
+const NON_DEGRADING_PROVIDER_FALLBACK_TYPES = new Set([
+  "debate_provider_fallback",
+  "search_fallback",
+]);
+
+type WarningSeverity = "error" | "warning" | "info" | "unknown";
+
+function normalizeWarningSeverity(raw: unknown): WarningSeverity {
+  if (raw === "error" || raw === "warning" || raw === "info") return raw;
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === "error" || normalized === "warning" || normalized === "info") {
+      return normalized;
+    }
+  }
+  return "unknown";
+}
+
+function isDegradingProviderIssue(warning: any): boolean {
+  const severity = normalizeWarningSeverity(warning?.severity);
+  if (severity === "error" || severity === "warning") return true;
+  if (severity === "info") return false;
+  return !NON_DEGRADING_PROVIDER_FALLBACK_TYPES.has(warning?.type);
+}
+
 // Module-level helper — browser-safe (client component, only called from event handlers)
 function escapeHtml(str: string): string {
   const div = document.createElement("div");
@@ -420,6 +445,8 @@ export default function JobPage() {
   const classificationFallbacks = result?.classificationFallbacks;
   const allAnalysisWarnings: any[] = result?.analysisWarnings || [];
   const providerIssues = allAnalysisWarnings.filter((w: any) => PROVIDER_ISSUE_TYPES.has(w?.type));
+  const degradingProviderIssues = providerIssues.filter((w: any) => isDegradingProviderIssue(w));
+  const informationalProviderIssues = providerIssues.filter((w: any) => !isDegradingProviderIssue(w));
   const analysisWarnings = allAnalysisWarnings.filter((w: any) => !PROVIDER_ISSUE_TYPES.has(w?.type));
   const reportIntegrity = result?.meta?.reportIntegrity;
   const reportDamagedWarning = analysisWarnings.find((w: any) => w?.type === "report_damaged");
@@ -449,7 +476,7 @@ export default function JobPage() {
   const fallbackCount = classificationFallbacks?.totalFallbacks ?? 0;
   const hasQualityDegradationStatus =
     isReportDamaged ||
-    providerIssues.length > 0 ||
+    degradingProviderIssues.length > 0 ||
     qualityWarnings.length > 0 ||
     fallbackCount > 0;
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
@@ -862,7 +889,7 @@ export default function JobPage() {
                     Quality-degrading status detected for this report.
                   </div>
                   <div className={styles.qualityStatusMeta}>
-                    {providerIssues.length} provider issue{providerIssues.length !== 1 ? "s" : ""} · {qualityWarnings.length} warning/error signal{qualityWarnings.length !== 1 ? "s" : ""} · {fallbackCount} fallback{fallbackCount !== 1 ? "s" : ""}
+                    {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} · {qualityWarnings.length} warning/error signal{qualityWarnings.length !== 1 ? "s" : ""} · {fallbackCount} fallback{fallbackCount !== 1 ? "s" : ""}
                   </div>
                   <Link href="/admin/quality-health" className={styles.qualityStatusLink}>
                     Open Analysis Monitoring dashboard
@@ -870,14 +897,29 @@ export default function JobPage() {
                 </div>
               )}
 
-              {providerIssues.length > 0 && (
+              {degradingProviderIssues.length > 0 && (
                 <details className={styles.providerIssueBanner}>
                   <summary className={styles.providerIssueSummary}>
-                    {providerIssues.length} provider issue{providerIssues.length !== 1 ? 's' : ''} occurred during analysis (fallbacks used)
+                    {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
                   </summary>
                   <ul className={styles.providerIssueList}>
-                    {providerIssues.map((w: any, idx: number) => (
+                    {degradingProviderIssues.map((w: any, idx: number) => (
                       <li key={`pi-${idx}`}>
+                        <strong>{w.type}:</strong> {w.message}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+
+              {informationalProviderIssues.length > 0 && (
+                <details className={styles.providerInfoBanner}>
+                  <summary className={styles.providerInfoSummary}>
+                    {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
+                  </summary>
+                  <ul className={styles.providerInfoList}>
+                    {informationalProviderIssues.map((w: any, idx: number) => (
+                      <li key={`pi-info-${idx}`}>
                         <strong>{w.type}:</strong> {w.message}
                       </li>
                     ))}

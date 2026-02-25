@@ -219,6 +219,41 @@
   font-weight: 500;
 }
 
+.providerInfoBanner {
+  margin: 8px 0 10px;
+  padding: 6px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  font-size: 12px;
+}
+
+.providerInfoSummary {
+  color: #1e40af;
+  cursor: pointer;
+  user-select: none;
+}
+
+.providerInfoSummary:hover {
+  color: #1d4ed8;
+}
+
+.providerInfoList {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #1e3a8a;
+  font-size: 12px;
+}
+
+.providerInfoList li {
+  margin: 3px 0;
+}
+
+.providerInfoList strong {
+  color: #1e3a8a;
+  font-weight: 500;
+}
+
 .reportDamageBanner {
   margin: 10px 0 14px;
   padding: 12px;
