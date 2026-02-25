@@ -1153,7 +1153,9 @@ async function renderPreview(){
           const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
           const meta = manifest.reports[f.name];
           if(meta && meta.claim && (ext === 'html' || ext === 'htm')){
-            const href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+            const href = window.location.hostname.endsWith('.github.io')
+              ? `TESTREPORTS/${encodeURIComponent(f.name)}`
+              : `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
             const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
             const verdictCls = rvClass(meta.verdict);
             const pctInfo = (meta.truth != null ? `${meta.truth}% truth` : '') + (meta.confidence != null ? ` · ${meta.confidence}% conf` : '');
@@ -1189,7 +1191,9 @@ async function renderPreview(){
           const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
           let href;
           if(ext === 'html' || ext === 'htm'){
-            href = `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
+            href = window.location.hostname.endsWith('.github.io')
+              ? `TESTREPORTS/${encodeURIComponent(f.name)}`
+              : `https://htmlpreview.github.io/?https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
           } else {
             href = `https://github.com/${repo}/blob/main/${ghPath}/${encodeURIComponent(f.name)}`;
           }
