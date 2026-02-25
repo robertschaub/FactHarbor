@@ -2,7 +2,7 @@
 == 1. Purpose and Scope ==
 This checklist documents prerequisite tasks that must be completed before FactHarbor can launch to the public.
 **Organization Reality:** Starting as a solo project with team growth expected within the first year. 
-**Status as of:** December 17, 2025 
+**Status as of:** February 25, 2026 
 **Target Launch Date:** [To be determined]
 **Important:** Initially, one person handles multiple functions. This is normal and legal. As the team grows, responsibilities can be distributed.
 == 2. Critical Tasks (MUST Complete Before Launch) ==
@@ -10,7 +10,7 @@ These tasks are mandatory for legal compliance and core functionality.
 === 2.1 Legal & Compliance ===
 |= Task |= Status |= Notes |
 | **Engage Swiss legal advisor for policy review** | ⬜ Not Started | Review all policies, bylaws |
-| **Draft and adopt Verein bylaws (statutes)** | ⬜ Not Started | Required for legal existence |
+| **Draft and adopt Verein bylaws (statutes)** | ✅ Draft Ready | Required for legal existence |
 | **Appoint founding board (minimum two members)** | ⬜ Not Started | Can include yourself |
 | **Apply for Swiss tax-exempt status** | ⬜ Not Started | Cantonal tax authority |
 | **Designate Swiss representative** | ⬜ Not Started | Can be yourself with Swiss address |
@@ -123,7 +123,7 @@ Strategic decisions needed before implementation:
 == 7. Launch Blockers - Go/No-Go Checklist ==
 **Cannot launch until ALL are complete:**
 **Legal:**
-- [ ] Verein bylaws adopted
+- [x] Verein bylaws drafted (adoption pending)
 - [ ] Governing Team appointed (two members minimum)
 - [ ] Swiss representative designated
 - [ ] Privacy Policy effective date set
@@ -254,5 +254,5 @@ You do need:
 * [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
 * [[Finance & Compliance>>FactHarbor.Organisation.Legal and Compliance.Finance and Compliance.WebHome]]
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]]
-**Last Updated:** December 17, 2025 
+**Last Updated:** February 25, 2026 
 **Status:** Adapted for solo start with team growth expected
