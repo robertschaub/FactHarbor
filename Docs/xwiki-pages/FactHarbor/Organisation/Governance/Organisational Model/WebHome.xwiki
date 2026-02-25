@@ -1,9 +1,12 @@
 = Organisational Model =
 FactHarbor operates as a **Swiss Verein** (non-profit association) with a **simple, flat structure** focused on automation over bureaucracy.
 == 1. Legal Structure ==
+
 **Entity Type**: Swiss Verein (Association) 
 **Jurisdiction**: Switzerland 
 **Governed By**: Swiss Civil Code (Art. 60-79)
+**Statutes**: [[Draft Statutes (English)>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome||anchor="H7.DraftStatutes"]] (In Review)
+
 **Key Characteristics**:
 * Non-profit purpose
 * Member-based governance
@@ -35,62 +38,64 @@ FactHarbor operates as a **Swiss Verein** (non-profit association) with a **simp
 * Hiring/firing key staff
 * Represent organization externally
 **Meetings**: Quarterly (minimum)
-=== 2.3 Team Member Roles ===
-**Philosophy**: Minimal team, automation-first. Team members improve the SYSTEM, not the DATA.
+=== 2.3 Operational Domains & Roles ===
+
+**Philosophy**: Minimal team, automation-first. Role holders improve the SYSTEM, not the DATA.
 **Core Principle**: AKEL makes content decisions. Humans monitor system performance and improve algorithms.
-**Essential Roles**:
-**Technical Coordinator** (1 FTE):
-* **Domain**: AKEL performance and infrastructure
-* **Monitors**: Processing speed, error rates, resource utilization, algorithm performance metrics
-* **Improves**: Algorithms, infrastructure optimization, processing efficiency
-* **Does NOT**: Review individual claim verdicts, override AKEL decisions
-* **Authority**: Approve technical changes within domain boundaries
-* **Decision Method**: Autonomous within domain, consent for cross-domain changes
-**Community Coordinator** (1 FTE):
-* **Domain**: Community health and feedback loop optimization
-* **Monitors**: User feedback patterns, contribution quality trends, community engagement
-* **Improves**: Onboarding processes, documentation, feedback mechanisms, community guidelines
-* **Does NOT**: Moderate individual disputes (AKEL handles), make content decisions
-* **Authority**: Approve community process changes
-* **Decision Method**: Autonomous within domain
-**Moderators** (part-time):
-* **Domain**: Handle AKEL-flagged escalations and system gaming
-* **Monitors**: Items AKEL marks for human review (abuse, manipulation attempts)
-* **Improves**: Detection algorithms based on observed patterns
-* **Does NOT**: Routine content review, override AKEL verdicts
-* **Authority**: Handle flagged items, propose detection improvements
-* **Decision Method**: Autonomous for flagged items, propose improvements to Technical Coordinator
-**Optional Contractors** (as needed):
-* Developers: Specific feature development
-* Data Scientists: Algorithm research and optimization
-* Legal Counsel: Compliance and legal review
-* Accountant: Annual audits
-**Total Core Staff**: full-timeE + part-time moderators
+
+We divide operations into four primary **Domains** (based on Sociocracy 3.0). Each domain has a lead responsible for its performance and health.
+
+#### **A. R&D Domain (Research & Development)**
+* **Purpose**: Ensure the technical architecture and AI reasoning are state-of-the-art and reliable.
+* **Responsibilities**: AKEL performance, data models, algorithm improvements, LLM evaluation metrics.
+* **Authority**: Approve technical changes that don't affect public policy.
+* **Constraint**: Must not manually override individual AKEL verdicts.
+
+#### **B. Operations Domain**
+* **Purpose**: Maintain the organisational structure, tools, and documentation.
+* **Responsibilities**: XWiki maintenance, repository structure, internal processes, contributor onboarding workflows.
+* **Authority**: Approve changes to organisational documentation and internal tools.
+* **Constraint**: Must align with Governance policies set by the Governing Team.
+
+#### **C. Community Domain**
+* **Purpose**: Enable effective community contribution and maintain public trust.
+* **Responsibilities**: Documentation, feedback loop optimization, public relations, community guidelines, moderator coordination.
+* **Authority**: Approve community process changes and external communication materials.
+* **Constraint**: Cannot change technical systems or legal policies autonomously.
+
+#### **D. Finance Domain**
+* **Purpose**: Ensure financial integrity, compliance, and sustainability.
+* **Responsibilities**: Budgeting, financial reporting, grant applications, conflict-of-interest register, legal compliance.
+* **Authority**: Approve expenses within budget limits; manage financial audits.
+* **Constraint**: All major expenditures (>CHF 20k) require Governing Team approval.
+
 **Key Distinction**:
-* ✅ Team members monitor AGGREGATE metrics and improve SYSTEMS
-* ❌ Team members do NOT review individual claims or override AKEL
-* ✅ When metrics show problems, fix the ALGORITHM
-* ❌ Do NOT manually correct individual outputs
+* ✅ Role holders monitor AGGREGATE metrics and improve SYSTEMS.
+* ❌ Role holders do NOT review individual claims or override AKEL.
+* ✅ When metrics show problems, fix the ALGORITHM or the PROMPT.
+* ❌ Do NOT manually correct individual outputs.
+
 === 2.3.5 Team Roles Diagram ===
 {{include reference="FactHarbor.Product Development.Diagrams.Human User Roles.WebHome"/}}
+
 == 3. Decision-Making ==
+
 === 3.1 Routine Operations ===
-**Handled by**: Technical Coordinator + Community Coordinator
+**Handled by**: Domain Leads (R&D, Operations, Community, Finance)
 **Scope**:
 * Day-to-day operations
-* Content moderation (via moderators)
 * Technical maintenance
 * Minor policy clarifications
-**Transparency**: All decisions documented
+**Transparency**: All decisions documented in the Decision Log.
+
 === 3.2 Strategic Decisions ===
-**Handled by**: Governing Team
+**Handled by**: Governing Team (Board)
 **Scope**:
 * Budget allocation
 * Major feature additions
-* Policy changes
-* Partnerships
-* Hiring
-**Process**: Majority vote (quorum: 50%+1)
+* Policy changes (e.g., Risk Policy)
+* Hiring of Domain Leads
+**Process**: Majority vote or Consent-based (Sociocracy 3.0).
 === 3.3 Major Changes ===
 **Handled by**: General Assembly
 **Scope**:

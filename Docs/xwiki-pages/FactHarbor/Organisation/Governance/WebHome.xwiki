@@ -9,16 +9,22 @@ At FactHarbor, we prioritize systems that scale and results that are auditable.
 * **Data-Driven**: Every system change is backed by measured outcomes.
 * **Adaptive**: Our structure evolves to meet new challenges.
 == 2. Organisational Structure ==
+
 We follow a **Flat Cooperative Model** that promotes collaborative teamwork over hierarchy.
-**General Assembly** (All Members) → **Governing Team** → **Team Members**
+
+**General Assembly** (All Members) → **Governing Team** → **Domain Leads**
+
 * **General Assembly**: Meets annually to elect the Governing Team, approve statutes, major strategy, and the budget.
 * **Governing Team**: Meets quarterly to set policy, allocate budget, and make strategic decisions.
-* **Team Members**: Small, specialized teams focused on technical coordination, community, and moderation.
+* **Domain Leads**: Small, specialized roles focused on R&D, Operations, Community, and Finance.
+
 == 3. Decision Authority ==
+
 Authority is distributed based on the scope and impact of the decision.
+
 * **Strategic**: General Assembly (2/3 majority required).
 * **Tactical**: Governing Team (Simple majority required).
-* **Operational**: Technical and Community Coordinators (Autonomous within their domains).
+* **Operational**: Domain Leads (Autonomous within their domains).
 * **Emergency**: Immediate action allowed by any team member, followed by Governing Team ratification.
 == 4. Policy & Finance ==
 **Developing Policies (The RFC Process)**:
@@ -52,9 +58,11 @@ Humans act as the architects and auditors of the system. Our role is to monitor 
 * **Operations**: Hiring, infrastructure, and role assignments.
 * **Community**: Policies for contributors and moderators.
 * **Partnerships**: Agreements with external data providers or researchers.
-**Operational Decisions** (Domain Owners, autonomous):
-* **Technical Coordinator**: Performance optimizations and infrastructure updates.
-* **Community Coordinator**: Documentation and contributor process improvements.
+**Operational Decisions** (Domain Leads, autonomous):
+* **R&D Lead**: Performance optimizations and infrastructure updates.
+* **Community Lead**: Documentation and contributor process improvements.
+* **Operations Lead**: Organizational tools and workflow maintenance.
+* **Finance Lead**: Budget monitoring and compliance checks.
 * **Moderators**: Handling system abuse and reviewing items flagged by the AI.
 **Emergency Decisions**:
 Any team member may act immediately on critical security, legal, or safety issues, with subsequent ratification by the Governing Team.

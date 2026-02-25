@@ -66,7 +66,8 @@
 
 | Document                    | Status      | Location                                            |
 | ----------------------------- | ------------- | ----------------------------------------------------- |
-| Draft Statutes (EN)         | DRAFT       | `Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md` |
+| Draft Statutes (EN)         | **READY**   | `Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md` |
+| Draft Statutes (DE)         | **READY**   | `Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md` |
 | Founding Assembly Minutes   | Not started | —                                                  |
 | Handelsregister Application | Not started | —                                                  |
 | Tax-Exemption Application   | Not started | —                                                  |
