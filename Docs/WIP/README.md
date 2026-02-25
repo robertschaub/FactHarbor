@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-24 (Added Multi-Source Evidence Retrieval Plan v2.1)
-**Status**: 9 active files — Decision log + cost optimization + claim fidelity + evidence retrieval + Alpha feature proposals
+**Last Updated**: 2026-02-25 (Added Phase 1 Pipeline Execution Checklist)
+**Status**: 11 active files — Decision log + cost optimization + claim fidelity + evidence retrieval + Alpha execution proposals
 
 ---
 
@@ -17,7 +17,7 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-## Active Documents (9 files)
+## Active Documents (11 files)
 
 ### Calibration & Quality Track (1 file)
 
@@ -30,13 +30,26 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### Active Execution State (1 file)
+### Active Execution State (3 files)
+
+#### Alpha Phase Acceleration & Observability Plan (2026-02-25)
+**Status:** 🧭 Proposed / Awaiting Review
+- **Document:** [Alpha_Phase_Acceleration_Plan_2026-02-25.md](Alpha_Phase_Acceleration_Plan_2026-02-25.md)
+- **Type:** Execution Plan / Alpha Strategy
+- **Scope:** Observability gap closure (verification), Model Auto-resolution (Ref: `Model_Auto_Resolution_Plan.md`), Multi-Source integration (Ref: `Multi-Source_Evidence_Retrieval_Plan.md`), C13/Accuracy validation.
+- **Priority:** Alpha Priority #1
 
 #### Calibration Cost Optimization Review Plan (2026-02-22)
 **Status:** 🧭 Proposal — Awaiting review
 - **Document:** [Calibration_Cost_Optimization_Review_Plan_2026-02-22.md](Calibration_Cost_Optimization_Review_Plan_2026-02-22.md)
 - **Type:** Cost Optimization / Review Plan
 - **Scope:** Two-lane run policy (Gate lane vs Smoke lane) for calibration cost reduction.
+
+#### Phase 1 Pipeline Execution Checklist (2026-02-25)
+**Status:** ✅ Ready for execution
+- **Document:** [Phase1_Pipeline_Execution_Checklist_2026-02-25.md](Phase1_Pipeline_Execution_Checklist_2026-02-25.md)
+- **Type:** Execution Checklist / Runbook
+- **Scope:** Gate-by-gate command sequence with strict stop rules, pass/fail criteria, and low-cost calibration lane progression.
 
 ---
 

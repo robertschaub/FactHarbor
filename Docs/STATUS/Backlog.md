@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 24, 2026 (status sync: production-profile calibration policy + multi-source provider layer completed)
+**Last Updated**: February 25, 2026 (manual-test deferment logged + Phase 1 runbook handoff added)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -21,6 +21,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Step | Description | Domain | Urgency | Status | Notes |
 |------|-------------|--------|---------|--------|-------|
+| **Phase 1a** | **Metrics integration**: Wire metrics infrastructure into Stages 2, 3, 5 and add `debateRole` attribution. Critical for cost/observability. | Analyzer / Observability | high | done | Alpha Plan Phase 1 |
+| **Phase 1b** | **Model auto-resolution**: Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases; code auto-resolves via `model-resolver.ts` using provider `-latest` aliases (version-lock by default). Covers all providers. | Maintenance / Stability | high | PLANNED | Alpha Plan Phase 1 |
+| **Phase 1c** | **Manual-test checkpoint + runbook restart**: Temporarily defer Alpha execution while manual tests run, then resume from Gate 0 using `Docs/WIP/Phase1_Pipeline_Execution_Checklist_2026-02-25.md`. | QA / Execution Governance | high | IN PROGRESS | Captain direction (2026-02-25): manual tests first, then resume gated execution |
 | **Phase 5i** | **Final cleanup**: V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests) | Cleanup | med | NOT STARTED | Alpha polish |
 | **Phase 5k** | **UI adaptations**: Admin config panel (24 CB params), coverage matrix + verdictNarrative + qualityGates components, xWiki diagrams | Web UI | med | NOT STARTED | Alpha polish |
 | **Phase 5h** | **Test coverage**: Neutrality, performance, adversarial tests for CB pipeline | Testing | med | NOT STARTED | Optional but recommended |
@@ -35,7 +38,6 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Advanced triangulation | Cross-boundary correlation analysis | Architecture §8.5.2 |
 | Contestation weight reduction | Requires `factualBasis` field on CBClaimVerdict | Legacy getClaimWeight() incompatibility |
 | Derivative detection improvements | Enhanced derivative source identification | Architecture §8.5.3 |
-| **Model auto-resolution (no hardcoded version strings)** | Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases ("haiku", "sonnet"); code auto-resolves via `model-resolver.ts` using provider `-latest` aliases. Covers all providers (Anthropic, OpenAI, Google). Supersedes the narrower "non-Anthropic UCM defaults" item. ~15 files, ~4-6h. **Plan:** [`Docs/WIP/Model_Auto_Resolution_Plan.md`](../WIP/Model_Auto_Resolution_Plan.md) | Stale model incident 2026-02-23 |
 
 ---
 
@@ -151,11 +153,8 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
 | **Validate B-sequence features with real runs**: All B-sequence improvements (pro_con queries, verifiability/misleadingness annotations, rubric scoring) are implemented but untested with real data. Run 2-3 analyses with UCM features enabled (~$3-5). This is the missing feedback loop. | Analyzer / Quality | high | high | [Next_For_Report_Quality.md](../ARCHIVE/Next_For_Report_Quality.md) item 1 |
-| **Metrics integration**: Wire metrics infrastructure into `analyzer.ts` (15-30 min). Essential for observability into LLM call counts, latency, and cost per analysis. | Analyzer / Observability | high | high | [Next_For_Report_Quality.md](../ARCHIVE/Next_For_Report_Quality.md) item 5 |
-| ~~**D1-D5 execution pause checkpoint**~~: Pause lifted. B-sequence implemented (B-4 through B-8/B-5b), D5 controls implemented, code reviews complete. Execution tracker: [Decision_Log_D1-D5](../WIP/Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md). | Governance / Execution | ~~high~~ done | high | [Plan_Pause_Status_2026-02-22.md](../ARCHIVE/Plan_Pause_Status_2026-02-22.md) |
-| ~~**Per-stage model tracking in pipeline**~~: B-1 runtime role tracing implemented — `callContext: { debateRole, promptKey }` on all 5 debate roles, `runtimeRoleModels` in resultJson meta, calibration report renders Runtime Role Usage table with mismatch detection. Per-LLM-call cost attribution still missing. | Analyzer / Observability | ~~high~~ done | high | [Code_Review_D5_B1_UI_2026-02-23.md](../ARCHIVE/Code_Review_D5_B1_UI_2026-02-23.md) |
 | **C13 active rebalancing**: D5 Control 3 (contrarian retrieval) implemented — runs targeted searches when evidence pool imbalance detected. Full rebalancing loop (A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1) still needs validation with real runs. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
-| **Verdict Accuracy Test Set**: Curate 20-30 claims with independently verified outcomes (10 true, 10 false, 5-10 contested) from Climate Feedback, PolitiFact, Snopes, AFP, Full Fact. Metric: `verdictAccuracyRate` = % where pipeline verdict matches ground truth category. Measures correctness, not just symmetry. | Analyzer / Quality | high | high | [Report_Quality_Opportunity_Map](../ARCHIVE/Report_Quality_Opportunity_Map_2026-02-22.md) §5 |
+| **Verdict Accuracy Test Set**: Curate 50 claims with independently verified outcomes (15+ T/F, 15+ contested, 10+ multilingual, 10+ fact-check anchors) from Climate Feedback, PolitiFact, Snopes, AFP, Full Fact. Metric: `verdictAccuracyRate` = % where pipeline verdict matches ground truth category. Measures correctness, not just symmetry. | Analyzer / Quality | high | high | [Report_Quality_Opportunity_Map](../ARCHIVE/Report_Quality_Opportunity_Map_2026-02-22.md) §5 |
 | **Conditional re-reconciliation (B-3 add-on)**: After reconciliation, if self-consistency spread >20pp AND contrarian evidence present, re-run reconciliation once with prompt addendum. UCM-flagged (`reDeliberationEnabled`, default off). Max 1 extra Sonnet call per triggered claim (~10-20% trigger rate). Not Debate V2 — scoped addition to existing topology. | Analyzer / Quality | med | med | [Debate_Iteration_Analysis](../ARCHIVE/Debate_Iteration_Analysis_2026-02-21.md) §5 |
 | **Production-profile calibration baseline v2 run**: Execute full gate with current production challenger provider (`debateModelProviders.challenger=openai`) on framing-symmetry v3.x fixture and publish canonical v2 baseline artifacts/deltas vs v1. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |
 | **C17 adversarial benchmark + fail policy**: Build dedicated prompt-injection benchmark (≥10 scenarios, ≥2 languages) with ≥90% pass target and explicit fail-open/fail-closed policy. | Security / Quality | med | high | [Stammbach §5.3 item 5](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
@@ -184,8 +183,8 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
-| **Batch API integration**: Switch LLM calls to Anthropic Batch API for 50% flat discount. Analyses are background jobs — async latency is acceptable. | Cost / Analyzer | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §4.A1 |
-| **Prompt caching**: Add `cacheControl: { type: 'ephemeral' }` to system prompts for 90% discount on cache hits. Same system prompts reused 40-60x per analysis. Requires AI SDK v0.39+. | Cost / Analyzer | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §4.A2 |
+| **Batch API integration**: Switch LLM calls to Anthropic Batch API for potential discount. Acknowledge that sequential debate calls limit savings to ~20-30%. | Cost / Analyzer | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §4.A1 |
+| **Prompt caching**: Add `cacheControl: { type: 'ephemeral' }` to system prompts. Essential for 20-30% target. Requires AI SDK v0.39+. | Cost / Analyzer | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §4.A2 |
 | **NPO/OSS credit applications**: Apply for Claude for Nonprofits (75% off), AWS TechSoup ($1K/year), Google for Nonprofits ($10K/year), Anthropic AI for Science ($20K). | Cost / Admin | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §5 |
 | **SSRF protections for URL fetching**: Block private IP ranges, cap redirects, cap response size, enforce timeouts. *(POC: low urgency)* | Security | low | high | Improvements #1 |
 | **Secure admin endpoints**: Protect `/admin/test-config` and any endpoints that can trigger paid API calls with FH_ADMIN_KEY authentication. *(POC: low urgency)* | Security / Cost-Control | low | high | Improvements #1 |
@@ -257,10 +256,10 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
   3. Cost quotas → financial safety *(low urgency for POC)*
   4. Admin authentication → security *(low urgency for POC)*
 
-- **Cost optimization** (combined 70-85% reduction):
+- **Cost optimization** (combined ~20-30% reduction):
   - ✅ Budget defaults reduced: 25-40% savings (implemented 2026-02-13)
-  - Batch API: 50% flat discount (next priority)
-  - Prompt caching: 10-15% additional (stacks with Batch API)
+  - Batch API: ~20% discount (limited by sequential debate calls)
+  - Prompt caching: ~10% additional
   - NPO/OSS credits: $11K+/year potential
   - Claim caching: 30-50% savings on repeat claims
   - See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)

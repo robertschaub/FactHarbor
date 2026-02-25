@@ -219,6 +219,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Role Required Reading lists must point to authoritative, up-to-date documents — never to `Docs/ARCHIVE/`. Archived docs are historical snapshots that may be stale. When an authoritative xWiki page exists for the same topic, always reference that instead. During the agent knowledge restructuring, we found 8 references to `Docs/ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` in role files and AGENTS.md, while the xWiki pages (`Pipeline Variants/WebHome.xwiki`, `AKEL Pipeline/WebHome.xwiki`) had comprehensive, up-to-date content (updated 2026-02-22). Tool-specific config files also had stale references to removed code (`orchestrated.ts`) that drifted because they duplicated content rather than pointing to the canonical source. Lesson: thin pointers > partial copies; authoritative xWiki > archived markdown.
 **Files:** `Docs/AGENTS/Roles/*.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules/00-factharbor-rules.md`
 
+### 2026-02-25 — Hardcoded model fallbacks block UCM configuration
+**Role:** LLM Expert  **Agent/Tool:** Gemini Code Assist
+**Category:** gotcha
+**Learning:** In `runner.ts`, hardcoding specific model IDs (e.g., `gemini-2.5-pro`) as the return value for a provider prevents the Unified Config Management (UCM) system from injecting newer models. The fix is to check if the UCM-provided model string is valid (and not the default fallback) before returning a hardcoded default. This enables dynamic upgrades to Gemini 3.0 without code deployment.
+**Files:** `apps/web/src/lib/calibration/runner.ts`
+
 ## Product Strategist
 
 _(No entries yet)_

@@ -1907,3 +1907,101 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **Warnings:** `npm -w apps/web run build` fails (TypeScript) in current worktree; this conflicts with “build clean” claims in status docs and raises delivery risk.
 **For next agent:** Prioritize a short “plan+status contract sync” pass, then implement only the minimal P0 fixes required for trustworthy metrics and cost-governed validation before broader quality experiments.
 **Learnings:** no
+---
+### 2026-02-25 | Default | Codex (GPT-5) | Hotfix Regression Recovery (11 Failing Tests)
+**Task:** Fix post-hotfix regressions causing 11 test failures across config schema drift, model resolver routing, and calibration model resolution; address instrumentation quality regressions highlighted in review notes.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/model-resolver.ts`, `apps/web/src/lib/analyzer/llm.ts`, `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/analyzer/metrics.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Restored `DEFAULT_PIPELINE_CONFIG` model defaults to concrete IDs to match `apps/web/configs/pipeline.default.json` and preserve drift-detection intent.
+- Updated model resolver version map to current IDs (`claude-haiku-4-5-20251001`, `claude-sonnet-4-5-20250929`, `claude-opus-4-6`, `gpt-4.1/mini`, Gemini 2.5).
+- Restored calibration UCM override passthrough semantics for Anthropic role resolution while keeping provider-tier mapping for non-Anthropic providers.
+- Fixed `getModelForTask` so logical-tier overrides resolve to concrete model IDs and model instance now matches selected `modelName`.
+- Replaced zero-duration non-verdict `recordLLMCall` instrumentation with real elapsed durations and added failure-path metric recording in Stage 1/2/3/5 helper calls.
+- Removed `@ts-ignore` in metrics finalization by extending `tokenCounts` type with cache token fields.
+**Open items:** `llm-routing.test.ts` emits expected warning logs when OpenAI provider is combined with Anthropic-configured model overrides in shared defaults; behavior is unchanged and tests pass.
+**Warnings:** This was a multi-file recovery in a dirty worktree; only the files listed above were intentionally modified.
+**For next agent:** If you continue model-resolution work, keep `model-resolver.ts`, `llm.ts`, and `calibration/runner.ts` in lockstep to avoid silent model-instance/model-name divergence.
+**Learnings:** no
+---
+### 2026-02-25 | Senior Developer | Codex (GPT-5) | Review Remediation: Calibration + TIGERScore + Metrics Integrity
+**Task:** Address code review findings from commits `ae50be4`, `550cc70`, `c0d452a`, `2bb1b53`, focusing on blocking/high regressions plus key medium-risk observability/cost-control issues.
+**Files touched:** `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/metrics.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/test/unit/lib/calibration-runner.test.ts`, `apps/web/test/unit/lib/calibration-runner-failures.test.ts`, `apps/web/test/unit/lib/config-schemas.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Fixed calibration model resolution to honor UCM overrides when provider/model are compatible, while safely falling back to provider defaults when override/provider mismatch is detected.
+- Changed calibration mid-pair budget behavior from throw/fail to clean abort, preventing false failed-pair accounting when budget is exhausted.
+- Moved Stage 2 `recordLLMCall` success logging to post-parse success paths and added explicit failure records for no-structured-output cases (query generation, relevance classification, evidence extraction).
+- Made Stage 6 TIGERScore LLM parameters UCM-configurable (`tigerScoreTier`, `tigerScoreTemperature`) and validated `overallScore` against the mean of TIGER dimension scores.
+- Replaced unsafe TIGER reasoning truncation with Unicode-safe truncation and tightened UI typing (`TIGERScorePanel` no longer uses `any`).
+- Added legacy metrics phase aliases (`summary`, `report`) synchronized with `cluster`/`aggregate` to reduce dashboard break risk.
+**Open items:**
+- If desired, add a dedicated migration note for monitoring consumers that still query legacy phase keys (`summary`, `report`).
+**Warnings:**
+- Repository remains a dirty worktree with unrelated in-flight edits; this remediation intentionally changed only the files listed above.
+**For next agent:**
+- Keep calibration resolution behavior aligned with analyzer routing semantics (`llm.ts`) when evolving provider/model override policy.
+- If TIGERScore moves from beta to enforced gating, consider adding dedicated unit tests for new schema invariants and config-driven tier/temperature behavior.
+**Learnings:** no
+---
+### 2026-02-25 | Senior Developer | Codex (GPT-5) | Phase 1 Pipeline Execution Checklist Runbook
+**Task:** Draft a concrete Phase 1 pipeline execution checklist with exact commands, pass/fail gates, and low-cost progression to continue the Alpha plan safely.
+**Files touched:** `Docs/WIP/Phase1_Pipeline_Execution_Checklist_2026-02-25.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Defined a strict gate sequence: Baseline integrity -> observability sanity -> Canary -> Smoke -> Full gate decision.
+- Added explicit stop rules to prevent expensive long runs before short-lane stability is proven.
+- Included copy-paste commands for validation, calibration lanes, telemetry checks, and quick JSON gate inspection.
+- Registered the new runbook in `Docs/WIP/README.md` to keep WIP index in sync.
+**Open items:**
+- Team should run Gates 0-2 first and publish results to `Agent_Outputs.md` before approving Gate 3/4.
+**Warnings:**
+- Calibration lanes use real LLM calls and incur cost; checklist intentionally enforces staged execution to contain spend.
+**For next agent:**
+- Execute the checklist as written; if a gate fails, remediate blocker/high findings and resume from the failed gate only.
+**Learnings:** no
+---
+### 2026-02-25 | Default | Codex (GPT-5) | Alpha Plan Deferral + Runbook Integration
+**Task:** Log temporary postponement of Alpha execution while manual tests run, add backlog tracking entry, and embed runbook usage into the Alpha plan.
+**Files touched:** `Docs/STATUS/Backlog.md`, `Docs/WIP/Alpha_Phase_Acceleration_Plan_2026-02-25.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a high-urgency execution-governance backlog item (`Phase 1c`) to track manual-test checkpoint and runbook-based restart.
+- Updated Alpha plan status to temporary deferment during manual-test window.
+- Added explicit runbook linkage and embedded gate summary into the plan so resume path is unambiguous.
+- Updated Next Steps to start with manual-test checkpoint, then resume at runbook Gate 0.
+**Open items:**
+- After manual tests complete, log checkpoint result and begin Gate 0 from the runbook.
+**Warnings:**
+- This change updates planning/status docs only; no analyzer runtime code changed.
+**For next agent:**
+- Do not start Gate 2+ calibration lanes until Gate 0/Gate 1 are re-validated after manual test outcomes are recorded.
+**Learnings:** no
+---
+### 2026-02-25 | Default | Codex (GPT-5) | Calibration Fail-Fast Option (Stop On First Failure)
+**Task:** Implement optional fail-fast behavior for calibration runs after confirming the team wants to stop continuing after first failed pair.
+**Files touched:** `apps/web/src/lib/calibration/runner.ts`, `apps/web/test/unit/lib/calibration-runner-failures.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `stopOnFirstFailure` to `RunOptions` (default `false`) to preserve existing continue-on-failure behavior unless explicitly enabled.
+- Implemented controlled abort after failed pair while still recording the failed pair and running checkpoint callback before breaking.
+- Preserved clean mid-pair budget abort behavior (no false failed-pair marking when budget threshold is reached after left side).
+- Added/updated tests for both modes: default continue-on-failure and opt-in fail-fast stop-on-first-failure.
+- Verified with focused test run: `npm -w apps/web run test -- test/unit/lib/calibration-runner-failures.test.ts test/unit/lib/calibration-runner.test.ts` (14/14 passing).
+**Open items:**
+- If product wants fail-fast as default later, flip the default in `RunOptions` and update any operator docs/UI accordingly.
+**Warnings:**
+- This update is in an already dirty worktree with unrelated pending edits.
+**For next agent:**
+- Use `stopOnFirstFailure: true` for cost-protective/manual validation lanes; keep default behavior for robustness benchmarking where partial completion data is still useful.
+**Learnings:** no
+---
+### 2026-02-25 | Default | Codex (GPT-5) | Documented TIGERScore Usage + Calibration Policy Cross-Link
+**Task:** Add canonical operator guidance for TIGERScore usage and ensure calibration policy references that guidance.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a new `TIGERScore Usage (Alpha)` section in `Current_Status.md` with enable/configure/verify steps and calibration-comparability notes.
+- Kept instructions aligned with UCM configuration fields (`tigerScoreMode`, `tigerScoreTier`, `tigerScoreTemperature`) and default-off policy.
+- Added direct reference from `Calibration_Run_Policy.md` to the new TIGERScore usage section for run-governance consistency.
+**Open items:**
+- Optional follow-up: update xWiki requirements page that still states TIGERScore is not implemented to remove documentation drift.
+**Warnings:**
+- `Current_Status.md` already had unrelated in-flight edits in the working tree; this task added the TIGERScore section without reverting prior changes.
+**For next agent:**
+- If TIGERScore becomes mandatory for promotion decisions, extend calibration policy with explicit gate criteria for TIGERScore deltas and variance tolerance.
+**Learnings:** no

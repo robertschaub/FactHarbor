@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-02-24
+**Last Updated**: 2026-02-25
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. 1053 tests passing, build clean. Framing-symmetry calibration v3.3.0 (14 pairs, 5 languages, operational-vs-diagnostic gate split, production-profile preflight). B-sequence quality improvements (B-4 through B-8/B-5b) implemented. D5 evidence controls (sufficiency gate, partitioning, contrarian retrieval) and B-1 runtime role tracing implemented. Multi-source retrieval provider layer (Wikipedia, Semantic Scholar, Google Fact Check) implemented and wired (config-gated). End-to-end claim extraction, evidence gathering, boundary clustering, LLM-based verdicts, aggregation, and quality gates all working.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Metrics integration (Phase 1) complete. 1053 tests passing, build clean.
 
 ---
 
@@ -220,9 +220,9 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Automated retry with exponential backoff
 - **Unified Configuration Management** (v2.9.0 ✅ Complete): Database-backed config system for prompt/search/calculation/pipeline/sr/lexicons, validation, history, rollback, import/export. Analysis settings (including LLM provider selection) now load from UCM with hot-reload. **All phases complete** - job config snapshots + SR modularity interface + admin UI with snapshot tools.
 
-**Metrics & Testing (BUILT BUT NOT INTEGRATED)**:
-- ⚠️ **Metrics Collection System**: Built but not connected to analyzer.ts
-- ⚠️ **Observability Dashboard**: Built at `/admin/metrics` but no data collection yet
+**Metrics & Testing**:
+- ✅ **Metrics Collection System**: Integrated into ClaimAssessmentBoundary pipeline.
+- ⚠️ **Observability Dashboard**: Built at `/admin/metrics`, awaiting data aggregation logic.
 - ⚠️ **Baseline Test Suite**: Ready (30 diverse test cases) but not executed (requires $20-50)
 - ⚠️ **A/B Testing Framework**: Built but not executed (requires $100-200)
 - ⚠️ **Schema Retry Logic**: Implemented in separate module, not integrated
@@ -253,7 +253,7 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 
 **CRITICAL**:
 1. ~~**Prompt Optimizations Never Validated**~~: ✅ **RESOLVED** (v2.10.2) - Lead Dev code review complete, format-only principle verified, backward compatibility confirmed.
-2. **Metrics Infrastructure Not Integrated**: Built but not connected to analyzer.ts. No observability.
+2. ~~**Metrics Infrastructure Not Integrated**~~: ✅ **RESOLVED** (v2.11.0) - All 5 stages instrumented with role-level attribution.
 3. ~~**10 search test failures**~~: ✅ **RESOLVED** (safe suite now 1047/1047 passing).
 
 **HIGH**:
@@ -289,10 +289,9 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
    - **Status**: Complete - See [Prompt Optimization Summary](../ARCHIVE/Prompt_Optimization_Investigation.md)
 
 2. **Integrate Metrics Collection**
-   - ⏸️ Add metrics hooks to analyzer.ts (15-30 minute task)
+   - ✅ Add metrics hooks to analyzer.ts
    - ⏸️ Verify dashboard shows data
-   - **Status**: Integration helpers provided, needs implementation
-   - **See**: `apps/web/src/lib/analyzer/metrics-integration.ts`
+   - **Status**: Complete (Phase 1 wiring unblocked Phase 1.5/2)
 
 ### Short-Term (PERFORMANCE & QUALITY)
 
@@ -411,6 +410,42 @@ The AnalysisContext pipeline has been fully replaced by the **ClaimAssessmentBou
 - Database layer tests
 - Frontend component tests
 - E2E automated tests
+
+---
+
+## TIGERScore Usage (Alpha)
+
+TIGERScore is an optional Stage 6 holistic audit pass that scores:
+- Truth
+- Insight
+- Grounding
+- Evidence
+- Relevance
+
+It is disabled by default (`tigerScoreMode: "off"`).
+
+### Enable and configure
+
+Set these UCM pipeline fields (Admin -> Config -> Pipeline):
+- `tigerScoreMode`: `"on"` to enable Stage 6
+- `tigerScoreTier`: `"haiku" | "sonnet" | "opus"` (default: `"sonnet"`)
+- `tigerScoreTemperature`: `0.0-1.0` (default: `0.1`)
+
+Defaults are defined in:
+- `apps/web/configs/pipeline.default.json`
+- `apps/web/src/lib/config-schemas.ts`
+
+### Verify it is active
+
+1. Run a normal analysis job with TIGERScore enabled.
+2. Confirm output includes a populated `tigerScore` object in `OverallAssessment`.
+3. Confirm job report UI/HTML export renders the TIGERScore panel.
+
+### Calibration policy note
+
+For framing-symmetry calibration runs, keep TIGERScore policy explicit and stable:
+- If comparing against a baseline that ran with TIGERScore off, keep it off.
+- If enabling TIGERScore for experiments, apply the same setting to both A/B sides and document it in run metadata.
 
 ---
 
