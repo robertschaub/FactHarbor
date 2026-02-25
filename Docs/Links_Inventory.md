@@ -11,6 +11,7 @@ Each entry creates both an HTML redirect page (`/slug/` clean URL) and a bundle 
 | Slug | Target Page Ref | URL |
 |------|----------------|-----|
 | `TestReports` | `Product Development.TestReports.WebHome` | `/TestReports/` or `#TestReports` |
+| `LegalFramework` | `Organisation.Legal and Compliance.Legal Framework.WebHome` | `/LegalFramework/` or `#LegalFramework` |
 
 **File:** `Docs/xwiki-pages/_redirects.json` (object format: `{ "slug": "#encodedRef" }`)
 **Legacy:** `Docs/xwiki-pages/viewer-impl/_redirects.json` (array format, still supported)
@@ -77,6 +78,7 @@ All patterns for linking to a specific page:
 https://robertschaub.github.io/FactHarbor/#Organisation.Governance.WebHome
 https://robertschaub.github.io/FactHarbor/?page=Organisation.Governance.WebHome
 https://robertschaub.github.io/FactHarbor/TestReports/  (via redirect alias)
+https://robertschaub.github.io/FactHarbor/LegalFramework/ (via redirect alias)
 ```
 
 ---
