@@ -283,8 +283,10 @@ By producing **structured Evidence Models with multi-agent debate and systematic
 
 ----
 
-{{box title="Analysis Metadata"}}
+(% class="box" %)
+(((
+**Analysis Metadata**
 * **Analysis Date:** December 31, 2025
 * **Sources:** Web research, FactHarbor specification documents
 * **Author:** Claude (AI Assistant)
-{{/box}}
+)))
