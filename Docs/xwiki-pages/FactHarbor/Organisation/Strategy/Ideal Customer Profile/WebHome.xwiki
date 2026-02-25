@@ -363,22 +363,20 @@ Track for each segment:
 
 === 7.2 Segment-Specific Success Indicators ===
 
-| Segment | Key Success Metric |
-|---------|-------------------|
-| Journalists | API calls per newsroom; time saved per verification |
-| Researchers | Papers citing FactHarbor; data downloads |
-| Educators | Curricula integrations; student engagement |
-| Policy Analysts | Briefings citing FactHarbor; repeat usage |
-| Content Consumers | Retention rate; evidence exploration rate |
+|=Segment|=Key Success Metric
+|Journalists|API calls per newsroom; time saved per verification
+|Researchers|Papers citing FactHarbor; data downloads
+|Educators|Curricula integrations; student engagement
+|Policy Analysts|Briefings citing FactHarbor; repeat usage
+|Content Consumers|Retention rate; evidence exploration rate
 
 === 7.3 Partnership Metrics ===
 
-| Partner Type | Success Metric |
-|-------------|----------------|
-| Media | Integration count; co-published analyses |
-| Fact-Checkers | Data sharing volume; methodology alignment |
-| Academic | Papers published; grants received |
-| Funders | Grants awarded; renewal rate |
+|=Partner Type|=Success Metric
+|Media|Integration count; co-published analyses
+|Fact-Checkers|Data sharing volume; methodology alignment
+|Academic|Papers published; grants received
+|Funders|Grants awarded; renewal rate
 
 == 8. Related Pages ==
 
