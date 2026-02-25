@@ -44,7 +44,9 @@ public sealed class JobsController : ControllerBase
                 updatedUtc = j.UpdatedUtc.ToString("o"),
                 inputType = j.InputType,
                 inputPreview = j.InputPreview,
-                pipelineVariant = j.PipelineVariant
+                pipelineVariant = j.PipelineVariant,
+                verdictLabel = j.VerdictLabel,
+                truthPercentage = j.TruthPercentage
             }),
             pagination = new
             {
@@ -79,6 +81,8 @@ public sealed class JobsController : ControllerBase
             inputValue = j.InputValue,
             inputPreview = j.InputPreview,
             pipelineVariant = j.PipelineVariant,
+            verdictLabel = j.VerdictLabel,
+            truthPercentage = j.TruthPercentage,
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });

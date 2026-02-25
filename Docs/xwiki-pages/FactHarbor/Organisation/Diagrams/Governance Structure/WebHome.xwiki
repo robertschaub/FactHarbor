@@ -11,8 +11,8 @@ graph TD
     GS -.->|Procedural Oversight| DL[Domain Leads]
     
     GT -->|Oversees| DL[Domain Leads: R&D, Ops, Community, Finance]
-    GT -->|Appoints & Oversees| UA[UCM Administrators]
     
+    DL -->|Manage| UA[UCM Administrators]
     DL -->|Manage| MOD[Moderators]
     DL -->|Architecture| AKEL[AKEL & Infrastructure]
     
@@ -36,6 +36,6 @@ graph TD
 * **Auditor**: Independent financial oversight of the Board and organization.
 * **Governance Steward**: Safeguards neutrality and fairness of all processes.
 * **Domain Leads**: Operational execution across R&D, Operations, Community, and Finance.
-* **UCM Administrators**: Manage core system configuration and prompt architecture under Board oversight.
+* **UCM Administrators**: Manage core system configuration and prompt architecture under Domain Lead oversight.
 * **Moderators**: Handle system-flagged escalations and system gaming.
 * **Readers & Users**: Interact with the platform while remaining subject to community guidelines and automated moderation.

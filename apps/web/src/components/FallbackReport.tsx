@@ -178,9 +178,12 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
 
   // Count only quality-affecting issues in the header
   const qualityIssueCount = qualityWarnings.length + (summary?.totalFallbacks || 0);
+  const hasQualityIssues = qualityIssueCount > 0;
 
   return (
-    <div className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''}`}>
+    <div
+      className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''} ${!hasQualityIssues ? styles.notesOnly : ''}`}
+    >
       <div className={styles.header}>
         <svg
           className={styles.icon}
@@ -188,15 +191,19 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
           fill="currentColor"
           aria-hidden="true"
         >
-          <path
-            fillRule="evenodd"
-            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-            clipRule="evenodd"
-          />
+          {hasQualityIssues ? (
+            <path
+              fillRule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          ) : (
+            <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 100 2 1 1 0 000-2zm1 4a1 1 0 10-2 0v4a1 1 0 102 0v-4z" />
+          )}
         </svg>
         <div className={styles.content}>
           <h3 className={styles.title}>
-            {qualityIssueCount > 0
+            {hasQualityIssues
               ? `Analysis Quality Issues (${qualityIssueCount})`
               : `Analysis Notes`}
           </h3>

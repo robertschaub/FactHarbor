@@ -21,6 +21,8 @@ type JobSummary = {
   inputType: string;
   inputPreview: string | null;
   pipelineVariant?: string;
+  verdictLabel?: string;
+  truthPercentage?: number;
 };
 
 type PaginationInfo = {
@@ -138,6 +140,22 @@ export default function JobsPage() {
     }
   };
 
+  const getVerdictBadge = (label?: string): { icon: string; text: string; className: string } | null => {
+    if (!label) return null;
+    
+    switch (label) {
+      case "TRUE": return { icon: "✅", text: "True", className: styles.verdictTrue };
+      case "MOSTLY-TRUE": return { icon: "✓", text: "Mostly True", className: styles.verdictMostlyTrue };
+      case "LEANING-TRUE": return { icon: "◐", text: "Leaning True", className: styles.verdictLeaningTrue };
+      case "MIXED": return { icon: "⚖", text: "Mixed", className: styles.verdictMixed };
+      case "UNVERIFIED": return { icon: "?", text: "Unverified", className: styles.verdictUnverified };
+      case "LEANING-FALSE": return { icon: "◔", text: "Leaning False", className: styles.verdictLeaningFalse };
+      case "MOSTLY-FALSE": return { icon: "✗", text: "Mostly False", className: styles.verdictMostlyFalse };
+      case "FALSE": return { icon: "❌", text: "False", className: styles.verdictFalse };
+      default: return { icon: "❓", text: label, className: styles.verdictDefault };
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -200,6 +218,15 @@ export default function JobsPage() {
                     <span className={`${styles.statusBadge} ${getStatusBadgeClass(job.status)}`}>
                       {job.status}
                     </span>
+                    {job.verdictLabel && (() => {
+                      const vBadge = getVerdictBadge(job.verdictLabel);
+                      if (!vBadge) return null;
+                      return (
+                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}`}>
+                          {vBadge.icon} {vBadge.text} {job.truthPercentage !== undefined && `(${job.truthPercentage}%)`}
+                        </span>
+                      );
+                    })()}
                     <span className={styles.inputTypeBadge}>
                       {job.inputType}
                     </span>

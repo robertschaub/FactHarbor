@@ -55,6 +55,17 @@ public sealed class JobEntity
     // Stored outputs
     public string? ResultJson { get; set; }
     public string? ReportMarkdown { get; set; }
+
+    /// <summary>
+    /// Calculated verdict label (e.g., "TRUE", "MOSTLY-FALSE", "UNVERIFIED")
+    /// extracted from ResultJson for display in lists.
+    /// </summary>
+    public string? VerdictLabel { get; set; }
+
+    /// <summary>
+    /// Calculated truth percentage (0-100) extracted from ResultJson.
+    /// </summary>
+    public int? TruthPercentage { get; set; }
 }
 
 public sealed class JobEventEntity
