@@ -2,6 +2,17 @@
 
 
 ---
+### 2026-02-25 | Technical Writer | Gemini CLI | Improve readability of Organisation xWiki documentation
+**Task:** Updated Governance and Strategy docs for readability, terminology consistency (Boundaries, AtomicClaims), and spelling (Organisational).
+**Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/
+**Key decisions:** Replaced 'Scenario' with 'ClaimAssessmentBoundary/Boundary' across Strategy and Governance docs. Fixed 'Organizational' to 'Organisational' for consistency. Improved narrative flow in Governance WebHome.
+**Open items:** None
+**Warnings:** Check if 'Scenario' is still used in UI or code comments.
+**For next agent:** Verify terminology against latest CB pipeline documentation.
+**Learnings:** Adhered to v4.0.0-cb terminology spec.
+
+
+---
 ### 2026-02-25 | Senior Developer | Claude Code (Opus 4.6) | Option A Hotfix — Stale Model Version + Build Compilation
 **Task:** Execute Option A hotfix for live job failure: replace deprecated claude-3-5-haiku-20241022 model with claude-3-5-haiku-20251001 and resolve build compilation errors.
 **Files touched:** apps/web/src/lib/analyzer/model-resolver.ts (created), apps/web/src/lib/analyzer/metrics.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts, apps/web/src/lib/calibration/runner.ts

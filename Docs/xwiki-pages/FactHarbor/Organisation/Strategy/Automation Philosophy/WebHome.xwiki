@@ -13,15 +13,14 @@ This is:
 == 2. Why This Matters ==
 === 2.1 Scalability ===
 **Human review doesn't scale**:
-* 1 person can review ~100 claims/day carefully
-* FactHarbor aims for millions of claims
-* Would need 10,000+ reviewers
-* Impossible to maintain consistency
+* 1 person can review ~100 **AtomicClaims** per day carefully.
+* FactHarbor aims for millions of evaluations.
+* Scaling would require 10,000+ reviewers, making consistency impossible.
 **Algorithmic processing scales**:
-* AKEL processes 1 claim or 1 million claims with same consistency
-* Cost per claim approaches zero at scale
-* Quality improves with more data
-* 24/7 availability
+* AKEL processes 1 **AtomicClaim** or 1 million with the same unwavering consistency.
+* Cost per evaluation approaches zero at scale.
+* Quality improves as more data is processed.
+* 24/7 availability.
 === 2.2 Consistency ===
 **Human judgment varies**:
 * Different reviewers apply criteria differently
@@ -81,18 +80,18 @@ Humans in FactHarbor are **system architects**, not **content judges**.
 * Allocate resources
 * Make strategic decisions
 === 3.2 What Humans Do NOT Do ===
-**Review** individual claims for correctness:
-* ❌ "Let me check if this verdict is right"
-* ❌ "I'll approve these before publication"
-* ❌ "This needs human judgment"
+**Review** individual **AtomicClaims** for correctness:
+* ❌ "Let me check if this **ClaimVerdict** is right."
+* ❌ "I'll approve these before publication."
+* ❌ "This needs human judgment."
 **Override** AKEL decisions routinely:
-* ❌ "AKEL got this wrong, I'll fix it"
-* ❌ "I disagree with this verdict"
-* ❌ "This source should be rated higher"
+* ❌ "AKEL got this wrong, I'll fix it."
+* ❌ "I disagree with this **ClaimVerdict**."
+* ❌ "This source should be rated higher."
 **Act as** approval gates:
-* ❌ "All claims must be human-approved"
-* ❌ "High-risk claims need review"
-* ❌ "Quality assurance before publication"
+* ❌ "All **AtomicClaims** must be human-approved."
+* ❌ "High-risk **AtomicClaims** need review."
+* ❌ "Quality assurance before publication."
 **Why not?** Because this defeats the purpose and doesn't scale.
 == 4. When Humans Intervene ==
 === 4.1 Legitimate Interventions ===
@@ -118,35 +117,35 @@ Humans in FactHarbor are **system architects**, not **content judges**.
 * Compliance violation
 === 4.2 Illegitimate Interventions ===
 **Humans should NOT intervene for**:
-==== "I disagree with this verdict" ====:
-* Problem: Your opinion vs AKEL's analysis
-* Solution: If AKEL is systematically wrong, fix the algorithm
-* Action: Gather data, propose algorithm improvement
+==== "I disagree with this ClaimVerdict" ====:
+* Problem: Your opinion vs. AKEL's analysis.
+* Solution: If AKEL is systematically wrong, improve the algorithm.
+* Action: Gather data, propose algorithm improvement.
 ==== "This source should rank higher" ====:
-* Problem: Subjective preference
-* Solution: Fix scoring rules systematically
-* Action: Analyze why AKEL scored it lower, adjust scoring algorithm if justified
+* Problem: Subjective preference.
+* Solution: Fix scoring rules systematically.
+* Action: Analyze why AKEL scored it lower; adjust scoring algorithm if justified.
 ==== "Manual quality gate" ====:
-* Problem: Creates bottleneck, defeats automation
-* Solution: Improve AKEL's quality to not need human gate
-* Action: Set quality thresholds in algorithm, not human review
+* Problem: Creates bottleneck, defeats automation.
+* Solution: Improve AKEL's quality to remove the need for human gates.
+* Action: Set quality thresholds in the algorithm, not human review.
 ==== "I know better than the algorithm" ====:
-* Problem: Doesn't scale, introduces bias
-* Solution: Teach the algorithm what you know
-* Action: Update training data, adjust parameters, document expertise in policy
+* Problem: Doesn't scale, introduces bias.
+* Solution: Teach the algorithm what you know.
+* Action: Update training data, adjust parameters, and document expertise in policy.
 == 5. Fix the System, Not the Data ==
-**Fundamental principle**: When AKEL makes mistakes, improve AKEL, don't fix individual outputs.
+**Fundamental principle**: When AKEL makes mistakes, improve the system — don't fix individual outputs.
 === 5.1 Why? ===
 **Fixing individual outputs**:
-* Doesn't prevent future similar errors
-* Doesn't scale (too many outputs)
-* Creates inconsistency
-* Hides systematic problems
+* Doesn't prevent future similar errors.
+* Doesn't scale (too many outputs).
+* Creates inconsistency.
+* Hides systematic problems.
 **Fixing the system**:
-* Prevents future similar errors
-* Scales automatically
-* Maintains consistency
-* Surfaces and resolves root causes
+* Prevents future similar errors.
+* Scales automatically.
+* Maintains consistency.
+* Surfaces and resolves root causes.
 === 5.2 Process ===
 **When you see a "wrong" AKEL decision**:
 ==== Document it ====:

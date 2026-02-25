@@ -28,7 +28,7 @@ These tasks are mandatory for legal compliance and core functionality.
 | **Set up breach notification procedures** | ⬜ Not Started | Document + FDPIC contact |
 | **Implement TLS/HTTPS encryption** | ⬜ Not Started | Let's Encrypt or similar |
 | **Set up security logging** | ⬜ Not Started | One year retention |
-=== 2.3 Organizational Infrastructure ===
+=== 2.3 Organisational Infrastructure ===
 | Task | Status | Notes |
 |------|--------|-------|
 | **Set up contact infrastructure** | ⬜ Not Started | See Section 5 |
@@ -122,7 +122,7 @@ Strategic decisions needed before implementation:
 | **Code licensing** | MIT / MIT+AGPL | Simpler vs. stronger copyleft |
 | **Hosting location** | CH/EU/US | Swiss aligns with mission |
 | **AI model** | Open/API | Infrastructure vs. simplicity |
-=== 6.2 Organizational Decisions ===
+=== 6.2 Organisational Decisions ===
 | Decision | Options |
 |----------|---------|
 | **Governing Team size** | Two minimum, can expand later |

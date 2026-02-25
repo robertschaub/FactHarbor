@@ -20,56 +20,29 @@ Most claims change meaning drastically depending on:
 * Interpretation
 FactHarbor reveals and compares these variations.
 === 1.3 Problem 3 — "Binary Fact Checks" Fail ===
-Most fact-checking simplifies complex claims into:
-* True
-* Mostly True
-* False
-This hides legitimate contextual differences.
-FactHarbor replaces binary judgment with scenario-based, likelihood-driven evaluation.
+Most fact-checking simplifies complex claims into "True" or "False". This often hides legitimate differences in context or methodology.
+FactHarbor replaces binary judgments with **multi-perspective evaluation**. We use **ClaimAssessmentBoundaries** to show how a claim's truth can change depending on the evidence's scope and assumptions.
 === 1.4 Problem 4 — Good Evidence Is Hard to Find ===
-High-quality evidence exists — but users often cannot:
-* Locate it
-* Assess its reliability
-* Understand how it fits into a scenario
-* Compare it with competing evidence
-FactHarbor aggregates, assesses, and organizes evidence with full transparency.
+High-quality evidence exists, but users often struggle to find it, assess its reliability, or understand how it applies to a specific boundary.
+FactHarbor aggregates, evaluates, and organizes evidence into clear boundaries with full transparency.
 === 1.5 Problem 5 — Claims Evolve Over Time ===
-Research and understanding change:
-* New studies emerge
-* Old studies are retracted
-* Consensus shifts
-FactHarbor provides:
-* Full entity versioning
-* Verdict timelines
-* Automatic re-evaluation when inputs change
+Research changes as new studies emerge and consensus shifts. FactHarbor provides:
+* **Versioning**: Full history for every claim and verdict.
+* **Timelines**: Visibility into how a verdict has changed over time.
+* **Auto-Update**: Automatic re-evaluation when new evidence is discovered.
 === 1.6 Problem 6 — Users Cannot See Why People Disagree ===
-People often assume others are ignorant or dishonest, when disagreements typically arise from:
-* Different definitions
-* Different implicit assumptions
-* Different evidence
-* Different contexts
-FactHarbor exposes these underlying structures so disagreements become understandable, not divisive.
+Disagreements often arise from different definitions, assumptions, or evidence sets. FactHarbor exposes these underlying structures so that disagreements become understandable and constructive, rather than divisive.
 == 2. Core Concepts ==
-=== 2.1 Claim ===
-A user- or AI-submitted statement whose meaning is often ambiguous and requires structured interpretation.
-A claim does not receive a single verdict — it branches into scenarios that clarify its meaning.
-=== 2.2 Scenario ===
-A structured interpretation that clarifies what the claim means under a specific set of:
-* Boundaries
-* Definitions
-* Assumptions
-* Contextual conditions
-Multiple scenarios allow claims to be understood fairly and without political or ideological bias.
-=== 2.3 Evidence ===
-Information that supports or contradicts a scenario.
-Evidence includes empirical studies, experimental data, expert consensus, historical records, contextual background, and absence-of-evidence signals.
-Evidence evolves through versioning and includes reliability assessment.
-=== 2.4 Verdict ===
-A likelihood estimate for a claim within a specific scenario based on evidence quality, quantity, methodology, uncertainty factors, and comparison with competing scenarios.
-Each verdict is versioned and includes a historical timeline.
+=== 2.1 AtomicClaim ===
+A single, verifiable assertion extracted from user input. Each claim is evaluated independently across multiple boundaries to ensure a fair and comprehensive assessment.
+=== 2.2 ClaimAssessmentBoundary (Boundary) ===
+A grouping of compatible evidence based on shared methodology, geography, or timeframes. Boundaries emerge naturally from the evidence, showing the different "frames" through which a claim can be viewed.
+=== 2.3 EvidenceItem ===
+Information extracted from a source that either supports or contradicts a claim. Each item includes an **EvidenceScope** that describes the source's methodology and limitations.
+=== 2.4 ClaimVerdict ===
+A likelihood estimate for a claim's truth within a specific boundary. It is based on the quality and quantity of evidence, and is produced through a rigorous, multi-step AI debate process.
 === 2.5 AI Knowledge Extraction Layer (AKEL) ===
-The AI subsystem that interprets claims, proposes scenario drafts, retrieves evidence, classifies sources, drafts verdicts, detects contradictions, and triggers re-evaluation when inputs change.
-AKEL outputs follow risk-based publication model with quality gates and audit oversight.
+The core AI system that extracts claims, researches evidence, clusters boundaries, and generates verdicts. AKEL operates under strict quality gates and human oversight.
 === 2.6 Decentralized Federation Model ===
 FactHarbor supports a decentralized, multi-node architecture where each node stores its own data and synchronizes via federation protocol.
 This increases resilience, autonomy, and scalability.

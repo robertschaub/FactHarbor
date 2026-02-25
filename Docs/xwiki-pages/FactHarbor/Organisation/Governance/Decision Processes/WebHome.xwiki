@@ -14,7 +14,7 @@ This page describes the main types of decisions in FactHarbor and how they are e
 * ✅ Evidence assessment and relevance scoring
 * ✅ Source track record scoring
 * ✅ Risk tier classification
-* ✅ Scenario extraction
+* ✅ Boundary extraction
 * ✅ Publication decisions
 * ✅ Contradiction detection
 **Why automated?**

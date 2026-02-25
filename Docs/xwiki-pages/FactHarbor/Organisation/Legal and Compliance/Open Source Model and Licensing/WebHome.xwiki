@@ -79,7 +79,7 @@ This allows:
 **Hybrid Licensing for Core Components:**
 For the **core reasoning engine** and **AKEL components**, we recommend using **AGPL-3.0** to prevent black-box deployments and ensure transparency of modifications.
 The recommended hybrid approach:
-* **AGPL-3.0** for: Core verdict engine, AKEL reasoning logic, scenario evaluation engine
+* **AGPL-3.0** for: Core verdict engine, AKEL reasoning logic, boundary evaluation engine
 * **MIT** for: Integrations, utilities, frontend clients, libraries, tools
 This hybrid model (similar to Wikimedia's use of AGPL for MediaWiki) balances maximum adoption with protection of the transparency mission.
 **Rationale:**

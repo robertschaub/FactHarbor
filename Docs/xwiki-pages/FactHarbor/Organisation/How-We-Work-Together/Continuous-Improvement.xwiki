@@ -184,7 +184,7 @@
 * User feedback (helpful/unhelpful ratio)
 * Contradiction rate
 * Source diversity
-* Scenario coverage
+* Boundary coverage
 **System Health**:
 * Uptime
 * Error rate

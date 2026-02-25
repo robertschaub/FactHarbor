@@ -11,7 +11,7 @@
 
 The fact-checking landscape in 2025 is experiencing significant disruption. Meta's withdrawal from third-party fact-checking, funding challenges from USAID cuts, and the shift toward crowdsourced models (Community Notes) have created both challenges and opportunities. FactHarbor's **Evidence Model approach** addresses fundamental gaps that existing solutions fail to fill.
 
-**Key Finding:** No current solution provides transparent, scenario-based, probabilistic fact-checking with explicit assumptions—FactHarbor's core differentiation.
+**Key Finding:** No current solution provides transparent, boundary-based, probabilistic fact-checking with explicit assumptions—FactHarbor's core differentiation.
 
 ----
 
@@ -202,9 +202,9 @@ The fact-checking landscape in 2025 is experiencing significant disruption. Meta
 
 === Key Differentiators ===
 
-1. **Scenario-Based Analysis:** A claim isn't just "true" or "false"—it's "true under these assumptions, false under those"
-1. **Evidence Landscape:** Shows where a claim holds, fails, and where reasonable disagreement exists
-1. **Transparent Reasoning:** Every step from claim → scenario → evidence → verdict is visible
+1. **Boundary-Based Analysis:** A claim isn't just "true" or "false"—its truth depends on the methodology and scope of the evidence.
+1. **Evidence Landscape:** Shows where a claim holds, fails, and where reasonable disagreement exists.
+1. **Transparent Reasoning:** Every step from claim → boundary → evidence → verdict is visible.
 1. **Probabilistic Verdicts:** Not just labels, but likelihood ranges with explicit uncertainty factors
 1. **Versioned Knowledge:** Updates tracked; evidence evolution visible
 1. **Federated Model:** No single entity controls the narrative; nodes can synchronize
@@ -275,7 +275,7 @@ FactHarbor is **uniquely positioned** to fill the gap between:
 * Automated systems (low quality, high scale)
 * Crowdsourced systems (variable quality, medium scale)
 
-By producing **structured Evidence Models with explicit scenarios, assumptions, and probabilistic verdicts**, FactHarbor offers something no competitor provides: **transparent reasoning at scale**.
+By producing **structured Evidence Models with explicit boundaries, assumptions, and probabilistic verdicts**, FactHarbor offers something no competitor provides: **transparent reasoning at scale**.
 
 === Recommended Next Steps ===
 
