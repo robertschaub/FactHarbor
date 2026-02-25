@@ -14,10 +14,8 @@ import {
   loadCalcConfig,
 } from "@/lib/config-loader";
 import type { PipelineConfig } from "@/lib/config-schemas";
-import {
-  OPENAI_MODELS,
-  GOOGLE_MODELS,
-} from "@/lib/analyzer/model-tiering";
+import { resolveModel } from "@/lib/analyzer/model-resolver";
+import type { LLMProviderType } from "@/lib/analyzer/types";
 import { getActiveSearchProviders } from "@/lib/web-search";
 import { computePairMetrics, computeAggregateMetrics } from "./metrics";
 import type {
@@ -37,6 +35,8 @@ import { DEFAULT_CALIBRATION_THRESHOLDS } from "./types";
 export interface RunOptions {
   mode: "quick" | "full" | "targeted";
   runIntent: "gate" | "smoke";
+  /** Stop execution if cumulative cost exceeds this budget (USD). Default $5.00 */
+  maxBudgetUSD?: number;
   targetDomain?: string;
   targetLanguage?: string;
   /** Run only a single pair by ID (overrides mode filtering). */
@@ -80,18 +80,39 @@ export async function runCalibration(
 
   // Run pairs sequentially (avoids search provider contention)
   const pairResults: PairResult[] = [];
+  let cumulativeCostUSD = 0;
+  const maxBudget = options.maxBudgetUSD ?? 5.0;
 
   for (let i = 0; i < activePairs.length; i++) {
     const pair = activePairs[i];
+
+    // Pre-check budget
+    if (cumulativeCostUSD >= maxBudget) {
+      options.onProgress?.(
+        `Budget EXHAUSTED ($${cumulativeCostUSD.toFixed(2)} >= $${maxBudget.toFixed(2)}). Aborting remaining ${activePairs.length - i} pairs.`,
+        i,
+        activePairs.length,
+      );
+      break;
+    }
+
     options.onProgress?.(
-      `Running pair ${i + 1}/${activePairs.length}: ${pair.id}`,
+      `Running pair ${i + 1}/${activePairs.length}: ${pair.id} (Current cost: $${cumulativeCostUSD.toFixed(2)})`,
       i,
       activePairs.length,
     );
 
     try {
       const leftResult = await runSide(pair, "left");
+      cumulativeCostUSD += leftResult.estimatedCostUSD;
+
+      if (cumulativeCostUSD >= maxBudget) {
+        throw new Error(`Budget exceeded during left side of pair ${pair.id}`);
+      }
+
       const rightResult = await runSide(pair, "right");
+      cumulativeCostUSD += rightResult.estimatedCostUSD;
+
       const metrics = computePairMetrics(leftResult, rightResult, pair, thresholds);
 
       pairResults.push({
@@ -273,9 +294,9 @@ async function captureConfigSnapshot(): Promise<
 export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["configSnapshot"]["resolvedLLM"] {
   const provider = config.llmProvider ?? "anthropic";
   const tiering = config.llmTiering ?? false;
-  const modelUnderstand = config.modelUnderstand ?? "claude-haiku-4-5-20251001";
-  const modelExtractEvidence = config.modelExtractEvidence ?? "claude-haiku-4-5-20251001";
-  const modelVerdict = config.modelVerdict ?? "claude-sonnet-4-5-20250929";
+  const modelUnderstand = config.modelUnderstand ?? "haiku";
+  const modelExtractEvidence = config.modelExtractEvidence ?? "haiku";
+  const modelVerdict = config.modelVerdict ?? "sonnet";
   const modelOpus = config.modelOpus ?? modelVerdict; // B-5b: fallback to modelVerdict
 
   const explicitTiers = config.debateModelTiers;
@@ -318,37 +339,21 @@ function resolveModelName(
   modelVerdict: string,
   modelOpus?: string,
 ): string {
-  const isPremium = tier === "sonnet" || tier === "opus";
-  const isOpus = tier === "opus";
   const p = (roleProvider || "").toLowerCase();
+  const provider = normalizeProvider(p);
+  const t = (tier === "sonnet" || tier === "opus") ? tier : "haiku";
+  
+  // Use model-resolver
+  return resolveModel(t as any, provider).modelName;
+}
 
-  // Anthropic: honour UCM model overrides
-  if (p === "anthropic" || p === "claude") {
-    if (isOpus) return modelOpus ?? modelVerdict;
-    if (!tiering) return modelVerdict;
-    return isPremium ? modelVerdict : modelUnderstand;
-  }
-
-  // Other providers: look up from model-tiering tables
-  const providerModels =
-    p === "openai" ? OPENAI_MODELS :
-    (p === "google" || p === "gemini") ? GOOGLE_MODELS :
-    undefined;
-
-  if (providerModels) {
-    return isPremium
-      ? providerModels.premium.modelId
-      : providerModels.budget.modelId;
-  }
-
-  // Mistral: align with analyzer/llm.ts default model routing
-  if (p === "mistral") {
-    return isPremium ? "mistral-large-latest" : "mistral-small-latest";
-  }
-
-  // Unknown provider — fall back to Anthropic UCM models
-  if (isOpus) return modelOpus ?? modelVerdict;
-  return isPremium ? modelVerdict : modelUnderstand;
+function normalizeProvider(raw: string): LLMProviderType {
+  const p = (raw || "").toLowerCase().trim();
+  if (p === "anthropic" || p === "claude") return "anthropic";
+  if (p === "google" || p === "gemini") return "google";
+  if (p === "mistral") return "mistral";
+  if (p === "openai") return "openai";
+  return "anthropic";
 }
 
 /**
@@ -563,6 +568,7 @@ function extractSideResult(
     llmCalls: rj.meta?.llmCalls ?? 0,
     searchQueries: (rj.searchQueries ?? []).length,
     durationMs,
+    estimatedCostUSD: rj.meta?.estimatedCostUSD ?? 0,
     modelsUsed: rj.meta?.modelsUsed ?? {},
     runtimeRoleModels: rj.meta?.runtimeRoleModels ?? undefined,
     warnings,

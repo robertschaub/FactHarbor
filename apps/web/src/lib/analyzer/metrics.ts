@@ -14,9 +14,10 @@
 
 export type LLMTaskType =
   | 'understand'
-  | 'extract_evidence'
-  | 'context_refinement'
+  | 'research'
+  | 'cluster'
   | 'verdict'
+  | 'aggregate'
   | 'supplemental'
   | 'other';
 
@@ -27,20 +28,28 @@ export interface LLMCallMetric {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  /** Optional: tokens read from Anthropic/OpenAI prompt cache */
+  cacheReadInputTokens?: number;
+  /** Optional: tokens that were used to create a cache entry */
+  cacheCreationInputTokens?: number;
   durationMs: number;
   success: boolean;
   schemaCompliant: boolean;
   retries: number;
   errorMessage?: string;
   timestamp: Date;
+  /** Optional: role in the debate (advocate, challenger, reconciler, etc.) */
+  debateRole?: string;
 }
 
 export interface SearchQueryMetric {
   query: string;
-  provider: 'google-cse' | 'serpapi' | 'gemini-grounded';
+  provider: string; // Use string for flexibility with 'auto' and display names
   resultsCount: number;
   durationMs: number;
   success: boolean;
+  /** Optional: whether the result was served from cache */
+  cached?: boolean;
   timestamp: Date;
 }
 
@@ -123,9 +132,9 @@ export interface AnalysisMetrics {
   phaseTimings: {
     understand: number;
     research: number;
+    cluster: number;
     verdict: number;
-    summary: number;
-    report: number;
+    aggregate: number;
   };
   llmCalls: LLMCallMetric[];
   searchQueries: SearchQueryMetric[];
@@ -193,9 +202,9 @@ export class MetricsCollector {
       phaseTimings: {
         understand: 0,
         research: 0,
+        cluster: 0,
         verdict: 0,
-        summary: 0,
-        report: 0,
+        aggregate: 0,
       },
       failureModes: {
         totalWarnings: 0,
@@ -304,11 +313,16 @@ export class MetricsCollector {
     // Calculate token counts
     const promptTokens = this.metrics.llmCalls!.reduce((sum, call) => sum + call.promptTokens, 0);
     const completionTokens = this.metrics.llmCalls!.reduce((sum, call) => sum + call.completionTokens, 0);
+    const cacheReadInputTokens = this.metrics.llmCalls!.reduce((sum, call) => sum + (call.cacheReadInputTokens || 0), 0);
+    const cacheCreationInputTokens = this.metrics.llmCalls!.reduce((sum, call) => sum + (call.cacheCreationInputTokens || 0), 0);
     
     this.metrics.tokenCounts = {
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
+      // @ts-ignore - Adding these for Alpha tracking even if not in base type yet
+      cacheReadInputTokens,
+      cacheCreationInputTokens,
     };
 
     // Estimate cost (rough estimates based on common pricing)
@@ -362,7 +376,7 @@ export class MetricsCollector {
       'claude-sonnet-4-20250514': { input: 3, output: 15 },
       'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
       'claude-haiku-4-5-20251001': { input: 1, output: 5 },
-      'claude-3-5-haiku-20241022': { input: 1, output: 5 },
+      'claude-3-5-haiku-20251001': { input: 1, output: 5 },
       'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
       
       // OpenAI

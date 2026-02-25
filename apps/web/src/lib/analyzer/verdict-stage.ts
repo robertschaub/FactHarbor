@@ -40,7 +40,7 @@ import type {
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
-import type { LLMProviderType } from "@/lib/config-schemas";
+import type { LLMProviderType } from "./types";
 
 // ============================================================================
 // D5 CONTROL 2: SOURCE TYPE PARTITIONS

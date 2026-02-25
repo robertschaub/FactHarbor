@@ -71,7 +71,8 @@ import { loadAndRenderSection } from "./prompt-loader";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
-import type { PipelineConfig, SearchConfig, CalcConfig, LLMProviderType } from "@/lib/config-schemas";
+import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
+import type { LLMProviderType } from "@/lib/analyzer/types";
 
 // Metrics integration
 import {
@@ -123,11 +124,6 @@ export async function runClaimBoundaryAnalysis(
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const onEvent = input.onEvent ?? (() => {});
 
-  // Initialize metrics collection for this job
-  if (input.jobId) {
-    initializeMetrics(input.jobId, "claimboundary");
-  }
-
   // Load configs once at start to capture provider metadata
   const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default"),
@@ -137,6 +133,11 @@ export async function runClaimBoundaryAnalysis(
   const initialPipelineConfig = pipelineResult.config;
   const initialSearchConfig = searchResult.config;
   const initialCalcConfig = calcResult.config;
+
+  // Initialize metrics collection for this job after config load to capture runtime providers
+  if (input.jobId) {
+    initializeMetrics(input.jobId, "claimboundary", initialPipelineConfig, initialSearchConfig);
+  }
 
   // Log config load status — warn on error fallbacks so admins know UCM config was not applied
   for (const [name, result] of [
@@ -186,8 +187,10 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Extracting claims from input...", 10);
     startPhase("understand");
+    const startTime1 = Date.now();
     const understanding = await extractClaims(state);
     state.understanding = understanding;
+    
     endPhase("understand");
 
     // Record Gate 1 stats after claim extraction
@@ -204,7 +207,9 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Researching evidence for claims...", 30);
     startPhase("research");
+    const startTime2 = Date.now();
     await researchEvidence(state, input.jobId);
+    
     endPhase("research");
 
     // Evidence pool balance check (C13 — detect directional skew before verdict)
@@ -289,10 +294,10 @@ export async function runClaimBoundaryAnalysis(
     // Stage 3: Cluster Boundaries
     checkAbortSignal(input.jobId);
     onEvent("Clustering evidence into boundaries...", 60);
-    startPhase("summary");
+    startPhase("cluster");
     const boundaries = await clusterBoundaries(state);
     state.claimBoundaries = boundaries;
-    endPhase("summary");
+    endPhase("cluster");
 
     // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
     const coverageMatrix = buildCoverageMatrix(
@@ -402,7 +407,7 @@ export async function runClaimBoundaryAnalysis(
     // Stage 5: Aggregate
     checkAbortSignal(input.jobId);
     onEvent("Aggregating final assessment...", 90);
-    startPhase("report");
+    startPhase("aggregate");
     const assessment = await aggregateAssessment(
       claimVerdicts,
       boundaries,
@@ -410,7 +415,7 @@ export async function runClaimBoundaryAnalysis(
       coverageMatrix,
       state
     );
-    endPhase("report");
+    endPhase("aggregate");
 
     // B-8: Explanation quality check (after aggregation, before result assembly)
     const explanationQualityMode = initialPipelineConfig.explanationQualityMode ?? "off";
@@ -879,6 +884,21 @@ export async function runPass1(
     ),
   });
 
+  // Record LLM call metrics
+  recordLLMCall({
+    taskType: "understand",
+    provider: model.provider,
+    modelName: model.modelName,
+    promptTokens: result.usage?.inputTokens ?? 0,
+    completionTokens: result.usage?.outputTokens ?? 0,
+    totalTokens: result.usage?.totalTokens ?? 0,
+    durationMs: 0, // Duration not exposed by generateText directly without wrapper
+    success: true,
+    schemaCompliant: true,
+    retries: 0,
+    timestamp: new Date(),
+  });
+
   const parsed = extractStructuredOutput(result);
   if (!parsed) {
     throw new Error("Stage 1 Pass 1: LLM returned no structured output");
@@ -1170,6 +1190,21 @@ async function extractPreliminaryEvidence(
       ),
     });
 
+    // Record LLM call metrics
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: 0,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
     const parsed = extractStructuredOutput(result);
     if (!parsed) return [];
 
@@ -1370,7 +1405,21 @@ export async function runPass2(
         ),
       });
 
-      // Log response metadata for soft-refusal detection
+          // Record LLM call metrics
+          recordLLMCall({
+            taskType: "understand",
+            provider: model.provider,
+            modelName: model.modelName,
+            promptTokens: result.usage?.inputTokens ?? 0,
+            completionTokens: result.usage?.outputTokens ?? 0,
+            totalTokens: result.usage?.totalTokens ?? 0,
+            durationMs: 0,
+            success: true,
+            schemaCompliant: true,
+            retries: attempt,
+            timestamp: new Date(),
+          });
+            // Log response metadata for soft-refusal detection
       const finishReason = (result as unknown as Record<string, unknown>).finishReason;
       if (finishReason === "content-filter" || finishReason === "other") {
         console.warn(`[Stage1 Pass2] Possible content-policy soft-refusal: finishReason=${finishReason}`);
@@ -1670,6 +1719,21 @@ export async function runGate1Validation(
       providerOptions: getStructuredOutputProviderOptions(
         (pipelineConfig.llmProvider) ?? "anthropic",
       ),
+    });
+
+    // Record LLM call metrics
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: 0,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
     });
 
     const parsed = extractStructuredOutput(result);
@@ -2515,6 +2579,21 @@ export async function generateResearchQueries(
       ),
     });
 
+    // Record LLM call metrics
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: 0,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
     const parsed = extractStructuredOutput(result);
     if (!parsed) {
       return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
@@ -2610,6 +2689,21 @@ export async function classifyRelevance(
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
       ),
+    });
+
+    // Record LLM call metrics
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: 0,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
     });
 
     const parsed = extractStructuredOutput(result);
@@ -2836,6 +2930,21 @@ export async function extractResearchEvidence(
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
       ),
+    });
+
+    // Record LLM call metrics
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: 0,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
     });
 
     const parsed = extractStructuredOutput(result);
@@ -3401,6 +3510,21 @@ export async function runLLMClustering(
     providerOptions: getStructuredOutputProviderOptions(
       pipelineConfig.llmProvider ?? "anthropic",
     ),
+  });
+
+  // Record LLM call metrics
+  recordLLMCall({
+    taskType: "cluster",
+    provider: model.provider,
+    modelName: model.modelName,
+    promptTokens: result.usage?.inputTokens ?? 0,
+    completionTokens: result.usage?.outputTokens ?? 0,
+    totalTokens: result.usage?.totalTokens ?? 0,
+    durationMs: 0,
+    success: true,
+    schemaCompliant: true,
+    retries: 0,
+    timestamp: new Date(),
   });
 
   const parsed = extractStructuredOutput(result);
@@ -3969,6 +4093,7 @@ export function createProductionLLMCall(
         retries: 0,
         errorMessage,
         timestamp: new Date(),
+        debateRole: options?.callContext?.debateRole,
       });
 
       // Retry once with mini fallback when OpenAI TPM pressure is detected.
@@ -3999,6 +4124,7 @@ export function createProductionLLMCall(
             retries: 1,
             errorMessage: retryMessage,
             timestamp: new Date(),
+            debateRole: options?.callContext?.debateRole,
           });
 
           throw toError(
@@ -4035,14 +4161,15 @@ export function createProductionLLMCall(
       taskType: 'verdict',
       provider: attemptModel.provider,
       modelName: attemptModel.modelName,
-      promptTokens: result.usage?.promptTokens ?? 0,
-      completionTokens: result.usage?.completionTokens ?? 0,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
       totalTokens: result.usage?.totalTokens ?? 0,
       durationMs: Date.now() - startTime,
       success: true,
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
+      debateRole: options?.callContext?.debateRole,
     });
 
     // 5. Parse result as JSON
@@ -4479,6 +4606,21 @@ export async function generateVerdictNarrative(
     providerOptions: getStructuredOutputProviderOptions(
       pipelineConfig.llmProvider ?? "anthropic",
     ),
+  });
+
+  // Record LLM call metrics
+  recordLLMCall({
+    taskType: "aggregate",
+    provider: model.provider,
+    modelName: model.modelName,
+    promptTokens: result.usage?.inputTokens ?? 0,
+    completionTokens: result.usage?.outputTokens ?? 0,
+    totalTokens: result.usage?.totalTokens ?? 0,
+    durationMs: 0,
+    success: true,
+    schemaCompliant: true,
+    retries: 0,
+    timestamp: new Date(),
   });
 
   const parsed = extractStructuredOutput(result);
