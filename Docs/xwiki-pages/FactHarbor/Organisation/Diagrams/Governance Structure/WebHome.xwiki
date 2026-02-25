@@ -26,8 +26,9 @@ graph TD
     end
     
     DEV -->|"Implement"| AKEL
-    MOD -->|"Moderate"| CNT["Claims & Evidence"]
+    MOD -->|"Moderate"| CNT["Reports (Claims & Evidence)"]
     UA -->|"Configure"| CFG
+    AS -->|"Generates"| CNT
     
     USR["Registered Users"] -->|"Submit/Flag"| CNT
     RED["Readers / Guests"] -->|"Browse/View"| CNT
@@ -52,5 +53,6 @@ graph TD
     * **Developers / Core Ops**: Build and maintain the Application & Services and the technical infrastructure.
     * **UCM Administrators**: Manage system configuration and prompt architecture within the Application & Services.
     * **Moderators**: Handle system-flagged content escalations and system gaming.
-* **Application & Services**: The technical platform consisting of the core reasoning logic (AKEL), infrastructure, and the Unified Config Management (UCM) system.
+* **Application & Services**: The technical platform consisting of the core reasoning logic (AKEL), infrastructure, and the Unified Config Management (UCM) system. It generates the analytical reports.
+* **Reports (Claims & Evidence)**: The primary output of the system, consisting of claim decompositions, evidence items, and truth assessments.
 * **Readers & Users**: Interact with the platform while remaining subject to community guidelines and automated moderation.
