@@ -87,5 +87,30 @@ describe("resolveLLMConfig", () => {
     // OpenAI doesn't have Opus — maps to premium model
     expect(resolved.debateRoles.reconciler.model).toBe("gpt-4.1");
   });
-});
 
+  it("honors non-Anthropic UCM model override when provider matches", () => {
+    const config = createPipelineConfig({
+      llmProvider: "openai",
+      modelVerdict: "gpt-4.1-mini",
+      debateModelProviders: { challenger: "openai" },
+      debateModelTiers: { challenger: "sonnet" },
+    });
+
+    const resolved = resolveLLMConfig(config);
+    expect(resolved.debateRoles.challenger.provider).toBe("openai");
+    expect(resolved.debateRoles.challenger.model).toBe("gpt-4.1-mini");
+  });
+
+  it("ignores mismatched-provider model override and falls back to provider default", () => {
+    const config = createPipelineConfig({
+      llmProvider: "openai",
+      modelVerdict: "claude-sonnet-4-5-20250929",
+      debateModelProviders: { challenger: "openai" },
+      debateModelTiers: { challenger: "sonnet" },
+    });
+
+    const resolved = resolveLLMConfig(config);
+    expect(resolved.debateRoles.challenger.provider).toBe("openai");
+    expect(resolved.debateRoles.challenger.model).toBe("gpt-4.1");
+  });
+});

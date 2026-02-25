@@ -10,6 +10,7 @@
 
 import { z } from "zod";
 import crypto from "crypto";
+import type { LLMProviderType } from "./analyzer/types";
 
 // ============================================================================
 // TYPES
@@ -445,6 +446,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Explanation quality check mode: off (default), structural (Tier 1 deterministic checks), rubric (Tier 1 + Tier 2 LLM rubric via configured provider — cost depends on llmProvider setting)"),
   tigerScoreMode: z.enum(["off", "on"]).optional()
     .describe("Holistic TIGERScore evaluation mode: off (default) | on (performs a final holistic quality pass cross-referencing input, evidence, and assessment)"),
+  tigerScoreTier: z.enum(["haiku", "sonnet", "opus"]).optional()
+    .describe("Model tier for Stage 6 TIGERScore evaluation (default: sonnet)"),
+  tigerScoreTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for Stage 6 TIGERScore evaluation (default: 0.1)"),
   gate1GroundingRetryThreshold: z.number().min(0).max(1).optional()
     .describe("If >X% of claims fail Gate 1, trigger retry loop (default: 0.5)"),
 
@@ -701,6 +706,15 @@ export const PipelineConfigSchema = z.object({
   if (data.claimAnnotationMode === undefined) {
     data.claimAnnotationMode = "verifiability_and_misleadingness";
   }
+  if (data.tigerScoreMode === undefined) {
+    data.tigerScoreMode = "off";
+  }
+  if (data.tigerScoreTier === undefined) {
+    data.tigerScoreTier = "sonnet";
+  }
+  if (data.tigerScoreTemperature === undefined) {
+    data.tigerScoreTemperature = 0.1;
+  }
   if (data.explanationQualityMode === undefined) {
     data.explanationQualityMode = "rubric";
   }
@@ -744,10 +758,6 @@ export const PipelineConfigSchema = z.object({
 });
 
 export type PipelineConfig = z.infer<typeof PipelineConfigSchema>;
-
-/** LLM provider identifiers used in pipeline and debate configuration. */
-export type LLMProviderType = "anthropic" | "openai" | "google" | "mistral";
-
 
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
@@ -839,6 +849,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   maxTokensPerCall: 100000,
   enforceBudgets: false,
   claimAnnotationMode: "verifiability_and_misleadingness",
+  tigerScoreMode: "off",
+  tigerScoreTier: "sonnet",
+  tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
   queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,

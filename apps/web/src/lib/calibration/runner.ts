@@ -14,7 +14,12 @@ import {
   loadCalcConfig,
 } from "@/lib/config-loader";
 import type { PipelineConfig } from "@/lib/config-schemas";
-import { resolveModel } from "@/lib/analyzer/model-resolver";
+import {
+  isModelTier,
+  normalizeLLMProvider,
+  resolveModel,
+  type ModelTier,
+} from "@/lib/analyzer/model-resolver";
 import type { LLMProviderType } from "@/lib/analyzer/types";
 import { getActiveSearchProviders } from "@/lib/web-search";
 import { computePairMetrics, computeAggregateMetrics } from "./metrics";
@@ -37,6 +42,8 @@ export interface RunOptions {
   runIntent: "gate" | "smoke";
   /** Stop execution if cumulative cost exceeds this budget (USD). Default $5.00 */
   maxBudgetUSD?: number;
+  /** Stop the run after the first failed pair. Default false (continue-on-failure). */
+  stopOnFirstFailure?: boolean;
   targetDomain?: string;
   targetLanguage?: string;
   /** Run only a single pair by ID (overrides mode filtering). */
@@ -85,6 +92,7 @@ export async function runCalibration(
 
   for (let i = 0; i < activePairs.length; i++) {
     const pair = activePairs[i];
+    let shouldStopAfterCheckpoint = false;
 
     // Pre-check budget
     if (cumulativeCostUSD >= maxBudget) {
@@ -107,7 +115,12 @@ export async function runCalibration(
       cumulativeCostUSD += leftResult.estimatedCostUSD;
 
       if (cumulativeCostUSD >= maxBudget) {
-        throw new Error(`Budget exceeded during left side of pair ${pair.id}`);
+        options.onProgress?.(
+          `Budget threshold reached during pair ${pair.id} after left side ($${cumulativeCostUSD.toFixed(2)} >= $${maxBudget.toFixed(2)}). Aborting remaining runs cleanly.`,
+          i + 1,
+          activePairs.length,
+        );
+        break;
       }
 
       const rightResult = await runSide(pair, "right");
@@ -144,6 +157,14 @@ export async function runCalibration(
         i + 1,
         activePairs.length,
       );
+      if (options.stopOnFirstFailure) {
+        options.onProgress?.(
+          `stopOnFirstFailure enabled. Aborting after failed pair ${pair.id}.`,
+          i + 1,
+          activePairs.length,
+        );
+        shouldStopAfterCheckpoint = true;
+      }
     }
 
     if (options.onCheckpoint) {
@@ -164,6 +185,10 @@ export async function runCalibration(
           checkpointError,
         );
       }
+    }
+
+    if (shouldStopAfterCheckpoint) {
+      break;
     }
   }
 
@@ -326,10 +351,9 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
 /**
  * Resolve a model name from debate tier + provider.
  *
- * For Anthropic: uses UCM model overrides (modelUnderstand / modelVerdict)
- * since admin may have overridden the default model IDs.
- * For other providers: looks up from the canonical model-tiering tables
- * so model names stay in sync with the routing module.
+ * Uses UCM model overrides when the configured model is compatible with the
+ * target provider. If the configured model appears to belong to a different
+ * provider, falls back to canonical tier resolution for the target provider.
  */
 function resolveModelName(
   tier: string,
@@ -339,21 +363,78 @@ function resolveModelName(
   modelVerdict: string,
   modelOpus?: string,
 ): string {
-  const p = (roleProvider || "").toLowerCase();
-  const provider = normalizeProvider(p);
-  const t = (tier === "sonnet" || tier === "opus") ? tier : "haiku";
-  
-  // Use model-resolver
-  return resolveModel(t as any, provider).modelName;
-}
+  const provider = normalizeLLMProvider(roleProvider);
+  const normalizedTier: ModelTier =
+    tier === "sonnet" || tier === "opus" ? tier : "haiku";
 
-function normalizeProvider(raw: string): LLMProviderType {
-  const p = (raw || "").toLowerCase().trim();
-  if (p === "anthropic" || p === "claude") return "anthropic";
-  if (p === "google" || p === "gemini") return "google";
-  if (p === "mistral") return "mistral";
-  if (p === "openai") return "openai";
-  return "anthropic";
+  const detectProviderFromModelName = (
+    modelName: string,
+  ): LLMProviderType | null => {
+    const normalized = modelName.toLowerCase();
+    if (normalized.includes("claude")) return "anthropic";
+    if (normalized.includes("gpt")) return "openai";
+    if (normalized.includes("gemini")) return "google";
+    if (normalized.includes("mistral")) return "mistral";
+    return null;
+  };
+
+  const resolveConfiguredModel = (
+    configuredValue: string | undefined,
+    fallbackTier: ModelTier,
+    targetProvider: LLMProviderType,
+  ): string => {
+    if (!configuredValue || configuredValue.trim().length === 0) {
+      return resolveModel(fallbackTier, targetProvider).modelName;
+    }
+
+    const trimmed = configuredValue.trim();
+    if (isModelTier(trimmed)) {
+      return resolveModel(trimmed, targetProvider).modelName;
+    }
+
+    const inferredProvider = detectProviderFromModelName(trimmed);
+    if (inferredProvider && inferredProvider !== targetProvider) {
+      return resolveModel(fallbackTier, targetProvider).modelName;
+    }
+
+    return trimmed;
+  };
+
+  if (provider === "anthropic") {
+    if (!tiering) {
+      return resolveConfiguredModel(modelVerdict, "sonnet", "anthropic");
+    }
+
+    if (normalizedTier === "haiku") {
+      return resolveConfiguredModel(modelUnderstand, "haiku", "anthropic");
+    }
+    if (normalizedTier === "opus") {
+      return resolveConfiguredModel(modelOpus ?? modelVerdict, "opus", "anthropic");
+    }
+    return resolveConfiguredModel(modelVerdict, "sonnet", "anthropic");
+  }
+
+  if (provider === "openai" || provider === "google" || provider === "mistral") {
+    if (!tiering) {
+      return resolveConfiguredModel(modelVerdict, "sonnet", provider);
+    }
+    if (normalizedTier === "haiku") {
+      return resolveConfiguredModel(modelUnderstand, "haiku", provider);
+    }
+    if (normalizedTier === "opus") {
+      return resolveConfiguredModel(modelOpus ?? modelVerdict, "opus", provider);
+    }
+    return resolveConfiguredModel(modelVerdict, "sonnet", provider);
+  }
+
+  // Unknown provider fallback: preserve Anthropic UCM overrides.
+  if (normalizedTier === "haiku") {
+    return resolveConfiguredModel(modelUnderstand, "haiku", "anthropic");
+  }
+  if (normalizedTier === "opus") {
+    return resolveConfiguredModel(modelOpus ?? modelVerdict, "opus", "anthropic");
+  }
+  return resolveConfiguredModel(modelVerdict, "sonnet", "anthropic");
 }
 
 /**

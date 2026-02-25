@@ -98,6 +98,7 @@ export interface SideResult {
   llmCalls: number;
   searchQueries: number;
   durationMs: number;
+  estimatedCostUSD: number;
 
   // Model information per debate role
   modelsUsed: Record<string, string>;
@@ -290,6 +291,7 @@ export interface AggregateMetrics {
 
   // Cost and duration
   totalDurationMs: number;
+  totalEstimatedCostUSD: number;
 }
 
 // ============================================================================

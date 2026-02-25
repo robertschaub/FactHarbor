@@ -133,8 +133,12 @@ export interface AnalysisMetrics {
     understand: number;
     research: number;
     cluster: number;
+    /** Legacy alias retained for dashboard backward-compatibility. */
+    summary?: number;
     verdict: number;
     aggregate: number;
+    /** Legacy alias retained for dashboard backward-compatibility. */
+    report?: number;
   };
   llmCalls: LLMCallMetric[];
   searchQueries: SearchQueryMetric[];
@@ -168,6 +172,8 @@ export interface AnalysisMetrics {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
+    cacheReadInputTokens?: number;
+    cacheCreationInputTokens?: number;
   };
   
   // Configuration
@@ -203,8 +209,10 @@ export class MetricsCollector {
         understand: 0,
         research: 0,
         cluster: 0,
+        summary: 0,
         verdict: 0,
         aggregate: 0,
+        report: 0,
       },
       failureModes: {
         totalWarnings: 0,
@@ -232,7 +240,13 @@ export class MetricsCollector {
   endPhase(phase: keyof AnalysisMetrics['phaseTimings']): void {
     const startTime = this.phaseStartTimes.get(phase);
     if (startTime) {
-      this.metrics.phaseTimings![phase] = Date.now() - startTime;
+      const duration = Date.now() - startTime;
+      this.metrics.phaseTimings![phase] = duration;
+      // Keep renamed and legacy phase keys in sync for downstream consumers.
+      if (phase === "cluster") this.metrics.phaseTimings!.summary = duration;
+      if (phase === "aggregate") this.metrics.phaseTimings!.report = duration;
+      if (phase === "summary") this.metrics.phaseTimings!.cluster = duration;
+      if (phase === "report") this.metrics.phaseTimings!.aggregate = duration;
       this.phaseStartTimes.delete(phase);
     }
   }
@@ -320,7 +334,6 @@ export class MetricsCollector {
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
-      // @ts-ignore - Adding these for Alpha tracking even if not in base type yet
       cacheReadInputTokens,
       cacheCreationInputTokens,
     };

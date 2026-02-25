@@ -650,6 +650,9 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(750000); // Captain decision 2026-02-19: restored to 750000
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
       expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("verifiability_and_misleadingness");
+      expect(DEFAULT_PIPELINE_CONFIG.tigerScoreMode).toBe("off");
+      expect(DEFAULT_PIPELINE_CONFIG.tigerScoreTier).toBe("sonnet");
+      expect(DEFAULT_PIPELINE_CONFIG.tigerScoreTemperature).toBe(0.1);
       expect(DEFAULT_PIPELINE_CONFIG.explanationQualityMode).toBe("rubric");
       expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("pro_con");
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
@@ -680,6 +683,9 @@ describe("Default Config Values", () => {
       "modelUnderstand",
       "modelExtractEvidence",
       "modelVerdict",
+      "tigerScoreMode",
+      "tigerScoreTier",
+      "tigerScoreTemperature",
       "defaultPipelineVariant",
     ] as const;
 

@@ -28,35 +28,35 @@ export interface ResolvedModel {
 // ============================================================================
 
 const ANTHROPIC_VERSIONS = {
-  haiku: "claude-3-5-haiku-20251001",
-  sonnet: "claude-3-5-sonnet-20241022",
-  opus: "claude-3-opus-20240229",
+  haiku: "claude-haiku-4-5-20251001",
+  sonnet: "claude-sonnet-4-5-20250929",
+  opus: "claude-opus-4-6",
   latest: {
-    haiku: "claude-3-5-haiku-latest",
-    sonnet: "claude-3-5-sonnet-latest",
-    opus: "claude-3-opus-latest",
+    haiku: "claude-haiku-4-5-latest",
+    sonnet: "claude-sonnet-4-5-latest",
+    opus: "claude-opus-4-6",
   }
 };
 
 const OPENAI_VERSIONS = {
-  haiku: "gpt-4o-mini", // No direct haiku equivalent, use mini
-  sonnet: "gpt-4o",
-  opus: "gpt-4o", // No direct opus equivalent
+  haiku: "gpt-4.1-mini", // No direct haiku equivalent, use budget tier
+  sonnet: "gpt-4.1",
+  opus: "gpt-4.1", // No direct opus equivalent
   latest: {
-    haiku: "gpt-4o-mini",
-    sonnet: "gpt-4o",
-    opus: "gpt-4o",
+    haiku: "gpt-4.1-mini",
+    sonnet: "gpt-4.1",
+    opus: "gpt-4.1",
   }
 };
 
 const GOOGLE_VERSIONS = {
-  haiku: "gemini-1.5-flash",
-  sonnet: "gemini-1.5-pro",
-  opus: "gemini-1.5-pro", // No direct opus equivalent
+  haiku: "gemini-2.5-flash",
+  sonnet: "gemini-2.5-pro",
+  opus: "gemini-2.5-pro", // No direct opus equivalent
   latest: {
-    haiku: "gemini-1.5-flash-latest",
-    sonnet: "gemini-1.5-pro-latest",
-    opus: "gemini-1.5-pro-latest",
+    haiku: "gemini-2.5-flash",
+    sonnet: "gemini-2.5-pro",
+    opus: "gemini-2.5-pro",
   }
 };
 
@@ -83,7 +83,7 @@ export function resolveModel(
   provider: LLMProviderType = "anthropic",
   useLatest: boolean = false
 ): ResolvedModel {
-  const p = normalizeProvider(provider);
+  const p = normalizeLLMProvider(provider);
   let modelName: string;
 
   switch (p) {
@@ -110,11 +110,15 @@ export function resolveModel(
   }
 }
 
-function normalizeProvider(raw: string): LLMProviderType {
+export function normalizeLLMProvider(raw: string): LLMProviderType {
   const p = (raw || "").toLowerCase().trim();
   if (p === "anthropic" || p === "claude") return "anthropic";
   if (p === "google" || p === "gemini") return "google";
   if (p === "mistral") return "mistral";
   if (p === "openai") return "openai";
   return "anthropic";
+}
+
+export function isModelTier(value: string): value is ModelTier {
+  return value === "haiku" || value === "sonnet" || value === "opus";
 }

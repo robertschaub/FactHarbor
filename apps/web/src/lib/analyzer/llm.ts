@@ -19,6 +19,12 @@ import {
   type ProviderType,
 } from "./prompts/config-adaptations/structured-output";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
+import {
+  isModelTier,
+  normalizeLLMProvider,
+  resolveModel,
+  type ModelTier,
+} from "./model-resolver";
 
 // ============================================================================
 // MODEL SELECTION
@@ -54,14 +60,6 @@ export function getStructuredOutputProviderOptions(
   return undefined;
 }
 
-function normalizeProvider(raw: string): "anthropic" | "google" | "mistral" | "openai" {
-  const p = (raw || "").toLowerCase().trim();
-  if (p === "anthropic" || p === "claude") return "anthropic";
-  if (p === "google" || p === "gemini") return "google";
-  if (p === "mistral") return "mistral";
-  return "openai";
-}
-
 function detectProviderFromModelName(modelName: string): "anthropic" | "google" | "mistral" | "openai" | null {
   const name = (modelName || "").toLowerCase();
   if (name.includes("claude")) return "anthropic";
@@ -80,7 +78,7 @@ function resolveProvider(
   config?: PipelineConfig,
 ): "anthropic" | "google" | "mistral" | "openai" {
   const fallback = config?.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic";
-  return normalizeProvider(providerOverride ?? fallback);
+  return normalizeLLMProvider(providerOverride ?? fallback);
 }
 
 function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string | null {
@@ -101,33 +99,19 @@ function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string 
 
 function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | "openai", task: ModelTask): string {
   // Defaults are task-tiered (cheap/fast for extraction-ish steps, higher-quality for synthesis).
-  // Anthropic defaults derive from DEFAULT_PIPELINE_CONFIG to stay consistent with config-schemas.ts.
-  // Other providers use provider-specific defaults until UCM-managed fallbacks are implemented (P1D).
   const isPremiumTask = task === "verdict" || task === "report" || task === "context_refinement";
-  switch (provider) {
-    case "anthropic":
-      return isPremiumTask ? DEFAULT_PIPELINE_CONFIG.modelVerdict : DEFAULT_PIPELINE_CONFIG.modelUnderstand;
-    case "google":
-      return isPremiumTask ? "gemini-2.5-pro" : "gemini-2.5-flash";
-    case "mistral":
-      return isPremiumTask ? "mistral-large-latest" : "mistral-small-latest";
-    case "openai":
-    default:
-      return isPremiumTask ? "gpt-4.1" : "gpt-4.1-mini";
-  }
+  const tier: ModelTier = isPremiumTask ? "sonnet" : "haiku";
+  return resolveModel(tier, provider).modelName;
 }
 
-function buildModelInfo(provider: "anthropic" | "google" | "mistral" | "openai", modelName: string): ModelInfo {
-  if (provider === "anthropic") {
-    return { provider, modelName, model: anthropic(modelName) };
-  }
-  if (provider === "google") {
-    return { provider, modelName, model: google(modelName) };
-  }
-  if (provider === "mistral") {
-    return { provider, modelName, model: mistral(modelName) };
-  }
-  return { provider: "openai", modelName, model: openai(modelName) };
+function buildProviderModel(
+  provider: "anthropic" | "google" | "mistral" | "openai",
+  modelName: string,
+): ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral> {
+  if (provider === "anthropic") return anthropic(modelName);
+  if (provider === "google") return google(modelName);
+  if (provider === "mistral") return mistral(modelName);
+  return openai(modelName);
 }
 
 /**
@@ -136,16 +120,9 @@ function buildModelInfo(provider: "anthropic" | "google" | "mistral" | "openai",
 export function getModel(providerOverride?: string, config?: PipelineConfig): ModelInfo {
   const provider = resolveProvider(providerOverride, config);
   // Legacy single-model defaults: premium model for all tasks when tiering is off.
-  // Anthropic derives from DEFAULT_PIPELINE_CONFIG for consistency.
-  const modelName =
-    provider === "anthropic"
-      ? DEFAULT_PIPELINE_CONFIG.modelVerdict
-      : provider === "google"
-        ? "gemini-2.5-pro"
-        : provider === "mistral"
-          ? "mistral-large-latest"
-          : "gpt-4.1";
-  return buildModelInfo(provider, modelName);
+  const { modelName } = resolveModel("sonnet", provider);
+  const model = buildProviderModel(provider, modelName);
+  return { provider, modelName, model };
 }
 
 /**
@@ -170,20 +147,26 @@ export function getModelForTask(
   let modelName: string | null = null;
 
   if (overrideName) {
-    const inferredProvider = detectProviderFromModelName(overrideName);
-    if (inferredProvider && inferredProvider !== provider) {
-      console.warn(
-        `[LLM] Ignoring model override "${overrideName}" for task "${task}" because provider is "${provider}"`,
-      );
+    if (isModelTier(overrideName)) {
+      modelName = resolveModel(overrideName, provider).modelName;
     } else {
-      modelName = overrideName;
+      const inferredProvider = detectProviderFromModelName(overrideName);
+      if (inferredProvider && inferredProvider !== provider) {
+        console.warn(
+          `[LLM] Ignoring model override "${overrideName}" for task "${task}" because provider is "${provider}"`,
+        );
+      } else {
+        modelName = overrideName;
+      }
     }
   }
 
   if (!modelName) {
     modelName = defaultModelNameForTask(provider, task);
   }
-  return buildModelInfo(provider, modelName);
+
+  const model = buildProviderModel(provider, modelName);
+  return { provider, modelName, model };
 }
 
 // ============================================================================

@@ -611,6 +611,9 @@ export interface ResearchDecision {
 // ANALYSIS INPUT/OUTPUT TYPES
 // ============================================================================
 
+/** LLM provider identifiers used in pipeline and debate configuration. */
+export type LLMProviderType = "anthropic" | "openai" | "google" | "mistral";
+
 export type AnalysisInput = {
   jobId?: string;
   inputType: "text" | "url";

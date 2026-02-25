@@ -34,10 +34,10 @@ export function initializeMetrics(
   // Set config - use pipeline/search configs if provided, otherwise fall back to defaults
   currentMetrics.setConfig({
     llmProvider: pipeline.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic",
-    searchProvider: search.provider,
-    allowModelKnowledge: pipeline.allowModelKnowledge,
-    isLLMTiering: pipeline.llmTiering,
-    isDeterministic: pipeline.deterministic,
+    searchProvider: search.provider || DEFAULT_SEARCH_CONFIG.provider,
+    allowModelKnowledge: pipeline.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
+    isLLMTiering: pipeline.llmTiering ?? DEFAULT_PIPELINE_CONFIG.llmTiering,
+    isDeterministic: pipeline.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic,
   });
 }
 
@@ -45,7 +45,7 @@ export function initializeMetrics(
  * Start timing a phase
  * Call at the START of each major phase
  */
-export function startPhase(phase: 'understand' | 'research' | 'verdict' | 'summary' | 'report'): void {
+export function startPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict' | 'aggregate'): void {
   if (currentMetrics) {
     currentMetrics.startPhase(phase);
   }
@@ -55,7 +55,7 @@ export function startPhase(phase: 'understand' | 'research' | 'verdict' | 'summa
  * End timing a phase
  * Call at the END of each major phase
  */
-export function endPhase(phase: 'understand' | 'research' | 'verdict' | 'summary' | 'report'): void {
+export function endPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict' | 'aggregate'): void {
   if (currentMetrics) {
     currentMetrics.endPhase(phase);
   }

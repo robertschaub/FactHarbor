@@ -46,6 +46,20 @@ const PAIRS: BiasPair[] = [
   },
 ];
 
+const PAIRS_TWO: BiasPair[] = [
+  ...PAIRS,
+  {
+    id: "pair-2",
+    domain: "test",
+    language: "en",
+    leftClaim: "Second left claim",
+    rightClaim: "Second right claim",
+    category: "factual",
+    expectedSkew: "neutral",
+    description: "Second test pair",
+  },
+];
+
 describe("runCalibration failure diagnostics", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -150,5 +164,90 @@ describe("runCalibration failure diagnostics", () => {
     expect(result.pairResults[0]?.status).toBe("completed");
     expect(checkpoints).toHaveLength(1);
     expect(checkpoints[0]).toEqual({ completed: 1, failed: 0 });
+  });
+
+  it("aborts cleanly when budget is exceeded mid-pair without marking pair failed", async () => {
+    vi.mocked(runClaimBoundaryAnalysis)
+      .mockResolvedValueOnce({
+        resultJson: {
+          truthPercentage: 62,
+          confidence: 70,
+          verdict: "LEANING-TRUE",
+          evidenceItems: [],
+          sources: [],
+          meta: {
+            estimatedCostUSD: 0.05,
+          },
+        },
+        reportMarkdown: "",
+      } as any);
+
+    const result = await runCalibration(PAIRS, {
+      mode: "full",
+      runIntent: "gate",
+      maxBudgetUSD: 0.01,
+    });
+
+    expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(1);
+    expect(result.pairResults).toHaveLength(0);
+    expect(result.metadata.pairsCompleted).toBe(0);
+    expect(result.metadata.pairsFailed).toBe(0);
+    expect(result.metadata.pairsSkipped).toBe(1);
+  });
+
+  it("continues to remaining pairs by default after a failed pair", async () => {
+    vi.mocked(runClaimBoundaryAnalysis)
+      .mockRejectedValueOnce(new Error("pair-1 left failed"))
+      .mockResolvedValueOnce({
+        resultJson: {
+          truthPercentage: 58,
+          confidence: 67,
+          verdict: "LEANING-TRUE",
+          evidenceItems: [],
+          sources: [],
+        },
+        reportMarkdown: "",
+      } as any)
+      .mockResolvedValueOnce({
+        resultJson: {
+          truthPercentage: 42,
+          confidence: 64,
+          verdict: "LEANING-FALSE",
+          evidenceItems: [],
+          sources: [],
+        },
+        reportMarkdown: "",
+      } as any);
+
+    const result = await runCalibration(PAIRS_TWO, {
+      mode: "full",
+      runIntent: "gate",
+    });
+
+    expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(3);
+    expect(result.pairResults).toHaveLength(2);
+    expect(result.pairResults[0]?.status).toBe("failed");
+    expect(result.pairResults[1]?.status).toBe("completed");
+    expect(result.metadata.pairsCompleted).toBe(1);
+    expect(result.metadata.pairsFailed).toBe(1);
+    expect(result.metadata.pairsSkipped).toBe(0);
+  });
+
+  it("stops after first failed pair when stopOnFirstFailure is enabled", async () => {
+    vi.mocked(runClaimBoundaryAnalysis)
+      .mockRejectedValueOnce(new Error("pair-1 left failed"));
+
+    const result = await runCalibration(PAIRS_TWO, {
+      mode: "full",
+      runIntent: "gate",
+      stopOnFirstFailure: true,
+    });
+
+    expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(1);
+    expect(result.pairResults).toHaveLength(1);
+    expect(result.pairResults[0]?.status).toBe("failed");
+    expect(result.metadata.pairsCompleted).toBe(0);
+    expect(result.metadata.pairsFailed).toBe(1);
+    expect(result.metadata.pairsSkipped).toBe(1);
   });
 });

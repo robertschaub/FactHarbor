@@ -187,7 +187,6 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Extracting claims from input...", 10);
     startPhase("understand");
-    const startTime1 = Date.now();
     const understanding = await extractClaims(state);
     state.understanding = understanding;
     
@@ -207,7 +206,6 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Researching evidence for claims...", 30);
     startPhase("research");
-    const startTime2 = Date.now();
     await researchEvidence(state, input.jobId);
     
     endPhase("research");
@@ -866,45 +864,64 @@ export async function runPass1(
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
+  try {
+    result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        { role: "user", content: inputText },
+      ],
+      temperature: 0.15,
+      output: Output.object({ schema: Pass1OutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
 
-  const result = await generateText({
-    model: model.model,
-    messages: [
-      {
-        role: "system",
-        content: rendered.content,
-        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-      },
-      { role: "user", content: inputText },
-    ],
-    temperature: 0.15,
-    output: Output.object({ schema: Pass1OutputSchema }),
-    providerOptions: getStructuredOutputProviderOptions(
-      pipelineConfig.llmProvider ?? "anthropic",
-    ),
-  });
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      throw new Error("Stage 1 Pass 1: LLM returned no structured output");
+    }
 
-  // Record LLM call metrics
-  recordLLMCall({
-    taskType: "understand",
-    provider: model.provider,
-    modelName: model.modelName,
-    promptTokens: result.usage?.inputTokens ?? 0,
-    completionTokens: result.usage?.outputTokens ?? 0,
-    totalTokens: result.usage?.totalTokens ?? 0,
-    durationMs: 0, // Duration not exposed by generateText directly without wrapper
-    success: true,
-    schemaCompliant: true,
-    retries: 0,
-    timestamp: new Date(),
-  });
-
-  const parsed = extractStructuredOutput(result);
-  if (!parsed) {
-    throw new Error("Stage 1 Pass 1: LLM returned no structured output");
+    const validated = Pass1OutputSchema.parse(parsed);
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+    return validated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
+    throw error;
   }
-
-  return Pass1OutputSchema.parse(parsed);
 }
 
 /**
@@ -1171,9 +1188,11 @@ async function extractPreliminaryEvidence(
   }
 
   const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
 
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -1190,7 +1209,26 @@ async function extractPreliminaryEvidence(
       ),
     });
 
-    // Record LLM call metrics
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "research",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Stage 1 preliminary evidence extraction returned no structured output",
+        timestamp: new Date(),
+      });
+      return [];
+    }
+
+    const validated = ExtractEvidenceOutputSchema.parse(parsed);
     recordLLMCall({
       taskType: "research",
       provider: model.provider,
@@ -1198,17 +1236,12 @@ async function extractPreliminaryEvidence(
       promptTokens: result.usage?.inputTokens ?? 0,
       completionTokens: result.usage?.outputTokens ?? 0,
       totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: 0,
+      durationMs: Date.now() - llmCallStartedAt,
       success: true,
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
     });
-
-    const parsed = extractStructuredOutput(result);
-    if (!parsed) return [];
-
-    const validated = ExtractEvidenceOutputSchema.parse(parsed);
 
     // Map to PreliminaryEvidenceItem, assigning source URLs.
     // Use LLM-attributed sourceUrl when available; fall back to first source.
@@ -1228,6 +1261,21 @@ async function extractPreliminaryEvidence(
       };
     });
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
     console.warn("[Stage1] Preliminary evidence extraction failed:", err);
     return [];
   }
@@ -1378,6 +1426,8 @@ export async function runPass2(
   };
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const attemptStartedAt = Date.now();
+    let attemptResult: any;
     try {
       // On retry, append guidance to user message (safe: same [system, user] message
       // structure that Output.object() + tool calling expects).
@@ -1388,7 +1438,7 @@ export async function runPass2(
         ? renderedWithoutEvidence.content
         : renderedWithEvidence.content;
 
-      const result = await generateText({
+      attemptResult = await generateText({
         model: model.model,
         messages: [
           {
@@ -1405,27 +1455,13 @@ export async function runPass2(
         ),
       });
 
-          // Record LLM call metrics
-          recordLLMCall({
-            taskType: "understand",
-            provider: model.provider,
-            modelName: model.modelName,
-            promptTokens: result.usage?.inputTokens ?? 0,
-            completionTokens: result.usage?.outputTokens ?? 0,
-            totalTokens: result.usage?.totalTokens ?? 0,
-            durationMs: 0,
-            success: true,
-            schemaCompliant: true,
-            retries: attempt,
-            timestamp: new Date(),
-          });
-            // Log response metadata for soft-refusal detection
-      const finishReason = (result as unknown as Record<string, unknown>).finishReason;
+      // Log response metadata for soft-refusal detection
+      const finishReason = (attemptResult as unknown as Record<string, unknown>).finishReason;
       if (finishReason === "content-filter" || finishReason === "other") {
         console.warn(`[Stage1 Pass2] Possible content-policy soft-refusal: finishReason=${finishReason}`);
       }
 
-      const parsed = extractStructuredOutput(result);
+      const parsed = extractStructuredOutput(attemptResult);
       if (!parsed) {
         throw new Error("Stage 1 Pass 2: LLM returned no structured output");
       }
@@ -1486,9 +1522,38 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
         console.log(`[Stage1 Pass2] Succeeded on attempt ${attempt + 1}/${maxRetries + 1}${wasTotalRefusal ? " (recovered from soft refusal)" : ""}`);
       }
 
+      recordLLMCall({
+        taskType: "understand",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: attemptResult.usage?.inputTokens ?? 0,
+        completionTokens: attemptResult.usage?.outputTokens ?? 0,
+        totalTokens: attemptResult.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - attemptStartedAt,
+        success: true,
+        schemaCompliant: true,
+        retries: attempt,
+        timestamp: new Date(),
+      });
+
       return validated;
     } catch (err) {
       lastError = err as Error;
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      recordLLMCall({
+        taskType: "understand",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: attemptResult?.usage?.inputTokens ?? 0,
+        completionTokens: attemptResult?.usage?.outputTokens ?? 0,
+        totalTokens: attemptResult?.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - attemptStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: attempt,
+        errorMessage,
+        timestamp: new Date(),
+      });
 
       // Log detailed Zod validation errors for diagnostics
       if (err instanceof z.ZodError) {
@@ -1695,9 +1760,11 @@ export async function runGate1Validation(
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
 
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -1721,23 +1788,22 @@ export async function runGate1Validation(
       ),
     });
 
-    // Record LLM call metrics
-    recordLLMCall({
-      taskType: "understand",
-      provider: model.provider,
-      modelName: model.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: 0,
-      success: true,
-      schemaCompliant: true,
-      retries: 0,
-      timestamp: new Date(),
-    });
-
     const parsed = extractStructuredOutput(result);
     if (!parsed) {
+      recordLLMCall({
+        taskType: "understand",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Gate 1 validation returned no structured output",
+        timestamp: new Date(),
+      });
       console.warn("[Stage1] Gate 1: LLM returned no structured output — passing all claims");
       return {
         stats: {
@@ -1860,6 +1926,20 @@ export async function runGate1Validation(
       }
     }
 
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
     return {
       stats: {
         totalClaims: claims.length,
@@ -1872,6 +1952,21 @@ export async function runGate1Validation(
       filteredClaims: keptClaims,
     };
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
     console.warn("[Stage1] Gate 1 validation failed:", err);
     return {
       stats: {
@@ -2557,9 +2652,11 @@ export async function generateResearchQueries(
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
 
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -2579,7 +2676,66 @@ export async function generateResearchQueries(
       ),
     });
 
-    // Record LLM call metrics
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "research",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Stage 2 query generation returned no structured output",
+        timestamp: new Date(),
+      });
+      return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
+    }
+
+    const validated = GenerateQueriesOutputSchema.parse(parsed);
+    let finalQueries: Array<{ query: string; rationale: string }>;
+    if (queryStrategyMode !== "pro_con") {
+      finalQueries = validated.queries
+        .slice(0, maxQueries)
+        .map(({ query, rationale }) => ({ query, rationale }));
+    } else {
+      const supportingQueries = validated.queries.filter((query) => query.variantType === "supporting");
+      const refutingQueries = validated.queries.filter((query) => query.variantType === "refuting");
+      const unlabeledQueries = validated.queries.filter(
+        (query) => query.variantType !== "supporting" && query.variantType !== "refuting",
+      );
+
+      const merged: Array<{ query: string; rationale: string }> = [];
+      const maxVariantLength = Math.max(supportingQueries.length, refutingQueries.length);
+      for (let i = 0; i < maxVariantLength; i++) {
+        if (supportingQueries[i]) {
+          merged.push({
+            query: supportingQueries[i].query,
+            rationale: supportingQueries[i].rationale,
+          });
+        }
+        if (refutingQueries[i]) {
+          merged.push({
+            query: refutingQueries[i].query,
+            rationale: refutingQueries[i].rationale,
+          });
+        }
+      }
+
+      for (const unlabeled of unlabeledQueries) {
+        merged.push({ query: unlabeled.query, rationale: unlabeled.rationale });
+      }
+
+      const normalized = merged.length > 0
+        ? merged
+        : validated.queries.map(({ query, rationale }) => ({ query, rationale }));
+
+      finalQueries = normalized.slice(0, maxQueries);
+    }
+
     recordLLMCall({
       taskType: "research",
       provider: model.provider,
@@ -2587,58 +2743,30 @@ export async function generateResearchQueries(
       promptTokens: result.usage?.inputTokens ?? 0,
       completionTokens: result.usage?.outputTokens ?? 0,
       totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: 0,
+      durationMs: Date.now() - llmCallStartedAt,
       success: true,
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
     });
 
-    const parsed = extractStructuredOutput(result);
-    if (!parsed) {
-      return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
-    }
-
-    const validated = GenerateQueriesOutputSchema.parse(parsed);
-    if (queryStrategyMode !== "pro_con") {
-      return validated.queries
-        .slice(0, maxQueries)
-        .map(({ query, rationale }) => ({ query, rationale }));
-    }
-
-    const supportingQueries = validated.queries.filter((query) => query.variantType === "supporting");
-    const refutingQueries = validated.queries.filter((query) => query.variantType === "refuting");
-    const unlabeledQueries = validated.queries.filter(
-      (query) => query.variantType !== "supporting" && query.variantType !== "refuting",
-    );
-
-    const merged: Array<{ query: string; rationale: string }> = [];
-    const maxVariantLength = Math.max(supportingQueries.length, refutingQueries.length);
-    for (let i = 0; i < maxVariantLength; i++) {
-      if (supportingQueries[i]) {
-        merged.push({
-          query: supportingQueries[i].query,
-          rationale: supportingQueries[i].rationale,
-        });
-      }
-      if (refutingQueries[i]) {
-        merged.push({
-          query: refutingQueries[i].query,
-          rationale: refutingQueries[i].rationale,
-        });
-      }
-    }
-
-    for (const unlabeled of unlabeledQueries) {
-      merged.push({ query: unlabeled.query, rationale: unlabeled.rationale });
-    }
-
-    const normalized = merged.length > 0
-      ? merged
-      : validated.queries.map(({ query, rationale }) => ({ query, rationale }));
-
-    return normalized.slice(0, maxQueries);
+    return finalQueries;
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
     console.warn("[Stage2] Query generation failed, using fallback:", err);
     return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
   }
@@ -2669,9 +2797,11 @@ export async function classifyRelevance(
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
 
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -2691,7 +2821,28 @@ export async function classifyRelevance(
       ),
     });
 
-    // Record LLM call metrics
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "research",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Stage 2 relevance classification returned no structured output",
+        timestamp: new Date(),
+      });
+      return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+    }
+
+    const validated = RelevanceClassificationOutputSchema.parse(parsed);
+    const relevantSources = validated.relevantSources.filter((s) => s.relevanceScore >= 0.4);
+
     recordLLMCall({
       taskType: "research",
       provider: model.provider,
@@ -2699,20 +2850,31 @@ export async function classifyRelevance(
       promptTokens: result.usage?.inputTokens ?? 0,
       completionTokens: result.usage?.outputTokens ?? 0,
       totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: 0,
+      durationMs: Date.now() - llmCallStartedAt,
       success: true,
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
     });
 
-    const parsed = extractStructuredOutput(result);
-    if (!parsed) return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
-
-    const validated = RelevanceClassificationOutputSchema.parse(parsed);
     // Filter to minimum relevance score of 0.4
-    return validated.relevantSources.filter((s) => s.relevanceScore >= 0.4);
+    return relevantSources;
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
     console.warn("[Stage2] Relevance classification failed, accepting all results:", err);
     return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
   }
@@ -2910,9 +3072,11 @@ export async function extractResearchEvidence(
   if (!rendered) return [];
 
   const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
 
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -2932,29 +3096,30 @@ export async function extractResearchEvidence(
       ),
     });
 
-    // Record LLM call metrics
-    recordLLMCall({
-      taskType: "research",
-      provider: model.provider,
-      modelName: model.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: 0,
-      success: true,
-      schemaCompliant: true,
-      retries: 0,
-      timestamp: new Date(),
-    });
-
     const parsed = extractStructuredOutput(result);
-    if (!parsed) return [];
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "research",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Stage 2 evidence extraction returned no structured output",
+        timestamp: new Date(),
+      });
+      return [];
+    }
 
     const validated = Stage2ExtractEvidenceOutputSchema.parse(parsed);
 
     // Map to full EvidenceItem format
     let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
-    return validated.evidenceItems.map((ei) => {
+    const evidenceItems = validated.evidenceItems.map((ei) => {
       // Use LLM-attributed sourceUrl when available; fall back to first source.
       const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
 
@@ -2985,7 +3150,38 @@ export async function extractResearchEvidence(
         derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
       } satisfies EvidenceItem;
     });
+
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    return evidenceItems;
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "research",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
     console.warn("[Stage2] Evidence extraction failed:", err);
     return [];
   }
@@ -3491,69 +3687,88 @@ export async function runLLMClustering(
   }
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
+  try {
+    result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: `Cluster ${uniqueScopes.length} unique EvidenceScopes into ClaimBoundaries based on methodological congruence.`,
+        },
+      ],
+      temperature: 0.15,
+      output: Output.object({ schema: BoundaryClusteringOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
 
-  const result = await generateText({
-    model: model.model,
-    messages: [
-      {
-        role: "system",
-        content: rendered.content,
-        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-      },
-      {
-        role: "user",
-        content: `Cluster ${uniqueScopes.length} unique EvidenceScopes into ClaimBoundaries based on methodological congruence.`,
-      },
-    ],
-    temperature: 0.15,
-    output: Output.object({ schema: BoundaryClusteringOutputSchema }),
-    providerOptions: getStructuredOutputProviderOptions(
-      pipelineConfig.llmProvider ?? "anthropic",
-    ),
-  });
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      throw new Error("Stage 3: LLM returned no structured output");
+    }
 
-  // Record LLM call metrics
-  recordLLMCall({
-    taskType: "cluster",
-    provider: model.provider,
-    modelName: model.modelName,
-    promptTokens: result.usage?.inputTokens ?? 0,
-    completionTokens: result.usage?.outputTokens ?? 0,
-    totalTokens: result.usage?.totalTokens ?? 0,
-    durationMs: 0,
-    success: true,
-    schemaCompliant: true,
-    retries: 0,
-    timestamp: new Date(),
-  });
+    const validated = BoundaryClusteringOutputSchema.parse(parsed);
 
-  const parsed = extractStructuredOutput(result);
-  if (!parsed) {
-    throw new Error("Stage 3: LLM returned no structured output");
+    if (validated.claimBoundaries.length === 0) {
+      throw new Error("Stage 3: LLM returned 0 boundaries");
+    }
+
+    recordLLMCall({
+      taskType: "cluster",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    // Map LLM output to ClaimAssessmentBoundary[] with constituentScopes
+    return validated.claimBoundaries.map((cb) => ({
+      id: cb.id,
+      name: cb.name,
+      shortName: cb.shortName,
+      description: cb.description,
+      methodology: cb.methodology,
+      boundaries: cb.boundaries,
+      geographic: cb.geographic,
+      temporal: cb.temporal,
+      constituentScopes: cb.constituentScopeIndices
+        .filter((idx) => idx >= 0 && idx < uniqueScopes.length)
+        .map((idx) => uniqueScopes[idx].scope),
+      internalCoherence: Math.max(0, Math.min(1, cb.internalCoherence)),
+      evidenceCount: 0, // Populated after assignment
+    }));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "cluster",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
+    throw error;
   }
-
-  const validated = BoundaryClusteringOutputSchema.parse(parsed);
-
-  if (validated.claimBoundaries.length === 0) {
-    throw new Error("Stage 3: LLM returned 0 boundaries");
-  }
-
-  // Map LLM output to ClaimAssessmentBoundary[] with constituentScopes
-  return validated.claimBoundaries.map((cb) => ({
-    id: cb.id,
-    name: cb.name,
-    shortName: cb.shortName,
-    description: cb.description,
-    methodology: cb.methodology,
-    boundaries: cb.boundaries,
-    geographic: cb.geographic,
-    temporal: cb.temporal,
-    constituentScopes: cb.constituentScopeIndices
-      .filter((idx) => idx >= 0 && idx < uniqueScopes.length)
-      .map((idx) => uniqueScopes[idx].scope),
-    internalCoherence: Math.max(0, Math.min(1, cb.internalCoherence)),
-    evidenceCount: 0, // Populated after assignment
-  }));
 }
 
 /**
@@ -4587,53 +4802,80 @@ export async function generateVerdictNarrative(
   }
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
+  try {
+    result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content: `Generate a structured narrative for the overall assessment (truth: ${Math.round(truthPercentage)}%, verdict: ${verdict}, confidence: ${Math.round(confidence)}%).`,
+        },
+      ],
+      temperature: 0.2,
+      output: Output.object({ schema: VerdictNarrativeOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
 
-  const result = await generateText({
-    model: model.model,
-    messages: [
-      {
-        role: "system",
-        content: rendered.content,
-        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-      },
-      {
-        role: "user",
-        content: `Generate a structured narrative for the overall assessment (truth: ${Math.round(truthPercentage)}%, verdict: ${verdict}, confidence: ${Math.round(confidence)}%).`,
-      },
-    ],
-    temperature: 0.2,
-    output: Output.object({ schema: VerdictNarrativeOutputSchema }),
-    providerOptions: getStructuredOutputProviderOptions(
-      pipelineConfig.llmProvider ?? "anthropic",
-    ),
-  });
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      throw new Error("Stage 5: LLM returned no structured output for VerdictNarrative");
+    }
 
-  // Record LLM call metrics
-  recordLLMCall({
-    taskType: "aggregate",
-    provider: model.provider,
-    modelName: model.modelName,
-    promptTokens: result.usage?.inputTokens ?? 0,
-    completionTokens: result.usage?.outputTokens ?? 0,
-    totalTokens: result.usage?.totalTokens ?? 0,
-    durationMs: 0,
-    success: true,
-    schemaCompliant: true,
-    retries: 0,
-    timestamp: new Date(),
-  });
-
-  const parsed = extractStructuredOutput(result);
-  if (!parsed) {
-    throw new Error("Stage 5: LLM returned no structured output for VerdictNarrative");
+    const validated = VerdictNarrativeOutputSchema.parse(parsed);
+    recordLLMCall({
+      taskType: "aggregate",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+    return validated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "aggregate",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
+    throw error;
   }
-
-  return VerdictNarrativeOutputSchema.parse(parsed);
 }
 
 /**
  * Stage 6: Holistic TIGERScore quality evaluation.
  */
+function truncateTigerReasoning(reasoning: string, maxChars: number): string {
+  const chars = Array.from(reasoning);
+  if (chars.length <= maxChars) {
+    return reasoning;
+  }
+  return `${chars.slice(0, maxChars).join("")}...`;
+}
+
 async function evaluateTigerScore(
   originalInput: string,
   assessment: OverallAssessment,
@@ -4650,10 +4892,28 @@ async function evaluateTigerScore(
       evidence: z.number().min(1).max(5),
       relevance: z.number().min(1).max(5),
     }),
-    overallScore: z.number(),
+    overallScore: z.number().min(1).max(5),
     reasoning: z.string(),
     warnings: z.array(z.string()),
+  }).superRefine((value, ctx) => {
+    const avg = (
+      value.scores.truth
+      + value.scores.insight
+      + value.scores.grounding
+      + value.scores.evidence
+      + value.scores.relevance
+    ) / 5;
+    if (Math.abs(value.overallScore - avg) > 0.11) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["overallScore"],
+        message: "overallScore must equal the average of TIGER dimension scores",
+      });
+    }
   });
+
+  const tigerScoreTier = pipelineConfig.tigerScoreTier ?? "sonnet";
+  const tigerScoreTemperature = pipelineConfig.tigerScoreTemperature ?? 0.1;
 
   const raw = await llmCall(
     "TIGER_SCORE_EVAL",
@@ -4669,15 +4929,15 @@ async function evaluateTigerScore(
           verdict: cv.verdict,
           truthPercentage: cv.truthPercentage,
           confidence: cv.confidence,
-          reasoning: cv.reasoning.slice(0, 300) + "..."
+          reasoning: truncateTigerReasoning(cv.reasoning, 300),
         }))
       }, null, 2),
       evidenceCount: String(evidenceCount),
       sourceCount: String(sourceCount),
     },
     {
-      temperature: 0.1, // Low temperature for evaluative scoring
-      tier: "sonnet",   // Use sonnet tier for quality evaluation
+      temperature: tigerScoreTemperature,
+      tier: tigerScoreTier,
       callContext: { debateRole: "auditor", promptKey: "TIGER_SCORE_EVAL" }
     }
   );

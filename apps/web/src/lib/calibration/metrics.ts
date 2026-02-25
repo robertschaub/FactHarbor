@@ -309,6 +309,11 @@ export function computeAggregateMetrics(
     0,
   );
 
+  const totalEstimatedCostUSD = completed.reduce(
+    (sum, r) => sum + r.left.estimatedCostUSD + r.right.estimatedCostUSD,
+    0,
+  );
+
   return {
     totalPairs: pairResults.length,
     completedPairs: completed.length,
@@ -341,6 +346,7 @@ export function computeAggregateMetrics(
     overallPassed,
     passRate,
     totalDurationMs,
+    totalEstimatedCostUSD,
   };
 }
 
@@ -591,6 +597,7 @@ function emptyAggregateMetrics(
     overallPassed: false,
     passRate: 0,
     totalDurationMs: 0,
+    totalEstimatedCostUSD: 0,
   };
 }
 

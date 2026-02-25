@@ -39,6 +39,7 @@ import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
+import type { TIGERScore } from "@/lib/analyzer/types";
 
 // Provider issues (LLM/search call errors, even if recovered via fallback)
 // shown as a top-of-page indicator, not inside the report.
@@ -1121,7 +1122,7 @@ function decodeHtmlEntities(text: string): string {
 // TIGERScore Panel
 // ============================================================================
 
-function TIGERScorePanel({ tigerScore }: { tigerScore: any }) {
+function TIGERScorePanel({ tigerScore }: { tigerScore?: TIGERScore }) {
   if (!tigerScore) return null;
 
   const getScoreColor = (score: number) => {

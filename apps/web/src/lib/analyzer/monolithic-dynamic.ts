@@ -607,7 +607,7 @@ export async function runMonolithicDynamic(
   endPhase("verdict");
 
   // Step 4: Harden with Provenance Validation
-  startPhase("report");
+  startPhase("aggregate");
   // Preserve original accessedAt timestamps (Bug fix: don't lose fetch times)
   const citationTimestamps = new Map<string, string>();
   for (const c of citations) {
@@ -783,7 +783,7 @@ export async function runMonolithicDynamic(
           sourceReliabilityWeight: avgSourceReliabilityWeight,
         },
   };
-    endPhase("report");
+    endPhase("aggregate");
 
     // Generate report markdown
     const reportMarkdown = generateDynamicReportMarkdown(resultJson);
