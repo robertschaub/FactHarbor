@@ -2,25 +2,25 @@
 
 {{mermaid}}
 graph TD
-    GA[General Assembly / Members] -->|Elects| GT[Governing Team / Board]
-    GA -. May Appoint .-> AUD[Auditor (Optional)]
+    GA["General Assembly / Members"] -->|"Elects"| GT["Governing Team / Board"]
+    GA -. "May Appoint" .-> AUD["Auditor (Optional)"]
     
-    AUD -. Financial Oversight .-> GT
+    AUD -. "Financial Oversight" .-> GT
     
-    GS[Governance Steward] -. Procedural Oversight .-> GT
-    GS -. Procedural Oversight .-> DL[Domain Leads]
+    GS["Governance Steward"] -. "Procedural Oversight" .-> GT
+    GS -. "Procedural Oversight" .-> DL["Domain Leads: R&D, Ops, Community, Finance"]
     
-    GT -->|Oversees| DL[Domain Leads: R&D, Ops, Community, Finance]
+    GT -->|"Oversees"| DL
     
-    DL -->|Manage| UA[UCM Administrators]
-    DL -->|Manage| MOD[Moderators]
-    DL -->|Architecture| AKEL[AKEL & Infrastructure]
+    DL -->|"Manage"| UA["UCM Administrators"]
+    DL -->|"Manage"| MOD["Moderators"]
+    DL -->|"Architecture"| AKEL["AKEL & Infrastructure"]
     
-    MOD -->|Moderate| CNT[Claims & Evidence]
-    UA -->|Configure| CFG[UCM System Config]
+    MOD -->|"Moderate"| CNT["Claims & Evidence"]
+    UA -->|"Configure"| CFG["UCM System Config"]
     
-    USR[Registered Users] -->|Submit/Flag| CNT
-    RED[Readers / Guests] -->|Browse/View| CNT
+    USR["Registered Users"] -->|"Submit/Flag"| CNT
+    RED["Readers / Guests"] -->|"Browse/View"| CNT
 
     style GA fill:#e1f5ff,stroke:#005cbf
     style GT fill:#ffe1f5,stroke:#b0003a
