@@ -14,19 +14,20 @@ graph TD
     
     DL -->|"Manage"| UA["UCM Administrators"]
     DL -->|"Manage"| MOD["Moderators"]
+    DL -->|"Manage"| SC["Staff & Contributors"]
     DL -->|"Architecture"| AKEL["AKEL & Infrastructure"]
     
     MOD -->|"Moderate"| CNT["Claims & Evidence"]
     UA -->|"Configure"| CFG["UCM System Config"]
-    
-    USR["Registered Users"] -->|"Submit/Flag"| CNT
-    RED["Readers / Guests"] -->|"Browse/View"| CNT
+    SC -->|"Implement/Contribute"| AKEL
+    SC -->|"Contribute"| CNT
 
     style GA fill:#e1f5ff,stroke:#005cbf
     style GT fill:#ffe1f5,stroke:#b0003a
     style GS fill:#fff9c4,stroke:#fbc02d
     style DL fill:#fff5e1,stroke:#f57c00
     style AUD fill:#f8f9fa,stroke:#343a40
+    style SC fill:#f1f8e9,stroke:#558b2f
 {{/mermaid}}
 
 == Structure Summary ==
@@ -37,5 +38,6 @@ graph TD
 * **Governance Steward**: Safeguards neutrality and fairness of all processes.
 * **Domain Leads**: Operational execution across R&D, Operations, Community, and Finance.
 * **UCM Administrators**: Manage core system configuration and prompt architecture under Domain Lead oversight.
+* **Staff & Contributors**: Paid employees, contractors, and volunteer contributors who develop the software and contribute to the evidence base.
 * **Moderators**: Handle system-flagged escalations and system gaming.
 * **Readers & Users**: Interact with the platform while remaining subject to community guidelines and automated moderation.
