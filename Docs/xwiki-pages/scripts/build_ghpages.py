@@ -20,6 +20,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.parse
@@ -523,6 +524,16 @@ def main():
             print('  Skipping reports manifest (generate_reports_manifest.py not found)')
         except Exception as e:
             print(f'  Warning: reports manifest generation failed: {e}', file=sys.stderr)
+
+        # Copy HTML report files to gh-pages output
+        gh_reports_dir = output_dir / 'TESTREPORTS'
+        gh_reports_dir.mkdir(exist_ok=True)
+        report_count = 0
+        for html_file in reports_dir.glob('*.html'):
+            shutil.copy2(html_file, gh_reports_dir / html_file.name)
+            report_count += 1
+        if report_count:
+            print(f'  Copied {report_count} HTML report(s) to {gh_reports_dir}')
 
     total_size = json_size + html_size
     alias_note = f', {len(aliases)} alias(es)' if aliases else ''
