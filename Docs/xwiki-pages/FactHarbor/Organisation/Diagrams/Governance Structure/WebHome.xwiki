@@ -12,15 +12,17 @@ graph TD
     
     GT -->|"Oversees"| DL
     
-    DL -->|"Manage"| UA["UCM Administrators"]
-    DL -->|"Manage"| MOD["Moderators"]
     DL -->|"Manage"| SC["Staff & Contributors"]
-    DL -->|"Architecture"| AKEL["AKEL & Infrastructure"]
+    
+    SC -->|"Manage"| UA["UCM Administrators"]
+    SC -->|"Manage"| MOD["Moderators"]
+    SC -->|"Implement/Contribute"| AKEL["AKEL & Infrastructure"]
     
     MOD -->|"Moderate"| CNT["Claims & Evidence"]
     UA -->|"Configure"| CFG["UCM System Config"]
-    SC -->|"Implement/Contribute"| AKEL
-    SC -->|"Contribute"| CNT
+    
+    USR["Registered Users"] -->|"Submit/Flag"| CNT
+    RED["Readers / Guests"] -->|"Browse/View"| CNT
 
     style GA fill:#e1f5ff,stroke:#005cbf
     style GT fill:#ffe1f5,stroke:#b0003a
@@ -36,8 +38,8 @@ graph TD
 * **Governing Team (Board)**: Strategic oversight, policy setting, and appointments.
 * **Auditor (Optional)**: Provides independent financial oversight. Not mandatory by Swiss law for associations of FactHarbor's current size.
 * **Governance Steward**: Safeguards neutrality and fairness of all processes.
-* **Domain Leads**: Operational execution across R&D, Operations, Community, and Finance.
-* **UCM Administrators**: Manage core system configuration and prompt architecture under Domain Lead oversight.
-* **Staff & Contributors**: Paid employees, contractors, and volunteer contributors who develop the software and contribute to the evidence base.
-* **Moderators**: Handle system-flagged escalations and system gaming.
+* **Domain Leads**: Operational execution leads for R&D, Operations, Community, and Finance.
+* **Staff & Contributors**: Paid employees, contractors, and core volunteers who develop the platform, maintain infrastructure, and manage technical operations.
+* **UCM Administrators**: Manage core system configuration and prompt architecture under Staff supervision.
+* **Moderators**: Handle system-flagged escalations and system gaming under Staff supervision.
 * **Readers & Users**: Interact with the platform while remaining subject to community guidelines and automated moderation.
