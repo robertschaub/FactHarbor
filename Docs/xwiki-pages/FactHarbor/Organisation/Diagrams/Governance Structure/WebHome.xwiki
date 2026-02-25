@@ -20,7 +20,7 @@ graph TD
     
     DL -->|"Manage"| SC
     
-    DEV -->|"Implement"| AKEL["AKEL & Infrastructure"]
+    DEV -->|"Implement"| AKEL["Application & Services"]
     MOD -->|"Moderate"| CNT["Claims & Evidence"]
     UA -->|"Configure"| CFG["UCM System Config"]
     
@@ -43,7 +43,7 @@ graph TD
 * **Governance Steward**: Safeguards neutrality and fairness of all processes.
 * **Domain Leads**: Operational execution leads for R&D, Operations, Community, and Finance.
 * **Staff & Contributors**: The collective operational workforce managed by Domain Leads. Individuals in the following roles are members of this group:
-    * **Developers / Core Ops**: Build and maintain AKEL and the technical infrastructure.
+    * **Developers / Core Ops**: Build and maintain the Application & Services and the technical infrastructure.
     * **UCM Administrators**: Manage system configuration and prompt architecture.
     * **Moderators**: Handle system-flagged content escalations and system gaming.
 * **Readers & Users**: Interact with the platform while remaining subject to community guidelines and automated moderation.
