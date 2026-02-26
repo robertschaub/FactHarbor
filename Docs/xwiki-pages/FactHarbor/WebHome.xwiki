@@ -1,5 +1,10 @@
 = FactHarbor =
 
+(% style="font-size: 1.2em; color: #555;" %)
+Open-source AI fact-checking — every verdict backed by evidence you can inspect.
+
+== Our Vision and Mission ==
+
 (% class="wikigeneratedid" %)
 (((
 (% class="box successmessage" %)
@@ -24,7 +29,7 @@ FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** proje
 We serve the public interest with full transparency — no paywalls, no hidden algorithms, and no profit motive.
 )))
 
-=== From Claim to Verdict ===
+== What we do ==
 
 (% class="box infomessage" %)
 (((
