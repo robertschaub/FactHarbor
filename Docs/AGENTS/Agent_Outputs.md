@@ -2126,3 +2126,12 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If TIGERScore becomes mandatory for promotion decisions, extend calibration policy with explicit gate criteria for TIGERScore deltas and variance tolerance.
 **Learnings:** no
+### 2026-02-26 | Product Strategist (mapped from Marketing Professional) | Codex (GPT-5) | FactHarbor Essence Messaging Synthesis
+**Task:** Investigate current documentation and source code to produce a concise top-level description of how FactHarbor brings clarity for interested audiences.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Positioned FactHarbor as a transparent evidence-mapping system (not a black-box verdict tool), emphasizing pipeline-backed clarity: claim extraction, evidence gathering, boundary-aware verdicting, and inspectable reasoning with source provenance.
+**Open items:** Optional follow-up to tailor variants by channel (website hero, GitHub README, investor pitch, social post) while preserving current CB terminology.
+**Warnings:** Some legacy docs still use older wording (e.g., “AnalysisContext” language); messaging should prioritize current ClaimAssessmentBoundary-era terminology.
+**For next agent:** Reuse this synthesis baseline and tune only tone/length per audience; avoid introducing obsolete pipeline names or “single definitive truth” framing.
+**Learnings:** no
+---
