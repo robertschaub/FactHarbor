@@ -33,7 +33,6 @@ export interface SRConfigReadOnly {
   cacheTtlDays: number;
   multiModel: boolean;
   filterEnabled: boolean;
-  defaultScore: number;
 }
 
 /**
@@ -127,7 +126,6 @@ export interface SRServiceOptions {
   enabled?: boolean;
   confidenceThreshold?: number;
   consensusThreshold?: number;
-  defaultScore?: number;
 }
 
 /**

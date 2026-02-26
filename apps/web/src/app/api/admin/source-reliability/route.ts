@@ -14,11 +14,11 @@ export const runtime = "nodejs";
 
 // Get effective weight calculation config (using shared config)
 async function getWeightConfig() {
-  const srConfigResult = await getConfig("sr", "default");
-  const srConfig = srConfigResult.config;
+  const calcConfigResult = await getConfig("calculation", "default");
+  const calcConfig = calcConfigResult.config;
   return {
     blendCenter: 0.5, // Fixed: mathematical neutral
-    defaultScore: srConfig.defaultScore,
+    defaultScore: calcConfig.sourceReliability.defaultScore,
   };
 }
 

@@ -317,10 +317,7 @@ describe("Integration: Domain extraction + Importance filter", () => {
   });
 });
 
-describe("applyEvidenceWeighting (amplified deviation formula)", () => {
-  // New formula: effectiveWeight = 0.5 + (score - 0.5) × SPREAD × confidence × consensus
-  // Where SPREAD_MULTIPLIER = 1.5, CONSENSUS_SPREAD_MULTIPLIER = 1.15
-  // Default confidence when not specified = 0.7, default consensus = false
+describe("applyEvidenceWeighting", () => {
 
   it("returns verdicts unchanged when no supporting evidence items", () => {
     const verdicts = [
@@ -333,7 +330,7 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     expect(result[0].truthPercentage).toBe(75); // Truly unchanged (no evidence items)
   });
 
-  it("applies neutral weight to unknown sources (null score)", () => {
+  it("excludes unknown sources by default (null score)", () => {
     const verdicts = [
       { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: ["E1"] },
     ];
@@ -341,11 +338,22 @@ describe("applyEvidenceWeighting (amplified deviation formula)", () => {
     const sources = [{ id: "s1", trackRecordScore: null }]; // Unknown source
 
     const result = applyEvidenceWeighting(verdicts, evidenceItems, sources);
-    // Unknown source: score=0.5 (neutral), confidence=0.5
-    // effectiveWeight = 0.5 + (0.5 - 0.5) × 0.5 = 0.5 + 0 = 0.5
-    // adjustedTruth = 50 + (75 - 50) × 0.5 = 50 + 12.5 = 63
-    expect(result[0].truthPercentage).toBe(63);
-    expect(result[0].evidenceWeight).toBeCloseTo(0.5, 2);
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].evidenceWeight).toBeUndefined();
+  });
+
+  it("uses app-defined fallback when unknownSourceScore is provided", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 75, confidence: 80, supportingEvidenceIds: ["E1"] },
+    ];
+    const evidenceItems = [{ id: "E1", sourceId: "s1" }];
+    const sources = [{ id: "s1", trackRecordScore: null }];
+
+    const result = applyEvidenceWeighting(verdicts, evidenceItems, sources, {
+      unknownSourceScore: 0.4,
+    });
+    expect(result[0].truthPercentage).toBe(60);
+    expect(result[0].evidenceWeight).toBeCloseTo(0.4, 2);
   });
 
   it("adjusts truth percentage based on high reliability source", () => {

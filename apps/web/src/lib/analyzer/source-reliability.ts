@@ -35,14 +35,18 @@ export const SR_CONFIG = {
   domainCooldownSec: sharedConfig.domainCooldownSec,
   skipPlatforms: sharedConfig.skipPlatforms,
   skipTlds: sharedConfig.skipTlds,
-  defaultScore: sharedConfig.defaultScore,
   evalConcurrency: sharedConfig.evalConcurrency ?? 5,
   evalTimeoutMs: sharedConfig.evalTimeoutMs ?? 90000,
   defaultConfidence: sharedConfig.defaultConfidence ?? 0.8,
   unknownSourceConfidence: sharedConfig.unknownSourceConfidence ?? 0.5,
 };
 
-let DEFAULT_UNKNOWN_SOURCE_SCORE = SR_CONFIG.defaultScore;
+/**
+ * SR module default for unknown sources.
+ * The SR system itself returns null for unknown/unrated sources; consuming apps
+ * choose if/how to map null to a fallback numeric weight.
+ */
+export const DEFAULT_UNKNOWN_SOURCE_SCORE: null = null;
 
 export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): void {
   setSRConfig(config);
@@ -57,12 +61,10 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.domainCooldownSec = next.domainCooldownSec;
   SR_CONFIG.skipPlatforms = next.skipPlatforms;
   SR_CONFIG.skipTlds = next.skipTlds;
-  SR_CONFIG.defaultScore = next.defaultScore;
   SR_CONFIG.evalConcurrency = next.evalConcurrency ?? 5;
   SR_CONFIG.evalTimeoutMs = next.evalTimeoutMs ?? 90000;
   SR_CONFIG.defaultConfidence = next.defaultConfidence ?? 0.8;
   SR_CONFIG.unknownSourceConfidence = next.unknownSourceConfidence ?? 0.5;
-  DEFAULT_UNKNOWN_SOURCE_SCORE = next.defaultScore;
   setCacheTtlDays(next.cacheTtlDays);
 }
 
@@ -533,19 +535,12 @@ export function normalizeTrackRecordScore(score: number): number {
 // ============================================================================
 
 /**
- * Default score for unknown sources (sources without reliability data).
- * 
- * Set to 0.5 (50%) which represents the neutral center of the symmetric scale:
- * - Above 0.5: Positive boost to verdict preservation (trusted sources)
- * - At 0.5: No change (neutral/unknown - appropriate skepticism)
- * - Below 0.5: Pull verdict toward neutral (skepticism for unreliable sources)
- * 
- * Unknown sources use this with low confidence (0.5), resulting in:
- * effectiveWeight = 0.5 + (0.5 - 0.5) × spread × 0.5 = 0.5 (neutral)
- * 
- * Configurable via UCM SR defaultScore.
+ * Options for evidence weighting.
+ * `unknownSourceScore` is app-defined; SR defaults to null for unknown sources.
  */
-export { DEFAULT_UNKNOWN_SOURCE_SCORE };
+export interface EvidenceWeightingOptions {
+  unknownSourceScore?: number | null;
+}
 
 /**
  * Extended source reliability data for verdict calculation.
@@ -587,15 +582,15 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * - null: insufficient_data (unknown source, no assessments)
  * 
  * Formula: adjustedTruth = 50 + (originalTruth - 50) * avgEffectiveWeight
- * 
- * Effective weight = 0.5 + (score - 0.5) × confidence
- * - Score: LLM-evaluated reliability (7-band scale)
- * - Confidence: How certain the LLM was (pulls toward neutral when low)
+ *
+ * Unknown-source handling is consumer-defined via `options.unknownSourceScore`.
+ * If omitted/null, unknown sources are excluded from weighting.
  */
 export function applyEvidenceWeighting(
   claimVerdicts: ClaimVerdict[],
   evidenceItems: EvidenceItem[],
-  sources: FetchedSource[]
+  sources: FetchedSource[],
+  options: EvidenceWeightingOptions = {}
 ): ClaimVerdict[] {
   // Build source reliability data map
   const sourceDataById = new Map<string, SourceReliabilityData | null>(
@@ -626,17 +621,17 @@ export function applyEvidenceWeighting(
       .filter((data): data is SourceReliabilityData | null => true);
 
     // Calculate effective weights for each source
-    const weights = reliabilityData.map((data) => {
+    const weights = reliabilityData
+      .map((data) => {
       if (data === null) {
-        // Unknown source: use default score with moderate confidence, no consensus
-        return calculateEffectiveWeight({
-          score: DEFAULT_UNKNOWN_SOURCE_SCORE,
-          confidence: SR_CONFIG.unknownSourceConfidence, // Confidence for unknown sources from UCM
-          consensusAchieved: false,
-        });
+        if (options.unknownSourceScore === null || options.unknownSourceScore === undefined) {
+          return null;
+        }
+        return normalizeTrackRecordScore(options.unknownSourceScore);
       }
       return calculateEffectiveWeight(data);
-    });
+    })
+      .filter((weight): weight is number => weight !== null);
 
     // If no evidence/sources, return verdict unchanged
     if (weights.length === 0) return verdict;

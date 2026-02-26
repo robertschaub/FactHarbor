@@ -120,7 +120,7 @@ export function validateVerdictGate4(
   const qualityMedium = gateConfig?.gate4QualityThresholdMedium ?? 0.5;
   const agreementHigh = gateConfig?.gate4AgreementThresholdHigh ?? 0.7;
   const agreementMedium = gateConfig?.gate4AgreementThresholdMedium ?? 0.5;
-  const defaultScore = gateConfig?.defaultTrackRecordScore ?? 0.5;
+  const defaultScore = gateConfig?.defaultTrackRecordScore ?? 0.4;
 
   // 1. Count evidence sources
   const evidenceCount = sources.length;

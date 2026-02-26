@@ -70,7 +70,6 @@ export class SRServiceImpl implements ISRService {
       cacheTtlDays: config.cacheTtlDays,
       multiModel: config.multiModel,
       filterEnabled: config.filterEnabled,
-      defaultScore: this.options.defaultScore ?? config.defaultScore,
     };
   }
 

@@ -184,7 +184,6 @@ interface SRConfig {
   openaiModel: string;
   confidenceThreshold: number;
   consensusThreshold: number;
-  defaultScore: number;
   cacheTtlDays: number;
   filterEnabled: boolean;
   skipPlatforms: string[];
@@ -230,7 +229,7 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
   sourceReliability: {
     confidenceThreshold: 0.8,
     consensusThreshold: 0.2,
-    defaultScore: 0.5,
+    defaultScore: 0.4,
   },
   qualityGates: {
     gate1OpinionThreshold: 0.7,
@@ -294,7 +293,6 @@ const DEFAULT_SR_CONFIG: SRConfig = {
   openaiModel: "gpt-4o-mini",
   confidenceThreshold: 0.8,
   consensusThreshold: 0.20,
-  defaultScore: 0.5,
   cacheTtlDays: 90,
   filterEnabled: true,
   skipPlatforms: ["blogspot.", "wordpress.com", "medium.com", "substack.com"],
@@ -768,7 +766,7 @@ function CalcConfigForm({
               onChange={(e) => {
                 const v = parseFloat(e.target.value);
                 updateNested("sourceReliability", {
-                  defaultScore: isNaN(v) ? 0.5 : v,
+                  defaultScore: isNaN(v) ? 0.4 : v,
                 });
               }}
             />
@@ -2062,22 +2060,6 @@ function SRConfigForm({
             }}
           />
           <div className={styles.formHelp}>Max allowed diff between models. 0.2 = 20% max disagreement.</div>
-        </div>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Default Score</label>
-          <input
-            type="number"
-            className={styles.formInput}
-            value={config.defaultScore}
-            min={0}
-            max={1}
-            step={0.1}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              updateField("defaultScore", isNaN(v) ? 0.5 : v);
-            }}
-          />
-          <div className={styles.formHelp}>Fallback for unknown sources. 0.5 = neutral. Lower = more skeptical.</div>
         </div>
       </div>
 

@@ -27,11 +27,6 @@ export const DEFAULT_CONFIDENCE_THRESHOLD = DEFAULT_SR_CONFIG.confidenceThreshol
  */
 export const DEFAULT_CONSENSUS_THRESHOLD = DEFAULT_SR_CONFIG.consensusThreshold;
 
-/**
- * Default score for unknown sources (neutral center of the scale).
- */
-export const DEFAULT_UNKNOWN_SCORE = DEFAULT_SR_CONFIG.defaultScore;
-
 // ============================================================================
 // SOURCE TYPE SCORE CAPS (REFERENCE ONLY - PROMPT IS AUTHORITATIVE)
 // ============================================================================

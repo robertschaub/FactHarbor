@@ -389,11 +389,11 @@ Adjusted: 50 + (85 - 50) x 0.95 = 83.3% -> 83% (MOSTLY-TRUE)
 Impact: Verdict mostly preserved
 {{/code}}
 
-**Unknown Source (50% score -- neutral default)**
+**Unknown Source (40% score -- default skeptical prior)**
 
 {{code}}
 Original verdict: 85% (MOSTLY-TRUE)
-Adjusted: 50 + (85 - 50) x 0.50 = 67.5% -> 68% (LEANING-TRUE)
+Adjusted: 50 + (85 - 50) x 0.40 = 64.0% -> 64% (LEANING-TRUE)
 Impact: Strong pull toward neutral (appropriate skepticism)
 {{/code}}
 
@@ -411,16 +411,16 @@ Impact: Strong pull toward neutral (unreliable source)
 Verdict evidence from:
   - reuters.com:       95% score
   - bild.de:           44% score
-  - unknown-blog.xyz:  50% score (default)
+  - unknown-blog.xyz:  40% score (default)
 
-Average weight: (95 + 44 + 50) / 3 = 63%
+Average weight: (95 + 44 + 40) / 3 = 60%
 
-Original: 85% -> Adjusted: 50 + (85 - 50) x 0.63 = 72% (LEANING-TRUE)
+Original: 85% -> Adjusted: 50 + (85 - 50) x 0.60 = 71% (LEANING-TRUE)
 {{/code}}
 
 === 8.4 Unknown Source Handling ===
 
-Sources not in the reliability cache are assigned ##defaultScore = 0.5## (symmetric scale centre), resulting in 50% weight (neutral). This applies appropriate skepticism without completely discounting evidence.
+Sources not in the reliability cache remain ##null## in Source Reliability. The consuming pipeline/app decides whether to apply a fallback score (for example ##defaultScore = 0.4##) or leave unknown sources unweighted.
 
 ----
 

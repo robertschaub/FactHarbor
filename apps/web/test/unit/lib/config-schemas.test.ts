@@ -663,7 +663,6 @@ describe("Default Config Values", () => {
     it("has correct threshold defaults", () => {
       expect(DEFAULT_SR_CONFIG.confidenceThreshold).toBe(0.8);
       expect(DEFAULT_SR_CONFIG.consensusThreshold).toBe(0.20);
-      expect(DEFAULT_SR_CONFIG.defaultScore).toBe(0.5);
     });
 
     it("has correct filtering defaults", () => {

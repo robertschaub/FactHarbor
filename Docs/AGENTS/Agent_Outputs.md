@@ -2135,3 +2135,54 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:** Reuse this synthesis baseline and tune only tone/length per audience; avoid introducing obsolete pipeline names or “single definitive truth” framing.
 **Learnings:** no
 ---
+---
+### 2026-02-26 | Default | Codex (GPT-5) | Lower SR Unknown-Source Default to 0.4
+**Task:** Change the Source Reliability unknown-source default score from `0.5` to `0.4` and align dependent code/tests/docs.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/app/admin/config/page.tsx`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/src/lib/source-reliability-config.ts`, `apps/web/src/lib/analyzer/quality-gates.ts`, `apps/web/test/unit/lib/analyzer/source-reliability.integration.test.ts`, `apps/web/test/unit/lib/config-schemas.test.ts`, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/Configuration and Scoring/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Calculations and Verdicts/WebHome.xwiki`, `Docs/ARCHITECTURE/Calculations.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Set SR defaults to `defaultScore: 0.4` in config schema defaults so unknown-source fallback is more skeptical by default.
+- Updated admin config form defaults/fallbacks to `0.4` to keep UI defaults consistent with runtime defaults.
+- Aligned Gate 4 fallback (`defaultTrackRecordScore`) to `0.4` to avoid hidden inconsistency with SR unknown-source handling.
+- Updated affected tests and non-archived docs/examples that explicitly stated `0.5`.
+**Open items:**
+- If there is an active UCM `sr/default` profile in another environment, set `defaultScore` there too; code defaults only apply when no active DB config overrides them.
+**Warnings:**
+- Full `config-schemas.test.ts` currently has an unrelated pre-existing failure (`maxTotalTokens` expected `750000` vs current `1000000`). SR-targeted tests passed.
+**For next agent:**
+- If you want this applied immediately in a running environment with an active SR config, update UCM `source-reliability` profile (`defaultScore`) and re-run a smoke analysis on unknown-domain evidence.
+**Learnings:** no
+---
+### 2026-02-26 | Default | Codex (GPT-5) | SR Unknown Defaults Shifted to Consumer-Owned Fallback
+**Task:** Change Source Reliability behavior so unknown/unrated sources remain `null` by default, and require consuming app logic to define any numeric fallback.
+**Files touched:** `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/src/lib/analyzer/monolithic-dynamic.ts`, `apps/web/test/unit/lib/analyzer/source-reliability.test.ts`, `apps/web/test/unit/lib/analyzer/source-reliability.integration.test.ts`, `Docs/ARCHITECTURE/Calculations.md`, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Calculations and Verdicts/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/Configuration and Scoring/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Set SR module unknown default to `null` (`DEFAULT_UNKNOWN_SOURCE_SCORE: null`) and removed internal reassignment from SR config.
+- Added `EvidenceWeightingOptions` to `applyEvidenceWeighting(...)` with `unknownSourceScore?: number | null`; default path excludes unknown sources from weighting.
+- Updated Monolithic Dynamic to define its own unknown-source fallback explicitly via app/UCM config (`srConfig.defaultScore`) instead of SR module internals.
+- Updated unit/integration tests to assert: default unknown behavior is unchanged verdict, and app-defined fallback applies when provided.
+- Updated architecture/xwiki docs to reflect new contract: SR returns `null`; consumer pipeline/app decides fallback.
+**Open items:**
+- ClaimBoundary pipeline currently does not call `setSourceReliabilityConfig(...)` (existing behavior). If required, SR UCM hot config should be explicitly wired there in a follow-up.
+**Warnings:**
+- Worktree already had unrelated in-flight edits from prior SR default changes (0.4). This entry documents only the null-by-default contract shift and consumer-owned fallback behavior.
+**For next agent:**
+- If asked to complete end-to-end SR UCM wiring for ClaimBoundary runtime, add SR config load/apply at pipeline start and cover with a focused unit test around config application.
+**Learnings:** no
+---
+### 2026-02-26 | Default | Codex (GPT-5) | Move Unknown-Source Fallback Ownership to Main App UCM
+**Task:** Ensure unknown-source fallback (0.4) is configurable in FactHarbor main application config, not Source Reliability UCM.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/source-reliability-config.ts`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/src/lib/analyzer/monolithic-dynamic.ts`, `apps/web/src/lib/analyzer/sr-service-interface.ts`, `apps/web/src/lib/analyzer/sr-service-impl.ts`, `apps/web/src/app/admin/config/page.tsx`, `apps/web/src/app/api/admin/source-reliability/route.ts`, `apps/web/src/lib/config-snapshots.ts`, `apps/web/test/unit/lib/source-reliability-config.test.ts`, `apps/web/test/unit/lib/config-schemas.test.ts`, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/Configuration and Scoring/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Removed `defaultScore` from `SourceReliabilityConfigSchema` and `DEFAULT_SR_CONFIG` so SR UCM no longer owns unknown-source fallback.
+- Kept fallback in main app config (`CalcConfig.sourceReliability.defaultScore`, default `0.4`) as the single tunable fallback source.
+- Updated Monolithic Dynamic to use `calcConfig.sourceReliability.defaultScore` for unknown-source weighting instead of `srConfig.defaultScore`.
+- Retained SR behavior that unknown/unrated sources resolve to `null` unless the consuming app explicitly provides fallback.
+- Updated SR admin API “weight config” helper to read fallback from calculation config, not SR config.
+- Removed SR UI field for `defaultScore` from Admin Config > SR profile editor.
+**Open items:**
+- Existing docs/tests modified earlier in this branch still include broader SR default/fallback transition work; this entry reflects only the ownership move requested here.
+**Warnings:**
+- `Docs/AGENTS/Agent_Outputs.md` and multiple SR-related files were already dirty before this turn; changes were additive and aligned with current request.
+**For next agent:**
+- If needed, add/confirm UX copy in Admin Config clarifying that unknown-source fallback is under **Calculation > Source Reliability > Default Score** (not SR profile).
+**Learnings:** no

@@ -11,7 +11,7 @@
  * @date 2026-01-30
  */
 
-import type { PipelineConfig, SearchConfig, SourceReliabilityConfig } from "./config-schemas";
+import type { PipelineConfig, SearchConfig, SourceReliabilityConfig, CalcConfig } from "./config-schemas";
 import { getDb } from "./config-storage";
 import { ANALYZER_VERSION } from "./version";
 
@@ -193,14 +193,17 @@ export async function getConfigSnapshot(
  *
  * @returns SR summary for snapshot
  */
-export function getSRConfigSummary(srConfig: SourceReliabilityConfig): {
+export function getSRConfigSummary(
+  srConfig: SourceReliabilityConfig,
+  calcConfig: CalcConfig,
+): {
   enabled: boolean;
   defaultScore: number;
   confidenceThreshold: number;
 } {
   return {
     enabled: srConfig.enabled,
-    defaultScore: srConfig.defaultScore,
+    defaultScore: calcConfig.sourceReliability.defaultScore,
     confidenceThreshold: srConfig.confidenceThreshold,
   };
 }

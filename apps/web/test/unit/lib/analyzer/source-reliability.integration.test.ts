@@ -187,11 +187,18 @@ describe("Source Reliability Integration", () => {
 
       const weighted = applyEvidenceWeighting(verdicts, evidenceItems, sources);
 
-      // Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) which pulls verdict toward neutral
-      // Formula: adjustedTruth = 50 + (80 - 50) * 0.5 = 50 + 15 = 65
-      expect(weighted[0].truthPercentage).toBe(65);
-      expect(weighted[0].evidenceWeight).toBe(0.5);
-      expect(weighted[0].sourceReliabilityMeta?.unknownSources).toBe(1);
+      // Default behavior: unknown sources remain null and are excluded from weighting
+      expect(weighted[0].truthPercentage).toBe(80);
+      expect(weighted[0].evidenceWeight).toBeUndefined();
+
+      // Consumer can define fallback explicitly
+      const weightedWithFallback = applyEvidenceWeighting(verdicts, evidenceItems, sources, {
+        unknownSourceScore: 0.4,
+      });
+      // Formula with app-defined fallback: 50 + (80 - 50) * 0.4 = 62
+      expect(weightedWithFallback[0].truthPercentage).toBe(62);
+      expect(weightedWithFallback[0].evidenceWeight).toBe(0.4);
+      expect(weightedWithFallback[0].sourceReliabilityMeta?.unknownSources).toBe(1);
     });
 
     it("skips blog platforms during prefetch (importance filter)", async () => {
@@ -482,7 +489,7 @@ describe("Source Reliability Integration", () => {
         id: "unknown-source",
         url: "https://unknown.example/article",
         title: "Unknown Article",
-        trackRecordScore: null, // Unknown source - uses DEFAULT_UNKNOWN_SOURCE_SCORE (0.5)
+        trackRecordScore: null,
         fullText: "...",
         fetchedAt: new Date().toISOString(),
         category: "unknown",
@@ -509,11 +516,18 @@ describe("Source Reliability Integration", () => {
 
       const weighted = applyEvidenceWeighting(verdicts, evidenceItems, [source]);
 
-      // Unknown sources use DEFAULT_UNKNOWN_SOURCE_SCORE (0.5) which pulls verdict toward neutral
-      // Formula: adjustedTruth = 50 + (75 - 50) * 0.5 = 50 + 12.5 = 63 (rounded)
-      expect(weighted[0].truthPercentage).toBe(63);
-      expect(weighted[0].evidenceWeight).toBe(0.5);
-      expect(weighted[0].sourceReliabilityMeta?.unknownSources).toBe(1);
+      // Default behavior: unknown source is excluded
+      expect(weighted[0].truthPercentage).toBe(75);
+      expect(weighted[0].evidenceWeight).toBeUndefined();
+
+      // Consumer-defined fallback still supported
+      const weightedWithFallback = applyEvidenceWeighting(verdicts, evidenceItems, [source], {
+        unknownSourceScore: 0.4,
+      });
+      // Formula: adjustedTruth = 50 + (75 - 50) * 0.4 = 60
+      expect(weightedWithFallback[0].truthPercentage).toBe(60);
+      expect(weightedWithFallback[0].evidenceWeight).toBe(0.4);
+      expect(weightedWithFallback[0].sourceReliabilityMeta?.unknownSources).toBe(1);
     });
   });
 });

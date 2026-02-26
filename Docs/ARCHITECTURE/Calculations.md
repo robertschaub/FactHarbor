@@ -480,7 +480,7 @@ const fetchedSource: FetchedSource = {
 | 0.15–0.28 | Unreliable | Strong pull toward neutral (~15–30% weight) |
 | 0.00–0.14 | Highly Unreliable | Maximum skepticism (~0–15% weight) |
 
-Unknown/unevaluated sources receive `defaultScore = 0.5` (neutral center), applying appropriate skepticism without discounting evidence entirely.
+Unknown/unevaluated sources remain `null` in Source Reliability. The consuming pipeline/app decides whether to apply a fallback (for example `defaultScore = 0.4`) or to leave unknown sources unweighted.
 
 ### Verdict Adjustment Formula
 
@@ -501,7 +501,7 @@ adjustedConfidence = Math.round(originalConfidence * (0.5 + avgEffectiveWeight /
 | Source | Score | Original Verdict | Adjusted Verdict |
 |--------|-------|-----------------|-----------------|
 | Reuters (95% score) | 0.95 | 85% (MOSTLY-TRUE) | 83% (MOSTLY-TRUE) |
-| Unknown source (50% score) | 0.50 | 85% (MOSTLY-TRUE) | 68% (LEANING-TRUE) |
+| Unknown source (40% score) | 0.40 | 85% (MOSTLY-TRUE) | 64% (LEANING-TRUE) |
 | Low credibility (27% score) | 0.27 | 85% (MOSTLY-TRUE) | 60% (LEANING-TRUE) |
 
 **Multi-source averaging**: When a verdict draws from multiple sources, their scores are averaged before applying the adjustment formula.

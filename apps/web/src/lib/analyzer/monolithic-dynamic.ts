@@ -34,13 +34,12 @@ import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-break
 import { detectProvider } from "./prompts/prompt-builder";
 import { loadAndRenderSection, loadPromptFile, type Pipeline } from "./prompt-loader";
 import { getConfig, recordConfigUsage } from "@/lib/config-storage";
-import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
+import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import {
   prefetchSourceReliability,
   getTrackRecordData,
   clearPrefetchedScores,
   calculateEffectiveWeight,
-  DEFAULT_UNKNOWN_SOURCE_SCORE,
   SR_CONFIG,
   setSourceReliabilityConfig,
   type CachedReliabilityData,
@@ -195,12 +194,14 @@ export async function runMonolithicDynamic(
 ): Promise<{ resultJson: any; reportMarkdown: string }> {
   const startTime = Date.now();
   // We use tiered models below instead of a single getModel()
-  const [pipelineResult, searchResult] = await Promise.all([
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default", input.jobId),
     loadSearchConfig("default", input.jobId),
+    loadCalcConfig("default", input.jobId),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+  const calcConfig = calcResult.config;
   const dynamicBudget: DynamicBudget = {
     maxIterations: pipelineConfig.monolithicMaxIterations ?? 4,
     maxSearches: pipelineConfig.monolithicMaxSearches ?? 6,
@@ -653,7 +654,8 @@ export async function runMonolithicDynamic(
   });
 
   // v2.6.35: Apply source reliability weighting to verdict
-  let avgSourceReliabilityWeight = DEFAULT_UNKNOWN_SOURCE_SCORE;
+  const unknownSourceScore = calcConfig.sourceReliability.defaultScore;
+  let avgSourceReliabilityWeight = unknownSourceScore;
   if (SR_CONFIG.enabled && finalCitations.length > 0) {
     const reliabilityWeights = finalCitations.map((c) => {
       if (c.trackRecordScore !== null && c.trackRecordScore !== undefined) {
@@ -665,7 +667,7 @@ export async function runMonolithicDynamic(
       }
       // Unknown source: use default with low confidence
       return calculateEffectiveWeight({
-        score: DEFAULT_UNKNOWN_SOURCE_SCORE,
+        score: unknownSourceScore,
         confidence: 0.5,
         consensusAchieved: false,
       });

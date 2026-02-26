@@ -885,7 +885,6 @@ export const SourceReliabilityConfigSchema = z.object({
   // === Thresholds ===
   confidenceThreshold: z.number().min(0).max(1).describe("Minimum confidence to accept a score"),
   consensusThreshold: z.number().min(0).max(1).describe("Max score difference between models for consensus"),
-  defaultScore: z.number().min(0).max(1).describe("Default score for unknown sources"),
 
   // === Cache Settings ===
   cacheTtlDays: z.number().int().min(1).max(365).describe("Cache TTL in days"),
@@ -939,7 +938,6 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   // Thresholds
   confidenceThreshold: 0.8,
   consensusThreshold: 0.20,
-  defaultScore: 0.5,
 
   // Cache
   cacheTtlDays: 90,
@@ -1381,7 +1379,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   sourceReliability: {
     confidenceThreshold: 0.8,
     consensusThreshold: 0.2,
-    defaultScore: 0.5,
+    defaultScore: 0.4,
   },
   qualityGates: {
     gate1OpinionThreshold: 0.7,

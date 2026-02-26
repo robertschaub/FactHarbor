@@ -8,7 +8,6 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CONFIDENCE_THRESHOLD,
   DEFAULT_CONSENSUS_THRESHOLD,
-  DEFAULT_UNKNOWN_SCORE,
   SOURCE_TYPE_EXPECTED_CAPS,
   scoreToFactualRating,
   ratingToScoreRange,
@@ -24,10 +23,6 @@ describe("Source Reliability Config - Constants", () => {
 
   it("has correct default consensus threshold (0.20)", () => {
     expect(DEFAULT_CONSENSUS_THRESHOLD).toBe(0.20);
-  });
-
-  it("has correct default unknown score (0.5)", () => {
-    expect(DEFAULT_UNKNOWN_SCORE).toBe(0.5);
   });
 });
 
@@ -195,7 +190,6 @@ describe("getSRConfig", () => {
     expect(config).toHaveProperty("multiModel");
     expect(config).toHaveProperty("confidenceThreshold");
     expect(config).toHaveProperty("consensusThreshold");
-    expect(config).toHaveProperty("defaultScore");
     expect(config).toHaveProperty("cacheTtlDays");
     expect(config).toHaveProperty("filterEnabled");
   });
@@ -205,6 +199,5 @@ describe("getSRConfig", () => {
     // These should match the module-level defaults
     expect(config.confidenceThreshold).toBe(DEFAULT_CONFIDENCE_THRESHOLD);
     expect(config.consensusThreshold).toBe(DEFAULT_CONSENSUS_THRESHOLD);
-    expect(config.defaultScore).toBe(DEFAULT_UNKNOWN_SCORE);
   });
 });
