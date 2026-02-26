@@ -13,7 +13,7 @@ We build a high-scale, automated analysis pipeline (AKEL) using **Next.js**, **.
 * **Product Owner** → [[Requirements & User Needs>>FactHarbor.Product Development.Requirements.WebHome]]
 * **Project Manager** → [[Planning & Roadmap>>FactHarbor.Product Development.Planning.WebHome]]
 
----
+----
 
 == 🛠️ Core Documentation ==
 
@@ -22,7 +22,7 @@ We build a high-scale, automated analysis pipeline (AKEL) using **Next.js**, **.
 * 🔗 **[[Planning>>FactHarbor.Product Development.Planning.WebHome]]**: Project status, phase definitions (Alpha/Beta), and roadmaps.
 * 🔗 **[[DevOps>>FactHarbor.Product Development.DevOps.WebHome]]**: Coding guidelines, local setup, and deployment guides.
 
----
+----
 
 == 💡 Engineering Mandates ==
 * **No Domain Hardcoding**: The system must remain generic and strictly evidence-driven.
@@ -30,5 +30,5 @@ We build a high-scale, automated analysis pipeline (AKEL) using **Next.js**, **.
 * **Input Neutrality**: Phrasing must not bias the depth or direction of analysis.
 * **UCM-Driven**: All tunable parameters reside in Unified Config Management (SQLite).
 
----
+----
 **Maintained by**: R&D Lead | **Status**: Alpha | **Last Review**: Feb 2026

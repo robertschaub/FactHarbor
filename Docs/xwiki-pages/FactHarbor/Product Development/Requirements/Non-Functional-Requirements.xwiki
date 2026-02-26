@@ -27,5 +27,5 @@
 * **Modularity**: Separation of AKEL (Logic) and persistence (.NET API).
 * **Testability**: Mandatory Vitest coverage for all analysis modules.
 
----
+----
 **Maintained by**: Operations Lead | **Status**: Alpha | **Last Review**: Feb 2026

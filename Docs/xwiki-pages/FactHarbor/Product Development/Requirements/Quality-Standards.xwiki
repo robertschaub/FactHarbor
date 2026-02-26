@@ -33,5 +33,5 @@ Continuous scoring determines the necessary review level:
 * **Factors**: Domain sensitivity (Medical/Legal), potential impact, and controversy level.
 * **Actions**: High-risk items (>80) are flagged for human moderator oversight.
 
----
+----
 **Maintained by**: Community Lead | **Status**: Operational | **Last Review**: Feb 2026

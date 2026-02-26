@@ -19,7 +19,7 @@ This document describes the **Specification** of FactHarbor. It is a working dra
 * **Inspect the data model** → [[Data Model Examples>>FactHarbor.Product Development.Specification.Data Model Examples.WebHome]]
 * **Deep dive into logic** → [[Calculations>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]]
 
----
+----
 
 == 1. 🛠️ Functional Specification ==
 What the system does from a user and data perspective.
@@ -41,9 +41,9 @@ Standardized look-up material for developers and AI agents.
 * 🔗 **[[Data Models & Schemas>>FactHarbor.Product Development.Specification.Reference.Data Models and Schemas.WebHome]]**: JSON schemas and Zod definitions.
 * 🔗 **[[Prompt Engineering>>FactHarbor.Product Development.Specification.Reference.Prompt Engineering.WebHome]]**: Designing for multi-provider consistency.
 
----
+----
 === 📂 Historical Context ===
 * [[POC Archive>>FactHarbor.Product Development.Specification.POC.WebHome]] — Legacy schemas and early trial reports.
 
----
+----
 **Maintained by**: R&D Lead | **Status**: Alpha | **Last Review**: Feb 2026

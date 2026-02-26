@@ -5,7 +5,7 @@
 **Status:** Production Specification 
 **Based on:** FactHarbor V0.9.69 + Quality Gate Enhancements
 
----
+----
 
 == Purpose ==
 
@@ -16,7 +16,7 @@ This specification defines POC1 scope and requirements. POC1 proves that the AKE
 3. **Quality Validation** - Quality gates prevent hallucinations and low-confidence outputs
 4. **Core Workflow Viability** - The Article → Claims → Evidence → Verdicts pipeline works
 
----
+----
 
 == Success Criteria ==
 
@@ -28,7 +28,7 @@ This specification defines POC1 scope and requirements. POC1 proves that the AKE
 * ✅ Hallucination rate below 10% (manual verification)
 * ✅ Quality gates effectively filter non-publishable content
 
----
+----
 
 == Scope ==
 
@@ -70,7 +70,7 @@ This specification defines POC1 scope and requirements. POC1 proves that the AKE
 * Security hardening (NFR12)
 * A/B testing (FR49)
 
----
+----
 
 == Requirements ==
 
@@ -201,7 +201,7 @@ For POC1 testing and debugging **only**:
 * **Must be removed** before POC2
 * All bypasses logged for review
 
----
+----
 
 === FR7: Automated Verdicts (Enhanced with Quality Gates) ===
 
@@ -251,7 +251,7 @@ The claim that "France's GDP was $2.7 trillion in 2023" is partially accurate. A
 **Evidence Agreement:** 100% (all sources support)
 {{/info}}
 
----
+----
 
 === FR4: Analysis Summary (Enhanced with Quality Indicators) ===
 
@@ -288,7 +288,7 @@ Basic summary showing:
 * Analysis confidence: MEDIUM
 {{/info}}
 
----
+----
 
 == Workflow ==
 
@@ -320,7 +320,7 @@ Article Input
 6. **Gate 4 Validation:** Verify verdict has sufficient confidence
 7. **Display or Hold:** Show verdict to user or flag for review
 
----
+----
 
 == Data Model Extensions ==
 
@@ -341,7 +341,7 @@ Article Input
 | `failureReason` | string | Why it failed (if applicable)
 | `validatedAt` | timestamp | Validation time
 
----
+----
 
 === VerdictValidationResult ===
 
@@ -360,7 +360,7 @@ Article Input
 | `failureReasons` | string[] | Why not publishable (if applicable)
 | `validatedAt` | timestamp | Validation time
 
----
+----
 
 === QualityMetrics ===
 
@@ -385,7 +385,7 @@ Article Input
 5. Calculate quality metrics
 6. Adjust thresholds if needed
 
----
+----
 
 == Cache Architecture ==
 
@@ -449,8 +449,8 @@ Article Input
 * ✅ **API integration stable** - < 5% API call failures
 * ✅ **Code quality** - documented, testable, maintainable
 
----
+----
 
----
+----
 
 _End of POC1 Specification_

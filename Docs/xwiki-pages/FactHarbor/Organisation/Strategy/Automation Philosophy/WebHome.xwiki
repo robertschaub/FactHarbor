@@ -269,7 +269,7 @@ Humans in FactHarbor are **system architects**, not **content judges**.
 4. Improve: Update AKEL to handle similar cases
 5. Monitor: Did exception rate decrease?
 **Goal**: Fewer exceptions over time as AKEL learns.
----
+----
 **Remember**: AKEL is primary. You improve the SYSTEM. The system improves the CONTENT.
 == 10. Related Pages ==
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]] - How AKEL is governed

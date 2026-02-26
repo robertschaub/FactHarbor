@@ -9,7 +9,7 @@
 **Version**: 2.11.0 (ClaimAssessmentBoundary pipeline, 2026-02-19)
 **Status**: Operational (Stage 4 advisory LLM validation — grounding + direction; no auto-correct in CB pipeline)
 
-----
+-----
 
 == 1. The Core Concern
 
@@ -20,7 +20,7 @@ The system has multiple "direction" concepts that can easily conflate, leading t
 - Scope mismatch between evidence direction and sub-claim verdicts
 - Counter-claims being treated incorrectly
 
-----
+-----
 
 == 2. The Direction Stack ==
 
@@ -62,7 +62,7 @@ graph TB
 
 **Critical**: Each layer has a different scope. Conflating them causes direction confusion bugs.
 
-----
+-----
 
 == 3. The Confusion Problem ==
 
@@ -92,7 +92,7 @@ graph TB
 
 **The LLM must understand this matrix. If it conflates layers, verdicts flip incorrectly.**
 
-----
+-----
 
 == 4. The Scope Mismatch Problem ==
 
@@ -122,7 +122,7 @@ graph TD
 4. Validator sees "contradicts" evidence + HIGH verdict → flags as mismatch
 5. **Wrong flip** if auto-correct is enabled
 
----
+----
 
 == 5. Implementation ==
 
@@ -268,7 +268,7 @@ Prompt contract in ##claimboundary.prompt.md##:
 - If qualifiers are dropped (for example "without independent corroboration"), direction-validation mismatch warnings can become false positives.
 - Preserving qualifiers keeps Layer 1 thesis semantics aligned with Layer 4 verdict interpretation.
 
-----
+-----
 
 == 6. Contestation vs Contradiction ==
 
@@ -312,7 +312,7 @@ CONTESTED ≠ FALSE:
 - **Correct verdict**: 70% (Mostly True - factual claim confirmed)
 - **Correct confidence**: 65% (reduced due to completeness dispute)
 
-----
+-----
 
 == 7. LLM-Prompt Contract Requirements ==
 
@@ -369,7 +369,7 @@ Prompt instructions use English keywords for consistency, but LLM interpretation
 must be language-agnostic at the semantic level.
 {{/code}}
 
-----
+-----
 
 == 8. Anti-Pattern Warning ==
 
@@ -399,7 +399,7 @@ await validateVerdicts(verdicts, evidence, llmCall);
 **Current status**: Direction validation in the CB pipeline is **advisory** (non-blocking). The 5-step LLM debate pattern (Advocate → Challenger → Reconciliation) produces reliable initial verdicts; direction validation is a final logging check. No auto-correct. See ##verdict-stage.ts:421##.
 {{/warning}}
 
-----
+-----
 
 == 9. Warning Metadata ==
 
@@ -427,7 +427,7 @@ interface DirectionMismatchWarning {
 
 **Important**: Use ##llmAssessment## for accurate direction evaluation. The ##legacyDirectionalMetadata## is kept for backward compatibility and debugging only.
 
-----
+-----
 
 == 10. Verification Checklist ==
 
@@ -445,7 +445,7 @@ To ensure LLM-code alignment:
 | Contestation fields separate from direction | ##types.ts:407## (isContestedClaim, contestedBy) | ##claimboundary.prompt.md## VERDICT_RECONCILIATION
 | Validation failure handling | ##verdict-stage.ts:456-466## (console.warn, non-blocking) | N/A (code-only)
 
-----
+-----
 
 == 11. Common Pitfalls ==
 
@@ -457,7 +457,7 @@ To ensure LLM-code alignment:
 | **Evidence direction used for sub-claim validation** | Counter-claims flagged incorrectly | Use semantic LLM validation instead
 | **Ignoring degraded mode** | Silent validation failures | Monitor ##direction_validation_degraded## warnings
 
-----
+-----
 
 == 12. Related Documentation ==
 
@@ -467,6 +467,6 @@ To ensure LLM-code alignment:
 * [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] -- ClaimAssessmentBoundary and EvidenceScope detection methodology
 * [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] -- ClaimAssessmentBoundary vs Monolithic Dynamic pipeline overview
 
-----
+-----
 
 **Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Prev: [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] | Next: [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]]
