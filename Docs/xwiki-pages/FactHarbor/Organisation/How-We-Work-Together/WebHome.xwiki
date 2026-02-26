@@ -1,29 +1,36 @@
 = Culture & Collaboration =
 
-This section describes how we work together to build FactHarbor. We combine human values, structured decision-making, and automation to create a high-trust, high-impact environment.
+{{box title="TL;DR: Our Working Style"}}
+🎯 **Goal**: Create a high-velocity, high-trust team environment.
+⚖️ **Decision Making**: We use **Sociocracy 3.0** (Consent pattern) to prevent bottlenecks.
+💡 **Values**: Empowerment, iterative learning, and data-driven transparency.
+{{/box}}
 
-== 1. Culture & Values ==
+== 🚀 Quick Start: How do I... ==
 
-**[[Workplace Culture>>FactHarbor.Organisation.How-We-Work-Together.Workplace-Culture]]**
-Our culture draws from three sources: the **[[Best Workplace Blueprint>>https://robertschaub.github.io/BestWorkplace]]** (human-centric), **Sociocracy 3.0** (structural), and an **AI-first philosophy** (technological).
-
-**[[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]]**
-How we use feedback loops, retrospectives, and metrics to ensure the system and the organisation are always getting better.
-
-== 2. Structured Decision Making ==
-
-**[[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]**
-We use the Sociocracy 3.0 consent pattern for all system and policy changes. It ensures every concern is heard while maintaining high velocity.
-
-**[[Global Rules>>FactHarbor.Organisation.How-We-Work-Together.GlobalRules.WebHome]]**
-The shared standards that define how we evaluate evidence, handle risk, and maintain neutrality across the system.
-
-== 3. Joining the Mission ==
-
-**[[Contributor Processes>>FactHarbor.Organisation.How-We-Work-Together.Contributor Processes.WebHome]]**
-Information for new and existing contributors on how to propose changes (RFCs), earn trust, and improve the system without manually editing content.
+* **Understand our values** → [[Workplace Culture>>FactHarbor.Organisation.How-We-Work-Together.Workplace-Culture]]
+* **Make a decision** → [[Consent-Based Decisions>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]
+* **Improve the system** → [[Contributor Processes>>FactHarbor.Organisation.How-We-Work-Together.Contributor Processes.WebHome]]
+* **Check the rules** → [[Global Rules>>FactHarbor.Organisation.How-We-Work-Together.GlobalRules.WebHome]]
 
 ---
 
-== External Policies ==
-* See **[[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]** for our public-facing policies, including Privacy, Security, and Terms of Service.
+== 1. 🤝 Culture & Values ==
+The human foundation of the FactHarbor project.
+
+* 🔗 **[[Workplace Culture>>FactHarbor.Organisation.How-We-Work-Together.Workplace-Culture]]**: Human-centric values and AI-first collaboration.
+* 🔗 **[[Continuous Improvement>>FactHarbor.Organisation.How-We-Work-Together.Continuous-Improvement]]**: Feedback loops, retros, and metrics.
+
+== 2. ⚖️ Structured Decision Making ==
+How we move fast while staying aligned.
+
+* 🔗 **[[Consent-Based Decision Making>>FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making]]**: The process for policy and system changes.
+* 🔗 **[[Global Rules>>FactHarbor.Organisation.How-We-Work-Together.GlobalRules.WebHome]]**: Shared standards for evidence and neutral analysis.
+
+== 3. 🚀 Joining the Mission ==
+Onboarding and engagement for the Team & Community.
+
+* 🔗 **[[Contributor Processes>>FactHarbor.Organisation.How-We-Work-Together.Contributor Processes.WebHome]]**: How to propose RFCs and earn trust levels.
+
+---
+**Maintained by**: Community Lead | **Status**: Operational | **Last Review**: Feb 2026

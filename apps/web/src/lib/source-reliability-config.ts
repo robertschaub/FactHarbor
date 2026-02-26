@@ -18,19 +18,19 @@ import { DEFAULT_SR_CONFIG, type SourceReliabilityConfig } from "./config-schema
  * Scores below this threshold are treated as insufficient_data.
  * Unified to 0.8 across admin, pipeline, and evaluator.
  */
-export const DEFAULT_CONFIDENCE_THRESHOLD = 0.8;
+export const DEFAULT_CONFIDENCE_THRESHOLD = DEFAULT_SR_CONFIG.confidenceThreshold;
 
 /**
  * Default consensus threshold for multi-model evaluation.
  * If models disagree by more than this, consensus fails.
  * Raised from 0.15 to 0.20 to reduce failures from minor disagreements.
  */
-export const DEFAULT_CONSENSUS_THRESHOLD = 0.20;
+export const DEFAULT_CONSENSUS_THRESHOLD = DEFAULT_SR_CONFIG.consensusThreshold;
 
 /**
  * Default score for unknown sources (neutral center of the scale).
  */
-export const DEFAULT_UNKNOWN_SCORE = 0.5;
+export const DEFAULT_UNKNOWN_SCORE = DEFAULT_SR_CONFIG.defaultScore;
 
 // ============================================================================
 // SOURCE TYPE SCORE CAPS (REFERENCE ONLY - PROMPT IS AUTHORITATIVE)

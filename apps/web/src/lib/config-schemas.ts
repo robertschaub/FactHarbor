@@ -845,7 +845,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   verdictBatchSize: 5,
   maxIterationsPerContext: 3, // v2.11.1: was 5 - balance cost vs research depth
   maxTotalIterations: 10, // v2.11.1: was 20 - cap deep research loops
-  maxTotalTokens: 750000, // v2.11.1 reduced to 500000; Captain decision 2026-02-19: 750000
+  maxTotalTokens: 1000000, // Alpha optimization: increased from 750k for deep runs
   maxTokensPerCall: 100000,
   enforceBudgets: false,
   claimAnnotationMode: "verifiability_and_misleadingness",
@@ -853,6 +853,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   tigerScoreTier: "sonnet",
   tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
+  selfConsistencyTemperature: 0.4, // Alpha optimization: increased from 0.3 for broader exploration
   queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,
 
@@ -919,6 +920,12 @@ export const SourceReliabilityConfigSchema = z.object({
     .nullable()
     .optional()
     .describe("Date restrict for SR evaluation searches (y|m|w). Null uses search config."),
+
+  // === Performance & Reliability ===
+  evalConcurrency: z.number().int().min(1).max(10).optional().describe("Max concurrent SR evaluations (default: 3)"),
+  evalTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for individual SR evaluations (ms) (default: 90000)"),
+  defaultConfidence: z.number().min(0).max(1).optional().describe("Default confidence for missing track records (default: 0.7)"),
+  unknownSourceConfidence: z.number().min(0).max(1).optional().describe("Confidence assigned to unknown sources (default: 0.5)"),
 });
 
 export type SourceReliabilityConfig = z.infer<typeof SourceReliabilityConfigSchema>;
@@ -951,6 +958,10 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   evalSearchMaxResultsPerQuery: 3,
   evalMaxEvidenceItems: 12,
   evalSearchDateRestrict: null,
+  evalConcurrency: 5,
+  evalTimeoutMs: 90000,
+  defaultConfidence: 0.8,
+  unknownSourceConfidence: 0.5,
 };
 
 // ============================================================================
@@ -1127,6 +1138,17 @@ export const CalcConfigSchema = z.object({
     stable: z.number().int().min(0).max(20),
     moderate: z.number().int().min(0).max(30),
     unstable: z.number().int().min(0).max(50),
+  }).optional(),
+
+  verdictStage: z.object({
+    spreadMultipliers: z.object({
+      highlyStable: z.number().min(0.5).max(1.5),
+      moderatelyStable: z.number().min(0.5).max(1.5),
+      unstable: z.number().min(0.1).max(1.0),
+      highlyUnstable: z.number().min(0.1).max(1.0),
+    }),
+    institutionalSourceTypes: z.array(z.string()).optional().describe("Source types routed to advocate (default: peer_reviewed_study, fact_check_report, etc.)"),
+    generalSourceTypes: z.array(z.string()).optional().describe("Source types routed to challenger (default: news_primary, expert_statement, etc.)"),
   }).optional(),
 
   evidenceFilter: z.object({
@@ -1387,6 +1409,27 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     stable: 5,
     moderate: 12,
     unstable: 20,
+  },
+  verdictStage: {
+    spreadMultipliers: {
+      highlyStable: 1.0,
+      moderatelyStable: 0.9,
+      unstable: 0.7,
+      highlyUnstable: 0.4,
+    },
+    institutionalSourceTypes: [
+      "peer_reviewed_study",
+      "fact_check_report",
+      "government_report",
+      "legal_document",
+      "organization_report",
+    ],
+    generalSourceTypes: [
+      "news_primary",
+      "news_secondary",
+      "expert_statement",
+      "other",
+    ],
   },
   evidenceFilter: {
     minStatementLength: 20,

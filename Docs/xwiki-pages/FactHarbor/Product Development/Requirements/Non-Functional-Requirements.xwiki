@@ -1,0 +1,29 @@
+= Non-Functional Requirements =
+
+{{box title="TL;DR"}}
+⚡ **Performance**: <30s processing, <2s search.
+🛡️ **Security**: GDPR compliant, encrypted storage, RBAC.
+⚖️ **Integrity**: Open source, public metrics, auditable config.
+{{/box}}
+
+== 1. Technical Performance ==
+* **Latency**: Analysis pipeline must complete in < 30 seconds.
+* **Availability**: 99.0% uptime for core API and search.
+* **Scalability**: Support for 1M+ claims and 100k+ concurrent users.
+
+== 2. Transparency & Auditability ==
+* **Open Source**: All analysis algorithms and prompts are public.
+* **UCM Audit**: Every job is linked to a versioned configuration snapshot.
+* **Public Metrics**: Error rates and source reliability distributions are public.
+
+== 3. Security & Privacy ==
+* **GDPR Compliance**: Full support for data export and account deletion.
+* **Encryption**: AES-256 for data at rest; TLS 1.3 for data in transit.
+* **Sanitization**: Strict input validation and HTML/JS scrubbing for all submissions.
+
+== 4. Maintainability ==
+* **Modularity**: Separation of AKEL (Logic) and persistence (.NET API).
+* **Testability**: Mandatory Vitest coverage for all analysis modules.
+
+---
+**Maintained by**: Operations Lead | **Status**: Alpha | **Last Review**: Feb 2026

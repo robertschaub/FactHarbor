@@ -36,6 +36,10 @@ export const SR_CONFIG = {
   skipPlatforms: sharedConfig.skipPlatforms,
   skipTlds: sharedConfig.skipTlds,
   defaultScore: sharedConfig.defaultScore,
+  evalConcurrency: sharedConfig.evalConcurrency ?? 5,
+  evalTimeoutMs: sharedConfig.evalTimeoutMs ?? 90000,
+  defaultConfidence: sharedConfig.defaultConfidence ?? 0.8,
+  unknownSourceConfidence: sharedConfig.unknownSourceConfidence ?? 0.5,
 };
 
 let DEFAULT_UNKNOWN_SOURCE_SCORE = SR_CONFIG.defaultScore;
@@ -54,6 +58,10 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.skipPlatforms = next.skipPlatforms;
   SR_CONFIG.skipTlds = next.skipTlds;
   SR_CONFIG.defaultScore = next.defaultScore;
+  SR_CONFIG.evalConcurrency = next.evalConcurrency ?? 5;
+  SR_CONFIG.evalTimeoutMs = next.evalTimeoutMs ?? 90000;
+  SR_CONFIG.defaultConfidence = next.defaultConfidence ?? 0.8;
+  SR_CONFIG.unknownSourceConfidence = next.unknownSourceConfidence ?? 0.5;
   DEFAULT_UNKNOWN_SOURCE_SCORE = next.defaultScore;
   setCacheTtlDays(next.cacheTtlDays);
 }
@@ -241,7 +249,7 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
   // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
   // Processing serially caused 10+ minute delays with 39 domains
   // Concurrency=3 reduces SR-Eval time by ~3x
-  const SR_EVAL_CONCURRENCY = 3;
+  const SR_EVAL_CONCURRENCY = SR_CONFIG.evalConcurrency;
 
   // Process domains in parallel batches
   const evaluateDomain = async (domain: string) => {
@@ -420,7 +428,7 @@ async function evaluateSourceInternal(
   const runnerKey = process.env.FH_INTERNAL_RUNNER_KEY || "";
 
   // **P0 FIX**: Add timeout to prevent indefinite hangs (90 sec max per domain)
-  const EVAL_TIMEOUT_MS = 90000; // 90 seconds
+  const EVAL_TIMEOUT_MS = SR_CONFIG.evalTimeoutMs;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), EVAL_TIMEOUT_MS);
 
@@ -596,7 +604,7 @@ export function applyEvidenceWeighting(
       s.trackRecordScore !== null
         ? {
             score: normalizeTrackRecordScore(s.trackRecordScore),
-            confidence: s.trackRecordConfidence ?? 0.7, // Default confidence if not available
+            confidence: s.trackRecordConfidence ?? SR_CONFIG.defaultConfidence, // Default confidence from UCM
             consensusAchieved: s.trackRecordConsensus ?? false,
           }
         : null,
@@ -623,7 +631,7 @@ export function applyEvidenceWeighting(
         // Unknown source: use default score with moderate confidence, no consensus
         return calculateEffectiveWeight({
           score: DEFAULT_UNKNOWN_SOURCE_SCORE,
-          confidence: 0.5, // Low confidence for unknown sources
+          confidence: SR_CONFIG.unknownSourceConfidence, // Confidence for unknown sources from UCM
           consensusAchieved: false,
         });
       }

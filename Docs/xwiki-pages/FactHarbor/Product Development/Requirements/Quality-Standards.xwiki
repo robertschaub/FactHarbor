@@ -1,0 +1,35 @@
+= Quality Standards =
+
+{{box title="TL;DR"}}
+🎯 **Goal**: Ensure every analysis is evidence-based, neutral, and auditable.
+⚖️ **Core Principle**: Track record over credentials. No automatic trust for any source.
+{{/box}}
+
+== 1. Source Requirements ==
+**Track Record Over Credentials**:
+* Sources are evaluated by historical accuracy and correction policies.
+* Independence from conflicts of interest is mandatory.
+* Automated tracking of source accuracy in the **Source Quality Database**.
+
+== 2. Claim & Evidence Requirements ==
+* **AtomicClaims**: Must be clear assertions, verifiable, and neutral.
+* **EvidenceItems**: Must be publicly accessible, relevant, and properly cited. Original sources are preferred over secondary ones.
+
+== 3. Confidence Scoring ==
+Automated calculation based on:
+* Source quality scores.
+* Evidence consistency and multi-source triangulation.
+* Contradiction detection results.
+
+**Thresholds**:
+* **< 40%**: Insufficient evidence (Not Published).
+* **40-60%**: Published with "Low confidence" warning.
+* **> 80%**: Published as "High confidence".
+
+== 4. Automated Risk Scoring ==
+Continuous scoring determines the necessary review level:
+* **Factors**: Domain sensitivity (Medical/Legal), potential impact, and controversy level.
+* **Actions**: High-risk items (>80) are flagged for human moderator oversight.
+
+---
+**Maintained by**: Community Lead | **Status**: Operational | **Last Review**: Feb 2026

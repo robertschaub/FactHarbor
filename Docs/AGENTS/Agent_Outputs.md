@@ -2,6 +2,50 @@
 
 
 ---
+### 2026-02-26 | Technical Writer | Gemini CLI | Final Comprehensive Readability & Navigation Overhaul
+**Task:** Applied persona-based navigation, TL;DR boxes, and iconography across all eight core entry spaces.
+**Files touched:** Docs/xwiki-pages/FactHarbor/
+**Key decisions:** Extended the structural overhaul to Legal & Compliance, Strategy, Culture, and Specification root pages. Ensured every major entry point has a 'Quick Start' section ('I want to...', 'I am a...'). Consistent visual signposting (🎯💡⚖️🚀) and 'Living Document' footers (maintained by, status, last review) are now project-wide standards. Finalised the requirements deconstruction into Quality, Functional, and Non-Functional sub-pages.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify consistent rendering of new boxes and icons in xWiki preview.
+**Learnings:** Vastly improved information discoverability for all project personas.
+
+
+---
+### 2026-02-26 | Lead Architect | Gemini CLI | Analyze and optimize UCM configurations
+**Task:** Conducted a deep audit of hardcoded constants and moved critical performance/analytical settings to UCM. Optimized Alpha defaults for quality and cost.
+**Files touched:** apps/web/src/lib/config-schemas.ts, apps/web/src/lib/analyzer/source-reliability.ts, apps/web/src/lib/analyzer/verdict-stage.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/source-reliability-config.ts
+**Key decisions:** Moved SR evaluation concurrency, timeouts, and confidence fallbacks to UCM; moved verdict spread multipliers and source type partitions to UCM; increased maxTotalTokens to 1M and self-consistency temperature to 0.4.
+**Open items:** None
+**Warnings:** UCM is now the single source of truth for all analytical behavior.
+**For next agent:** Proceed with Alpha Phase 2 Baseline Pilot runs using optimized defaults.
+**Learnings:** No
+
+
+---
+### 2026-02-26 | Technical Writer | Gemini CLI | Comprehensive Human Readability & Structure Overhaul
+**Task:** Implemented persona-based navigation, TL;DR boxes, iconography, and progressive disclosure across core xWiki documents.
+**Files touched:** Docs/xwiki-pages/FactHarbor/
+**Key decisions:** Restructured root pages (Home, Organisation, Product Dev) with Quick Start guides. Broke down the 1500-line Requirements page into focused sub-pages. Applied consistent iconography (🎯💡⚖️) and metadata footers. Standardized multi-agent debate process descriptions with Mermaid diagrams. Oversaw terminology deep-linking to glossary.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify navigation and link integrity in xWiki preview.
+**Learnings:** Significantly reduced cognitive load for new readers.
+
+
+---
+### 2026-02-26 | Technical Writer | Gemini CLI | Systematic Readability & Structure Improvement of xWiki
+**Task:** Reviewed and improved readability across all primary xWiki documents.
+**Files touched:** Docs/xwiki-pages/FactHarbor/
+**Key decisions:** Renamed 'Staff & Contributors' to 'Team & Community' for better clarity. Streamlined Requirements and Specification root pages by removing redundant acceptance criteria and implementation details. Standardised project stage to 'Alpha'. Improved role definitions and transition principles for conciseness.
+**Open items:** None
+**Warnings:** None
+**For next agent:** Verify link integrity in xWiki.
+**Learnings:** None
+
+
+---
 ### 2026-02-25 | Technical Writer | Gemini CLI | Add links to Draft Verein statutes
 **Task:** Added links to the German and English draft Verein statutes from xWiki documentation.
 **Files touched:** Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Legal Framework/WebHome.xwiki, Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Transparency-Policy.xwiki

@@ -1,36 +1,48 @@
 = Organisation =
 
-Welcome to the FactHarbor Organisation space. This documentation describes our mission, our culture, and the legal and structural frameworks that enable our automated fact-checking mission.
+{{box title="TL;DR: How we operate"}}
+FactHarbor is a **Swiss Non-Profit Association (Verein)**. We use a flat, cooperative model where code and automated policies minimize bureaucracy. We follow **Sociocracy 3.0** for decision-making and an **AI-First** operating philosophy.
+{{/box}}
 
-{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
+== 🚀 Quick Start: I am a... ==
 
-== 1. Why We Exist: Strategy & Mission ==
-Our core mission is to bring clarity to complex information through automation and transparent reasoning.
-
-* **[[Strategy & Mission>>FactHarbor.Organisation.Strategy.WebHome]]**: Core problems we solve, our automation-first philosophy, and our vision for the future.
-
-== 2. How We Work: Culture & Collaboration ==
-FactHarbor is built on a culture of empowerment, continuous learning, and radical transparency.
-
-* **[[Culture & Collaboration>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]**: Our workplace values, how we make decisions (Sociocracy 3.0), and how to contribute to the project.
-
-== 3. How We Are Structured: Governance ==
-We use a flat, cooperative model designed to scale through code rather than hierarchy.
-
-* **[[Governance>>FactHarbor.Organisation.Governance.WebHome]]**: Our organisational model, team roles, and the "Fix the System" governance principle.
-
-== 4. Our Rules: Legal, Privacy & Compliance ==
-The formal framework that ensures our independence, protects our users, and defines our legal commitments.
-
-* **[[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]**: Legal foundations, licensing, financial governance, and public policies (Privacy, Terms, Security).
+* **New Community Member** → [[Culture & Collaboration>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]
+* **Potential Partner/Donor** → [[Strategy & Mission>>FactHarbor.Organisation.Strategy.WebHome]]
+* **Legal/Compliance Auditor** → [[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]
+* **Governance Researcher** → [[Organisational Model>>FactHarbor.Organisation.Governance.WebHome]]
 
 ---
 
-== Visual References ==
-* **[[Diagrams>>FactHarbor.Organisation.Diagrams.WebHome]]**: Governance structures, domain maps, and the lifecycle of claims and boundaries.
+== 1. 🎯 Why We Exist: Strategy & Mission ==
+Our strategy centers on solving the "binary fact-check" problem through transparent, multi-perspective automation.
 
-== Key Principles ==
-* **Automation First**: AKEL makes content decisions; humans improve the algorithms.
-* **Continuous Improvement**: We measure everything, learn from failures, and iterate rapidly.
-* **Radical Transparency**: Open decisions, public metrics, and auditable code.
-* **User Empowerment**: We provide the evidence and tools for users to form their own informed judgments.
+* 🔗 **[[Strategy & Mission>>FactHarbor.Organisation.Strategy.WebHome]]**: Mission, automation philosophy, and market positioning.
+
+== 2. 🤝 How We Work: Culture & Collaboration ==
+We combine human-centric values with high-velocity, consent-based processes.
+
+* 🔗 **[[Culture & Collaboration>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]**: Workplace values, decision-making (Sociocracy 3.0), and contributor guides.
+
+== 3. ⚖️ How We Are Structured: Governance ==
+Our governance ensures neutrality and "system-over-data" integrity.
+
+* 🔗 **[[Governance>>FactHarbor.Organisation.Governance.WebHome]]**: Governance structure, roles, and the "Fix the System" principle.
+
+== 4. 📜 Our Rules: Legal & Compliance ==
+The formal framework protecting our mission and our users.
+
+* 🔗 **[[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]**: Statutes, open-source licenses, and public policies (Privacy/Transparency).
+
+---
+
+== 🗺️ Visual References ==
+* **[[Diagrams>>FactHarbor.Organisation.Diagrams.WebHome]]**: Governance structures and operational domain maps.
+
+== 💡 Key Principles ==
+* **AI-First**: AKEL evaluates content; humans refine the system.
+* **Radical Transparency**: Every decision and metric is public.
+* **Consent-Based**: We move fast by seeking "no principled objections."
+* **Swiss Neutrality**: Protected by our non-profit association status.
+
+---
+**Maintained by**: Operations Lead | **Status**: Operational | **Last Review**: Feb 2026

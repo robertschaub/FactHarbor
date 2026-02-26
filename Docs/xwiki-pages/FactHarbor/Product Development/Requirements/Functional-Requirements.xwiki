@@ -1,0 +1,30 @@
+= Functional Requirements =
+
+{{box title="TL;DR"}}
+🛠️ **Scope**: Core features for intake, multi-perspective analysis, and user presentation.
+💡 **Key Innovation**: Multi-agent debate and evidence-emergent boundaries.
+{{/box}}
+
+== 1. Intake & Normalization ==
+* **Intake (FR1)**: Support for text, URLs, and images via API/Form.
+* **Normalization (FR2)**: Automated extraction of verifiable assertions (**AtomicClaims**).
+* **Classification (FR3)**: Automated tagging by domain and initial risk assessment.
+
+== 2. Boundary System ==
+* **Generation (FR4)**: Automated clustering of evidence into compatible analytical frames (e.g., different methodologies or timeframes).
+* **Linking (FR5)**: Automatic discovery and relevance scoring of web evidence.
+* **Comparison (FR6)**: UI for side-by-side comparison of results across different boundaries.
+
+== 3. Verdicts & Presentation ==
+* **Automated Verdicts (FR7)**: Probabilistic likelihood ratings generated via a 5-step AI debate pattern.
+* **Two-Panel View (FR12)**: Side-by-side comparison of the original document vs. FactHarbor's analysis.
+* **In-Article Highlighting (FR13)**: Color-coded overlays for real-time credibility assessment while reading.
+
+== 4. Advanced Integration ==
+* **ClaimReview (FR44)**: Schema.org metadata generation for search engine interoperability.
+* **Corrections (FR45)**: Automated user notification for significant verdict updates.
+* **Image Verification (FR46)**: Deepfake and manipulation detection using EXIF and reverse search.
+* **Persistence (FR47)**: Automatic archival of all evidence via Archive.org.
+
+---
+**Maintained by**: R&D Lead | **Status**: Operational | **Last Review**: Feb 2026

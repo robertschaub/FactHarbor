@@ -95,6 +95,11 @@ export interface VerdictStageConfig {
     highlyUnstable: number;      // default 0.4
   };
 
+  /** Source types routed to advocate role. */
+  institutionalSourceTypes?: string[];
+  /** Source types routed to challenger role. */
+  generalSourceTypes?: string[];
+
   /** Mixed/Unverified confidence threshold (UCM, default 40) */
   mixedConfidenceThreshold: number;
 
@@ -255,8 +260,11 @@ export async function runVerdictStage(
   let challengerEvidence = evidence;
 
   if (config.evidencePartitioningEnabled) {
-    const institutional = evidence.filter(e => INSTITUTIONAL_SOURCE_TYPES.has(e.sourceType as SourceType));
-    const general = evidence.filter(e => !e.sourceType || GENERAL_SOURCE_TYPES.has(e.sourceType as SourceType));
+    const instTypes = new Set(config.institutionalSourceTypes ?? Array.from(INSTITUTIONAL_SOURCE_TYPES));
+    const genTypes = new Set(config.generalSourceTypes ?? Array.from(GENERAL_SOURCE_TYPES));
+
+    const institutional = evidence.filter(e => instTypes.has(e.sourceType as SourceType));
+    const general = evidence.filter(e => !e.sourceType || genTypes.has(e.sourceType as SourceType));
 
     // Fallback: if either partition has <2 items, both roles get full pool
     const partitionActive = institutional.length >= 2 && general.length >= 2;

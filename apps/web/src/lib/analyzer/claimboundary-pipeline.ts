@@ -4049,7 +4049,9 @@ export function buildVerdictStageConfig(
     stableThreshold: spreadThresholds.stable ?? 5,
     moderateThreshold: spreadThresholds.moderate ?? 12,
     unstableThreshold: spreadThresholds.unstable ?? 20,
-    spreadMultipliers: DEFAULT_VERDICT_STAGE_CONFIG.spreadMultipliers,
+    spreadMultipliers: calcConfig.verdictStage?.spreadMultipliers ?? DEFAULT_VERDICT_STAGE_CONFIG.spreadMultipliers,
+    institutionalSourceTypes: calcConfig.verdictStage?.institutionalSourceTypes,
+    generalSourceTypes: calcConfig.verdictStage?.generalSourceTypes,
     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
     highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
     debateModelTiers: {

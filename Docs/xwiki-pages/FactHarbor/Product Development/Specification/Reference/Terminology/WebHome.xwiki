@@ -1,28 +1,56 @@
-= FactHarbor Terminology Reference =
+= Terminology Reference =
 
-**Version**: 4.0.0-cb
-**Date**: 2026-02-16
-**Audience**: Developers, Prompt Engineers, LLM Systems
-**Status**: ClaimBoundary pipeline (default) - Orchestrated pipeline removed
+{{box title="TL;DR: The Language of FactHarbor"}}
+🎯 **Purpose**: This is the authoritative glossary for the **ClaimBoundary (CB)** pipeline. Use these terms consistently across code, schemas, and prompts.
+⚖️ **Rule**: ClaimBoundary is the default. Legacy terms like "AnalysisContext" or "SubClaim" are deprecated and must not be used.
+{{/box}}
 
-----
+== 🚀 Quick Start: I need to... ==
 
-== Purpose ==
+* **Write TypeScript Code** → See [[Primary Entities Mapping>>#HFieldMappingTable28v4.0.0-cb29]]
+* **Design an LLM Prompt** → See [[Prompt Terminology>>#H3.Promptterminology]]
+* **Understand the Data Flow** → See [[Pipeline Hierarchy>>#HPipelineHierarchy:UnderstandingtheFlow]]
 
-This document provides the **authoritative glossary** for FactHarbor's ClaimBoundary pipeline terminology across all layers: TypeScript code, JSON schema, database storage, and LLM prompts. Use this as the single source of truth when encountering ambiguous terms.
+---
 
-{{info}}
-**ClaimBoundary is now the default pipeline** (as of Phase 2: Cutover, February 2026). The Orchestrated pipeline (which used AnalysisContext) has been completely removed.
+== 🛠️ Core Concepts ==
 
-* **All code** uses ClaimBoundary, AtomicClaim, claimBoundaryId.
-* **NEVER use** in new code: AnalysisContext, contextId, analysisContexts.
-* Full architecture: [[ClaimBoundary Pipeline Architecture>>path:/Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md]]
-* Migration state: See [[CB Execution State>>path:/Docs/WIP/CB_Execution_State.md]]
-{{/info}}
+=== 1. 🔎 AtomicClaim ===
+**What it is**: A single, verifiable assertion extracted from user input.
+* 💡 **Why it matters**: It's the "unit of work." Each claim drives independent research.
+* ❌ **Don't call it**: "Fact", "Context", "Sub-task".
 
-----
+=== 2. 🌐 ClaimAssessmentBoundary (Boundary) ===
+**What it is**: A grouping of evidence based on shared methodology, geography, or timeframes.
+* 💡 **Why it matters**: Boundaries emerge from the evidence itself. They show different "frames" through which a claim can be viewed.
+* ❌ **Don't call it**: "Scope", "Context", "Category".
 
-== Field Mapping Table (v4.0.0-cb) ==
+=== 3. 📚 EvidenceItem ===
+**What it is**: Information extracted from a source that either supports or contradicts a claim.
+* 💡 **Why it matters**: Every verdict must be traceable to specific evidence items.
+* 🔗 **EvidenceScope**: Metadata describing *how* the source document was produced (methodology/temporal).
+
+=== 4. ⚖️ ClaimVerdict ===
+**What it is**: The final probabilistic rating for a claim within a specific boundary.
+* 💡 **Why it matters**: Generated via a 5-step multi-agent debate to ensure neutrality and rigor.
+
+---
+
+== 🔄 Pipeline Hierarchy: The Flow of Information ==
+
+{{mermaid}}
+graph TD
+    A[Stage 1: Extract AtomicClaims] --> B[Stage 2: Research EvidenceItems]
+    B --> C[Stage 3: Cluster ClaimBoundaries]
+    C --> D[Stage 4: Generate ClaimVerdicts]
+    D --> E[Stage 5: Aggregate OverallAssessment]
+    style A fill:#e3f2fd
+    style E fill:#c8e6c9
+{{/mermaid}}
+
+---
+
+== 📋 Field Mapping Table (v4.0.0-cb) ==
 
 **ClaimBoundary Pipeline**: All code uses ClaimBoundary terminology. AnalysisContext fields removed.
 

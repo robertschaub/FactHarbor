@@ -12,7 +12,7 @@ graph TD
     
     GT -->|"Oversees"| DL
     
-    subgraph SC ["Staff & Contributors"]
+    subgraph SC ["Team & Community"]
         DEV["Developers / Core Ops"]
         UA["UCM Administrators"]
         MOD["Moderators"]
@@ -49,7 +49,7 @@ graph TD
 * **Auditor (Optional)**: Provides independent financial oversight. Not mandatory by Swiss law for associations of FactHarbor's current size.
 * **Governance Steward**: Safeguards neutrality and fairness of all processes.
 * **Domain Leads**: Operational execution leads for R&D, Operations, Community, and Finance.
-* **Staff & Contributors**: The collective operational workforce managed by Domain Leads. Individuals in the following roles are members of this group:
+* **Team & Community**: The collective operational workforce managed by Domain Leads. Individuals in the following roles are members of this group:
     * **Developers / Core Ops**: Build and maintain the Application & Services and the technical infrastructure.
     * **UCM Administrators**: Manage system configuration and prompt architecture within the Application & Services.
     * **Moderators**: Handle system-flagged content escalations and system gaming.
