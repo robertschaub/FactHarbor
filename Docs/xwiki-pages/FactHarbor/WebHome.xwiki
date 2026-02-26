@@ -1,5 +1,29 @@
 = FactHarbor =
 
+(% class="wikigeneratedid" %)
+(((
+(% class="box successmessage" %)
+(((
+**Our Vision**
+A world where decisions and public debate are grounded in evidence so people can move forward with clarity and confidence.
+)))
+)))
+
+(((
+(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
+(((
+**Our Mission**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+)))
+
+(% class="box warningmessage" %)
+(((
+**Non-profit and Transparent**
+FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+We serve the public interest with full transparency — no paywalls, no hidden algorithms, and no profit motive.
+)))
+
 {{box title="TL;DR: What is FactHarbor?"}}
 🎯 **Mission**: Bring clarity to contested information through transparent, AI-powered reasoning.
 💡 **Innovation**: We don't just give a "True/False" label; we map the entire **Evidence Landscape** with explicit assumptions and confidence scores.
