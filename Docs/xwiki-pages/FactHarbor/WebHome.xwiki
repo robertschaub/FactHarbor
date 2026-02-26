@@ -26,18 +26,20 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 
 (% class="box infomessage" %)
 (((
-**FactHarbor builds a transparent navigation system for complex claims.**
-Instead of asking you to trust an authority, we map the **Evidence Landscape**. We use AI to make the reasoning, the assumptions, and the specific contexts visible—moving beyond binary "True/False" labels so you can inspect the evidence and form your own judgment.
-
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**FactHarbor brings clarity **
+by connecting claims with groundes evidence in a transparent and inspectable model. We help people move beyond blind trust or total disengagement — and judge for themselves.
 )))
 
-== 🚀 Quick Start: How can we help you? ==
+== Quick Start ==
 
-* **I want to understand the mission** → [[About FactHarbor>>FactHarbor.About FactHarbor.WebHome]]
-* **I want to see real results** → [[Analysis Test Reports>>FactHarbor.Product Development.TestReports.WebHome]]
-* **I want to contribute or build** → [[Product Development>>FactHarbor.Product Development.WebHome]]
-* **I want to know how we are governed** → [[Organisation>>FactHarbor.Organisation.WebHome]]
+* **[[About FactHarbor>>FactHarbor.About FactHarbor.WebHome]]** — Who we are.
+* **[[Organisation>>FactHarbor.Organisation.WebHome]]** — Governance, culture, and legal frameworks.
+* **[[Product Development>>FactHarbor.Product Development.WebHome]]** — Requirements, architecture, and developer guides.
+* **[[Analysis Test Reports>>FactHarbor.Product Development.TestReports.WebHome]]** — Claim analysis reports from test runs.
+* **[[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]]** — Our transparent credibility database for 1000+ sources.
+* **[[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]** — Project Repository
+* **[[License & Disclaimer>>FactHarbor.License and Disclaimer.WebHome]]** — Usage terms and open-source licenses.
+
 
 ----
 
@@ -87,12 +89,6 @@ Data in FactHarbor flows through a structured, auditable process:
 * **Verdict Creation:** Generating per-boundary, per-claim verdicts via structured debate.
 * **Public Presentation:** The evidence landscape — multi-perspective results with full provenance — is published for users to explore.
 
-== 📂 Explore the Documentation ==
-
-* **[[Organisation>>FactHarbor.Organisation.WebHome]]** — Governance, culture, and legal frameworks.
-* **[[Product Development>>FactHarbor.Product Development.WebHome]]** — Requirements, architecture, and developer guides.
-* **[[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]]** — Our transparent credibility database for 1000+ sources.
-* **[[License & Disclaimer>>FactHarbor.License and Disclaimer.WebHome]]** — Usage terms and open-source licenses.
 
 ----
-**Maintained by**: Community Lead | **Status**: Operational | **Last Review**: Feb 2026
+**Maintained by**: Founder | **Status**: Operational | **Last Review**: Feb 2026
