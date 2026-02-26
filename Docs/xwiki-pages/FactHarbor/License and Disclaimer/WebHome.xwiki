@@ -5,56 +5,47 @@
 **FactHarbor uses a multi-license model to ensure code, documentation, and data remain public assets.**
 Our mission is to prevent black-box proprietary control of truth-seeking tools by using **AGPL/MIT** for code and **CC BY-SA** for documentation.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
-== 🚀 Quick Start: I want to... ==
-
-* **Reuse documentation** → [[Creative Commons BY-SA 4.0>>#HDocumentation]]
-* **Build on the code** → [[MIT & AGPL-3.0 Rules>>#HCode]]
-* **Use FactHarbor data** → [[Open Database License>>#HStructuredData]]
-* **Understand the risks** → [[Disclaimer & Liability>>#HDisclaimer]]
-
----
-
-== ⚖️ Licensing Framework ==
+== Licensing Framework ==
 
 FactHarbor is an open-source non-profit project. We use specific licenses to maximize reuse while protecting the project's long-term transparency mission.
 
-=== 1. 📚 Documentation (CC BY-SA 4.0) ===
+=== 1. Documentation (CC BY-SA 4.0) ===
 All organizational and technical documentation is licensed under **[[CC BY-SA 4.0>>http://creativecommons.org/licenses/by-sa/4.0/]]**.
-* ✅ **You may**: Share, adapt, and use commercially.
-* ⚖️ **You must**: Provide attribution and share derivative works under the same license.
+* **You may**: Share, adapt, and use commercially.
+* **You must**: Provide attribution and share derivative works under the same license.
 
-=== 2. 👨‍💻 Code (MIT & AGPL-3.0) ===
+=== 2. Code (MIT & AGPL-3.0) ===
 * **Default**: **[[MIT License>>https://opensource.org/licenses/MIT]]** for general utilities and UI components.
 * **Core Components**: **[[AGPL-3.0>>https://www.gnu.org/licenses/agpl-3.0.en.html]]** for the core verdict engine and AKEL reasoning logic.
-* 💡 **Rationale**: AGPL-3.0 prevents "black-box" network services by requiring that anyone running the engine over a network must share their source code.
+* **Rationale**: AGPL-3.0 prevents "black-box" network services by requiring that anyone running the engine over a network must share their source code.
 
-=== 3. 📊 Structured Data (ODbL) ===
+=== 3. Structured Data (ODbL) ===
 Curated knowledge and datasets are licensed under the **[[Open Database License (ODbL)>>https://opendatacommons.org/licenses/odbl/]]**. This ensures our evidence models remain a community asset and cannot be captured by proprietary silos.
 
----
+----
 
-== ⚠️ Disclaimer ==
+== Disclaimer ==
 
 === No Warranty ===
 FactHarbor is provided **"AS IS"** without warranty of any kind. We strive for accuracy through our automated multi-agent debate, but we do not guarantee definitive truth.
 
 === Educational Purpose Only ===
 FactHarbor analyses are for **educational and informational purposes**. They do not constitute:
-* ❌ Professional advice (Medical, Legal, or Financial).
-* ❌ Final or absolute judgments.
-* ❌ Replacements for independent critical thinking.
+* Professional advice (Medical, Legal, or Financial).
+* Final or absolute judgments.
+* Replacements for independent critical thinking.
 
 **Our goal is to provide the evidence; the judgment is always yours.**
 
----
+----
 
-== 🗺️ Related Pages ==
-* 🔗 **[[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]]**
-* 🔗 **[[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]**
-* 🔗 **[[Terms of Service>>FactHarbor.Organisation.Legal and Compliance.Terms-of-Service]]**
+== Related Pages ==
+* **[[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]]**
+* **[[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]**
+* **[[Terms of Service>>FactHarbor.Organisation.Legal and Compliance.Terms-of-Service]]**
 
 ----
 **Maintained by**: Legal Domain | **Status**: Operational | **Last Review**: Feb 2026

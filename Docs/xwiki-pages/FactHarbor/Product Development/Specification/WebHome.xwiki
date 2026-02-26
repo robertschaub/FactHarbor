@@ -9,10 +9,10 @@ This document describes the **Specification** of FactHarbor. It is a working dra
 **The AKEL pipeline provides a deterministic, auditable path from raw claim to evidence-backed verdict.**
 We use multi-agent debate to stress-test evidence within emergent boundaries. Every result is a probabilistic likelihood, not a binary choice, and remains fully traceable to its sources through a versioned analysis flow.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
-== 🚀 Quick Start: I want to... ==
+== Quick Start: I want to... ==
 
 * **Understand the concepts** → [[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]]
 * **See the pipeline flow** → [[AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]]
@@ -21,28 +21,22 @@ We use multi-agent debate to stress-test evidence within emergent boundaries. Ev
 
 ----
 
-== 1. 🛠️ Functional Specification ==
-What the system does from a user and data perspective.
+== 1. Functional Specification ==
+* **[[Workflows>>FactHarbor.Product Development.Specification.Workflows.WebHome]]** — Submission and analysis lifecycle.
+* **[[Automation>>FactHarbor.Product Development.Specification.Automation.WebHome]]** — Roadmap for self-improving prompt architectures.
+* **[[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]]** — How we evaluate source reliability.
 
-* 🔗 **[[Workflows>>FactHarbor.Product Development.Specification.Workflows.WebHome]]**: Submission and analysis lifecycle.
-* 🔗 **[[Automation>>FactHarbor.Product Development.Specification.Automation.WebHome]]**: Roadmap for self-improving prompt architectures.
-* 🔗 **[[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]]**: How we evaluate source reliability.
+== 2. Architecture & Design ==
+* **[[Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]]** — Two-service system design and multi-provider strategy.
+* **[[Architecture Deep Dives>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]]** — Internals of debate patterns, quality gates, and scoring formulas.
 
-== 2. 🏛️ Architecture & Design ==
-How the system is built and wired together.
-
-* 🔗 **[[Architecture Overview>>FactHarbor.Product Development.Specification.Architecture.WebHome]]**: Two-service system design and multi-provider strategy.
-* 🔗 **[[Architecture Deep Dives>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]]**: Internals of debate patterns, quality gates, and scoring formulas.
-
-== 3. 📚 Technical Reference ==
-Standardized look-up material for developers and AI agents.
-
-* 🔗 **[[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]]**: Authoritative glossary for all code and prompts.
-* 🔗 **[[Data Models & Schemas>>FactHarbor.Product Development.Specification.Reference.Data Models and Schemas.WebHome]]**: JSON schemas and Zod definitions.
-* 🔗 **[[Prompt Engineering>>FactHarbor.Product Development.Specification.Reference.Prompt Engineering.WebHome]]**: Designing for multi-provider consistency.
+== 3. Technical Reference ==
+* **[[Terminology>>FactHarbor.Product Development.Specification.Reference.Terminology.WebHome]]** — Authoritative glossary for all code and prompts.
+* **[[Data Models & Schemas>>FactHarbor.Product Development.Specification.Reference.Data Models and Schemas.WebHome]]** — JSON schemas and Zod definitions.
+* **[[Prompt Engineering>>FactHarbor.Product Development.Specification.Reference.Prompt Engineering.WebHome]]** — Designing for multi-provider consistency.
 
 ----
-=== 📂 Historical Context ===
+=== Historical Context ===
 * [[POC Archive>>FactHarbor.Product Development.Specification.POC.WebHome]] — Legacy schemas and early trial reports.
 
 ----

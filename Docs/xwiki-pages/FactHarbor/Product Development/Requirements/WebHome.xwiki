@@ -5,20 +5,20 @@
 **FactHarbor translates user needs into a verifiable, automated system through strict quality standards.**
 We prioritize **system-over-data**—fixing the algorithm rather than the individual output. This ensures that every analysis is evidence-based, neutral, and auditable.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
-== 🚀 Navigation ==
+== Navigation ==
 
-* 🤝 **[[Roles & Content States>>FactHarbor.Product Development.Requirements.Roles.WebHome]]**: Who can do what and how data is labeled.
-* ⚖️ **[[Quality & Improvement>>FactHarbor.Product Development.Requirements.Quality-Standards]]**: Standards for evidence, confidence, and risk.
-* 🛠️ **[[Functional Features>>FactHarbor.Product Development.Requirements.Functional-Requirements]]**: Intake, boundaries, verdicts, and UI.
-* 🛡️ **[[System Attributes>>FactHarbor.Product Development.Requirements.Non-Functional-Requirements]]**: Performance, security, and transparency rules.
-* 🎯 **[[User Needs>>FactHarbor.Product Development.Requirements.User Needs.WebHome]]**: The original goals driving these requirements.
+* **[[Roles & Content States>>FactHarbor.Product Development.Requirements.Roles.WebHome]]**: Who can do what and how data is labeled.
+* **[[Quality & Improvement>>FactHarbor.Product Development.Requirements.Quality-Standards]]**: Standards for evidence, confidence, and risk.
+* **[[Functional Features>>FactHarbor.Product Development.Requirements.Functional-Requirements]]**: Intake, boundaries, verdicts, and UI.
+* **[[System Attributes>>FactHarbor.Product Development.Requirements.Non-Functional-Requirements]]**: Performance, security, and transparency rules.
+* **[[User Needs>>FactHarbor.Product Development.Requirements.User Needs.WebHome]]**: The original goals driving these requirements.
 
 ----
 
-== 🎨 Visual Reference: The User Experience ==
+== Visual Reference: The User Experience ==
 
 Requirements are best understood through the intended user experience. Below are the key UI patterns defined by these requirements.
 
@@ -30,13 +30,13 @@ Real-time credibility indicators overlayed on the text.
 
 (% class="box successmessage" style="margin:10px 0;" %)
 (((
-🟢 **Researchers found that Mediterranean diet followers had a 25% lower risk of heart disease**
+**Researchers found that Mediterranean diet followers had a 25% lower risk of heart disease**
 ↑ WELL SUPPORTED • 87% confidence
 )))
 
 (% class="box warningmessage" style="margin:10px 0;" %)
 (((
-🟡 **Some experts believe this diet can completely prevent heart attacks**
+**Some experts believe this diet can completely prevent heart attacks**
 ↑ UNCERTAIN • 45% confidence — Overstated based on evidence
 )))
 

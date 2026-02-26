@@ -5,50 +5,32 @@
 (% class="box infomessage" %)
 (((
 **FactHarbor is a Swiss Non-Profit (Verein) governed through code.**
-We scale through automation rather than hierarchy. Our **"System-over-Data"** philosophy ensures neutrality by fixing underlying algorithms instead of individual outputs, ensuring every decision is transparent and auditable.
+We ensure neutrality by fixing underlying algorithms instead of individual outputs, ensuring every decision is transparent and auditable.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
-== 🚀 Quick Start: I am a... ==
 
-* **New Community Member** → [[Culture & Collaboration>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]
-* **Potential Partner/Donor** → [[Strategy & Mission>>FactHarbor.Organisation.Strategy.WebHome]]
-* **Legal/Compliance Auditor** → [[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]
-* **Governance Researcher** → [[Organisational Model>>FactHarbor.Organisation.Governance.WebHome]]
+== Why We Exist: Strategy & Mission ==
+* **[[Strategy & Mission>>FactHarbor.Organisation.Strategy.WebHome]]** — Mission, automation philosophy, and market positioning.
 
-----
+== How We Work: Culture & Collaboration ==
+* **[[Culture & Collaboration>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]** — Workplace values, decision-making (Sociocracy 3.0), and contributor guides.
 
-== 1. 🎯 Why We Exist: Strategy & Mission ==
-Our strategy centers on solving the "binary fact-check" problem through transparent, multi-perspective automation.
+== How We Are Structured: Governance ==
+* **[[Governance>>FactHarbor.Organisation.Governance.WebHome]]** — Governance structure, roles, and the "Fix the System" principle.
 
-* 🔗 **[[Strategy & Mission>>FactHarbor.Organisation.Strategy.WebHome]]**: Mission, automation philosophy, and market positioning.
-
-== 2. 🤝 How We Work: Culture & Collaboration ==
-We combine human-centric values with high-velocity, consent-based processes.
-
-* 🔗 **[[Culture & Collaboration>>FactHarbor.Organisation.How-We-Work-Together.WebHome]]**: Workplace values, decision-making (Sociocracy 3.0), and contributor guides.
-
-== 3. ⚖️ How We Are Structured: Governance ==
-Our governance ensures neutrality and "system-over-data" integrity.
-
-* 🔗 **[[Governance>>FactHarbor.Organisation.Governance.WebHome]]**: Governance structure, roles, and the "Fix the System" principle.
-
-== 4. 📜 Our Rules: Legal & Compliance ==
-The formal framework protecting our mission and our users.
-
-* 🔗 **[[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]**: Statutes, open-source licenses, and public policies (Privacy/Transparency).
+== Our Rules: Legal & Compliance ==
+* **[[Legal & Compliance>>FactHarbor.Organisation.Legal and Compliance.WebHome]]** — Statutes, open-source licenses, and public policies (Privacy/Transparency).
 
 ----
 
-== 🗺️ Visual References ==
-* **[[Diagrams>>FactHarbor.Organisation.Diagrams.WebHome]]**: Governance structures and operational domain maps.
+== Visual References ==
+* **[[Diagrams>>FactHarbor.Organisation.Diagrams.WebHome]]** — Governance structures and operational domain maps.
 
-== 💡 Key Principles ==
-* **AI-First**: AKEL evaluates content; humans refine the system.
+== Key Principles ==
+* **Improve the system, don't modify data**: AKEL evaluates content; humans refine the system.
 * **Radical Transparency**: Every decision and metric is public.
 * **Consent-Based**: We move fast by seeking "no principled objections."
 * **Swiss Neutrality**: Protected by our non-profit association status.
 
-----
-**Maintained by**: Operations Lead | **Status**: Operational | **Last Review**: Feb 2026

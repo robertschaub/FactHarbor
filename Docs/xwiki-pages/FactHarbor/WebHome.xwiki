@@ -27,7 +27,7 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 (% class="box infomessage" %)
 (((
 **FactHarbor brings clarity **
-by connecting claims with groundes evidence in a transparent and inspectable model. We help people move beyond blind trust or total disengagement — and judge for themselves.
+by connecting claims with groundes evidence in a transparent and inspectable model. To help people to judge for themselves based on evidence.
 )))
 
 == Quick Start ==
@@ -88,7 +88,3 @@ Data in FactHarbor flows through a structured, auditable process:
 * **Evidence Handling:** Evidence is retrieved, assessed for quality, and linked.
 * **Verdict Creation:** Generating per-boundary, per-claim verdicts via structured debate.
 * **Public Presentation:** The evidence landscape — multi-perspective results with full provenance — is published for users to explore.
-
-
-----
-**Maintained by**: Founder | **Status**: Operational | **Last Review**: Feb 2026

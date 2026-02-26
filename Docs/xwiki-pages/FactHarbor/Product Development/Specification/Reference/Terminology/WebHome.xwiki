@@ -5,7 +5,7 @@
 **FactHarbor uses a standardized glossary to ensure consistency across code, schemas, and prompts.**
 The **ClaimBoundary (CB)** pipeline is our default standard. We use precise terms like AtomicClaim and ClaimAssessmentBoundary to maintain auditable reasoning.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 🚀 Quick Start: I need to... ==

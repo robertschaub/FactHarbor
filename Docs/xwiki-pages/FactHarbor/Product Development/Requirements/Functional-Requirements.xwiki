@@ -5,7 +5,7 @@
 **FactHarbor implements multi-perspective analysis through a 5-stage automated pipeline.**
 Our functional features cover intake, boundary clustering, multi-agent debate, and real-time credibility highlighting.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 1. Intake & Normalization ==

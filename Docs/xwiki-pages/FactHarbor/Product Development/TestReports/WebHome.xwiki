@@ -9,4 +9,17 @@ The Reports capture the complete analysis result for a given input claim, includ
 
 == Reports ==
 
-{{github-files repo="robertschaub/FactHarbor" path="Docs/TESTREPORTS" /}}
+|=Claim|=Verdict|=Truth|=Conf.|=Date
+|[[Hydrogen is more efficient for cars than electricity>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/Hydrogen_is_more_efficient_for_cars_than_Report_20260220_003803.html]]|MOSTLY-FALSE|18%|78%|2026-02-19
+|[[O julgamento de Bolsonaro foi justo e baseado na legislação brasileira?>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/O_julgamento_de_Bolsonaro_foi_justo_e_ba_Report_20260219_162245.html]]|MOSTLY-TRUE|82%|78%|2026-02-19
+|[[Die SRG hat einen "Rechtsdrall">>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/SRG_hat_einen_Rechtsdrall.html]]|MOSTLY-FALSE|22%|68%|2026-02-19
+|[[Die SRG hat einen "Linksdrall">>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/SRG_Hat_Linksdrall.html]]|LEANING-FALSE|35%|58%|2026-02-19
+|[[Statements from the current US federal government can be trusted>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/Statements_from_the_current_US_federal_g_Report_20260220_001200.html]]|LEANING-FALSE|35%|68%|2026-02-19
+|[[The sky is blue>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/The_sky_is_blue_Report_20260219_194905.html]]|MOSTLY-TRUE|78%|72%|2026-02-18
+|[["Bad" behavior is a result of situational factors rather than inherent "evil">>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/bad_behavior_is_a_result_of_situational_Report_20260222_233435.html]]|LEANING-TRUE|58%|65%|2026-02-22
+|[[Sanctions rarely achieve their goals>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/Sanctions_rarely_achieve_their_goals_Report_20260222_215917.html]]|LEANING-TRUE|62%|65%|2026-02-22
+|[[Wer der Evidenz konsequent folgt...>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/Wer_der_Evidenz_konsequent_folgt_landet_Report_20260225_000904.html]]| — | — | — |2026-02-25
+|[[Will South Korea go extinct in 50 years?>>https://robertschaub.github.io/FactHarbor/#Docs/TESTREPORTS/Will_South_Korea_go_extinct_in_50_years_Report_20260225_190148.html]]| — | — | — |2026-02-25
+
+----
+**Maintained by**: R&D Lead | **Status**: Operational | **Last Review**: Feb 2026

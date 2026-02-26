@@ -5,10 +5,10 @@
 **We build a high-scale, automated analysis pipeline (AKEL) for evidence-based reasoning.**
 FactHarbor uses **Next.js**, **.NET 8**, and **multi-provider LLMs** to deliver auditable results. Our development is metrics-driven, open-source, and follows a strict "system-over-data" philosophy.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
-== 🚀 Quick Start: I am a... ==
+== Quick Start: I am a... ==
 
 * **New Developer** → [[DevOps & Setup>>FactHarbor.Product Development.DevOps.WebHome]]
 * **System Architect** → [[Specification & Deep Dives>>FactHarbor.Product Development.Specification.WebHome]]
@@ -17,20 +17,16 @@ FactHarbor uses **Next.js**, **.NET 8**, and **multi-provider LLMs** to deliver 
 
 ----
 
-== 🛠️ Core Documentation ==
-
-* 🔗 **[[Requirements>>FactHarbor.Product Development.Requirements.WebHome]]**: Functional features, user roles, and quality standards.
-* 🔗 **[[Specification>>FactHarbor.Product Development.Specification.WebHome]]**: Technical architecture, data models, and implemention deep-dives.
-* 🔗 **[[Planning>>FactHarbor.Product Development.Planning.WebHome]]**: Project status, phase definitions (Alpha/Beta), and roadmaps.
-* 🔗 **[[DevOps>>FactHarbor.Product Development.DevOps.WebHome]]**: Coding guidelines, local setup, and deployment guides.
+== Core Documentation ==
+* **[[Requirements>>FactHarbor.Product Development.Requirements.WebHome]]** — Functional features, user roles, and quality standards.
+* **[[Specification>>FactHarbor.Product Development.Specification.WebHome]]** — Technical architecture, data models, and implementation deep-dives.
+* **[[Planning>>FactHarbor.Product Development.Planning.WebHome]]** — Project status, phase definitions (Alpha/Beta), and roadmaps.
+* **[[DevOps>>FactHarbor.Product Development.DevOps.WebHome]]** — Coding guidelines, local setup, and deployment guides.
 
 ----
 
-== 💡 Engineering Mandates ==
+== Engineering Mandates ==
 * **No Domain Hardcoding**: The system must remain generic and strictly evidence-driven.
 * **LLM Intelligence**: Use semantic reasoning for analysis, never regex/heuristics.
 * **Input Neutrality**: Phrasing must not bias the depth or direction of analysis.
 * **UCM-Driven**: All tunable parameters reside in Unified Config Management (SQLite).
-
-----
-**Maintained by**: R&D Lead | **Status**: Alpha | **Last Review**: Feb 2026

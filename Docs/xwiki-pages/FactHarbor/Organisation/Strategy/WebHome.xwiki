@@ -1,42 +1,14 @@
 = Strategy =
 
-(% class="box infomessage" %)
-(((
-**FactHarbor aims to solve the "Binary Fact-Check" crisis through multi-perspective automation.**
-We focus on transitioning from simple verdicts to an interactive **Evidence Landscape**. Our growth strategy involves scaling through deep-reasoning backends for existing monitoring leaders.
+== Mission & Problem Space ==
+* **[[Core Problems FactHarbor Solves>>FactHarbor.Organisation.Strategy.Core Problems FactHarbor Solves.WebHome]]** — Our vision for impact beyond binary truth.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
-)))
+== Operating Philosophy ==
+* **[[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philosophy.WebHome]]** — AKEL as the primary engine; humans as architects and auditors.
 
-== 🚀 Quick Start: I want to know... ==
+== Market & Positioning ==
+* **[[Competitive Analysis>>FactHarbor.Organisation.Strategy.Competitive Analysis.WebHome]]** — 2026 market landscape and our unique reasoning chain moat.
+* **[[Ideal Customer Profile>>FactHarbor.Organisation.Strategy.Ideal Customer Profile.WebHome]]** — Target segments from journalists to policy analysts.
 
-* **What problems we solve** → [[Core Problems>>FactHarbor.Organisation.Strategy.Core Problems FactHarbor Solves.WebHome]]
-* **Why we use AI** → [[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philosophy.WebHome]]
-* **Who we compete with** → [[Competitive Analysis>>FactHarbor.Organisation.Strategy.Competitive Analysis.WebHome]]
-* **Who we partner with** → [[Cooperation Opportunities>>FactHarbor.Organisation.Strategy.Cooperation Opportunities.WebHome]]
-
-----
-
-== 1. 🎯 Mission & Problem Space ==
-Defining the fundamental gaps in modern information landscapes.
-
-* 🔗 **[[Core Problems FactHarbor Solves>>FactHarbor.Organisation.Strategy.Core Problems FactHarbor Solves.WebHome]]**: Our vision for impact beyond binary truth.
-
-== 2. 💡 Operating Philosophy ==
-How our AI-First approach differs from traditional fact-checking.
-
-* 🔗 **[[Automation Philosophy>>FactHarbor.Organisation.Strategy.Automation Philosophy.WebHome]]**: AKEL as the primary engine; humans as architects and auditors.
-
-== 3. 🌐 Market & Positioning ==
-Where FactHarbor sits in the global verification ecosystem.
-
-* 🔗 **[[Competitive Analysis>>FactHarbor.Organisation.Strategy.Competitive Analysis.WebHome]]**: 2026 market landscape and our unique reasoning chain moat.
-* 🔗 **[[Ideal Customer Profile>>FactHarbor.Organisation.Strategy.Ideal Customer Profile.WebHome]]**: Target segments from journalists to policy analysts.
-
-== 4. 🤝 Partnerships ==
-Collaborating to achieve monitoring scale.
-
-* 🔗 **[[Cooperation Opportunities>>FactHarbor.Organisation.Strategy.Cooperation Opportunities.WebHome]]**: Strategic targets (Full Fact, ETH Zurich) and funding models.
-
-----
-**Maintained by**: Strategy Lead | **Status**: Operational | **Last Review**: Feb 2026
+== Partnerships ==
+* **[[Cooperation Opportunities>>FactHarbor.Organisation.Strategy.Cooperation Opportunities.WebHome]]** — Strategic targets (Full Fact, ETH Zurich) and funding models.

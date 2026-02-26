@@ -1,23 +1,6 @@
 = Governance =
 
-(% class="box infomessage" %)
-(((
-**FactHarbor uses an automation-first, flat cooperative governance model.**
-We minimize bureaucracy to maximize analytical impact. Our governance follows **Sociocracy 3.0** (Consent pattern) and a **"Fix the System"** principle—ensuring neutrality by focusing on algorithms rather than individual outputs.
-
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
-)))
-
-== 🚀 Quick Start: I want to... ==
-
-* **Understand the model** → [[Organisational Model>>FactHarbor.Organisation.Governance.Organisational Model.WebHome]]
-* **Propose a change** → [[The RFC Process>>#H4.Policy26Finance]]
-* **See how decisions are made** → [[Consent-Based Decisions>>#H6.6Consent-BasedDecisionMaking]]
-* **Report an issue** → [[Conflict Resolution>>#H8.ConflictResolution26Moderation]]
-
----
-
-== 1. ⚖️ Our Philosophy ==
+== 1. Our Philosophy ==
 At FactHarbor, we prioritize systems that scale and results that are auditable.
 * **Automation First**: We minimize manual, subjective processes.
 * **Radical Transparency**: Our decision-making is open by default.
@@ -25,7 +8,7 @@ At FactHarbor, we prioritize systems that scale and results that are auditable.
 * **Data-Driven**: Every system change is backed by measured outcomes.
 * **Adaptive**: Our structure evolves to meet new challenges.
 
-== 2. 🏛️ Organisational Structure ==
+== 2. Organisational Structure ==
 We follow a **Flat Cooperative Model** that promotes collaborative teamwork over hierarchy.
 {{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
 
@@ -35,14 +18,14 @@ We follow a **Flat Cooperative Model** that promotes collaborative teamwork over
 * **Governing Team**: Meets quarterly to set policy, allocate budget, and make strategic decisions.
 * **Domain Leads**: Small, specialized roles focused on R&D, Operations, Community, and Finance.
 
-== 3. 🎯 Decision Authority ==
+== 3. Decision Authority ==
 Authority is distributed based on the scope and impact of the decision.
 * **Strategic**: General Assembly (2/3 majority required).
 * **Tactical**: Governing Team (Simple majority required).
 * **Operational**: Domain Leads (Autonomous within their domains).
 * **Emergency**: Immediate action allowed by any team member, followed by Governing Team ratification.
 
-== 4. 📜 Policy & Finance ==
+== 4. Policy & Finance ==
 **Developing Policies (The RFC Process)**:
 Anyone can draft a proposal (RFC). We discuss it as a community, the Governing Team reviews and votes, and the result is published openly.
 
@@ -51,7 +34,7 @@ Anyone can draft a proposal (RFC). We discuss it as a community, the Governing T
 * **Safeguards**: Two-signature requirement for amounts over CHF 5,000.
 * **Oversight**: Quarterly reports and an annual independent audit ensure full transparency.
 
-== 5. 🤖 Automation Governance ==
+== 5. Automation Governance ==
 FactHarbor is built on the principle of **systemic integrity**. Instead of manually reviewing every claim, we focus on building a robust, automated system that produces reliable results at scale.
 
 === 5.1 The Decision Boundary ===
@@ -73,30 +56,27 @@ To maintain objectivity and scalability, we maintain a clear boundary between au
 
 === 5.2 Principle: Fix the System, Not the Data ===
 When the system produces a questionable result, we do not manually "fix" that specific verdict. Instead, we use it as a signal to improve the entire system.
-* ❌ **Don't**: Manually override a single verdict or source score.
-* ✅ **Do**: Investigate if the issue is systematic and refine the underlying algorithm.
+* **Don't**: Manually override a single verdict or source score.
+* **Do**: Investigate if the issue is systematic and refine the underlying algorithm.
 
 === 5.3 Human Intervention Criteria ===
 Manual intervention is only permitted for operational integrity, never for content preference.
-* ✅ **Yes**: System metrics show performance degradation or legal/safety issues.
-* ✅ **Yes**: The system explicitly flags an item for human review.
-* ❌ **No**: Disagreement with a specific verdict or "manual quality gates."
+* **Yes**: System metrics show performance degradation or legal/safety issues.
+* **Yes**: The system explicitly flags an item for human review.
+* **No**: Disagreement with a specific verdict or "manual quality gates."
 
 === 5.4 Consent-Based Decision Making ===
 For system and policy changes, we use **Consent** rather than Consensus (based on [[Sociocracy 3.0>>https://sociocracy30.org/]]).
 **Consent** means there are no principled objections. It is faster than consensus and maintains high velocity while ensuring everyone can "live with" the decision.
 
----
+----
 
-== 6. 🤝 Transparency & Accountability ==
+== 6. Transparency & Accountability ==
 FactHarbor is committed to building public trust through openness.
 * **Public Information**: All policies, board memberships, financials, and quality metrics are public.
 * **Audit Trail**: All meetings, decisions, and system actions are documented and retained.
 
-== 7. ⚖️ Conflict Resolution & Moderation ==
+== 7. Conflict Resolution & Moderation ==
 * **User Disputes**: Handled by moderators, with a right of appeal to the Governing Team.
 * **Internal Conflicts**: Resolved through direct discussion, or external mediation if necessary.
 * **Moderation Oversight**: Moderators must have a high reputation and their actions are periodically reviewed.
-
-----
-**Maintained by**: Operations Lead | **Status**: Operational | **Last Review**: Feb 2026

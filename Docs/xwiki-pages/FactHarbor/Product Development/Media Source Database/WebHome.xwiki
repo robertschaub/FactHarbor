@@ -13,37 +13,37 @@
 **The Media Source Database provides on-demand, evidence-grounded credibility scores for 19 languages.**
 We replace static media rating lists with real-time AI evaluations cross-checked by multiple models against historical track records and regional fact-checkers.
 
-🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
+**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
-== 🚀 Quick Start: How can we help you? ==
+== Quick Start: How can we help you? ==
 
 * **I am a Journalist** → [[Vetting Workflows>>#HJournalistsandNewsrooms]]
 * **I am a Researcher** → [[API & Data Export>>#HResearchersandAcademics]]
 * **I am a Developer** → [[Implementation Details>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]]
 * **I want to see the scale** → [[7-Band Credibility Scale>>#HThe7-BandCredibilityScale]]
 
----
+----
 
-== 🎯 The Problem ==
+== The Problem ==
 
 Reliable information starts with reliable sources, but current tools fall short:
-* 📉 **Static databases go stale**: pre-seeded lists can't keep up with ownership or editorial changes.
-* 🙈 **Hidden editorial bias**: Users cannot inspect the reasoning behind traditional ratings.
-* 🌍 **English-only coverage**: Regional sources are often ignored or misjudged.
-* 🏛️ **Prestige over evidence**: Systems rely on institutional names rather than accuracy records.
+* **Static databases go stale**: pre-seeded lists can't keep up with ownership or editorial changes.
+* **Hidden editorial bias**: Users cannot inspect the reasoning behind traditional ratings.
+* **English-only coverage**: Regional sources are often ignored or misjudged.
+* **Prestige over evidence**: Systems rely on institutional names rather than accuracy records.
 
-== 💡 Our Response: The Evidence-Grounded Approach ==
+== Our Response: The Evidence-Grounded Approach ==
 
 FactHarbor's Media Source Database provides a transparent, auditable, and open-source alternative.
 
-* 🔎 **No Pre-seeded Data**: Every source is evaluated on-demand using the same evidence-based process.
-* 🤖 **Dual-AI Cross-Check**: Claude and OpenAI must reach a consensus before a score is accepted.
-* 📚 **Evidence-Grounded**: Scores are backed by a retrieved "Evidence Pack" of fact-checks and ownership data.
-* 🗺️ **Works in 19 Languages**: We search regional fact-checkers (e.g., CORRECTIV for German sources) to ensure local context.
-* 🔄 **Dynamic and Current**: Evaluations are refreshed every 90 days to reflect the last 24 months of performance.
+* **No Pre-seeded Data**: Every source is evaluated on-demand using the same evidence-based process.
+* **Dual-AI Cross-Check**: Claude and OpenAI must reach a consensus before a score is accepted.
+* **Evidence-Grounded**: Scores are backed by a retrieved "Evidence Pack" of fact-checks and ownership data.
+* **Works in 19 Languages**: We search regional fact-checkers (e.g., CORRECTIV for German sources) to ensure local context.
+* **Dynamic and Current**: Evaluations are refreshed every 90 days to reflect the last 24 months of performance.
 
-== ⚖️ The 7-Band Credibility Scale ==
+== The 7-Band Credibility Scale ==
 
 |= Score |= Rating |= Meaning |= Verdict Effect
 | 0.86 – 1.00 | **Highly Reliable** | Verified accuracy, rigorous corrections (e.g., wire services) | Verdict preserved
@@ -56,16 +56,16 @@ FactHarbor's Media Source Database provides a transparent, auditable, and open-s
 
 **Unknown sources** receive a default score of **0.50** (neutral center).
 
-== 🛠️ How It Works ==
+== How It Works ==
 
 1. **Evidence Gathering**: System retrieves fact-checker ratings, journalism reviews, and correction records.
 2. **Dual-Model Evaluation**: Claude produces a draft; OpenAI cross-checks. Consensus difference must be ≤ 0.20.
 3. **Skeptical Acceptance**: High ratings require higher confidence and more evidence citations.
 4. **Transparent Result**: Full reasoning, bias indicators, and evidence citations are stored and cached.
 
----
+----
 
-== 🚀 Future: Standalone Service & Public API ==
+== Future: Standalone Service & Public API ==
 
 The Media Source Database is moving from an internal module to a **standalone public service**.
 
