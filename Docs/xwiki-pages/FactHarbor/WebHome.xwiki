@@ -30,10 +30,8 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 
 (% class="box infomessage" %)
 (((
-**TL;DR: What is FactHarbor?**
-🎯 **Mission**: Bring clarity to contested information through transparent, AI-powered reasoning.
-💡 **Innovation**: We don't just give a "True/False" label; we map the entire **Evidence Landscape** with explicit assumptions and confidence scores.
-⚖️ **Values**: Non-profit, open-source, and strictly evidence-based.
+**TL;DR: Navigation for complex claims.**
+Instead of asking you to trust an authority, FactHarbor maps the **Evidence Landscape**. We use AI to make the reasoning, the assumptions, and the specific contexts visible—moving beyond binary "True/False" labels so you can inspect the evidence and form your own judgment.
 )))
 
 == 🚀 Quick Start: How can we help you? ==

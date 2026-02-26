@@ -6,10 +6,8 @@ This document describes the **Specification** of FactHarbor. It is a working dra
 
 (% class="box infomessage" %)
 (((
-**TL;DR: How it works**
-🎯 **Goal**: Provide a deterministic, auditable path from raw claim to evidence-backed verdict.
-💡 **Innovation**: A 5-stage pipeline (AKEL) featuring automated research and multi-agent debate.
-⚖️ **Integrity**: Every verdict is traceable to specific evidence items and source reliability scores.
+**TL;DR: Auditable Reasoning at Scale.**
+The AKEL pipeline uses multi-agent debate to stress-test evidence within emergent boundaries. Every result is a probabilistic likelihood, not a binary choice, and remains fully traceable to its sources through a deterministic, versioned analysis flow.
 )))
 
 == 🚀 Quick Start: I want to... ==

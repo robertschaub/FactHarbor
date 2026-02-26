@@ -1,9 +1,11 @@
 = Organisation =
 
+{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
+
 (% class="box infomessage" %)
 (((
-**TL;DR: How we operate**
-FactHarbor is a **Swiss Non-Profit Association (Verein)**. We use a flat, cooperative model where code and automated policies minimize bureaucracy. We follow **Sociocracy 3.0** for decision-making and an **AI-First** operating philosophy.
+**TL;DR: Governance through Code.**
+FactHarbor is a Swiss Non-Profit (Verein) designed to scale through automation rather than hierarchy. Our **"System-over-Data"** philosophy ensures neutrality by fixing underlying algorithms instead of individual outputs, ensuring every decision is transparent and auditable.
 )))
 
 == 🚀 Quick Start: I am a... ==
