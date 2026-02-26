@@ -4495,6 +4495,12 @@ export async function aggregateAssessment(
     low: 1.0,
   };
   const derivativeMultiplier = aggregation.derivativeMultiplier ?? 0.5;
+  const probativeValueWeights = calcConfig.probativeValueWeights ?? {
+    high: 1.0,
+    medium: 0.9,
+    low: 0.5,
+  };
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
 
   const weightsData = claimVerdicts.map((verdict) => {
     const claim = claims.find((c) => c.id === verdict.claimId);
@@ -4521,13 +4527,29 @@ export async function aggregateAssessment(
       derivativeMultiplier,
     );
 
-    // Final weight (§8.5.4): centrality × harm × confidence × (1 + triangulation) × derivative
+    // Probative value factor: average quality of supporting evidence
+    // (high > medium > low) controlled by CalcConfig.probativeValueWeights.
+    const supportingEvidenceIds = verdict.supportingEvidenceIds ?? [];
+    const probativeFactors = supportingEvidenceIds
+      .map((id) => evidenceById.get(id))
+      .filter((item): item is EvidenceItem => Boolean(item))
+      .map((item) => {
+        const level = item.probativeValue ?? "medium";
+        return probativeValueWeights[level];
+      });
+    const probativeFactor =
+      probativeFactors.length > 0
+        ? probativeFactors.reduce((sum, value) => sum + value, 0) / probativeFactors.length
+        : 1.0;
+
+    // Final weight (§8.5.4): centrality × harm × confidence × (1 + triangulation) × derivative × probative
     const finalWeight =
       centralityWeight *
       harmWeight *
       confidenceFactor *
       (1 + triangulationFactor) *
-      derivativeFactor;
+      derivativeFactor *
+      probativeFactor;
 
     return {
       truthPercentage: verdict.truthPercentage,

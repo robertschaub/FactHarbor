@@ -1131,6 +1131,15 @@ export const CalcConfigSchema = z.object({
 
   mixedConfidenceThreshold: z.number().int().min(0).max(100),
 
+  // ClaimBoundary Stage 5: probative value multipliers for claim influence weighting
+  probativeValueWeights: z
+    .object({
+      high: z.number().min(0).max(2),
+      medium: z.number().min(0).max(2),
+      low: z.number().min(0).max(2),
+    })
+    .optional(),
+
   // ClaimBoundary Stage 4: Self-consistency spread thresholds (percentage points)
   selfConsistencySpreadThresholds: z.object({
     stable: z.number().int().min(0).max(20),
@@ -1402,6 +1411,11 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     contextMergeThreshold: 0.7,
   },
   mixedConfidenceThreshold: 40,
+  probativeValueWeights: {
+    high: 1.0,
+    medium: 0.9,
+    low: 0.5,
+  },
   // ClaimBoundary Stage 4: Self-consistency spread thresholds (in percentage points)
   selfConsistencySpreadThresholds: {
     stable: 5,

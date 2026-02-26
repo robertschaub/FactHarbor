@@ -251,7 +251,7 @@ const DEFAULT_CALC_CONFIG: CalcConfig = {
   mixedConfidenceThreshold: 40,
   probativeValueWeights: {
     high: 1.0,
-    medium: 0.8,
+    medium: 0.9,
     low: 0.5,
   },
   sourceTypeCalibration: {
@@ -862,7 +862,7 @@ function CalcConfigForm({
                   probativeValueWeights: {
                     ...config.probativeValueWeights,
                     high: isNaN(v) ? 1.0 : v,
-                    medium: config.probativeValueWeights?.medium ?? 0.8,
+                    medium: config.probativeValueWeights?.medium ?? 0.9,
                     low: config.probativeValueWeights?.low ?? 0.5,
                   },
                 });
@@ -875,7 +875,7 @@ function CalcConfigForm({
             <input
               type="number"
               className={styles.formInput}
-              value={config.probativeValueWeights?.medium ?? 0.8}
+              value={config.probativeValueWeights?.medium ?? 0.9}
               min={0.1}
               max={2.0}
               step={0.1}
@@ -908,7 +908,7 @@ function CalcConfigForm({
                   ...config,
                   probativeValueWeights: {
                     high: config.probativeValueWeights?.high ?? 1.0,
-                    medium: config.probativeValueWeights?.medium ?? 0.8,
+                    medium: config.probativeValueWeights?.medium ?? 0.9,
                     low: isNaN(v) ? 0.5 : v,
                   },
                 });
