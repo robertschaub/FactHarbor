@@ -8,286 +8,68 @@
 )))
 )))
 
-The Media Source Database evaluates the reliability of media sources using dual-AI cross-checking, evidence-grounded scoring, and a 7-band credibility scale — in 19 languages. It currently powers every FactHarbor analysis and is planned to become a **standalone public service and API** available to journalists, researchers, educators, and anyone who needs to assess source credibility.
+(% class="box infomessage" %)
+(((
+**TL;DR: On-demand credibility, not static lists.**
+We replace stale, biased media rating lists with real-time, evidence-grounded AI evaluations. Every source is cross-checked by two models against its own track record and regional fact-checker assessments—available in 19 languages.
+)))
 
-**Version**: 1.4 (Multi-Language Support) | **Status**: Operational
+== 🚀 Quick Start: How can we help you? ==
 
-----
+* **I am a Journalist** → [[Vetting Workflows>>#HJournalistsandNewsrooms]]
+* **I am a Researcher** → [[API & Data Export>>#HResearchersandAcademics]]
+* **I am a Developer** → [[Implementation Details>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]]
+* **I want to see the scale** → [[7-Band Credibility Scale>>#HThe7-BandCredibilityScale]]
 
-== The Problem ==
+---
 
-Reliable information starts with reliable sources — but assessing source credibility today is surprisingly difficult:
+== 🎯 The Problem ==
 
-* **Static databases go stale.** Most media rating lists are pre-seeded by editorial teams, updated infrequently, and inevitably fall behind ownership changes, editorial shifts, and evolving track records.
-* **Hidden editorial bias.** Pre-seeded ratings reflect the judgement of whoever compiled them. Users cannot inspect the reasoning or challenge the scores.
-* **English-only coverage.** Most existing tools focus on English-language media, leaving regional sources in dozens of languages unassessed.
-* **Opinion over evidence.** Many rating systems rely on institutional prestige or domain type (.gov, .edu) rather than demonstrated accuracy and correction practices.
-* **No open-source alternative.** There is no transparent, auditable, open-source system for on-demand media source evaluation.
+Reliable information starts with reliable sources, but current tools fall short:
+* 📉 **Static databases go stale**: pre-seeded lists can't keep up with ownership or editorial changes.
+* 🙈 **Hidden editorial bias**: Users cannot inspect the reasoning behind traditional ratings.
+* 🌍 **English-only coverage**: Regional sources are often ignored or misjudged.
+* 🏛️ **Prestige over evidence**: Systems rely on institutional names rather than accuracy records.
 
-The Media Source Database addresses all of these.
+== 💡 Our Response: The Evidence-Grounded Approach ==
 
-----
+FactHarbor's Media Source Database provides a transparent, auditable, and open-source alternative.
 
-== What Makes This Different ==
+* 🔎 **No Pre-seeded Data**: Every source is evaluated on-demand using the same evidence-based process.
+* 🤖 **Dual-AI Cross-Check**: Claude and OpenAI must reach a consensus before a score is accepted.
+* 📚 **Evidence-Grounded**: Scores are backed by a retrieved "Evidence Pack" of fact-checks and ownership data.
+* 🗺️ **Works in 19 Languages**: We search regional fact-checkers (e.g., CORRECTIV for German sources) to ensure local context.
+* 🔄 **Dynamic and Current**: Evaluations are refreshed every 90 days to reflect the last 24 months of performance.
 
-=== No Pre-seeded Data ===
-
-There is no hardcoded list of "good" or "bad" sources. Every source is evaluated on-demand by AI using the same process — from a local newspaper in São Paulo to a major wire service. Every score is traceable to an LLM evaluation with cited evidence. Nothing is hidden.
-
-=== Dual-AI Cross-Check ===
-
-Two independent AI models must agree. Claude performs the primary evaluation, then an OpenAI model cross-checks and refines the result. If the models disagree beyond a configurable threshold, the source is marked as "unknown" rather than receiving a potentially unreliable score. Skepticism is the default.
-
-=== Evidence-Grounded ===
-
-Scores are not based on AI "feelings" about a source. The system first searches the web for independent assessments — fact-checker ratings, journalism reviews, correction records, and ownership information — and builds an **evidence pack**. The AI evaluates against this evidence. Scores backed by insufficient evidence are rejected: high reliability ratings require a minimum number of cited sources.
-
-=== Skeptical by Default ===
-
-High reliability is harder to earn than low reliability. A source rated "Highly Reliable" needs stronger evidence and higher model confidence than one rated "Mixed". Unknown sources receive a neutral score (0.50), not a generous one. Absence of negative evidence does not equal reliability.
-
-=== Works in 19 Languages ===
-
-The system detects the publication language and searches for regional fact-checker assessments alongside international coverage. A German-language source is evaluated against assessments from CORRECTIV, Mimikama, and dpa-Faktencheck — not just English-language fact-checkers.
-
-Supported languages: German, French, Spanish, Portuguese, Italian, Dutch, Polish, Russian, Swedish, Norwegian, Danish, Finnish, Czech, Hungarian, Turkish, Japanese, Chinese, Korean, Arabic.
-
-=== Dynamic and Current ===
-
-Source credibility changes over time. Ownership changes, editorial shifts, political transitions, and corrections records all matter. Evaluations are cached for 90 days and then automatically re-assessed — ensuring scores reflect current performance, not historical reputation. The last 24 months matter most.
-
-=== Fully Transparent ===
-
-Every evaluation stores the full reasoning, bias indicators, evidence citations, and confidence scores. Users can inspect exactly why a source received its rating, what evidence was considered, and how confident the system is in the result. Evaluations are exportable in JSON, Markdown, HTML, and PDF formats.
-
-----
-
-== How It Works ==
-
-=== 1. Evidence Gathering ===
-
-When a source is first encountered, the system searches the web for independent assessments: fact-checker ratings, journalism reviews, track record evidence, ownership information, and correction practices. For non-English sources, it performs dual-language searches — English for international coverage, plus the source's own language for regional fact-checkers.
-
-=== 2. Dual-Model Evaluation ===
-
-**Claude** evaluates the source using the evidence pack, producing a reliability score, confidence level, reasoning, bias classification, and evidence citations. Then an **OpenAI model** independently cross-checks the result using the same evidence.
-
-=== 3. Skeptical Acceptance ===
-
-The score is only accepted if:
-* Both models agree (score difference ≤ 0.20)
-* Confidence meets the threshold (≥ 0.80, higher for high-reliability ratings)
-* Sufficient evidence was cited
-
-If any check fails, the source is marked as "unknown" (neutral) rather than receiving a potentially unreliable score.
-
-=== 4. Transparent Result ===
-
-The accepted evaluation is cached for 90 days and includes: reliability score, confidence, full reasoning, bias indicator, all evidence citations, and the evidence pack used during evaluation.
-
-=== Verdict Impact ===
-
-Source reliability scores act as **weights on evidence**. A verdict backed by highly reliable sources keeps its strength. A verdict backed by unreliable sources is pulled toward neutral (50%).
-
-{{code}}
-Example:
-  Original verdict: 80% (Mostly True)
-  Average source score: 0.50 (Mixed reliability)
-  Adjusted verdict: 65% (Leaning True)
-{{/code}}
-
-----
-
-== The 7-Band Credibility Scale ==
+== ⚖️ The 7-Band Credibility Scale ==
 
 |= Score |= Rating |= Meaning |= Verdict Effect
-| 0.86 – 1.00 | **Highly Reliable** | Verified accuracy, rigorous corrections (e.g., wire services, standards bodies) | Verdict fully preserved
-| 0.72 – 0.85 | **Reliable** | Consistent accuracy, professional editorial standards | Verdict mostly preserved
-| 0.58 – 0.71 | **Leaning Reliable** | Often accurate, occasional errors, corrects when notified | Moderate preservation
-| 0.43 – 0.57 | **Mixed** | Variable accuracy or inconsistent quality by topic/author | Neutral zone
-| 0.29 – 0.42 | **Leaning Unreliable** | Often inaccurate or bias significantly affects reporting | Pulls toward neutral
-| 0.15 – 0.28 | **Unreliable** | Pattern of false claims or ignores corrections | Strong pull toward neutral
+| 0.86 – 1.00 | **Highly Reliable** | Verified accuracy, rigorous corrections (e.g., wire services) | Verdict preserved
+| 0.72 – 0.85 | **Reliable** | Consistent accuracy, professional editorial standards | Mostly preserved
+| 0.58 – 0.71 | **Leaning Reliable** | Often accurate, corrects when notified | Moderate preservation
+| 0.43 – 0.57 | **Mixed** | Variable accuracy or inconsistent quality | Neutral zone
+| 0.29 – 0.42 | **Leaning Unreliable** | Often inaccurate; bias significantly affects reporting | Pulls toward 50%
+| 0.15 – 0.28 | **Unreliable** | Pattern of false claims or ignores corrections | Strong pull toward 50%
 | 0.00 – 0.14 | **Highly Unreliable** | Fabricates content or documented disinformation source | Maximum skepticism
 
-**Unknown sources** (not yet evaluated or evaluation inconclusive) receive a default score of **0.50** (neutral center).
+**Unknown sources** receive a default score of **0.50** (neutral center).
+
+== 🛠️ How It Works ==
+
+1. **Evidence Gathering**: System retrieves fact-checker ratings, journalism reviews, and correction records.
+2. **Dual-Model Evaluation**: Claude produces a draft; OpenAI cross-checks. Consensus difference must be ≤ 0.20.
+3. **Skeptical Acceptance**: High ratings require higher confidence and more evidence citations.
+4. **Transparent Result**: Full reasoning, bias indicators, and evidence citations are stored and cached.
+
+---
+
+== 🚀 Future: Standalone Service & Public API ==
+
+The Media Source Database is moving from an internal module to a **standalone public service**.
+
+* **Why**: Decoupling enables independent scaling and allows external tools to use our reliability data.
+* **Public API**: Planned endpoints for `GET /api/v1/sources/{domain}` and `POST /evaluate`.
+* **Sponsorship**: We are seeking funding to expand language coverage and build a one-click browser extension.
 
 ----
-
-== What Users See ==
-
-For every analysis, users can see:
-
-* **Per-source credibility badge** — color-coded rating (Highly Reliable → Highly Unreliable)
-* **Score and confidence** — the numeric reliability score and how confident the evaluation is
-* **Bias indicator** — political spectrum or other bias classification (noted, not penalized unless it affects accuracy)
-* **Impact on verdict** — how source reliability weighted the final verdict
-
-----
-
-== Who This Is For ==
-
-=== Journalists and Newsrooms ===
-
-* Quick credibility check before citing an unfamiliar source
-* Multi-language coverage for regional and international sources
-* Transparent reasoning that can be cited in editorial discussions
-* Export evaluations for editorial records and source vetting workflows
-
-=== Researchers and Academics ===
-
-* API access for systematic media landscape studies
-* Evidence-based scores suitable for reproducible research
-* Full data export (JSON, Markdown, HTML, PDF) for analysis pipelines
-* No proprietary black box — methodology is open and auditable
-
-=== Fact-Checkers ===
-
-* Cross-reference your own assessments with AI-powered evaluation
-* Identify sources that lack independent assessment coverage
-* Bulk credibility screening for large source lists
-* Multi-language support for cross-border investigations
-
-=== Educators ===
-
-* Teach media literacy with real, transparent evaluations
-* Show students how credibility is assessed with evidence, not opinion
-* Demonstrate how the same source can be evaluated differently over time
-* Open methodology that can be studied and critiqued in the classroom
-
-=== Organizations and Decision-Makers ===
-
-* Vet information sources systematically before acting on them
-* Understand the credibility landscape around a topic
-* Evidence-based source assessments for compliance and due diligence
-
-----
-
-== Standalone Application and Public API ==
-
-The Media Source Database is planned to become a **separate application and web service**, independent of the FactHarbor analysis pipeline.
-
-=== Why ===
-
-Source reliability evaluation is a general-purpose capability with value far beyond claim analysis. Journalists need quick credibility checks without running a full analysis. Researchers want to query the database directly via API. Other fact-checking tools could integrate source reliability as a service. Decoupling enables independent scaling, deployment, and release cycles.
-
-=== Architecture ===
-
-{{code}}
-Current (embedded):
-  FactHarbor Analysis Pipeline → [SR Service (internal)]
-
-Future (standalone):
-  FactHarbor Analysis Pipeline ──→ Media Source Database API
-  External consumers ─────────────→ Media Source Database API
-  Browser / direct users ─────────→ Media Source Database Web UI
-{{/code}}
-
-=== Public API (Planned) ===
-
-|= Endpoint |= Method |= Description |= Auth
-| ##/api/v1/sources/{domain}## | GET | Look up source credibility | Reader (guest)
-| ##/api/v1/sources/{domain}/evaluate## | POST | Request fresh evaluation | User (rate-limited)
-| ##/api/v1/sources## | GET | Search/list evaluated sources | Reader (guest)
-| ##/api/v1/sources/{domain}/flag## | POST | Flag incorrect evaluation | User (authenticated)
-
-=== Shared User Account System ===
-
-The Media Source Database will share FactHarbor's user account system. Users log in once and have access to both.
-
-|= Role |= FactHarbor |= Media Source Database
-| **Reader** (Guest) | Browse and view analyses | Browse and search source evaluations
-| **User** (Registered) | Submit URLs/text for analysis (rate-limited) | Look up source credibility (rate-limited), flag incorrect evaluations
-| **UCM Administrator** | Manage pipeline configuration | Manage SR configuration (evaluation parameters, cache, scoring rules)
-| **Moderator** | Handle abuse and community health | Handle abuse and community health
-
-=== Migration Path ===
-
-1. **Current**: Embedded module within FactHarbor (SQLite cache, internal API)
-1. **Next**: Extracted into separate deployable package (shared database, separate process)
-1. **Future**: Standalone web application with its own UI, public API, and shared authentication
-
-----
-
-== For Sponsors ==
-
-=== The Opportunity ===
-
-Media trust is in crisis globally. People struggle to distinguish reliable reporting from propaganda, and professionals lack open, transparent tools for source vetting. Existing solutions are proprietary, English-only, or rely on opaque editorial judgement.
-
-The Media Source Database is **the first open-source, AI-powered, multi-language source credibility service** — built on principles of transparency, evidence, and skepticism.
-
-=== What Funding Enables ===
-
-* **Standalone public service** — Extracting the Media Source Database into an independent application with its own web UI and public API
-* **Expanded language coverage** — Adding more languages and regional fact-checker integrations beyond the current 19
-* **Browser extension** — One-click source credibility checks while browsing
-* **API tiers** — Free public access with rate limits, plus higher-volume tiers for institutional users
-* **Community features** — User flagging, correction workflows, and evaluation quality feedback loops
-
-=== Transparency Commitment ===
-
-* **Open source** — All code is publicly available and auditable
-* **Open methodology** — Evaluation criteria, scoring rules, and AI prompts are documented
-* **Open data** — Evaluation results are exportable and inspectable
-* **No hidden algorithms** — Every score is traceable to specific evidence and reasoning
-
-----
-
-== Design Principles ==
-
-=== Evidence Over Authority ===
-
-Source credibility is **supplementary**, not primary. A low-credibility source with documented evidence should still be considered. A high-credibility source making unsupported claims should be questioned. The evidence itself always matters more than who says it.
-
-=== Track Record Over Prestige ===
-
-Domain type (.gov, .edu, .org) does **not** imply quality. Scores are derived from demonstrated track record: accuracy history, correction practices, editorial independence, and fact-checker assessments. Brand recognition alone does not inflate scores.
-
-=== Entity-Level Evaluation ===
-
-When a domain is the primary digital outlet for a larger organization, the evaluation focuses on the reliability of the entire organization — not just the website. This prevents high-quality organizations from being underrated due to narrow domain-focused metrics.
-
-----
-
-== Source Type Score Caps ==
-
-Certain source types have **default score caps** to handle known categories of unreliable content. These are configurable by administrators.
-
-|= Source Type |= Default Cap |= Default Rating
-| Propaganda outlet | 0.14 | Highly Unreliable
-| Known disinformation | 0.14 | Highly Unreliable
-| State-controlled media | 0.42 | Leaning Unreliable
-| User-generated content platform | 0.42 | Leaning Unreliable
-
-The caps are **prompt-driven** — the AI is instructed to respect them during evaluation. If evidence suggests a source has reformed, the correct action is to **reclassify the source type**, not exceed the cap.
-
-----
-
-== Configuration ==
-
-The Media Source Database is configured via **UCM** (Admin → Config → Source Reliability). Key settings:
-
-|= Setting |= Default |= Description
-| Enabled | Yes | Enable/disable source evaluation
-| Multi-model | Yes | Use two models for cross-checking
-| Cache TTL | 90 days | How long to cache evaluations
-| Confidence threshold | 0.80 | Minimum AI confidence to accept a score
-| Consensus threshold | 0.20 | Maximum score difference between models
-| Default score | 0.50 | Score for unknown sources (neutral center)
-
-----
-
-{{info}}
-**Technical Reference:** For implementation details — code architecture, batch prefetch pattern, cache strategy, pipeline integration, cost estimates, and test coverage — see [[Source Reliability (Deep Dive)>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]].
-
-**Internal module name**: SourceReliability Service | **Key file**: ##apps/web/src/lib/analyzer/source-reliability.ts##
-{{/info}}
-
-----
-
-== Related Pages ==
-
-* [[Source Reliability (Deep Dive)>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] — Technical architecture, code integration, and API details
-* [[Source Reliability Export Guide>>FactHarbor.Product Development.DevOps.Subsystems and Components.Source Reliability Export.WebHome]] — How to export evaluation data
-* [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] — How quality gates interact with source reliability
-* [[Evidence and Verdict Workflow>>FactHarbor.Product Development.Diagrams.Evidence and Verdict Workflow.WebHome]] — How evidence flows through the system
+**Maintained by**: Lead Architect | **Status**: Operational | **Last Review**: Feb 2026
