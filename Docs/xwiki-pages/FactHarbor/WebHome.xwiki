@@ -33,7 +33,7 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 
 (% class="box infomessage" %)
 (((
-**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces, collecting supporting and opposing evidence from web sources and databases, and evaluating evidence quality and source reliability across different contexts. It compares, challenges, and reconciles findings through a structured multi-agent AI debate process. **It delivers a transparent verdict where every conclusion links to cited evidence, so you can judge for yourself.**
+**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces, collecting supporting and opposing evidence from web sources and databases, and evaluating evidence quality and source reliability across evidence-defined analysis boundaries. It compares, challenges, and reconciles findings through a structured multi-agent AI debate process. **It delivers a transparent verdict where every conclusion links to cited evidence, so you can judge for yourself.**
 )))
 === Where FactHarbor stands out ===
 
@@ -50,7 +50,7 @@ flowchart TD
         B["Search supporting<br/>and opposing evidence"]:::web
 
         Q["Filter quality<br/>and score reliability"]:::ai
-        C["Organize into<br/>analytical contexts"]:::ai
+        C["Organize into<br/>evidence-defined boundaries"]:::ai
 
         subgraph DEBATE ["Structured AI Debate"]
             direction TB
