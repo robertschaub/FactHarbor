@@ -1,16 +1,31 @@
 = Governance =
-FactHarbor's governance is designed to be **simple, transparent, and automation-first**. We minimize bureaucracy to maximize the impact of our analysis.
-{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
-== 1. Our Philosophy ==
+
+(% class="box infomessage" %)
+(((
+**TL;DR: Automation-first, flat cooperative governance.**
+We minimize bureaucracy to maximize analytical impact. Our governance follows **Sociocracy 3.0** (Consent pattern) and a **"Fix the System"** principle—ensuring neutrality by focusing on algorithms rather than individual outputs.
+)))
+
+== 🚀 Quick Start: I want to... ==
+
+* **Understand the model** → [[Organisational Model>>FactHarbor.Organisation.Governance.Organisational Model.WebHome]]
+* **Propose a change** → [[The RFC Process>>#H4.Policy26Finance]]
+* **See how decisions are made** → [[Consent-Based Decisions>>#H6.6Consent-BasedDecisionMaking]]
+* **Report an issue** → [[Conflict Resolution>>#H8.ConflictResolution26Moderation]]
+
+---
+
+== 1. ⚖️ Our Philosophy ==
 At FactHarbor, we prioritize systems that scale and results that are auditable.
 * **Automation First**: We minimize manual, subjective processes.
 * **Radical Transparency**: Our decision-making is open by default.
 * **Decisive Community**: We listen to input, but we decide with clarity.
 * **Data-Driven**: Every system change is backed by measured outcomes.
 * **Adaptive**: Our structure evolves to meet new challenges.
-== 2. Organisational Structure ==
 
+== 2. 🏛️ Organisational Structure ==
 We follow a **Flat Cooperative Model** that promotes collaborative teamwork over hierarchy.
+{{include reference="FactHarbor.Organisation.Diagrams.Governance Structure.WebHome"/}}
 
 **General Assembly** (All Members) → **Governing Team** → **Domain Leads**
 
@@ -18,120 +33,68 @@ We follow a **Flat Cooperative Model** that promotes collaborative teamwork over
 * **Governing Team**: Meets quarterly to set policy, allocate budget, and make strategic decisions.
 * **Domain Leads**: Small, specialized roles focused on R&D, Operations, Community, and Finance.
 
-== 3. Decision Authority ==
-
+== 3. 🎯 Decision Authority ==
 Authority is distributed based on the scope and impact of the decision.
-
 * **Strategic**: General Assembly (2/3 majority required).
 * **Tactical**: Governing Team (Simple majority required).
 * **Operational**: Domain Leads (Autonomous within their domains).
 * **Emergency**: Immediate action allowed by any team member, followed by Governing Team ratification.
-== 4. Policy & Finance ==
+
+== 4. 📜 Policy & Finance ==
 **Developing Policies (The RFC Process)**:
 Anyone can draft a proposal (RFC). We discuss it as a community, the Governing Team reviews and votes, and the result is published openly.
+
 **Financial Integrity**:
 * **Budgeting**: An annual budget is approved by the General Assembly.
 * **Safeguards**: Two-signature requirement for amounts over CHF 5,000.
 * **Oversight**: Quarterly reports and an annual independent audit ensure full transparency.
-== 6. Automation Governance ==
+
+== 5. 🤖 Automation Governance ==
 FactHarbor is built on the principle of **systemic integrity**. Instead of manually reviewing every claim, we focus on building a robust, automated system that produces reliable results at scale.
-=== 6.1 The Decision Boundary ===
+
+=== 5.1 The Decision Boundary ===
 To maintain objectivity and scalability, we maintain a clear boundary between automated analysis and human oversight.
-**Core Principle**: The AI layer (AKEL) evaluates the **content** (claims, evidence, and verdicts), while humans manage the **system** (algorithms, policies, and strategy).
+**Core Principle**: The AI layer (AKEL) evaluates the **content**, while humans manage the **system** (algorithms, policies, and strategy).
+
 **What the System Decides (Automated)**:
-To ensure consistency and avoid human bias, the following are handled entirely by the analysis pipeline:
 * **Verdicts**: Truth assessments and confidence scores.
 * **Evidence**: Selection, relevance, and quality scoring.
 * **Sources**: Track record and reliability calibration.
 * **Risk Levels**: Classification of claims into safety tiers.
 * **Boundaries**: Grouping evidence and extracting complex narratives from raw data.
-**Rationale**: Processing millions of claims requires a speed and consistency that human teams cannot match. Automation ensures that every claim is judged by the same transparent, auditable rules.
+
 **What Humans Decide**:
-Humans act as the architects and auditors of the system. Our role is to monitor aggregate performance, identify systematic issues, and refine the underlying algorithms.
-**Strategic Decisions** (General Assembly, 2/3 majority):
 * **Mission & Values**: Defining the core purpose of the project.
 * **Risk Policies**: Setting the boundaries for safety and sensitivity.
 * **Architecture**: Major shifts in how the system works.
-* **Resources**: Budget allocation and organisational survival.
-**Tactical Decisions** (Governing Team, simple majority):
 * **Tuning**: Adjusting algorithm parameter ranges within policy.
-* **Operations**: Hiring, infrastructure, and role assignments.
-* **Community**: Policies for contributors and moderators.
-* **Partnerships**: Agreements with external data providers or researchers.
-**Operational Decisions** (Domain Leads, autonomous):
-* **R&D Lead**: Performance optimizations and infrastructure updates.
-* **Community Lead**: Documentation and contributor process improvements.
-* **Operations Lead**: Organizational tools and workflow maintenance.
-* **Finance Lead**: Budget monitoring and compliance checks.
-* **Moderators**: Handling system abuse and reviewing items flagged by the AI.
-**Emergency Decisions**:
-Any team member may act immediately on critical security, legal, or safety issues, with subsequent ratification by the Governing Team.
-=== 6.2 Principle: Fix the System, Not the Data ===
+
+=== 5.2 Principle: Fix the System, Not the Data ===
 When the system produces a questionable result, we do not manually "fix" that specific verdict. Instead, we use it as a signal to improve the entire system.
 * ❌ **Don't**: Manually override a single verdict or source score.
-* ✅ **Do**: Investigate if the issue is systematic.
-* ✅ **Do**: Refine the algorithm or policy to handle such cases better.
-* ✅ **Do**: Validate the change against historical data to ensure no regressions.
-* ✅ **Do**: Deploy the improved system and monitor its performance.
-**Example**: If a high-quality source is consistently underrated, we don't manually boost that source. We adjust the scoring algorithm to better value the characteristics of that source type (e.g., peer-reviewed journals).
-=== 6.3 Performance Review & Auditing ===
-The Governing Team and Technical Coordinator periodically audit the system's performance to ensure it remains fair, accurate, and efficient.
-**Key Metrics**:
-* **Efficiency**: Processing speed and success/error rates.
-* **Quality**: Evidence completeness and confidence score distribution.
-* **Trust**: User feedback (helpful/unhelpful ratios) and bias indicators.
-**Triggers for Policy Review**:
-* Metrics falling outside acceptable ranges.
-* Detection of systematic bias.
-* Significant user concerns about fairness.
-* New legal or compliance requirements.
-=== 6.4 Algorithm Change Process ===
-1. **Identify**: Detect an issue from metrics, feedback, or audits.
-2. **Propose**: Draft a solution (RFC - Request for Comments).
-3. **Stage**: Test the solution in a isolated staging environment.
-4. **Evaluate**: Measure the impact on historical data.
-5. **Approve**: Technical Coordinator approves or escalates if a policy change is needed.
-6. **Deploy**: Roll out the update and monitor results closely.
-=== 6.5 Human Intervention Criteria ===
+* ✅ **Do**: Investigate if the issue is systematic and refine the underlying algorithm.
+
+=== 5.3 Human Intervention Criteria ===
 Manual intervention is only permitted for operational integrity, never for content preference.
-* ✅ **Yes**: System metrics show performance degradation.
-* ✅ **Yes**: Legal or safety issues require immediate action.
+* ✅ **Yes**: System metrics show performance degradation or legal/safety issues.
 * ✅ **Yes**: The system explicitly flags an item for human review.
-* ❌ **No**: Disagreement with a specific verdict or source rank.
-* ❌ **No**: "Manual quality gates" that undermine automation.
-* ❌ **No**: Overriding the algorithm based on personal opinion.
-=== 6.6 Consent-Based Decision Making ===
+* ❌ **No**: Disagreement with a specific verdict or "manual quality gates."
+
+=== 5.4 Consent-Based Decision Making ===
 For system and policy changes, we use **Consent** rather than Consensus (based on [[Sociocracy 3.0>>https://sociocracy30.org/]]).
-**What is Consent?**
-Consent means there are no principled objections. It is faster than consensus, as it doesn't require everyone to agree — only that everyone can live with the decision.
-**The Process**:
-1. **Present**: A proposal (RFC) is shared with the team.
-2. **Clarify**: Team members ask clarifying questions.
-3. **React**: Team members share initial reactions and concerns.
-4. **Integrate**: The proposer incorporates feedback into the proposal.
-5. **Consent Round**: Team members are asked: "Do you have any principled objections?"
-6. **Resolve**: If there are no objections, the decision is made. If there are, they are integrated, and the cycle repeats.
-**Use for**: Algorithm updates, policy changes, infrastructure investments, and process improvements.
-**Not for**: High-level strategic decisions (use voting) or emergencies (use autonomous authority).
-== 7. Transparency & Accountability ==
+**Consent** means there are no principled objections. It is faster than consensus and maintains high velocity while ensuring everyone can "live with" the decision.
+
+---
+
+== 6. 🤝 Transparency & Accountability ==
 FactHarbor is committed to building public trust through openness.
-* **Public Information**: All policies, structures, board memberships, financials, and quality metrics are always public.
-* **Regular Reporting**: We publish periodic activity reports and moderation statistics.
+* **Public Information**: All policies, board memberships, financials, and quality metrics are public.
 * **Audit Trail**: All meetings, decisions, and system actions are documented and retained.
-== 8. Conflict Resolution & Moderation ==
-We strive for fair and timely resolution of all disputes.
+
+== 7. ⚖️ Conflict Resolution & Moderation ==
 * **User Disputes**: Handled by moderators, with a right of appeal to the Governing Team.
 * **Internal Conflicts**: Resolved through direct discussion, or external mediation if necessary.
-**Moderation Oversight**:
-Our moderators must have a high reputation and a clean track record. Their actions are periodically reviewed by the Community Coordinator and Governing Team to ensure impartiality.
-== 9. Code of Conduct ==
-* **Governing Team**: Act in the project's best interest, disclose all conflicts, and maintain confidentiality.
-* **Team Members**: Follow established procedures, maintain professional conduct, and document all actions.
-* **Moderators**: Make impartial decisions, respect user privacy, and respond to disputes in a timely manner.
-== 10. Amendments ==
-* **Minor changes**: Handled by the Governing Team.
-* **Major changes**: Requires a 2/3 vote from the General Assembly.
-== 11. Related Pages ==
-* [[Organisational Model>>FactHarbor.Organisation.Governance.Organisational Model.WebHome]]
-* [[Legal Framework>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome]]
-* [[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]
+* **Moderation Oversight**: Moderators must have a high reputation and their actions are periodically reviewed.
+
+----
+**Maintained by**: Operations Lead | **Status**: Operational | **Last Review**: Feb 2026
