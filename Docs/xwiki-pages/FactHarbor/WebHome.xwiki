@@ -43,9 +43,7 @@ flowchart TD
         INPUT(["Your Claim<br/>or Article"])
         A["Extract<br/>verifiable claims"]:::ai
 
-        subgraph RESEARCH ["Evidence Research"]
-            B["Search supporting<br/>and opposing evidence"]:::web
-        end
+        B["Search supporting<br/>and opposing evidence"]:::web
 
         Q["Filter quality<br/>and score reliability"]:::ai
         C["Organize into<br/>analytical contexts"]:::ai
@@ -63,7 +61,7 @@ flowchart TD
 
         OUTPUT(["Verdict and<br/>Structured Report"])
 
-        INPUT --> A --> RESEARCH --> Q --> C --> DEBATE --> OUTPUT
+        INPUT --> A --> B --> Q --> C --> DEBATE --> OUTPUT
     end
 
     subgraph LEGEND ["Legend"]
@@ -75,7 +73,6 @@ flowchart TD
 
     style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
     style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
-    style RESEARCH fill:#FFF3E0,stroke:#E65100,color:#BF360C
     style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
     style MAIN fill:none,stroke:none
     style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
