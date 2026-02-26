@@ -2,8 +2,10 @@
 
 (% class="box infomessage" %)
 (((
-**TL;DR: Strengthening trust through transparent reasoning.**
-FactHarbor was founded to bridge the gap between "blind belief" and "total distrust." We don't act as an ultimate authority; instead, we provide the structured evidence and visible reasoning needed for individuals to form their own informed judgments.
+**FactHarbor strengthens public trust by providing structured evidence and visible reasoning.**
+We bridge the gap between blind belief and total distrust by acting as an inspectable evidence layer, empowering individuals to form their own informed judgments.
+
+🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 🎯 The Challenge ==

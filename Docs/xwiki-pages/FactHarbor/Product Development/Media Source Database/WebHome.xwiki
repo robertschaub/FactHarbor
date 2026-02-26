@@ -10,8 +10,10 @@
 
 (% class="box infomessage" %)
 (((
-**TL;DR: On-demand credibility, not static lists.**
-We replace stale, biased media rating lists with real-time, evidence-grounded AI evaluations. Every source is cross-checked by two models against its own track record and regional fact-checker assessments—available in 19 languages.
+**The Media Source Database provides on-demand, evidence-grounded credibility scores for 19 languages.**
+We replace static media rating lists with real-time AI evaluations cross-checked by multiple models against historical track records and regional fact-checkers.
+
+🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 🚀 Quick Start: How can we help you? ==

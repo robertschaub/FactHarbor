@@ -2,8 +2,10 @@
 
 (% class="box infomessage" %)
 (((
-**TL;DR: Open code, open data, open reasoning.**
-FactHarbor uses a multi-license model to ensure our code (**AGPL/MIT**), documentation (**CC BY-SA**), and data (**ODbL**) remain public assets. Our mission is to prevent black-box proprietary control of truth-seeking tools.
+**FactHarbor uses a multi-license model to ensure code, documentation, and data remain public assets.**
+Our mission is to prevent black-box proprietary control of truth-seeking tools by using **AGPL/MIT** for code and **CC BY-SA** for documentation.
+
+🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 🚀 Quick Start: I want to... ==

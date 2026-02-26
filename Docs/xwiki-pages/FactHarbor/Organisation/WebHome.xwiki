@@ -4,8 +4,10 @@
 
 (% class="box infomessage" %)
 (((
-**TL;DR: Governance through Code.**
-FactHarbor is a Swiss Non-Profit (Verein) designed to scale through automation rather than hierarchy. Our **"System-over-Data"** philosophy ensures neutrality by fixing underlying algorithms instead of individual outputs, ensuring every decision is transparent and auditable.
+**FactHarbor is a Swiss Non-Profit (Verein) governed through code.**
+We scale through automation rather than hierarchy. Our **"System-over-Data"** philosophy ensures neutrality by fixing underlying algorithms instead of individual outputs, ensuring every decision is transparent and auditable.
+
+🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 🚀 Quick Start: I am a... ==

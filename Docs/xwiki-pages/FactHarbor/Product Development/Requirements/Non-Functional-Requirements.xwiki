@@ -2,10 +2,10 @@
 
 (% class="box infomessage" %)
 (((
-**TL;DR**
-⚡ **Performance**: <30s processing, <2s search.
-🛡️ **Security**: GDPR compliant, encrypted storage, RBAC.
-⚖️ **Integrity**: Open source, public metrics, auditable config.
+**FactHarbor targets high performance, production-grade security, and radical transparency.**
+Our system attributes include sub-30s processing latency, encrypted storage, and auditable open-source logic.
+
+🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 1. Technical Performance ==

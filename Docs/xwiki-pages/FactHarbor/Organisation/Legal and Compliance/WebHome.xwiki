@@ -2,10 +2,10 @@
 
 (% class="box infomessage" %)
 (((
-**TL;DR: Our Rules**
-🎯 **Goal**: Ensure independence, transparency, and user protection.
-⚖️ **Core Rule**: No single donor can provide more than 20% of our annual budget (Editorial Firewall).
-📜 **Open Source**: Code is licensed under **AGPL-3.0** / **MIT**; data is **CC BY-SA 4.0**.
+**FactHarbor maintains independence and user protection through a formal legal and financial framework.**
+Our commitment to open source (**AGPL-3.0 / MIT**) and our "20% Donor Rule" ensure that the project remains a transparent public asset.
+
+🔗 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))
 
 == 🚀 Quick Start: I need to... ==
