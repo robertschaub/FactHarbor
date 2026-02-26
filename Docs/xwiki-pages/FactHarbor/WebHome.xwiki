@@ -39,6 +39,55 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 * **[[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]** — Project Repository
 * **[[License & Disclaimer>>FactHarbor.License and Disclaimer.WebHome]]** — Usage terms and open-source licenses.
 
+=== From Claim to Verdict ===
+
+{{mermaid}}
+flowchart TD
+    subgraph MAIN [" "]
+        direction LR
+        INPUT(["Your Claim<br/>or Article"])
+        A["Extract<br/>verifiable claims"]:::ai
+
+        subgraph RESEARCH ["Evidence Research"]
+            B["Search supporting<br/>and opposing evidence"]:::web
+        end
+
+        Q["Filter quality<br/>and score reliability"]:::ai
+        C["Organize into<br/>analytical contexts"]:::ai
+
+        subgraph DEBATE ["Structured AI Debate"]
+            direction TB
+            D["Advocate"]:::ai
+            SC["Self-Consistency"]:::ai
+            E["Challenger"]:::ai
+            F["Reconciler"]:::ai
+            V["Validator"]:::ai
+            D --> SC & E
+            SC & E --> F --> V
+        end
+
+        OUTPUT(["Verdict and<br/>Structured Report"])
+
+        INPUT --> A --> RESEARCH --> Q --> C --> DEBATE --> OUTPUT
+    end
+
+    subgraph LEGEND ["Legend"]
+        direction LR
+        L1["AI-powered"]:::ai ~~~ L2["Web and External Sources"]:::web
+    end
+
+    MAIN ~~~ LEGEND
+
+    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    style RESEARCH fill:#FFF3E0,stroke:#E65100,color:#BF360C
+    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    style MAIN fill:none,stroke:none
+    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
+
+    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
+{{/mermaid}}
 
 ----
 
