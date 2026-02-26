@@ -1,31 +1,49 @@
 = About FactHarbor =
 
-We live in a time of overwhelming information.
-
-Some people believe bold claims with little evidence.
-Others step back entirely: "I don't read the news anymore. I can't trust anything."
-
-Both reactions are understandable.
-
-When reasoning is hidden and sources lack transparency, trust erodes. The problem is not that people don't care about truth — it's that the structure behind information is often invisible.
-
-FactHarbor was created to change that.
-
-We organize public debates into transparent evidence models, connecting claims with assumptions, supporting and opposing evidence, and the reliability of their sources. Instead of asking people to simply believe or reject, we make the reasoning visible.
-
-Not to win arguments.
-But to strengthen trust through clarity.
-
-Because when reasoning is transparent, judgment becomes possible again.
-
-== Founder ==
-
 (% class="box infomessage" %)
 (((
-**Robert Schaub**
-
-Founder of FactHarbor.
-
-* [[LinkedIn>>https://www.linkedin.com/in/robertschaub/]]
-* [[info@factharbor.ch>>mailto:info@factharbor.ch]]
+**TL;DR: Strengthening trust through transparent reasoning.**
+FactHarbor was founded to bridge the gap between "blind belief" and "total distrust." We don't act as an ultimate authority; instead, we provide the structured evidence and visible reasoning needed for individuals to form their own informed judgments.
 )))
+
+== 🎯 The Challenge ==
+
+We live in an era of overwhelming information and eroding trust.
+* Some react with **unfiltered belief** in bold but unproven claims.
+* Others succumb to **total skepticism**: *"I can't trust anything anymore."*
+
+Both reactions are natural responses to a landscape where sources are opaque and reasoning is hidden. When the "why" behind information is invisible, trust has no foundation.
+
+== 💡 Our Response: Transparency as a Service ==
+
+FactHarbor was created to make the structure of information visible again. We don't just provide answers; we map the journey to them.
+
+* **Evidence Models**: We connect claims to the specific assumptions and evidence they depend on.
+* **Inspectable Reasoning**: We show the multi-agent debate and the "analytical frames" used to reach a conclusion.
+* **Source Accountability**: Every source is evaluated by its track record, not just its credentials.
+
+**Our goal is not to win arguments, but to restore the possibility of judgment through clarity.**
+
+== ⚖️ Our Philosophy ==
+
+FactHarbor is guided by three core principles:
+1. **System over Authority**: Trust should come from an inspectable process, not a central name.
+2. **Nuance over Binary**: Most complex claims aren't simply "true" or "false"—they are "well-supported under specific conditions."
+3. **Open by Design**: As a Swiss Non-Profit, our code, our data, and our rules belong to the community.
+
+----
+
+== 👨‍💻 The Founder ==
+
+(% class="box successmessage" %)
+(((
+**Robert Schaub**
+*Founder & Lead Architect*
+
+Driven by the conviction that transparent reasoning is the only long-term solution to the information crisis, Robert founded FactHarbor as a strictly non-profit, open-source project.
+
+🔗 **Connect**: [[LinkedIn>>https://www.linkedin.com/in/robertschaub/]] | 📧 **Contact**: [[info@factharbor.ch>>mailto:info@factharbor.ch]]
+)))
+
+----
+**Maintained by**: Founder | **Status**: Operational | **Last Review**: Feb 2026
