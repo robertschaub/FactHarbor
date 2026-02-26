@@ -2186,3 +2186,18 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If needed, add/confirm UX copy in Admin Config clarifying that unknown-source fallback is under **Calculation > Source Reliability > Default Score** (not SR profile).
 **Learnings:** no
+### 2026-02-26 | Default | Codex (GPT-5) | Apply Probative Multiplier in Claim Influence Weighting
+**Task:** Implement probative-value multiplier usage in ClaimBoundary evidence weighting and make defaults configurable via main app calc config.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/src/app/admin/config/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `probativeFactor` into Stage 5 final claim weight formula by averaging supporting evidence `probativeValue` multipliers.
+- Introduced `CalcConfig.probativeValueWeights` in schema (optional for backward compatibility), with defaults `high: 1.0`, `medium: 0.9`, `low: 0.5`.
+- Updated Admin Config calc defaults and UI fallbacks to match `medium: 0.9`.
+**Open items:**
+- No dedicated unit test yet asserts comparative influence shift between identical claims differing only in supporting evidence probative levels.
+**Warnings:**
+- Running `test/unit/lib/config-schemas.test.ts` with the broader `Default Config Values` suite still shows a pre-existing unrelated failure (`maxTotalTokens` expectation drift: `750000` vs current `1000000`).
+**For next agent:**
+- If this weighting should also consider contradicting evidence probative strength, extend the formula intentionally and calibrate defaults before rollout.
+**Learnings:** no
+---
