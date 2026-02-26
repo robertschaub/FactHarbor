@@ -1,9 +1,11 @@
 = Quality Standards =
 
-{{box title="TL;DR"}}
+(% class="box infomessage" %)
+(((
+**TL;DR**
 🎯 **Goal**: Ensure every analysis is evidence-based, neutral, and auditable.
 ⚖️ **Core Principle**: Track record over credentials. No automatic trust for any source.
-{{/box}}
+)))
 
 == 1. Source Requirements ==
 **Track Record Over Credentials**:

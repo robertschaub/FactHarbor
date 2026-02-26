@@ -24,11 +24,13 @@ FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** proje
 We serve the public interest with full transparency — no paywalls, no hidden algorithms, and no profit motive.
 )))
 
-{{box title="TL;DR: What is FactHarbor?"}}
+(% class="box infomessage" %)
+(((
+**TL;DR: What is FactHarbor?**
 🎯 **Mission**: Bring clarity to contested information through transparent, AI-powered reasoning.
 💡 **Innovation**: We don't just give a "True/False" label; we map the entire **Evidence Landscape** with explicit assumptions and confidence scores.
 ⚖️ **Values**: Non-profit, open-source, and strictly evidence-based.
-{{/box}}
+)))
 
 == 🚀 Quick Start: How can we help you? ==
 

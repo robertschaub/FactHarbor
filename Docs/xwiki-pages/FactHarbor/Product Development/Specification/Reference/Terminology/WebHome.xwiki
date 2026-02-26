@@ -1,9 +1,11 @@
 = Terminology Reference =
 
-{{box title="TL;DR: The Language of FactHarbor"}}
+(% class="box infomessage" %)
+(((
+**TL;DR: The Language of FactHarbor**
 🎯 **Purpose**: This is the authoritative glossary for the **ClaimBoundary (CB)** pipeline. Use these terms consistently across code, schemas, and prompts.
 ⚖️ **Rule**: ClaimBoundary is the default. Legacy terms like "AnalysisContext" or "SubClaim" are deprecated and must not be used.
-{{/box}}
+)))
 
 == 🚀 Quick Start: I need to... ==
 

@@ -1,8 +1,10 @@
 = Product Development =
 
-{{box title="TL;DR: Engineering FactHarbor"}}
+(% class="box infomessage" %)
+(((
+**TL;DR: Engineering FactHarbor**
 We build a high-scale, automated analysis pipeline (AKEL) using **Next.js**, **.NET 8**, and **multi-provider LLMs**. Our development is metrics-driven, open-source, and follows a strict "system-over-data" philosophy.
-{{/box}}
+)))
 
 == 🚀 Quick Start: I am a... ==
 

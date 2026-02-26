@@ -4,11 +4,13 @@ This document describes the **Specification** of FactHarbor. It is a working dra
 
 = Specification =
 
-{{box title="TL;DR: How it works"}}
+(% class="box infomessage" %)
+(((
+**TL;DR: How it works**
 🎯 **Goal**: Provide a deterministic, auditable path from raw claim to evidence-backed verdict.
 💡 **Innovation**: A 5-stage pipeline (AKEL) featuring automated research and multi-agent debate.
 ⚖️ **Integrity**: Every verdict is traceable to specific evidence items and source reliability scores.
-{{/box}}
+)))
 
 == 🚀 Quick Start: I want to... ==
 

@@ -1,9 +1,11 @@
 = Requirements =
 
-{{box title="TL;DR: The Rules of FactHarbor"}}
+(% class="box infomessage" %)
+(((
+**TL;DR: The Rules of FactHarbor**
 🎯 **Goal**: Translate user needs into a verifiable, automated system.
 ⚖️ **Philosophy**: **System-over-data**—we fix the algorithm, not the individual output.
-{{/box}}
+)))
 
 == 🚀 Navigation ==
 

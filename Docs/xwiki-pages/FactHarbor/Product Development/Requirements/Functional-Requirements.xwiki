@@ -1,9 +1,11 @@
 = Functional Requirements =
 
-{{box title="TL;DR"}}
+(% class="box infomessage" %)
+(((
+**TL;DR**
 🛠️ **Scope**: Core features for intake, multi-perspective analysis, and user presentation.
 💡 **Key Innovation**: Multi-agent debate and evidence-emergent boundaries.
-{{/box}}
+)))
 
 == 1. Intake & Normalization ==
 * **Intake (FR1)**: Support for text, URLs, and images via API/Form.

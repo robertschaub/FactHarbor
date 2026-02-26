@@ -1,10 +1,12 @@
 = Non-Functional Requirements =
 
-{{box title="TL;DR"}}
+(% class="box infomessage" %)
+(((
+**TL;DR**
 ⚡ **Performance**: <30s processing, <2s search.
 🛡️ **Security**: GDPR compliant, encrypted storage, RBAC.
 ⚖️ **Integrity**: Open source, public metrics, auditable config.
-{{/box}}
+)))
 
 == 1. Technical Performance ==
 * **Latency**: Analysis pipeline must complete in < 30 seconds.

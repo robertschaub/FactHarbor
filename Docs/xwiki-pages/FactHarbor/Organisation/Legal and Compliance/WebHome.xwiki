@@ -1,10 +1,12 @@
 = Legal & Compliance =
 
-{{box title="TL;DR: Our Rules"}}
+(% class="box infomessage" %)
+(((
+**TL;DR: Our Rules**
 🎯 **Goal**: Ensure independence, transparency, and user protection.
 ⚖️ **Core Rule**: No single donor can provide more than 20% of our annual budget (Editorial Firewall).
 📜 **Open Source**: Code is licensed under **AGPL-3.0** / **MIT**; data is **CC BY-SA 4.0**.
-{{/box}}
+)))
 
 == 🚀 Quick Start: I need to... ==
 
