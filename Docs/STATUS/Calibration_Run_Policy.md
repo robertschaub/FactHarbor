@@ -1,7 +1,7 @@
 # Calibration Run Policy (Gate vs Smoke)
 
 **Status:** Active  
-**Last Updated:** 2026-02-24  
+**Last Updated:** 2026-02-27  
 **Scope:** Framing symmetry calibration harness (`apps/web/test/calibration/framing-symmetry.test.ts`)
 
 ---
@@ -139,7 +139,7 @@ If a gate run is intentionally stopped before completion:
 - **Decision basis:** operational gate first, diagnostic skew second (telemetry/trend)
 - **Artifact prefix:** `gate-full-*`
 - **Profile target:** actual production debate profile with `debateModelProviders.challenger = openai`
-- **Preflight rule:** fail fast if gate run is not using the production challenger provider
+- **Preflight rule:** logs active provider overrides for operator awareness (no hard-fail — changed 2026-02-27)
 
 ### Smoke lane (non-gating)
 

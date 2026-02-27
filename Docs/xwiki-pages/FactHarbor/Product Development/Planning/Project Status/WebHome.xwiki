@@ -10,7 +10,7 @@
 | **Version** | v2.11.0 (Code) · 3.0.0-cb (Schema) · ##v1.0.0-poc## (Tag) |
 | **Phase** | **POC Complete** — entering Alpha |
 | **Codebase** | Next.js (UI + AI orchestrator) + ASP.NET Core (API + persistence) |
-| **Tests** | 853 passing (45 test files, all mocked — no LLM API calls) |
+| **Tests** | 1079 passing (53 test files, all mocked — no LLM API calls) |
 | **Build** | Clean |
 
 == POC Closure (2026-02-19) ==

@@ -15,7 +15,7 @@ Two apps + one tool:
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
 3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
 
-> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 853 tests passing. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
+> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 1079 tests passing (53 files). See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 

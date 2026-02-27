@@ -673,7 +673,10 @@ export type AnalysisWarningType =
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
   | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
-  | "tiger_score_failed";              // Stage 6: Holistic TIGERScore evaluation failed
+  | "tiger_score_failed"               // Stage 6: Holistic TIGERScore evaluation failed
+  | "structural_consistency"           // Verdict structural consistency check found issues
+  | "verdict_grounding_issue"          // Verdict grounding validation found invalid evidence references
+  | "verdict_direction_issue";         // Verdict direction validation found truth%/evidence misalignment
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
@@ -812,6 +815,8 @@ export interface CBClaimVerdict {
   consistencyResult: ConsistencyResult;
   challengeResponses: ChallengeResponse[];
   triangulationScore: TriangulationScore;
+  /** Gate 4: Confidence classification tier based on confidence score. */
+  confidenceTier?: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
   /** Plausible range for truthPercentage, computed from consistency spread + boundary variance. */
   truthPercentageRange?: TruthPercentageRange;
   /** B-7: Misleadingness assessment, independent of truthPercentage. Output-only (not fed back into debate). */
@@ -960,6 +965,7 @@ export interface CBClaimUnderstanding {
     sourceUrl: string;
     snippet: string;
     claimId: string;
+    probativeValue?: "high" | "medium" | "low";
   }>;
   gate1Stats: {
     totalClaims: number;

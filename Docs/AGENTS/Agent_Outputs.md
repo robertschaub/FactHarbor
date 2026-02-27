@@ -2,6 +2,24 @@
 
 
 ---
+### 2026-02-27 | LLM Expert | Claude Code (Opus 4.6) | Report Quality Investigation Phase 2
+**Task:** Investigate and improve FactHarbor report quality — deep investigation into null probativeValue, hollow boundaries, challenger temperature.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/WIP/2026-02-27_Report_Quality_Investigation.md`
+**Key decisions:** (1) Found and fixed probativeValue data loss — LLM returns it but `extractPreliminaryEvidence()` discarded it at 2 points in the mapping chain. 5 edits across 2 files to preserve it. (2) Confirmed hollow ClaimBoundary metadata is BY DESIGN — boundaries use name/shortName, claims and evidence are cross-referenced not nested. (3) Documented precise challenger temperature implementation plan (6 code changes, follows selfConsistencyTemperature pattern) but deferred to Captain approval since it changes LLM behavior.
+**Open items:** Challenger temperature (W2, ready to implement with approval), UCM config drift (W5, needs Captain decisions on 5 parameters), 3 uninvestigated medium-severity items (SR metadata null, AI_InvalidPromptError, fetch failures).
+**Warnings:** probativeValue fix affects ~40% of evidence pool. Previously these items bypassed the evidence filter entirely and inflated aggregation weights. Now they carry LLM-assessed quality. This is a significant quality improvement but will change report outputs.
+**For next agent:** Full report at `Docs/WIP/2026-02-27_Report_Quality_Investigation.md`. Phase 2 added W11 (probativeValue — fixed) and W12 (hollow boundaries — by design). Challenger temperature is the highest remaining actionable item.
+**Learnings:** Appended to Role_Learnings.md? No.
+
+---
+### 2026-02-27 | LLM Expert | Claude Code (Opus 4.6) | Report Quality Investigation Phase 1
+**Task:** Initial investigation — establish baseline, identify weak areas, apply first safe fixes.
+**Files touched:** `verdict-stage.ts`, `types.ts`, `verdict-stage.test.ts`
+**Key decisions:** Applied 3 safe fixes: spread multiplier wiring, validation warning surfacing, Gate 4 implementation.
+**Open items:** See Phase 2 entry above.
+**For next agent:** Superseded by Phase 2 entry.
+
+---
 ### 2026-02-26 | Technical Writer | Gemini CLI | Final Comprehensive Readability & Navigation Overhaul
 **Task:** Applied persona-based navigation, TL;DR boxes, and iconography across all eight core entry spaces.
 **Files touched:** Docs/xwiki-pages/FactHarbor/

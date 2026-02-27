@@ -1,9 +1,20 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-02-25
+**Last Updated**: 2026-02-27
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Metrics integration (Phase 1) complete. 1053 tests passing, build clean.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Metrics integration (Phase 1) complete. 1079 tests passing (53 files), build clean. Cross-provider debate active (OpenAI challenger).
+
+---
+
+## Recent Changes (2026-02-27)
+
+**D5 UCM seed completion + calibration alignment:**
+- ✅ Added 3 missing D5 contrarian retrieval params to `calculation.default.json` (`contrarianRetrievalEnabled`, `contrarianMaxQueriesPerClaim`, `contrarianRuntimeCeilingPct`) — Admin UI can now surface these for tuning
+- ✅ B-1 runtime role tracing verified working from actual canary + gate run data (Feb 23 outputs confirm all 5 debate roles populated)
+- ✅ Removed calibration preflight hard-fail on `debateModelProviders` overrides — gate runs now test actual production config (OpenAI challenger) instead of forcing all-Anthropic baseline
+- ✅ Canary runs: `immigration-impact-en` operational PASS (57pp raw, 17pp adjusted), `rent-control-en` operational PASS (26pp raw/adjusted, Sonnet refusal recovered via Haiku fallback)
+- ✅ Project status synced across all docs (CLAUDE.md, Backlog.md, xWiki Project Status, xWiki Planning)
 
 ---
 
@@ -14,7 +25,7 @@
 - ✅ Split report interpretation into **operational gate** (execution reliability) vs **diagnostic gate** (framing-skew telemetry)
 - ✅ Top-level calibration report verdict now reflects operational status; skew remains visible as optimization signal
 - ✅ Calibration policy document updated with explicit purpose/value and acceptance guidance
-- ✅ Gate calibration preflight now enforces production-aligned profile (`OpenAI` challenger provider)
+- ✅ Gate calibration preflight logs production profile (`OpenAI` challenger provider) — hard-fail removed 2026-02-27
 - ✅ Aborted gate runs explicitly classified as non-decision-grade in run policy (debug-only use)
 
 **Multi-source retrieval provider layer (Plan v2.1 Phases 1-4):**

@@ -764,19 +764,43 @@ describe("runVerdictStage (full orchestration)", () => {
 // ============================================================================
 
 describe("classifyConfidence (Gate 4)", () => {
-  it("should return verdicts unchanged (confidence already embedded)", () => {
-    const verdicts: CBClaimVerdict[] = [{
+  function createVerdictWithConfidence(confidence: number): CBClaimVerdict {
+    return {
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
-      confidence: 80, reasoning: "", harmPotential: "medium", isContested: false,
+      confidence, reasoning: "", harmPotential: "medium", isContested: false,
       supportingEvidenceIds: [], contradictingEvidenceIds: [],
       boundaryFindings: [],
       consistencyResult: { claimId: "AC_01", percentages: [], average: 0, spread: 0, stable: true, assessed: false },
       challengeResponses: [],
       triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
-    }];
+    };
+  }
 
-    const result = classifyConfidence(verdicts);
-    expect(result).toEqual(verdicts);
+  it("should classify HIGH when confidence >= 75", () => {
+    const result = classifyConfidence([createVerdictWithConfidence(80)]);
+    expect(result[0].confidenceTier).toBe("HIGH");
+  });
+
+  it("should classify MEDIUM when confidence >= 50 and < 75", () => {
+    const result = classifyConfidence([createVerdictWithConfidence(60)]);
+    expect(result[0].confidenceTier).toBe("MEDIUM");
+  });
+
+  it("should classify LOW when confidence >= 25 and < 50", () => {
+    const result = classifyConfidence([createVerdictWithConfidence(30)]);
+    expect(result[0].confidenceTier).toBe("LOW");
+  });
+
+  it("should classify INSUFFICIENT when confidence < 25", () => {
+    const result = classifyConfidence([createVerdictWithConfidence(20)]);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+  });
+
+  it("should classify at exact boundaries correctly", () => {
+    expect(classifyConfidence([createVerdictWithConfidence(75)])[0].confidenceTier).toBe("HIGH");
+    expect(classifyConfidence([createVerdictWithConfidence(50)])[0].confidenceTier).toBe("MEDIUM");
+    expect(classifyConfidence([createVerdictWithConfidence(25)])[0].confidenceTier).toBe("LOW");
+    expect(classifyConfidence([createVerdictWithConfidence(24)])[0].confidenceTier).toBe("INSUFFICIENT");
   });
 });
 

@@ -705,6 +705,7 @@ export interface PreliminaryEvidenceItem {
     geographic?: string;
     boundaries?: string;
   };
+  probativeValue?: "high" | "medium" | "low";
   relevantClaimIds?: string[];
 }
 
@@ -816,6 +817,7 @@ export async function extractClaims(
       sourceUrl: pe.sourceUrl,
       snippet: pe.statement,
       claimId: pe.relevantClaimIds?.[0] ?? "",
+      probativeValue: pe.probativeValue,
     })),
     gate1Stats: gate1Result.stats,
   };
@@ -1257,6 +1259,7 @@ async function extractPreliminaryEvidence(
           geographic: ei.evidenceScope.geographic,
           boundaries: ei.evidenceScope.boundaries,
         } : undefined,
+        probativeValue: ei.probativeValue,
         relevantClaimIds: ei.relevantClaimIds,
       };
     });
@@ -2317,6 +2320,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       sourceTitle: "",
       sourceExcerpt: pe.snippet,
       relevantClaimIds: pe.claimId ? [pe.claimId] : [],
+      probativeValue: pe.probativeValue ?? "medium", // Preserve LLM assessment; default "medium" if unavailable
       scopeQuality: "partial", // Preliminary evidence has limited scope data
     });
   }

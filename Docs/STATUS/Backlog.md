@@ -14,7 +14,7 @@
 
 ## ClaimAssessmentBoundary Pipeline — Alpha Remaining Work
 
-The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1047 tests passing.
+The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1079 tests passing (53 files).
 
 **Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)

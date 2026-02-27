@@ -309,8 +309,14 @@ export async function runVerdictStage(
     reconciledVerdicts, validatedChallengeDoc, advocateVerdicts, warnings
   );
 
+  // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
+  const spreadAdjustedVerdicts = enforcedVerdicts.map(v => ({
+    ...v,
+    confidence: applySpreadAdjustment(v.confidence, v.consistencyResult, config),
+  }));
+
   // Step 5: Verdict Validation
-  const validatedVerdicts = await validateVerdicts(enforcedVerdicts, evidence, llmCall, config);
+  const validatedVerdicts = await validateVerdicts(spreadAdjustedVerdicts, evidence, llmCall, config, warnings);
 
   // Structural Consistency Check (deterministic)
   const structuralWarnings = runStructuralConsistencyCheck(
@@ -318,6 +324,13 @@ export async function runVerdictStage(
   );
   if (structuralWarnings.length > 0) {
     console.warn("[VerdictStage] Structural consistency warnings:", structuralWarnings);
+    for (const sw of structuralWarnings) {
+      warnings?.push({
+        type: "structural_consistency",
+        severity: "warning",
+        message: sw,
+      });
+    }
   }
 
   // Step 5b: High-harm confidence floor (C8 — Stammbach/Ash bias mitigation)
@@ -628,6 +641,7 @@ export async function validateVerdicts(
   evidence: EvidenceItem[],
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+  warnings?: AnalysisWarning[],
 ): Promise<CBClaimVerdict[]> {
   const validationTier = config.debateModelTiers.validation;
   const validationProvider = config.debateModelProviders.validation;
@@ -665,12 +679,22 @@ export async function validateVerdicts(
   for (const gr of groundingResults) {
     if (gr.groundingValid === false) {
       console.warn(`[VerdictStage] Grounding issue for claim ${gr.claimId}:`, gr.issues);
+      warnings?.push({
+        type: "verdict_grounding_issue",
+        severity: "warning",
+        message: `Claim ${gr.claimId}: grounding check found issues: ${Array.isArray(gr.issues) ? gr.issues.join("; ") : String(gr.issues ?? "unknown")}`,
+      });
     }
   }
 
   for (const dr of directionResults) {
     if (dr.directionValid === false) {
       console.warn(`[VerdictStage] Direction issue for claim ${dr.claimId}:`, dr.issues);
+      warnings?.push({
+        type: "verdict_direction_issue",
+        severity: "warning",
+        message: `Claim ${dr.claimId}: direction check found issues: ${Array.isArray(dr.issues) ? dr.issues.join("; ") : String(dr.issues ?? "unknown")}`,
+      });
     }
   }
 
@@ -816,11 +840,15 @@ export function enforceHarmConfidenceFloor(
 export function classifyConfidence(
   verdicts: CBClaimVerdict[],
 ): CBClaimVerdict[] {
-  // Confidence is already a 0-100 number on each verdict.
-  // Gate 4 in the CB pipeline uses the existing confidence value
-  // (already adjusted by self-consistency spread in reconciliation).
-  // The classification is attached for downstream consumption.
-  return verdicts;
+  // Classify each verdict's confidence into a tier for downstream consumption.
+  // Confidence is already a 0-100 number (adjusted by spread in Step 4c).
+  return verdicts.map(v => ({
+    ...v,
+    confidenceTier: v.confidence >= 75 ? "HIGH" as const
+      : v.confidence >= 50 ? "MEDIUM" as const
+      : v.confidence >= 25 ? "LOW" as const
+      : "INSUFFICIENT" as const,
+  }));
 }
 
 // ============================================================================
