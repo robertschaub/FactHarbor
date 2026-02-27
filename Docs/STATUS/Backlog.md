@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 25, 2026 (manual-test deferment logged + Phase 1 runbook handoff added)
+**Last Updated**: February 27, 2026 (report quality investigation items + token reduction + open items)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -14,7 +14,7 @@
 
 ## ClaimAssessmentBoundary Pipeline — Alpha Remaining Work
 
-The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1079 tests passing (53 files).
+The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1086 tests passing (53 files).
 
 **Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
 **Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
@@ -40,6 +40,17 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Derivative detection improvements | Enhanced derivative source identification | Architecture §8.5.3 |
 
 ---
+
+## Recently Completed (February 27, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Report quality investigation (W1-W15)**: 15 weak areas identified, 8 fixed (spread multiplier wiring, Gate 4 classification, validation warning surfacing, probativeValue preservation, SR metadata serialization, W14 error masking chain, challenger temperature wiring, UCM config drift alignment). 4 resolved as by-design. | Analyzer / Quality | 2026-02-27 | [Report_Quality_Investigation](../WIP/2026-02-27_Report_Quality_Investigation.md) |
+| ✅ **Evidence field trimming (token reduction #1)**: Verdict-stage LLM calls now pass 18 contract-relevant fields instead of 47. Drops sourceExcerpt, specificity, extractionConfidence. ~20-25% verdict stage input token reduction. | Analyzer / Cost | 2026-02-27 | Commit `975c303` |
+| ✅ **UCM config drift resolved (5 params)**: selfConsistencyTemperature→0.4, maxTotalTokens→1M, maxIterationsPerContext cleared, sr.openaiModel→gpt-4.1-mini, defaultScore→0.4. Code defaults aligned across all locations. | Config / Quality | 2026-02-27 | [Report_Quality_Investigation](../WIP/2026-02-27_Report_Quality_Investigation.md) W5 |
+| ✅ **Calibration preflight fix**: Removed hard-fail on provider overrides in gate runs. Calibration now tests actual production config (cross-provider with OpenAI challenger). | Calibration / Governance | 2026-02-27 | [Calibration_Run_Policy.md](Calibration_Run_Policy.md) §7 |
+| ✅ **Pipeline seed alignment**: `selfConsistencyTemperature` 0.3→0.4, `challengerTemperature` 0.3 added to `pipeline.default.json`. D5 contrarian params added to `calculation.default.json`. | Config | 2026-02-27 | Commits `1b4f5b8`, prior session |
+| ✅ **Project status docs updated**: Phase "entering Alpha"→"Alpha" across all docs. Test count synced to 1086. "Where FactHarbor stands out" added to Project Status. | Documentation | 2026-02-27 | Commit `f53f391` |
 
 ## Recently Completed (February 24, 2026)
 
@@ -155,6 +166,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **Validate B-sequence features with real runs**: All B-sequence improvements (pro_con queries, verifiability/misleadingness annotations, rubric scoring) are implemented but untested with real data. Run 2-3 analyses with UCM features enabled (~$3-5). This is the missing feedback loop. | Analyzer / Quality | high | high | [Next_For_Report_Quality.md](../ARCHIVE/Next_For_Report_Quality.md) item 1 |
 | **C13 active rebalancing**: D5 Control 3 (contrarian retrieval) implemented — runs targeted searches when evidence pool imbalance detected. Full rebalancing loop (A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1) still needs validation with real runs. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Verdict Accuracy Test Set**: Curate 50 claims with independently verified outcomes (15+ T/F, 15+ contested, 10+ multilingual, 10+ fact-check anchors) from Climate Feedback, PolitiFact, Snopes, AFP, Full Fact. Metric: `verdictAccuracyRate` = % where pipeline verdict matches ground truth category. Measures correctness, not just symmetry. | Analyzer / Quality | high | high | [Report_Quality_Opportunity_Map](../ARCHIVE/Report_Quality_Opportunity_Map_2026-02-22.md) §5 |
+| **W15 domain-aware fetch batching**: Add domain-level URL grouping + 500ms stagger for same-domain requests in batch fetch (`claimboundary-pipeline.ts:2909`). Prevents 100% fetch failure when search results cluster on one domain. ~50-100 lines, new UCM param `fetchSameDomainDelayMs`. | Analyzer / Reliability | high | high | [Report_Quality_Investigation](../WIP/2026-02-27_Report_Quality_Investigation.md) W15 |
+| **Self-consistency Haiku experiment**: Test self-consistency (Step 2) on Haiku instead of Sonnet via UCM `debateModelTiers.selfConsistency: "haiku"`. Measure spread/diversity vs cost. No code change needed — UCM config test only. | Analyzer / Cost | med | med | [Report_Quality_Investigation](../WIP/2026-02-27_Report_Quality_Investigation.md) Phase 1 item #2 |
+| **Multi-challenger cross-provider debate (Phase 2)**: Replace Steps 2+3 with cross-provider debate round (Claude, GPT, Gemini). Deferred pending 4 prerequisite corrections: reconciliation contract update, confidence tier semantics, label alignment, UCM-managed reasoning instructions. | Analyzer / Quality | low | high | [Multi_Agent_Cross_Provider_Debate](../WIP/Multi_Agent_Cross_Provider_Debate_2026-02-27.md) |
 | **Conditional re-reconciliation (B-3 add-on)**: After reconciliation, if self-consistency spread >20pp AND contrarian evidence present, re-run reconciliation once with prompt addendum. UCM-flagged (`reDeliberationEnabled`, default off). Max 1 extra Sonnet call per triggered claim (~10-20% trigger rate). Not Debate V2 — scoped addition to existing topology. | Analyzer / Quality | med | med | [Debate_Iteration_Analysis](../ARCHIVE/Debate_Iteration_Analysis_2026-02-21.md) §5 |
 | **Production-profile calibration baseline v2 run**: Execute full gate with current production challenger provider (`debateModelProviders.challenger=openai`) on framing-symmetry v3.x fixture and publish canonical v2 baseline artifacts/deltas vs v1. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |
 | **C17 adversarial benchmark + fail policy**: Build dedicated prompt-injection benchmark (≥10 scenarios, ≥2 languages) with ≥90% pass target and explicit fail-open/fail-closed policy. | Security / Quality | med | high | [Stammbach §5.3 item 5](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
@@ -184,7 +198,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
 | **Batch API integration**: Switch LLM calls to Anthropic Batch API for potential discount. Acknowledge that sequential debate calls limit savings to ~20-30%. | Cost / Analyzer | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §4.A1 |
-| **Prompt caching**: Add `cacheControl: { type: 'ephemeral' }` to system prompts. Essential for 20-30% target. Requires AI SDK v0.39+. | Cost / Analyzer | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §4.A2 |
+| ~~**Prompt caching**~~: ✅ **ACTIVE** — Anthropic ephemeral prompt caching already wired on all `generateText()` system messages via `getPromptCachingOptions()` in `llm.ts:375`. Cache metrics (`cacheReadInputTokens`, `cacheCreationInputTokens`) tracked in `LLMCallMetric`. | Cost / Analyzer | ~~high~~ done | high | `llm.ts:375-398` |
 | **NPO/OSS credit applications**: Apply for Claude for Nonprofits (75% off), AWS TechSoup ($1K/year), Google for Nonprofits ($10K/year), Anthropic AI for Science ($20K). | Cost / Admin | high | high | [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md) §5 |
 | **SSRF protections for URL fetching**: Block private IP ranges, cap redirects, cap response size, enforce timeouts. *(POC: low urgency)* | Security | low | high | Improvements #1 |
 | **Secure admin endpoints**: Protect `/admin/test-config` and any endpoints that can trigger paid API calls with FH_ADMIN_KEY authentication. *(POC: low urgency)* | Security / Cost-Control | low | high | Improvements #1 |
@@ -258,8 +272,10 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 - **Cost optimization** (combined ~20-30% reduction):
   - ✅ Budget defaults reduced: 25-40% savings (implemented 2026-02-13)
+  - ✅ Prompt caching: active on all system messages (implemented, `llm.ts:375`)
+  - ✅ Evidence field trimming: ~20-25% verdict stage input reduction (implemented 2026-02-27)
   - Batch API: ~20% discount (limited by sequential debate calls)
-  - Prompt caching: ~10% additional
+  - Self-consistency on Haiku: potential ~50-70% cost reduction for Step 2 (pending experiment)
   - NPO/OSS credits: $11K+/year potential
   - Claim caching: 30-50% savings on repeat claims
   - See: [API Cost Reduction Strategy](../WIP/API_Cost_Reduction_Strategy_2026-02-13.md)
