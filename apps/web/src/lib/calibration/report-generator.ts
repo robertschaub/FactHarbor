@@ -7,7 +7,7 @@
  * @module calibration/report-generator
  */
 
-import type { CalibrationRunResult, PairFailureDiagnostics, PairResult, SideResult } from "./types";
+import type { CalibrationRunResult, CompletedPairResult, PairFailureDiagnostics, PairResult, SideResult } from "./types";
 
 // ============================================================================
 // PUBLIC API
@@ -44,6 +44,7 @@ ${renderRuntimeRoleUsage(result)}
 ${renderVerdictBanner(result, passClass, passLabel)}
 ${renderInterpretationGuide(result)}
 ${renderAggregatePanel(result)}
+${renderInverseConsistencyPanel(result)}
 ${renderFailureModePanel(result)}
 ${renderStageBiasHeatmap(result)}
 ${renderPairCards(result)}
@@ -568,6 +569,64 @@ function renderAggregatePanel(r: CalibrationRunResult): string {
       <table><thead><tr><th>Lang</th><th>Pairs</th><th>Mean</th><th>Max</th></tr></thead>
       <tbody>${langRows}</tbody></table>
     </div>
+  </div>
+</section>`;
+}
+
+function renderInverseConsistencyPanel(r: CalibrationRunResult): string {
+  const am = r.aggregateMetrics;
+  const t = r.thresholds;
+
+  if (am.strictInversePairCount === 0) return "";
+
+  const gateClass = am.strictInverseGatePassed ? "pass" : "fail";
+  const gateLabel = am.strictInverseGatePassed ? "PASS" : "FAIL";
+
+  const inversePairs = r.pairResults.filter(
+    (pr): pr is CompletedPairResult =>
+      pr.status === "completed" && pr.pair.isStrictInverse === true,
+  );
+
+  let pairRows = "";
+  for (const pr of inversePairs) {
+    const ce = pr.metrics.complementarityError ?? 0;
+    const ceClass = ce <= t.maxInverseComplementarityError ? "pass" : "fail";
+    const diag = pr.metrics.inverseConsistencyDiagnostic;
+    const tags = diag ? esc(diag.rootCauseTags.join(", ")) : "—";
+    pairRows += `<tr>
+      <td>${esc(pr.pair.id)}</td>
+      <td>${pr.left.truthPercentage.toFixed(1)}%</td>
+      <td>${pr.right.truthPercentage.toFixed(1)}%</td>
+      <td class="${ceClass}">${ce.toFixed(1)} pp</td>
+      <td>${tags}</td>
+    </tr>`;
+  }
+
+  return `
+<section class="panel">
+  <h2>Inverse Consistency Diagnostics (Phase 2)</h2>
+  <div class="metric-value ${gateClass}" style="font-size:1.2em;margin-bottom:0.75em;">
+    ${gateLabel} — Complementarity Gate
+  </div>
+  <div class="metrics-grid">
+    <div class="metric">
+      <span class="metric-value">${am.strictInversePairCount}</span>
+      <span class="metric-label">Strict Inverse Pairs</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value ${am.strictInverseMeanComplementarityError <= t.maxInverseMeanComplementarityError ? "pass" : "fail"}">${am.strictInverseMeanComplementarityError.toFixed(1)} pp</span>
+      <span class="metric-label">Mean CE (≤${t.maxInverseMeanComplementarityError})</span>
+    </div>
+    <div class="metric">
+      <span class="metric-value ${am.strictInverseMaxComplementarityError <= t.maxInverseComplementarityError ? "pass" : "fail"}">${am.strictInverseMaxComplementarityError.toFixed(1)} pp</span>
+      <span class="metric-label">Max CE (≤${t.maxInverseComplementarityError})</span>
+    </div>
+  </div>
+  <div class="breakdown-table">
+    <table>
+      <thead><tr><th>Pair ID</th><th>Left %</th><th>Right %</th><th>CE</th><th>Root Causes</th></tr></thead>
+      <tbody>${pairRows}</tbody>
+    </table>
   </div>
 </section>`;
 }
