@@ -44,6 +44,7 @@ public sealed class JobsController : ControllerBase
                 updatedUtc = j.UpdatedUtc.ToString("o"),
                 inputType = j.InputType,
                 inputPreview = j.InputPreview,
+                inviteCode = j.InviteCode,
                 pipelineVariant = j.PipelineVariant,
                 verdictLabel = j.VerdictLabel,
                 truthPercentage = j.TruthPercentage
@@ -80,6 +81,7 @@ public sealed class JobsController : ControllerBase
             inputType = j.InputType,
             inputValue = j.InputValue,
             inputPreview = j.InputPreview,
+            inviteCode = j.InviteCode,
             pipelineVariant = j.PipelineVariant,
             verdictLabel = j.VerdictLabel,
             truthPercentage = j.TruthPercentage,

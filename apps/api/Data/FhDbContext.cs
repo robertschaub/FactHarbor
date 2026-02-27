@@ -9,9 +9,16 @@ public sealed class FhDbContext : DbContext
     public DbSet<JobEntity> Jobs => Set<JobEntity>();
     public DbSet<JobEventEntity> JobEvents => Set<JobEventEntity>();
     public DbSet<Models.AnalysisMetrics> AnalysisMetrics => Set<Models.AnalysisMetrics>();
+    public DbSet<InviteCodeEntity> InviteCodes => Set<InviteCodeEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<InviteCodeEntity>(e =>
+        {
+            e.HasKey(x => x.Code);
+            e.Property(x => x.Code).ValueGeneratedNever();
+        });
+
         modelBuilder.Entity<JobEntity>(e =>
         {
             e.HasKey(x => x.JobId);

@@ -21,15 +21,16 @@ import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 export default function AnalyzePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("claimboundary");
   const [pipelineLoaded, setPipelineLoaded] = useState(false);
 
-  // Load default pipeline from localStorage on mount.
-  // This is intentionally done in an effect to avoid SSR/localStorage access.
+  // Load default pipeline and invite code from localStorage on mount.
   useEffect(() => {
     setPipelineVariant(readDefaultPipelineVariant());
+    setInviteCode(localStorage.getItem("fh_invite_code") || "");
     setPipelineLoaded(true);
   }, []);
 
@@ -105,16 +106,24 @@ export default function AnalyzePage() {
       const timeoutMs = 15000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+      // Update stored invite code
+      localStorage.setItem("fh_invite_code", inviteCode);
+
       const res = await fetch("/api/fh/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputType, inputValue, pipelineVariant: pipelineToSend }),
+        body: JSON.stringify({
+          inputType,
+          inputValue,
+          pipelineVariant: pipelineToSend,
+          inviteCode: inviteCode.trim()
+        }),
         signal: controller.signal,
       }).finally(() => clearTimeout(timeoutId));
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Failed to start analysis: ${text}`);
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to start analysis: ${res.statusText}`);
       }
 
       const data = await res.json();
@@ -198,6 +207,23 @@ export default function AnalyzePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Invite Code */}
+        <div style={{ marginBottom: 16 }}>
+          <label className={styles.variantLabel} style={{ display: "block", marginBottom: 8 }}>Invite Code:</label>
+          <input
+            type="password"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            placeholder="Enter your beta invite code"
+            className={styles.textarea}
+            style={{ height: "auto", padding: "10px", minHeight: "unset" }}
+            required
+          />
+          <p style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+            A valid invite code is required to use the FactHarbor beta preview.
+          </p>
         </div>
 
         {error && (

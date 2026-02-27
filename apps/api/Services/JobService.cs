@@ -10,7 +10,7 @@ public sealed class JobService
 
     public JobService(FhDbContext db) { _db = db; }
 
-    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "orchestrated")
+    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "orchestrated", string? inviteCode = null)
     {
         var job = new JobEntity
         {
@@ -21,6 +21,7 @@ public sealed class JobService
             InputValue = inputValue,
             InputPreview = MakePreview(inputType, inputValue),
             PipelineVariant = pipelineVariant,
+            InviteCode = inviteCode,
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };
@@ -146,6 +147,29 @@ public sealed class JobService
         await _db.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<(bool isValid, string? error)> ValidateInviteCodeAsync(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return (false, "Invite code required");
+
+        var invite = await _db.InviteCodes.FirstOrDefaultAsync(x => x.Code == code);
+        if (invite == null) return (false, "Invalid invite code");
+        if (!invite.IsActive) return (false, "Invite code is disabled");
+        if (invite.ExpiresUtc.HasValue && invite.ExpiresUtc.Value < DateTime.UtcNow) return (false, "Invite code has expired");
+        if (invite.UsedJobs >= invite.MaxJobs) return (false, "Invite code limit reached (max " + invite.MaxJobs + " reports)");
+
+        return (true, null);
+    }
+
+    public async Task IncrementInviteUsageAsync(string code)
+    {
+        var invite = await _db.InviteCodes.FirstOrDefaultAsync(x => x.Code == code);
+        if (invite != null)
+        {
+            invite.UsedJobs++;
+            await _db.SaveChangesAsync();
+        }
     }
 
     /// <summary>

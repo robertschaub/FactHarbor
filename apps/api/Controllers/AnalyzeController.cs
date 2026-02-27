@@ -7,7 +7,8 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateJobRequest(
     string inputType,
     string inputValue,
-    string? pipelineVariant = "orchestrated"  // "orchestrated" or "monolithic_dynamic"
+    string? pipelineVariant = "orchestrated",  // "orchestrated" or "monolithic_dynamic"
+    string? inviteCode = null
 );
 public sealed record CreateJobResponse(string jobId, string status);
 
@@ -32,7 +33,15 @@ public sealed class AnalyzeController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CreateJobResponse>> Create([FromBody] CreateJobRequest req, CancellationToken ct)
     {
-        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "orchestrated");
+        // 1. Validate Invite Code
+        var (isValid, error) = await _jobs.ValidateInviteCodeAsync(req.inviteCode);
+        if (!isValid) return BadRequest(new { error });
+
+        // 2. Increment Usage
+        await _jobs.IncrementInviteUsageAsync(req.inviteCode!);
+
+        // 3. Create Job
+        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "orchestrated", req.inviteCode);
 
         // If we have scope factory + logger, do best-effort async trigger (POC-friendly).
         if (_scopeFactory is not null && _log is not null)

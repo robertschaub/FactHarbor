@@ -41,6 +41,20 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FhDbContext>();
     db.Database.EnsureCreated();
+
+    // Seed default invite code if none exist
+    if (!db.InviteCodes.Any())
+    {
+        db.InviteCodes.Add(new InviteCodeEntity
+        {
+            Code = "BETA-PREVIEW-2026",
+            Description = "Default public preview code",
+            MaxJobs = 10,
+            UsedJobs = 0,
+            IsActive = true
+        });
+        db.SaveChanges();
+    }
 }
 
 app.UseSwagger();

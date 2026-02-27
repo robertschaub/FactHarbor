@@ -18,6 +18,9 @@ public sealed class JobEntity
 
     public string? InputPreview { get; set; }
 
+    [MaxLength(64)]
+    public string? InviteCode { get; set; }
+
     /// <summary>
     /// Pipeline variant: "orchestrated" (default) or "monolithic_dynamic"
     /// </summary>
