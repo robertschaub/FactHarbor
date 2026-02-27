@@ -2,6 +2,16 @@
 
 
 ---
+### 2026-02-27 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 Inverse Claim Asymmetry Plan
+**Task:** Implement all 7 tasks of the Inverse Claim Asymmetry Phase 2 plan (calibration/audit-only; production runtime stays stateless).
+**Files touched:** `test/fixtures/framing-symmetry-pairs.json`, `src/lib/calibration/types.ts`, `src/lib/calibration/metrics.ts`, `src/lib/config-schemas.ts`, `configs/pipeline.default.json`, `src/lib/calibration/report-generator.ts`, `src/lib/calibration/runner.ts`, `test/calibration/framing-symmetry.test.ts`, new: `src/lib/calibration/paired-job-audit.ts`, `scripts/run-paired-audit.ts`, `prompts/text-analysis/inverse-claim-verification.prompt.md`, `test/unit/lib/paired-job-audit.test.ts`, `test/unit/lib/calibration-metrics.test.ts`.
+**Key decisions:** (1) `inverseGateAction` placed in UCM PipelineConfigSchema (not CalibrationThresholds — enum breaks pure-numeric interface). (2) `diagnosticGatePassed` computation moved after strict inverse section to fold with `strictInverseGatePassed` when action is "fail". (3) `inverse_consistency_error` warning attached to `leftResult.warnings` (no `CompletedPairResult.warnings` field added — avoids schema change). (4) `makeMinimalSideResult()` stubs only `warnings` field for `diagnoseInverseAsymmetry()`. (5) Default inverse thresholds generous (30pp/20pp) per plan — tighten after Phase 0 baseline.
+**Open items:** Phase 3 CI gate (deferred). Threshold tightening after first full calibration run baseline. Promote thresholds to UCM if operators need runtime tuning.
+**Warnings:** 12 new tests added (5 for gate logic, 3 for root-cause tagging, 4 for paired audit); 1111 total. Build passes. `calibrationInverseGateAction: "warn"` is default — inverse gate does NOT block `diagnosticGatePassed` until operator sets "fail".
+**For next agent:** All 7 Phase 2 tasks done (7 commits). Run `npx tsx scripts/run-calibration-lane.ts canary` against an inverse pair to capture first baseline CE values. Tighten thresholds in `DEFAULT_CALIBRATION_THRESHOLDS` after baseline. Paired job audit tested: `npx tsx scripts/run-paired-audit.ts <jobA> <jobB>`.
+**Learnings:** No new role learnings — Senior Developer section already populated.
+
+---
 ### 2026-02-27 | LLM Expert | Claude Code (Opus 4.6) | Report Quality Investigation Phase 2
 **Task:** Investigate and improve FactHarbor report quality — deep investigation into null probativeValue, hollow boundaries, challenger temperature.
 **Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/WIP/2026-02-27_Report_Quality_Investigation.md`
