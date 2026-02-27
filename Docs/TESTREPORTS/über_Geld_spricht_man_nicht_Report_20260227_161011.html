@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Über Geld spricht man nicht.">
+<meta name="fh:verdict" content="MOSTLY-TRUE">
+<meta name="fh:truth" content="72">
+<meta name="fh:confidence" content="75">
+<meta name="fh:date" content="2026-02-27">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Über Geld spricht man nicht.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: ec12b9b9ae174bfeb62a41e471225691</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-27 11:11 UTC</div>
+      <div>Completed: 2026-02-27 11:21 UTC</div>
+      <div>Duration: ~10 min 24 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Über Geld spricht man nicht.</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE, Brave</span>
+    <span class="chip chip-gray">19 LLM calls</span>
+    <span class="chip chip-gray">8 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 26 evidence items · 11 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-t">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge t-color">MOSTLY-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">Die Evidenz zeigt ein differenziertes Bild: Während Geld in bestimmten Kontexten – insbesondere am Arbeitsplatz und bei …</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value t-color">72%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:72%;background:#22543d"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">75%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:75%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:72%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">72%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">Die Evidenz zeigt ein differenziertes Bild: Während Geld in bestimmten Kontexten – insbesondere am Arbeitsplatz und bei Gehaltsfragen – tatsächlich als Tabu gilt, ist die Situation in engen Partnerschaften deutlich offener. Journalistische und kulturvergleichende Analysen bestätigen gesellschaftliche Normen gegen Geldgespräche, doch empirische Umfragedaten zeigen, dass viele Paare regelmäßig über Finanzen sprechen und das Gehalt des Partners kennen. Die Wahrheit der Behauptung hängt somit stark vom spezifischen sozialen Kontext ab – die pauschale Formulierung &quot;Geld ist ein Tabuthema&quot; vereinfacht eine nuancierte Realität.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Die Behauptung, dass Geld ein Tabuthema sei, ist überwiegend zutreffend, jedoch mit wichtigen Einschränkungen je nach Kontext und Beziehungstyp.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">26 Evidenzeinheiten aus 6 analytischen Perspektiven, darunter journalistische Analysen, kulturvergleichende Studien und empirische Umfragen zu Geldgesprächen in Partnerschaften, am Arbeitsplatz und in der Familie.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">Die Evidenz zeigt ein differenziertes Bild: Während Geld in bestimmten Kontexten – insbesondere am Arbeitsplatz und bei Gehaltsfragen – tatsächlich als Tabu gilt, ist die Situation in engen Partnerschaften deutlich offener. Journalistische und kulturvergleichende Analysen bestätigen gesellschaftliche Normen gegen Geldgespräche, doch empirische Umfragedaten zeigen, dass viele Paare regelmäßig über Finanzen sprechen und das Gehalt des Partners kennen. Die Wahrheit der Behauptung hängt somit stark vom spezifischen sozialen Kontext ab – die pauschale Formulierung &quot;Geld ist ein Tabuthema&quot; vereinfacht eine nuancierte Realität.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Die Perspektive &#39;Umfragen zu Geldgesprächen in Partnerschaften&#39; (CB_03) zeigt gemischte Evidenz und deutet auf erhebliche Offenheit in romantischen Beziehungen hin, während &#39;Umfragen zu Tabuthemen am Arbeitsplatz&#39; (CB_06) das Tabu klar bestätigen. Die Perspektive &#39;Analyse von Umfrageergebnissen (junge Erwachsene)&#39; (CB_07) widerspricht der Behauptung direkt und zeigt, dass jüngere Generationen offener über Finanzen sprechen. Diese Divergenz zeigt, dass die Gültigkeit der Behauptung stark vom sozialen Setting (Partnerschaft vs. Arbeitsplatz) und der Altersgruppe abhängt.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">Die Analyse konnte nicht abschließend klären, wie stark kulturelle und generationelle Unterschiede die Tabu-Wahrnehmung beeinflussen, da die meisten Umfragen auf deutschsprachige Länder beschränkt sind. Zudem fehlen Längsschnittdaten, um zu bestimmen, ob sich das Tabu im Zeitverlauf abschwächt. Die Diskrepanz zwischen selbstberichteter Offenheit in Umfragen und tatsächlichem Verhalten in realen Gesprächssituationen konnte nicht quantifiziert werden.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Es existiert eine soziale Norm oder Konvention, wonach Menschen nicht offen über Geld sprechen.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">72%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">75%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:72%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">72%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: low</span>
+      <span class="chip chip-gray">Check-worthiness: medium</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: potentially_misleading</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ While the claim is substantially true (72%) that a social norm exists against openly discussing money, it is potentially misleading because it implies a universal, monolithic taboo without acknowledging critical context-dependencies. The norm&#39;s strength varies dramatically by social context: it is strong in workplace settings (82%) and with extended family (80%), but significantly weaker in intimate partnerships regarding general finances (45%). Even the phrase &#39;people do not openly speak about money&#39; obscures that 76% of partnered individuals claim full knowledge of their partner&#39;s financial status, and regular money discussions occur in most relationships (72% discuss monthly or more frequently). The claim&#39;s framing suggests a blanket prohibition when the evidence shows a complex, context-sensitive norm that is actively weakening among younger demographics and in private intimate settings. A more accurate framing would specify &#39;people generally avoid discussing money in public, workplace, and non-intimate social contexts, though this norm is weaker in close relationships and among younger adults.&#39; The current phrasing cherry-picks the contexts where the taboo is strongest while underrepresenting the substantial evidence of openness in other domains.</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Journalistische und redaktionelle Analyse gesellschaftlicher Normen + Kulturvergleichende und psychologische Analyse von Geldtabus</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:85%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Umfragen zu Geldgesprächen in Partnerschaften</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">45%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">13 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:45%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_04 · Umfragen zu Gehaltswissen in Partnerschaften</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">65%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:70%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Umfragen zu Gehaltsinformationen in Familie und Partnerschaft (Österreich)</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:80%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_06 · Umfragen zu Tabuthemen am Arbeitsplatz</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:82%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Analyse von Umfrageergebnissen (junge Erwachsene)</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">60%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:30%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(11 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict adjusts downward from the advocate&#39;s initial assessment (78% truth, 82% confidence) to reflect legitimate methodological concerns while maintaining that the norm demonstrably exists.
+
+**Self-Consistency Assessment:** The claim showed perfect stability across three runs (78%, 78%, 78%), indicating the advocate&#39;s reasoning framework is internally consistent. This stability supports maintaining a relatively high truth percentage.
+
+**Challenge Response Analysis:**
+
+**CP_AC_01_0 &amp; CP_AC_01_3 (Source Independence - HIGH severity):** PARTIALLY ACCEPTED. The challenger correctly identifies that evidence IDs EV_005-EV_008 are invalid (hallucinated references), reducing the effective evidence base. However, the valid evidence (EV_1772194415286-288) still represents substantive content from gehaltsvergleich.com citing the Consorsbank study. The core concern about source overlap across boundaries CB_01, CB_03, and CB_04 is valid—this represents a single journalistic synthesis being counted multiple times rather than true triangulation. This significantly weakens the apparent multi-method convergence. **Adjustment:** Reduced confidence by 5 points to account for inflated convergence perception. Truth percentage reduced by 3 points as the effective evidence base is narrower than initially assessed.
+
+**CP_AC_01_1 (Missing Academic/Government Surveys - MEDIUM severity):** ACCEPTED. The absence of peer-reviewed sociological research or official government social attitude surveys is a legitimate gap. All quantitative evidence derives from commercial surveys (Consorsbank, Kununu, YouGov/Statista, Raisin SE), which may have sampling biases, commercial incentives, or non-representative samples. For a claim about a pervasive social norm, the lack of independent academic validation is notable. However, this does not invalidate the commercial survey findings—it simply means they lack independent corroboration. **Adjustment:** Reduced confidence by 2 points. No truth percentage adjustment, as absence of evidence is not evidence of absence, and commercial surveys still provide meaningful data.
+
+**CP_AC_01_2 (Missing Legal/HR Documentation - MEDIUM severity):** PARTIALLY ACCEPTED. The absence of primary legal or HR policy documents is a gap, but the challenger overstates its implications. Social norms often operate informally without codification in legal documents. The 2018 German pay transparency legislation (EntgTranspG) mentioned in EV_1772194446437 actually provides indirect evidence—the fact that legislation was needed to counter salary secrecy, and that 34% still view salary talk as taboo despite the law, suggests the norm operates culturally rather than through formal enforcement. The absence of documented disciplinary cases may indicate the taboo is maintained through social pressure rather than institutional sanctions, which is consistent with how cultural norms typically function. **No adjustment:** This challenge reflects a misunderstanding of how informal social norms operate.
+
+**CP_AC_01_4 (Qualitative Methodology Weakness - MEDIUM severity):** ACCEPTED. CB_01&#39;s 85% verdict relies heavily on interpretive journalistic and cultural analysis rather than systematic measurement. While qualitative evidence has value for understanding cultural phenomena, the advocate may have overweighted it relative to quantitative data. The cultural saying &#39;Über Geld spricht man nicht&#39; being widely known (EV_005, though this specific ID is invalid, the content exists in valid sources) demonstrates awareness of the norm but not necessarily adherence strength. **Adjustment:** This concern is already partially reflected in the source independence adjustment, but warrants additional caution. Reduced truth percentage by 2 points to account for potential overstatement of universality based on interpretive evidence.
+
+**CP_AC_01_5 (Missing Cross-Cultural Comparison - LOW severity):** ACKNOWLEDGED BUT NOT ADJUSTED. While systematic cross-cultural data would strengthen contextualization, the claim is specifically about German-speaking regions, not a comparative claim. The anecdotal international references (EV_1772194415286, EV_1772194446438) suffice to establish that the norm is recognized as distinctive, even if not rigorously quantified. **No adjustment.**
+
+**CP_AC_01_6 (Missing Generational Time Series - MEDIUM severity):** ACCEPTED. The single interpretive source (EV_1772194461495) for generational change is insufficient to establish a trend. CB_07&#39;s 30% verdict is based on thin evidence. However, this challenge cuts both ways—it doesn&#39;t strengthen the claim, but it also doesn&#39;t weaken it significantly, as the advocate already rated CB_07 as contradicting with low confidence (60%). The advocate&#39;s synthesis already accounts for this weakness. **No adjustment:** Already reflected in the advocate&#39;s cautious treatment of CB_07.
+
+**CP_AC_01_7 (Underweighting Contradicting Evidence - MEDIUM severity):** PARTIALLY ACCEPTED. The contradicting evidence from CB_03 (EV_1772194415291, EV_1772194446435) is indeed methodologically strong—representative samples, clear methodology, recent data. The advocate&#39;s synthesis acknowledges this by rating CB_03 at only 45% (mixed evidence) and explicitly noting the context-dependency of the norm. However, the challenger has a point that these high-quality contradicting data points deserve weight. The advocate&#39;s final 78% may not fully account for the strength of evidence showing openness in partnerships. **Adjustment:** Reduced truth percentage by 1 point to give additional weight to the robust contradicting evidence in intimate contexts.
+
+**CP_AC_01_8 (Missing Subpopulation Data - LOW severity):** ACKNOWLEDGED BUT NOT ADJUSTED. The absence of data on marginalized groups, immigrants, or rural/urban differences is a gap in comprehensiveness, but does not invalidate the claim about a general social norm. Most social science research on cultural norms begins with majority populations. The claim does not explicitly assert universality across all subgroups. **No adjustment.**
+
+**CP_AC_01_9 (Missing Evidence of Social Sanctions - MEDIUM severity):** PARTIALLY ACCEPTED. The absence of documented cases of ostracism or workplace penalties is notable, but the challenger again misunderstands how informal norms operate. EV_1772194415288 and EV_1772194415290 describe fears of envy, mockery, and social consequences, which are the typical enforcement mechanisms for informal taboos. The absence of formal sanctions may actually indicate the norm is maintained through subtle social pressure rather than overt punishment, which is consistent with the evidence. However, the lack of any case studies or incident reports does limit our understanding of real-world consequences. **No adjustment:** The advocate&#39;s reasoning already accounts for the norm being informal and context-dependent.
+
+**CP_AC_01_10 (Missing Digital/Social Media Analysis - LOW severity):** ACKNOWLEDGED BUT NOT ADJUSTED. Digital discourse analysis would be valuable supplementary evidence, especially for younger demographics, but its absence does not undermine the existing survey and cultural evidence. Social media behavior may not reflect private conversational norms. **No adjustment.**
+
+**Final Synthesis:**
+
+The claim that a social norm exists whereby people do not openly speak about money in German-speaking regions is SUPPORTED, but with important qualifications:
+
+1. **The norm demonstrably exists** across multiple contexts (workplace, extended family, general society) with quantitative and qualitative evidence.
+
+2. **Source independence is weaker than initially assessed** due to overlapping journalistic sources and repeated citation of the same commercial surveys, reducing effective triangulation.
+
+3. **The norm is highly context-dependent**: strongest in workplace and public settings (CB_06: 82%), weaker in intimate partnerships regarding general finances (CB_03: 45%), though specific salary figures remain partially taboo even with partners (CB_04: 70%).
+
+4. **Methodological limitations**: reliance on commercial surveys without academic corroboration, heavy weighting of interpretive cultural analysis, and gaps in subpopulation and longitudinal data.
+
+5. **The norm&#39;s strength may be overstated** by qualitative cultural commentary relative to quantitative behavioral data, especially in private contexts.
+
+The adjusted truthPercentage of 72% reflects that the norm clearly exists and operates across most social contexts, but the evidence base is narrower and more context-dependent than initially assessed. The confidence of 75% reflects reduced certainty due to source overlap, methodological limitations, and the absence of independent academic validation, while maintaining reasonable confidence given the self-consistency of findings and the substantive evidence that does exist.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_0: Partially accepted. Evidence IDs EV_005-008 are invalid (hallucinated), reducing the evidence base. The valid evidence (EV_1772194415286-288) still represents substantive content, but the source overlap across boundaries CB_01, CB_03, CB_04 is a legitimate concern that inflates apparent convergence.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_3: Accepted. The shared source base (gehaltsvergleich.com and Consorsbank study) across multiple boundaries means apparent multi-method convergence is weaker than initially assessed. This represents repeated citation rather than independent confirmation.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_1: Accepted. The absence of peer-reviewed academic or government survey data is a legitimate gap. All quantitative evidence is from commercial sources, which may have biases. This reduces confidence in the claim&#39;s empirical foundation, though it doesn&#39;t invalidate existing findings.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_2: Partially accepted but no adjustment. The absence of legal/HR documentation is noted, but social norms often operate informally. The 2018 transparency legislation actually provides indirect evidence of the norm&#39;s cultural (rather than formal) nature.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_4: Accepted. CB_01&#39;s heavy reliance on interpretive qualitative analysis rather than systematic measurement may overstate the norm&#39;s universality. Cultural commentary about the saying &#39;Über Geld spricht man nicht&#39; demonstrates awareness but not necessarily adherence strength.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_5: Acknowledged but no adjustment. The claim is about German-speaking regions specifically, not a comparative claim. Anecdotal international references suffice to establish the norm is recognized as distinctive.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_6: Accepted but no adjustment needed. The single source for generational change (CB_07) is weak, but the advocate already rated this boundary as contradicting with low confidence (60%), so this weakness is already reflected.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_7: Partially accepted. The contradicting evidence from CB_03 is methodologically strong and recent. The advocate&#39;s 45% rating for CB_03 acknowledges this, but the final 78% may not fully account for the robust evidence of openness in intimate partnerships.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_8: Acknowledged but no adjustment. The absence of subpopulation data (marginalized groups, rural/urban) is a gap in comprehensiveness but doesn&#39;t invalidate the claim about a general social norm.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_9: Partially accepted but no adjustment. The absence of documented sanctions is noted, but informal norms typically operate through subtle social pressure (fear of envy, mockery) rather than formal punishment, which is consistent with the evidence provided.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_10: Acknowledged but no adjustment. Digital discourse analysis would be valuable supplementary evidence but its absence doesn&#39;t undermine existing survey and cultural evidence. Social media behavior may not reflect private conversational norms.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_03<br><span style="font-weight:400;font-size:10px">Partnerschafts-Umfragen</span></th><th>CB_04<br><span style="font-weight:400;font-size:10px">Gehaltswissen Partner</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Kununu-Umfrage Österreich</span></th><th>CB_06<br><span style="font-weight:400;font-size:10px">Arbeitsplatz-Tabu-Umfragen</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">Analyse Hessen 18-35</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">Journalistische Analyse</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Es existiert eine soziale Norm</td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-high">8</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Umfragen zu Geldgesprächen in Partnerschaften</span><span class="ba-ev-count">13 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Umfragen zu Finanzgesprächen in Beziehungen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Schweiz, Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2020-2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Empirische Umfragen zur Häufigkeit und Bedeutung von Geldgesprächen in romantischen Beziehungen und Partnerschaften</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_04</span><span class="ba-name">Umfragen zu Gehaltswissen in Partnerschaften</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Umfrage durch Consorsbank</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Umfrage-basierte Evidenz zum Wissen über das Gehalt des Partners/der Partnerin</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Umfragen zu Gehaltsinformationen in Familie und Partnerschaft (Österreich)</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Umfrage durch Kununu</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Österreich</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2021</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Umfrage-Daten zur Offenlegung von Gehaltsinformationen gegenüber Familie und Partner in Österreich</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_06</span><span class="ba-name">Umfragen zu Tabuthemen am Arbeitsplatz</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Umfrage von YouGov und Statista.de</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Nach 2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Empirische Umfragen zu Tabuthemen (insbesondere Finanzen und Gehalt) am Arbeitsplatz</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Analyse von Umfrageergebnissen (junge Erwachsene)</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Analyse und Interpretation von Umfrageergebnissen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Hessen, Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Januar 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Sekundäranalyse und Interpretation von Umfrageergebnissen zur Finanzoffenheit bei jungen Erwachsenen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Journalistische und redaktionelle Analyse gesellschaftlicher Normen + Kulturvergleichende und psychologische Analyse von Geldtabus</span><span class="ba-ev-count">8 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Journalistische/redaktionelle Analyse und Beobachtung</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland, Österreich, Schweiz</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2021-2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Journalistische und redaktionelle Beobachtungen und Analysen zu gesellschaftlichen Normen und Tabus rund um Geldgespräche, basierend auf qualitativer Interpretation und Beobachtung; Analytische Untersuchungen zu kulturellen Unterschieden, gesellschaftlichen Normen und psychologischen Gründen für Geldtabus, mit internationalem Vergleich</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">26 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(12 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194388194</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Geldthemen sind in unserer Gesellschaft oft tabu, weshalb es wichtig ist, schon mit kleineren Kindern offen und altersgerecht über Geld zu sprechen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.abs.ch/sites/default/files/2022-03/ABS_moneta_1-2021_DE_web.pdf" target="_blank" rel="noopener noreferrer">ABS moneta 1 2021 DE web</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194388196</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Wie viel wir verdienen, sparen oder ausgeben, ist für viele ein sensibles Thema.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zeit.de/geld/2025-05/tabutema-geld-reden-freunde-familie-aufruf" target="_blank" rel="noopener noreferrer">Tabuthema Geld: Wie reden Sie mit Freunden und Familie über Geld? | DIE ZEITBenachrichtigungPfeil nach linksPfeil nach rechtsMerklisteAufklappenKommentareAbspielenPauseAbspielenWiederholenSucheDIE ZEITSchließenGefällt mirGefällt mirGefällt mir nichtGefällt mir nichtSendZ+ (abopflichtiger Inhalt);Z+ (abopflichtiger Inhalt);Z+ (abopflichtiger Inhalt);SchließenDIE ZEIT</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194388197</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Laut einer Umfrage der Jobbewertungsplattform Kununu aus dem Jahr 2021 verrät gerade einmal die Hälfte der Befragten ihr Gehalt den eigenen Angehörigen; bei einem Drittel weiß es nicht einmal die Partnerin oder der Partner.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.diepresse.com/20501548/reden-wir-uebers-geld-gespraeche-ueber-das-gehalt-sollten-kein-tabu" target="_blank" rel="noopener noreferrer">Reden wir übers Geld! Gespräche über das Gehalt sollten kein Tabu sein – DiePresse.com</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194388198</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Diese Verschwiegenheit über Gehalt ist in Österreich die Norm.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.diepresse.com/20501548/reden-wir-uebers-geld-gespraeche-ueber-das-gehalt-sollten-kein-tabu" target="_blank" rel="noopener noreferrer">Reden wir übers Geld! Gespräche über das Gehalt sollten kein Tabu sein – DiePresse.com</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415286</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der Ausspruch &#39;Über Geld spricht man nicht&#39; ist in Deutschland weit verbreitet und bekannt, und Deutschen wird nachgesagt, diese Regel besonders verinnerlicht zu haben.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">Let’s Talk about Money: In diesen Ländern spricht man über Geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415287</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Laut einer Studie der Consorsbank wissen rund 40 Prozent der Deutschen nicht, was der eigene Partner verdient.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">Let’s Talk about Money: In diesen Ländern spricht man über Geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415288</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In Deutschland fürchten viele Menschen die Reaktionen ihrer Mitmenschen beim Sprechen über Finanzen: höhere Einkommen könnten Neid und Missgunst auslösen, niedrigere Gehälter Hohn und Spott.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">Let’s Talk about Money: In diesen Ländern spricht man über Geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415289</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Das Schweigen über Geld ist tief in den gesellschaftlichen Normen und Traditionen Deutschlands verankert, mit der Mentalität &#39;Über Geld spricht man nicht, man hat es oder man hat es nicht&#39;.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://rzhartmann.de/blogbeitrag/open-salaries-ueber-geld-spricht-man-doch/" target="_blank" rel="noopener noreferrer">Open Salaries - über Geld spricht man doch I rzhartmann.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415290</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Viele Menschen in Deutschland vermeiden es, über ihr Gehalt zu sprechen, aus Angst vor Neid, Missverständnissen oder Konflikten, und fürchten, dass ihr Wert allein durch Zahlen bemessen werden könnte.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://rzhartmann.de/blogbeitrag/open-salaries-ueber-geld-spricht-man-doch/" target="_blank" rel="noopener noreferrer">Open Salaries - über Geld spricht man doch I rzhartmann.de</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194446436</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">48 Prozent der befragten Arbeitnehmer halten die persönlichen Finanzen für ein Tabuthema im Büro. Das Motto &#39;Über Geld spricht man nicht&#39; ist an deutschen Arbeitsplätzen weiterhin weit verbreitet.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://blog.otto-office.com/arbeitsalltag/businessknigge/tabuthemen-am-arbeitsplatz/" target="_blank" rel="noopener noreferrer">Tabuthemen am Arbeitsplatz | OTTO Office Blog</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194446437</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">34 Prozent der Befragten sehen Gespräche über das eigene Gehalt als Tabu an. Daran hat auch das 2018 in Kraft getretene Entgelttransparenzgesetz nichts geändert.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://blog.otto-office.com/arbeitsalltag/businessknigge/tabuthemen-am-arbeitsplatz/" target="_blank" rel="noopener noreferrer">Tabuthemen am Arbeitsplatz | OTTO Office Blog</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194446438</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In den USA ist es normal, über das eigene Gehalt zu sprechen. In Schweden gibt sogar das Finanzamt Auskunft über das zu versteuernde Einkommen jeden Steuerzahlers. Das Motto &#39;Über Geld spricht man nicht&#39; ist dagegen an deutschen Arbeitsplätzen weit verbreitet.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://blog.otto-office.com/arbeitsalltag/businessknigge/tabuthemen-am-arbeitsplatz/" target="_blank" rel="noopener noreferrer">Tabuthemen am Arbeitsplatz | OTTO Office Blog</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(3 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415291</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Paare sprechen regelmäßig über Geld: 4% täglich, 33% wöchentlich, 35% monatlich, was zeigt, dass Geldgespräche in Beziehungen durchaus stattfinden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cler.ch/de/blog/blog/umfrage-geld-in-beziehungen" target="_blank" rel="noopener noreferrer">Umfrage Geld in Beziehungen - Bank Cler</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194446435</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Nur 4 Prozent der Befragten geben an, Themen wie Gehälter und Kontenstände konsequent zu meiden. 76 Prozent der Befragten glauben demnach, den Schulden- und Vermögensstand ihrer Partnerin oder ihres Partners vollständig zu kennen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zeit.de/news/2025-02/13/umfrage-geld-ist-kein-tabu-thema-in-der-liebe" target="_blank" rel="noopener noreferrer">Gemeinsame Finanzen: Umfrage: Geld ist kein Tabu-Thema in der Liebe | DIE ZEITBenachrichtigungPfeil nach linksPfeil nach rechtsMerklisteAufklappenKommentareAbspielenPauseAbspielenWiederholenSucheDIE ZEITZ+ (abopflichtiger Inhalt);Z+ (abopflichtiger Inhalt);SchließenDIE ZEIT</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194461495</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die Offenheit und die Bereitschaft über Geld zu sprechen sind positive Anzeichen und Ansatzpunkte für staatliches Handeln.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://finanzen.hessen.de/sites/finanzen.hessen.de/files/2025-01/safe-hessenmonitor_finanzkompetenz-abschlussbericht.pdf" target="_blank" rel="noopener noreferrer">safe hessenmonitor finanzkompetenz abschlussbericht</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(11 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Nichts ist so allgegenwärtig und gleichzeitig so tabuisiert wie Geld. Lohn, Kontoauszüge, Mahnungen, Erbsummen – darüber wird, wenn überhaupt, nur im engsten Familienkreis gesprochen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/autorin-fordert-gerechtigkeit-schuften-scheffeln-schweigen-wir-muessen-ueber-geld-sprechen" target="_blank" rel="noopener noreferrer">https://www.srf.ch/kultur/gesellschaft-religion/autorin-fordert-gerechtigkeit-schuften-scheffeln-schweigen-wir-muessen-ueber-geld-sprechen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Auch in Deutschland sei Geld ein Tabuthema. Auch dort spreche man nicht über den Lohn und auch dort sei Armut mit Scham und Schuld belegt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/autorin-fordert-gerechtigkeit-schuften-scheffeln-schweigen-wir-muessen-ueber-geld-sprechen" target="_blank" rel="noopener noreferrer">https://www.srf.ch/kultur/gesellschaft-religion/autorin-fordert-gerechtigkeit-schuften-scheffeln-schweigen-wir-muessen-ueber-geld-sprechen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In der Schweiz sei es im Unterschied zu Deutschland selbstverständlicher, gut mit dem Geld auszukommen, gut zu verdienen und ein gutes Leben zu führen. Über Geldprobleme spreche man nicht.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/autorin-fordert-gerechtigkeit-schuften-scheffeln-schweigen-wir-muessen-ueber-geld-sprechen" target="_blank" rel="noopener noreferrer">https://www.srf.ch/kultur/gesellschaft-religion/autorin-fordert-gerechtigkeit-schuften-scheffeln-schweigen-wir-muessen-ueber-geld-sprechen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Frage nach dem Honorar ist (nicht nur) im Kunst- und Kulturbereich oftmals ein Tabu.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://igbildendekunst.at/themen/kunst-und-geld/" target="_blank" rel="noopener noreferrer">https://igbildendekunst.at/themen/kunst-und-geld/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">&quot;Über Geld spricht man nicht&quot; – diesen Ausspruch kennt hierzulande fast jeder. Glaubt man dem Klischee, haben besonders die Deutschen diese Regel verinnerlicht.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In Deutschland – und übrigens auch in zahlreichen weiteren mittel- und westeuropäischen Ländern – fürchten viele die Reaktionen ihrer Mitmenschen. Höhere Einkommen könnten Neid und Missgunst auslösen, niedrigere Gehälter Hohn und Spott.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Laut einer Studie der Consorsbank wissen rund 40 Prozent der Deutschen nicht einmal, was der eigene Partner verdient.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Mit diesen Erwartungen scheint es nachvollziehbar, dass die meisten Deutschen ihre finanzielle Situation lieber geheim halten.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die WHO geht davon aus, dass Suizidhandlungen und Suizidalität stigmatisierend sind und einem Tabu unterliegen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://de.wikipedia.org/wiki/Suizid" target="_blank" rel="noopener noreferrer">https://de.wikipedia.org/wiki/Suizid</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Hungersnot blieb in der Sowjetunion bis zur Zeit der Perestrojka ein streng gehütetes Tabu, an dem offiziell auch in der Zeit des Tauwetters nach Stalins Tod nicht gerüttelt wurde.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bundesstiftung-aufarbeitung.de/de/recherche/dossiers/holodomor/historischer-hintergrund" target="_blank" rel="noopener noreferrer">https://www.bundesstiftung-aufarbeitung.de/de/recherche/dossiers/holodomor/historischer-hintergrund</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772194415293</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Für 79% der Befragten spielt Geld in einer Beziehung eine &#39;eher wichtige&#39; oder &#39;sehr wichtige&#39; Rolle, was darauf hindeutet, dass das Thema Geld in Beziehungen relevant und diskutiert wird.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cler.ch/de/blog/blog/umfrage-geld-in-beziehungen" target="_blank" rel="noopener noreferrer">Umfrage Geld in Beziehungen - Bank Cler</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">11 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">ABS moneta 1 2021 DE web</span></div>
+        <div class="source-url"><a href="https://www.abs.ch/sites/default/files/2022-03/ABS_moneta_1-2021_DE_web.pdf" target="_blank" rel="noopener noreferrer">https://www.abs.ch/sites/default/files/2022-03/ABS_moneta_1-2021_DE_web.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Umfrage Tabu Geldgespräche soziale Norm</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Tabuthema Geld: Wie reden Sie mit Freunden und Familie über Geld? | DIE ZEITBenachrichtigungPfeil nach linksPfeil nach rechtsMerklisteAufklappenKommentareAbspielenPauseAbspielenWiederholenSucheDIE ZEITSchließenGefällt mirGefällt mirGefällt mir nichtGefällt mir nichtSendZ+ (abopflichtiger Inhalt);Z+ (abopflichtiger Inhalt);Z+ (abopflichtiger Inhalt);SchließenDIE ZEIT</span></div>
+        <div class="source-url"><a href="https://www.zeit.de/geld/2025-05/tabutema-geld-reden-freunde-familie-aufruf" target="_blank" rel="noopener noreferrer">https://www.zeit.de/geld/2025-05/tabutema-geld-reden-freunde-familie-aufruf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Umfrage Tabu Geldgespräche soziale Norm</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Reden wir übers Geld! Gespräche über das Gehalt sollten kein Tabu sein – DiePresse.com</span></div>
+        <div class="source-url"><a href="https://www.diepresse.com/20501548/reden-wir-uebers-geld-gespraeche-ueber-das-gehalt-sollten-kein-tabu" target="_blank" rel="noopener noreferrer">https://www.diepresse.com/20501548/reden-wir-uebers-geld-gespraeche-ueber-das-gehalt-sollten-kein-tabu</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Umfrage Tabu Geldgespräche soziale Norm</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Eigenes Finanzwissen top, Kinder flop - Beratungsdienst Geld und Haushalt</span></div>
+        <div class="source-url"><a href="https://www.geldundhaushalt.de/pressemitteilungen/eigenes-finanzwissen-top-kinder-flop/" target="_blank" rel="noopener noreferrer">https://www.geldundhaushalt.de/pressemitteilungen/eigenes-finanzwissen-top-kinder-flop/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Umfrage Tabu Geldgespräche soziale Norm</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/Finanzen/comments/z1rtko/redet_ihr_mit_freundenfamilie_%C3%BCber_euer/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/Finanzen/comments/z1rtko/redet_ihr_mit_freundenfamilie_%C3%BCber_euer/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Menschen sprechen offen über Geld Häufigkeit Normalität</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Let’s Talk about Money: In diesen Ländern spricht man über Geld</span></div>
+        <div class="source-url"><a href="https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld" target="_blank" rel="noopener noreferrer">https://www.gehaltsvergleich.com/news/let-s-talk-about-money-in-diesen-laendern-spricht-man-ueber-geld</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Menschen sprechen offen über Geld Häufigkeit Normalität</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Open Salaries - über Geld spricht man doch I rzhartmann.de</span></div>
+        <div class="source-url"><a href="https://rzhartmann.de/blogbeitrag/open-salaries-ueber-geld-spricht-man-doch/" target="_blank" rel="noopener noreferrer">https://rzhartmann.de/blogbeitrag/open-salaries-ueber-geld-spricht-man-doch/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Menschen sprechen offen über Geld Häufigkeit Normalität</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Umfrage Geld in Beziehungen - Bank Cler</span></div>
+        <div class="source-url"><a href="https://www.cler.ch/de/blog/blog/umfrage-geld-in-beziehungen" target="_blank" rel="noopener noreferrer">https://www.cler.ch/de/blog/blog/umfrage-geld-in-beziehungen</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Menschen sprechen offen über Geld Häufigkeit Normalität</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Gemeinsame Finanzen: Umfrage: Geld ist kein Tabu-Thema in der Liebe | DIE ZEITBenachrichtigungPfeil nach linksPfeil nach rechtsMerklisteAufklappenKommentareAbspielenPauseAbspielenWiederholenSucheDIE ZEITZ+ (abopflichtiger Inhalt);Z+ (abopflichtiger Inhalt);SchließenDIE ZEIT</span></div>
+        <div class="source-url"><a href="https://www.zeit.de/news/2025-02/13/umfrage-geld-ist-kein-tabu-thema-in-der-liebe" target="_blank" rel="noopener noreferrer">https://www.zeit.de/news/2025-02/13/umfrage-geld-ist-kein-tabu-thema-in-der-liebe</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Tabu Geldgespräche soziale Norm Umfrage</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Tabuthemen am Arbeitsplatz | OTTO Office Blog</span></div>
+        <div class="source-url"><a href="https://blog.otto-office.com/arbeitsalltag/businessknigge/tabuthemen-am-arbeitsplatz/" target="_blank" rel="noopener noreferrer">https://blog.otto-office.com/arbeitsalltag/businessknigge/tabuthemen-am-arbeitsplatz/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Tabu Geldgespräche soziale Norm Umfrage</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">safe hessenmonitor finanzkompetenz abschlussbericht</span></div>
+        <div class="source-url"><a href="https://finanzen.hessen.de/sites/finanzen.hessen.de/files/2025-01/safe-hessenmonitor_finanzkompetenz-abschlussbericht.pdf" target="_blank" rel="noopener noreferrer">https://finanzen.hessen.de/sites/finanzen.hessen.de/files/2025-01/safe-hessenmonitor_finanzkompetenz-abschlussbericht.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Menschen sprechen offen über Geld Studie</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">8 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>Tabu Geld sprechen Kultur</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>In deutschen oder europäischen Kulturen ist es ein verbreitetes Tabu, über persö</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Umfrage Tabu Geldgespräche soziale Norm</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Menschen sprechen offen über Geld Häufigkeit Normalität</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Kulturelle Unterschiede Offenheit finanzielle Gespräche Studie</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Tabu Geldgespräche soziale Norm Umfrage</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Menschen sprechen offen über Geld Studie</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Kulturelle Unterschiede Offenheit Finanzgespräche ethnographisch</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">26</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">11</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">8</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">19</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-27 15:10 UTC
+  <br>Job ec12b9b9ae174bfeb62a41e471225691 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
