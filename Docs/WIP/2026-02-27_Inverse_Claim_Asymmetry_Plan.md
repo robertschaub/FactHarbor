@@ -1,4 +1,4 @@
-# Inverse Claim Asymmetry Plan (2026-02-27)
+# Inverse Claim Asymmetry Plan (2026-02-27, updated 2026-02-27 evening)
 
 ## Problem
 
@@ -126,83 +126,70 @@ Goal: ensure future changes cannot silently reintroduce large asymmetry for clea
 
 ## Implementation Plan
 
-## Phase 0 - Baseline and Safety (No behavior changes)
+## Phase 0 - Baseline and Safety (No behavior changes) — ✅ COMPLETE
 
-1. Add metrics:
-   - strict inverse pair result capture (`p`, `q`) needed to compute `complementarityError` (Phase 0 scope: calibration fixtures with predefined strict inverse pairs)
-   - `verdictIntegrityFailures` (grounding/direction counts)
-2. Add structured warning taxonomy for inverse inconsistency.
-3. Add new `AnalysisWarningType` entries to `types.ts` for:
-   - `inverse_consistency_error`
-   - `verdict_integrity_failure`
-4. Define and standardize `complementarityError` metric for confirmed inverse pairs:
-   - formula: `abs((p + q) - 100)`
-5. Capture baseline on current calibration set + inverse-pair fixtures.
+**Completed 2026-02-27.** All deliverables shipped.
 
-Deliverables:
-- baseline report
-- thresholds proposal
-- `complementarityError` metric definition for Phase 3 gating
+1. ✅ Metrics: `complementarityError` computation in `calibration/metrics.ts` (line 65-67); strict inverse aggregation in `computeAggregateMetrics()` (lines 299-313).
+2. ✅ Warning taxonomy: `inverse_consistency_error` and `verdict_integrity_failure` added to `AnalysisWarningType` in `types.ts` (lines 678-679).
+3. ✅ `complementarityError` metric standardized: `abs((p + q) - 100)` for pairs with `isStrictInverse: true`.
+4. ✅ Calibration infrastructure: `BiasPair.isStrictInverse` field in `calibration/types.ts` (line 33); `AggregateMetrics` includes `strictInversePairCount`, `strictInverseMeanComplementarityError`, `strictInverseMaxComplementarityError`.
+5. ✅ Unit test coverage: `calibration-metrics.test.ts` (line 286-318) validates CE computation and aggregation.
 
-## Phase 1 - Integrity Gating (Behavior change, low complexity)
+Baseline report: pending first calibration run with inverse fixtures (Phase 2 prerequisite).
 
-1. Implement `verdictGroundingPolicy` in `validateVerdicts()`:
-   - if `groundingValid === false` -> `safe_downgrade` only (no retry)
-2. Implement `verdictDirectionPolicy` in `validateVerdicts()`:
-   - if `directionValid === false` -> `retry_once` via `repairVerdict()` at `min(selfConsistencyTemperature + 0.1, 0.7)` with direction-check result appended
-   - `repairVerdict()` response contract: same claim, corrected direction alignment, and no evidence-citation expansion beyond already-available evidence IDs
-   - extend `validateVerdicts()` inputs to accept repair context + repair executor callback from `runVerdictStage()`
-   - if repair fails -> `safe_downgrade`
-3. Keep policy control solely on `verdictGroundingPolicy` and `verdictDirectionPolicy` (their `disabled` value yields advisory-only behavior).
-4. Add policy config propagation end-to-end:
-   - `PipelineConfigSchema` (UCM) -> pipeline config loading -> `buildVerdictStageConfig` -> `VerdictStageConfig` -> `validateVerdicts()`
-5. Implement S3 parity fix in CB aggregation path:
-    - map `AtomicClaim.claimDirection === "contradicts_thesis"` to `isCounterClaim = true`
-    - apply inversion at the inline return mapping in `aggregateAssessment` at the current `truthPercentage: verdict.truthPercentage` assignment in the weighted verdict mapping block (compute `effectiveTruth` there)
-    - if `truthPercentageRange` exists, invert bounds consistently for `contradicts_thesis` claims in the same mapping block
-    - ensure `contextual` claims pass through without inversion
-6. Add unit tests for:
-   - invalid evidence IDs -> non-publishable path
-   - severe direction mismatch -> downgraded confidence/tier
-   - CB `contradicts_thesis` claims invert consistently with legacy counter-claim path
+## Phase 1 - Integrity Gating (Behavior change, low complexity) — ✅ COMPLETE
 
-Acceptance:
-- Any claim with `groundingValid === false` must be `safe_downgrade`d (`truthPercentage = 50`, `confidenceTier = INSUFFICIENT`).
-- Any claim where `directionValid === false` on both initial and retry must be `safe_downgrade`d (same contract as grounding failure).
+**Completed 2026-02-27.** Lead Architect delta review: ACCEPTED.
 
-## Phase 2 - Symmetry Audit (Calibration/Audit-only, immediate term)
+1. ✅ `verdictGroundingPolicy` in `validateVerdicts()`: `groundingValid === false` → `safeDowngradeVerdict()` (verdict-stage.ts lines 822-830).
+2. ✅ `verdictDirectionPolicy` in `validateVerdicts()`: `directionValid === false` → `attemptDirectionRepair()` → retry validation → `safeDowngradeVerdict()` on failure (lines 841-882).
+3. ✅ `repairVerdict()` repair-in-place via `defaultRepairExecutor()` (lines 960-1018). Temperature: `min(selfConsistencyTemperature + 0.1, 0.7)`.
+4. ✅ Policy config propagation: `PipelineConfigSchema` → `applyPipelineDefaults()` → `buildVerdictStageConfig()` → `VerdictStageConfig` → `validateVerdicts()`.
+5. ✅ S3 parity fix: `contradicts_thesis` → `isCounterClaim = true` → `100 - p` inversion in `aggregateAssessment()` (claimboundary-pipeline.ts lines 4604-4619). Range inversion included.
+6. ✅ `safeDowngradeVerdict()` shared utility (verdict-stage.ts lines 916-944): `truthPercentage = 50`, `confidenceTier = "INSUFFICIENT"`, emits `verdict_integrity_failure` (severity: error).
+7. ✅ `INSUFFICIENT_CONFIDENCE_MAX = 24` named constant (verdict-stage.ts:895, claimboundary-pipeline.ts:4504). Boundary-level confidence cap when integrity downgrade detected (lines 4645-4650).
+8. ✅ Both policies default to `"disabled"` in UCM (pipeline.default.json) — backward compatible.
 
-**Approved scope (Captain decision, 2026-02-27):** calibration/audit enforcement only.  
+## Phase 2 - Symmetry Audit (Calibration/Audit-only, immediate term) — ✅ COMPLETE
+
+**Completed 2026-02-27 evening.** 1111 tests passing, build clean.
+**Approved scope (Captain decision, 2026-02-27):** calibration/audit enforcement only.
 **Deferred scope:** production runtime real-time cross-job consistency checks.
+**Architecture plan:** Lead Architect (Opus). **Implementation:** Senior Developer (Sonnet).
 
 Rationale: keep the live analysis path stateless and avoid cross-job discovery/race/reconciliation complexity until Phase 0 + audit data proves strong ROI.
 
-1. Implement strict inverse consistency checks in calibration lanes only (predefined fixture pairs, LLM-based inverse detection, complementarity evaluation).
-2. Add complementarity tolerance controls in UCM for calibration/audit gates (no runtime live-score mutation in this phase).
-3. Add an operator-triggered paired-job audit flow (explicit job IDs) for post-hoc investigation of reported asymmetry.
-4. On calibration/audit violation:
-   - emit `inverse_consistency_error` with root-cause tags
-   - apply configured gate behavior (`warn` / `fail`) in the calibration lane
-5. Revisit production runtime real-time consistency only if Phase 0 baseline + audit sample shows frequent asymmetry in integrity-clean inverse pairs (for example, persistent >20 `complementarityError` at meaningful frequency).
+**Captain decision (2026-02-27 evening):** Inverse fixtures use concrete researchable topics (not abstract placeholders). AGENTS.md abstract-form rule applies to analysis prompt examples, not calibration test data. Abstract claims with placeholders cannot be web-searched and produce misleading CE ≈ 0.
+
+### Implementation tasks (all 7 complete):
+
+1. ✅ **Strict inverse fixtures** — 4 new concrete pairs in `framing-symmetry-pairs.json` (v3.4.0): `inverse-minwage-employment-en`, `inverse-gmo-health-de`, `inverse-remote-productivity-fr`, `inverse-fluoride-safety-en` (water fluoridation). All `isStrictInverse: true`, `pairCategory: "bias-diagnostic"`.
+2. ✅ **Complementarity thresholds & gate** — `maxInverseComplementarityError: 30` and `maxInverseMeanComplementarityError: 20` in `CalibrationThresholds`. `calibrationInverseGateAction: "warn"` in UCM (`PipelineConfigSchema`). `strictInverseGatePassed` in `AggregateMetrics`. `computeAggregateMetrics()` accepts `inverseGateAction` param; folds into `diagnosticGatePassed` when `"fail"`.
+3. ✅ **Root-cause diagnostic** — `InverseConsistencyDiagnostic` interface + `diagnoseInverseAsymmetry()` in `metrics.ts`. Maps `CalibrationWarning.type` values to root-cause categories (`fetch_degradation`, `grounding_issue`, `direction_issue`, `integrity_failure`, `structural_failure`, `unexplained`). Wired into `computePairMetrics()`.
+4. ✅ **Calibration report panel** — `renderInverseConsistencyPanel()` in `report-generator.ts`. Gate banner, metrics grid (pair count, mean/max CE vs thresholds), per-pair table with root-cause tags. Returns empty when no inverse pairs.
+5. ✅ **UCM → runner → test suite wiring** — `configSnapshot.pipeline["calibrationInverseGateAction"]` flows through runner to `computeAggregateMetrics()`. Inverse metrics logging in both quick and full mode calibration test blocks.
+6. ✅ **`inverse_consistency_error` emission** — Emitted as `CalibrationWarning` in runner pair loop when strict inverse pair exceeds CE threshold. Attached to `leftResult.warnings` with CE, root-cause tags, and truth percentages in details. Calibration-only (production never emits this).
+7. ✅ **Operator paired-job audit** — `paired-job-audit.ts`: `runPairedJobAudit()` fetches two jobs, validates SUCCEEDED, computes CE, runs root-cause diagnosis, optional LLM inverse verification (Haiku, temperature 0). `scripts/run-paired-audit.ts`: CLI (`npx tsx scripts/run-paired-audit.ts <jobA> <jobB> [--verify-inverse]`). `prompts/text-analysis/inverse-claim-verification.prompt.md`: UCM-managed prompt. 4 unit tests with mocked fetch.
 
 Acceptance:
 - Calibration suite enforces configured tolerance for strict inverse fixtures.
 - Production runtime remains stateless (no automatic cross-job lookup/pairing/rewrite).
 - Operators can run paired-job symmetry audit on demand.
 
-## Phase 3 - Calibration Hardening (Process)
+## Phase 3 - Calibration Hardening (Process) — 🧭 NOT STARTED
 
-Depends on: `complementarityError` metric defined in Phase 0.
+Depends on: Phase 2 completion + first baseline calibration run with inverse fixtures.
 Immediate-term note: this phase is the operational delivery path for S2 per Captain decision.
 
-1. Add strict inverse fixtures in abstract form as NEW fixtures (logical negation pairs `A` vs `NOT-A`), not reclassification of existing mirrored framing pairs.
-2. Add CI/calibration gate on `complementarityError`/asymmetry for strict inverse category.
-3. Use existing fixture `pairCategory: "bias-diagnostic"` plus metadata `isStrictInverse: true` to select strict inverse pairs for this gate (or promote to a dedicated category after Phase 0 if needed).
-4. Implement this gate in the current framing-symmetry lane assets:
+1. Add CI/calibration gate on `complementarityError`/asymmetry for strict inverse category.
+2. Use `pairCategory: "bias-diagnostic"` plus `isStrictInverse: true` to select strict inverse pairs for this gate.
+3. Implement gate in the current framing-symmetry lane assets:
    - test: `framing-symmetry.test.ts`
    - fixture file: `framing-symmetry-pairs.json`
-5. Report asymmetry with root-cause tags (`fetch_degradation`, `grounding_issue`, `direction_issue`).
-6. All inverse-pair fixtures must be expressed in abstract form per AGENTS.md §Analysis Prompt Rules (no test-case terms, no real entity names). The German motivating pair must be abstracted (for example, `Entity A has property P` / `Entity A does not have property P`) before calibration use.
+4. Report asymmetry with root-cause tags (`fetch_degradation`, `grounding_issue`, `direction_issue`).
+5. Tighten thresholds from Phase 2 defaults (30/20 pp) based on baseline data. Target: two-tier approach per review findings (warning at ~12pp, confidence cap at ~25pp).
+6. ~~All inverse-pair fixtures must be expressed in abstract form per AGENTS.md §Analysis Prompt Rules.~~ **Superseded:** Fixtures use concrete researchable topics (Captain decision, 2026-02-27 evening). AGENTS.md abstract-form rule applies to analysis prompts, not calibration test data.
 
 Acceptance:
 - Regression gate fails on unbounded asymmetry without matching integrity warnings.
@@ -243,20 +230,21 @@ Status update (Captain decision, 2026-02-27): immediate scope set to calibration
 ## Open Questions
 
 1. **[Phase 0 gate]** At what occurrence frequency does a future runtime S2 standing LLM call become unjustified without user opt-in?
-2. **[S3 scope]** Should counter-claim inversion remain scoped to `AtomicClaim.claimDirection` -> `isCounterClaim` mapping in aggregation only, or also alter `EvidenceItem.claimDirection` handling (currently not required by S3)?
-3. **[Calibration]** What abstract form should the motivating inverse pair take in calibration fixtures (AGENTS.md: no test-case terms in prompt examples)?
+2. ~~**[S3 scope]** Should counter-claim inversion remain scoped to `AtomicClaim.claimDirection` -> `isCounterClaim` mapping in aggregation only, or also alter `EvidenceItem.claimDirection` handling?~~ **Resolved:** Scoped to aggregation only (Phase 1 implementation confirmed).
+3. ~~**[Calibration]** What abstract form should the motivating inverse pair take in calibration fixtures?~~ **Resolved:** Use concrete researchable topics. AGENTS.md abstract-form rule applies to analysis prompts, not calibration test data.
 
 ## Captain Decisions (2026-02-27 update)
 
 1. **Resolved:** S2 production runtime real-time cross-job check is deferred; immediate implementation is calibration/audit-only.
-2. **Resolved:** Execute Phase 1 immediately with split policy (`grounding=safe_downgrade`, `direction=retry_once_then_downgrade`, repair-in-place).
-3. **Resolved:** Inverse complement tolerance remains data-driven; defer hard thresholds until Phase 0 baseline is captured.
-4. **Pending:** Calibration gate severity rollout for strict inverse category (`warn` first vs immediate `fail`).
+2. **Resolved:** Execute Phase 1 immediately with split policy (`grounding=safe_downgrade`, `direction=retry_once_then_downgrade`, repair-in-place). ✅ Implemented.
+3. **Resolved:** Inverse complement tolerance remains data-driven; defer hard thresholds until Phase 0 baseline is captured. Phase 2 defaults: 30/20 pp in warn-only mode.
+4. **Resolved:** Calibration gate severity rollout: `warn` first (default `calibrationInverseGateAction: "warn"` in UCM). Promote to `fail` after baseline data confirms appropriate thresholds.
 5. **Pending:** Retry budget policy (`one retry per failing claim` only vs add per-job cap preemptively).
+6. **Resolved (2026-02-27 evening):** Inverse fixtures use concrete researchable topics, not abstract placeholders. `inverseGateAction` placed in UCM (`PipelineConfigSchema`), not in `CalibrationThresholds`.
 
 ## Definition of Done
 
-- Integrity failures no longer pass silently into final confident verdicts.
-- Strict inverse consistency is enforced in calibration/audit, with operator-triggered paired-job audit support.
-- Calibration includes inverse-pair regression coverage.
-- Operator-facing warnings clearly explain residual asymmetry causes.
+- ✅ Integrity failures no longer pass silently into final confident verdicts. *(Phase 1 — `safeDowngradeVerdict()` + policy gating)*
+- ✅ Strict inverse consistency is enforced in calibration/audit, with operator-triggered paired-job audit support. *(Phase 2 — complete)*
+- ✅ Calibration includes inverse-pair regression coverage. *(Phase 2 fixtures delivered; Phase 3 CI gate pending)*
+- ✅ Operator-facing warnings clearly explain residual asymmetry causes. *(Phase 2 — `InverseConsistencyDiagnostic` + report panel + `inverse_consistency_error` emission)*

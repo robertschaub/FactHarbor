@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Facts and misinformation are not distributed equally across the political spectrum. Those who consistently follow the evidence therefore do not automatically end up “in the middle,” but rather where the evidence leads them. This can appear to be a political bias.">
+<meta name="fh:verdict" content="MOSTLY-TRUE">
+<meta name="fh:truth" content="73">
+<meta name="fh:confidence" content="73">
+<meta name="fh:date" content="2026-02-27">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Facts and misinformation are not distributed equally across the political spectrum. Those who consistently follow the evidence therefore do not automatically end up “in the middle,” but rather where the evidence leads them. This can appear to be a political bias.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 0d54393670a5464ea34d2019f1d4e7bf</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-27 14:16 UTC</div>
+      <div>Completed: 2026-02-27 14:33 UTC</div>
+      <div>Duration: ~17 min 9 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Facts and misinformation are not distributed equally across the political spectrum. Those who consistently follow the evidence therefore do not automatically end up “in the middle,” but rather where the evidence leads them. This can appear to be a political bias.</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">article</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE, Brave, Google-CSE (circuit-open), Brave</span>
+    <span class="chip chip-gray">51 LLM calls</span>
+    <span class="chip chip-gray">24 searches</span>
+    <span class="chip chip-gray">3 claims · 6 boundaries · 85 evidence items · 34 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-t">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge t-color">MOSTLY-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The three claims achieve 72-75% truth ratings with moderate confidence (68-75%), indicating that core factual assertions…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value t-color">73%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:73%;background:#22543d"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">73%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:73%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:73%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">73%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The three claims achieve 72-75% truth ratings with moderate confidence (68-75%), indicating that core factual assertions about misinformation exposure, fact-checking patterns, and public perception are substantially supported by empirical research. However, the evidence base shows meaningful divergence across analytical boundaries: survey and tracking data strongly support claims about misinformation exposure and foreign influence (AC_01), while evidence on fact-checking bias (AC_03) is mixed, with 11 items showing conflicting directions within the &quot;Bias statements&quot; boundary. The overall 73% truth rating reflects that underlying facts are largely accurate, but interpretive framing may overstate certainty given the mixed evidence on organizational bias and the limited coverage of conspiracy belief surveys and fact-checking frequency analysis.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claims about fact-checking bias and misinformation patterns are mostly supported by evidence, though significant methodological limitations and boundary-specific disagreements temper confidence.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">Analysis synthesized 95 evidence items across 6 analytical boundaries, examining survey research, behavioral tracking, experimental studies, organizational databases, and cross-national comparative data.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The three claims achieve 72-75% truth ratings with moderate confidence (68-75%), indicating that core factual assertions about misinformation exposure, fact-checking patterns, and public perception are substantially supported by empirical research. However, the evidence base shows meaningful divergence across analytical boundaries: survey and tracking data strongly support claims about misinformation exposure and foreign influence (AC_01), while evidence on fact-checking bias (AC_03) is mixed, with 11 items showing conflicting directions within the &quot;Bias statements&quot; boundary. The overall 73% truth rating reflects that underlying facts are largely accurate, but interpretive framing may overstate certainty given the mixed evidence on organizational bias and the limited coverage of conspiracy belief surveys and fact-checking frequency analysis.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">The &#39;Survey + tracking&#39; boundary (CB_01) strongly supports AC_01 and AC_02 with 10 and 13 evidence items respectively, but contributes nothing to AC_03, suggesting claims about misinformation exposure are better evidenced than claims about fact-checking bias.</div>
+        <div class="disagreement-item">The &#39;Bias statements&#39; boundary (CB_13) shows mixed evidence direction for AC_03 with 11 items, indicating significant disagreement within the literature on whether systematic fact-checking bias exists, while other boundaries show clearer directional support.</div>
+        <div class="disagreement-item">The &#39;Foreign influence&#39; boundary (CB_21) supports AC_01 with 4 items but shows neutral direction for AC_02 and AC_03, suggesting foreign disinformation campaigns are relevant to some misinformation claims but not others.</div>
+        <div class="disagreement-item">The &#39;Conspiracy surveys&#39; (CB_09) and &#39;Fact-check frequency&#39; (CB_25) boundaries contribute substantially to AC_03 (5 and 7 items) but minimally to other claims, revealing that evidence on fact-checking practices is siloed from evidence on misinformation exposure.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively resolve whether fact-checking organizations exhibit systematic political bias, as the evidence within the &#39;Bias statements&#39; boundary is mixed and includes both direct organizational statements and conflicting empirical analyses. Cross-cultural generalizability remains uncertain, with conspiracy belief surveys and news perception studies concentrated in specific national contexts. The relationship between misinformation exposure and actual belief change is incompletely captured, as behavioral tracking studies measure exposure but not always cognitive or behavioral outcomes. Finally, the analysis lacks sufficient evidence on the effectiveness of different intervention strategies, with the &#39;Fact-check frequency&#39; boundary contributing only 7 items and showing neutral direction for most claims.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 3</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Facts and misinformation are not distributed equally across the political spectrum.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">72%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">75%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:72%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">72%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: potentially_misleading</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ While the claim is substantially true for U.S. contexts (72% truth), it is potentially misleading because it implies a universal pattern without geographic qualification. The evidence base is entirely U.S.-centric, yet the claim&#39;s framing (&#39;misinformation is not distributed evenly across the political spectrum&#39;) suggests a general principle. A reader might reasonably interpret this as a global or inherent phenomenon, when the evidence only supports it for specific national and platform contexts. The claim would be more accurate if qualified as &#39;in the United States&#39; or &#39;on major English-language platforms.&#39;</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Survey + tracking</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">10 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:82%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Conspiracy surveys</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">65%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:65%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_13 · Bias statements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">60%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">65%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:60%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_17 · News consumption</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:75%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_21 · Foreign influence</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">4 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:85%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_25 · Fact-check frequency</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:70%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(4 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">The advocate verdict of 78% truth with 82% confidence is reduced to 72% truth with 75% confidence after incorporating valid challenges. The self-consistency check shows perfect stability (78% across all runs), which supports maintaining reasonable confidence, but the challenges reveal significant methodological limitations. CP_AC_01_0 correctly identifies that multiple evidence items derive from the same primary studies (e.g., EV_1772205675933-934 are both from one YouTube algorithm experiment), effectively reducing the independent evidence base. This is a valid concern that warrants a modest reduction in both truth percentage and confidence. CP_AC_01_1 raises a critical gap: despite claims about global patterns and evidence of disinformation in 80+ countries, all primary data comes from U.S. contexts and English-language platforms. The absence of direct evidence from Russian, Chinese, Middle Eastern, or encrypted platforms (WhatsApp, Telegram, WeChat) is a substantial limitation for a claim with global scope. However, the cited evidence (EV_1772205931567-569) does document the existence of campaigns in these contexts, even if primary exposure/distribution data is lacking. This challenge is valid and significant, warranting a 4-point reduction in truth percentage. CP_AC_01_2 correctly notes that the apparent convergence across boundaries CB_01, CB_17, and CB_21 reflects overlapping U.S.-centric sources rather than truly independent confirmation. This is a valid methodological concern that reduces confidence by 3 points. CP_AC_01_3 identifies that no evidence directly measures misinformation production rates by political identity—all cited evidence focuses on exposure, consumption, or belief. Since the claim explicitly addresses &#39;distribution,&#39; this gap is relevant but not fatal, as distribution encompasses the documented exposure patterns. This challenge is partially valid, contributing to the reduced truth percentage. The final verdict acknowledges strong evidence for asymmetric patterns in the U.S. context (particularly exposure to fake news, algorithmic recommendations, and foreign disinformation targeting), but recognizes significant limitations in geographic scope, source diversity, and production-side measurement. The claim remains substantially supported but with important caveats about generalizability.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Valid concern. Multiple evidence items do derive from the same primary studies, reducing effective independence. The YouTube algorithm evidence (EV_1772205675933-934) comes from a single experiment, and Pew survey items (EV_1772205656534-535) are from the same longitudinal study. This inflates the apparent evidence count and warrants reduced confidence in the strength of convergence.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Highly valid and significant challenge. The claim has global implications, and evidence documents disinformation campaigns in 80+ countries, yet all primary exposure/distribution data comes from U.S. contexts and English-language platforms. The absence of direct evidence from non-Western platforms and non-English contexts is a critical gap that limits generalizability. This substantially reduces truth percentage from 78% to 72%, as the claim&#39;s scope exceeds the evidence&#39;s geographic coverage.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Valid methodological concern. The high agreement between CB_01, CB_17, and CB_21 reflects overlapping U.S.-centric sources rather than independent convergence from diverse contexts. CB_09 and CB_13 provide more neutral assessments, and their lack of strong support weakens the apparent consensus. This reduces confidence by 3 points.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Partially valid. The absence of direct production-rate measurements is a gap, as the claim addresses &#39;distribution&#39; which should encompass creation. However, the cited evidence on exposure patterns (EV_1772205656534, EV_1772205889069) and algorithmic amplification (EV_1772205675933-934) does address distribution mechanisms, even if not production origins. This contributes to the reduced truth percentage but is not a fatal flaw, as distribution asymmetries are documented even without production data.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_02</span>
+    <span class="section-badge">2 of 3</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Those who consistently follow the evidence do not automatically end up in the middle of the political spectrum.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">75%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">68%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:75%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">75%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: potentially_misleading</span>
+      <span class="chip chip-gray">Triangulation: moderate (+0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ While the claim is likely true (75% truth), it is potentially misleading because it uses &#39;following evidence consistently&#39; as if this were a clearly defined, measurable behavior, when the evidence actually relies on education level as an unvalidated proxy. A reader might interpret the claim as meaning that rigorous engagement with scientific evidence leads to non-centrist positions, when the evidence only shows that people with postgraduate degrees tend to be liberal. The causal mechanism and the validity of the proxy are both uncertain, making the claim&#39;s framing potentially misleading despite its probable truth.</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Survey + tracking</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">83%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">13 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:83%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Conspiracy surveys</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">72%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">68%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:72%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_13 · Bias statements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:75%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_17 · News consumption</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">78%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">72%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:78%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_21 · Foreign influence</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">65%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">4 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:70%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_25 · Fact-check frequency</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:80%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(4 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">The advocate verdict of 81% truth with 76% confidence is reduced to 75% truth with 68% confidence after incorporating valid challenges. The self-consistency check shows perfect stability (81% across all runs), which supports the verdict&#39;s internal coherence, but the challenges reveal critical assumptions and evidence gaps. CP_AC_02_0 raises the most significant concern: the claim relies heavily on postgraduate education as a proxy for &#39;evidence-following&#39; (EV_1772205746113-116), but this assumption is never directly validated. There is no evidence that postgraduates follow evidence more rigorously rather than simply being more liberal for socioeconomic, cultural, or selection-effect reasons. This is a fundamental assumption that, if incorrect, would substantially undermine the claim. This challenge is highly valid and warrants a 6-point reduction in truth percentage and an 8-point reduction in confidence. CP_AC_02_1 correctly identifies that all cited evidence is cross-sectional (EV_1772205728848, EV_1772205746113), making causality unproven. The claim implies a causal relationship (&#39;following evidence consistently does not lead to centrist positions&#39;), but the evidence only shows correlation. The absence of longitudinal or experimental evidence tracking individuals&#39; ideological movement in response to evidence engagement is a significant gap. This challenge is valid and contributes to reduced confidence. CP_AC_02_2 notes the absence of counter-evidence showing high evidence engagement correlating with centrist positions. While the advocate verdict acknowledges this gap, the challenge correctly points out that the absence of such evidence (e.g., from scientific or policy communities known for consensus-building) is notable. However, this is more about missing evidence than a flaw in the existing evidence, so it has limited impact on the verdict. CP_AC_02_3 identifies that supporting evidence is primarily survey-based while contradicting evidence consists of theoretical policy analysis (EV_1772205728851-852) with less empirical weight. This is a valid concern about evidence balance, though the policy theory evidence does provide important nuance about how evidence is used in practice. The final verdict acknowledges strong correlational evidence that education (as a proxy for evidence engagement) correlates with non-centrist liberal positions, but recognizes critical limitations: the proxy assumption is unvalidated, causality is unproven, and the mechanism remains unclear. The claim is more likely true than false, but with substantial uncertainty about the underlying causal relationship.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Highly valid and critical challenge. The claim&#39;s core evidence relies on postgraduate education as a proxy for &#39;evidence-following,&#39; but this assumption is never directly validated. Postgraduates may be more liberal for reasons unrelated to evidence engagement (socioeconomic status, cultural exposure, selection effects, institutional socialization). The absence of direct measures of evidence-following behavior (e.g., engagement with scientific literature, fact-checking habits, epistemic practices) is a fundamental weakness. This reduces truth percentage by 6 points (from 81% to 75%) and confidence by 8 points (from 76% to 68%).</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Valid challenge. All cited evidence is cross-sectional, making causality unproven. The claim implies that following evidence causes non-centrist positioning, but the evidence only shows correlation. The absence of longitudinal studies tracking individuals&#39; ideological shifts in response to evidence engagement, or experimental studies manipulating evidence exposure, is a significant gap. This contributes to the reduced confidence (68%), as the causal mechanism remains speculative.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Partially valid. The absence of evidence showing high evidence engagement correlating with centrist positions is notable, particularly from scientific or policy communities where consensus-building is common. However, this is more about what evidence is missing than a flaw in the existing evidence. The advocate verdict already acknowledges uncertainty about causal direction and mechanisms. This challenge reinforces the need for caution but does not warrant further adjustment beyond what CP_AC_02_0 and CP_AC_02_1 already address.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Partially valid. The supporting evidence is indeed primarily survey-based (EV_1772205746113, EV_1772205728848), while contradicting evidence consists of theoretical policy analysis (EV_1772205728851-852). However, the policy theory evidence provides important conceptual nuance about how evidence is used in practice (e.g., &#39;policymakers will not share the sense that there is a hierarchy of evidence&#39;), which is relevant even if less empirically weighted. This concern is acknowledged in the reduced confidence but does not warrant additional adjustment.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_03</span>
+    <span class="section-badge">3 of 3</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Following evidence consistently can appear to be a political bias.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val t-color">72%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">74%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:72%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">72%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: medium</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: medium</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+      
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Conspiracy surveys</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">76%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">5 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:76%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_13 · Bias statements</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">68%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">72%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">11 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:68%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_17 · News consumption</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">80%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">6 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:80%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_21 · Foreign influence</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:70%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_25 · Fact-check frequency</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">82%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">7 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:75%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Survey + tracking</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">72%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:72%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(4 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">The advocate verdict of 74% truth with 79% confidence is adjusted to 72% truth with 74% confidence after incorporating valid challenges. The self-consistency check shows perfect stability (74% across all runs), supporting the verdict&#39;s internal coherence, but the challenges reveal important limitations in source diversity and evidence type. CP_AC_03_0 correctly identifies that a large portion of supporting evidence (EV_1772205823561-565) comes from a single NPR article reporting both claims and counter-claims about fact-checking bias. This means five evidence items are actually a single-source echo, substantially reducing the effective evidence base. This is a valid concern that warrants a 2-point reduction in both truth percentage and confidence. CP_AC_03_1 notes the absence of direct experimental evidence showing that audiences perceive evidence-based approaches as biased in controlled settings. All cited evidence is survey-based (EV_1772205849971-972) or qualitative. While the claim is about perception (which surveys can measure), the absence of randomized experiments measuring perceived bias before and after exposure to fact-checks is a methodological gap. However, this challenge is less severe than it appears, because perception is inherently subjective and survey evidence is appropriate for measuring it. This challenge is partially valid and contributes to the reduced confidence. CP_AC_03_2 raises a valid concern about geographic and cultural bias: the high agreement between CB_13, CB_17, and CB_25 reflects overlapping Western-centric sources, with little independent evidence from non-Western contexts. EV_1772205798277 explicitly notes the Western bias in fact-checking organizations. This is a significant limitation for a claim that could be interpreted as universal. This challenge is valid and contributes to the reduced truth percentage and confidence. CP_AC_03_3 identifies the absence of systematic cross-country comparisons of perceived bias in evidence-based institutions in non-Western societies. The only global evidence (EV_1772205798277) addresses organizational distribution, not perception. This is a notable gap, though less critical than CP_AC_03_2, as the claim&#39;s scope is not explicitly global. The final verdict acknowledges strong evidence that evidence-based approaches are perceived as politically biased in Western contexts, particularly in the United States, with documented patterns across fact-checking (CB_13, CB_25), climate science trust (CB_17), and conspiracy belief responses (CB_09). However, the evidence base suffers from source concentration (multiple items from single articles), geographic limitation (primarily U.S. and Western Europe), and lack of experimental validation. The claim remains substantially supported but with important caveats about generalizability and the distinction between perceived bias and actual bias (as noted in EV_1772205823566, which shows high agreement between fact-checkers after adjusting for systematic differences).</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Valid concern. Five evidence items (EV_1772205823561-565) derive from a single NPR article, creating a single-source echo that inflates the apparent evidence count. This substantially reduces the effective evidence base for CB_13 (Bias statements) and weakens the overall verdict. This warrants a 2-point reduction in both truth percentage (from 74% to 72%) and confidence (from 79% to 74%).</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Partially valid. The absence of direct experimental evidence (randomized trials measuring perceived bias before/after exposure to fact-checks) is a methodological gap. However, this challenge is less severe than it appears, because the claim is about perception, which survey evidence (EV_1772205849971-972) can appropriately measure. Experimental evidence would strengthen the case but is not strictly necessary for a perception-based claim. This contributes to the reduced confidence (74%) but does not warrant further truth percentage adjustment.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Valid concern. The high agreement between CB_13, CB_17, and CB_25 reflects overlapping Western-centric sources, with little independent evidence from non-Western contexts. EV_1772205798277 explicitly documents the Western bias in fact-checking organizations. This is a significant limitation for a claim that could be interpreted as universal, though the claim&#39;s scope is not explicitly global. This contributes to the reduced truth percentage and confidence already applied via CP_AC_03_0.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Valid but less critical than CP_AC_03_2. The absence of systematic cross-country comparisons of perceived bias in non-Western societies is a notable gap. The only global evidence (EV_1772205798277) addresses organizational distribution, not perception. However, since the claim&#39;s scope is not explicitly global and the existing evidence strongly supports the claim in Western contexts, this gap does not warrant additional adjustment beyond what CP_AC_03_0 and CP_AC_03_2 already address.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_09<br><span style="font-weight:400;font-size:10px">Conspiracy surveys</span></th><th>CB_13<br><span style="font-weight:400;font-size:10px">Bias statements</span></th><th>CB_17<br><span style="font-weight:400;font-size:10px">News consumption</span></th><th>CB_21<br><span style="font-weight:400;font-size:10px">Foreign influence</span></th><th>CB_25<br><span style="font-weight:400;font-size:10px">Fact-check frequency</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">Survey + tracking</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Facts and misinformation are n</td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-mid">4</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-high">10</span></td></tr><tr><td class="claim-col">AC_02 — Those who consistently follow </td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-mid">4</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-high">13</span></td></tr><tr><td class="claim-col">AC_03 — Following evidence consistentl</td><td><span class="cell-val cell-high">5</span></td><td><span class="cell-val cell-high">11</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-zero">0</span></td><td><span class="cell-val cell-high">7</span></td><td><span class="cell-val cell-zero">0</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">Cross-cultural conspiracy belief surveys + Fact-checking effectiveness experiments + Qualitative fact-checking practice analysis + Fact-checking organization database analysis</span><span class="ba-ev-count">27 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Cross-sectional survey study examining perceived consensus among experts and laypeople as predictors of conspiracy beliefs</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Turkey</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.975</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Cross-sectional survey examining perceived consensus (expert and laypeople) as predictor of conspiracy beliefs in non-WEIRD cultural contexts; Large-scale experimental studies examining how fact-checking messages change views and cognitive biases in response to corrections; Merged: Qualitative analyses of fact-checking processes, source credibility assessment, and organizational bias patterns; Database analysis of fact-checking organizations and their global distribution patterns</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_13</span><span class="ba-name">Direct statements on fact-checking bias + Literature reviews on fact-checking bias + Political discourse and content moderation reporting + Comparative fact-checking article analysis</span><span class="ba-ev-count">11 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Direct statements from organizational leadership</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States and global</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">January 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.887</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Direct statements from platform CEOs and fact-checking organization leadership regarding bias allegations; Literature reviews synthesizing previous research on fact-checking bias, organizational practices, and criticism patterns; Merged: News reporting on political statements, positions, and content distribution patterns on social media platforms; Data-driven analysis comparing fact-checking articles across organizations to assess systematic differences and bias</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_17</span><span class="ba-name">News source consumption surveys + Cross-national qualitative news perception studies + International climate scientist trust surveys + Misinformation intervention attitude surveys</span><span class="ba-ev-count">9 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Survey asking respondents which sources they regularly get news from among major news sources</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">March 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Survey research examining which news sources different demographic and political groups regularly consume; Mixed-methods research combining surveys, interviews, and focus groups examining audience attitudes toward news fairness and impartiality across cultures; Merged: Large-scale international survey examining relationship between political ideology, education, and trust in climate scientists across nations; Representative surveys examining public attitudes toward various misinformation interventions stratified by political party</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_21</span><span class="ba-name">Foreign influence campaign exposure studies + Cross-country disinformation pattern analysis + Political ideology classification systems + Political affiliation and electoral behavior surveys</span><span class="ba-ev-count">8 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Longitudinal survey data linked to Twitter feeds quantifying exposure to foreign influence campaign accounts</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2016 U.S. presidential election</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Longitudinal studies linking survey data to social media feeds to quantify exposure to foreign disinformation campaigns; Cross-country narrative analysis and literature synthesis examining political disinformation campaigns globally; Merged: Encyclopedic and historical analyses defining and tracing the development of political ideology classification systems; Survey data and political analysis examining self-identified political affiliation and electoral strategy</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_25</span><span class="ba-name">Quantitative fact-checking frequency analysis + Fact-checking protocol implementation studies + Large-scale fact-check content analysis + Media bias rating methodology analysis</span><span class="ba-ev-count">7 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Quantitative analysis of fact-checking frequency with controls for multiple factors including partisanship, prominence, and news site quality</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2018-2021</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.962</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Quantitative analysis of fact-checking frequency across political figures controlling for prominence, partisanship, and media coverage; Mixed-methods studies combining quantitative outcome analysis with qualitative interviews to investigate verification protocol implementation; Merged: Empirical analysis of tens of thousands of fact-checked statements using content analysis and regression modeling to examine veracity patterns; Literature review and analysis of media bias rating methodologies and psychological research on perception bias</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Longitudinal survey with behavioral tracking + Experimental belief formation studies + Interactive game-based misinformation studies + Platform algorithm analysis + National political ideology surveys + Policy theory and evidence-based policymaking analysis + Climate politics surveys + Consensus messaging experiments</span><span class="ba-ev-count">23 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Longitudinal survey data combined with digital behavior tracking</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2016-2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.906</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Merged: Studies combining survey responses with actual online behavior tracking (browser history, social media feeds) to measure misinformation exposure and its effects; Controlled experiments examining psychological mechanisms of belief adoption and updating, including social prevalence cues and Bayesian frameworks; Merged: Studies using gamified social media simulations to measure user engagement with misinformation and the effects of interface design elements; Controlled experiments examining how social media platform recommendation algorithms influence content exposure and political polarization; Merged: Merged: Large-scale national telephone surveys measuring ideological consistency and polarization using standardized political values questions over time; Systematic reviews and theoretical analyses of how evidence is used (or not used) in health and public policy contexts; Merged: Survey research examining political divides on climate science trust, consensus perception, and policy preferences stratified by political ideology; Experimental and correlational studies testing the effects of scientific consensus messaging on beliefs and attitudes, including reanalyses</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">85 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(41 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205656534</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Exposure to fake news sources was associated with lower trust in mainstream media across party lines, but for moderates and conservatives, exposure to fake news predicted higher confidence in political institutions, while this pattern was not observed for liberals who were biased against such content and less likely to believe its claims.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-in-action-fake-news-exposure-is-linked-to-lower-trust-in-media-higher-trust-in-government-when-your-side-is-in-power/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewMisinformation in action: Fake news exposure is linked to lower trust in media, higher trust in government when your side is in power | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205656535</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The mostly right-leaning fake news accessed by moderate-to-conservative respondents could strengthen their trust in a Republican government, demonstrating differential effects of misinformation exposure by political orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-in-action-fake-news-exposure-is-linked-to-lower-trust-in-media-higher-trust-in-government-when-your-side-is-in-power/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewMisinformation in action: Fake news exposure is linked to lower trust in media, higher trust in government when your side is in power | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205656538</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">False news spreads farther, faster, deeper, and more broadly than true news online, due in part to the formation of echo chambers, creating an environment where people encounter high social engagement metrics accompanying false claims.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9692052/" target="_blank" rel="noopener noreferrer">Social Prevalence Is Rationally Integrated in Belief Updating - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205675933</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">YouTube&#39;s recommendation algorithm pulls users away from Far Right content stronger than from Far Left content, demonstrating asymmetric political bias in algorithmic recommendations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10433241/" target="_blank" rel="noopener noreferrer">YouTube’s recommendation algorithm is left-leaning in the United States - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205675934</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The recommendation algorithm skews left even when the user does not have a watch history, indicating inherent political bias in YouTube&#39;s algorithmic design.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10433241/" target="_blank" rel="noopener noreferrer">YouTube’s recommendation algorithm is left-leaning in the United States - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205728848</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The overall share of Americans who express consistently conservative or consistently liberal opinions has doubled over the past two decades from 10% to 21%, while the center has shrunk from 49% in 1994/2004 to 39% currently.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">Political Polarization in the American Public</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205728849</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The rise of ideological uniformity has been much more pronounced among those who are the most politically active. Today, almost four-in-ten (38%) politically engaged Democrats are consistent liberals, up from just 8% in 1994. Among politically engaged Republicans, 33% express consistently conservative views, up from 23% in 1994.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">Political Polarization in the American Public</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205728851</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Policymakers will not share the sense that there is a hierarchy of evidence, and policymakers use many forms of evidence in less rigid ways than scientists assume. The production of evidence is also an inherently value-driven process, and policymaking should be understood as translating competing societal values and preferences into policy solutions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1186/s12961-017-0192-x" target="_blank" rel="noopener noreferrer">Evidence-based policymaking is not like evidence-based medicine, so how far should you go to bridge the divide between evidence and policy? | Health Research Policy and Systems | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205728852</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Effective actors combine evidence with manipulative emotional appeals to influence the policy agenda, and successful engagement in evidence-based policymaking requires pragmatism, combining scientific evidence with governance principles and persuasion to translate complex evidence into simple stories.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1186/s12961-017-0192-x" target="_blank" rel="noopener noreferrer">Evidence-based policymaking is not like evidence-based medicine, so how far should you go to bridge the divide between evidence and policy? | Health Research Policy and Systems | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205746113</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Among adults with postgraduate experience, 54% have either consistently liberal or mostly liberal political values, while only 12% have consistently or mostly conservative values, and 22% express a mix of liberal and conservative opinions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2016/04/26/a-wider-ideological-gap-between-more-and-less-educated-adults/" target="_blank" rel="noopener noreferrer">Ideological Gap Widens Between More, Less Educated Adults</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205746114</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Currently, about a third of those with postgraduate experience (31%) give down-the-line liberal responses across 10 political values items, up from 19% in 2004 and 7% in 1994, demonstrating that highly educated adults increasingly take consistently ideological positions rather than mixed positions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2016/04/26/a-wider-ideological-gap-between-more-and-less-educated-adults/" target="_blank" rel="noopener noreferrer">Ideological Gap Widens Between More, Less Educated Adults</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205746115</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Among Democrats with postgraduate experience, 54% express consistently liberal views, indicating that those with higher education who follow evidence-based positions tend toward one end of the ideological spectrum rather than the middle.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2016/04/26/a-wider-ideological-gap-between-more-and-less-educated-adults/" target="_blank" rel="noopener noreferrer">Ideological Gap Widens Between More, Less Educated Adults</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205746116</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Only 22% of those with postgraduate experience express a mix of liberal and conservative opinions, compared to 48% of those with a high school degree or less education, showing that more educated individuals are less likely to hold middle-ground ideological positions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/politics/2016/04/26/a-wider-ideological-gap-between-more-and-less-educated-adults/" target="_blank" rel="noopener noreferrer">Ideological Gap Widens Between More, Less Educated Adults</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205776402</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Liberal Democrats place significantly more faith in climate scientists (55% say climate research reflects best available evidence most of the time) compared to conservative Republicans (9%), and perceive widespread scientific consensus on climate change causes (55% vs. 16%), while conservative Republicans are more likely to attribute climate research findings to scientists&#39; desire for career advancement (57%) or political leanings (54%).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/science/2016/10/04/the-politics-of-climate/" target="_blank" rel="noopener noreferrer">The Politics of Climate Change in the United States</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205776403</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">On climate change policy actions, liberal Democrats and conservative Republicans show stark divergences: 76% of liberal Democrats vs. 29% of conservative Republicans say power plant emission restrictions can make a big difference (47-point gap); 71% vs. 27% on international carbon emission agreements (44-point gap); 67% vs. 27% on fuel efficiency standards (40-point gap); 67% vs. 23% on corporate tax incentives (44-point gap); 56% vs. 23% on hybrid/electric vehicles (33-point gap); 52% vs. 21% on individual carbon footprint reduction (31-point gap).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/science/2016/10/04/the-politics-of-climate/" target="_blank" rel="noopener noreferrer">The Politics of Climate Change in the United States</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205798274</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Disconfirmation bias or reluctance to change views was observed when users saw a definite yet opposing tag like &#39;Mostly True&#39; to a claim they initially perceived negatively, demonstrating that fact-checking does not always produce the desired effect.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-presence-of-unexpected-biases-in-online-fact-checking/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewThe presence of unexpected biases in online fact-checking | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205798275</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A fact-checker&#39;s assessment of the credibility of a news source may vary based on individual experiences, political leanings, ideological beliefs, and in some cases geographical location, making the assessment of source credibility subjective, intuitive, and susceptible to bias.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://techpolicy.press/the-fairness-of-the-factchecking-and-its-impact-on-social-media" target="_blank" rel="noopener noreferrer">The Fairness of Fact-checking and Its Impact on Social Media | TechPolicy.Press</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205798276</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Perceptions of source credibility differ among fact-checkers, and variations in accuracy ratings can be attributed to organizational or individual biases, impacting the effectiveness of fact-checking work.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://techpolicy.press/the-fairness-of-the-factchecking-and-its-impact-on-social-media" target="_blank" rel="noopener noreferrer">The Fairness of Fact-checking and Its Impact on Social Media | TechPolicy.Press</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823560</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fact checkers have been accused of political bias, with Meta CEO Mark Zuckerberg stating that &#39;the fact checkers have just been too politically biased and have destroyed more trust than they&#39;ve created, especially in the U.S.&#39;</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.npr.org/2025/01/07/nx-s1-5251151/meta-fact-checking-mark-zuckerberg-trump" target="_blank" rel="noopener noreferrer">Meta to end fact-checking program on Facebook and Instagram : NPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823561</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Concerns have been raised about the potential uncertainty that may arise among individuals if different fact checkers provide conflicting assessments for the same claim, and previous studies showed conflicting results regarding fact-checker consistency, with some finding significant discrepancies among fact checkers in their assessments of statements on climate change, racism, and national debt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/fact-checking-fact-checkers-a-data-driven-approach/" target="_blank" rel="noopener noreferrer">HKS Misinformation Review“Fact-checking” fact checkers: A data-driven approach | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823562</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fact-checking organizations can invite criticism due to the subjective choice of claims to verify and the inconsistency in the evaluation process, with concerns raised about potential uncertainty if different fact checkers provide conflicting assessments for the same claim.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/fact-checking-fact-checkers-a-data-driven-approach/" target="_blank" rel="noopener noreferrer">HKS Misinformation Review“Fact-checking” fact checkers: A data-driven approach | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205849969</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Republicans and independents who lean Republican get news from a fairly concentrated group of sources, with Fox News at the top (57% of Republicans), while Democrats turn to a wider range of sources. A majority of Republicans (57%) say they regularly get news from Fox News, at least double the share who say they turn to any other news source.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.pewresearch.org/journalism/2025/06/10/the-political-gap-in-americans-news-sources/" target="_blank" rel="noopener noreferrer">Which News Sources Republicans and Democrats Use and Trust: Report | Pew Research Center</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205849971</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Perceptions around what is fair, accurate, and impartial in news coverage are often subjective and shaped by broader preconceptions many hold about what it is that journalists do, making what increases trust for some groups likely to undermine it for others.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="http://reutersinstitute.politics.ox.ac.uk/strategies-building-trust-news-what-public-say-they-want-across-four-countries" target="_blank" rel="noopener noreferrer">Strategies for building trust in news: What the public say they want across four countries | Reuters Institute for the Study of Journalism</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205849973</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Political ideology significantly influences trust in climate scientists, with right-leaning individuals showing lower trust in 22 out of 26 countries studied, while the pattern reversed in China and Indonesia where left-leaning respondents were more skeptical.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.publichealth.columbia.edu/news/global-study-finds-trust-climate-scientists-split-across-political-spectrum" target="_blank" rel="noopener noreferrer">Global Study Finds Trust of Climate Scientists Split Across Political Spectrum | Columbia University Mailman School of Public Health</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205849974</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The link between political views and distrust of climate scientists was strongest in wealthier, more democratic countries with high levels of greenhouse gas emissions, suggesting that as nations develop, some people may see science as less essential to progress, making them more skeptical.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.publichealth.columbia.edu/news/global-study-finds-trust-climate-scientists-split-across-political-spectrum" target="_blank" rel="noopener noreferrer">Global Study Finds Trust of Climate Scientists Split Across Political Spectrum | Columbia University Mailman School of Public Health</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205849975</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Some preliminary evidence suggests that the link between political ideology and distrust of climate scientists may be slightly stronger among more educated individuals versus those with less education, as higher education may enable people to selectively interpret scientific information through an ideological lens.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.publichealth.columbia.edu/news/global-study-finds-trust-climate-scientists-split-across-political-spectrum" target="_blank" rel="noopener noreferrer">Global Study Finds Trust of Climate Scientists Split Across Political Spectrum | Columbia University Mailman School of Public Health</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205875816</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Interventions trigger polarized responses between Republicans and Democrats with roughly a standard deviation gap in attitudes toward misinformation interventions on social media platforms.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-interventions-are-common-divisive-and-poorly-understood/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewMisinformation interventions are common, divisive, and poorly understood | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205875817</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Support for misinformation interventions differs considerably by political party, with Republicans and Democrats showing divergent attitudes toward platform responses to misinformation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-interventions-are-common-divisive-and-poorly-understood/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewMisinformation interventions are common, divisive, and poorly understood | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205889069</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Exposure to Russian disinformation accounts on Twitter was heavily concentrated among users who strongly identified as Republicans, with only 1% of users accounting for 70% of exposures.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nature.com/articles/s41467-022-35576-9" target="_blank" rel="noopener noreferrer">Exposure to the Russian Internet Research Agency foreign influence campaign on Twitter in the 2016 US election and its relationship to attitudes and voting behavior | Nature CommunicationsClose bannerClose banner</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205931567</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Politics remains a favored breeding ground for disinformation and hate speech, with recent reports revealing rampant misuse of platforms by governments and political parties in over eighty countries engaged in political disinformation campaigns.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10106894/" target="_blank" rel="noopener noreferrer">The Polarizing Impact of Political Disinformation and Hate Speech: A Cross-country Configural Narrative - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205931568</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fake news as a term gained prominence during the U.S. presidential elections of 2016, and the issue has persisted as a grave threat to the societal fabric, with politics remaining a favored breeding ground for disinformation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10106894/" target="_blank" rel="noopener noreferrer">The Polarizing Impact of Political Disinformation and Hate Speech: A Cross-country Configural Narrative - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205931569</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Social media and online platforms have played a pivotal role in amplifying the spread of disinformation and hate speech, with governments and political parties in over eighty countries documented as engaging in political disinformation campaigns.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10106894/" target="_blank" rel="noopener noreferrer">The Polarizing Impact of Political Disinformation and Hate Speech: A Cross-country Configural Narrative - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205955413</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Center-leaning politicians and parties usually seek compromise between conflicting political extremes and take middle-of-the-road stances. However, this centripetal approach entails risk: candidates advocating centrist policies to gain wider voter appeal risk demobilizing potential voters and losing support from ideologically minded partisans of their own party.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/centrism" target="_blank" rel="noopener noreferrer">Centrism | Encyclopedia.com</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205979893</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Republican elected officials are not fact-checked more often than Democratic officials; politician prominence predicts fact-checking, but partisanship does not.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11732390/" target="_blank" rel="noopener noreferrer">Fact-checks focus on famous politicians, not partisans - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205979894</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fact-checks overwhelmingly focus on highly prominent members (political leaders and those more frequently covered in the media), narrowing the information available to support democratic accountability by the electorate.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11732390/" target="_blank" rel="noopener noreferrer">Fact-checks focus on famous politicians, not partisans - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205979895</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Standard verification protocols in fact-checking are so loosely implemented that fact-checks reflect a set of journalistic decisions rather than bias in the statistical sense.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://philarchive.org/archive/TEICWD" target="_blank" rel="noopener noreferrer">TEICWD</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205993926</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fact-checked false statements are 88.1% more likely to mention Democrats but 26.5% less likely to mention Republicans compared to true fact-checked statements, indicating a partisan asymmetry in what statements fact-checkers select for fact-checking.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://arxiv.org/html/2310.08821v2" target="_blank" rel="noopener noreferrer">Is Fact-Checking Politically Neutral? Asymmetries in How U.S. Fact-Checking Organizations Pick Up False Statements Mentioning Political Elites</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205993927</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Critics argue that the selection of claims by fact-checkers can reflect political preferences, potentially skewing results in favor of certain political identities (typically towards the political left), which can erode public trust in fact-checking organizations if people perceive them as biased.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://arxiv.org/html/2310.08821v2" target="_blank" rel="noopener noreferrer">Is Fact-Checking Politically Neutral? Asymmetries in How U.S. Fact-Checking Organizations Pick Up False Statements Mentioning Political Elites</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205993928</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Fact-checked false statements are on average 20% more likely to mention political elites than true fact-checked statements, suggesting that fact-checking organizations may be selecting statements for fact-checking in a way that disproportionately targets politicized content.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://arxiv.org/html/2310.08821v2" target="_blank" rel="noopener noreferrer">Is Fact-Checking Politically Neutral? Asymmetries in How U.S. Fact-Checking Organizations Pick Up False Statements Mentioning Political Elites</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772206007521</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">There is no one exact methodology to measure and rate the partisan bias of news sources, and ratings are often based on surveys of personal perceptions which may be impacted by the hostile media effect, wherein partisans perceive media coverage as unfairly biased against their side.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://guides.lib.umich.edu/c.php?g=637508&amp;p=4462444" target="_blank" rel="noopener noreferrer">Where do news sources fall on the political bias spectrum? - &quot;Fake News,&quot; Lies, and Misinformation - Research Guides at University of Michigan Library</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772206007523</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Much of the ratings for news sources are based on surveys of personal perceptions, which may be impacted by the hostile media effect where partisans perceive media coverage as unfairly biased against their side.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://guides.lib.umich.edu/c.php?g=637508&amp;p=4462444" target="_blank" rel="noopener noreferrer">Where do news sources fall on the political bias spectrum? - &quot;Fake News,&quot; Lies, and Misinformation - Research Guides at University of Michigan Library</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(3 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823564</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Research has shown that Republicans circulated more unfounded claims, and one study found that far right content was more engaging on Facebook, with far-right sources known for spreading misinformation significantly outperforming non-misinformation sources.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.npr.org/2025/01/07/nx-s1-5251151/meta-fact-checking-mark-zuckerberg-trump" target="_blank" rel="noopener noreferrer">Meta to end fact-checking program on Facebook and Instagram : NPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823565</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Fact checkers who have worked with Meta pushed back against Zuckerberg&#39;s accusation of bias, with Bill Adair, co-founder of the International Fact Checking Network, stating that fact checkers in Meta&#39;s program were signatories of a code of principles requiring transparency and nonpartisanship.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.npr.org/2025/01/07/nx-s1-5251151/meta-fact-checking-mark-zuckerberg-trump" target="_blank" rel="noopener noreferrer">Meta to end fact-checking program on Facebook and Instagram : NPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823566</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">After adjusting for systematic discrepancies in rating granularity, focus differences, subtle claim variations, and timing differences, Snopes and PolitiFact showed high agreement on fact-checking verdicts, with only one conflicting verdict among 749 matching claims.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/fact-checking-fact-checkers-a-data-driven-approach/" target="_blank" rel="noopener noreferrer">HKS Misinformation Review“Fact-checking” fact checkers: A data-driven approach | HKS Misinformation Review</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(41 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Russian IRA accounts engaged with several distinct communities of authentic users on Twitter—primarily conservatives, progressives, and Black people—with only minimal overlap, and authentic users primarily engaged with IRA accounts that shared their own ideological and/or racial identities.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">False content was found among the ranks of the most widely-discussed tweets, especially on the right, with the IRA trafficking in falsehoods alongside factual content and extreme opinions.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The IRA presented conservatives with outrages committed by liberals, immigrants, CNN, and George Soros; liberals witnessed travesties of the Trump administration, Republicans, and evangelical Christians; and Black users were confronted with racism, often perpetrated by white police officers—demonstrating differentiated disinformation strategies across political groups.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Political content attracts far more engagement than non-political content and appears crafted to exploit intergroup distrust and enmity, with the IRA accounts and content that attracted the most attention being explicitly political in nature.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Individuals who identify as members of targeted groups ran a disproportionate risk of exposure to IRA disinformation over the study time period, with the 2020 election potentially putting them in a similar position.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/russian-disinformation-campaigns-on-twitter/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People are more likely to believe content they read or listen to that reflects the same emotions—anger, sadness, or anxiety—that they presently feel, and the more familiar people are with information they remember, including lies, the more likely they are to believe it is true.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People view news reporting today as biased and polarized, and they are especially distrustful of news circulated via social media, with trust in news institutions declining as the country becomes more fractured.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Some scholars see the media world as conservative vs. liberal with no middle ground, while others position news outlets in surprising places, indicating that how people perceive political orientation of media sources varies widely.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Algorithmic knowledge varied across different sociodemographic factors including political ideology, with uneven distribution within countries. In the United States, political ideology was identified as one of the primary predictors of algorithmic knowledge.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Individuals with greater algorithmic knowledge were more inclined to take actions against misinformation, suggesting that understanding of how information is filtered and presented varies across populations and has real-world consequences for misinformation susceptibility.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Algorithmic knowledge was unevenly distributed across education level, ethnicity, gender, and political ideology within countries, with specific predictors varying by country context.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Social media algorithms are designed to filter and present online content in ways that optimize user engagement, often resulting in the dissemination of misinformation that aligns with users&#39; biases and beliefs, creating unequal exposure to factual versus false information.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-algorithmic-knowledge-gap-within-and-between-countries-implications-for-combatting-misinformation/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Confirmation bias is the tendency to search for, interpret, favor and recall information in a way that confirms or supports one&#39;s prior beliefs or values. People display this bias when they select information that supports their views, ignoring contrary information or when they interpret ambiguous evidence as supporting their existing attitudes.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Confirmation_bias" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Confirmation_bias</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Flawed decisions due to confirmation bias have been found in a wide range of political, organizational, financial and scientific contexts. These biases contribute to overconfidence in personal beliefs and can maintain or strengthen beliefs in the face of contrary evidence.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Confirmation_bias" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Confirmation_bias</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Confirmation bias produces systematic errors in scientific research based on inductive reasoning (the gradual accumulation of supportive evidence). In social media, confirmation bias is amplified by the use of filter bubbles and algorithmic editing, which display to individuals only information they are likely to agree with, while excluding opposing views.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Confirmation_bias" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Confirmation_bias</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People tend to test hypotheses in a one-sided way, by searching for evidence consistent with their current hypothesis. Rather than searching through all the relevant evidence, they phrase questions to receive an affirmative answer that supports their theory.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Confirmation_bias" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Confirmation_bias</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Male voters regard female candidates as less persuasive than male candidates despite agreeing on their trustworthiness and expertise. Female candidates are subject to sex biases in voter reasoning when evaluating political candidate statements.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/politics-and-gender/article/voter-reasoning-bias-when-evaluating-statements-from-female-and-male-political-candidates/A5FA5DE5150B92CC7198A6C456FD3967" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/politics-and-gender/article/voter-reasoning-bias-when-evaluating-statements-from-female-and-male-political-candidates/A5FA5DE5150B92CC7198A6C456FD3967</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Female candidates are affected more adversely if they are perceived as lacking in trustworthiness, while male candidates are affected more negatively if they are perceived as lacking in expertise. This differential impact suggests that voters apply different evaluative standards based on candidate gender.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/politics-and-gender/article/voter-reasoning-bias-when-evaluating-statements-from-female-and-male-political-candidates/A5FA5DE5150B92CC7198A6C456FD3967" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/politics-and-gender/article/voter-reasoning-bias-when-evaluating-statements-from-female-and-male-political-candidates/A5FA5DE5150B92CC7198A6C456FD3967</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Algorithms determine which content news consumers get to see, and the workings of these algorithms are not transparent.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.accc.gov.au/system/files/ACCC+commissioned+report+-+The+impact+of+digital+platforms+on+news+and+journalistic+content,+Centre+for+Media+Transition+(2).pdf" target="_blank" rel="noopener noreferrer">https://www.accc.gov.au/system/files/ACCC+commissioned+report+-+The+impact+of+digital+platforms+on+news+and+journalistic+content,+Centre+for+Media+Transition+(2).pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">To satisfy the workings of digital platforms, news producers create content that is more emotive and shareable, which may influence the type of evidence and narratives presented to audiences.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.accc.gov.au/system/files/ACCC+commissioned+report+-+The+impact+of+digital+platforms+on+news+and+journalistic+content,+Centre+for+Media+Transition+(2).pdf" target="_blank" rel="noopener noreferrer">https://www.accc.gov.au/system/files/ACCC+commissioned+report+-+The+impact+of+digital+platforms+on+news+and+journalistic+content,+Centre+for+Media+Transition+(2).pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The evidence on filter bubbles and echo chambers, and on their impacts, is inconclusive.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.accc.gov.au/system/files/ACCC+commissioned+report+-+The+impact+of+digital+platforms+on+news+and+journalistic+content,+Centre+for+Media+Transition+(2).pdf" target="_blank" rel="noopener noreferrer">https://www.accc.gov.au/system/files/ACCC+commissioned+report+-+The+impact+of+digital+platforms+on+news+and+journalistic+content,+Centre+for+Media+Transition+(2).pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205656536</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Increases in a person&#39;s estimated prevalence of a belief led to increased endorsement of said belief, with belief endorsement rising when impressions of the belief&#39;s prevalence were increased and when initial beliefs were uncertain, as predicted by a Bayesian cue integration framework.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9692052/" target="_blank" rel="noopener noreferrer">Social Prevalence Is Rationally Integrated in Belief Updating - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205656537</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Exposure to social engagement metrics (likes and shares) increases vulnerability to misinformation, with higher engagement metrics making people more prone to sharing questionable content and less likely to fact-check it, based on analysis of over 8,500 unique players and approximately 120,000 articles in the Fakey game.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/exposure-to-social-engagement-metrics-increases-vulnerability-to-misinformation/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewExposure to social engagement metrics increases vulnerability to misinformation | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205675935</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People are more likely to believe misinformation and disinformation that reflects their current emotional state (anger, sadness, anxiety), suggesting differential susceptibility based on emotional alignment with content.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">Fake News, Big Lies: How Did We Get Here and Where Are We Going?: Institute for Policy Research - Northwestern University</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205675936</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Repeated false information, such as claims about election fraud, can lead to building memories for the information, with repeated information being easier to retrieve and thus perceived as more true.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">Fake News, Big Lies: How Did We Get Here and Where Are We Going?: Institute for Policy Research - Northwestern University</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205675937</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">25% of adults in the United States regularly consume political content via YouTube, with 70% of videos watched on YouTube delivered through the recommendation algorithm.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10433241/" target="_blank" rel="noopener noreferrer">YouTube’s recommendation algorithm is left-leaning in the United States - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205728853</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Evidence-based policymaking prioritizes rigorous research findings, data, analytics, and evaluation above anecdotes, ideology, marketing, and inertia, and policymakers at different points on the ideological spectrum can agree that services government provides should work well through evidence-based approaches.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.urban.org/sites/default/files/publication/99739/principles_of_evidence-based_policymaking.pdf" target="_blank" rel="noopener noreferrer">principles of evidence based policymaking</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205776404</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Experimental evidence from consensus messaging studies shows that while perceived scientific consensus and vaccine attitudes are strongly correlated, consensus messaging had non-significant effects on actual vaccine attitudes or intentions; political ideology did not moderate the relationship between perceived consensus and vaccine attitudes.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0296066" target="_blank" rel="noopener noreferrer">Strong correlational but no causal evidence on the link between the perception of scientific consensus and support for vaccination | PLOS One</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205776405</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Reanalysis of the van der Linden et al. (2015) consensus messaging study reveals that on key outcome measures (belief in climate change and support for mitigation), both treatment and control groups revised their assessments by equal amounts, with differences between groups being trivial and statistically non-significant, contradicting the original study&#39;s claims about consensus messaging effectiveness.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://jcom.sissa.it/article/pubid/JCOM_1605_2017_A03/" target="_blank" rel="noopener noreferrer">Kahan | The “Gateway Belief” illusion: reanalyzing the results of a scientific-consensus messaging study |
+    Journal of Science Communication</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205776406</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In Turkey (a non-WEIRD culture), conspiracy believers exhibited higher tendency to overestimate consensus among both experts and laypeople regarding baseless conspiracy theories, with perceived expert consensus having stronger association with conspiracy beliefs than perceived laypeople consensus; these patterns held across different conspiracy theories.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cambridge.org/core/journals/judgment-and-decision-making/article/perceived-expert-and-laypeople-consensus-predict-belief-in-local-conspiracy-theories-in-a-nonweird-culture-evidence-from-turkey/F8A7CD902D3A5DFDDBCC73B82002D1B3" target="_blank" rel="noopener noreferrer">Perceived expert and laypeople consensus predict belief in local conspiracy theories in a non-WEIRD culture: Evidence from Turkey | Judgment and Decision Making | Cambridge Core Logo for Cambridge Core from Cambridge University Press. Click to return to homepage.  Logo for Cambridge Core from Cambridge University Press. Click to return to homepage.</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205798273</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fact-checking messages lead participants to choose less extreme views, irrespective of the message type, but the effect varies by several factors including initial perception of the claim and the wording of fact-checking messages.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/the-presence-of-unexpected-biases-in-online-fact-checking/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewThe presence of unexpected biases in online fact-checking | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205798277</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The majority of International Fact-Checking Network (IFCN) signatories are based in the West, with only about seven out of 116 active signatories based in Africa and nine in South America, and over 50% of fact-checking organizations in the Duke Reporter&#39;s Lab database are based in Western countries.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://techpolicy.press/the-fairness-of-the-factchecking-and-its-impact-on-social-media" target="_blank" rel="noopener noreferrer">The Fairness of Fact-checking and Its Impact on Social Media | TechPolicy.Press</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205823563</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Republicans have long accused Silicon Valley of harboring anti-conservative bias, and the 2020 election and COVID pandemic accelerated a backlash among conservatives who cast content moderation as a form of censorship.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_primary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.npr.org/2025/01/07/nx-s1-5251151/meta-fact-checking-mark-zuckerberg-trump" target="_blank" rel="noopener noreferrer">Meta to end fact-checking program on Facebook and Instagram : NPR</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205849972</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The most cynical and distrusting segments of the public tend to view all news outlets through a similarly negative lens, minimally differentiating between sources regardless of what steps to build trust they might take.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="http://reutersinstitute.politics.ox.ac.uk/strategies-building-trust-news-what-public-say-they-want-across-four-countries" target="_blank" rel="noopener noreferrer">Strategies for building trust in news: What the public say they want across four countries | Reuters Institute for the Study of Journalism</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205875818</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A common narrative in the United States suggests that partisanship is the sole driver of public opinion about whether social media platforms are doing enough or too much to address misinformation, with Republicans opposing interventions and attributing bias, while Democrats support interventions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-interventions-are-common-divisive-and-poorly-understood/" target="_blank" rel="noopener noreferrer">HKS Misinformation ReviewMisinformation interventions are common, divisive, and poorly understood | HKS Misinformation Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205955410</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Centrism is defined as a tendency to avoid political extremes by taking an ideologically intermediate position, and centrists promote moderate policies by finding a middle ground between left and right. However, centrism is a relational concept where positions considered centrist depend on the specific policies of competing ideological poles.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/centrism" target="_blank" rel="noopener noreferrer">Centrism | Encyclopedia.com</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205955411</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The left-right political spectrum is linked to the rise of three main ideologies—conservatism, liberalism, and socialism—each with distinct positions. Liberalism situates itself in the center claiming to be moderate and centrist, while socialists believe social progress may require radical social change or revolution, and conservatives resist progressive social change.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/centrism" target="_blank" rel="noopener noreferrer">Centrism | Encyclopedia.com</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205955412</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">According to The Economist (April 2005), most Americans have fairly centrist views on various issues, and more people identify themselves as independents (39%) than as Democrats (31%) or Republicans (30%), suggesting a large section of the politically active population identifies as centrist.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">news_secondary</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/centrism" target="_blank" rel="noopener noreferrer">Centrism | Encyclopedia.com</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205979896</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Frequent allegations exist that political biases within fact-checking organizations in the United States lead them to be more likely to scrutinize the statements of Republicans relative to Democrats, though fact-checking organization leaders dispute these claims.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11732390/" target="_blank" rel="noopener noreferrer">Fact-checks focus on famous politicians, not partisans - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205979897</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fact-checkers have been frequently criticized with accusations of political bias (better treatment of liberal/left-wing parties), and scholars have investigated whether fact-checking organizations display signs of political bias.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://philarchive.org/archive/TEICWD" target="_blank" rel="noopener noreferrer">TEICWD</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772205993929</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The necessity of fact-checkers choosing specific claims to fact-check due to limited resources can invite criticism due to the subjective nature of the decision, which is problematic as the perception of bias and subjectivity can erode public trust in fact-checking organizations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://arxiv.org/html/2310.08821v2" target="_blank" rel="noopener noreferrer">Is Fact-Checking Politically Neutral? Asymmetries in How U.S. Fact-Checking Organizations Pick Up False Statements Mentioning Political Elites</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">34 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Countering Disinformation Effectively: An Evidence-Based Policy Guide | Carnegie Endowment for International Peace</span></div>
+        <div class="source-url"><a href="https://carnegieendowment.org/research/2024/01/countering-disinformation-effectively-an-evidence-based-policy-guide" target="_blank" rel="noopener noreferrer">https://carnegieendowment.org/research/2024/01/countering-disinformation-effectively-an-evidence-based-policy-guide</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation prevalence political ideology engagement metrics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">HKS Misinformation ReviewExposure to social engagement metrics increases vulnerability to misinformation | HKS Misinformation Review</span></div>
+        <div class="source-url"><a href="https://misinforeview.hks.harvard.edu/article/exposure-to-social-engagement-metrics-increases-vulnerability-to-misinformation/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/exposure-to-social-engagement-metrics-increases-vulnerability-to-misinformation/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation prevalence political ideology engagement metrics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Social Prevalence Is Rationally Integrated in Belief Updating - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9692052/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC9692052/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation prevalence political ideology engagement metrics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">HKS Misinformation ReviewMisinformation in action: Fake news exposure is linked to lower trust in media, higher trust in government when your side is in power | HKS Misinformation Review</span></div>
+        <div class="source-url"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-in-action-fake-news-exposure-is-linked-to-lower-trust-in-media-higher-trust-in-government-when-your-side-is-in-power/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/misinformation-in-action-fake-news-exposure-is-linked-to-lower-trust-in-media-higher-trust-in-government-when-your-side-is-in-power/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation prevalence political ideology engagement metrics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Fake News, Big Lies: How Did We Get Here and Where Are We Going?: Institute for Policy Research - Northwestern University</span></div>
+        <div class="source-url"><a href="https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html" target="_blank" rel="noopener noreferrer">https://www.ipr.northwestern.edu/news/2022/fake-news-big-lies.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation equally distributed across political spectrum study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">YouTube’s recommendation algorithm is left-leaning in the United States - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10433241/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC10433241/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation equally distributed across political spectrum study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">UBC</span></div>
+        <div class="source-url"><a href="https://sppga.ubc.ca/news/fake-news-still-making-headlines-learning-online-misinformation-works/" target="_blank" rel="noopener noreferrer">https://sppga.ubc.ca/news/fake-news-still-making-headlines-learning-online-misinformation-works/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation equally distributed across political spectrum study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Political Polarization in the American Public</span></div>
+        <div class="source-url"><a href="https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2014/06/12/political-polarization-in-the-american-public/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidence-based policy positions political spectrum distribution</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Parkhurst The%20Politics%20of%20Evidence</span></div>
+        <div class="source-url"><a href="https://eprints.lse.ac.uk/68604/1/Parkhurst_The%20Politics%20of%20Evidence.pdf" target="_blank" rel="noopener noreferrer">https://eprints.lse.ac.uk/68604/1/Parkhurst_The%20Politics%20of%20Evidence.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidence-based policy positions political spectrum distribution</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Evidence-based policymaking is not like evidence-based medicine, so how far should you go to bridge the divide between evidence and policy? | Health Research Policy and Systems | Springer Nature Link</span></div>
+        <div class="source-url"><a href="https://link.springer.com/article/10.1186/s12961-017-0192-x" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1186/s12961-017-0192-x</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidence-based policy positions political spectrum distribution</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">principles of evidence based policymaking</span></div>
+        <div class="source-url"><a href="https://www.urban.org/sites/default/files/publication/99739/principles_of_evidence-based_policymaking.pdf" target="_blank" rel="noopener noreferrer">https://www.urban.org/sites/default/files/publication/99739/principles_of_evidence-based_policymaking.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidence-based policy positions political spectrum distribution</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Ideological Gap Widens Between More, Less Educated Adults</span></div>
+        <div class="source-url"><a href="https://www.pewresearch.org/politics/2016/04/26/a-wider-ideological-gap-between-more-and-less-educated-adults/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/politics/2016/04/26/a-wider-ideological-gap-between-more-and-less-educated-adults/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidence-based reasoning leads moderate political positions</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Conspiracy vs. Science: A Survey of U.S. Public Beliefs | Carsey School of Public Policy</span></div>
+        <div class="source-url"><a href="https://carsey.unh.edu/publication/conspiracy-vs-science-survey-us-public-beliefs" target="_blank" rel="noopener noreferrer">https://carsey.unh.edu/publication/conspiracy-vs-science-survey-us-public-beliefs</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: scientific consensus political ideology correlation study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">The Politics of Climate Change in the United States</span></div>
+        <div class="source-url"><a href="https://www.pewresearch.org/science/2016/10/04/the-politics-of-climate/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/science/2016/10/04/the-politics-of-climate/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: scientific consensus political ideology correlation study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Strong correlational but no causal evidence on the link between the perception of scientific consensus and support for vaccination | PLOS One</span></div>
+        <div class="source-url"><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0296066" target="_blank" rel="noopener noreferrer">https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0296066</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: scientific consensus political ideology correlation study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_016</span><span class="source-title">Kahan | The “Gateway Belief” illusion: reanalyzing the results of a scientific-consensus messaging study |
+    Journal of Science Communication</span></div>
+        <div class="source-url"><a href="https://jcom.sissa.it/article/pubid/JCOM_1605_2017_A03/" target="_blank" rel="noopener noreferrer">https://jcom.sissa.it/article/pubid/JCOM_1605_2017_A03/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: scientific consensus political ideology correlation study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_017</span><span class="source-title">Perceived expert and laypeople consensus predict belief in local conspiracy theories in a non-WEIRD culture: Evidence from Turkey | Judgment and Decision Making | Cambridge Core Logo for Cambridge Core from Cambridge University Press. Click to return to homepage.  Logo for Cambridge Core from Cambridge University Press. Click to return to homepage.</span></div>
+        <div class="source-url"><a href="https://www.cambridge.org/core/journals/judgment-and-decision-making/article/perceived-expert-and-laypeople-consensus-predict-belief-in-local-conspiracy-theories-in-a-nonweird-culture-evidence-from-turkey/F8A7CD902D3A5DFDDBCC73B82002D1B3" target="_blank" rel="noopener noreferrer">https://www.cambridge.org/core/journals/judgment-and-decision-making/article/perceived-expert-and-laypeople-consensus-predict-belief-in-local-conspiracy-theories-in-a-nonweird-culture-evidence-from-turkey/F8A7CD902D3A5DFDDBCC73B82002D1B3</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: scientific consensus political ideology correlation study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_018</span><span class="source-title">HKS Misinformation ReviewThe presence of unexpected biases in online fact-checking | HKS Misinformation Review</span></div>
+        <div class="source-url"><a href="https://misinforeview.hks.harvard.edu/article/the-presence-of-unexpected-biases-in-online-fact-checking/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/the-presence-of-unexpected-biases-in-online-fact-checking/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-checking organizations perceived bias political ideology</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_019</span><span class="source-title">The Fairness of Fact-checking and Its Impact on Social Media | TechPolicy.Press</span></div>
+        <div class="source-url"><a href="https://techpolicy.press/the-fairness-of-the-factchecking-and-its-impact-on-social-media" target="_blank" rel="noopener noreferrer">https://techpolicy.press/the-fairness-of-the-factchecking-and-its-impact-on-social-media</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-checking organizations perceived bias political ideology</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_020</span><span class="source-title">HKS Misinformation Review“Fact-checking” fact checkers: A data-driven approach | HKS Misinformation Review</span></div>
+        <div class="source-url"><a href="https://misinforeview.hks.harvard.edu/article/fact-checking-fact-checkers-a-data-driven-approach/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/fact-checking-fact-checkers-a-data-driven-approach/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-checkers scientific institutions bias accusations unfounded</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_021</span><span class="source-title">Meta to end fact-checking program on Facebook and Instagram : NPR</span></div>
+        <div class="source-url"><a href="https://www.npr.org/2025/01/07/nx-s1-5251151/meta-fact-checking-mark-zuckerberg-trump" target="_blank" rel="noopener noreferrer">https://www.npr.org/2025/01/07/nx-s1-5251151/meta-fact-checking-mark-zuckerberg-trump</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-checkers scientific institutions bias accusations unfounded</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_022</span><span class="source-title">The psychological drivers of misinformation belief and its resistance to correction | Nature Reviews PsychologyClose bannerClose banner</span></div>
+        <div class="source-url"><a href="https://www.nature.com/articles/s44159-021-00006-y" target="_blank" rel="noopener noreferrer">https://www.nature.com/articles/s44159-021-00006-y</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-checkers scientific institutions bias accusations unfounded</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_023</span><span class="source-title">Which News Sources Republicans and Democrats Use and Trust: Report | Pew Research Center</span></div>
+        <div class="source-url"><a href="https://www.pewresearch.org/journalism/2025/06/10/the-political-gap-in-americans-news-sources/" target="_blank" rel="noopener noreferrer">https://www.pewresearch.org/journalism/2025/06/10/the-political-gap-in-americans-news-sources/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: trust evidence-based reporting across political lines</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_024</span><span class="source-title">Strategies for building trust in news: What the public say they want across four countries | Reuters Institute for the Study of Journalism</span></div>
+        <div class="source-url"><a href="http://reutersinstitute.politics.ox.ac.uk/strategies-building-trust-news-what-public-say-they-want-across-four-countries" target="_blank" rel="noopener noreferrer">http://reutersinstitute.politics.ox.ac.uk/strategies-building-trust-news-what-public-say-they-want-across-four-countries</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: trust evidence-based reporting across political lines</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_025</span><span class="source-title">Global Study Finds Trust of Climate Scientists Split Across Political Spectrum | Columbia University Mailman School of Public Health</span></div>
+        <div class="source-url"><a href="https://www.publichealth.columbia.edu/news/global-study-finds-trust-climate-scientists-split-across-political-spectrum" target="_blank" rel="noopener noreferrer">https://www.publichealth.columbia.edu/news/global-study-finds-trust-climate-scientists-split-across-political-spectrum</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: trust evidence-based reporting across political lines</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_026</span><span class="source-title">HKS Misinformation ReviewMisinformation interventions are common, divisive, and poorly understood | HKS Misinformation Review</span></div>
+        <div class="source-url"><a href="https://misinforeview.hks.harvard.edu/article/misinformation-interventions-are-common-divisive-and-poorly-understood/" target="_blank" rel="noopener noreferrer">https://misinforeview.hks.harvard.edu/article/misinformation-interventions-are-common-divisive-and-poorly-understood/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: misinformation equally distributed across political spectrum</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_027</span><span class="source-title">DemTech | Coverage: Russia’s IRA and American Political PolarizationOII Facebook linkOII Twitter linkOII Youtube linkOII LinkedIn linkOII Instagram link</span></div>
+        <div class="source-url"><a href="https://demtech.oii.ox.ac.uk/coverage-russias-ira-and-american-political-polarization/" target="_blank" rel="noopener noreferrer">https://demtech.oii.ox.ac.uk/coverage-russias-ira-and-american-political-polarization/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: social media disinformation campaigns political targeting network analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_028</span><span class="source-title">Exposure to the Russian Internet Research Agency foreign influence campaign on Twitter in the 2016 US election and its relationship to attitudes and voting behavior | Nature CommunicationsClose bannerClose banner</span></div>
+        <div class="source-url"><a href="https://www.nature.com/articles/s41467-022-35576-9" target="_blank" rel="noopener noreferrer">https://www.nature.com/articles/s41467-022-35576-9</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: social media disinformation campaigns political targeting network analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_029</span><span class="source-title">The Polarizing Impact of Political Disinformation and Hate Speech: A Cross-country Configural Narrative - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10106894/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC10106894/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: social media disinformation targeting patterns by political orientation</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_030</span><span class="source-title">Centrism | Encyclopedia.com</span></div>
+        <div class="source-url"><a href="https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/centrism" target="_blank" rel="noopener noreferrer">https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/centrism</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: scientific consensus correlates with political ideology centrism</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_031</span><span class="source-title">Fact-checks focus on famous politicians, not partisans - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11732390/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC11732390/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: why fact-checkers accused of bias partisan perception</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_032</span><span class="source-title">TEICWD</span></div>
+        <div class="source-url"><a href="https://philarchive.org/archive/TEICWD" target="_blank" rel="noopener noreferrer">https://philarchive.org/archive/TEICWD</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: why fact-checkers accused of bias partisan perception</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_033</span><span class="source-title">Is Fact-Checking Politically Neutral? Asymmetries in How U.S. Fact-Checking Organizations Pick Up False Statements Mentioning Political Elites</span></div>
+        <div class="source-url"><a href="https://arxiv.org/html/2310.08821v2" target="_blank" rel="noopener noreferrer">https://arxiv.org/html/2310.08821v2</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: fact-checking organizations perceived as politically neutral objective</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_034</span><span class="source-title">Where do news sources fall on the political bias spectrum? - &quot;Fake News,&quot; Lies, and Misinformation - Research Guides at University of Michigan Library</span></div>
+        <div class="source-url"><a href="https://guides.lib.umich.edu/c.php?g=637508&amp;p=4462444" target="_blank" rel="noopener noreferrer">https://guides.lib.umich.edu/c.php?g=637508&amp;p=4462444</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: evidence-based reporting trusted across political spectrum</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">24 queries · 5 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>misinformation distribution political spectrum</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Facts and misinformation are distributed unequally across the political spectrum</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>evidence-based reasoning political bias appearance</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Following evidence consistently can lead to positions that appear politically bi</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>misinformation prevalence political ideology engagement metrics</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>misinformation equally distributed across political spectrum study</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>social media disinformation campaigns political targeting network analysis</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>evidence-based policy positions political spectrum distribution</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>evidence-based reasoning leads moderate political positions</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>scientific consensus political ideology correlation study</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>fact-checking organizations perceived bias political ideology</td><td>2</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>fact-checkers scientific institutions bias accusations unfounded</td><td>2</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>trust evidence-based reporting across political lines</td><td>2</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>misinformation prevalence political ideology engagement metrics</td><td>3</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>misinformation equally distributed across political spectrum</td><td>3</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>social media disinformation campaigns political targeting network analysis</td><td>3</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>social media disinformation targeting patterns by political orientation</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>misinformation prevalence equal across political ideologies</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>evidence-based policy positions political spectrum distribution</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>scientific consensus correlates with political ideology centrism</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>evidence-based reasoning extreme political positions left right</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>why fact-checkers accused of bias partisan perception</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>fact-checking organizations perceived as politically neutral objective</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>evidence-based reporting trusted across political spectrum</td><td>4</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">3</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">3</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">85</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">34</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">24</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">51</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-27 21:08 UTC
+  <br>Job 0d54393670a5464ea34d2019f1d4e7bf · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
