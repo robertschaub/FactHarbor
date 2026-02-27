@@ -111,6 +111,7 @@
   "maxClaimBoundaries": 6,
   "boundaryCoherenceMinimum": 0.3,
   "selfConsistencyMode": "full",
-  "selfConsistencyTemperature": 0.3,
+  "selfConsistencyTemperature": 0.4,
+  "challengerTemperature": 0.3,
   "debateModelProviders": { "challenger": "openai" }
 }
