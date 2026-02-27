@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-02-25 (Added Phase 1 Pipeline Execution Checklist)
-**Status**: 11 active files — Decision log + cost optimization + claim fidelity + evidence retrieval + Alpha execution proposals
+**Status**: 12 active files — Decision log + cost optimization + claim fidelity + evidence retrieval + Alpha execution proposals
 
 ---
 
@@ -76,7 +76,15 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### Alpha Feature Proposals (5 files)
+### Alpha Feature Proposals (6 files)
+
+#### Multi-Agent Cross-Provider Debate (2026-02-27)
+**Status:** 🧭 Proposal — Awaiting Prioritization
+- **Document:** [Multi_Agent_Cross_Provider_Debate_2026-02-27.md](Multi_Agent_Cross_Provider_Debate_2026-02-27.md)
+- **Type:** Feature Design / Verdict Quality Enhancement
+- **Scope:** Replace verdict-stage Steps 2+3 (self-consistency + adversarial challenge) with a cross-provider debate round using Claude, GPT-4o, and Gemini in parallel. Confidence-weighted voting synthesis via Claude Opus. All 3 AI SDK packages already installed — no new deps. Includes self-consistency baseline experiment as recommended prerequisite before committing to full implementation.
+
+---
 
 #### Model Auto-Resolution Plan (2026-02-23)
 **Status:** 🧭 Planned — High priority

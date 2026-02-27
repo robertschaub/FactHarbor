@@ -2250,3 +2250,18 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If any new verdict path mutates `confidence`, require co-located `confidenceTier` recomputation to avoid internal drift.
 **Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Capture Phase Decision + Start Evidence Field Trimming
+**Task:** Record agreed Phase 1/Phase 2 decision in investigation doc and implement token-reduction item #1 (trim verdict-stage evidence payloads while preserving prompt-contract fields).
+**Files touched:** `Docs/WIP/2026-02-27_Report_Quality_Investigation.md`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added Captain decision snapshot to the investigation doc (Phase 1 immediate items + Phase 2 deferred status and prerequisites).
+- Implemented a dedicated verdict prompt payload mapper that preserves provenance/quality fields used by `VERDICT_ADVOCATE` and `VERDICT_CHALLENGER` while dropping bulky extraction-only fields such as `sourceExcerpt`.
+- Applied the trimmed payload to Step 1 advocate, Step 2 self-consistency re-runs, and Step 3 challenger calls.
+- Added two unit tests to assert trimmed payload behavior and contract-field preservation.
+**Open items:**
+- Self-consistency 3x baseline experiment and Haiku-vs-Sonnet evaluation remain pending (UCM/runtime validation task, not code-level default change in this patch).
+**Warnings:**
+- Working tree already contains unrelated changes in `Docs/WIP/README.md` and untracked `Docs/WIP/Multi_Agent_Cross_Provider_Debate_2026-02-27.md`, `tools/debate/`; left untouched.
+**For next agent:**
+- If further token reduction is pursued, next highest-impact check is Stage-4 prompt input duplication path (`JSON.stringify(input)` user message), but validate prompt-variable substitution behavior first to avoid contract regressions.
+**Learnings:** no

@@ -69,6 +69,58 @@ const GENERAL_SOURCE_TYPES: ReadonlySet<SourceType> = new Set([
   "other",
 ]);
 
+type VerdictPromptEvidenceItem = Pick<
+  EvidenceItem,
+  | "id"
+  | "statement"
+  | "category"
+  | "claimDirection"
+  | "sourceId"
+  | "sourceUrl"
+  | "sourceTitle"
+  | "sourceType"
+  | "probativeValue"
+  | "sourceAuthority"
+  | "evidenceBasis"
+  | "evidenceScope"
+  | "claimBoundaryId"
+  | "relevantClaimIds"
+  | "fromOppositeClaimSearch"
+  | "isDerivative"
+  | "derivedFromSourceUrl"
+  | "scopeQuality"
+>;
+
+/**
+ * Build a lean evidence payload for verdict-stage prompts.
+ * Keeps fields used by VERDICT_ADVOCATE / VERDICT_CHALLENGER contracts
+ * while dropping bulky extraction-only fields (e.g., sourceExcerpt).
+ */
+function toVerdictPromptEvidenceItems(
+  evidence: EvidenceItem[],
+): VerdictPromptEvidenceItem[] {
+  return evidence.map((item) => ({
+    id: item.id,
+    statement: item.statement,
+    category: item.category,
+    claimDirection: item.claimDirection,
+    sourceId: item.sourceId,
+    sourceUrl: item.sourceUrl,
+    sourceTitle: item.sourceTitle,
+    sourceType: item.sourceType,
+    probativeValue: item.probativeValue,
+    sourceAuthority: item.sourceAuthority,
+    evidenceBasis: item.evidenceBasis,
+    evidenceScope: item.evidenceScope,
+    claimBoundaryId: item.claimBoundaryId,
+    relevantClaimIds: item.relevantClaimIds,
+    fromOppositeClaimSearch: item.fromOppositeClaimSearch,
+    isDerivative: item.isDerivative,
+    derivedFromSourceUrl: item.derivedFromSourceUrl,
+    scopeQuality: item.scopeQuality,
+  }));
+}
+
 // ============================================================================
 // CONFIGURATION (UCM-configurable thresholds)
 // ============================================================================
@@ -390,9 +442,11 @@ export async function advocateVerdict(
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<CBClaimVerdict[]> {
+  const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
+
   const result = await llmCall("VERDICT_ADVOCATE", {
     atomicClaims: claims,
-    evidenceItems: evidence,
+    evidenceItems: promptEvidenceItems,
     claimBoundaries: boundaries,
     coverageMatrix: {
       claims: coverageMatrix.claims,
@@ -485,9 +539,10 @@ export async function selfConsistencyCheck(
   const temperature = Math.max(0.1, Math.min(0.7, config.selfConsistencyTemperature));
 
   // Re-run advocate prompt 2 times at elevated temperature
+  const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
   const input = {
     atomicClaims: claims,
-    evidenceItems: evidence,
+    evidenceItems: promptEvidenceItems,
     claimBoundaries: boundaries,
     coverageMatrix: {
       claims: coverageMatrix.claims,
@@ -543,6 +598,7 @@ export async function adversarialChallenge(
 ): Promise<ChallengeDocument> {
   // Temperature clamped to [0.1, 0.7] — same bounds as selfConsistencyTemperature
   const temperature = Math.max(0.1, Math.min(0.7, config.challengerTemperature));
+  const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
 
   const result = await llmCall("VERDICT_CHALLENGER", {
     claimVerdicts: advocateVerdicts.map((v) => ({
@@ -554,7 +610,7 @@ export async function adversarialChallenge(
       contradictingEvidenceIds: v.contradictingEvidenceIds,
       boundaryFindings: v.boundaryFindings,
     })),
-    evidenceItems: evidence,
+    evidenceItems: promptEvidenceItems,
     claimBoundaries: boundaries,
   }, { tier: config.debateModelTiers.challenger, temperature, providerOverride: config.debateModelProviders.challenger, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
 

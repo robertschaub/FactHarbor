@@ -201,6 +201,55 @@ describe("advocateVerdict (Step 1)", () => {
     );
   });
 
+  it("should trim advocate evidence payload to contract-relevant fields", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem({
+      sourceType: "peer_reviewed_study",
+      sourceAuthority: "primary",
+      evidenceBasis: "scientific",
+      fromOppositeClaimSearch: true,
+      isDerivative: true,
+      derivedFromSourceUrl: "https://example.com/original",
+      evidenceScope: {
+        name: "Scope A",
+        methodology: "Method A",
+        temporal: "2024",
+      },
+      scopeQuality: "complete",
+    })];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+
+    await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    const callInput = (mockLLM as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][1] as {
+      evidenceItems: Array<Record<string, unknown>>;
+    };
+    const sent = callInput.evidenceItems[0];
+
+    expect(sent).toMatchObject({
+      id: "EV_01",
+      statement: evidence[0].statement,
+      claimDirection: "supports",
+      sourceId: "S1",
+      sourceUrl: "https://example.com/source",
+      sourceTitle: "Example Source",
+      sourceType: "peer_reviewed_study",
+      probativeValue: "high",
+      sourceAuthority: "primary",
+      evidenceBasis: "scientific",
+      claimBoundaryId: "CB_01",
+      relevantClaimIds: ["AC_01"],
+      fromOppositeClaimSearch: true,
+      isDerivative: true,
+      derivedFromSourceUrl: "https://example.com/original",
+      scopeQuality: "complete",
+    });
+    expect(sent).not.toHaveProperty("sourceExcerpt");
+    expect(sent).not.toHaveProperty("specificity");
+  });
+
   it("should clamp truth percentage to 0-100", async () => {
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem()];
@@ -360,6 +409,43 @@ describe("adversarialChallenge (Step 3)", () => {
     expect(result.challenges[0].challengePoints).toHaveLength(1);
     expect(result.challenges[0].challengePoints[0].type).toBe("methodology_weakness");
     expect(result.challenges[0].challengePoints[0].severity).toBe("medium");
+  });
+
+  it("should trim challenger evidence payload to contract-relevant fields", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const evidence = [createEvidenceItem({
+      sourceType: "news_primary",
+      sourceAuthority: "secondary",
+      evidenceBasis: "documented",
+    })];
+    const boundaries = [createClaimBoundary()];
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
+
+    await adversarialChallenge(verdicts, evidence, boundaries, mockLLM);
+
+    const callInput = (mockLLM as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][1] as {
+      evidenceItems: Array<Record<string, unknown>>;
+    };
+    const sent = callInput.evidenceItems[0];
+
+    expect(sent).toMatchObject({
+      id: "EV_01",
+      sourceId: "S1",
+      sourceUrl: "https://example.com/source",
+      sourceType: "news_primary",
+      sourceAuthority: "secondary",
+      evidenceBasis: "documented",
+      probativeValue: "high",
+    });
+    expect(sent).not.toHaveProperty("sourceExcerpt");
   });
 
   it("should handle empty challenge response gracefully", async () => {

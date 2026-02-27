@@ -4,6 +4,20 @@
 **Task:** Investigate and improve FactHarbor report quality
 **Status:** Phase 2 complete — 4 fixes applied (7 code locations), 2 issues resolved as by-design, 2 items flagged for approval
 
+## Decision Update (Captain) — 2026-02-27
+
+### Phase 1 (Immediate)
+1. **Evidence field trimming** (token reduction item #1): approved for implementation.
+2. **Self-consistency on Haiku** (token reduction item #2): test first via UCM config change before code-level default changes.
+3. **3x self-consistency baseline**: run and measure current spread/diversity before larger debate architecture changes.
+
+### Phase 2 (Deferred)
+1. **Multi-challenger cross-provider architecture** remains promising but is deferred until prerequisite corrections are addressed:
+   - Reconciliation contract update (Step 4 input is not actually unchanged)
+   - Cost-gate tier semantics correction (current confidence tiers are `HIGH|MEDIUM|LOW|INSUFFICIENT`, not "contested")
+   - Confidence label alignment in weighted voting logic (uppercase tier contract + `INSUFFICIENT`)
+   - Reasoning-mode instructions managed via UCM prompt text (not hardcoded)
+
 ---
 
 ## 1. Baseline Assessment
