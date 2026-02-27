@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Christians are less likely to commit crimes than Muslims.">
+<meta name="fh:verdict" content="FALSE">
+<meta name="fh:truth" content="10">
+<meta name="fh:confidence" content="50">
+<meta name="fh:date" content="2026-02-27">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Christians are less likely to commit crimes than Muslims.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 0f754618e6c842e8a100306e7fd31c34</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-27 21:00 UTC</div>
+      <div>Completed: 2026-02-27 21:06 UTC</div>
+      <div>Duration: ~6 min 7 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Christians are less likely to commit crimes than Muslims.</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE, Brave, Google-CSE (circuit-open), Brave, Google-CSE (cached)</span>
+    <span class="chip chip-gray">22 LLM calls</span>
+    <span class="chip chip-gray">12 searches</span>
+    <span class="chip chip-gray">1 claim · 3 boundaries · 16 evidence items · 6 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-f">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge f-color">FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The overwhelming majority of evidence contradicts the claim, with a retracted publication indicating methodological or i…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value f-color">10%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:10%;background:#c53030"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">50%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:50%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:10%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">10%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The overwhelming majority of evidence contradicts the claim, with a retracted publication indicating methodological or integrity issues, empirical studies showing no support for the asserted religion-crime relationship, and mixed findings from cross-national comparisons. The confidence level remains moderate (50%) due to the complexity of isolating causal factors in cross-cultural crime research and potential confounding variables that the available evidence could not fully control for.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claim is assessed as FALSE with very low truth value (10%) based on contradictory evidence from retraction notices, empirical studies, and cross-national data.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">16 evidence items from 3 analytical perspectives: journal retraction notices (11 items), empirical survey and observational studies (3 items), and cross-national crime statistics comparisons (2 items).</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The overwhelming majority of evidence contradicts the claim, with a retracted publication indicating methodological or integrity issues, empirical studies showing no support for the asserted religion-crime relationship, and mixed findings from cross-national comparisons. The confidence level remains moderate (50%) due to the complexity of isolating causal factors in cross-cultural crime research and potential confounding variables that the available evidence could not fully control for.</div>
+    </div>
+    
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not fully account for confounding socioeconomic, political, and cultural variables that influence crime rates across nations. The retraction notice indicates problems with the original research but does not provide complete details on all methodological flaws. Additionally, the cross-national comparison boundary showed mixed evidence, suggesting that aggregate statistics may obscure important within-group variation and causal mechanisms that require more granular investigation.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Christians are less likely to commit crimes than Muslims.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val f-color">10%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">50%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:10%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">10%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: highly_misleading</span>
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ Even if one were to accept the 10% truthPercentage as leaving room for uncertainty, the claim is highly misleading because: (1) It implies a causal relationship between religious identity and criminal behavior without acknowledging the overwhelming role of socioeconomic factors, discrimination, reporting bias, and structural inequalities that confound any such comparison; (2) It cherry-picks the dimension of religion while ignoring that crime rates are far more strongly predicted by poverty, education, employment, age, gender, and urban/rural residence than by religious affiliation; (3) It creates a false binary comparison that ignores within-group variation (e.g., crime rates vary enormously among Christian-majority countries and among Muslim-majority countries, suggesting religion is not the primary driver); (4) It implies generalizability across contexts when the available evidence shows context-dependent relationships (e.g., the German study found religiosity reduced violence for Christians but not Muslims, but this does NOT mean Muslims commit more crime—it means the religiosity-crime relationship differs by group and context); (5) The framing invites stigmatization of Muslims by suggesting an inherent propensity for criminality, when the best available evidence (systematic review, U.S. study) shows either no difference or lower rates among Muslims; (6) It omits that the only supporting evidence (1980 UN data) actually shows Islamic countries with LOWER crime rates, which contradicts the claim&#39;s implication even if one accepts the methodologically flawed country-level comparison. The claim is technically unsupported by evidence (hence low truth%) AND misleading in its framing, implications, and omission of crucial context.</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Journal retraction notice</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">0%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:0%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_02 · Empirical survey and observational studies of religion-crime relationship</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">20%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">70%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:20%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Cross-national crime statistics comparison</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">25%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">30%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:25%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating challenger feedback and self-consistency data, the final verdict adjusts the truthPercentage downward from 15 to 10, while slightly increasing confidence from 45 to 50 due to the identification of additional contradicting evidence that was underweighted in the initial assessment.
+
+**Challenge Response Integration:**
+
+**CP_AC_01_0 (Assumption - Source Overlap):** REJECTED. This challenge cites evidence IDs (EV_002, EV_003, EV_004) that do not exist in the advocate&#39;s evidence base. All challengeValidation shows these as invalid. This challenge is structurally baseless and receives no analytical weight.
+
+**CP_AC_01_1 (Missing Evidence - Individual-Level Crime Data):** PARTIALLY ACCEPTED. The challenger correctly identifies a critical gap: the absence of national criminal justice statistics comparing Christians and Muslims within the same jurisdiction. However, 7 of 12 cited evidence IDs are invalid (EV_002-005, EV_008-010 do not exist). The valid concern—that we lack adult, population-level arrest/conviction data by religion—stands on its own merit. This gap justifies maintaining low truthPercentage but does NOT warrant further reduction, as absence of evidence is not evidence of absence. The existing evidence (adolescent studies, cross-national data) already contradicts the claim; more granular data would likely strengthen that contradiction rather than support the claim.
+
+**CP_AC_01_2 (Missing Evidence - Western Country Data):** ACCEPTED. All four cited evidence IDs are valid (EV_1772229803603, EV_1772229803602, EV_1772229803606, EV_1772229803608). The challenger correctly notes that government-sourced crime statistics by religion from countries like the UK, France, or US are conspicuously absent. This is a significant evidentiary gap. However, the existing U.S. study (EV_1772229803603) finding no relationship between Muslim identity and violent crime, combined with the systematic review (EV_1772229803606) showing lower Muslim delinquency rates, suggests that if such data existed and supported the claim, it would likely have been published. The absence strengthens the case against the claim rather than creating uncertainty in its favor.
+
+**CP_AC_01_3 (Assumption - Secondary Source Overlap):** REJECTED. Both cited evidence IDs are valid (EV_1772229803606, EV_1772229803608), but the challenge mischaracterizes them. EV_1772229803606 is a systematic review synthesizing 14 independent peer-reviewed studies—this is a strength, not a weakness, as it aggregates multiple primary sources. EV_1772229803608 appears to be a theoretical/review article. The concern about &#39;shared bias&#39; is speculative without evidence of actual data overlap. The systematic review&#39;s methodology (synthesizing independent studies) actually increases evidentiary independence.
+
+**CP_AC_01_4 (Assumption - Underweighting Systematic Review):** ACCEPTED. All four cited evidence IDs are valid. The challenger correctly identifies that EV_1772229803606 (systematic review of 14 studies finding lower Muslim delinquency rates) was not explicitly addressed in the advocate&#39;s reasoning, despite being highly relevant and methodologically robust. This is a significant oversight. The systematic review directly contradicts the claim by showing Muslims have LOWER, not higher, delinquency rates compared to non-Muslims. This justifies reducing truthPercentage from 15 to 10.
+
+**CP_AC_01_5 (Missing Evidence - Country-Level Patterns):** PARTIALLY ACCEPTED. Both cited evidence IDs are valid (EV_1772229803607, EV_1772229803608). The challenger correctly notes the absence of granular country-level comparisons (e.g., Brazil vs. Saudi Arabia). However, this gap does not materially affect the verdict because: (1) the claim is about individual religious affiliation, not national religious identity; (2) country-level crime rates are confounded by governance, development, reporting practices, and demographics; (3) the existing cross-national data (EV_1772229803607) already shows Islamic countries with LOWER crime rates, contradicting the claim. More detailed country breakdowns would not rescue the claim.
+
+**CP_AC_01_6 (Missing Evidence - Systematic Review Omission):** ACCEPTED. The cited evidence ID is valid (EV_1772229803606). This duplicates the concern in CP_AC_01_4 and is the most substantive challenge. The systematic review synthesizing 14 peer-reviewed articles and finding lower Muslim adolescent delinquency rates is strong, recent, and directly relevant evidence that was inadequately weighted. This omission led to an inflated truthPercentage in the initial verdict.
+
+**Self-Consistency Assessment:** The claim showed perfect stability across three runs (15%, 15%, 15%, spread=0). This indicates the advocate&#39;s reasoning was internally consistent, though it missed key evidence. The consistency data supports maintaining or slightly increasing confidence, as the analytical framework was stable.
+
+**Adjusted Verdict Justification:**
+
+- **TruthPercentage reduced to 10** (from 15): The systematic review (EV_1772229803606) finding lower Muslim delinquency rates is high-quality evidence that directly contradicts the claim and was underweighted. Combined with the U.S. study (EV_1772229803603) showing no relationship between Muslim identity and violent crime, the evidence base more strongly contradicts the claim than initially assessed. The only supporting evidence (1980 UN cross-national data, EV_1772229803607) suffers from ecological fallacy and is 44 years outdated.
+
+- **Confidence increased to 50** (from 45): Despite significant evidentiary gaps (no adult population-level criminal justice data by religion), the existing evidence consistently contradicts the claim across multiple methodologies (individual-level studies, systematic reviews, cross-national data). The identification of the systematic review increases confidence that the available evidence, while incomplete, points in a clear direction. The perfect self-consistency (spread=0) also supports slightly higher confidence in the analytical framework. Confidence remains moderate (50) due to the acknowledged gaps in direct, adult, population-level data from Western countries.
+
+- **IsContested remains true**: The claim addresses a sensitive topic with significant evidentiary gaps and methodological challenges (ecological fallacy, confounding variables, publication bias indicated by retraction). While the evidence leans against the claim, the absence of definitive population-level data means the claim remains contested in public discourse.
+
+**Final Assessment:** The claim that &#39;Christians are less likely to commit crimes than Muslims&#39; is not supported by available evidence. The strongest evidence (systematic review of 14 studies, U.S. peer-reviewed study) either shows no difference or finds Muslims have lower delinquency rates. The only supporting evidence (1980 cross-national data) is methodologically inappropriate for individual-level claims and severely outdated. The truthPercentage of 10 reflects that the claim is very likely false, with the remaining 10% accounting for evidentiary gaps and the theoretical possibility that unmeasured confounders or unpublished data could alter the picture. Confidence of 50 reflects that while existing evidence consistently contradicts the claim, the ideal evidence (adult criminal justice statistics by religion from diverse countries) remains absent from the public record.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge cites non-existent evidence IDs (EV_002, EV_003, EV_004). All cited evidence is invalid per challengeValidation. This challenge is structurally baseless and receives no analytical weight.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Partially accepted. The valid concern about missing adult population-level criminal justice data is acknowledged, but 7 of 12 cited evidence IDs are invalid. The gap is real but does not warrant reducing truthPercentage further, as existing evidence already contradicts the claim. Absence of evidence is not evidence supporting the claim.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Accepted. All cited evidence IDs are valid. The absence of government-sourced crime statistics by religion from Western countries is a significant gap. However, existing U.S. and systematic review evidence suggests that if such data existed and supported the claim, it would likely be published. The gap strengthens the case against the claim rather than creating uncertainty in its favor.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. Both cited evidence IDs are valid, but the challenge mischaracterizes the systematic review (EV_1772229803606) as a weakness when it actually synthesizes 14 independent studies, increasing evidentiary strength. The concern about &#39;shared bias&#39; is speculative without evidence of actual data overlap.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. All cited evidence IDs are valid. The systematic review (EV_1772229803606) finding lower Muslim delinquency rates across 14 studies was inadequately weighted in the initial verdict. This high-quality evidence directly contradicts the claim and justifies reducing truthPercentage.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Partially accepted. Both cited evidence IDs are valid. The absence of granular country-level comparisons is noted, but this gap does not materially affect the verdict because the claim concerns individual religious affiliation, not national identity. Country-level data suffers from ecological fallacy and confounding. Existing cross-national data already contradicts the claim.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. The cited evidence ID is valid. This duplicates CP_AC_01_4&#39;s concern. The systematic review (EV_1772229803606) is strong, recent, directly relevant evidence that was underweighted, justifying the reduction in truthPercentage.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">3 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_01<br><span style="font-weight:400;font-size:10px">Retraction</span></th><th>CB_02<br><span style="font-weight:400;font-size:10px">Empirical religion-crime studies</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">National-level crime statistics</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Christians are less likely to </td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-low">2</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Journal retraction notice</span><span class="ba-ev-count">11 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Journal retraction notice</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Retraction published July 2020</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.000</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Retracted publication indicating methodological or integrity issues with original research</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_02</span><span class="ba-name">Empirical survey and observational studies of religion-crime relationship</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Quantitative empirical analysis (surveys, observational studies, systematic reviews)</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Germany, United States, multiple countries</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Early 2010s to 2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.750</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Quantitative empirical studies examining the relationship between religious affiliation/practice and criminal or violent behavior using survey data or observational methods</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Cross-national crime statistics comparison</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Cross-national crime statistics comparison and theoretical interpretation</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Islamic countries vs. non-Islamic countries (global)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1980 and early 2000s</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.900</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Comparative analysis of aggregate crime rates across countries grouped by Islamic vs. non-Islamic populations</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">16 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(4 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229803602</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In a German-wide representative school survey of 16,545 male students in the ninth grade, higher religiosity correlated with lower rates of violent behavior only for Christians, not for Muslims. For Muslims, there was no significant correlation between religiosity and violent behavior in bivariate analysis, but multivariate analysis revealed a suppression effect where controlling for alcohol consumption, Muslim religiosity increased violent behavior.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/24114763/" target="_blank" rel="noopener noreferrer">The influence of religiosity on violent behavior of adolescents: a comparison of Christian and Muslim religiosity - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229803606</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A systematic review of 14 articles found that Muslim adolescents have a lower rate of delinquency compared to non-Muslim adolescents in general, though more complex trends emerge when considering measurement of delinquency types (such as violence) and cultural context (such as first-generation immigrants in non-Muslim-majority countries).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s40894-023-00206-y" target="_blank" rel="noopener noreferrer">Muslim Religiosity and Juvenile Delinquency: A Systematic Review | Adolescent Research Review | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229803607</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">According to United Nations crime statistics data from 1980, the average total crime rate of Islamic developing countries was 694.2 per 100,000 inhabitants, compared to 1,028.5 for non-Islamic developing countries and 5,968.5 for developed countries. Islamic countries had the lowest rates in almost all crime categories except non-intentional homicide and robbery.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.lancaster.ac.uk/jais/volume/docs/vol4/4_111-131serajzade1.pdf" target="_blank" rel="noopener noreferrer">4 111 131serajzade1</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229803608</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">International crime statistics indicate that in Islamic countries crime rates are lower than in other countries. The article argues that Islamic beliefs and practice, which develop a strong sense of moral community and generate social sanctions, are the dominant explanatory factor for the low crime rate in Islamic countries, rather than level of development or strictness of Islamic penal law alone.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.lancaster.ac.uk/jais/volume/docs/vol4/4_111-131serajzade1.pdf" target="_blank" rel="noopener noreferrer">4 111 131serajzade1</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(2 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229770189</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The article &#39;Declines in Religiosity Predict Increases in Violent Crime-but Not Among Countries With Relatively High Average IQ&#39; was retracted by the journal Psychological Science in July 2020.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/31961775/" target="_blank" rel="noopener noreferrer">Declines in Religiosity Predict Increases in Violent Crime-but Not Among Countries With Relatively High Average IQ - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229803603</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">A peer-reviewed study published in the Journal of Interpersonal Violence found no measurable relationship between being Muslim and committing violent stranger crime in the U.S.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://medium.com/@SaidAbdulLatif/do-muslims-commit-a-disproportionate-amount-of-crime-in-the-united-states-a-look-at-the-facts-adc66d1b4772" target="_blank" rel="noopener noreferrer">Do Muslims Commit a Disproportionate Amount of Crime in the United States? A Look at the Facts | by Sa’īd Abdul Latif (Hilarion Heagy) | Medium</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(10 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In 2023, there were 236 reported hate crime incidents involving anti-Muslim bias in the United States.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.justice.gov/crs/news/2023-hate-crime-statistics" target="_blank" rel="noopener noreferrer">https://www.justice.gov/crs/news/2023-hate-crime-statistics</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In Nigeria, Christians are 6.5 times more likely to be killed than Muslims and 5.1 times more likely to be abducted, according to data from the Observatory for Religious Freedom in Africa.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.opendoorsus.org/en-US/stories/10-things-you-need-to-know-about-violence-in-nigeria/" target="_blank" rel="noopener noreferrer">https://www.opendoorsus.org/en-US/stories/10-things-you-need-to-know-about-violence-in-nigeria/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fulani militants are responsible for 55% of recorded Christian deaths between 2019 and 2023 in Nigeria, with thousands killed every year.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.opendoorsus.org/en-US/stories/10-things-you-need-to-know-about-violence-in-nigeria/" target="_blank" rel="noopener noreferrer">https://www.opendoorsus.org/en-US/stories/10-things-you-need-to-know-about-violence-in-nigeria/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Boko Haram and Islamic State West Africa Province (ISWAP) have explicitly and repeatedly declared Christians as targets, with victims reporting attackers stating &#39;We will destroy all Christians.&#39;</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.opendoorsus.org/en-US/stories/10-things-you-need-to-know-about-violence-in-nigeria/" target="_blank" rel="noopener noreferrer">https://www.opendoorsus.org/en-US/stories/10-things-you-need-to-know-about-violence-in-nigeria/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A Reddit discussion asks whether secular societies, Christian societies, or Muslim societies have lower crime rates, with the original poster requesting sources for comparative crime rate data.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/atheism/comments/18h3oqm/do_secular_societies_have_lower_crime_rates/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/atheism/comments/18h3oqm/do_secular_societies_have_lower_crime_rates/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In 2023, there were 236 reported hate crime incidents driven by anti-Muslim bias in the United States, representing an increase from the previous year.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.justice.gov/crs/news/2023-hate-crime-statistics" target="_blank" rel="noopener noreferrer">https://www.justice.gov/crs/news/2023-hate-crime-statistics</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The 2023 FBI Hate Crimes Statistics report compiles data on bias-motivated offenses reported by law enforcement agencies, focusing on crimes driven by biases based on race, ethnicity, religion, sexual orientation, disability, gender or gender identity.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.justice.gov/crs/news/2023-hate-crime-statistics" target="_blank" rel="noopener noreferrer">https://www.justice.gov/crs/news/2023-hate-crime-statistics</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Muslims are not more violent than Christians; once historical facts and societal conditions are factored in, perceived differences among religious groups can be largely accounted for by contextual factors rather than inherent group characteristics.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/changemyview/comments/5g98wa/cmv_muslims_are_not_more_violent_than_christians/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/changemyview/comments/5g98wa/cmv_muslims_are_not_more_violent_than_christians/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Anti-Muslim hate crime incidents rose to 236 reported cases in 2023, compared to the previous year, indicating an increase in bias-motivated crimes targeting Muslims.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.justice.gov/crs/news/2023-hate-crime-statistics" target="_blank" rel="noopener noreferrer">https://www.justice.gov/crs/news/2023-hate-crime-statistics</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Religion-based hate crimes totaled 2,699 reported incidents in 2023, with anti-Jewish bias accounting for more than half (1,832 incidents), while anti-Muslim incidents comprised 236 cases.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.justice.gov/crs/news/2023-hate-crime-statistics" target="_blank" rel="noopener noreferrer">https://www.justice.gov/crs/news/2023-hate-crime-statistics</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">6 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Race and the Religious Contexts of Violence: Linking Religion and White, Black, and Latino Violent Crime - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4066971/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC4066971/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: crime rates by religious affiliation statistical analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Declines in Religiosity Predict Increases in Violent Crime-but Not Among Countries With Relatively High Average IQ - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</span></div>
+        <div class="source-url"><a href="https://pubmed.ncbi.nlm.nih.gov/31961775/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/31961775/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: crime rates by religious affiliation statistical analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">The influence of religiosity on violent behavior of adolescents: a comparison of Christian and Muslim religiosity - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</span></div>
+        <div class="source-url"><a href="https://pubmed.ncbi.nlm.nih.gov/24114763/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/24114763/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Muslim Christian crime rate comparison criminological study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Do Muslims Commit a Disproportionate Amount of Crime in the United States? A Look at the Facts | by Sa’īd Abdul Latif (Hilarion Heagy) | Medium</span></div>
+        <div class="source-url"><a href="https://medium.com/@SaidAbdulLatif/do-muslims-commit-a-disproportionate-amount-of-crime-in-the-united-states-a-look-at-the-facts-adc66d1b4772" target="_blank" rel="noopener noreferrer">https://medium.com/@SaidAbdulLatif/do-muslims-commit-a-disproportionate-amount-of-crime-in-the-united-states-a-look-at-the-facts-adc66d1b4772</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Muslim Christian crime rate comparison criminological study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Muslim Religiosity and Juvenile Delinquency: A Systematic Review | Adolescent Research Review | Springer Nature Link</span></div>
+        <div class="source-url"><a href="https://link.springer.com/article/10.1007/s40894-023-00206-y" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1007/s40894-023-00206-y</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Muslim Christian crime rate comparison criminological study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">4 111 131serajzade1</span></div>
+        <div class="source-url"><a href="https://www.lancaster.ac.uk/jais/volume/docs/vol4/4_111-131serajzade1.pdf" target="_blank" rel="noopener noreferrer">https://www.lancaster.ac.uk/jais/volume/docs/vol4/4_111-131serajzade1.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Muslim Christian crime rate comparison criminological study</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">12 queries · 3 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>crime rates Christians Muslims comparison</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Christians have lower crime rates than Muslims.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Muslim crime statistics rates data</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Muslims commit crimes at higher rates than Christians.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>crime rates by religion Christian Muslim statistical analysis</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Muslim crime rates lower than Christian communities study</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>religious affiliation criminal justice records arrest conviction data</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>crime rates by religious affiliation statistical analysis</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>religious affiliation crime statistics confounding variables bias</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Muslim Christian crime rate comparison criminological study</td><td>1</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>crime rates by religion Christian Muslim statistical analysis</td><td>2</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Muslim crime rates lower than Christian communities study</td><td>2</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">16</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">6</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">12</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">22</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-27 22:07 UTC
+  <br>Job 0f754618e6c842e8a100306e7fd31c34 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
