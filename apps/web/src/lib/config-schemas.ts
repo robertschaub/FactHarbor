@@ -482,6 +482,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.4)"),
   challengerTemperature: z.number().min(0.1).max(0.7).optional()
     .describe("Temperature for adversarial challenger (floor 0.1, ceiling 0.7) (default: 0.3)"),
+  calibrationInverseGateAction: z.enum(["warn", "fail"]).optional()
+    .describe("Gate action for inverse consistency violations in calibration (default: warn). warn: report only; fail: block diagnosticGatePassed."),
   verdictGroundingPolicy: z.enum(["disabled", "safe_downgrade"]).optional()
     .describe("Integrity policy for grounding failures in verdict validation (default: disabled)."),
   verdictDirectionPolicy: z.enum(["disabled", "retry_once_then_safe_downgrade"]).optional()
@@ -751,6 +753,9 @@ export const PipelineConfigSchema = z.object({
   if (data.challengerTemperature === undefined) {
     data.challengerTemperature = 0.3;
   }
+  if (data.calibrationInverseGateAction === undefined) {
+    data.calibrationInverseGateAction = "warn";
+  }
   if (data.verdictGroundingPolicy === undefined) {
     data.verdictGroundingPolicy = "disabled";
   }
@@ -872,6 +877,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
   selfConsistencyTemperature: 0.4, // Alpha optimization: increased from 0.3 for broader exploration
+  calibrationInverseGateAction: "warn",
   verdictGroundingPolicy: "disabled",
   verdictDirectionPolicy: "disabled",
   queryStrategyMode: "pro_con",

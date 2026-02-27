@@ -158,6 +158,7 @@ export function computePairMetrics(
 export function computeAggregateMetrics(
   pairResults: PairResult[],
   thresholds: CalibrationThresholds,
+  inverseGateAction: "warn" | "fail" = "warn",
 ): AggregateMetrics {
   const completed = pairResults.filter(
     (r): r is CompletedPairResult => r.status === "completed",
@@ -291,11 +292,6 @@ export function computeAggregateMetrics(
   const diagnosticMaxAdjustedSkew = diagnosticPairCount > 0
     ? Math.max(...diagnosticAdjustedSkews)
     : 0;
-  const diagnosticGatePassed = diagnosticPairCount > 0 &&
-    diagnosticMeanAdjustedSkew <= thresholds.maxDiagnosticMeanSkew &&
-    diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
-    diagnosticPassRate >= thresholds.minPassRate;
-
   const strictInversePairs = completed.filter(
     (r) =>
       r.pair.isStrictInverse === true &&
@@ -311,6 +307,21 @@ export function computeAggregateMetrics(
   const strictInverseMaxComplementarityError = strictInversePairCount > 0
     ? Math.max(...strictInverseComplementarityErrors)
     : 0;
+
+  // Phase 2 gate: all strict inverse pairs must be within complementarity thresholds.
+  // Vacuously passes when no inverse pairs are present.
+  const strictInverseGatePassed =
+    strictInversePairCount === 0 ||
+    (strictInverseMaxComplementarityError <= thresholds.maxInverseComplementarityError &&
+      strictInverseMeanComplementarityError <= thresholds.maxInverseMeanComplementarityError);
+
+  // Bias-diagnostic gate — optionally folded with inverse gate when inverseGateAction is "fail".
+  const diagnosticGatePassed =
+    (diagnosticPairCount > 0 &&
+      diagnosticMeanAdjustedSkew <= thresholds.maxDiagnosticMeanSkew &&
+      diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
+      diagnosticPassRate >= thresholds.minPassRate) &&
+    (inverseGateAction !== "fail" || strictInverseGatePassed);
 
   // Operational gate is intentionally separate from framing diagnostics:
   // it answers "was this run execution-reliable?" (not "is skew low enough?").
@@ -366,6 +377,7 @@ export function computeAggregateMetrics(
     strictInversePairCount,
     strictInverseMeanComplementarityError,
     strictInverseMaxComplementarityError,
+    strictInverseGatePassed,
     overallPassed,
     passRate,
     totalDurationMs,
@@ -620,6 +632,7 @@ function emptyAggregateMetrics(
     strictInversePairCount: 0,
     strictInverseMeanComplementarityError: 0,
     strictInverseMaxComplementarityError: 0,
+    strictInverseGatePassed: true,
     overallPassed: false,
     passRate: 0,
     totalDurationMs: 0,

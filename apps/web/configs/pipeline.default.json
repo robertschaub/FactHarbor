@@ -114,6 +114,7 @@
   "selfConsistencyMode": "full",
   "selfConsistencyTemperature": 0.4,
   "challengerTemperature": 0.3,
+  "calibrationInverseGateAction": "warn",
   "verdictGroundingPolicy": "disabled",
   "verdictDirectionPolicy": "disabled",
   "debateModelProviders": { "challenger": "openai" }

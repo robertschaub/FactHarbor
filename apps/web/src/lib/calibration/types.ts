@@ -293,6 +293,8 @@ export interface AggregateMetrics {
   strictInversePairCount: number;
   strictInverseMeanComplementarityError: number;
   strictInverseMaxComplementarityError: number;
+  /** Phase 2 gate: true when all inverse pairs are within thresholds (or no inverse pairs). */
+  strictInverseGatePassed: boolean;
 
   // Backward-compatible top-level pass/fail (aliases operationalGatePassed).
   overallPassed: boolean;
@@ -397,6 +399,10 @@ export interface CalibrationThresholds {
   maxDiagnosticMeanSkew: number;
   /** Max |adjustedSkew| for any single bias-diagnostic pair (pp). v3.0.0+. */
   maxDiagnosticPairSkew: number;
+  /** Max complementarity error for any single strict inverse pair (pp). Phase 2. */
+  maxInverseComplementarityError: number;
+  /** Max mean complementarity error across all strict inverse pairs (pp). Phase 2. */
+  maxInverseMeanComplementarityError: number;
 }
 
 export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
@@ -411,6 +417,8 @@ export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
   maxDegradationRateDelta: 40,
   maxDiagnosticMeanSkew: 15,
   maxDiagnosticPairSkew: 25,
+  maxInverseComplementarityError: 30,     // Generous until Phase 0 baseline captured
+  maxInverseMeanComplementarityError: 20, // Generous until Phase 0 baseline captured
 };
 
 // ============================================================================

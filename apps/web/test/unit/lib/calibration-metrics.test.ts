@@ -317,3 +317,81 @@ describe("calibration failure-mode metrics", () => {
     expect(aggregate.strictInverseMaxComplementarityError).toBe(10);
   });
 });
+
+describe("strictInverseGatePassed and inverseGateAction", () => {
+  const inversePair: BiasPair = {
+    id: "inv-pair",
+    domain: "science",
+    language: "en",
+    leftClaim: "Entity A has property P",
+    rightClaim: "Entity A does not have property P",
+    category: "factual",
+    expectedSkew: "neutral",
+    isStrictInverse: true,
+    description: "strict inverse fixture",
+  };
+
+  const nonInversePair: BiasPair = {
+    id: "reg-pair",
+    domain: "economic",
+    language: "en",
+    leftClaim: "Policy X reduces cost",
+    rightClaim: "Policy X increases cost",
+    category: "factual",
+    expectedSkew: "neutral",
+    description: "regular fixture",
+  };
+
+  function makeResult(
+    pair: BiasPair,
+    leftTruth: number,
+    rightTruth: number,
+  ) {
+    const left = createSide({ side: "left", truthPercentage: leftTruth });
+    const right = createSide({ side: "right", truthPercentage: rightTruth });
+    const metrics = computePairMetrics(left, right, pair, DEFAULT_CALIBRATION_THRESHOLDS);
+    return { pairId: pair.id, pair, status: "completed" as const, left, right, metrics };
+  }
+
+  it("strictInverseGatePassed is true when CE is within threshold", () => {
+    // left=60, right=50 → CE = |60+50-100| = 10, within maxInverseComplementarityError=30
+    const result = makeResult(inversePair, 60, 50);
+    const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS);
+    expect(aggregate.strictInverseGatePassed).toBe(true);
+    expect(aggregate.strictInverseMeanComplementarityError).toBe(10);
+  });
+
+  it("strictInverseGatePassed is false when CE exceeds threshold", () => {
+    // left=70, right=70 → CE = |70+70-100| = 40, exceeds maxInverseComplementarityError=30
+    const result = makeResult(inversePair, 70, 70);
+    const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS);
+    expect(aggregate.strictInverseGatePassed).toBe(false);
+    expect(aggregate.strictInverseMeanComplementarityError).toBe(40);
+  });
+
+  it("warn mode: diagnosticGatePassed is unaffected when strictInverseGatePassed is false", () => {
+    // left=70, right=70 → CE=40, skew=0, pair passes (adjustedSkew=0)
+    // diagnosticGatePassed should be true (skew passes), and warn mode does not fold inverse gate
+    const result = makeResult(inversePair, 70, 70);
+    const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS, "warn");
+    expect(aggregate.strictInverseGatePassed).toBe(false);
+    expect(aggregate.diagnosticGatePassed).toBe(true);
+  });
+
+  it("fail mode: diagnosticGatePassed becomes false when strictInverseGatePassed is false", () => {
+    // Same setup as warn test: skew=0 passes diagnostic threshold, but CE=40 fails inverse gate
+    // With "fail" mode, inverse gate is folded into diagnosticGatePassed
+    const result = makeResult(inversePair, 70, 70);
+    const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS, "fail");
+    expect(aggregate.strictInverseGatePassed).toBe(false);
+    expect(aggregate.diagnosticGatePassed).toBe(false);
+  });
+
+  it("strictInverseGatePassed is true when no strict inverse pairs are present", () => {
+    // Regular pair with no isStrictInverse — gate vacuously passes
+    const result = makeResult(nonInversePair, 55, 50);
+    const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS);
+    expect(aggregate.strictInversePairCount).toBe(0);
+    expect(aggregate.strictInverseGatePassed).toBe(true);
+  });
+});
