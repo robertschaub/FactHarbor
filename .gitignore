@@ -136,3 +136,5 @@ artifacts/
 /apps/web/build-out.txt
 /build-latest.txt
 /test-latest.txt
+
+/apps/web/config.db.bak
