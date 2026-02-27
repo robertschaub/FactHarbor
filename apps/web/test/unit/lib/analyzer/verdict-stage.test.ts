@@ -373,6 +373,16 @@ describe("adversarialChallenge (Step 3)", () => {
 
     expect(result.challenges).toEqual([]);
   });
+
+  it("should throw Stage4NullResultError when challenger returns null", async () => {
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: null });
+
+    await expect(
+      adversarialChallenge([], [], [], mockLLM),
+    ).rejects.toMatchObject({
+      name: "Stage4NullResultError",
+    });
+  });
 });
 
 // ============================================================================
@@ -407,6 +417,7 @@ describe("reconcileVerdicts (Step 4)", () => {
     expect(result).toHaveLength(1);
     expect(result[0].truthPercentage).toBe(72);
     expect(result[0].confidence).toBe(78);
+    expect(result[0].confidenceTier).toBe("HIGH");
     expect(result[0].verdict).toBe("MOSTLY-TRUE");
     expect(result[0].challengeResponses).toHaveLength(1);
     expect(result[0].challengeResponses[0].verdictAdjusted).toBe(true);
@@ -437,6 +448,25 @@ describe("reconcileVerdicts (Step 4)", () => {
 
     // Original preserved
     expect(result[0].truthPercentage).toBe(75);
+  });
+
+  it("should throw Stage4NullResultError when reconciliation returns null", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, confidenceTier: "HIGH", reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: [], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+
+    const mockLLM = createMockLLM({ VERDICT_RECONCILIATION: null });
+
+    await expect(
+      reconcileVerdicts(advocateVerdictsList, { challenges: [] }, [], [], mockLLM),
+    ).rejects.toMatchObject({
+      name: "Stage4NullResultError",
+    });
   });
 });
 

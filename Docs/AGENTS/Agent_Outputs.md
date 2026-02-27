@@ -2235,3 +2235,18 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If reviewer follow-up asks for hard enforcement (not comments/docs), implement a shared boundary source (contract endpoint or generated constants) and add a parity test between C# and TS mappings.
 **Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Verdict Null Guards + Confidence Tier Consistency + Schema Description Sync
+**Task:** Address review items in verdict stage and config schema: add missing null guards for challenger/reconciliation calls, resolve confidenceTier interim consistency concern, and fix selfConsistencyTemperature description drift.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit `Stage4NullResultError` guards after `VERDICT_CHALLENGER` and `VERDICT_RECONCILIATION` LLM calls to fail fast with clear diagnostics when a null result is masked upstream.
+- Kept required `confidenceTier` at advocate parse time, then ensured it stays consistent by recomputing tier whenever confidence is changed (spread adjustment and reconciliation merge path).
+- Updated `selfConsistencyTemperature` schema `.describe()` default text from `0.3` to `0.4` to match code defaults.
+- Added/updated unit tests to cover both new null-guard error paths and reconciled confidence-tier behavior.
+**Open items:**
+- None for this change set.
+**Warnings:**
+- Working tree also includes unrelated pre-existing changes in `.gitignore`; left untouched.
+**For next agent:**
+- If any new verdict path mutates `confidence`, require co-located `confidenceTier` recomputation to avoid internal drift.
+**Learnings:** no

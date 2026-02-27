@@ -477,7 +477,7 @@ export const PipelineConfigSchema = z.object({
   selfConsistencyMode: z.enum(["full", "disabled"]).optional()
     .describe("Self-consistency check mode for ClaimBoundary verdicts (default: full)"),
   selfConsistencyTemperature: z.number().min(0.1).max(0.7).optional()
-    .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.3)"),
+    .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.4)"),
   challengerTemperature: z.number().min(0.1).max(0.7).optional()
     .describe("Temperature for adversarial challenger (floor 0.1, ceiling 0.7) (default: 0.3)"),
   debateModelTiers: z.object({

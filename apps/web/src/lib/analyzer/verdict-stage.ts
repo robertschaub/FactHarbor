@@ -313,10 +313,14 @@ export async function runVerdictStage(
   );
 
   // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
-  const spreadAdjustedVerdicts = enforcedVerdicts.map(v => ({
-    ...v,
-    confidence: applySpreadAdjustment(v.confidence, v.consistencyResult, config),
-  }));
+  const spreadAdjustedVerdicts = enforcedVerdicts.map((v) => {
+    const adjustedConfidence = applySpreadAdjustment(v.confidence, v.consistencyResult, config);
+    return {
+      ...v,
+      confidence: adjustedConfidence,
+      confidenceTier: confidenceToTier(adjustedConfidence),
+    };
+  });
 
   // Step 5: Verdict Validation
   const validatedVerdicts = await validateVerdicts(spreadAdjustedVerdicts, evidence, llmCall, config, warnings);
@@ -429,6 +433,7 @@ function parseAdvocateVerdict(
     truthPercentage,
     verdict: percentageToClaimVerdict(truthPercentage, confidence, undefined, config.mixedConfidenceThreshold),
     confidence,
+    // Initial tier from advocate confidence; recomputed in later steps if confidence changes.
     confidenceTier: confidenceToTier(confidence),
     reasoning: String(raw.reasoning ?? ""),
     harmPotential: claim?.harmPotential ?? "medium",
@@ -553,6 +558,13 @@ export async function adversarialChallenge(
     claimBoundaries: boundaries,
   }, { tier: config.debateModelTiers.challenger, temperature, providerOverride: config.debateModelProviders.challenger, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
 
+  // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
+  if (result == null) {
+    const err = new Error("Stage 4 VERDICT_CHALLENGER: LLM call returned no result — possible masked AI SDK error");
+    err.name = "Stage4NullResultError";
+    throw err;
+  }
+
   return parseChallengeDocument(result);
 }
 
@@ -596,6 +608,13 @@ export async function reconcileVerdicts(
     consistencyResults,
   }, { tier: config.debateModelTiers.reconciler, providerOverride: config.debateModelProviders.reconciler, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
 
+  // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
+  if (result == null) {
+    const err = new Error("Stage 4 VERDICT_RECONCILIATION: LLM call returned no result — possible masked AI SDK error");
+    err.name = "Stage4NullResultError";
+    throw err;
+  }
+
   const rawReconciled = result as Array<Record<string, unknown>>;
 
   const verdicts = advocateVerdicts.map((original) => {
@@ -617,6 +636,7 @@ export async function reconcileVerdicts(
       truthPercentage,
       verdict: percentageToClaimVerdict(truthPercentage, confidence, undefined, config.mixedConfidenceThreshold),
       confidence,
+      confidenceTier: confidenceToTier(confidence),
       reasoning: String(reconciled.reasoning ?? original.reasoning),
       isContested: Boolean(reconciled.isContested ?? original.isContested),
       consistencyResult: consistency ?? original.consistencyResult,
