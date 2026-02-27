@@ -478,6 +478,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Self-consistency check mode for ClaimBoundary verdicts (default: full)"),
   selfConsistencyTemperature: z.number().min(0.1).max(0.7).optional()
     .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.3)"),
+  challengerTemperature: z.number().min(0.1).max(0.7).optional()
+    .describe("Temperature for adversarial challenger (floor 0.1, ceiling 0.7) (default: 0.3)"),
   debateModelTiers: z.object({
     advocate: z.enum(["haiku", "sonnet", "opus"]).optional(),
     selfConsistency: z.enum(["haiku", "sonnet", "opus"]).optional(),
@@ -738,7 +740,10 @@ export const PipelineConfigSchema = z.object({
     data.selfConsistencyMode = "full";
   }
   if (data.selfConsistencyTemperature === undefined) {
-    data.selfConsistencyTemperature = 0.3;
+    data.selfConsistencyTemperature = 0.4; // Alpha optimization: matches DEFAULT_PIPELINE_CONFIG
+  }
+  if (data.challengerTemperature === undefined) {
+    data.challengerTemperature = 0.3;
   }
   if (data.openaiTpmGuardEnabled === undefined) {
     data.openaiTpmGuardEnabled = true;

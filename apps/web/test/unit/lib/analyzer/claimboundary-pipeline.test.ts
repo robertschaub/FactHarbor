@@ -1104,8 +1104,8 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     const state = {
       understanding: {
         preliminaryEvidence: [
-          { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01" },
-          { sourceUrl: "https://example.com/2", snippet: "Evidence B", claimId: "AC_02" },
+          { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01", probativeValue: "high" },
+          { sourceUrl: "https://example.com/2", snippet: "Evidence B", claimId: "AC_02", probativeValue: "low" },
         ],
       },
       evidenceItems: [],
@@ -1119,6 +1119,24 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(state.evidenceItems[0].sourceUrl).toBe("https://example.com/1");
     expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01"]);
     expect(state.evidenceItems[0].scopeQuality).toBe("partial");
+    expect(state.evidenceItems[0].probativeValue).toBe("high");
+    expect(state.evidenceItems[1].probativeValue).toBe("low");
+  });
+
+  it("should default probativeValue to 'medium' when LLM did not produce one", () => {
+    const state = {
+      understanding: {
+        preliminaryEvidence: [
+          { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01" },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].probativeValue).toBe("medium");
   });
 
   it("should handle empty preliminary evidence", () => {
@@ -2277,7 +2295,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     const result = buildVerdictStageConfig({} as any, {} as any);
 
     expect(result.selfConsistencyMode).toBe("disabled");
-    expect(result.selfConsistencyTemperature).toBe(0.3);
+    expect(result.selfConsistencyTemperature).toBe(0.4);
     expect(result.stableThreshold).toBe(5);
     expect(result.moderateThreshold).toBe(12);
     expect(result.unstableThreshold).toBe(20);

@@ -25,9 +25,9 @@
 | ClaimBoundary objects "hollow" | MEDIUM | label=null, atomicClaims=[] | ℹ️ BY DESIGN |
 | Challenger temperature 0.0 | HIGH | Deterministic debate reduces diversity | 🔶 NEEDS APPROVAL |
 | UCM config drift (6 parameters) | MEDIUM | DB values diverge from code defaults | 🔶 NEEDS REVIEW |
-| Source reliability metadata null | MEDIUM | resultJson shows null SR metadata | Not yet investigated |
-| Recurring `AI_InvalidPromptError` | MEDIUM | Intermittent structured output failures | Not yet investigated |
-| 100% fetch failure on some batches | MEDIUM | Research phase source acquisition | Not yet investigated |
+| Source reliability metadata null | MEDIUM | resultJson shows null SR metadata | ✅ FIXED (output serialization) |
+| Recurring `AI_InvalidPromptError` | MEDIUM | Intermittent structured output failures | Investigated — error masking in llm.ts:189 safeGet() |
+| 100% fetch failure on some batches | MEDIUM | Research phase source acquisition | Investigated — same-domain batching, no rate limiting |
 
 ---
 
@@ -57,17 +57,18 @@
 - **File:** `verdict-stage.ts:626-679`
 - **Issue:** Grounding/direction validation issues only `console.warn`'d — invisible to users.
 
-### W5 (MEDIUM): UCM config drift — 🔶 NEEDS REVIEW
-- **Issue:** 6 UCM database values diverge from code defaults:
+### W5 (MEDIUM): UCM config drift — 🔶 PARTIALLY RESOLVED
+- **Issue:** 5 UCM database values diverge from code defaults (was reported as 6, but `analysisMode` has no drift — both code and DB use "quick"; "comprehensive" does not exist as a valid value):
+- **selfConsistencyTemperature internal inconsistency resolved:** Code defaults were split (DEFAULT_PIPELINE_CONFIG=0.4, schema transform/VerdictStageConfig/buildVerdictStageConfig=0.3). Now aligned to 0.4 everywhere (Alpha optimization intent). DB retains 0.3 until admin updates.
 
-| Parameter | Code Default | DB Value | Risk |
-|-----------|-------------|----------|------|
-| `selfConsistencyTemperature` | 0.4 | 0.3 | Lower diversity in consistency check |
-| `maxTotalTokens` | 1,000,000 | 750,000 | Earlier truncation of large analyses |
-| `maxIterationsPerContext` | 3 | 5 | Deprecated field, no effect |
-| `sourceReliability.openaiModel` | `gpt-4.1-mini` | `gpt-4o-mini` | Older model for SR evaluation |
-| `sourceReliability.defaultScore` | 0.4 | 0.5 | More generous default for unknown sources |
-| `analysisMode` | `"comprehensive"` | `"quick"` | Potentially reduced analysis depth |
+| Parameter | Code Default | DB Value | Status |
+|-----------|-------------|----------|--------|
+| `selfConsistencyTemperature` | 0.4 | 0.3 | ✅ Code aligned to 0.4; DB retains 0.3 (Captain: update DB?) |
+| `maxTotalTokens` | 1,000,000 | 750,000 | 🔶 Captain decision: cost vs quality tradeoff |
+| `maxIterationsPerContext` | 3 | 5 | ℹ️ No action — deprecated, not enforced in CB pipeline |
+| `sourceReliability.openaiModel` | `gpt-4.1-mini` | `gpt-4o-mini` | 🔶 Captain decision: gpt-4.1-mini is newer |
+| `sourceReliability.defaultScore` | 0.4 | 0.5 | 🔶 Captain decision: conservative (0.4) vs permissive (0.5) |
+| `analysisMode` | `"quick"` | `"quick"` | ✅ No drift (was erroneously reported as drifted) |
 
 ### W6 (MEDIUM): Spread multiplier only adjusts confidence — ℹ️ BY DESIGN
 - Truth% is the best estimate; confidence reflects certainty. No action needed.
@@ -75,6 +76,8 @@
 ### W7 (MEDIUM): Structural warnings silent — ✅ FIXED
 
 ### W8 (LOW): No maxTokens on LLM calls — 🔶 LOW PRIORITY
+- **Issue:** LLM calls in the pipeline do not set explicit `maxTokens`, relying on provider defaults. Risk: runaway token usage on complex analyses.
+- **Recommendation:** Add `maxTokens` per-role via UCM config (e.g., advocate: 4096, challenger: 2048, validation: 1024). Low priority — provider defaults are reasonable for current workloads.
 
 ### W9 (LOW): Gate 4 has no gate behavior — ℹ️ BY DESIGN
 
@@ -168,10 +171,25 @@ Key questions:
 4. Is `selfConsistencyTemperature: 0.3` intentional? (vs 0.4 default)
 5. Is `sourceReliability.defaultScore: 0.5` intentional? (more generous than 0.4 default)
 
-### Priority 3: Remaining uninvestigated items
-- Source reliability metadata null in output (MEDIUM)
-- Recurring `AI_InvalidPromptError` (MEDIUM)
-- 100% fetch failure on some query batches (MEDIUM)
+### Priority 3: Investigated items (Phase 3)
+
+#### W13 (MEDIUM): Source reliability metadata null — ✅ FIXED
+- **Root cause:** `claimboundary-pipeline.ts:569-577` — output serialization copies `trackRecordScore` but omits `trackRecordConfidence` and `trackRecordConsensus` fields from `FetchedSource`.
+- **Fix:** Added both fields to the sources output mapping.
+
+#### W14 (MEDIUM): Recurring `AI_InvalidPromptError` — ROOT CAUSE IDENTIFIED
+- **Root cause:** Three-layer error masking:
+  1. `llm.ts:189-199` — `safeGet()` silently catches all exceptions (including AI SDK errors), returns `undefined`
+  2. `claimboundary-pipeline.ts:4299-4378` — `createProductionLLMCall()` converts all errors to generic `Stage4LLMCallError`, losing original error type
+  3. `verdict-stage.ts:386-399` — No null check after `llmCall()`, cast hides masked failures
+- **Likely triggers:** Deeply nested Zod schemas, prompt size exceeding limits, intermittent provider issues
+- **Recommendation:** Add `errorType` to LLM call metrics; in `safeGet()`, propagate `InvalidPromptError` instead of silent catch; add null checks after `llmCall()`. Moderate effort (3-5 changes).
+
+#### W15 (MEDIUM): 100% fetch failure on some batches — ROOT CAUSE IDENTIFIED
+- **Root cause:** `claimboundary-pipeline.ts:2909-2964` — batch fetch uses `Promise.all()` with FETCH_CONCURRENCY=3, no domain awareness. When search results cluster on one domain (e.g., 3 URLs from news.com), parallel requests trigger rate limiting (429/403).
+- **Missing safeguards:** No domain-level grouping, no per-domain rate limiting, no stagger between same-domain requests, no adaptive backoff.
+- **Current mitigation:** Code already detects and warns on 50%+ failure ratio (lines 2966-2984).
+- **Recommendation:** Add domain-level grouping before batch fetch + 500ms stagger for same-domain URLs. This is an architectural improvement (50-100 lines), not a quick fix.
 
 ---
 

@@ -1063,6 +1063,50 @@ describe("Configurable debate model tiers", () => {
     expect(callOptions).toMatchObject({ tier: "haiku" });
   });
 
+  it("adversarialChallenge should pass challengerTemperature clamped to [0.1, 0.7]", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, confidenceTier: "HIGH", reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      challengerTemperature: 0.5,
+    };
+
+    await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, config);
+
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.temperature).toBe(0.5);
+  });
+
+  it("adversarialChallenge should clamp temperature to floor 0.1", async () => {
+    const verdicts: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, confidenceTier: "HIGH", reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 75, confidence: 80, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      challengerTemperature: 0.01,
+    };
+
+    await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, config);
+
+    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
+    expect(callOptions.temperature).toBe(0.1);
+  });
+
   it("reconcileVerdicts should use config.debateModelTiers.reconciler", async () => {
     const advocateVerdictsList: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",

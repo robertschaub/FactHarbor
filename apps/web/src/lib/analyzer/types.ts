@@ -815,8 +815,8 @@ export interface CBClaimVerdict {
   consistencyResult: ConsistencyResult;
   challengeResponses: ChallengeResponse[];
   triangulationScore: TriangulationScore;
-  /** Gate 4: Confidence classification tier based on confidence score. */
-  confidenceTier?: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
+  /** Gate 4: Confidence classification tier based on confidence score. Always populated by classifyConfidence(). */
+  confidenceTier: "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
   /** Plausible range for truthPercentage, computed from consistency spread + boundary variance. */
   truthPercentageRange?: TruthPercentageRange;
   /** B-7: Misleadingness assessment, independent of truthPercentage. Output-only (not fed back into debate). */
