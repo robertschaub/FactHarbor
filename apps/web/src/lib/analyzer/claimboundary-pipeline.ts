@@ -376,6 +376,7 @@ export async function runClaimBoundaryAnalysis(
       verdictReason: "insufficient_evidence",
       verdict: "UNVERIFIED" as ClaimVerdict7Point,
       confidence: 0,
+      confidenceTier: "INSUFFICIENT" as const,
       reasoning: "Insufficient evidence to produce a reliable verdict. " +
         "This claim did not meet the minimum evidence requirements (items or source type diversity).",
       harmPotential: "low" as const,
@@ -570,6 +571,8 @@ export async function runClaimBoundaryAnalysis(
         url: s.url,
         title: s.title,
         trackRecordScore: s.trackRecordScore,
+        trackRecordConfidence: s.trackRecordConfidence,
+        trackRecordConsensus: s.trackRecordConsensus,
         category: s.category,
         fetchSuccess: s.fetchSuccess,
         searchQuery: s.searchQuery,
@@ -4049,7 +4052,9 @@ export function buildVerdictStageConfig(
   return {
     selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "disabled",
     selfConsistencyTemperature:
-      pipelineConfig.selfConsistencyTemperature ?? 0.3,
+      pipelineConfig.selfConsistencyTemperature ?? 0.4,
+    challengerTemperature:
+      pipelineConfig.challengerTemperature ?? 0.3,
     stableThreshold: spreadThresholds.stable ?? 5,
     moderateThreshold: spreadThresholds.moderate ?? 12,
     unstableThreshold: spreadThresholds.unstable ?? 20,
@@ -4299,6 +4304,7 @@ export function createProductionLLMCall(
       result = await callModel(attemptModel);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorType = error instanceof Error ? error.name : undefined;
 
       // Record failed LLM call with actual resolved provider
       recordLLMCall({
@@ -4313,6 +4319,7 @@ export function createProductionLLMCall(
         schemaCompliant: false,
         retries: 0,
         errorMessage,
+        errorType,
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
       });
@@ -4332,6 +4339,7 @@ export function createProductionLLMCall(
           result = await callModel(attemptModel);
         } catch (retryError) {
           const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+          const retryErrorType = retryError instanceof Error ? retryError.name : undefined;
           recordLLMCall({
             taskType: "verdict",
             provider: attemptModel.provider,
@@ -4344,6 +4352,7 @@ export function createProductionLLMCall(
             schemaCompliant: false,
             retries: 1,
             errorMessage: retryMessage,
+            errorType: retryErrorType,
             timestamp: new Date(),
             debateRole: options?.callContext?.debateRole,
           });

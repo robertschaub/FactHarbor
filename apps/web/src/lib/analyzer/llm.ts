@@ -11,6 +11,7 @@ import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
+import { AISDKError } from "ai";
 import {
   getStructuredOutputGuidance,
   getEnhancedRetryPrompt,
@@ -190,6 +191,11 @@ export function extractStructuredOutput(result: unknown): unknown {
     try {
       return getter();
     } catch (e) {
+      // Re-throw AI SDK errors (InvalidPromptError, APICallError, etc.) — these indicate real
+      // failures that must be visible to callers, not silently swallowed as undefined.
+      if (e instanceof AISDKError) {
+        throw e;
+      }
       if (label) {
         const err = e instanceof Error ? e : undefined;
         console.warn(`[Analyzer] extractStructuredOutput: ${label} getter threw:`, err?.name, err?.message?.slice(0, 200));

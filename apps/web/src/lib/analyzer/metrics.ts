@@ -37,6 +37,8 @@ export interface LLMCallMetric {
   schemaCompliant: boolean;
   retries: number;
   errorMessage?: string;
+  /** Original error class name (e.g., "AI_InvalidPromptError", "APICallError") — preserves type through Stage4LLMCallError wrapping */
+  errorType?: string;
   timestamp: Date;
   /** Optional: role in the debate (advocate, challenger, reconciler, etc.) */
   debateRole?: string;

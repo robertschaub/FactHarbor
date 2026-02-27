@@ -81,6 +81,8 @@ export interface VerdictStageConfig {
   selfConsistencyMode: "full" | "disabled";
   /** Temperature for self-consistency re-runs (default 0.3, floor 0.1, ceiling 0.7) */
   selfConsistencyTemperature: number;
+  /** Temperature for adversarial challenger (default 0.3, floor 0.1, ceiling 0.7) */
+  challengerTemperature: number;
 
   /** Spread thresholds for confidence adjustment (§8.5.5) */
   stableThreshold: number;       // default 5pp — highly stable
@@ -177,7 +179,8 @@ export interface VerdictStageConfig {
  */
 export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
   selfConsistencyMode: "full",
-  selfConsistencyTemperature: 0.3,
+  selfConsistencyTemperature: 0.4,
+  challengerTemperature: 0.3,
   stableThreshold: 5,
   moderateThreshold: 12,
   unstableThreshold: 20,
@@ -394,6 +397,13 @@ export async function advocateVerdict(
     },
   }, { tier: config.debateModelTiers.advocate, providerOverride: config.debateModelProviders.advocate, callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" } });
 
+  // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
+  if (result == null) {
+    const err = new Error("Stage 4 VERDICT_ADVOCATE: LLM call returned no result — possible masked AI SDK error");
+    err.name = "Stage4NullResultError";
+    throw err;
+  }
+
   // Parse LLM result into CBClaimVerdict[]
   const rawVerdicts = result as Array<Record<string, unknown>>;
   return rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims, config));
@@ -419,6 +429,7 @@ function parseAdvocateVerdict(
     truthPercentage,
     verdict: percentageToClaimVerdict(truthPercentage, confidence, undefined, config.mixedConfidenceThreshold),
     confidence,
+    confidenceTier: confidenceToTier(confidence),
     reasoning: String(raw.reasoning ?? ""),
     harmPotential: claim?.harmPotential ?? "medium",
     isContested: Boolean(raw.isContested ?? false),
@@ -525,6 +536,9 @@ export async function adversarialChallenge(
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
 ): Promise<ChallengeDocument> {
+  // Temperature clamped to [0.1, 0.7] — same bounds as selfConsistencyTemperature
+  const temperature = Math.max(0.1, Math.min(0.7, config.challengerTemperature));
+
   const result = await llmCall("VERDICT_CHALLENGER", {
     claimVerdicts: advocateVerdicts.map((v) => ({
       claimId: v.claimId,
@@ -537,7 +551,7 @@ export async function adversarialChallenge(
     })),
     evidenceItems: evidence,
     claimBoundaries: boundaries,
-  }, { tier: config.debateModelTiers.challenger, providerOverride: config.debateModelProviders.challenger, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
+  }, { tier: config.debateModelTiers.challenger, temperature, providerOverride: config.debateModelProviders.challenger, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
 
   return parseChallengeDocument(result);
 }
@@ -836,18 +850,28 @@ export function enforceHarmConfidenceFloor(
  * Returns verdicts unchanged — classification is informational.
  *
  * Tiers: HIGH (≥75), MEDIUM (≥50), LOW (≥25), INSUFFICIENT (<25)
+ *
+ * Boundaries are hardcoded by design (same rationale as VERDICT_BANDS in truth-scale.ts):
+ * they define a fixed structural contract for confidence interpretation across the UI,
+ * API responses, and quality gates. Making them tunable would fragment the meaning of
+ * confidence tiers across the system. If recalibration is needed, it should be a
+ * deliberate code change with synchronized updates to all consumers.
  */
+/** Classify a single confidence score into a tier. */
+export function confidenceToTier(confidence: number): CBClaimVerdict["confidenceTier"] {
+  return confidence >= 75 ? "HIGH"
+    : confidence >= 50 ? "MEDIUM"
+    : confidence >= 25 ? "LOW"
+    : "INSUFFICIENT";
+}
+
 export function classifyConfidence(
   verdicts: CBClaimVerdict[],
 ): CBClaimVerdict[] {
-  // Classify each verdict's confidence into a tier for downstream consumption.
   // Confidence is already a 0-100 number (adjusted by spread in Step 4c).
   return verdicts.map(v => ({
     ...v,
-    confidenceTier: v.confidence >= 75 ? "HIGH" as const
-      : v.confidence >= 50 ? "MEDIUM" as const
-      : v.confidence >= 25 ? "LOW" as const
-      : "INSUFFICIENT" as const,
+    confidenceTier: confidenceToTier(v.confidence),
   }));
 }
 
