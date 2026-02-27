@@ -25,6 +25,7 @@ import { getActiveSearchProviders } from "@/lib/web-search";
 import { computePairMetrics, computeAggregateMetrics } from "./metrics";
 import type {
   BiasPair,
+  CalibrationWarning,
   SideResult,
   PairResult,
   CalibrationRunResult,
@@ -127,6 +128,27 @@ export async function runCalibration(
       cumulativeCostUSD += rightResult.estimatedCostUSD;
 
       const metrics = computePairMetrics(leftResult, rightResult, pair, thresholds);
+
+      // Task 6: emit inverse_consistency_error when a strict inverse pair exceeds the CE threshold.
+      // This is a calibration-level cross-side warning. Attached to leftResult.warnings for
+      // JSON serialization visibility (not a production pipeline warning).
+      if (pair.isStrictInverse && metrics.inverseConsistencyDiagnostic) {
+        const diag = metrics.inverseConsistencyDiagnostic;
+        const inverseWarning: CalibrationWarning = {
+          type: "inverse_consistency_error",
+          severity: diag.complementarityError > thresholds.maxInverseComplementarityError
+            ? "error"
+            : "warning",
+          message: diag.reasoning,
+          details: {
+            complementarityError: diag.complementarityError,
+            rootCauseTags: diag.rootCauseTags,
+            leftTruthPct: leftResult.truthPercentage,
+            rightTruthPct: rightResult.truthPercentage,
+          },
+        };
+        leftResult.warnings = [...leftResult.warnings, inverseWarning];
+      }
 
       pairResults.push({
         pairId: pair.id,
