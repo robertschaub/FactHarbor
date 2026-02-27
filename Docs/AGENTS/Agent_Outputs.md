@@ -2265,3 +2265,17 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If further token reduction is pursued, next highest-impact check is Stage-4 prompt input duplication path (`JSON.stringify(input)` user message), but validate prompt-variable substitution behavior first to avoid contract regressions.
 **Learnings:** no
+### 2026-02-27 | Code Reviewer | Codex (GPT-5) | Add Missing Coverage for Verdict Temperature + Payload Trim Paths
+**Task:** Address uncovered test gaps from review: challenger temperature mapping/default, seed-drift coverage for temperature defaults, and Step 2 payload-trim verification.
+**Files touched:** `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/config-schemas.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added assertions that `buildVerdictStageConfig` maps explicit `challengerTemperature` and uses default `0.3` when omitted.
+- Extended config tests to validate effective (schema-transformed) temperature defaults against seed data, covering `selfConsistencyTemperature` and `challengerTemperature`.
+- Added Step 2 self-consistency evidence payload trim test to ensure contract-relevant fields are retained and heavy fields are removed.
+**Open items:**
+- None from this review scope.
+**Warnings:**
+- `DEFAULT_PIPELINE_CONFIG` does not explicitly include `challengerTemperature`; it is injected via `PipelineConfigSchema` transform. Tests now assert effective defaults to match runtime behavior.
+**For next agent:**
+- If `challengerTemperature` is later moved into `DEFAULT_PIPELINE_CONFIG`, simplify tests back to direct constant parity assertions.
+**Learnings:** no

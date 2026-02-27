@@ -2273,6 +2273,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     const pipelineConfig = {
       selfConsistencyMode: "full",
       selfConsistencyTemperature: 0.25,
+      challengerTemperature: 0.45,
     } as any;
     const calcConfig = {
       selfConsistencySpreadThresholds: { stable: 4, moderate: 10, unstable: 18 },
@@ -2283,6 +2284,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
 
     expect(result.selfConsistencyMode).toBe("full");
     expect(result.selfConsistencyTemperature).toBe(0.25);
+    expect(result.challengerTemperature).toBe(0.45);
     expect(result.stableThreshold).toBe(4);
     expect(result.moderateThreshold).toBe(10);
     expect(result.unstableThreshold).toBe(18);
@@ -2296,6 +2298,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
 
     expect(result.selfConsistencyMode).toBe("disabled");
     expect(result.selfConsistencyTemperature).toBe(0.4);
+    expect(result.challengerTemperature).toBe(0.3);
     expect(result.stableThreshold).toBe(5);
     expect(result.moderateThreshold).toBe(12);
     expect(result.unstableThreshold).toBe(20);

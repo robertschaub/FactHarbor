@@ -348,6 +348,51 @@ describe("selfConsistencyCheck (Step 2)", () => {
     expect(result[0].stable).toBe(true);       // 3 ≤ 5 (stableThreshold)
   });
 
+  it("should trim self-consistency evidence payload to contract-relevant fields", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem({
+      sourceType: "government_report",
+      sourceAuthority: "primary",
+      evidenceBasis: "documented",
+      isDerivative: true,
+      derivedFromSourceUrl: "https://example.com/original",
+    })];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: [], contradictingEvidenceIds: [], boundaryFindings: [],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const mockLLM = vi.fn(async () => [{ claimId: "AC_01", truthPercentage: 72 }]);
+
+    await selfConsistencyCheck(
+      claims, evidence, boundaries, matrix, advocateVerdictsList, mockLLM,
+    );
+
+    const callInput = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][1] as {
+      evidenceItems: Array<Record<string, unknown>>;
+    };
+    const sent = callInput.evidenceItems[0];
+
+    expect(sent).toMatchObject({
+      id: "EV_01",
+      sourceId: "S1",
+      sourceUrl: "https://example.com/source",
+      sourceType: "government_report",
+      sourceAuthority: "primary",
+      evidenceBasis: "documented",
+      isDerivative: true,
+      derivedFromSourceUrl: "https://example.com/original",
+      probativeValue: "high",
+    });
+    expect(sent).not.toHaveProperty("sourceExcerpt");
+    expect(sent).not.toHaveProperty("specificity");
+  });
+
   it("should clamp temperature to [0.1, 0.7]", async () => {
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem()];

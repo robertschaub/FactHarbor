@@ -648,6 +648,9 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.maxIterationsPerContext).toBe(3); // v2.11.1: reduced from 5
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalIterations).toBe(10); // v2.11.1: reduced from 20
       expect(DEFAULT_PIPELINE_CONFIG.maxTotalTokens).toBe(1000000); // Alpha optimization: increased from 750k for deep runs
+      expect(DEFAULT_PIPELINE_CONFIG.selfConsistencyTemperature).toBe(0.4);
+      const effectiveDefaults = PipelineConfigSchema.parse({ ...DEFAULT_PIPELINE_CONFIG });
+      expect(effectiveDefaults.challengerTemperature).toBe(0.3);
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
       expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("verifiability_and_misleadingness");
       expect(DEFAULT_PIPELINE_CONFIG.tigerScoreMode).toBe("off");
@@ -695,5 +698,15 @@ describe("Default Config Values", () => {
         );
       });
     }
+
+    it("effective selfConsistencyTemperature default matches seed file", () => {
+      const effectiveDefaults = PipelineConfigSchema.parse({ ...DEFAULT_PIPELINE_CONFIG });
+      expect(effectiveDefaults.selfConsistencyTemperature).toBe(seed.selfConsistencyTemperature);
+    });
+
+    it("effective challengerTemperature default matches seed file", () => {
+      const effectiveDefaults = PipelineConfigSchema.parse({ ...DEFAULT_PIPELINE_CONFIG });
+      expect(effectiveDefaults.challengerTemperature).toBe(seed.challengerTemperature);
+    });
   });
 });
