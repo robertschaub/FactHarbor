@@ -66,6 +66,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** The Executive Summary contains 15 prioritized action items with 6 identified quick wins. The D1-D5 plan only scheduled 3 of 15. Cross-referencing a consolidated priority list against any execution plan immediately reveals coverage gaps that would otherwise go unnoticed until later. This takes 15 minutes and prevents scope blindness — especially when a plan was built bottom-up from a specific problem (bias skew) rather than top-down from the full opportunity set.
 **Files:** `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/WIP/Report_Quality_Opportunity_Map_2026-02-22.md` §3
 
+### 2026-02-27 — AGENTS.md abstract-form rule is scoped to analysis prompts, not calibration data
+**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** AGENTS.md §Analysis Prompt Rules states "Prompt examples must be abstract (e.g., 'Entity A did X')". This rule applies specifically to LLM prompts under `apps/web/prompts/` — it prevents teaching-to-the-test in analysis. Calibration fixture data (`test/fixtures/`) is NOT covered by this rule. Abstract claims with placeholders ("Entity A has property P") cannot be web-searched and produce UNVERIFIED on both sides, yielding a misleading CE ≈ 0. Calibration fixtures must use concrete, researchable topics to produce meaningful metrics. This distinction is easy to miss during plan review.
+**Files:** `apps/web/test/fixtures/framing-symmetry-pairs.json`, `AGENTS.md` §Analysis Prompt Rules
+
+### 2026-02-27 — Post-implementation root-cause analysis is higher leverage than threshold tuning
+**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** useful-pattern
+**Learning:** After Phase 2 implementation, the German motivating pair still showed CE=34pp — seemingly poor improvement. Root-cause analysis of actual job results revealed 3 compounding factors (asymmetric claim decomposition, silent integrity failures, source fetch degradation). The fix was not threshold tuning or new code — it was enabling the already-implemented Phase 1 policies (which shipped as `disabled` for backward compatibility). One config change (commit 8e4a0d0) was predicted to reduce CE from 34pp to ~7pp. Lesson: when metrics don't improve after a feature lands, investigate the actual data before adding more features. The gap is often operational (config, deployment) not architectural.
+**Files:** `apps/web/configs/pipeline.default.json`, `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas

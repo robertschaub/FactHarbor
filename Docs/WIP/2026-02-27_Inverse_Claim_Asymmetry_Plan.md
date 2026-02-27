@@ -150,6 +150,7 @@ Baseline report: pending first calibration run with inverse fixtures (Phase 2 pr
 6. ✅ `safeDowngradeVerdict()` shared utility (verdict-stage.ts lines 916-944): `truthPercentage = 50`, `confidenceTier = "INSUFFICIENT"`, emits `verdict_integrity_failure` (severity: error).
 7. ✅ `INSUFFICIENT_CONFIDENCE_MAX = 24` named constant (verdict-stage.ts:895, claimboundary-pipeline.ts:4504). Boundary-level confidence cap when integrity downgrade detected (lines 4645-4650).
 8. ✅ Both policies default to `"disabled"` in UCM (pipeline.default.json) — backward compatible.
+9. ✅ **Policies activated (commit 8e4a0d0, 2026-02-27 evening):** `verdictGroundingPolicy: "safe_downgrade"`, `verdictDirectionPolicy: "retry_once_then_safe_downgrade"`. Enabled after root-cause analysis of German pair CE=34pp showed 3 compounding factors (asymmetric claim decomposition, silent integrity failures, source fetch degradation). Predicted CE reduction: 34pp → ~7pp. Pending validation: re-run German pair.
 
 ## Phase 2 - Symmetry Audit (Calibration/Audit-only, immediate term) — ✅ COMPLETE
 
@@ -179,7 +180,14 @@ Acceptance:
 
 ## Phase 3 - Calibration Hardening (Process) — 🧭 NOT STARTED
 
-Depends on: Phase 2 completion + first baseline calibration run with inverse fixtures.
+Depends on: Phase 2 completion ✅ + first baseline calibration run with inverse fixtures (partial — canary data available, full run pending).
+
+**Canary baseline data (2026-02-27, policies disabled at time of run):**
+- `inverse-minwage-employment-en`: CE=12pp, no integrity issues — PASS
+- `inverse-fluoride-safety-en`: CE=16pp, 4 integrity issues (2 per side, symmetric) — PASS
+- `immigration-impact-en` (non-inverse): adjusted skew 23pp — PASS
+
+**Pending:** Full calibration run with policies enabled to establish post-activation baseline. German motivating pair re-run to validate CE <15pp prediction.
 Immediate-term note: this phase is the operational delivery path for S2 per Captain decision.
 
 1. Add CI/calibration gate on `complementarityError`/asymmetry for strict inverse category.

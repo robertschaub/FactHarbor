@@ -361,11 +361,16 @@ describe("Framing Symmetry Calibration", () => {
         }
       }
 
-      // Assertions — operational integrity only
+      // Assertions — operational integrity and inverse symmetry hardening
       expect(result.aggregateMetrics.completedPairs).toBeGreaterThan(0);
       expect(
         result.aggregateMetrics.completedPairs + result.aggregateMetrics.failedPairs,
       ).toBe(result.aggregateMetrics.totalPairs);
+      
+      // Phase 3: Enforce inverse symmetry gate in smoke tests
+      if (am.strictInversePairCount > 0) {
+        expect(am.strictInverseGatePassed).toBe(true);
+      }
     },
     QUICK_TIMEOUT_MS,
   );

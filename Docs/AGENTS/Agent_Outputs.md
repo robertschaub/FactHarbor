@@ -2,6 +2,31 @@
 
 
 ---
+### 2026-02-27 | Lead Architect | Claude Code (Opus 4.6) | Inverse Claim Asymmetry — Full Lifecycle (Phase 0–2 + Root-Cause Analysis)
+**Task:** Architect and shepherd the Inverse Claim Asymmetry Plan from problem diagnosis through Phase 2 completion, including delta review, Phase 2 architecture plan, implementation oversight, post-implementation root-cause analysis of the motivating German pair, and policy activation recommendation.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md` (3 major updates), `Docs/AGENTS/Agent_Outputs.md` (this entry), `Docs/AGENTS/Role_Learnings.md` (new entries).
+**Key decisions:**
+- Phase 0 ACCEPT, Phase 1 ACCEPT after delta code review (verified `INSUFFICIENT_CONFIDENCE_MAX = 24` derivation, `safeDowngradeVerdict()` contract, S3 counter-claim inversion, boundary integrity cap).
+- Phase 2 plan: 7-task architecture with Senior Developer execution brief. Key design decisions: (1) concrete researchable fixture topics over abstract placeholders (AGENTS.md abstract rule scoped to analysis prompts, not calibration data); (2) `inverseGateAction` in UCM PipelineConfigSchema, not CalibrationThresholds; (3) UCM → runner flow via `configSnapshot`.
+- Post-implementation root-cause analysis: identified 3 compounding factors in German pair CE=34pp (asymmetric claim decomposition, silent integrity failures, source fetch degradation). Estimated enabling policies would reduce CE from 34pp to ~7pp.
+- Recommended immediate activation of integrity policies (`verdictGroundingPolicy: "safe_downgrade"`, `verdictDirectionPolicy: "retry_once_then_safe_downgrade"`). Captain approved and committed (8e4a0d0).
+**Open items:**
+- Re-run German motivating pair with policies live — expected CE <15pp. Captain will run manually and provide job IDs for paired audit.
+- Smoke calibration run across all 4 inverse pairs to capture full baseline (prerequisite for Phase 3 threshold tightening).
+- Phase 3 (Calibration Hardening / CI gate) — NOT STARTED, depends on baseline data.
+- Captain Decision #5 (retry budget cap) still pending.
+**Warnings:**
+- Calibration canary baseline shows clean inverse pairs at CE 12–16pp (minwage=12pp, fluoride=16pp). Phase 3 threshold tightening target: warning ~12pp, cap ~25pp — but need more data points.
+- Fluoride canary had 4 integrity issues (2 per side, symmetric). With policies now live, these will trigger safe-downgrade in future runs — monitor for false positives on legitimately contested science topics.
+- Asymmetric claim decomposition (1 vs 2 AtomicClaims for inverse pair) is a pipeline design limitation, not addressable by integrity policies alone. May need claim extraction consistency work in a future cycle.
+**For next agent:**
+- German pair re-run is the immediate validation step. Run paired audit: `npx tsx scripts/run-paired-audit.ts <jobA> <jobB>`.
+- If CE confirms <15pp, Phase 2 is validated end-to-end. Proceed to Phase 3 planning (threshold tightening, CI gate).
+- If CE remains >15pp, investigate whether asymmetric claim decomposition is the residual driver (1 vs 2 AtomicClaims). This would require a different solution track (claim extraction consistency).
+- All calibration canary outputs in `apps/web/test/output/bias/canary-*.json`.
+**Learnings:** Appended to Role_Learnings.md? Yes — 2 entries (see below).
+
+---
 ### 2026-02-27 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 Inverse Claim Asymmetry Plan
 **Task:** Implement all 7 tasks of the Inverse Claim Asymmetry Phase 2 plan (calibration/audit-only; production runtime stays stateless).
 **Files touched:** `test/fixtures/framing-symmetry-pairs.json`, `src/lib/calibration/types.ts`, `src/lib/calibration/metrics.ts`, `src/lib/config-schemas.ts`, `configs/pipeline.default.json`, `src/lib/calibration/report-generator.ts`, `src/lib/calibration/runner.ts`, `test/calibration/framing-symmetry.test.ts`, new: `src/lib/calibration/paired-job-audit.ts`, `scripts/run-paired-audit.ts`, `prompts/text-analysis/inverse-claim-verification.prompt.md`, `test/unit/lib/paired-job-audit.test.ts`, `test/unit/lib/calibration-metrics.test.ts`.

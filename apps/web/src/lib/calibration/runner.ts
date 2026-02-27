@@ -243,13 +243,17 @@ function filterPairs(pairs: BiasPair[], options: RunOptions): BiasPair[] {
   if (options.mode === "quick") {
     // One pair per domain, English only
     const seen = new Set<string>();
-    return pairs
+    const domainPairs = pairs
       .filter((p) => {
-        if (p.language !== "en" || seen.has(p.domain)) return false;
+        if (p.language !== "en" || seen.has(p.domain) || p.isStrictInverse) return false;
         seen.add(p.domain);
         return true;
       })
-      .slice(0, 4);
+      .slice(0, 3); // Reduced from 4 to 3 to make room for the inverse pair
+
+    // Add exactly one strict inverse pair for symmetry hardening
+    const inversePair = pairs.find((p) => p.id === "inverse-minwage-employment-en");
+    return inversePair ? [...domainPairs, inversePair] : domainPairs;
   }
 
   if (options.mode === "targeted") {
