@@ -18,6 +18,7 @@ async function getWeightConfig() {
   const calcConfig = calcConfigResult.config;
   return {
     blendCenter: 0.5, // Fixed: mathematical neutral
+    // Consumer-owned fallback when SR returns null for unknown sources.
     defaultScore: calcConfig.sourceReliability.defaultScore,
   };
 }

@@ -2201,3 +2201,19 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 - If this weighting should also consider contradicting evidence probative strength, extend the formula intentionally and calibrate defaults before rollout.
 **Learnings:** no
 ---
+---
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Addressed Review Medium Findings (Config/Schema Docs/Scale Drift)
+**Task:** Address medium-priority findings from code review: potential orphaned SR defaultScore config, API schema migration handling for new verdict columns, and cross-stack truth-scale drift risk.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/monolithic-dynamic.ts`, `apps/web/src/app/api/admin/source-reliability/route.ts`, `apps/web/src/lib/analyzer/truth-scale.ts`, `apps/api/Services/JobService.cs`, `apps/api/AGENTS.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Kept `CalcConfig.sourceReliability.defaultScore` (it is actively consumed) and clarified its contract as a **consumer-owned fallback** when SR returns `null` for unknown/unrated sources.
+- Added explicit comments at usage points (Monolithic Dynamic + SR admin weight config route) to prevent future confusion that the value is dead.
+- Added reciprocal truth-scale drift cross-reference in `truth-scale.ts` and tightened `JobService` comment to reference the matching web mapping components.
+- Updated API agent guidance to reflect current reality: `EnsureCreated()` bootstraps new DBs, while existing DBs require manual SQL scripts in `apps/api/migrations/` (including `004_add_verdict_summary_columns.sql`).
+**Open items:**
+- If desired, the remaining architectural drift risk can be reduced further by exposing verdict band boundaries from one shared contract consumed by both stacks.
+**Warnings:**
+- `dotnet build` in Debug failed due a running API process locking `bin/Debug/net8.0/FactHarbor.Api.exe`; compilation was validated with `dotnet build -c Release`.
+**For next agent:**
+- If reviewer follow-up asks for hard enforcement (not comments/docs), implement a shared boundary source (contract endpoint or generated constants) and add a parity test between C# and TS mappings.
+**Learnings:** no

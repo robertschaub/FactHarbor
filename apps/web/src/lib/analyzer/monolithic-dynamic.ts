@@ -654,6 +654,7 @@ export async function runMonolithicDynamic(
   });
 
   // v2.6.35: Apply source reliability weighting to verdict
+  // Consumer-owned fallback for unknown/unrated sources (SR returns null by design).
   const unknownSourceScore = calcConfig.sourceReliability.defaultScore;
   let avgSourceReliabilityWeight = unknownSourceScore;
   if (SR_CONFIG.enabled && finalCitations.length > 0) {

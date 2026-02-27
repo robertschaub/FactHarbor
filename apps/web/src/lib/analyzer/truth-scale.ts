@@ -40,6 +40,7 @@ export interface VerdictBandConfig {
  * System-level verdict band boundaries. These define what each verdict MEANS
  * and are NOT configurable via UCM. Changing these would break historical
  * comparisons, API contracts, and user expectations.
+ * Keep in sync with `apps/api/Services/JobService.cs` (`MapPercentageToVerdict`).
  */
 export const VERDICT_BANDS: Readonly<VerdictBandConfig> = Object.freeze({
   TRUE: 86,

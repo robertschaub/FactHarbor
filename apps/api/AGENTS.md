@@ -27,7 +27,8 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 
 ## Key Patterns
 
-- **No EF migrations.** DB is auto-created via `db.Database.EnsureCreated()` in `Program.cs`.
+- **DB bootstrap + manual schema updates.** `db.Database.EnsureCreated()` in `Program.cs` creates new DBs, but does not alter existing tables.
+- **Manual SQL migration scripts live in `apps/api/migrations/`.** Apply relevant scripts for existing databases after entity/schema changes (e.g., `004_add_verdict_summary_columns.sql` adds `VerdictLabel` and `TruthPercentage`).
 - **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for history/audit. Never write to DbContext directly from controllers.
 - **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`. This is a shared-secret mechanism, not full AuthN/AuthZ.
 - **RunnerClient has built-in retry.** Exponential backoff with jitter.

@@ -107,6 +107,7 @@ public sealed class JobService
     private static string MapPercentageToVerdict(int percentage, int confidence)
     {
         // Must match apps/web/src/lib/analyzer/truth-scale.ts
+        // (percentageToClaimVerdict + VERDICT_BANDS + mixed confidence threshold).
         if (percentage >= 86) return "TRUE";
         if (percentage >= 72) return "MOSTLY-TRUE";
         if (percentage >= 58) return "LEANING-TRUE";

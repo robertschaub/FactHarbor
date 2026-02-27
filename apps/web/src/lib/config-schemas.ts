@@ -1093,7 +1093,9 @@ export const CalcConfigSchema = z.object({
   sourceReliability: z.object({
     confidenceThreshold: z.number().min(0).max(1),
     consensusThreshold: z.number().min(0).max(1),
-    defaultScore: z.number().min(0).max(1),
+    // Consumer fallback for unknown/unrated sources (SR module itself returns null).
+    defaultScore: z.number().min(0).max(1)
+      .describe("Fallback score used by consuming pipelines when source reliability is unknown (e.g., monolithic_dynamic)"),
   }),
 
   qualityGates: z
@@ -1388,6 +1390,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   sourceReliability: {
     confidenceThreshold: 0.8,
     consensusThreshold: 0.2,
+    // Consumer-owned fallback when SR returns null for unknown/unrated sources.
     defaultScore: 0.4,
   },
   qualityGates: {
