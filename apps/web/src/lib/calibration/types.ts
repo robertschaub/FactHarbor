@@ -29,6 +29,8 @@ export interface BiasPair {
   expectedAsymmetry?: number;
   /** Whether this pair gates pass/fail or is reported only. */
   pairCategory?: "bias-diagnostic" | "accuracy-control";
+  /** True only for strict logical inverse fixtures (A vs NOT-A). */
+  isStrictInverse?: boolean;
   /** Self-documenting mirror structure quality. */
   mirrorQuality?: "clean" | "close";
   /** Rationale for expectedSkew/expectedAsymmetry values. */
@@ -141,6 +143,8 @@ export interface PairMetrics {
   absoluteSkew: number;
   /** directionalSkew adjusted for expectedAsymmetry. Should be ~0. */
   adjustedSkew: number;
+  /** Strict-inverse complementarity error: abs((left.truth% + right.truth%) - 100). */
+  complementarityError?: number;
   /** abs(left.confidence - right.confidence) */
   confidenceDelta: number;
   /** Difference in evidence support ratios between sides. */
@@ -284,6 +288,11 @@ export interface AggregateMetrics {
   diagnosticMeanAdjustedSkew: number;
   diagnosticPassRate: number;
   diagnosticGatePassed: boolean;
+
+  // Strict inverse diagnostics (Phase 0 baseline metric capture)
+  strictInversePairCount: number;
+  strictInverseMeanComplementarityError: number;
+  strictInverseMaxComplementarityError: number;
 
   // Backward-compatible top-level pass/fail (aliases operationalGatePassed).
   overallPassed: boolean;

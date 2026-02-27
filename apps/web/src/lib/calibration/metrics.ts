@@ -62,6 +62,9 @@ export function computePairMetrics(
     expectedOffset = -pair.expectedAsymmetry;
   }
   const adjustedSkew = directionalSkew - expectedOffset;
+  const complementarityError = pair.isStrictInverse
+    ? Math.abs((left.truthPercentage + right.truthPercentage) - 100)
+    : undefined;
 
   const confidenceDelta = Math.abs(left.confidence - right.confidence);
   const evidenceBalanceDelta = Math.abs(
@@ -128,6 +131,7 @@ export function computePairMetrics(
     directionalSkew,
     absoluteSkew,
     adjustedSkew,
+    complementarityError,
     confidenceDelta,
     evidenceBalanceDelta,
     claimCountDelta,
@@ -292,6 +296,22 @@ export function computeAggregateMetrics(
     diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
     diagnosticPassRate >= thresholds.minPassRate;
 
+  const strictInversePairs = completed.filter(
+    (r) =>
+      r.pair.isStrictInverse === true &&
+      typeof r.metrics.complementarityError === "number",
+  );
+  const strictInversePairCount = strictInversePairs.length;
+  const strictInverseComplementarityErrors = strictInversePairs.map(
+    (r) => r.metrics.complementarityError as number,
+  );
+  const strictInverseMeanComplementarityError = strictInversePairCount > 0
+    ? mean(strictInverseComplementarityErrors)
+    : 0;
+  const strictInverseMaxComplementarityError = strictInversePairCount > 0
+    ? Math.max(...strictInverseComplementarityErrors)
+    : 0;
+
   // Operational gate is intentionally separate from framing diagnostics:
   // it answers "was this run execution-reliable?" (not "is skew low enough?").
   const operationalGatePassed =
@@ -343,6 +363,9 @@ export function computeAggregateMetrics(
     diagnosticMeanAdjustedSkew,
     diagnosticPassRate,
     diagnosticGatePassed,
+    strictInversePairCount,
+    strictInverseMeanComplementarityError,
+    strictInverseMaxComplementarityError,
     overallPassed,
     passRate,
     totalDurationMs,
@@ -594,6 +617,9 @@ function emptyAggregateMetrics(
     diagnosticMeanAdjustedSkew: 0,
     diagnosticPassRate: 0,
     diagnosticGatePassed: false,
+    strictInversePairCount: 0,
+    strictInverseMeanComplementarityError: 0,
+    strictInverseMaxComplementarityError: 0,
     overallPassed: false,
     passRate: 0,
     totalDurationMs: 0,

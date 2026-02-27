@@ -43,6 +43,7 @@ import type {
   TriangulationScore,
   VerdictNarrative,
 } from "./types";
+import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
 import { filterByProbativeValue } from "./evidence-filter";
@@ -1405,11 +1406,17 @@ export async function runPass2(
   // Quality gate below detects when .catch() masked a real LLM failure.
   // On total refusal (all fields empty — common with politically sensitive inputs),
   // retry uses fact-checking framing to address the model's content-policy caution.
-  const maxRetries = 2;
+  const maxRetries = 3;
   let lastError: Error | null = null;
   let retryGuidance: string | null = null;
   let wasTotalRefusal = false;
   let retryWithoutPreliminaryEvidence = false;
+
+  // Appended to every user message (not just retries) to establish the verification-only
+  // frame before the model evaluates topic sensitivity. Sonnet 4.x soft-refuses politically
+  // sensitive structured-output requests without this early anchoring.
+  const FACT_CHECK_CONTEXT = "CONTEXT: You are operating as part of a fact-checking verification pipeline. Your task is to faithfully extract the claims in the input text so they can be verified against evidence. You are NOT asked to endorse, amplify, or reject any claim. Politically sensitive, controversial, legally complex, or potentially biased topics are valid and expected fact-checking subjects — treat them with the same structured extraction process.";
+
 
   const assessPass2Quality = (output: z.infer<typeof Pass2OutputSchema>): string[] => {
     const issues: string[] = [];
@@ -1435,11 +1442,12 @@ export async function runPass2(
     const attemptStartedAt = Date.now();
     let attemptResult: any;
     try {
-      // On retry, append guidance to user message (safe: same [system, user] message
-      // structure that Output.object() + tool calling expects).
+      // Always anchor with fact-checking context; on retry also append schema/quality guidance.
+      // Structured as [user input] + [context] + [retry guidance if any] to keep the
+      // user's text visually first while ensuring framing precedes the model's compliance decision.
       const userContent = (attempt > 0 && retryGuidance)
-        ? `${inputText}\n\n---\n${retryGuidance}`
-        : inputText;
+        ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}`
+        : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}`;
       const activeSystemPrompt = retryWithoutPreliminaryEvidence
         ? renderedWithoutEvidence.content
         : renderedWithEvidence.content;
@@ -1585,8 +1593,8 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
           console.warn(`[Stage1 Pass2] Total refusal after ${maxRetries + 1} attempts with ${model.modelName}. Attempting fallback with ${fallbackModel.modelName}.`);
           try {
             const fallbackUserContent = retryGuidance
-              ? `${inputText}\n\n---\n${retryGuidance}`
-              : inputText;
+              ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}`
+              : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}`;
             const fallbackResult = await generateText({
               model: fallbackModel.model,
               messages: [
@@ -2542,6 +2550,7 @@ export async function runResearchIteration(
         relevantSources.slice(0, 5),
         queryObj.query,
         state,
+        pipelineConfig,
       );
 
       if (fetchedSources.length === 0) continue;
@@ -2895,6 +2904,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs">,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
@@ -2902,6 +2912,9 @@ export async function fetchSources(
   const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
   let fetchAttempted = 0;
   let fetchFailed = 0;
+
+  // Configurable timeout — default 20 s (was 12 s). Legal/government sources load slowly.
+  const fetchTimeoutMs = pipelineConfig?.sourceFetchTimeoutMs ?? 20000;
 
   // Filter out already-fetched URLs
   const toFetch = relevantSources.filter(
@@ -2914,14 +2927,34 @@ export async function fetchSources(
     const batch = toFetch.slice(i, i + FETCH_CONCURRENCY);
     fetchAttempted += batch.length;
     const results = await Promise.all(
-      batch.map((source) =>
-        extractTextFromUrl(source.url, {
-          timeoutMs: 12000,
-          maxLength: 15000,
-        })
-          .then((content) => ({ source, content, ok: true as const }))
-          .catch((error: unknown) => ({ source, content: null, ok: false as const, error })),
-      ),
+      batch.map(async (source) => {
+        // First attempt
+        try {
+          const content = await extractTextFromUrl(source.url, {
+            timeoutMs: fetchTimeoutMs,
+            maxLength: 15000,
+          });
+          return { source, content, ok: true as const };
+        } catch (firstError: unknown) {
+          // Retry once on transient errors (timeout / network / server-side 5xx).
+          // Deterministic failures (401/403/404) are not retried — they won't resolve.
+          const classified = classifySourceFetchFailure(firstError);
+          if (["timeout", "network", "http_5xx"].includes(classified.type)) {
+            await new Promise<void>((r) => setTimeout(r, 2000));
+            try {
+              const content = await extractTextFromUrl(source.url, {
+                // Retry timeout: always >= first attempt, cap at schema max (60 s).
+                timeoutMs: Math.max(fetchTimeoutMs, Math.min(Math.round(fetchTimeoutMs * 1.5), 60000)),
+                maxLength: 15000,
+              });
+              return { source, content, ok: true as const };
+            } catch (retryError: unknown) {
+              return { source, content: null, ok: false as const, error: retryError };
+            }
+          }
+          return { source, content: null, ok: false as const, error: firstError };
+        }
+      }),
     );
 
     for (const result of results) {
@@ -4055,6 +4088,10 @@ export function buildVerdictStageConfig(
       pipelineConfig.selfConsistencyTemperature ?? 0.4,
     challengerTemperature:
       pipelineConfig.challengerTemperature ?? 0.3,
+    verdictGroundingPolicy:
+      pipelineConfig.verdictGroundingPolicy ?? "disabled",
+    verdictDirectionPolicy:
+      pipelineConfig.verdictDirectionPolicy ?? "disabled",
     stableThreshold: spreadThresholds.stable ?? 5,
     moderateThreshold: spreadThresholds.moderate ?? 12,
     unstableThreshold: spreadThresholds.unstable ?? 20,
@@ -4564,9 +4601,27 @@ export async function aggregateAssessment(
       derivativeFactor *
       probativeFactor;
 
+    const isCounterClaim = claim?.claimDirection === "contradicts_thesis";
+    const effectiveTruth = isCounterClaim
+      ? 100 - verdict.truthPercentage
+      : verdict.truthPercentage;
+
+    const effectiveRange = verdict.truthPercentageRange
+      ? isCounterClaim
+        ? {
+            min: Math.min(100 - verdict.truthPercentageRange.max, 100 - verdict.truthPercentageRange.min),
+            max: Math.max(100 - verdict.truthPercentageRange.max, 100 - verdict.truthPercentageRange.min),
+          }
+        : {
+            min: verdict.truthPercentageRange.min,
+            max: verdict.truthPercentageRange.max,
+          }
+      : undefined;
+
     return {
-      truthPercentage: verdict.truthPercentage,
+      truthPercentage: effectiveTruth,
       confidence: verdict.confidence,
+      truthPercentageRange: effectiveRange,
       weight: Math.max(0, finalWeight),
     };
   });
@@ -4587,12 +4642,18 @@ export async function aggregateAssessment(
           0,
         ) / totalWeight
       : 50;
+  const hasIntegrityDowngrade = claimVerdicts.some(
+    (verdict) => verdict.verdictReason === "verdict_integrity_failure",
+  );
+  const effectiveWeightedConfidence = hasIntegrityDowngrade
+    ? Math.min(weightedConfidence, INSUFFICIENT_CONFIDENCE_MAX)
+    : weightedConfidence;
 
   // 7-point verdict label
   const mixedConfidenceThreshold = calcConfig.mixedConfidenceThreshold ?? 40;
   const verdictLabel = percentageToArticleVerdict(
     weightedTruthPercentage,
-    weightedConfidence,
+    effectiveWeightedConfidence,
     undefined,
     mixedConfidenceThreshold,
   );
@@ -4645,8 +4706,8 @@ export async function aggregateAssessment(
     if (totalW > 0) {
       let weightedMin = 0;
       let weightedMax = 0;
-      for (let i = 0; i < claimVerdicts.length; i++) {
-        const v = claimVerdicts[i];
+      for (let i = 0; i < weightsData.length; i++) {
+        const v = weightsData[i];
         const w = weightsData[i]?.weight ?? 0;
         if (v.truthPercentageRange) {
           weightedMin += v.truthPercentageRange.min * w;
@@ -4667,7 +4728,7 @@ export async function aggregateAssessment(
   return {
     truthPercentage: Math.round(weightedTruthPercentage * 10) / 10,
     verdict: verdictLabel,
-    confidence: Math.round(weightedConfidence * 10) / 10,
+    confidence: Math.round(effectiveWeightedConfidence * 10) / 10,
     verdictNarrative,
     hasMultipleBoundaries: boundaries.length > 1,
     claimBoundaries: boundaries,

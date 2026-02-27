@@ -21,26 +21,31 @@
  * @see Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md §8.4
  */
 
-import type {
-  AnalysisWarning,
-  AtomicClaim,
-  BoundaryFinding,
-  CBClaimVerdict,
-  ChallengeDocument,
-  ChallengePoint,
-  ChallengeResponse,
-  ChallengeValidation,
-  ClaimAssessmentBoundary,
-  ClaimVerdict7Point,
-  ConsistencyResult,
-  CoverageMatrix,
-  EvidenceItem,
-  SourceType,
-  TriangulationScore,
+import {
+  CONFIDENCE_TIER_MIN,
+  INSUFFICIENT_CONFIDENCE_MAX,
+  type AnalysisWarning,
+  type AtomicClaim,
+  type BoundaryFinding,
+  type CBClaimVerdict,
+  type ChallengeDocument,
+  type ChallengePoint,
+  type ChallengeResponse,
+  type ChallengeValidation,
+  type ClaimAssessmentBoundary,
+  type ClaimVerdict7Point,
+  type ConsistencyResult,
+  type CoverageMatrix,
+  type EvidenceItem,
+  type LLMProviderType,
+  type SourceType,
+  type TriangulationScore,
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
-import type { LLMProviderType } from "./types";
+
+export type VerdictGroundingPolicy = "disabled" | "safe_downgrade";
+export type VerdictDirectionPolicy = "disabled" | "retry_once_then_safe_downgrade";
 
 // ============================================================================
 // D5 CONTROL 2: SOURCE TYPE PARTITIONS
@@ -135,6 +140,10 @@ export interface VerdictStageConfig {
   selfConsistencyTemperature: number;
   /** Temperature for adversarial challenger (default 0.3, floor 0.1, ceiling 0.7) */
   challengerTemperature: number;
+  /** Integrity policy for grounding validation failures. */
+  verdictGroundingPolicy: VerdictGroundingPolicy;
+  /** Integrity policy for direction validation failures. */
+  verdictDirectionPolicy: VerdictDirectionPolicy;
 
   /** Spread thresholds for confidence adjustment (§8.5.5) */
   stableThreshold: number;       // default 5pp — highly stable
@@ -233,6 +242,8 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
   selfConsistencyMode: "full",
   selfConsistencyTemperature: 0.4,
   challengerTemperature: 0.3,
+  verdictGroundingPolicy: "disabled",
+  verdictDirectionPolicy: "disabled",
   stableThreshold: 5,
   moderateThreshold: 12,
   unstableThreshold: 20,
@@ -375,7 +386,14 @@ export async function runVerdictStage(
   });
 
   // Step 5: Verdict Validation
-  const validatedVerdicts = await validateVerdicts(spreadAdjustedVerdicts, evidence, llmCall, config, warnings);
+  const validatedVerdicts = await validateVerdicts(
+    spreadAdjustedVerdicts,
+    evidence,
+    llmCall,
+    config,
+    warnings,
+    { claims, boundaries, coverageMatrix },
+  );
 
   // Structural Consistency Check (deterministic)
   const structuralWarnings = runStructuralConsistencyCheck(
@@ -719,12 +737,32 @@ export interface VerdictValidation {
   issues: string[];
 }
 
+export interface VerdictRepairRequest {
+  verdict: CBClaimVerdict;
+  directionIssues: string[];
+  claim?: AtomicClaim;
+  boundaryContext: Array<{ boundaryId: string; boundaryName: string }>;
+  evidenceDirectionSummary: { supports: number; contradicts: number; mixed: number; neutral: number };
+  evidencePool: Array<{ id: string; statement: string; claimDirection?: EvidenceItem["claimDirection"] }>;
+}
+
+export interface VerdictValidationRepairContext {
+  claims: AtomicClaim[];
+  boundaries: ClaimAssessmentBoundary[];
+  coverageMatrix: CoverageMatrix;
+  repairExecutor?: (
+    request: VerdictRepairRequest,
+    llmCall: LLMCallFn,
+    config: VerdictStageConfig,
+  ) => Promise<CBClaimVerdict | null>;
+}
+
 /**
  * Step 5: Validate verdicts with two lightweight Haiku checks.
  * Check A (grounding): Do evidence IDs exist?
  * Check B (direction): Does truth% align with evidence direction?
  *
- * @returns Verdicts (unchanged if valid; issues logged as warnings)
+ * @returns Verdicts after applying integrity policies (or unchanged when policies are disabled)
  */
 export async function validateVerdicts(
   verdicts: CBClaimVerdict[],
@@ -732,6 +770,7 @@ export async function validateVerdicts(
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
+  repairContext?: VerdictValidationRepairContext,
 ): Promise<CBClaimVerdict[]> {
   const validationTier = config.debateModelTiers.validation;
   const validationProvider = config.debateModelProviders.validation;
@@ -762,34 +801,303 @@ export async function validateVerdicts(
     }, { tier: validationTier, providerOverride: validationProvider, callContext: { debateRole: "validation", promptKey: "VERDICT_DIRECTION_VALIDATION" } }),
   ]);
 
-  // Parse validation results and log issues (non-blocking per §8.4)
-  const groundingResults = groundingResult as Array<Record<string, unknown>> ?? [];
-  const directionResults = directionResult as Array<Record<string, unknown>> ?? [];
+  const groundingResults = normalizeValidationEntries(groundingResult, "groundingValid");
+  const directionResults = normalizeValidationEntries(directionResult, "directionValid");
+  const groundingByClaim = new Map(groundingResults.map((r) => [r.claimId, r]));
+  const directionByClaim = new Map(directionResults.map((r) => [r.claimId, r]));
 
-  for (const gr of groundingResults) {
-    if (gr.groundingValid === false) {
-      console.warn(`[VerdictStage] Grounding issue for claim ${gr.claimId}:`, gr.issues);
+  const validated: CBClaimVerdict[] = [];
+  for (const verdict of verdicts) {
+    let current = verdict;
+    const grounding = groundingByClaim.get(verdict.claimId);
+    const direction = directionByClaim.get(verdict.claimId);
+
+    if (grounding && grounding.valid === false) {
+      console.warn(`[VerdictStage] Grounding issue for claim ${verdict.claimId}:`, grounding.issues);
       warnings?.push({
         type: "verdict_grounding_issue",
         severity: "warning",
-        message: `Claim ${gr.claimId}: grounding check found issues: ${Array.isArray(gr.issues) ? gr.issues.join("; ") : String(gr.issues ?? "unknown")}`,
+        message: `Claim ${verdict.claimId}: grounding check found issues: ${joinIssues(grounding.issues)}`,
       });
+      if (config.verdictGroundingPolicy === "safe_downgrade") {
+        current = safeDowngradeVerdict(
+          current,
+          "grounding",
+          grounding.issues,
+          warnings,
+          config.mixedConfidenceThreshold,
+        );
+      }
     }
-  }
 
-  for (const dr of directionResults) {
-    if (dr.directionValid === false) {
-      console.warn(`[VerdictStage] Direction issue for claim ${dr.claimId}:`, dr.issues);
+    if (direction && direction.valid === false) {
+      console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
       warnings?.push({
         type: "verdict_direction_issue",
         severity: "warning",
-        message: `Claim ${dr.claimId}: direction check found issues: ${Array.isArray(dr.issues) ? dr.issues.join("; ") : String(dr.issues ?? "unknown")}`,
+        message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(direction.issues)}`,
       });
+
+      if (
+        config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
+        && current.verdictReason !== "verdict_integrity_failure"
+      ) {
+        const repaired = await attemptDirectionRepair(
+          current,
+          direction.issues,
+          evidence,
+          llmCall,
+          config,
+          repairContext,
+        );
+
+        if (repaired) {
+          const retryDirection = await validateDirectionOnly(
+            repaired,
+            evidence,
+            llmCall,
+            validationTier,
+            validationProvider,
+          );
+          if (retryDirection.valid !== false) {
+            current = repaired;
+          } else {
+            current = safeDowngradeVerdict(
+              current,
+              "direction",
+              retryDirection.issues,
+              warnings,
+              config.mixedConfidenceThreshold,
+            );
+          }
+        } else {
+          current = safeDowngradeVerdict(
+            current,
+            "direction",
+            direction.issues,
+            warnings,
+            config.mixedConfidenceThreshold,
+          );
+        }
+      }
     }
+
+    validated.push(current);
   }
 
-  // Verdicts are returned unchanged — validation is advisory
-  return verdicts;
+  return validated;
+}
+
+type NormalizedValidationEntry = {
+  claimId: string;
+  valid: boolean;
+  issues: string[];
+};
+
+function normalizeValidationEntries(
+  raw: unknown,
+  validField: "groundingValid" | "directionValid",
+): NormalizedValidationEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((item) => ({
+      claimId: String(item.claimId ?? ""),
+      valid: item[validField] !== false,
+      issues: Array.isArray(item.issues) ? item.issues.map(String) : [],
+    }))
+    .filter((item) => item.claimId.length > 0);
+}
+
+function joinIssues(issues: string[]): string {
+  return issues.length > 0 ? issues.join("; ") : "unknown";
+}
+
+function safeDowngradeVerdict(
+  verdict: CBClaimVerdict,
+  reason: "grounding" | "direction",
+  issues: string[],
+  warnings: AnalysisWarning[] | undefined,
+  mixedConfidenceThreshold: number,
+): CBClaimVerdict {
+  warnings?.push({
+    type: "verdict_integrity_failure",
+    severity: "error",
+    message: `Claim ${verdict.claimId}: ${reason} integrity policy triggered safe downgrade (${joinIssues(issues)}).`,
+    details: {
+      claimId: verdict.claimId,
+      integrityFailureType: reason,
+      originalTruthPercentage: verdict.truthPercentage,
+      downgradedTruthPercentage: 50,
+    },
+  });
+
+  const downgradedConfidence = Math.min(verdict.confidence, INSUFFICIENT_CONFIDENCE_MAX);
+  return {
+    ...verdict,
+    truthPercentage: 50,
+    verdictReason: "verdict_integrity_failure",
+    verdict: percentageToClaimVerdict(50, downgradedConfidence, undefined, mixedConfidenceThreshold),
+    confidence: downgradedConfidence,
+    confidenceTier: "INSUFFICIENT",
+  };
+}
+
+function buildBoundaryContext(
+  claimId: string,
+  boundaries: ClaimAssessmentBoundary[],
+  coverageMatrix: CoverageMatrix,
+): Array<{ boundaryId: string; boundaryName: string }> {
+  const boundaryIds = coverageMatrix.getBoundariesForClaim(claimId);
+  if (boundaryIds.length === 0) return [];
+  const byId = new Map(boundaries.map((b) => [b.id, b]));
+  return boundaryIds.map((id) => ({
+    boundaryId: id,
+    boundaryName: byId.get(id)?.name ?? id,
+  }));
+}
+
+async function defaultRepairExecutor(
+  request: VerdictRepairRequest,
+  llmCall: LLMCallFn,
+  config: VerdictStageConfig,
+): Promise<CBClaimVerdict | null> {
+  const validationTier = config.debateModelTiers.validation;
+  const validationProvider = config.debateModelProviders.validation;
+  const repairTemperature = Math.min(config.selfConsistencyTemperature + 0.1, 0.7);
+  const repairResult = await llmCall(
+    "VERDICT_DIRECTION_REPAIR",
+    {
+      claimId: request.verdict.claimId,
+      claimText: request.claim?.statement ?? "",
+      boundaryContext: request.boundaryContext,
+      directionIssues: request.directionIssues,
+      verdict: {
+        claimId: request.verdict.claimId,
+        truthPercentage: request.verdict.truthPercentage,
+        confidence: request.verdict.confidence,
+        reasoning: request.verdict.reasoning,
+        supportingEvidenceIds: request.verdict.supportingEvidenceIds,
+        contradictingEvidenceIds: request.verdict.contradictingEvidenceIds,
+      },
+      evidenceDirectionSummary: request.evidenceDirectionSummary,
+      evidencePool: request.evidencePool,
+    },
+    {
+      tier: validationTier,
+      temperature: repairTemperature,
+      providerOverride: validationProvider,
+      callContext: { debateRole: "validation", promptKey: "VERDICT_DIRECTION_REPAIR" },
+    },
+  );
+
+  if (!repairResult || typeof repairResult !== "object") return null;
+  const parsed = Array.isArray(repairResult)
+    ? (repairResult[0] as Record<string, unknown> | undefined)
+    : (repairResult as Record<string, unknown>);
+  if (!parsed) return null;
+
+  const repairedClaimId = String(parsed.claimId ?? request.verdict.claimId);
+  if (repairedClaimId !== request.verdict.claimId) return null;
+
+  const repairedTruth = clampPercentage(Number(parsed.truthPercentage));
+  const repairedReasoning = typeof parsed.reasoning === "string" && parsed.reasoning.trim().length > 0
+    ? parsed.reasoning
+    : request.verdict.reasoning;
+  return {
+    ...request.verdict,
+    truthPercentage: repairedTruth,
+    verdict: percentageToClaimVerdict(
+      repairedTruth,
+      request.verdict.confidence,
+      undefined,
+      config.mixedConfidenceThreshold,
+    ),
+    reasoning: repairedReasoning,
+  };
+}
+
+async function attemptDirectionRepair(
+  verdict: CBClaimVerdict,
+  directionIssues: string[],
+  evidence: EvidenceItem[],
+  llmCall: LLMCallFn,
+  config: VerdictStageConfig,
+  repairContext?: VerdictValidationRepairContext,
+): Promise<CBClaimVerdict | null> {
+  if (!repairContext) return null;
+
+  const claim = repairContext.claims.find((c) => c.id === verdict.claimId);
+  const boundaryContext = buildBoundaryContext(
+    verdict.claimId,
+    repairContext.boundaries,
+    repairContext.coverageMatrix,
+  );
+
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const citedIds = new Set([
+    ...verdict.supportingEvidenceIds,
+    ...verdict.contradictingEvidenceIds,
+  ]);
+  const summary = { supports: 0, contradicts: 0, mixed: 0, neutral: 0 };
+  for (const id of citedIds) {
+    const item = evidenceById.get(id);
+    if (!item) continue;
+    const direction = item.claimDirection ?? "neutral";
+    if (direction === "supports") summary.supports += 1;
+    else if (direction === "contradicts") summary.contradicts += 1;
+    else summary.neutral += 1;
+  }
+
+  const request: VerdictRepairRequest = {
+    verdict,
+    directionIssues,
+    claim,
+    boundaryContext,
+    evidenceDirectionSummary: summary,
+    evidencePool: evidence.map((item) => ({
+      id: item.id,
+      statement: item.statement,
+      claimDirection: item.claimDirection,
+    })),
+  };
+
+  const repairExecutor = repairContext.repairExecutor ?? defaultRepairExecutor;
+  return repairExecutor(request, llmCall, config);
+}
+
+async function validateDirectionOnly(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  llmCall: LLMCallFn,
+  validationTier: "haiku" | "sonnet" | "opus",
+  validationProvider?: LLMProviderType,
+): Promise<NormalizedValidationEntry> {
+  const directionResult = await llmCall(
+    "VERDICT_DIRECTION_VALIDATION",
+    {
+      verdicts: [{
+        claimId: verdict.claimId,
+        truthPercentage: verdict.truthPercentage,
+        supportingEvidenceIds: verdict.supportingEvidenceIds,
+        contradictingEvidenceIds: verdict.contradictingEvidenceIds,
+      }],
+      evidencePool: evidence.map((e) => ({
+        id: e.id,
+        statement: e.statement,
+        claimDirection: e.claimDirection,
+      })),
+    },
+    {
+      tier: validationTier,
+      providerOverride: validationProvider,
+      callContext: { debateRole: "validation", promptKey: "VERDICT_DIRECTION_VALIDATION" },
+    },
+  );
+
+  const normalized = normalizeValidationEntries(directionResult, "directionValid");
+  if (normalized.length > 0) return normalized[0];
+  return { claimId: verdict.claimId, valid: false, issues: ["Direction validation returned no result"] };
 }
 
 // ============================================================================
@@ -935,9 +1243,9 @@ export function enforceHarmConfidenceFloor(
  */
 /** Classify a single confidence score into a tier. */
 export function confidenceToTier(confidence: number): CBClaimVerdict["confidenceTier"] {
-  return confidence >= 75 ? "HIGH"
-    : confidence >= 50 ? "MEDIUM"
-    : confidence >= 25 ? "LOW"
+  return confidence >= CONFIDENCE_TIER_MIN.HIGH ? "HIGH"
+    : confidence >= CONFIDENCE_TIER_MIN.MEDIUM ? "MEDIUM"
+    : confidence >= CONFIDENCE_TIER_MIN.LOW ? "LOW"
     : "INSUFFICIENT";
 }
 

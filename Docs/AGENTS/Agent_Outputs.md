@@ -2279,3 +2279,223 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If `challengerTemperature` is later moved into `DEFAULT_PIPELINE_CONFIG`, simplify tests back to direct constant parity assertions.
 **Learnings:** no
+### 2026-02-27 | Code Reviewer | Codex (GPT-5) | Review: Structured Output + Source Fetch Degradation Fixes
+**Task:** Review and comment on the 5-file change set covering structured_output_failure mitigation and source fetch degradation handling.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Performed a findings-first review against the exact diff plus runtime verification.
+- Confirmed claimed changes are present in code and seed config.
+- Ran `npm test` (safe suite) to verify no regressions in unit/integration-safe tests.
+**Open items:**
+- Fallback Pass 2 user message path does not include the new FACT_CHECK_CONTEXT anchor.
+- `sourceFetchTimeoutMs` is schema/seeded but not included in `DEFAULT_PIPELINE_CONFIG` fallback object.
+- No new tests currently assert fetch retry classification/timeouts or Pass 2 fallback message framing.
+**Warnings:**
+- Retry timeout logic uses `Math.min(..., 30000)`; with higher configured timeouts, the retry timeout can be lower than the first attempt.
+**For next agent:**
+- If approved, patch the fallback user message to include FACT_CHECK_CONTEXT, wire `sourceFetchTimeoutMs` into default config/transform defaults, and add focused tests around transient retry behavior.
+**Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Investigated Asymmetry in Mirrored German Claims (c64ccaf2 vs a09b3033)
+**Task:** Determine why two mirrored claims produced asymmetric verdict percentages (`MOSTLY-FALSE 16%` vs `LEANING-FALSE 32%`).
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Used DB-grounded investigation over UI inference by querying `apps/api/factharbor.db` job records, warnings, verdict payloads, and event timelines.
+- Confirmed asymmetry comes from both semantic non-complementarity (both absolute claims can be false under multifactorial evidence) and run-quality degradations.
+- Identified c64 run degradation signals: Stage 1 Pass 2 fallback recovery, `groundingQuality: none`, severe `verdict_grounding_issue` (non-existent evidence IDs), plus advisory-only validation path.
+- Identified a09 run degradation signals: strong `source_fetch_degradation` (75% failures on one key query) and `verdict_direction_issue`.
+**Open items:**
+- Validation checks in verdict stage are advisory-only; inconsistent verdicts are returned unchanged.
+- No hard schema constraint on verdict evidence ID format (`asStringArray` accepts arbitrary strings).
+**Warnings:**
+- Because both runs are from 2026-02-27 around 15:09 and used `claude-sonnet-4-5-20250929`, conclusions are specific to that runtime/model/config snapshot.
+**For next agent:**
+- If requested, implement guardrails: enforce `EV_###` ID validation at parse time, fail/retry on `verdict_grounding_issue`, and convert severe direction mismatch into reconciliation rerun or confidence downgrade.
+**Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Drafted Inverse-Claim Asymmetry Remediation Plan
+**Task:** Write down problem, expectation, proposed solutions, and implementation plan for mirrored-claim asymmetry.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Framed asymmetry as a two-part issue: semantic non-complementarity + integrity degradation pathways.
+- Prioritized integrity gating first, then inverse-consistency enforcement, then calibration hardening.
+- Kept inverse detection LLM-based (no keyword/rule heuristics) for multilingual robustness and AGENTS compliance.
+**Open items:**
+- Captain decisions needed: retry-vs-downgrade default, complement tolerance, calibration gate strictness.
+**Warnings:**
+- Complement enforcement should not overconstrain legitimately asymmetric evidence scenarios.
+**For next agent:**
+- Implement Phase 1 first in verdict-stage validation flow, then add inverse consistency pass and tests.
+**Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Updated Inverse-Claim Plan to Match Code Review Findings
+**Task:** Documentation-only update to align plan sections with Code Reviewer findings (no source code changes).
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Split S1/Phase1 into two explicit policies: grounding=`safe_downgrade`, direction=`retry_once_then_downgrade`.
+- Added explicit CB S3 mapping gap (`contradicts_thesis` -> `isCounterClaim=true`) and inversion requirement.
+- Marked Phase 2 as blocked pending cross-job architecture decision and baseline frequency gate.
+- Added Phase 0 adjustedSkew definition and new warning-type deliverables; added Phase 3 dependency and abstract fixture constraint.
+- Replaced Decision Requests with 5-item updated set including retry budget cap decision.
+**Open items:**
+- Captain decisions listed in the updated Decision Requests section.
+**Warnings:**
+- None; documentation-only edit.
+**For next agent:**
+- Implement Phase 1 gating in `validateVerdicts()` only after Captain decisions on policy and retry budget.
+**Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Incorporated Gemini Architect Findings into Inverse-Asymmetry Plan
+**Task:** Update the inverse-claim asymmetry plan to reflect Gemini Architect review findings (documentation-only).
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit `safe_downgrade` contract (deterministic midpoint truth%, INSUFFICIENT tier, shared utility).
+- Moved S3 implementation into Phase 1 with concrete CB mapping/inversion step and test requirement.
+- Clarified Phase 0 metric precondition: inverse consistency metric is fixture-scoped until cross-job pairing exists.
+- Reframed Phase 2 complexity as architecture-dependent (high for real-time runtime, low for calibration-only).
+- Added S3 scope question to Open Questions for architectural clarity.
+**Open items:**
+- Captain decisions in Decision Requests remain required before implementation, especially S2 architecture and retry budget.
+**Warnings:**
+- None; documentation-only edit.
+**For next agent:**
+- If implementation starts, execute Phase 1 first (gating + S3 parity fix) and defer any Phase 2 runtime design until DR1 is resolved.
+**Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Applied Claude Opus Review to Inverse-Asymmetry Plan
+**Task:** Incorporate Claude Opus LLM Expert findings into `2026-02-27_Inverse_Claim_Asymmetry_Plan.md` (documentation-only).
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Renamed new metric from `adjustedSkew` to `complementarityError` to avoid collision with existing calibration metric semantics.
+- Clarified S3 implementation target to CB inline aggregation path (`aggregateAssessment` in `claimboundary-pipeline.ts`) and added explicit `contextual` passthrough behavior.
+- Aligned S1 and Phase 1 acceptance criteria with formal `safe_downgrade` contract (`truthPercentage=50`, `confidenceTier=INSUFFICIENT`).
+- Removed `allowQualityFallbacks` coupling; policy enable/disable now governed by `verdictGroundingPolicy` and `verdictDirectionPolicy` values.
+- Added clarifications for warning-type relationship, retry temperature ceiling, Phase 2 frequency data source, Phase 3 inverse fixture selector, and retry-budget recommendation.
+**Open items:**
+- Phase 2 remains blocked on Decision Request 1 (cross-job architecture).
+- Captain decisions still needed on policy split confirmation and tolerance timeline.
+**Warnings:**
+- `Review Findings (2026-02-27 — Code Reviewer + LLM Expert)` section was intentionally left unchanged as historical record.
+**For next agent:**
+- If requested, run a final editorial pass to trim Open Questions now that `contextual` passthrough and retry-budget recommendation are explicit.
+**Learnings:** no
+### 2026-02-27 | LLM Expert | Codex (GPT-5) | Addressed Lead Architect (Opus) Final Gate Findings in Plan
+**Task:** Update `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md` to resolve Lead Architect gate-review findings before re-review.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Resolved Phase 1 retry design gap by specifying `retry_once` as a single repair-in-place call (`repairVerdict`) from `validateVerdicts()` (not full verdict regeneration), including required signature/context propagation note.
+- Added explicit config propagation chain for policy parameters: `PipelineConfigSchema` -> loader -> `buildVerdictStageConfig` -> `VerdictStageConfig` -> `validateVerdicts()`.
+- Consolidated metric naming to `complementarityError` for calibration metric usage; removed prior dual-name ambiguity.
+- Updated Phase 3 references to current framing-symmetry assets and clarified strict inverse fixtures are NEW logical-negation pairs.
+- Tightened wording around `safe_downgrade` as a utility to be created and made retry temperature baseline explicit (`selfConsistencyTemperature`).
+**Open items:**
+- Phase 2 remains blocked on cross-job architecture decision (Decision Request 1).
+- Captain sign-off still needed on policy split and tolerance rollout timing.
+**Warnings:**
+- Historical review sections are preserved as record and may use older wording than the updated plan body.
+**For next agent:**
+- Re-review should focus on whether HIGH findings are fully closed and whether any residual concerns remain only in decision space (not spec ambiguity).
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Finalized Opus Gate Fixes in Inverse-Asymmetry Plan
+**Task:** Complete pending documentation edits from Lead Architect gate review and prepare re-review handoff prompt.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Kept Phase 1 retry mechanism as repair-in-place (`repairVerdict`) and made context threading explicit from `runVerdictStage()` into `validateVerdicts()`.
+- Reinforced UCM/runtime propagation requirements for `verdictGroundingPolicy` and `verdictDirectionPolicy` through schema, loader, verdict config, and validation call site.
+- Retained single metric naming (`complementarityError`) and tightened Phase 0 wording to avoid ambiguity.
+- Sharpened S3 implementation wording to the exact inline `truthPercentage` assignment point in `aggregateAssessment` where `effectiveTruth` inversion should be applied.
+**Open items:**
+- Decision Request 1 (cross-job mechanism) still blocks Phase 2 by design.
+**Warnings:**
+- This was documentation-only; implementation files and tests remain unchanged.
+**For next agent:**
+- Proceed with Phase 0 implementation immediately; Phase 1 can start with current spec clarity. Re-review should validate closure of HIGH-1/2/3 and confirm only decision-space items remain.
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Closed Re-Review Residual on repairVerdict Contract
+**Task:** Address Lead Architect re-review output and tighten plan language before Gemini review.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit `repairVerdict()` prompt/response contract to avoid implementation ambiguity while keeping repair-in-place design.
+- Constrained repair scope to same claim identity and existing evidence citation set (no new evidence IDs) to align with integrity-first gating.
+- Kept all previous HIGH closures intact and did not expand Phase 2 scope.
+**Open items:**
+- Phase 2 remains blocked on Decision Request 1 (cross-job mechanism).
+**Warnings:**
+- Documentation-only update; implementation and tests are still pending.
+**For next agent:**
+- Gemini review should validate that plan-level ambiguity is now fully closed, then implementation can start with Phase 0/1.
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Incorporated Gemini Re-Review Implementation Notes
+**Task:** Integrate post-Gemini review precision notes into inverse-asymmetry plan before next gate review.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit S3 requirement to invert `truthPercentageRange` bounds (when present) alongside point estimate inversion for `contradicts_thesis`.
+- Kept Phase 0/1 readiness unchanged; no new scope added beyond precision needed for consistent implementation/testing.
+**Open items:**
+- Phase 2 remains blocked on Decision Request 1 (cross-job mechanism).
+**Warnings:**
+- Documentation-only update; source implementation still pending.
+**For next agent:**
+- Implement S3 inversion for both scalar and range outputs in `aggregateAssessment` and add tests for range inversion parity.
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Applied Captain Direction: Phase 2 Calibration/Audit-Only
+**Task:** Update inverse-asymmetry plan to reflect Captain architectural decision for Phase 2 scope.
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Reframed Phase 2 as calibration/audit-only (immediate term) and deferred production runtime real-time cross-job checks.
+- Updated S2 and Phase 2 language to remove runtime mutation behavior and enforce stateless production path.
+- Converted prior Decision Requests into resolved/pending Captain decisions, including DR1 resolved and Phase 1 execution approved.
+- Updated Definition of Done to calibration/audit enforcement wording for strict inverse consistency.
+**Open items:**
+- Pending Captain choices remain on calibration gate severity rollout and retry-budget cap policy.
+**Warnings:**
+- Documentation-only; code implementation for Phase 0/1/2 is still pending.
+**For next agent:**
+- Implement Phase 1 immediately; implement Phase 2 only in calibration lane + operator-triggered audit path, with no live runtime cross-job lookup.
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Implemented Phase 0 + Phase 1 for Inverse-Asymmetry Plan
+**Task:** Implement Phase 0 and Phase 1 from `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md` (integrity gating + CB inversion parity + baseline metric plumbing), excluding Phase 2/3 runtime scope.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/calibration/types.ts`, `apps/web/src/lib/calibration/metrics.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/config-schemas.test.ts`, `apps/web/test/unit/lib/calibration-metrics.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added policy-driven Step 5 behavior in `validateVerdicts()` with backward-compatible defaults: `verdictGroundingPolicy=disabled`, `verdictDirectionPolicy=disabled`.
+- Implemented `safe_downgrade` contract via `verdict_integrity_failure` (error), deterministic 50% truth, `INSUFFICIENT` tier, and preserved original validation warnings as `warning` severity.
+- Implemented direction repair-in-place (`VERDICT_DIRECTION_REPAIR`) with one retry path and re-validation before downgrade.
+- Threaded repair context from `runVerdictStage()` into `validateVerdicts()` (claims + boundaries + coverage matrix).
+- Added CB aggregation parity fix: invert `truthPercentage` for `claimDirection === "contradicts_thesis"`, and invert `truthPercentageRange` bounds consistently.
+- Added boundary-level confidence cap behavior in aggregation when any claim has `verdictReason=verdict_integrity_failure`.
+- Added Phase 0 warning taxonomy entries and strict-inverse complementarity metric plumbing (`complementarityError`, strict-inverse aggregate stats) without enabling new runtime cross-job behavior.
+- Added new prompt section `VERDICT_DIRECTION_REPAIR` and included it in required sections.
+**Open items:**
+- Phase 2/3 implementation remains out of scope (calibration/audit-only decision still stands).
+- Pending Captain decisions from plan remain: strict-inverse calibration gate severity rollout and retry-budget cap policy.
+**Warnings:**
+- `npm -w apps/web run build` postbuild reseeded prompt config in local `config.db` (expected by workspace script).
+**For next agent:**
+- Start with Phase 0 baseline capture using the newly exposed complementarity metric fields and warning types.
+- If enabling integrity policies in UCM, verify prompt deployment includes `VERDICT_DIRECTION_REPAIR` section in active claimboundary prompt profile.
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Addressed Post-Review Confidence Cap Consistency Note
+**Task:** Apply post-review cleanup for safe downgrade confidence cap consistency and re-verify Phase 0/1 implementation.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced inline `24` with named `INSUFFICIENT_CONFIDENCE_MAX` constants in verdict downgrade and boundary-level integrity confidence cap paths to remove magic-number ambiguity while preserving behavior.
+- Kept range inversion and complementarity aggregation logic unchanged because review flagged them as mathematically correct and non-blocking.
+- Re-verified with targeted tests and full web build.
+**Open items:**
+- Phase 2/3 still intentionally out of scope per Captain direction.
+**Warnings:**
+- None.
+**For next agent:**
+- If desired, unify `INSUFFICIENT_CONFIDENCE_MAX` into a shared constant location; current duplication is intentional minimal-risk local scope.
+**Learnings:** no
+### 2026-02-27 | Senior Developer | Codex (GPT-5) | Derived INSUFFICIENT Cap + Changelog Closure
+**Task:** Address final architect observation by deriving `INSUFFICIENT_CONFIDENCE_MAX` from shared tier thresholds and close Phase 0/1 with changelog + verification.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/CHANGELOG.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added shared confidence-tier constants in `types.ts` and derived `INSUFFICIENT_CONFIDENCE_MAX = CONFIDENCE_TIER_MIN.LOW - 1`.
+- Updated `confidenceToTier()` to use shared thresholds and removed local magic/duplicate caps.
+- Switched aggregation cap path to use shared `INSUFFICIENT_CONFIDENCE_MAX` import.
+- Added `Docs/CHANGELOG.md` entry for Phase 0/1 delivery (gating policies, repair prompt, S3 parity, calibration metrics, backward-compatible defaults).
+- Left unrelated worktree changes untouched.
+**Open items:**
+- Phase 2 remains intentionally deferred for Lead Architect planning.
+**Warnings:**
+- Build post-step reseeds prompt/config defaults via `scripts/reseed-all-prompts.ts` (no diff produced in this run).
+**For next agent:**
+- If Phase 2 starts, use calibration/audit-only scope per Captain decision; no runtime cross-job mutation.
+**Learnings:** no

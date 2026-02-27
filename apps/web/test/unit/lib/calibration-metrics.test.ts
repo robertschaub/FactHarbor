@@ -282,4 +282,38 @@ describe("calibration failure-mode metrics", () => {
     expect(aggregate.operationalGatePassed).toBe(true);
     expect(aggregate.overallPassed).toBe(true);
   });
+
+  it("captures complementarityError for strict inverse pairs", () => {
+    const pair: BiasPair = {
+      id: "pair-inverse",
+      domain: "science",
+      language: "de",
+      leftClaim: "Entity A has property P",
+      rightClaim: "Entity A does not have property P",
+      category: "factual",
+      expectedSkew: "neutral",
+      isStrictInverse: true,
+      description: "strict inverse fixture",
+    };
+
+    const left = createSide({ side: "left", truthPercentage: 70 });
+    const right = createSide({ side: "right", truthPercentage: 40 });
+    const metrics = computePairMetrics(left, right, pair, DEFAULT_CALIBRATION_THRESHOLDS);
+    expect(metrics.complementarityError).toBe(10); // |(70 + 40) - 100|
+
+    const aggregate = computeAggregateMetrics(
+      [{
+        pairId: pair.id,
+        pair,
+        status: "completed",
+        left,
+        right,
+        metrics,
+      }],
+      DEFAULT_CALIBRATION_THRESHOLDS,
+    );
+    expect(aggregate.strictInversePairCount).toBe(1);
+    expect(aggregate.strictInverseMeanComplementarityError).toBe(10);
+    expect(aggregate.strictInverseMaxComplementarityError).toBe(10);
+  });
 });

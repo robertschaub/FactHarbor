@@ -283,6 +283,8 @@ export const PipelineConfigSchema = z.object({
   probativeFilterEnabled: z.boolean().optional().describe("Enable probative value filtering"),
   provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
   pdfParseTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for PDF parsing (ms)"),
+  sourceFetchTimeoutMs: z.number().int().min(5000).max(60000).optional()
+    .describe("Timeout for fetching individual source URLs during research (ms, default: 20000). Increase for slow government or legal sources."),
 
   // === Parallel Extraction ===
   parallelExtractionLimit: z.number().int().min(1).max(10).optional()
@@ -480,6 +482,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Temperature for self-consistency re-runs (floor 0.1, ceiling 0.7) (default: 0.4)"),
   challengerTemperature: z.number().min(0.1).max(0.7).optional()
     .describe("Temperature for adversarial challenger (floor 0.1, ceiling 0.7) (default: 0.3)"),
+  verdictGroundingPolicy: z.enum(["disabled", "safe_downgrade"]).optional()
+    .describe("Integrity policy for grounding failures in verdict validation (default: disabled)."),
+  verdictDirectionPolicy: z.enum(["disabled", "retry_once_then_safe_downgrade"]).optional()
+    .describe("Integrity policy for direction failures in verdict validation (default: disabled)."),
   debateModelTiers: z.object({
     advocate: z.enum(["haiku", "sonnet", "opus"]).optional(),
     selfConsistency: z.enum(["haiku", "sonnet", "opus"]).optional(),
@@ -745,6 +751,12 @@ export const PipelineConfigSchema = z.object({
   if (data.challengerTemperature === undefined) {
     data.challengerTemperature = 0.3;
   }
+  if (data.verdictGroundingPolicy === undefined) {
+    data.verdictGroundingPolicy = "disabled";
+  }
+  if (data.verdictDirectionPolicy === undefined) {
+    data.verdictDirectionPolicy = "disabled";
+  }
   if (data.openaiTpmGuardEnabled === undefined) {
     data.openaiTpmGuardEnabled = true;
   }
@@ -770,7 +782,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmTiering: true,
   modelUnderstand: "claude-haiku-4-5-20251001",
   modelExtractEvidence: "claude-haiku-4-5-20251001",
-  modelVerdict: "claude-sonnet-4-5-20250929",
+  modelVerdict: "claude-sonnet-4-6",
   modelOpus: "claude-opus-4-6", // B-5b: explicit Opus model ID for opus debate tier
 
   // LLM text analysis (all enabled by default per v2.8.3)
@@ -809,6 +821,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
   pdfParseTimeoutMs: 60000,
+  sourceFetchTimeoutMs: 20000,
   parallelExtractionLimit: 3, // Conservative default; can increase for providers with higher rate limits
 
   // Pipeline thresholds
@@ -859,6 +872,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
   selfConsistencyTemperature: 0.4, // Alpha optimization: increased from 0.3 for broader exploration
+  verdictGroundingPolicy: "disabled",
+  verdictDirectionPolicy: "disabled",
   queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,
 

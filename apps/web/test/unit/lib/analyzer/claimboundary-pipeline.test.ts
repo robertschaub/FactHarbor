@@ -833,6 +833,109 @@ describe("Stage 1: runPass2", () => {
     expect(result.atomicClaims[0].id).toBe("AC_01");
     expect(result.atomicClaims[1].id).toBe("AC_02");
   });
+
+  it("should include FACT_CHECK_CONTEXT in user message on every attempt including attempt 0", async () => {
+    const pass2Fixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background",
+      articleThesis: "Thesis",
+      atomicClaims: [
+        {
+          id: "AC_01",
+          statement: "Entity A increased metric X by 50%",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "low",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.8,
+          groundingQuality: "moderate",
+          expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+        },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass2Fixture);
+
+    await runPass2("sensitive input text", [], mockPipelineConfig, "2026-02-17");
+
+    // The first (and only) generateText call should have the fact-checking context in the user message
+    const firstCall = mockGenerateText.mock.calls[0][0];
+    const userMsg = firstCall.messages.find((m: any) => m.role === "user");
+    expect(userMsg).toBeDefined();
+    expect(userMsg.content).toContain("fact-checking verification pipeline");
+    expect(userMsg.content).toContain("sensitive input text");
+  });
+
+  it("should include FACT_CHECK_CONTEXT in fallback user message after primary soft refusals", async () => {
+    const refusalFixture = {
+      impliedClaim: "",
+      backgroundDetails: "",
+      articleThesis: "",
+      atomicClaims: [],
+    };
+    const fallbackSuccessFixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background",
+      articleThesis: "Thesis",
+      atomicClaims: [
+        {
+          id: "AC_01",
+          statement: "Entity A increased metric X by 50%",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "low",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.8,
+          groundingQuality: "moderate",
+          expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+        },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
+    vi.mocked(mockGetModel).mockImplementation((task: any) => (
+      task === "understand"
+        ? { model: "haiku-model", modelName: "haiku-model", provider: "anthropic" }
+        : { model: "sonnet-model", modelName: "sonnet-model", provider: "anthropic" }
+    ));
+
+    let extractCall = 0;
+    mockExtractOutput.mockImplementation(() => {
+      extractCall++;
+      return extractCall <= 4 ? refusalFixture : fallbackSuccessFixture;
+    });
+
+    const setTimeoutSpy = vi.spyOn(global, "setTimeout").mockImplementation(((cb: any) => {
+      if (typeof cb === "function") cb();
+      return 0 as any;
+    }) as any);
+
+    try {
+      const result = await runPass2("sensitive input text", [], mockPipelineConfig, "2026-02-17");
+      expect(result.atomicClaims).toHaveLength(1);
+      expect(mockGenerateText).toHaveBeenCalledTimes(5); // 4 primary attempts + 1 fallback
+
+      const fallbackCall = mockGenerateText.mock.calls[4][0];
+      const userMsg = fallbackCall.messages.find((m: any) => m.role === "user");
+      expect(userMsg).toBeDefined();
+      expect(userMsg.content).toContain("fact-checking verification pipeline");
+      expect(userMsg.content).toContain("IMPORTANT: This is a fact-checking analysis engine.");
+      expect(userMsg.content).toContain("sensitive input text");
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
 });
 
 describe("Stage 1: runGate1Validation", () => {
@@ -1580,6 +1683,35 @@ describe("Stage 2: fetchSources", () => {
     expect(result).toHaveLength(0);
     expect(state.sources).toHaveLength(0);
   });
+
+  it("should retry once on transient timeout errors and succeed", async () => {
+    const state = { sources: [], warnings: [] } as any;
+    const relevantSources = [{ url: "https://slow.gov/page" }];
+
+    const timeoutError = Object.assign(new Error("AbortError: timed out"), { name: "AbortError" });
+    mockFetchUrl
+      .mockRejectedValueOnce(timeoutError)
+      .mockResolvedValueOnce({ text: "A".repeat(200), title: "Gov Source", contentType: "text/html" });
+
+    const result = await fetchSources(relevantSources, "test query", state);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Gov Source");
+    expect(mockFetchUrl).toHaveBeenCalledTimes(2);
+  });
+
+  it("should NOT retry on deterministic errors (404) — only one fetch attempt", async () => {
+    const state = { sources: [], warnings: [] } as any;
+    const relevantSources = [{ url: "https://example.com/missing" }];
+
+    const notFoundError = Object.assign(new Error("HTTP 404 Not Found"), { status: 404 });
+    mockFetchUrl.mockRejectedValue(notFoundError);
+
+    const result = await fetchSources(relevantSources, "test query", state);
+
+    expect(result).toHaveLength(0);
+    expect(mockFetchUrl).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("Stage 2: runResearchIteration", () => {
@@ -2274,6 +2406,8 @@ describe("Stage 4: buildVerdictStageConfig", () => {
       selfConsistencyMode: "full",
       selfConsistencyTemperature: 0.25,
       challengerTemperature: 0.45,
+      verdictGroundingPolicy: "safe_downgrade",
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
     } as any;
     const calcConfig = {
       selfConsistencySpreadThresholds: { stable: 4, moderate: 10, unstable: 18 },
@@ -2285,6 +2419,8 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     expect(result.selfConsistencyMode).toBe("full");
     expect(result.selfConsistencyTemperature).toBe(0.25);
     expect(result.challengerTemperature).toBe(0.45);
+    expect(result.verdictGroundingPolicy).toBe("safe_downgrade");
+    expect(result.verdictDirectionPolicy).toBe("retry_once_then_safe_downgrade");
     expect(result.stableThreshold).toBe(4);
     expect(result.moderateThreshold).toBe(10);
     expect(result.unstableThreshold).toBe(18);
@@ -2299,6 +2435,8 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     expect(result.selfConsistencyMode).toBe("disabled");
     expect(result.selfConsistencyTemperature).toBe(0.4);
     expect(result.challengerTemperature).toBe(0.3);
+    expect(result.verdictGroundingPolicy).toBe("disabled");
+    expect(result.verdictDirectionPolicy).toBe("disabled");
     expect(result.stableThreshold).toBe(5);
     expect(result.moderateThreshold).toBe(12);
     expect(result.unstableThreshold).toBe(20);
@@ -3295,6 +3433,76 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
 
     expect(result.hasMultipleBoundaries).toBe(true);
   });
+
+  it("inverts contradicts_thesis claim truth and range during weighted aggregation", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: { centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 }, derivativeMultiplier: 0.5 },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: { strongAgreementBoost: 0.15, moderateAgreementBoost: 0.05, singleBoundaryPenalty: -0.10 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    const narrativeOutput = {
+      headline: "Counter-claim inversion test",
+      evidenceBaseSummary: "2 items",
+      keyFinding: "Test finding.",
+      limitations: "Test limitations.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01", claimDirection: "supports_thesis" }),
+      createAtomicClaim({ id: "AC_02", claimDirection: "contradicts_thesis" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 80,
+        confidence: 80,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+        truthPercentageRange: { min: 70, max: 90 },
+      }),
+      createCBClaimVerdict({
+        claimId: "AC_02",
+        truthPercentage: 80,
+        confidence: 80,
+        supportingEvidenceIds: ["EV_02"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+        truthPercentageRange: { min: 70, max: 90 },
+      }),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1", "q2"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    // supports_thesis: 80, contradicts_thesis: inverted to 20 -> weighted average ~= 50
+    expect(result.truthPercentage).toBeCloseTo(50, 1);
+    // Range inversion: [70,90] + inverted [10,30] -> aggregate [40,60] with equal weights
+    expect(result.truthPercentageRange?.min).toBeCloseTo(40, 1);
+    expect(result.truthPercentageRange?.max).toBeCloseTo(60, 1);
+  });
 });
 
 // ============================================================================
@@ -3416,6 +3624,9 @@ describe("checkDebateTierDiversity", () => {
   const makeConfig = (overrides: Record<string, any> = {}) => ({
     selfConsistencyMode: "disabled" as const,
     selfConsistencyTemperature: 0.3,
+    challengerTemperature: 0.3,
+    verdictGroundingPolicy: "disabled" as const,
+    verdictDirectionPolicy: "disabled" as const,
     stableThreshold: 5,
     moderateThreshold: 12,
     unstableThreshold: 20,

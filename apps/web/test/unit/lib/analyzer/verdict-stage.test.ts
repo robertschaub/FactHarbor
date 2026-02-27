@@ -9,7 +9,7 @@
  * - Step 2: selfConsistencyCheck (enabled, disabled, spread calculation)
  * - Step 3: adversarialChallenge (parsing challenge document)
  * - Step 4: reconcileVerdicts (merging, challenge responses)
- * - Step 5: validateVerdicts (advisory, non-blocking)
+ * - Step 5: validateVerdicts (policy-driven: advisory by default, integrity gating when enabled)
  * - Structural consistency check (deterministic invariants)
  * - Spread multiplier calculations (§8.5.5)
  * - Full runVerdictStage orchestration
@@ -105,6 +105,41 @@ function createEvidenceItem(
     probativeValue: "high",
     claimBoundaryId: "CB_01",
     relevantClaimIds: ["AC_01"],
+    ...overrides,
+  };
+}
+
+function createCBVerdict(overrides: Partial<CBClaimVerdict> = {}): CBClaimVerdict {
+  return {
+    id: "CV_AC_01",
+    claimId: "AC_01",
+    truthPercentage: 75,
+    verdict: "MOSTLY-TRUE",
+    confidence: 80,
+    confidenceTier: "HIGH",
+    reasoning: "Test reasoning",
+    harmPotential: "medium",
+    isContested: false,
+    supportingEvidenceIds: ["EV_01"],
+    contradictingEvidenceIds: [],
+    boundaryFindings: [{
+      boundaryId: "CB_01",
+      boundaryName: "STD",
+      truthPercentage: 75,
+      confidence: 80,
+      evidenceDirection: "supports",
+      evidenceCount: 3,
+    }],
+    consistencyResult: {
+      claimId: "AC_01",
+      percentages: [75],
+      average: 75,
+      spread: 0,
+      stable: true,
+      assessed: false,
+    },
+    challengeResponses: [],
+    triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
     ...overrides,
   };
 }
@@ -638,6 +673,143 @@ describe("validateVerdicts (Step 5)", () => {
     );
     // Verdicts returned unchanged
     expect(result).toEqual(verdicts);
+  });
+
+  it("applies safe_downgrade on grounding failure when grounding policy is enabled", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 78,
+      confidence: 82,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: false, issues: ["Missing evidence id"] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    });
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictGroundingPolicy: "safe_downgrade",
+    };
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "warning")).toBe(true);
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
+  });
+
+  it("repairs direction mismatch once when direction policy is enabled and repair succeeds", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 82,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Mismatch"] }];
+        }
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return { claimId: "AC_01", truthPercentage: 46, reasoning: "Repaired direction alignment" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(46);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
+    expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+  });
+
+  it("downgrades after failed direction retry when direction policy is enabled", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 88,
+      confidence: 81,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        return [{ claimId: "AC_01", directionValid: false, issues: ["Still mismatched"] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return { claimId: "AC_01", truthPercentage: 70, reasoning: "Attempted repair" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
   });
 });
 

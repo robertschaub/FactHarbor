@@ -319,6 +319,38 @@ describe("PipelineConfigSchema", () => {
     }
   });
 
+  it("validates verdict integrity policy enums and defaults", () => {
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      verdictGroundingPolicy: "disabled",
+      verdictDirectionPolicy: "disabled",
+    }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      verdictGroundingPolicy: "safe_downgrade",
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    }).success).toBe(true);
+
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      verdictGroundingPolicy: "invalid",
+    }).success).toBe(false);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      verdictDirectionPolicy: "invalid",
+    }).success).toBe(false);
+
+    const withoutFields = { ...DEFAULT_PIPELINE_CONFIG };
+    delete (withoutFields as any).verdictGroundingPolicy;
+    delete (withoutFields as any).verdictDirectionPolicy;
+    const result = PipelineConfigSchema.safeParse(withoutFields);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.verdictGroundingPolicy).toBe("disabled");
+      expect(result.data.verdictDirectionPolicy).toBe("disabled");
+    }
+  });
+
   it("validates confidenceCalibration nested object", () => {
     // Full object should pass
     expect(PipelineConfigSchema.safeParse({
@@ -556,7 +588,7 @@ describe("parseTypedConfig function", () => {
     const content = JSON.stringify(DEFAULT_PIPELINE_CONFIG);
     const result = parseTypedConfig("pipeline", content);
     expect(result.llmTiering).toBe(true);
-    expect(result.modelVerdict).toBe("claude-sonnet-4-5-20250929");
+    expect(result.modelVerdict).toBe("claude-sonnet-4-6");
   });
 
   it("parses and returns typed SR config", () => {
@@ -634,7 +666,7 @@ describe("Default Config Values", () => {
     it("has correct model defaults from .env.example", () => {
       expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("claude-haiku-4-5-20251001");
       expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("claude-haiku-4-5-20251001");
-      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-sonnet-4-5-20250929");
+      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-sonnet-4-6");
     });
 
     it("has LLM text analysis enabled by default (v2.8.3)", () => {
@@ -651,6 +683,8 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.selfConsistencyTemperature).toBe(0.4);
       const effectiveDefaults = PipelineConfigSchema.parse({ ...DEFAULT_PIPELINE_CONFIG });
       expect(effectiveDefaults.challengerTemperature).toBe(0.3);
+      expect(effectiveDefaults.verdictGroundingPolicy).toBe("disabled");
+      expect(effectiveDefaults.verdictDirectionPolicy).toBe("disabled");
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
       expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("verifiability_and_misleadingness");
       expect(DEFAULT_PIPELINE_CONFIG.tigerScoreMode).toBe("off");

@@ -52,6 +52,21 @@ export function assertValidTruthPercentage(
 export type InputType = "claim" | "article";
 export type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
 
+/**
+ * Confidence-tier minimum thresholds (0-100 scale).
+ * Keep shared so downgrade caps stay aligned with confidence tiering logic.
+ */
+export const CONFIDENCE_TIER_MIN = {
+  HIGH: 75,
+  MEDIUM: 50,
+  LOW: 25,
+} as const;
+
+/**
+ * Maximum confidence value that still maps to INSUFFICIENT tier.
+ */
+export const INSUFFICIENT_CONFIDENCE_MAX = CONFIDENCE_TIER_MIN.LOW - 1;
+
 // ============================================================================
 // 7-POINT TRUTH SCALE TYPES
 // ============================================================================
@@ -675,6 +690,8 @@ export type AnalysisWarningType =
   | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
   | "tiger_score_failed"               // Stage 6: Holistic TIGERScore evaluation failed
   | "structural_consistency"           // Verdict structural consistency check found issues
+  | "inverse_consistency_error"        // Strict inverse pair complementarity check failed
+  | "verdict_integrity_failure"        // Integrity policy downgraded verdict to safe fallback
   | "verdict_grounding_issue"          // Verdict grounding validation found invalid evidence references
   | "verdict_direction_issue";         // Verdict direction validation found truth%/evidence misalignment
 

@@ -1,5 +1,37 @@
 # FactHarbor Changelog
 
+## 2026-02-27 - Inverse Claim Asymmetry Phase 0/1
+
+### Added
+- Verdict integrity warning taxonomy in analyzer warnings:
+  - `inverse_consistency_error`
+  - `verdict_integrity_failure`
+- Verdict validation policy controls in pipeline config:
+  - `verdictGroundingPolicy` (`disabled` | `safe_downgrade`)
+  - `verdictDirectionPolicy` (`disabled` | `retry_once_then_safe_downgrade`)
+- New `VERDICT_DIRECTION_REPAIR` prompt section for one-shot direction repair without evidence expansion.
+- Calibration metrics for strict inverse fixtures:
+  - `complementarityError` per pair
+  - `strictInverseMeanComplementarityError`
+  - `strictInverseMaxComplementarityError`
+
+### Changed
+- Phase 1 integrity gating implemented in verdict validation:
+  - Grounding failures can trigger `safe_downgrade`.
+  - Direction failures can trigger one repair attempt, then `safe_downgrade` on failure.
+- ClaimBoundary aggregation now applies directional parity:
+  - Inverts `truthPercentage` for `claimDirection = contradicts_thesis`.
+  - Inverts `truthPercentageRange` bounds consistently for counter-claims.
+- Boundary-level confidence is capped when any claim is downgraded for integrity failure.
+- `INSUFFICIENT_CONFIDENCE_MAX` is now derived from shared confidence-tier thresholds to avoid latent drift.
+
+### Compatibility
+- Backward compatible defaults preserved:
+  - `verdictGroundingPolicy = "disabled"`
+  - `verdictDirectionPolicy = "disabled"`
+
+---
+
 ## 2026-02-07 - Documentation Consolidation + LLM Tiering + Evidence Quality
 
 ### Added

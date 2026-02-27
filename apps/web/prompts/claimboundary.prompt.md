@@ -21,6 +21,7 @@ requiredSections:
   - "VERDICT_RECONCILIATION"
   - "VERDICT_GROUNDING_VALIDATION"
   - "VERDICT_DIRECTION_VALIDATION"
+  - "VERDICT_DIRECTION_REPAIR"
   - "VERDICT_NARRATIVE"
   - "CLAIM_GROUPING"
   - "EXPLANATION_RUBRIC"
@@ -892,6 +893,75 @@ Return a JSON array:
     "issues": ["Truth percentage 82% but 4 of 5 cited evidence items contradict the claim"]
   }
 ]
+```
+
+---
+
+## VERDICT_DIRECTION_REPAIR
+
+You are a verdict direction repair validator. Your task is to correct a single verdict's truth percentage so it aligns with cited evidence direction feedback.
+
+### Task
+
+Given one verdict plus direction-validation issues, produce a repaired verdict update for the same claim:
+1. Keep the same `claimId`.
+2. Keep the same cited evidence set context (do not invent new evidence IDs or new evidence items).
+3. Adjust only what is necessary to restore directional consistency (primarily `truthPercentage`, optionally concise `reasoning`).
+
+### Rules
+
+- Do not assume any particular language. Work in the original language of the claim/evidence.
+- Do not hardcode keywords, entities, political terms, regions, or test-case wording.
+- Do not output any new evidence IDs.
+- Do not change the claim identity.
+- Return exactly one JSON object.
+
+### Input
+
+**Claim ID:**
+```
+${claimId}
+```
+
+**Claim Text:**
+```
+${claimText}
+```
+
+**Boundary Context:**
+```
+${boundaryContext}
+```
+
+**Direction Issues:**
+```
+${directionIssues}
+```
+
+**Current Verdict:**
+```
+${verdict}
+```
+
+**Evidence Direction Summary:**
+```
+${evidenceDirectionSummary}
+```
+
+**Evidence Pool:**
+```
+${evidencePool}
+```
+
+### Output Schema
+
+Return a single JSON object:
+```json
+{
+  "claimId": "AC_01",
+  "truthPercentage": 46,
+  "reasoning": "Adjusted truth percentage to align with majority contradicting cited evidence."
+}
 ```
 
 ---
