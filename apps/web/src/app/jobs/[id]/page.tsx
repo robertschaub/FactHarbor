@@ -324,6 +324,12 @@ export default function JobPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [hasAdminKey, setHasAdminKey] = useState(false);
 
+  // Login-modal state (shown when cancel is attempted without an admin key)
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginKeyInput, setLoginKeyInput] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isVerifyingKey, setIsVerifyingKey] = useState(false);
+
   // Check for admin key on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -332,15 +338,22 @@ export default function JobPage() {
     }
   }, []);
 
-  // Cancel job handler
-  const handleCancel = async () => {
-    if (!window.confirm("Cancel this analysis job?")) return;
-
+  // Performs the actual cancel fetch (called both from handleCancel and after successful login)
+  const doCancelWithKey = async (adminKey: string) => {
     setIsCancelling(true);
     try {
       const res = await fetch(`/api/fh/jobs/${jobId}/cancel`, {
         method: "POST",
+        headers: { "X-Admin-Key": adminKey },
       });
+
+      if (res.status === 401) {
+        // Stored key is stale — clear it and ask the user to log in again
+        sessionStorage.removeItem("fh_admin_key");
+        setHasAdminKey(false);
+        setShowLoginModal(true);
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -352,6 +365,46 @@ export default function JobPage() {
       toast.error(`Cancel failed: ${err.message}`);
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  // Cancel job handler — opens login modal if no admin key is stored
+  const handleCancel = async () => {
+    if (!window.confirm("Cancel this analysis job?")) return;
+
+    const adminKey = sessionStorage.getItem("fh_admin_key");
+    if (!adminKey) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    await doCancelWithKey(adminKey);
+  };
+
+  // Login-modal submit: verify key, store it, then proceed with the cancel
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setIsVerifyingKey(true);
+    try {
+      const key = loginKeyInput.trim();
+      const res = await fetch("/api/admin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": key },
+      });
+      if (!res.ok) {
+        setLoginError("Invalid admin key");
+        return;
+      }
+      sessionStorage.setItem("fh_admin_key", key);
+      setHasAdminKey(true);
+      setShowLoginModal(false);
+      setLoginKeyInput("");
+      await doCancelWithKey(key);
+    } catch {
+      setLoginError("Failed to verify key");
+    } finally {
+      setIsVerifyingKey(false);
     }
   };
 
@@ -1146,6 +1199,70 @@ export default function JobPage() {
           </ul>
           {job && <PromptViewer jobId={job.jobId} />}
           {job && <ConfigViewer jobId={job.jobId} />}
+        </div>
+      )}
+
+      {/* Admin key login modal — shown when cancelling without a stored key */}
+      {showLoginModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)", zIndex: 1000,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 12, padding: 32, maxWidth: 400, width: "90%",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+          }}>
+            <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 600 }}>Admin Login Required</h2>
+            <p style={{ margin: "0 0 24px", color: "#666", fontSize: 14 }}>
+              Enter your admin key to cancel this job.
+            </p>
+            <form onSubmit={handleLoginSubmit}>
+              <input
+                type="password"
+                value={loginKeyInput}
+                onChange={(e) => setLoginKeyInput(e.target.value)}
+                placeholder="Enter FH_ADMIN_KEY"
+                autoFocus
+                disabled={isVerifyingKey}
+                style={{
+                  width: "100%", padding: "10px 12px", border: "1px solid #ddd",
+                  borderRadius: 8, fontSize: 14, boxSizing: "border-box", marginBottom: 12,
+                }}
+              />
+              {loginError && (
+                <p style={{ color: "#d32f2f", fontSize: 13, margin: "0 0 12px" }}>{loginError}</p>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="submit"
+                  disabled={isVerifyingKey || !loginKeyInput.trim()}
+                  style={{
+                    flex: 1, padding: "10px 16px", backgroundColor: "#ff9800",
+                    color: "#fff", border: "none", borderRadius: 8, fontSize: 14,
+                    fontWeight: 600, cursor: isVerifyingKey ? "wait" : "pointer",
+                    opacity: (isVerifyingKey || !loginKeyInput.trim()) ? 0.6 : 1,
+                  }}
+                >
+                  {isVerifyingKey ? "Verifying..." : "Login & Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowLoginModal(false); setLoginKeyInput(""); setLoginError(null); }}
+                  style={{
+                    padding: "10px 16px", backgroundColor: "#f5f5f5", color: "#333",
+                    border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
+                    fontWeight: 500, cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+            <p style={{ margin: "16px 0 0", color: "#999", fontSize: 12 }}>
+              Key is set via the <code>FH_ADMIN_KEY</code> environment variable.
+            </p>
+          </div>
         </div>
       )}
     </div>
