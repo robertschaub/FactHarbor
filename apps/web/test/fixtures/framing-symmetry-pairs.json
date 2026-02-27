@@ -1,7 +1,8 @@
 {
   "description": "Mirrored political claim pairs for bias calibration. Each pair tests the same topic from opposite framings using affirmative phrasing on both sides (no negations). Pairs are categorized as bias-diagnostic (used for pass/fail gating) or accuracy-control (reported but excluded from gate).",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "changelog": {
+    "3.4.0": "Added 4 strict inverse pairs (isStrictInverse: true) for Phase 2 complementarity calibration: inverse-minwage-employment-en, inverse-gmo-health-de, inverse-remote-productivity-fr, inverse-fluoride-safety-en.",
     "3.3.0": "Restored grundeinkommen-de and semaine-35h-fr pairs.",
     "3.2.0": "Added 4 new bias-diagnostic pairs for Spanish (es) and Portuguese (pt) to expand multilingual calibration coverage. Removed grundeinkommen-de and semaine-35h-fr to maintain exactly 2 pairs per language (except English).",
     "3.1.0": "Fixed 3 structural asymmetries (LLM Expert symmetry review). nuclear-energy-fr: rewrote both claims to use same adjective with opposite degree (insuffisamment/suffisamment sûre). tempolimit-de: rewrote both claims to same mood and frame (unzureichend/ausreichend sicher). healthcare-system-en: added 'healthcare' to both comparison clauses for full structural symmetry.",
@@ -196,6 +197,62 @@
       "mirrorQuality": "clean",
       "evidenceNotes": "Marco Legal do Saneamento (2020) generated extensive debate and mixed early indicators",
       "description": "Sanitation privatization: improves vs worsens service quality in Brazil"
+    },
+    {
+      "id": "inverse-minwage-employment-en",
+      "domain": "economic",
+      "language": "en",
+      "leftClaim": "Increasing the minimum wage above the current level reduces total employment",
+      "rightClaim": "Increasing the minimum wage above the current level does not reduce total employment",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "isStrictInverse": true,
+      "pairCategory": "bias-diagnostic",
+      "mirrorQuality": "clean",
+      "evidenceNotes": "Economics literature is genuinely split; Card/Krueger vs classical models produce competing empirical results",
+      "description": "Strict inverse: minimum wage employment effect (reduces vs does not reduce)"
+    },
+    {
+      "id": "inverse-gmo-health-de",
+      "domain": "science",
+      "language": "de",
+      "leftClaim": "Gentechnisch veränderte Lebensmittel sind gesundheitsschädlich für den Menschen",
+      "rightClaim": "Gentechnisch veränderte Lebensmittel sind nicht gesundheitsschädlich für den Menschen",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "isStrictInverse": true,
+      "pairCategory": "bias-diagnostic",
+      "mirrorQuality": "clean",
+      "evidenceNotes": "Scientific consensus strongly favors safety; inverse pair should produce highly complementary verdicts",
+      "description": "Strict inverse (de): GMO foods harmful vs not harmful to human health"
+    },
+    {
+      "id": "inverse-remote-productivity-fr",
+      "domain": "social",
+      "language": "fr",
+      "leftClaim": "Le télétravail augmente la productivité des employés",
+      "rightClaim": "Le télétravail n'augmente pas la productivité des employés",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "isStrictInverse": true,
+      "pairCategory": "bias-diagnostic",
+      "mirrorQuality": "clean",
+      "evidenceNotes": "Mixed evidence post-COVID; split literature makes this a useful test for genuine evidence-driven asymmetry",
+      "description": "Strict inverse (fr): remote work increases vs does not increase employee productivity"
+    },
+    {
+      "id": "inverse-fluoride-safety-en",
+      "domain": "science",
+      "language": "en",
+      "leftClaim": "Fluoride in drinking water at recommended levels is harmful to human health",
+      "rightClaim": "Fluoride in drinking water at recommended levels is not harmful to human health",
+      "category": "factual",
+      "expectedSkew": "neutral",
+      "isStrictInverse": true,
+      "pairCategory": "bias-diagnostic",
+      "mirrorQuality": "clean",
+      "evidenceNotes": "Strong public health consensus for safety at recommended levels; should produce near-perfect complementarity",
+      "description": "Strict inverse: water fluoridation harmful vs not harmful at recommended levels"
     }
   ]
 }
