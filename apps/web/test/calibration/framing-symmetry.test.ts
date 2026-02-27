@@ -345,6 +345,22 @@ describe("Framing Symmetry Calibration", () => {
         }
       }
 
+      // Inverse consistency metrics (Phase 2 baseline capture)
+      if (am.strictInversePairCount > 0) {
+        console.log(`\n=== STRICT INVERSE METRICS ===`);
+        console.log(`  Pairs: ${am.strictInversePairCount}`);
+        console.log(`  Mean CE: ${am.strictInverseMeanComplementarityError.toFixed(1)} pp`);
+        console.log(`  Max CE: ${am.strictInverseMaxComplementarityError.toFixed(1)} pp`);
+        console.log(`  Gate: ${am.strictInverseGatePassed ? "PASS" : "FAIL"}`);
+        for (const pr of result.pairResults) {
+          if (pr.status === "completed" && pr.pair.isStrictInverse) {
+            const ce = pr.metrics.complementarityError?.toFixed(1) ?? "n/a";
+            const tags = pr.metrics.inverseConsistencyDiagnostic?.rootCauseTags.join(", ") ?? "—";
+            console.log(`    ${pr.pairId}: L=${pr.left.truthPercentage.toFixed(0)}% R=${pr.right.truthPercentage.toFixed(0)}% CE=${ce}pp tags=[${tags}]`);
+          }
+        }
+      }
+
       // Assertions — operational integrity only
       expect(result.aggregateMetrics.completedPairs).toBeGreaterThan(0);
       expect(
@@ -453,6 +469,22 @@ describe("Framing Symmetry Calibration", () => {
       console.log(
         `    Verdict: ${am.stagePrevalence.verdictBiasCount}/${am.completedPairs}`,
       );
+
+      // Inverse consistency metrics (Phase 2 baseline capture)
+      if (am.strictInversePairCount > 0) {
+        console.log(`\n=== STRICT INVERSE METRICS ===`);
+        console.log(`  Pairs: ${am.strictInversePairCount}`);
+        console.log(`  Mean CE: ${am.strictInverseMeanComplementarityError.toFixed(1)} pp`);
+        console.log(`  Max CE: ${am.strictInverseMaxComplementarityError.toFixed(1)} pp`);
+        console.log(`  Gate: ${am.strictInverseGatePassed ? "PASS" : "FAIL"}`);
+        for (const pr of result.pairResults) {
+          if (pr.status === "completed" && pr.pair.isStrictInverse) {
+            const ce = pr.metrics.complementarityError?.toFixed(1) ?? "n/a";
+            const tags = pr.metrics.inverseConsistencyDiagnostic?.rootCauseTags.join(", ") ?? "—";
+            console.log(`    ${pr.pairId}: L=${pr.left.truthPercentage.toFixed(0)}% R=${pr.right.truthPercentage.toFixed(0)}% CE=${ce}pp tags=[${tags}]`);
+          }
+        }
+      }
 
       // Assertions
       expect(result.aggregateMetrics.totalPairs).toBe(pairs.length);

@@ -254,7 +254,10 @@ function buildRunResult(
   pairResults: PairResult[],
   thresholds: CalibrationThresholds,
 ): CalibrationRunResult {
-  const aggregateMetrics = computeAggregateMetrics(pairResults, thresholds);
+  const inverseGateAction = (
+    configSnapshot.pipeline["calibrationInverseGateAction"] as "warn" | "fail" | undefined
+  ) ?? "warn";
+  const aggregateMetrics = computeAggregateMetrics(pairResults, thresholds, inverseGateAction);
   const pairsCompleted = pairResults.filter((r) => r.status === "completed").length;
   const pairsFailed = pairResults.length - pairsCompleted;
 
