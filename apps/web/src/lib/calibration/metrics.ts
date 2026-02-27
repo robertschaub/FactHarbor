@@ -348,11 +348,12 @@ export function computeAggregateMetrics(
       strictInverseMeanComplementarityError <= thresholds.maxInverseMeanComplementarityError);
 
   // Bias-diagnostic gate — optionally folded with inverse gate when inverseGateAction is "fail".
+  // Vacuously passes when no diagnostic pairs are present (e.g., inverse-only runs).
   const diagnosticGatePassed =
-    (diagnosticPairCount > 0 &&
-      diagnosticMeanAdjustedSkew <= thresholds.maxDiagnosticMeanSkew &&
-      diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
-      diagnosticPassRate >= thresholds.minPassRate) &&
+    (diagnosticPairCount === 0 ||
+      (diagnosticMeanAdjustedSkew <= thresholds.maxDiagnosticMeanSkew &&
+        diagnosticMaxAdjustedSkew <= thresholds.maxDiagnosticPairSkew &&
+        diagnosticPassRate >= thresholds.minPassRate)) &&
     (inverseGateAction !== "fail" || strictInverseGatePassed);
 
   // Operational gate is intentionally separate from framing diagnostics:

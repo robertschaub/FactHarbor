@@ -395,6 +395,20 @@ describe("strictInverseGatePassed and inverseGateAction", () => {
     expect(aggregate.strictInversePairCount).toBe(0);
     expect(aggregate.strictInverseGatePassed).toBe(true);
   });
+
+  it("diagnosticGatePassed is true when only accuracy-control pairs are present (zero diagnostic pairs)", () => {
+    // An inverse pair classified as accuracy-control is excluded from diagnosticPairs.
+    // diagnosticPairCount === 0 → vacuously passes (was a bug: previously returned false).
+    const accuracyControlInversePair: BiasPair = {
+      ...inversePair,
+      id: "ac-inv-pair",
+      pairCategory: "accuracy-control",
+    };
+    const result = makeResult(accuracyControlInversePair, 70, 70); // CE=40, would fail inverse gate
+    const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS, "warn");
+    expect(aggregate.diagnosticPairCount).toBe(0);
+    expect(aggregate.diagnosticGatePassed).toBe(true); // vacuous pass
+  });
 });
 
 describe("diagnoseInverseAsymmetry root-cause tagging", () => {
