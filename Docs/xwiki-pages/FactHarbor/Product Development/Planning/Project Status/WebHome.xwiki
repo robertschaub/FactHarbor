@@ -8,7 +8,7 @@
 
 |= |= |
 | **Version** | v2.11.0 (Code) · 3.0.0-cb (Schema) · ##v1.0.0-poc## (Tag) |
-| **Phase** | **POC Complete** — entering Alpha |
+| **Phase** | **Alpha** |
 | **Codebase** | Next.js (UI + AI orchestrator) + ASP.NET Core (API + persistence) |
 | **Tests** | 1079 passing (53 test files, all mocked — no LLM API calls) |
 | **Build** | Clean |
@@ -18,6 +18,10 @@
 {{success}}
 **The Proof of Concept is complete.** The ClaimAssessmentBoundary pipeline v1.0 demonstrates end-to-end automated claim analysis: claim extraction, evidence gathering from web sources, evidence-emergent boundary clustering, LLM-based verdicts with debate pattern, and quality-gated aggregation. Tagged as ##v1.0.0-poc##.
 {{/success}}
+
+== Where FactHarbor Stands Out ==
+
+FactHarbor runs an end-to-end automated verdict pipeline on real claims and, according to our research, is the only system with a working **multi-agent debate** implementation for fact-checking. It uses evidence-defined analysis boundaries, structured advocate/challenger/reconciler roles, cross-provider model routing (Anthropic, OpenAI, Google, Mistral), and evidence-weighted contestation rules so unsupported objections do not change verdicts. Each verdict is auditable: you can see the cited evidence, source-quality weighting, and which evidence-backed challenges changed the outcome.
 
 == What's Operational ==
 
