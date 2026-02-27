@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Plastik Recycling bringt nichts">
+<meta name="fh:verdict" content="MOSTLY-FALSE">
+<meta name="fh:truth" content="15">
+<meta name="fh:confidence" content="75">
+<meta name="fh:date" content="2026-02-27">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Plastik Recycling bringt nichts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 14d4bf645e494b1ca7bdf2daabfc0df9</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-27 11:14 UTC</div>
+      <div>Completed: 2026-02-27 11:39 UTC</div>
+      <div>Duration: ~25 min 19 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Plastik Recycling bringt nichts</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Brave, Google-CSE (circuit-open), Brave, Google-CSE</span>
+    <span class="chip chip-gray">25 LLM calls</span>
+    <span class="chip chip-gray">12 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 114 evidence items · 26 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-f">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge f-color">MOSTLY-FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">Fünf von sechs Analysegrenzen widersprechen der Behauptung eindeutig, während eine Grenze (EU-Statistiken) gemischte Evi…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value f-color">15%</div>
+        <div class="meter-label">Truth</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:15%;background:#c53030"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">75%</div>
+        <div class="meter-label">Confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:75%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:15%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">15%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">Fünf von sechs Analysegrenzen widersprechen der Behauptung eindeutig, während eine Grenze (EU-Statistiken) gemischte Evidenz liefert. Die Gesamtheit der Evidenz – von Exportanalysen über Behördenbewertungen bis zu Lebenszyklusanalysen – zeigt systematisch, dass die zentrale Aussage nicht haltbar ist. Adversariale Prüfungen und Selbstkonsistenzanalysen führten zu einer Herabsetzung des Wahrheitsgehalts von 18% auf 15% und einer Reduktion der Konfidenz von 82% auf 75%, was auf robuste Widerlegung hinweist.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Die Behauptung wird durch umfangreiche Evidenz aus sechs analytischen Perspektiven überwiegend widerlegt (15% Wahrheitsgehalt, MOSTLY-FALSE).</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">114 Evidenzeinträge aus 6 Analysegrenzen (ClaimBoundaries): Exportströme und globale Systemanalysen (68 Einträge), Behördenbewertungen und historische Vergleiche (8 Einträge), EU-Statistiken und Verlustschätzungen (6 Einträge), Herausforderungsanalysen und Emissionsmessungen (6 Einträge), Literaturanalysen und Normungsroadmaps (7 Einträge), sowie Ökobilanzen und Massenflussanalysen (19 Einträge).</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">Fünf von sechs Analysegrenzen widersprechen der Behauptung eindeutig, während eine Grenze (EU-Statistiken) gemischte Evidenz liefert. Die Gesamtheit der Evidenz – von Exportanalysen über Behördenbewertungen bis zu Lebenszyklusanalysen – zeigt systematisch, dass die zentrale Aussage nicht haltbar ist. Adversariale Prüfungen und Selbstkonsistenzanalysen führten zu einer Herabsetzung des Wahrheitsgehalts von 18% auf 15% und einer Reduktion der Konfidenz von 82% auf 75%, was auf robuste Widerlegung hinweist.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Die Analysegrenze CB_13 (EU-Statistiken, Recyclingquoten Deutschland, Gesamtstatistik, Verlustschätzungen) zeigt als einzige gemischte Evidenz, während alle anderen Grenzen widersprüchliche Evidenz liefern. Dies deutet darauf hin, dass offizielle Statistiken möglicherweise methodische Unterschiede oder Berechnungsgrundlagen aufweisen, die von den anderen fachlichen Bewertungen, Systemanalysen und Ökobilanzen nicht gestützt werden. Die quantitativ umfangreichste Grenze CB_05 (68 Einträge) mit Exportanalysen und Stoffstrombildern widerspricht besonders deutlich, ebenso die Schweizer Ökobilanzstudien (CB_25, 19 Einträge).</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">Die Analyse konnte nicht abschließend klären, welche spezifischen methodischen Unterschiede zwischen den offiziellen EU-Statistiken (CB_13) und den industrieseitigen Stoffstromanalysen (CB_05) bestehen, die zu unterschiedlichen Evidenzrichtungen führen. Zudem fehlen detaillierte Informationen über regionale Variationen innerhalb Deutschlands und zeitliche Entwicklungen der letzten 1-2 Jahre. Die Gewichtung zwischen input- und outputbasierten Quotenberechnungen sowie die Behandlung von Exporten in verschiedenen Statistiksystemen bleibt teilweise unklar.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Kunststoffrecycling bringt keinen nennenswerten Nutzen.</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val f-color">15%</div>
+          <div class="small-meter-label">Truth</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">75%</div>
+          <div class="small-meter-label">Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:15%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">15%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+      
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Export-Analyse + Globale Systemanalysen + LCA Rezyklateinsatz + Stoffstrombild Deutschland</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">12%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">88%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">9 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:12%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Expert Assessment DE + Historische Recyclingquoten + Beschreibung Verfahren + Industrieerläuterungen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">15%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">75%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:15%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_13 · EU Statistik + Recyclingquoten DE + Gesamtstatistik + Schätzungen Verluste</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">25%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">85%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">6 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:25%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_17 · Herausforderungsanalyse + Emissionsmessungen + Technische Potenzialanalyse + Normative Grundlagen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">22%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">78%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">6 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:22%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_21 · Literaturbasierte Prozessanalyse + Normungsroadmap + Carbon Footprint + Sekundäranalyse</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">18%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">72%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">7 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:18%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_25 · LCA Siedlungsabfallwirtschaft + Materialanalysen + Ökoeffizienz CH + CO2-Berechnungen + Massenflussanalysen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">8%</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">90%</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">19 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:8%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(8 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict adjusts the truth percentage downward from 18% to 15% and reduces confidence from 82% to 75%. **Challenge responses:** CP_AC_01_0 (industry bias in LCA studies) is PARTIALLY ACCEPTED. While the cited evidence (EV_1772195344871, EV_1772195260869, EV_1772195344866, EV_1772195344867, EV_1772195260871) is valid and does show overlapping industry-adjacent sources (c7-consult, ALPLA, Kunststoff.swiss, Swiss PET recycling), these studies still represent methodologically sound LCA work published in institutional contexts. However, the reduced effective independence warrants a confidence reduction. CP_AC_01_1 (verdict may be too low) is REJECTED. The challenger argues for lowering truth% to 5-10%, but this would require ignoring the valid supporting evidence (EV_1772195165592, EV_1772195225695) which, while indirect, does document real implementation challenges and environmental leakage. The claim&#39;s phrasing &#39;keinen nennenswerten Nutzen&#39; (no significant benefit) is an absolute assertion; even weak supporting evidence showing marginal benefits or high costs provides some truth value. CP_AC_01_2 (missing robust negative meta-analyses) is ACCEPTED. The absence of peer-reviewed meta-analyses or governmental reports concluding net-negative impact is a critical gap. The supporting evidence (EV_1772195165592, EV_1772195165590, EV_1772195165596) is geographically limited (Switzerland) and focuses on marginal benefit rather than fundamental absence of benefit. This strengthens the case against the claim and justifies the low truth%. CP_AC_01_3 (absence of policy reversals) is ACCEPTED. No evidence of countries abandoning recycling programs due to proven lack of benefit was found. This counterfactual test strongly contradicts the claim. CP_AC_01_4 (overlapping LCA sources reducing independence) is ACCEPTED and reinforces CP_AC_01_0. The convergence across boundaries CB_25, CB_21, and CB_05 is partly due to shared LCA sources, reducing the effective independence of the evidence base. This justifies the confidence reduction. CP_AC_01_5 (quality asymmetry) is ACCEPTED. The contradicting evidence is methodologically stronger (LCA studies, official statistics) than the supporting evidence (policy decisions, anecdotal cases). This asymmetry supports the low truth% but also suggests the claim may be even less true than 18%. However, given the valid concerns about LCA assumptions (CP_AC_01_6), a modest downward adjustment to 15% is appropriate. CP_AC_01_6 (optimistic LCA assumptions) is PARTIALLY ACCEPTED. The cited evidence (EV_1772195344871, EV_1772195260869, EV_1772195344866, EV_1772195344867, EV_1772195165596) is valid, and the concern about substitution rates and energy mix assumptions is methodologically sound. However, this is a standard limitation of LCA methodology, not a fatal flaw. It warrants caution but does not invalidate the findings. CP_AC_01_7 (missing economic analysis) is ACKNOWLEDGED but NOT USED FOR ADJUSTMENT. The challenge correctly identifies a gap in economic cost-effectiveness data, but the claim is about &#39;Nutzen&#39; (benefit) broadly, not specifically economic efficiency. The environmental benefits documented (CO2 savings, resource conservation) constitute &#39;nennenswerten Nutzen&#39; regardless of cost-effectiveness. **Self-consistency:** The verdict was perfectly stable across three runs (18%, 18%, 18%), indicating high internal consistency. However, this stability does not address the external validity concerns raised by the challenges. **Final synthesis:** The claim &#39;Kunststoffrecycling bringt keinen nennenswerten Nutzen&#39; is contradicted by substantial quantitative evidence of environmental benefits (18 million tons CO2/year in Germany, 126,000 tCO2eq/year in Switzerland, rising EU recycling rates from 25.2% to 40.7%). The challenges validly identify reduced effective independence due to overlapping LCA sources, absence of robust negative meta-analyses supporting the claim, and methodological limitations in LCA assumptions. These factors justify a modest downward adjustment in truth% (to 15%) and a more significant reduction in confidence (to 75%) to reflect the industry-adjacent nature of some key studies and the potential for optimistic assumptions. The claim remains overwhelmingly contradicted by the evidence, but the confidence in this assessment is tempered by the challenges&#39; valid concerns about source independence and methodological assumptions.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Partially accepted. Industry-adjacent LCA sources (c7-consult, ALPLA, Kunststoff.swiss) reduce effective independence, but studies remain methodologically sound. Warrants confidence reduction.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. Lowering truth% to 5-10% would ignore valid supporting evidence (EV_1772195165592, EV_1772195225695) documenting implementation challenges and environmental leakage. The claim&#39;s absolute phrasing allows for some truth value even with weak supporting evidence.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Accepted. Absence of peer-reviewed meta-analyses or governmental reports concluding net-negative impact is a critical gap. Supporting evidence is geographically limited and focuses on marginal benefit, not fundamental absence of benefit.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Accepted. No evidence of policy reversals or program abandonment due to proven lack of benefit. This counterfactual test strongly contradicts the claim.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. Overlapping LCA sources across boundaries CB_25, CB_21, CB_05 reduce effective independence of convergence. Justifies confidence reduction.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. Contradicting evidence is methodologically stronger (LCA, official statistics) than supporting evidence (policy decisions, anecdotal cases). Quality asymmetry supports low truth% and modest downward adjustment.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Partially accepted. Concerns about optimistic LCA assumptions (substitution rates, energy mix) are methodologically valid but represent standard LCA limitations, not fatal flaws. Warrants caution but does not invalidate findings.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Acknowledged but not used for adjustment. Gap in economic cost-effectiveness data is real, but claim concerns &#39;Nutzen&#39; (benefit) broadly. Environmental benefits documented constitute &#39;nennenswerten Nutzen&#39; regardless of economic efficiency.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_05<br><span style="font-weight:400;font-size:10px">Export-Analyse</span></th><th>CB_09<br><span style="font-weight:400;font-size:10px">Expert Assessment DE</span></th><th>CB_13<br><span style="font-weight:400;font-size:10px">EU Statistik</span></th><th>CB_17<br><span style="font-weight:400;font-size:10px">Challenges Analysis</span></th><th>CB_21<br><span style="font-weight:400;font-size:10px">Lit Process Analysis</span></th><th>CB_25<br><span style="font-weight:400;font-size:10px">LCA Municipal Waste</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Kunststoffrecycling bringt kei</td><td><span class="cell-val cell-high">9</span></td><td><span class="cell-val cell-high">8</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-high">7</span></td><td><span class="cell-val cell-high">19</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Kunststoffexportströme und internationale Abfallhandel + Globale Systemanalysen und planetare Grenzen + Lebenszyklusanalyse Rezyklateinsatz (Deutschland) + Stoffstrombild Kunststoffe Deutschland (Industriedaten)</span><span class="ba-ev-count">68 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Statistische Erfassung und Analyse von Exportströmen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">EU, Deutschland zu Fernost und Nicht-OECD-Ländern</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2013-2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.925</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Analyse von Kunststoffabfallexporten und deren Umweltauswirkungen in Empfängerländern; Globale Analysen der Auswirkungen des Kunststoffsystems auf planetare Grenzen und zukünftige Szenarien; Merged: Vergleichende Lebenszyklusanalysen von Primär- versus recycelten Kunststoffen in Deutschland; Statistische Erfassung von Kunststoffabfällen und -verwertung basierend auf industrieseitigen Daten (Conversio, Duales System)</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">Fachliche Bewertungen durch Behörden und NGOs (Deutschland) + Historische Recyclingquoten-Vergleiche (Europa) + Beschreibung Recyclingverfahren und Anwendungen + Industrieseitige Erläuterungen Kreislaufwirtschaft</span><span class="ba-ev-count">8 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Fachliche Bewertung durch Umweltbundesamt und NABU</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Aktuell (2025)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.907</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Fachliche Bewertungen der Kunststoffabfallwirtschaft durch Umweltbundesamt und Naturschutzorganisationen; Datenerfassung und Vergleich europäischer Recyclingquoten aus historischer Perspektive; Merged: Beschreibung von Recyclingverfahren, praktischen Anwendungen und Verwertungsverfahren; Fachliche Erläuterung der Vorteile von Kunststoffrecycling durch Kunststoffhersteller</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_13</span><span class="ba-name">Europäische Abfallstatistiken + Recyclingquoten Deutschland (offizielle Berechnung) + Gesamtstatistik Kunststoffabfallverwertung Deutschland + Schätzungen nicht-recycelter Abfälle und wirtschaftliche Verluste</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Statistische Erfassung der Kunststoffabfallbehandlung</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Europa, Europäische Union</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2005-2022</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.968</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Statistische Erfassung der Kunststoffabfallbehandlung in EU-Mitgliedstaaten; Output- und inputbezogene Quotenberechnung gemäß EU-Vorgaben und deutschem Verpackungsgesetz; Merged: Statistische Erfassung aller Kunststoffabfälle aus verschiedenen Quellen in Deutschland; Schätzungen basierend auf Umweltdaten zu nicht recycelten Kunststoffabfällen und deren wirtschaftlichen Auswirkungen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_17</span><span class="ba-name">Herausforderungsanalyse Recyclingindustrie + Emissionsmessungen Kunststoff-Wertschöpfungskette + Technische Potenzialanalyse Innovationen (Deutschland) + Enzyklopädische und normative Grundlagen</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Analyse von Herausforderungen in der Kunststoffrecyclingindustrie</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Europäische Union</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Aktuell</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.962</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Analyse von Herausforderungen in der Kunststoffrecyclingindustrie; Globale und europäische Emissionsmessungen und Prognosen für die Kunststoff-Wertschöpfungskette; Merged: Technische Potenzialanalyse mit Literaturrecherchen, Expertengesprächen und Wirkungsabschätzungen für Kunststoffverwertung; Enzyklopädische Zusammenfassungen und normative Grundlagen zu Recycling und Kreislaufwirtschaft</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_21</span><span class="ba-name">Literaturbasierte Prozessanalyse + Normungsroadmap Circular Economy + Carbon Footprint Analysen Recyclingwerke + Sekundäranalyse Abfallstatistiken USA/EU</span><span class="ba-ev-count">7 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Literaturbasierte Analyse von Recyclingprozessen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Allgemein, Global</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Gegenwart, 2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.915</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Literaturbasierte Analyse von Kunststoffrecyclingprozessen, Degradationsmechanismen und technischen Aspekten; Normungsroadmap für Circular Economy Transformation im Kunststoffsektor; Merged: Carbon Footprint Analysen durch unabhängige Beratung für spezifische Recyclingwerke; Sekundäranalyse von Abfallstatistiken und vergleichende Analyse von Recyclingquoten</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_25</span><span class="ba-name">Ökobilanzielle Betrachtung Siedlungsabfallwirtschaft + Vergleichende Materialanalysen + Ökobilanzanalyse mit Ökoeffizienzindikatoren (Schweiz) + CO2-Einsparungsberechnungen (Schweiz) + Politische und fachliche Bewertungen (Schweiz) + Massenflussanalysen Kunststoffe in die Umwelt</span><span class="ba-ev-count">19 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Ökobilanzielle Betrachtung nach ISO 14040 und 14044; Gutschriftenmethode; Szenarioanalyse</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland, Europäische Union, USA</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1990-2011</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.899</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Merged: Ökobilanzielle Betrachtung nach ISO 14040/14044 für Siedlungsabfallwirtschaft mit Szenarioanalysen; Literaturvergleich von Abbauzeiten und Produktionsprozessen verschiedener Materialien; Merged: Merged: Ökobilanzstudien mit Ökoeffizienzindikatoren (SEBI, UBP) zur Bewertung von Kunststoffrecycling- und Verwertungssystemen in der Schweiz, einschließlich Vergleiche mit thermischer Verwertung; Berechnungen von CO2-Einsparungen und Emissionsfaktoren für Kunststoffrecycling auf Pro-Kopf-Basis oder Systemebene in der Schweiz; Merged: Politische Entscheidungen und Empfehlungen basierend auf Ökobilanzstudien; Analysen der Massenflüsse von Kunststoffen in die Umwelt, einschließlich Littering und Mikroplastik-Freisetzung</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">114 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(14 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165590</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Die Sammlung von gemischten Kunststoffabfällen stiftet zwar einen marginalen ökologischen Nutzen, dies aber bei untragbar hohen Kosten. Das Kunststoffrecycling ist wenig effektiv.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">19 08 kunststoffrecycling lohnt sich nicht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165591</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der Umweltnutzen des Kunststoffrecyclings würde pro Einwohner und Jahr etwa der Einsparung einer Autofahrt von 30 Kilometern oder dem Verzicht auf ein Grillsteak entsprechen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">19 08 kunststoffrecycling lohnt sich nicht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165592</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Das Schweizer Bundesamt für Umwelt hat auf Grundlage der Studienergebnisse eine gesetzlich verankerte Durchsetzung der Kunststoffsammlung abgelehnt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">19 08 kunststoffrecycling lohnt sich nicht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165593</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Kunststoffrecycling löst das Littering-Problem nicht, da Konsumenten, die zu wenig einsichtig sind um ihren Abfall ordnungsgemäss zu entsorgen, ihr illegales Entsorgungsverhalten auch bei erweitertem Recyclingangebot nicht ändern würden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">19 08 kunststoffrecycling lohnt sich nicht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165594</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Kunststoffrecycling löst das Problem des Produktabrieb (Reifen, Schuhsohlen, Kosmetika, Textilien) nicht, welches aus ökologischer Perspektive gravierender ist als Littering.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">19 08 kunststoffrecycling lohnt sich nicht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165595</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der Export von separat gesammelten Kunststoffen in Länder mit ungeordneter Abfallwirtschaft führt dazu, dass ein substanzieller Anteil dieser Massenströme im Meer endet. 2016 haben die EU-Staaten 46% der zwecks Recycling separat gesammelten Kunststoffe nach Fernost gebracht, 87% davon nach China.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">19 08 kunststoffrecycling lohnt sich nicht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165596</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Kunststoffrecycling ist nicht nur ineffizient, sondern auch wenig effektiv. Die Ökoeffizienz von Kunststoff-Gemischtsammlungen ist etwa zehnmal niedriger als die von Recyclingsystemen für Elektro- und Elektronikabfälle oder Aludosen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://dievolkswirtschaft.ch/de/2019/07/bunge-08-09-2019/" target="_blank" rel="noopener noreferrer">Kunststoffrecycling löst kein Umweltproblem – Die Volkswirtschaft</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165598</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Die recycelten Kunststoffe ersetzen bei Gemischtsammlungen nicht etwa frischen Kunststoff, sondern Holz, also einen nachwachsenden Rohstoff, was sich negativ auf die Ökobilanz des Kunststoffrecyclings auswirkt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://dievolkswirtschaft.ch/de/2019/07/bunge-08-09-2019/" target="_blank" rel="noopener noreferrer">Kunststoffrecycling löst kein Umweltproblem – Die Volkswirtschaft</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225695</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der relative geringe Anteil des Kunststoff-Recyclings in der EU bedeutet große Verluste für Wirtschaft und Umwelt; Schätzungen zufolge gelangen jährlich 19 bis 23 Millionen Tonnen Plastik in Böden, Flüsse und Ozeane.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten" target="_blank" rel="noopener noreferrer">Plastikmüll und Recycling in der EU: Zahlen und Fakten | Themen | Europäisches Parlament</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225697</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Im Jahr 2019 verursachten Kunststoffe 1,8 Milliarden Tonnen Treibhausgasemissionen, was 3,4 Prozent der weltweiten Emissionen entsprach; Prognosen zufolge könnten sich die Emissionen aus dem Lebenszyklus von Kunststoffen bis 2060 verdreifachen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten" target="_blank" rel="noopener noreferrer">Plastikmüll und Recycling in der EU: Zahlen und Fakten | Themen | Europäisches Parlament</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225700</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Der Export von Kunststoffabfällen ist problematisch, da es zu Umweltproblemen in den Empfängerländern kommen kann, wenn die Abfälle nicht ordnungsgemäß verwertet werden; in einigen Ländern werden Kunststoffabfälle illegal verbrannt oder auf Deponien gelagert, was zu Luftverschmutzung, Wasserverschmutzung und Bodenverunreinigung führt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://iwu-ev.de/kunststoffabfaelle-und-deutschlands-export-in-2023-ein-ausfuehrlicher-bericht/" target="_blank" rel="noopener noreferrer">Kunststoffabfälle und Deutschlands Export in 2023: Ein ausführlicher Bericht - Institut für Wirtschaft und Umwelt e. V.</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344870</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Durch die Verschiebung der Abfallströme von der Deponierung hin zu mehr Recycling und energetischer Nutzung der Restabfälle werden weitere Beiträge zur Minderung von Treibhausgasen erzielt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/sites/default/files/medien/publikation/long/4061.pdf" target="_blank" rel="noopener noreferrer">4061</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344871</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Die deutsche Siedlungsabfallwirtschaft entlastet das Klima um 18 Millionen Tonnen pro Jahr durch Recycling und Abfallbehandlung, was Einsparungen von 56 Mio. Tonnen CO2-Äquivalenten gegenüber 1990 entspricht.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/sites/default/files/medien/publikation/long/4061.pdf" target="_blank" rel="noopener noreferrer">4061</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344874</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Abfallwirtschaftliche Maßnahmen leisten einen wesentlichen Beitrag zur kostengünstigen Minderung von Treibhausgasen; bei Ausstieg aus der Deponierung unbehandelter Abfälle und gestiegenen Recyclingraten werden umgehend Erfolge bei der Treibhausgasminderung erzielt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/sites/default/files/medien/publikation/long/4061.pdf" target="_blank" rel="noopener noreferrer">4061</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(29 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165600</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Bei einer Recyclingrate von 31% (Verpackungen 63%) würde das Kunststoffsystem in der Schweiz von 5.4 Millionen Tonnen CO2 eq. auf 4.0 Millionen Tonnen sinken, also um 1.4 Millionen Tonnen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://kunststoff.swiss/Nachhaltigkeit/Fakten/Recycling" target="_blank" rel="noopener noreferrer">| Recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165601</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Wenn eine Person in der Schweiz 70% ihres Plastikabfalls separat sammelt, entsteht eine CO2-Einsparung von etwa 60.3 kg CO2 eq. pro Jahr, was fast zwanzig mal mehr Einsparungen entspricht als durch den Verzicht auf ein Steak.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://kunststoff.swiss/Nachhaltigkeit/Fakten/Recycling" target="_blank" rel="noopener noreferrer">| Recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165602</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Eine Studie kommt zum Schluss, dass &#39;Increasing recycling rates tackles all pillars of the triple planetary crisis addressed by the United Nations Environment Programme agreement&#39; und &#39;Recycling is the key towards environmentally sustainable plastics as it keeps virgin production to a minimum.&#39;</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://kunststoff.swiss/Nachhaltigkeit/Fakten/Recycling" target="_blank" rel="noopener noreferrer">| Recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165603</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Eine Studie der Material Economics zeigt Szenarien auf, in denen der Emissionsfaktor für recycelten Kunststoff auf 0.1 kg CO2 eq. pro 1 kg Material fällt, wenn das System optimal ausgestaltet wird mit dekarbonisiertem Energiesystem.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://kunststoff.swiss/Nachhaltigkeit/Fakten/Recycling" target="_blank" rel="noopener noreferrer">| Recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195165604</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die VDI ZRE Studie untersucht die ökologische und ökonomische Bewertung des Ressourcenaufwands beim Einsatz von rezyklierten Kunststoffen in Verpackungsmaterialien und zeigt, dass Kunststoffrezyklate in verschiedenen Szenarien ökologische Vorteile bieten können.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ressource-deutschland.de/fileadmin/user_upload/1_Themen/h_Publikationen/Studien/VDI_ZRE_Studie_Recyclingkunststoffe_komplett_BF_C1.pdf" target="_blank" rel="noopener noreferrer">VDI ZRE Studie Recyclingkunststoffe komplett BF C1</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196622</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Im Jahr 2023 wurden 99,5 % aller gesammelten Kunststoffabfälle verwertet: 38,4 % werk- und rohstofflich/chemisch und 61,1 % energetisch.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">Kunststoffabfälle | Umweltbundesamt</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196623</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Der Einsatz von Kunststoffrezyklaten hat sich von 2021 zu 2023 um 6,2 % erhöht, mit einem Anteil von 15 % an der insgesamt verarbeiteten Kunststoffmenge.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">Kunststoffabfälle | Umweltbundesamt</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196624</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Aus ökologischer Sicht ist es wichtig, mehr Kunststoffabfälle werkstofflich zu verwerten, da dies Ressourcenschonung und Umweltschutz fördert.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">Kunststoffabfälle | Umweltbundesamt</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196625</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">In Deutschland lag der Anteil der recycelten Kunststoffe im Jahr 2010 bei rund 45 Prozent, womit Deutschland im europäischen Vergleich die Spitzenposition einnahm.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.maschinenbau-wissen.de/skript3/werkstofftechnik/kunststoffe/431-kunststoffrecycling" target="_blank" rel="noopener noreferrer">Kunststoffrecycling - Verwertung von Kunststoff</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196626</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Werkstoffliche Verwertung liefert bei sortenreinen Abfällen aus Produktion oder Verarbeitung vollwertige Rohstoffe und ermöglicht die Herstellung neuer Formteile wie Rohre, Getränkeflaschen und Blumenkästen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.maschinenbau-wissen.de/skript3/werkstofftechnik/kunststoffe/431-kunststoffrecycling" target="_blank" rel="noopener noreferrer">Kunststoffrecycling - Verwertung von Kunststoff</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196627</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die Verwertungsquote für Kunststoffabfälle aus dem Haushaltsbereich liegt in Deutschland bei 95 %, und hohe Verwertungsquoten (&gt;80-90%) werden in mehreren europäischen Ländern erreicht.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.lernhelfer.de/schuelerlexikon/chemie/artikel/verwertung-von-kunststoffen" target="_blank" rel="noopener noreferrer">Verwertung von Kunststoffen in | Schülerlexikon | Lernhelfer</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196628</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Unter ökologischen und ökonomischen Gesichtspunkten ist ein Verwertungsmix aus werkstofflicher, rohstofflicher und energetischer Verwertung am sinnvollsten, um optimale Ressourcenschonung bei niedrigen Gesamtkosten zu erzielen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.lernhelfer.de/schuelerlexikon/chemie/artikel/verwertung-von-kunststoffen" target="_blank" rel="noopener noreferrer">Verwertung von Kunststoffen in | Schülerlexikon | Lernhelfer</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196629</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Das Kunststoffrecycling soll Kunststoff im Kreislauf halten und Verbrennung und Deponierung vermeiden, wodurch weniger fossile Rohstoffe für die Herstellung neuer Kunststoffe benötigt werden und Kohlenstoff nicht als CO2 in die Umwelt freigesetzt wird.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://plastics-rubber.basf.com/global/de/plastics-hub/Unsere-Stories/RECYCLE/Plastics-Recycling-challenges" target="_blank" rel="noopener noreferrer">Herausforderungen beim Kunststoffrecycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196632</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Mechanische Recyclingverfahren benötigen weniger Energie als chemische Verfahren und sollten standardmäßig eingesetzt werden, wo dies möglich ist, um die Qualität der Rezyklate zu steigern.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">Chemisches Recycling von Kunststoffen - NABU</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196633</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Chemisches Recycling könnte eine wichtige Ergänzung zum mechanischen Recycling darstellen, insbesondere für Abfallströme wie Alttextilien, Altreifen oder Matratzen, die mechanisch nicht recycelbar sind.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">Chemisches Recycling von Kunststoffen - NABU</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225691</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die Recyclingquote für Kunststoffverpackungen in Deutschland ist nach der outputbezogenen Quotenberechnung 2023 auf 52,3 Prozent gestiegen, nach der inputbezogenen Berechnungsmethode lag sie 2021 bei 63,1 Prozent.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/22033.html" target="_blank" rel="noopener noreferrer">Kunststoffabfälle in Deutschland - NABU</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225692</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die Recyclingquote für Kunststoffverpackungen ist in Deutschland seit Einführung des Verpackungsgesetzes 2019 mit anspruchsvollen Recyclingquoten sprunghaft angestiegen: von 47,9 Prozent im Jahr 2018 auf 55,2 Prozent im Jahr 2019 und 65,4 Prozent im Jahr 2022.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/22033.html" target="_blank" rel="noopener noreferrer">Kunststoffabfälle in Deutschland - NABU</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225693</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">In Europa ist das Recycling mit einem Anteil von 40,7 Prozent die am häufigsten genutzte Methode zur Entsorgung von Kunststoffabfällen, und die Recyclingquote für Kunststoffverpackungen ist in den vergangenen Jahren kontinuierlich gestiegen, von 25,2 Prozent im Jahr 2005 auf 40,7 Prozent im Jahr 2022.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten" target="_blank" rel="noopener noreferrer">Plastikmüll und Recycling in der EU: Zahlen und Fakten | Themen | Europäisches Parlament</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225694</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Etwa 56% der Kunststoffabfälle in Deutschland wurden 2023 recycelt, der Rest wurde entweder thermisch verwertet (24%) oder deponiert (20%).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://iwu-ev.de/kunststoffabfaelle-und-deutschlands-export-in-2023-ein-ausfuehrlicher-bericht/" target="_blank" rel="noopener noreferrer">Kunststoffabfälle und Deutschlands Export in 2023: Ein ausführlicher Bericht - Institut für Wirtschaft und Umwelt e. V.</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195260868</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Der Umweltnutzen des PET-Recycling Schweiz liegt mit 3.36 Mio. UBP resp. 2.65 tCO2 eq. ähnlich hoch wie in früheren Studien und wesentlich höher als der von anderen Kunststoffsammelsystemen. Es macht also weiterhin aus ökologischer Sicht Sinn, das jetzige PRS-System beizubehalten.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://petrecycling.ch/wp-content/uploads/2023/02/Oekologischer-Nutzen-des-PET-Recyclings_Carbotech_2022.pdf" target="_blank" rel="noopener noreferrer">Oekologischer Nutzen des PET Recyclings Carbotech 2022</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195260869</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Im Jahre 2020 konnte das PRS-System Einsparungen von 126&#39;000 tCO2 eq. erreichen, dies entspricht knapp 0.3% des gesamten Treibhausgas-Ausstosses in der Schweiz von 46 Mio. t CO2eq.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://petrecycling.ch/wp-content/uploads/2023/02/Oekologischer-Nutzen-des-PET-Recyclings_Carbotech_2022.pdf" target="_blank" rel="noopener noreferrer">Oekologischer Nutzen des PET Recyclings Carbotech 2022</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195260871</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Sortenreine separate Sammlung von PET-Getränkeflaschen ist sinnvoll und soll beibehalten werden. Bei PET-Getränkeflaschen ist ein hochwertiges Bottle-to-Bottle-Recycling möglich.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/umwelt-tiere/abfall-rohstoffe/abfallwirtschaft/informationen-f%C3%BCr-gemeinden/faktenblatt_kunststoffe_2017.pdf" target="_blank" rel="noopener noreferrer">faktenblatt kunststoffe 2017</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195260872</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Der ökologische Nutzen des Kunststoffrecyclings ergibt sich aus der Differenz zwischen dem Recycling-System und dem Referenzsystem (thermische Verwertung in KVA). Der Umweltnutzen stammt hauptsächlich vom Ersatz von Neumaterial durch Rezyklat, welcher um ein Vielfaches grösser ist als der Recyclingaufwand.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://petrecycling.ch/wp-content/uploads/2023/02/Oekologischer-Nutzen-des-PET-Recyclings_Carbotech_2022.pdf" target="_blank" rel="noopener noreferrer">Oekologischer Nutzen des PET Recyclings Carbotech 2022</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195312240</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Die Studie untersucht das Potenzial technischer Innovationen beim Kunststoffrecycling und bewertet deren Wirkung auf die Umwelt hinsichtlich Treibhauseffekt, Eutrophierung, Versauerung, Schonung fossiler Ressourcen und gesundheitlicher Risiken.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/system/files/medien/1410/publikationen/2021-12-10_texte_92-2021_potenzialanalyse-kunststoffrecycling.pdf" target="_blank" rel="noopener noreferrer">2021 12 10 texte 92 2021 potenzialanalyse kunststoffrecycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195312241</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Recycling trägt als wesentlicher Bestandteil der Kreislaufwirtschaft dazu bei, Materialkreisläufe zu schließen oder zu verlangsamen und so den Einsatz natürlicher Ressourcen und die Erzeugung von Emissionen zu vermindern.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://de.wikipedia.org/wiki/Recycling" target="_blank" rel="noopener noreferrer">Recycling – Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195312243</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Mit einer Beschleunigung der Entwicklung von Qualitätsstandards für Rezyklate werden neue hochwertige Stoffkreisläufe geschaffen. Das Produkt von heute ist der Rohstoff von morgen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.din.de/resource/blob/892606/06b0b608640aaddd63e5dae105ca77d8/normungsroadmap-circular-economy-data.pdf" target="_blank" rel="noopener noreferrer">normungsroadmap circular economy data</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195312244</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Ziel der Studie ist es, ein qualitativ hochwertiges und effizientes Kunststoffrecycling zu stärken und den Einsatz von Kunststoffrezyklaten zu steigern durch Identifikation und Bewertung technischer Innovationen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://epub.wupperinst.org/frontdoor/deliver/index/docId/7808/file/7808_Kunststoffrecycling.pdf" target="_blank" rel="noopener noreferrer">7808 Kunststoffrecycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344866</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Recyceltes HDPE (rHDPE) aus spanischen Suminco Recyclingwerken verursacht im Vergleich zu Neuware bis zu 88 Prozent weniger CO2-Äquivalent-Emissionen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bvse.de/gut-informiert-kunststoffrecycling/nachrichten-recycling/8511-recyceltes-hdpe-mit-hervorragender-co2-bilanz.html" target="_blank" rel="noopener noreferrer">bvse – Recyceltes HDPE mit hervorragender CO2-BilanzStartyoutube-filledfacebook</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344867</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Recyceltes PET und HDPE aus ALPLA-Recyclingwerken in Mexiko und Deutschland verursachen bis zu 87 Prozent weniger CO2-Emissionen als Neumaterial.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://blog.alpla.com/en/press-release/newsroom-recycling/recycled-plastic-reduces-carbon-consumption-87-cent/11-23" target="_blank" rel="noopener noreferrer">Recycled plastic reduces carbon consumption by up to 87 per cent | ALPLA Blog</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(71 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In Deutschland werden Kunststoffabfälle fast vollständig verwertet, mit einer gesetzlich vorgeschriebenen Recyclingquote von 90% seit 2022.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://nachhaltigkeit.rewe.de/dein-beitrag/muelltrennung/plastik-recycling" target="_blank" rel="noopener noreferrer">https://nachhaltigkeit.rewe.de/dein-beitrag/muelltrennung/plastik-recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Durch Recycling können wir die Menge an Plastikmüll, die in die Natur gelangt, erheblich verringern. Recycling spart Energie und Rohstoffe.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://nachhaltigkeit.rewe.de/dein-beitrag/muelltrennung/plastik-recycling" target="_blank" rel="noopener noreferrer">https://nachhaltigkeit.rewe.de/dein-beitrag/muelltrennung/plastik-recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Von dem Kunststoffmüll, der durch Endverbraucher:innen anfällt, wird nur ein kleiner Teil tatsächlich zu neuem Kunststoff wiederverwendet: 2021 waren es 1,27 Millionen Tonnen von 5,44 Millionen Tonnen Post-Consumer-Waste, das sind 23,35 Prozent.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Neu produziert wurden 2021 14,04 Millionen Tonnen Plastik, während recycelter Kunststoff aus dem Müll von Verbraucher:innen nur 9,05 Prozent ausmachte.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Kunststoffe können je nach Art nur etwa zwei- bis zehnmal recycelt werden, bevor sie schließlich deponiert oder verbrannt werden, da die Polymerketten beim Recyclingvorgang zerstört werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://nachhaltigkeit.rewe.de/dein-beitrag/muelltrennung/plastik-recycling" target="_blank" rel="noopener noreferrer">https://nachhaltigkeit.rewe.de/dein-beitrag/muelltrennung/plastik-recycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Werkstoffliches Recycling lässt sich nicht auf alle Kunststoffe anwenden. Besteht eine Verpackung aus verschiedenen Kunststoffarten (Verbundstoffe), ist es oft schwer bis unmöglich, diese wieder zu trennen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Rohstoffliches Recycling ist aktuell noch zu energieintensiv, um in der Breite genutzt zu werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">2021 wurden laut Conversio 1,65 Millionen Tonnen Rezyklat zur Fertigung von Kunststoffprodukten in Deutschland eingesetzt. Nur 11,7 Prozent des Neuplastiks in der Kunststoffverarbeitung wurden damit ersetzt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Eine Studie des schwedischen Umweltwissenschaftlers Karl Hillman von 2015 zeigt, dass durch Recyclingkunststoff circa ein Drittel der Emissionen wegfällt, die bei der Produktion von Neuplastik entstehen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Eine Studie von Forschenden der ETH Zürich von 2021 im Fachjournal Nature Sustainability zeigte, dass Recycling nur einen kleinen Anteil an den Emissionen hat, die durch die Plastikindustrie entstehen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/" target="_blank" rel="noopener noreferrer">https://utopia.de/ratgeber/wie-gut-funktioniert-kunststoffrecycling-in-deutschland_695641/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In Deutschland werden derzeit nur etwa 15 Prozent des Plastiks aus recyceltem Kunststoff hergestellt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Das klassische mechanische Recyclingverfahren funktioniert nur, wenn der Abfall möglichst sauber und sortenrein getrennt ist, was in der Praxis selten der Fall ist.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">BASF erhielt 2024 weltweit nur 11.300 Tonnen recycelte Rohstoffe, was 0,04 Prozent des gesamten Verbrauchs entspricht.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Kunststoffindustrie verfehlte ihre Ziele für chemisches Recycling deutlich: 2024 wurden weniger als 100.000 Tonnen produziert, obwohl 2021 1,2 Millionen Tonnen für 2025 angekündigt wurden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Kerstin Kuchta, Umweltschutz-Ingenieurin an der TU Hamburg, hält chemisches Recycling für technisch nicht ausgereift und sagt, dass Produkte aus verschiedenen Kunststoffsorten und gemischter Abfall damit nicht in größerem Umfang recycelt werden können.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im Plastik sind mehr als 16.000 verschiedene Chemikalien enthalten, die es oft kaum möglich machen, die Grundstoffe zu isolieren und wiederzuverwenden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tagesschau.de/wissen/forschung/plastik-recycling-muell-sorten-100.html" target="_blank" rel="noopener noreferrer">https://www.tagesschau.de/wissen/forschung/plastik-recycling-muell-sorten-100.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Michael Braungart, Professor für Öko-Design an der Leuphana-Universität Lüneburg, sagt, dass Recycling praktisch ausgeschlossen ist, weil die vielen Zusatzstoffe beim Recyclingprozess nicht wieder herausgefiltert werden können.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tagesschau.de/wissen/forschung/plastik-recycling-muell-sorten-100.html" target="_blank" rel="noopener noreferrer">https://www.tagesschau.de/wissen/forschung/plastik-recycling-muell-sorten-100.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Das Material einer PET-Flasche kann höchstens acht Mal wiederverwendet werden, da sich die Kohlenwasserstoffketten bei jedem Recyclingvorgang verkürzen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tagesschau.de/wissen/forschung/plastik-recycling-muell-sorten-100.html" target="_blank" rel="noopener noreferrer">https://www.tagesschau.de/wissen/forschung/plastik-recycling-muell-sorten-100.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Plastics Europe bestätigt, dass herkömmlicher Kunststoff nicht für Recyclingkreisläufe geeignet ist, da Polymerketten nicht unendlich lang im Kreis geführt werden können.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In Deutschland werden mehr als 50% des Kunststoffs verbrannt, mehr als 12% werden exportiert, und nur ein kleiner Teil wird zu Rezyklaten verarbeitet.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Rezyklate machen nur etwa 14-15% der Kunststoffneuware in Deutschland aus, und nur aus ungefähr der Hälfte davon werden tatsächlich gleichwertige Produkte hergestellt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_022</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Nur etwa 3-7% der Rezyklate werden für gleiche oder gleichwertige Produkte eingesetzt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_023</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Selbst wenn Kunststoffe in einen Kreislauf gelangen, bestehen diese nur sehr selten aus 100% Rezyklat; gewöhnlich werden zwischen 20-80% Neuplastik zugesetzt, und danach ist meistens Schluss mit der Wiederverwendung.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_024</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Für Lebensmittel dürfen Rezyklate aufgrund toxikologischer Risiken nur in seltenen Fällen eingesetzt werden; weltweit eignen sich nur etwa 10-11% der dekontaminierten Rezyklate für den Kontakt mit Lebensmitteln.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_025</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Recycling hat einen eher geringen Einfluss auf die gesamten CO2-Emissionen von Plastik, da die wesentlichen Belastungen mit etwa 70-80% bereits bei der Rohstoffgewinnung entstehen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/" target="_blank" rel="noopener noreferrer">https://www.gehtohne.de/muell/plastik-nicht-fuer-kreislaufwirtschaft-geeignet/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_026</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Weniger als 40 Prozent der Kunststoffabfälle werden in Deutschland aktuell recycelt, der Rest wird verbrannt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_027</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im Jahr 2023 wurden 38 Prozent aller gesammelten Kunststoffabfälle werkstofflich und 0,5 Prozent rohstofflich oder chemisch verwertet. 61 Prozent der Abfälle wurden energetisch verwertet.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_028</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Chemische Recyclingverfahren haben üblicherweise einen hohen Energieverbrauch, der ein wirtschaftliches und ökologisches Hemmnis darstellt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_029</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Mechanische Verfahren benötigen weniger Energie als chemische Verfahren, aber es gibt technische Grenzen bezüglich der Qualität des Recycling-Outputs und nicht alle Abfallfraktionen können mechanisch recycelt werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_030</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Aus ökologischer Sicht steht an erster Stelle, alle Abfälle mechanisch zu recyceln, bei denen dies möglich ist, und die mechanischen Verfahren sind weiterzuentwickeln, um die Qualität der Rezyklate zu steigern.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_031</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Problematisch ist, dass Schadstoffe und Additive oft in den Rezyklaten verbleiben, was etwa den Einsatz in Lebensmittelverpackungen verhindert.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_032</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Kunststoffe können nicht unendlich oft mechanisch recycelt werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_033</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im industriellen Maßstab gibt es bisher kaum Anlagen für chemische Recyclingverfahren.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_034</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Von den 5,91 Millionen Tonnen Kunststoffabfällen in Deutschland 2023 wurden 2,27 Mio. t (38,4%) werk- und rohstofflich/chemisch genutzt, während 3,61 Mio. t (61,1%) energetisch verwertet wurden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_035</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im Jahr 2023 wurden 38,4% der Kunststoffabfälle werkstofflich und rohstofflich/chemisch genutzt, während 61,1% energetisch verwertet wurden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_036</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Der Einsatz von Kunststoffrezyklaten an der insgesamt verarbeiteten Kunststoffmenge betrug 15% im Jahr 2023, ein Anstieg von 6,2% gegenüber 2021.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_037</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Plastik verursacht etwa zwei Milliarden Tonnen CO2 pro Jahr und ist damit für rund fünf Prozent aller Treibhausgas-Emissionen weltweit verantwortlich.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_038</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Nach NDR Recherchen wird das Recyclingziel der Kunststoffindustrie weit verfehlt. Der Verband Plastics Europe hatte 2021 angekündigt, dass 2025 in Europa 1,2 Millionen Tonnen neue Kunststoffe durch chemisches Recycling produziert würden, senkte das Ziel 2023 auf 900.000 Tonnen, aber 2024 waren es deutlich weniger als 100.000 Tonnen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_039</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">BASF erhielt 2024 weltweit von verschiedenen Lieferanten gerade mal 11.300 Tonnen recycelte Rohstoffe, was 0,04 Prozent des gesamten Verbrauchs entsprach.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_040</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Kerstin Kuchta, Umweltschutz-Ingenieurin an der TU Hamburg, hält chemisches Recycling für technisch nicht ausgereift. Produkte aus verschiedenen Kunststoffsorten und gemischter Abfall ließen sich damit nicht in größerem Umfang recyceln, da die Abfälle meist nicht nur gemischt, sondern auch verschmutzt und feucht sind, während die chemischen Reaktionen sehr sensibel auf Veränderungen reagieren.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_041</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Henning Wilts vom Wuppertal-Institut für Klima, Umwelt und Energie sieht wirtschaftliche Gründe für den mangelnden Ausbau des chemischen Recyclings: Es werde weder genug in das chemische Recycling investiert, noch funktioniere es in der Breite.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html" target="_blank" rel="noopener noreferrer">https://www.ndr.de/fernsehen/sendungen/panorama/archiv/2025/Klimakiller-Plastik-Die-Luege-vom-Recycling,plastikluege102.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_042</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Es mangelt an Leitlinien für eine transparente Umweltverträglichkeitsprüfung und Ökobilanzen für das Recycling. LCA-Studien werden wegen fehlender einheitlicher und harmonisierter Regeln kritisiert, was zu irreführender Kommunikation und Entscheidungsfindung führen kann.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.agentur-zukunft.eu/2024/02/142-zehn-herausforderungen-zur-transparenz-bei-oeko-bewertung-von-kunststoffrecycling/" target="_blank" rel="noopener noreferrer">https://www.agentur-zukunft.eu/2024/02/142-zehn-herausforderungen-zur-transparenz-bei-oeko-bewertung-von-kunststoffrecycling/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_043</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Zu den relevanten Herausforderungen beim Kunststoffrecycling zählen die Diversität der Technologien, die intrinsische Multifunktionalität des Recyclings, die Komplexität des Recyclings von Verbundkunststoffen, unterschiedliche Abfallherkünfte, mitgesammelte Störstoffe, nicht-recycelbare oder nur teilweise recycelbare Abfälle, Qualitätsverluste bei Kunststoff-Rezyklaten sowie signifikante Veränderungen der Rahmenbedingungen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.agentur-zukunft.eu/2024/02/142-zehn-herausforderungen-zur-transparenz-bei-oeko-bewertung-von-kunststoffrecycling/" target="_blank" rel="noopener noreferrer">https://www.agentur-zukunft.eu/2024/02/142-zehn-herausforderungen-zur-transparenz-bei-oeko-bewertung-von-kunststoffrecycling/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_044</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Der Vergleich von Neukunststoffen und recycelten Kunststoffen ist hinsichtlich der Funktionalität fehlerhaft, insbesondere wenn recycelte Kunststoffe aus einer multifunktionalen Recyclingkette stammen, die möglicherweise gemischte Sammelabfälle recycelt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.agentur-zukunft.eu/2024/02/142-zehn-herausforderungen-zur-transparenz-bei-oeko-bewertung-von-kunststoffrecycling/" target="_blank" rel="noopener noreferrer">https://www.agentur-zukunft.eu/2024/02/142-zehn-herausforderungen-zur-transparenz-bei-oeko-bewertung-von-kunststoffrecycling/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_045</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im Jahr 2023 wurden von den 5,91 Millionen Tonnen Kunststoffabfällen 2,27 Mio. t (38,4%) werk- und rohstofflich/chemisch genutzt, während 3,61 Mio. t (61,1%) energetisch verwertet wurden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_046</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Der Anteil von Kunststoffrezyklaten an der insgesamt verarbeiteten Kunststoffmenge betrug 2023 nur 15%, während 85% aus Primärkunststoffen oder anderen Quellen stammten.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_047</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Berechnungsmethode für Recyclingquoten zählt nur, was per Wiegeprotokoll in die erste Recyclinganlage gelangt, nicht aber wie viel Rezyklate tatsächlich hergestellt werden oder in neuen Produkten landen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/" target="_blank" rel="noopener noreferrer">https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_048</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hauptsächlich wird heute Stahl, Holz oder Beton durch Werkstücke aus Kunststoff-Rezyklaten ersetzt (Parkbänke, Bakenfüße, Profilbretter, Leitplanken, etc.), was als Downcycling bezeichnet wird und kein hochwertiges Recycling darstellt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/" target="_blank" rel="noopener noreferrer">https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_049</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Beim Downcycling entstehen regelmäßig Qualitätsmängel, die so hoch sind, dass für die &#39;weitere stoffliche Nutzung&#39; keine finanziellen Erträge erzielt werden können; im Gegenteil: Zuzahlungen sind üblich.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/" target="_blank" rel="noopener noreferrer">https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_050</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hochwertiges Recycling, bei dem Neumaterialien durch Rezyklate ersetzt werden, spielte in der bisherigen Praxis des deutschen Verpackungsgesetzes kaum eine Rolle - nur wenige Prozent.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/" target="_blank" rel="noopener noreferrer">https://www.ingenieur.de/fachmedien/vdi-energie-umwelt/umwelt/kreislaufwirtschaft/verpasst-deutschland-eine-chance/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_051</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Papier und Glas werden in Deutschland &#39;fast&#39; wie Weltmeister recycelt, nicht so beim Plastikmüll, was auf unterschiedliche Recyclingeffektivität hinweist.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.quarks.de/umwelt/muell/das-solltest-du-ueber-recycling-wissen/" target="_blank" rel="noopener noreferrer">https://www.quarks.de/umwelt/muell/das-solltest-du-ueber-recycling-wissen/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_052</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Nur rund 16 Prozent des in Deutschland angefallenen Plastikmülls werden für neue Produkte wiederverwendet, während die offiziellen Recyclingquoten bei 45 Prozent liegen, da diese sich nur auf die Anlieferung bei einem Recyclingunternehmen beziehen, nicht aber auf die wirklich recycelte Gesamtmenge.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz" target="_blank" rel="noopener noreferrer">https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_053</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Weltweit wird nur ein Bruchteil des anfallenden Plastikmülls recycelt – nicht einmal zehn Prozent des jemals produzierten Kunststoffes sind bisher wiederverwertet worden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz" target="_blank" rel="noopener noreferrer">https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_054</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Der niedrige Preis für Neukunststoff und das teure Sortieren und Aufarbeiten von gebrauchtem Kunststoff führt dazu, dass ein Großteil des Plastikmülls nach Übersee verschifft wird, anstatt wiederverwendet zu werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz" target="_blank" rel="noopener noreferrer">https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_055</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hersteller nutzen für ihre Produkte lieber neuwertigen Kunststoff als Rezyklat, das häufig nicht so rein sei.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz" target="_blank" rel="noopener noreferrer">https://www.zeit.de/wissen/umwelt/2019-06/recycling-plastikmuell-kunststoff-umweltverschmutzung-umweltschutz</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_056</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Weniger als 40 Prozent der Kunststoffabfälle werden in Deutschland aktuell recycelt, der Rest wird verbrannt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_057</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Schadstoffe und Additive bleiben oft in den Rezyklaten beim mechanischen Recycling, was etwa den Einsatz in Lebensmittelverpackungen verhindert.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_058</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Kunststoffe können nicht unendlich oft mechanisch recycelt werden, und es ist nicht immer möglich, mit Rezyklaten vollständig Neuware zu ersetzen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_059</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Jeder Einwohner Deutschlands erzeugte im Jahr 2019 im Durchschnitt 103 Kilogramm Verpackungsmüll, davon entstehen knapp neun Millionen Tonnen Verpackungsmüll beim privaten Endverbraucher.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.quarks.de/umwelt/muell/das-solltest-du-ueber-recycling-wissen/" target="_blank" rel="noopener noreferrer">https://www.quarks.de/umwelt/muell/das-solltest-du-ueber-recycling-wissen/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196630</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Im Jahr 2020 wurden zwei Drittel der europäischen Post-Verbraucher-Kunststoffabfälle zur energetischen Verwertung oder auf eine Deponie gebracht, während nur ein Drittel recycelt wurde.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_13</span>
+          </div>
+          <div class="ev-source-link"><a href="https://plastics-rubber.basf.com/global/de/plastics-hub/Unsere-Stories/RECYCLE/Plastics-Recycling-challenges" target="_blank" rel="noopener noreferrer">Herausforderungen beim Kunststoffrecycling</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195196631</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Weniger als 40 Prozent der Kunststoffabfälle werden in Deutschland aktuell recycelt, der Rest wird verbrannt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">Chemisches Recycling von Kunststoffen - NABU</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225696</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Zu den größten Herausforderungen im Kunststoffrecycling zählen die Qualität und der Preis des recycelten Materials verglichen mit fabrikneuem Kunststoff, sowie die Vielfalt an Rohmaterialien, die den Recyclingprozess teuer macht und die Qualität des Endprodukts beeinträchtigt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten" target="_blank" rel="noopener noreferrer">Plastikmüll und Recycling in der EU: Zahlen und Fakten | Themen | Europäisches Parlament</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225698</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Kunststoff-Wertschöpfungskette verursachte allein in der EU 193 Millionen Tonnen CO₂-Emissionen, wobei der Großteil auf die Kunststoffproduktion (63 Prozent) entfällt, gefolgt von der Produktumwandlung (22 Prozent) und der Entsorgung am Lebensende (15 Prozent).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_17</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten" target="_blank" rel="noopener noreferrer">Plastikmüll und Recycling in der EU: Zahlen und Fakten | Themen | Europäisches Parlament</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195225699</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Deutschland exportierte im Jahr 2023 ca. 745.100 Tonnen Kunststoffabfälle, was einem Rückgang von 51% im Vergleich zu 2013 entspricht; die wichtigsten Abnehmerländer waren China (ca. 237.000 Tonnen), die Türkei (ca. 92.400 Tonnen) und Polen (ca. 81.800 Tonnen).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://iwu-ev.de/kunststoffabfaelle-und-deutschlands-export-in-2023-ein-ausfuehrlicher-bericht/" target="_blank" rel="noopener noreferrer">Kunststoffabfälle und Deutschlands Export in 2023: Ein ausführlicher Bericht - Institut für Wirtschaft und Umwelt e. V.</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195260870</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Separate Sammlung und Verwertung von Kunststoffverpackungen ist sinnvoll, wenn der erzielte ökologische Nutzen in angemessenem Verhältnis zu den eingesetzten Kosten steht. Eine hohe stoffliche Verwertungsquote (&gt; 70%), bei der das Sammelgut grösstenteils hochwertig stofflich rezykliert wird, ist anzustreben.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/umwelt-tiere/abfall-rohstoffe/abfallwirtschaft/informationen-f%C3%BCr-gemeinden/faktenblatt_kunststoffe_2017.pdf" target="_blank" rel="noopener noreferrer">faktenblatt kunststoffe 2017</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195312242</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Verwertung von Kunststoffabfällen ist in der Regel ein Downcycling, da Polymere bei der Wiederverarbeitung und unter Umwelteinflüssen dazu neigen zu degradieren. In einigen Fällen erreicht der verwertete Kunststoff jedoch durchaus das Eigenschaftsniveau der Primärware, insbesondere bei hoher Qualität und Sortenreinheit der Ausgangsstoffe.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://de.wikipedia.org/wiki/Recycling" target="_blank" rel="noopener noreferrer">Recycling – Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344868</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Derzeit werden nur 9% aller Kunststoffe recycelt, obwohl allein in den USA über 13 Millionen Tonnen Kunststoffverpackungsabfälle anfallen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better" target="_blank" rel="noopener noreferrer">Umweltauswirkungen von Kunststoffen im Vergleich zu Metallen: Was ist besser?</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344869</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Recyclingquoten für Zinn und Aluminium sind in den letzten Jahren sprunghaft gestiegen und betrugen 2009 in der EU 72%, während Kunststoffrecycling mit 9% deutlich niedriger liegt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better" target="_blank" rel="noopener noreferrer">Umweltauswirkungen von Kunststoffen im Vergleich zu Metallen: Was ist besser?</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344872</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Kunststoff braucht über 400 Jahre bis zum Zerfall, während Zinn und Aluminium 50-200 Jahre benötigen; Kunststoff dauert doppelt so lange wie Aluminium und Zinn.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better" target="_blank" rel="noopener noreferrer">Umweltauswirkungen von Kunststoffen im Vergleich zu Metallen: Was ist besser?</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344873</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">1 kg Polyethylen-Kunststoffe erzeugt etwa 4 kg CO2, während 1 kg Aluminium 10,63 kg CO2 erzeugt; Kunststoff ist in der Herstellung die umweltfreundlichere Alternative.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_25</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better" target="_blank" rel="noopener noreferrer">Umweltauswirkungen von Kunststoffen im Vergleich zu Metallen: Was ist besser?</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195344875</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Eine der Haupthindernisse bei der Wiederverwertung von Kunststoffen ist die Schwierigkeit des Prozesses, da es verschiedene Kunststoffarten gibt, die unterschiedlich recycelt werden müssen, und nicht alle Kunststoffe überhaupt recycelbar sind.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_21</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better" target="_blank" rel="noopener noreferrer">Umweltauswirkungen von Kunststoffen im Vergleich zu Metallen: Was ist besser?</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">26 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">19 08 kunststoffrecycling lohnt sich nicht</span></div>
+        <div class="source-url"><a href="https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf" target="_blank" rel="noopener noreferrer">https://www.ost.ch/fileadmin/dateiliste/3_forschung_dienstleistung/institute/umtec/fachartikel/2019/19-08_kunststoffrecycling_lohnt_sich_nicht.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">VDI ZRE Studie Recyclingkunststoffe komplett BF C1</span></div>
+        <div class="source-url"><a href="https://www.ressource-deutschland.de/fileadmin/user_upload/1_Themen/h_Publikationen/Studien/VDI_ZRE_Studie_Recyclingkunststoffe_komplett_BF_C1.pdf" target="_blank" rel="noopener noreferrer">https://www.ressource-deutschland.de/fileadmin/user_upload/1_Themen/h_Publikationen/Studien/VDI_ZRE_Studie_Recyclingkunststoffe_komplett_BF_C1.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">| Recycling</span></div>
+        <div class="source-url"><a href="https://kunststoff.swiss/Nachhaltigkeit/Fakten/Recycling" target="_blank" rel="noopener noreferrer">https://kunststoff.swiss/Nachhaltigkeit/Fakten/Recycling</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Kunststoffrecycling löst kein Umweltproblem – Die Volkswirtschaft</span></div>
+        <div class="source-url"><a href="https://dievolkswirtschaft.ch/de/2019/07/bunge-08-09-2019/" target="_blank" rel="noopener noreferrer">https://dievolkswirtschaft.ch/de/2019/07/bunge-08-09-2019/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Kunststoffabfälle | Umweltbundesamt</span></div>
+        <div class="source-url"><a href="https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/daten/ressourcen-abfall/verwertung-entsorgung-ausgewaehlter-abfallarten/kunststoffabfaelle</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Probleme Kontamination Qualitätsverlust Deponierung Verbrennung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Kunststoffrecycling - Verwertung von Kunststoff</span></div>
+        <div class="source-url"><a href="https://www.maschinenbau-wissen.de/skript3/werkstofftechnik/kunststoffe/431-kunststoffrecycling" target="_blank" rel="noopener noreferrer">https://www.maschinenbau-wissen.de/skript3/werkstofftechnik/kunststoffe/431-kunststoffrecycling</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Probleme Kontamination Qualitätsverlust Deponierung Verbrennung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Verwertung von Kunststoffen in | Schülerlexikon | Lernhelfer</span></div>
+        <div class="source-url"><a href="https://www.lernhelfer.de/schuelerlexikon/chemie/artikel/verwertung-von-kunststoffen" target="_blank" rel="noopener noreferrer">https://www.lernhelfer.de/schuelerlexikon/chemie/artikel/verwertung-von-kunststoffen</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Probleme Kontamination Qualitätsverlust Deponierung Verbrennung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Herausforderungen beim Kunststoffrecycling</span></div>
+        <div class="source-url"><a href="https://plastics-rubber.basf.com/global/de/plastics-hub/Unsere-Stories/RECYCLE/Plastics-Recycling-challenges" target="_blank" rel="noopener noreferrer">https://plastics-rubber.basf.com/global/de/plastics-hub/Unsere-Stories/RECYCLE/Plastics-Recycling-challenges</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Probleme Kontamination Qualitätsverlust Deponierung Verbrennung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Chemisches Recycling von Kunststoffen - NABU</span></div>
+        <div class="source-url"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/recycling/27543.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Probleme Kontamination Qualitätsverlust Deponierung Verbrennung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Kunststoffabfälle in Deutschland - NABU</span></div>
+        <div class="source-url"><a href="https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/22033.html" target="_blank" rel="noopener noreferrer">https://www.nabu.de/umwelt-und-ressourcen/abfall-und-recycling/22033.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Recyclingquoten Marktpreis Wirtschaftlichkeit Analyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Plastikmüll und Recycling in der EU: Zahlen und Fakten | Themen | Europäisches Parlament</span></div>
+        <div class="source-url"><a href="https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten" target="_blank" rel="noopener noreferrer">https://www.europarl.europa.eu/topics/de/article/20181212STO21610/plastikmull-und-recycling-in-der-eu-zahlen-und-fakten</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Recyclingquoten Marktpreis Wirtschaftlichkeit Analyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">www.kunststoffe.de</span></div>
+        <div class="source-url"><a href="https://www.kunststoffe.de/a/fachartikel/der-lange-weg-zur-kreislaufwirtschaft-4964277" target="_blank" rel="noopener noreferrer">https://www.kunststoffe.de/a/fachartikel/der-lange-weg-zur-kreislaufwirtschaft-4964277</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Recyclingquoten Marktpreis Wirtschaftlichkeit Analyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Kunststoffabfälle und Deutschlands Export in 2023: Ein ausführlicher Bericht - Institut für Wirtschaft und Umwelt e. V.</span></div>
+        <div class="source-url"><a href="https://iwu-ev.de/kunststoffabfaelle-und-deutschlands-export-in-2023-ein-ausfuehrlicher-bericht/" target="_blank" rel="noopener noreferrer">https://iwu-ev.de/kunststoffabfaelle-und-deutschlands-export-in-2023-ein-ausfuehrlicher-bericht/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Recyclingquoten Marktpreis Wirtschaftlichkeit Analyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Aktuelle Studie quantifiziert Umweltauswirkungen von Verpackungen | ALPLA Blog</span></div>
+        <div class="source-url"><a href="https://blog.alpla.com/de/pressemitteilung/newsroom/aktuelle-studie-quantifiziert-umweltauswirkungen-von-verpackungen/04-19" target="_blank" rel="noopener noreferrer">https://blog.alpla.com/de/pressemitteilung/newsroom/aktuelle-studie-quantifiziert-umweltauswirkungen-von-verpackungen/04-19</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Swiss Recycle LCA Leistungsbericht Zahlen 2024 FINAL</span></div>
+        <div class="source-url"><a href="https://swissrecycle.ch/fileadmin/user_upload/pdfs/Leistungsbericht/2025/Swiss_Recycle_LCA_Leistungsbericht_Zahlen_2024_FINAL.pdf" target="_blank" rel="noopener noreferrer">https://swissrecycle.ch/fileadmin/user_upload/pdfs/Leistungsbericht/2025/Swiss_Recycle_LCA_Leistungsbericht_Zahlen_2024_FINAL.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_016</span><span class="source-title">Oekologischer Nutzen des PET Recyclings Carbotech 2022</span></div>
+        <div class="source-url"><a href="https://petrecycling.ch/wp-content/uploads/2023/02/Oekologischer-Nutzen-des-PET-Recyclings_Carbotech_2022.pdf" target="_blank" rel="noopener noreferrer">https://petrecycling.ch/wp-content/uploads/2023/02/Oekologischer-Nutzen-des-PET-Recyclings_Carbotech_2022.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_017</span><span class="source-title">faktenblatt kunststoffe 2017</span></div>
+        <div class="source-url"><a href="https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/umwelt-tiere/abfall-rohstoffe/abfallwirtschaft/informationen-f%C3%BCr-gemeinden/faktenblatt_kunststoffe_2017.pdf" target="_blank" rel="noopener noreferrer">https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/umwelt-tiere/abfall-rohstoffe/abfallwirtschaft/informationen-f%C3%BCr-gemeinden/faktenblatt_kunststoffe_2017.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studien</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_018</span><span class="source-title">2021 12 10 texte 92 2021 potenzialanalyse kunststoffrecycling</span></div>
+        <div class="source-url"><a href="https://www.umweltbundesamt.de/system/files/medien/1410/publikationen/2021-12-10_texte_92-2021_potenzialanalyse-kunststoffrecycling.pdf" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/system/files/medien/1410/publikationen/2021-12-10_texte_92-2021_potenzialanalyse-kunststoffrecycling.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Grenzen Qualitätsverlust Kontamination Probleme</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_019</span><span class="source-title">7808 Kunststoffrecycling</span></div>
+        <div class="source-url"><a href="https://epub.wupperinst.org/frontdoor/deliver/index/docId/7808/file/7808_Kunststoffrecycling.pdf" target="_blank" rel="noopener noreferrer">https://epub.wupperinst.org/frontdoor/deliver/index/docId/7808/file/7808_Kunststoffrecycling.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Grenzen Qualitätsverlust Kontamination Probleme</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_020</span><span class="source-title">Recycling – Wikipedia</span></div>
+        <div class="source-url"><a href="https://de.wikipedia.org/wiki/Recycling" target="_blank" rel="noopener noreferrer">https://de.wikipedia.org/wiki/Recycling</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Grenzen Qualitätsverlust Kontamination Probleme</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_021</span><span class="source-title">normungsroadmap circular economy data</span></div>
+        <div class="source-url"><a href="https://www.din.de/resource/blob/892606/06b0b608640aaddd63e5dae105ca77d8/normungsroadmap-circular-economy-data.pdf" target="_blank" rel="noopener noreferrer">https://www.din.de/resource/blob/892606/06b0b608640aaddd63e5dae105ca77d8/normungsroadmap-circular-economy-data.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Kunststoffrecycling Grenzen Qualitätsverlust Kontamination Probleme</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_022</span><span class="source-title">Umweltauswirkungen von Kunststoffen im Vergleich zu Metallen: Was ist besser?</span></div>
+        <div class="source-url"><a href="https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better" target="_blank" rel="noopener noreferrer">https://www.desjardin.fr/de/blog/environmental-impacts-of-plastics-vs.-metals-which-is-better</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Recyclingquoten Kunststoff CO2-Bilanz Energiebilanz Vergleich Deponierung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_023</span><span class="source-title">4061</span></div>
+        <div class="source-url"><a href="https://www.umweltbundesamt.de/sites/default/files/medien/publikation/long/4061.pdf" target="_blank" rel="noopener noreferrer">https://www.umweltbundesamt.de/sites/default/files/medien/publikation/long/4061.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Recyclingquoten Kunststoff CO2-Bilanz Energiebilanz Vergleich Deponierung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_024</span><span class="source-title">bvse – Recyceltes HDPE mit hervorragender CO2-BilanzStartyoutube-filledfacebook</span></div>
+        <div class="source-url"><a href="https://www.bvse.de/gut-informiert-kunststoffrecycling/nachrichten-recycling/8511-recyceltes-hdpe-mit-hervorragender-co2-bilanz.html" target="_blank" rel="noopener noreferrer">https://www.bvse.de/gut-informiert-kunststoffrecycling/nachrichten-recycling/8511-recyceltes-hdpe-mit-hervorragender-co2-bilanz.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Recyclingquoten Kunststoff CO2-Bilanz Energiebilanz Vergleich Deponierung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_025</span><span class="source-title">Recycled plastic reduces carbon consumption by up to 87 per cent | ALPLA Blog</span></div>
+        <div class="source-url"><a href="https://blog.alpla.com/en/press-release/newsroom-recycling/recycled-plastic-reduces-carbon-consumption-87-cent/11-23" target="_blank" rel="noopener noreferrer">https://blog.alpla.com/en/press-release/newsroom-recycling/recycled-plastic-reduces-carbon-consumption-87-cent/11-23</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Recyclingquoten Kunststoff CO2-Bilanz Energiebilanz Vergleich Deponierung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_026</span><span class="source-title">16 09 21 OEko Institut Abschlussbericht LCA DSD</span></div>
+        <div class="source-url"><a href="https://www.gruener-punkt.de/fileadmin/Dateien/Downloads/PDFs/16-09-21_OEko-Institut_Abschlussbericht_LCA-DSD.PDF" target="_blank" rel="noopener noreferrer">https://www.gruener-punkt.de/fileadmin/Dateien/Downloads/PDFs/16-09-21_OEko-Institut_Abschlussbericht_LCA-DSD.PDF</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Recyclingquoten Kunststoff CO2-Bilanz Energiebilanz Vergleich Deponierung</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">12 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>Plastik Recycling Effektivität Wirksamkeit</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Plastik Recycling ist ineffektiv.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Umweltauswirkungen Nutzen</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling führt nicht zu signifikanten Umweltverbesserungen.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Quote Wiederverwendung</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Die meisten recycelten Kunststoffe werden nicht tatsächlich wiederverwendet.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studie</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Probleme Kontamination Qualitätsverlust Deponierung Verbrennung</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Recyclingquoten Marktpreis Wirtschaftlichkeit Analyse</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Umweltnutzen Lebenszyklusanalyse Studien</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Kunststoffrecycling Grenzen Qualitätsverlust Kontamination Probleme</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Recyclingquoten Kunststoff CO2-Bilanz Energiebilanz Vergleich Deponierung</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">114</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">26</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">12</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">25</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-27 13:17 UTC
+  <br>Job 14d4bf645e494b1ca7bdf2daabfc0df9 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
