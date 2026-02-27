@@ -170,6 +170,9 @@ export interface PairMetrics {
     degradationRateDelta: number;
   };
 
+  /** Root-cause diagnostic — populated for strict inverse pairs exceeding CE threshold. */
+  inverseConsistencyDiagnostic?: InverseConsistencyDiagnostic;
+
   passed: boolean;
   failureReason?: string;
 }
@@ -195,6 +198,19 @@ export interface PairFailureDiagnostics {
   provider?: string;
   model?: string;
   side?: "left" | "right";
+}
+
+/**
+ * Root-cause diagnostic for a strict inverse pair that exceeds the complementarity threshold.
+ * Populated when pair.isStrictInverse and complementarityError > maxInverseComplementarityError.
+ */
+export interface InverseConsistencyDiagnostic {
+  complementarityError: number;
+  /** Root-cause tags derived from CalibrationWarning.type values on both sides. */
+  rootCauseTags: string[];
+  leftWarningTypes: string[];
+  rightWarningTypes: string[];
+  reasoning: string;
 }
 
 /**

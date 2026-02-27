@@ -13,6 +13,7 @@ import type {
   CalibrationWarning,
   CompletedPairResult,
   FailureModeSideMetrics,
+  InverseConsistencyDiagnostic,
   PairMetrics,
   PairResult,
   SideResult,
@@ -37,6 +38,29 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
   "analysis_generation_failed",
   "debate_provider_fallback",
 ]);
+
+/**
+ * Maps root-cause tag names to the CalibrationWarning.type values that indicate them.
+ * Structural plumbing only — no semantic text analysis (compliant with AGENTS.md LLM Intelligence rule).
+ */
+const ROOT_CAUSE_MAP: Record<string, string[]> = {
+  fetch_degradation: [
+    "source_fetch_failure",
+    "source_fetch_degradation",
+    "search_fallback",
+    "search_provider_error",
+    "query_budget_exhausted",
+  ],
+  grounding_issue: ["verdict_grounding_issue"],
+  direction_issue: ["verdict_direction_issue"],
+  integrity_failure: ["verdict_integrity_failure"],
+  structural_failure: [
+    "structured_output_failure",
+    "verdict_fallback_partial",
+    "verdict_partial_recovery",
+    "verdict_batch_retry",
+  ],
+};
 
 // ============================================================================
 // PER-PAIR METRICS
@@ -65,6 +89,13 @@ export function computePairMetrics(
   const complementarityError = pair.isStrictInverse
     ? Math.abs((left.truthPercentage + right.truthPercentage) - 100)
     : undefined;
+
+  const inverseConsistencyDiagnostic: InverseConsistencyDiagnostic | undefined =
+    pair.isStrictInverse &&
+    typeof complementarityError === "number" &&
+    complementarityError > thresholds.maxInverseComplementarityError
+      ? diagnoseInverseAsymmetry(left, right, complementarityError)
+      : undefined;
 
   const confidenceDelta = Math.abs(left.confidence - right.confidence);
   const evidenceBalanceDelta = Math.abs(
@@ -132,6 +163,7 @@ export function computePairMetrics(
     absoluteSkew,
     adjustedSkew,
     complementarityError,
+    inverseConsistencyDiagnostic,
     confidenceDelta,
     evidenceBalanceDelta,
     claimCountDelta,
@@ -382,6 +414,47 @@ export function computeAggregateMetrics(
     passRate,
     totalDurationMs,
     totalEstimatedCostUSD,
+  };
+}
+
+// ============================================================================
+// INVERSE CONSISTENCY DIAGNOSTIC
+// ============================================================================
+
+/**
+ * Maps both sides' warning types to root-cause categories for a strict inverse pair
+ * that exceeds the complementarity error threshold.
+ */
+export function diagnoseInverseAsymmetry(
+  left: SideResult,
+  right: SideResult,
+  complementarityError: number,
+): InverseConsistencyDiagnostic {
+  const leftWarningTypes = left.warnings.map((w) => w.type);
+  const rightWarningTypes = right.warnings.map((w) => w.type);
+  const allWarningTypes = new Set([...leftWarningTypes, ...rightWarningTypes]);
+
+  const rootCauseTags: string[] = [];
+  for (const [tag, types] of Object.entries(ROOT_CAUSE_MAP)) {
+    if (types.some((t) => allWarningTypes.has(t))) {
+      rootCauseTags.push(tag);
+    }
+  }
+
+  if (rootCauseTags.length === 0) {
+    rootCauseTags.push("unexplained");
+  }
+
+  const reasoning = rootCauseTags.includes("unexplained")
+    ? `No matching degradation warnings found. CE of ${complementarityError.toFixed(1)} pp is unexplained by warning data.`
+    : `CE of ${complementarityError.toFixed(1)} pp attributed to: ${rootCauseTags.join(", ")}.`;
+
+  return {
+    complementarityError,
+    rootCauseTags,
+    leftWarningTypes,
+    rightWarningTypes,
+    reasoning,
   };
 }
 

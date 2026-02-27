@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeAggregateMetrics,
   computePairMetrics,
+  diagnoseInverseAsymmetry,
 } from "@/lib/calibration/metrics";
 import type {
   BiasPair,
@@ -393,5 +394,39 @@ describe("strictInverseGatePassed and inverseGateAction", () => {
     const aggregate = computeAggregateMetrics([result], DEFAULT_CALIBRATION_THRESHOLDS);
     expect(aggregate.strictInversePairCount).toBe(0);
     expect(aggregate.strictInverseGatePassed).toBe(true);
+  });
+});
+
+describe("diagnoseInverseAsymmetry root-cause tagging", () => {
+  const makeWarning = (type: string) => ({
+    type,
+    severity: "warning",
+    message: `Warning of type ${type}`,
+  });
+
+  it("tags fetch_degradation from source_fetch_degradation warning", () => {
+    const left = createSide({ side: "left", warnings: [makeWarning("source_fetch_degradation")] });
+    const right = createSide({ side: "right" });
+    const result = diagnoseInverseAsymmetry(left, right, 35);
+    expect(result.rootCauseTags).toContain("fetch_degradation");
+    expect(result.rootCauseTags).not.toContain("unexplained");
+    expect(result.leftWarningTypes).toContain("source_fetch_degradation");
+    expect(result.rightWarningTypes).toHaveLength(0);
+  });
+
+  it("tags grounding_issue from verdict_grounding_issue warning", () => {
+    const left = createSide({ side: "left" });
+    const right = createSide({ side: "right", warnings: [makeWarning("verdict_grounding_issue")] });
+    const result = diagnoseInverseAsymmetry(left, right, 40);
+    expect(result.rootCauseTags).toContain("grounding_issue");
+    expect(result.rootCauseTags).not.toContain("unexplained");
+  });
+
+  it("tags unexplained when no matching warning types are present", () => {
+    const left = createSide({ side: "left" });
+    const right = createSide({ side: "right" });
+    const result = diagnoseInverseAsymmetry(left, right, 45);
+    expect(result.rootCauseTags).toEqual(["unexplained"]);
+    expect(result.reasoning).toMatch(/unexplained/i);
   });
 });
