@@ -136,9 +136,7 @@ export async function runCalibration(
         const diag = metrics.inverseConsistencyDiagnostic;
         const inverseWarning: CalibrationWarning = {
           type: "inverse_consistency_error",
-          severity: diag.complementarityError > thresholds.maxInverseComplementarityError
-            ? "error"
-            : "warning",
+          severity: "error",
           message: diag.reasoning,
           details: {
             complementarityError: diag.complementarityError,

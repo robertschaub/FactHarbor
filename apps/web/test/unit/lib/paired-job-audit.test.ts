@@ -128,4 +128,21 @@ describe("runPairedJobAudit", () => {
       }),
     ).rejects.toThrow("not SUCCEEDED");
   });
+
+  it("throws a descriptive error when a SUCCEEDED job has null resultJson", async () => {
+    const nullResultJob = { id: "null-result-job", status: "SUCCEEDED", inputValue: "Claim A", resultJson: null };
+
+    vi.stubGlobal("fetch", mockFetch(
+      { body: nullResultJob },
+      { body: makeJobBody() },
+    ));
+
+    await expect(
+      runPairedJobAudit({
+        jobIdA: "null-result-job",
+        jobIdB: "job-b",
+        apiBaseUrl: TEST_API_URL,
+      }),
+    ).rejects.toThrow("has no resultJson");
+  });
 });

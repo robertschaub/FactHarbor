@@ -12,6 +12,8 @@
  * @module calibration/paired-job-audit
  */
 
+import * as fs from "fs";
+import * as path from "path";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { diagnoseInverseAsymmetry } from "./metrics";
@@ -151,21 +153,26 @@ function makeMinimalSideResult(
 }
 
 /**
- * UCM-managed prompt template for LLM inverse verification.
- * Canonical source: prompts/text-analysis/inverse-claim-verification.prompt.md
+ * Load the inverse-claim-verification prompt from the UCM-managed file.
+ * Falls back gracefully if the file cannot be read.
  */
-const INVERSE_VERIFICATION_PROMPT =
-  `Given two claims, determine if they are strict logical inverses ` +
-  `(one asserts X, the other asserts NOT-X, with no additional semantic shift):\n\n` +
-  `Claim A: {{CLAIM_A}}\n` +
-  `Claim B: {{CLAIM_B}}\n\n` +
-  `Return JSON only: { "isStrictInverse": boolean, "reasoning": "..." }`;
+function loadInverseVerificationPrompt(): string {
+  const promptDir = process.env.FH_PROMPT_DIR ?? path.resolve(process.cwd(), "prompts");
+  const filePath = path.join(promptDir, "text-analysis", "inverse-claim-verification.prompt.md");
+  try {
+    return fs.readFileSync(filePath, "utf-8").trim();
+  } catch (err: unknown) {
+    throw new Error(
+      `Failed to load inverse-claim-verification prompt from ${filePath}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
 
 async function verifyInverse(
   claimA: string,
   claimB: string,
 ): Promise<{ isStrictInverse: boolean; reasoning: string }> {
-  const prompt = INVERSE_VERIFICATION_PROMPT
+  const prompt = loadInverseVerificationPrompt()
     .replace("{{CLAIM_A}}", claimA)
     .replace("{{CLAIM_B}}", claimB);
 
@@ -234,8 +241,15 @@ export async function runPairedJobAudit(
     );
   }
 
-  const rjA = jobA.resultJson ?? {};
-  const rjB = jobB.resultJson ?? {};
+  if (!jobA.resultJson) {
+    throw new Error(`Job ${request.jobIdA} has no resultJson — cannot compute complementarity error`);
+  }
+  if (!jobB.resultJson) {
+    throw new Error(`Job ${request.jobIdB} has no resultJson — cannot compute complementarity error`);
+  }
+
+  const rjA = jobA.resultJson;
+  const rjB = jobB.resultJson;
 
   const truthPercentageA = Number(rjA.truthPercentage ?? 50);
   const truthPercentageB = Number(rjB.truthPercentage ?? 50);
