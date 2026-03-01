@@ -375,6 +375,21 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Access Control Section */}
+      <div style={{ marginBottom: 32, maxWidth: "600px" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+          Access Control & Invites
+        </h2>
+        <div style={{ display: "grid", gap: "16px" }}>
+          <Link href="/admin/invites" className={styles.btnPrimary} style={{ background: "#f59e0b" }}>
+            🎫 Invite Code Management
+          </Link>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+            Create, manage, and monitor beta-preview invite codes and usage quotas.
+          </p>
+        </div>
+      </div>
+
       {/* FactHarbor Quality Section */}
       <div style={{ marginBottom: 32, maxWidth: "600px" }}>
         <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>

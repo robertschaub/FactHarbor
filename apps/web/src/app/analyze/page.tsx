@@ -26,13 +26,54 @@ export default function AnalyzePage() {
   const [error, setError] = useState<string | null>(null);
   const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("claimboundary");
   const [pipelineLoaded, setPipelineLoaded] = useState(false);
+  const [quotaStatus, setQuotaStatus] = useState<{
+    dailyRemaining: number;
+    lifetimeRemaining: number;
+    isActive: boolean;
+  } | null>(null);
+  const [checkingQuota, setCheckingQuota] = useState(false);
 
   // Load default pipeline and invite code from localStorage on mount.
   useEffect(() => {
     setPipelineVariant(readDefaultPipelineVariant());
-    setInviteCode(localStorage.getItem("fh_invite_code") || "");
+    const storedCode = localStorage.getItem("fh_invite_code") || "";
+    setInviteCode(storedCode);
     setPipelineLoaded(true);
+    if (storedCode) checkQuota(storedCode);
   }, []);
+
+  const checkQuota = async (code: string) => {
+    if (!code.trim()) {
+      setQuotaStatus(null);
+      return;
+    }
+    setCheckingQuota(true);
+    try {
+      const res = await fetch(`/api/fh/analyze/status?code=${encodeURIComponent(code.trim())}`);
+      if (res.ok) {
+        const data = await res.json();
+        setQuotaStatus({
+          dailyRemaining: data.dailyRemaining,
+          lifetimeRemaining: data.lifetimeRemaining,
+          isActive: data.isActive
+        });
+      } else {
+        setQuotaStatus(null);
+      }
+    } catch (err) {
+      setQuotaStatus(null);
+    } finally {
+      setCheckingQuota(false);
+    }
+  };
+
+  // Debounce quota check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inviteCode) checkQuota(inviteCode);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [inviteCode]);
 
   // When navigating back from /jobs/[id], browsers can restore this page from bfcache
   // with stale React state (e.g. isSubmitting=true), which would keep the button disabled.
@@ -211,14 +252,36 @@ export default function AnalyzePage() {
 
         {/* Invite Code */}
         <div style={{ marginBottom: 16 }}>
-          <label className={styles.variantLabel} style={{ display: "block", marginBottom: 8 }}>Invite Code:</label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <label className={styles.variantLabel} style={{ margin: 0 }}>Invite Code:</label>
+            {checkingQuota && <span style={{ fontSize: 11, color: "#666" }}>Checking...</span>}
+            {quotaStatus && (
+              <span style={{ 
+                fontSize: 11, 
+                padding: "2px 8px", 
+                borderRadius: 10, 
+                background: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#d4edda" : "#f8d7da",
+                color: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545",
+                fontWeight: 600
+              }}>
+                {quotaStatus.isActive 
+                  ? `${quotaStatus.dailyRemaining} remaining today` 
+                  : "Inactive Code"}
+              </span>
+            )}
+          </div>
           <input
             type="password"
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
             placeholder="Enter your beta invite code"
             className={styles.textarea}
-            style={{ height: "auto", padding: "10px", minHeight: "unset" }}
+            style={{ 
+              height: "auto", 
+              padding: "10px", 
+              minHeight: "unset",
+              borderColor: quotaStatus ? (quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545") : "inherit"
+            }}
             required
           />
           <p style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
