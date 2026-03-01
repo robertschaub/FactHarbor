@@ -32,13 +32,14 @@ export default function AnalyzePage() {
     isActive: boolean;
   } | null>(null);
   const [checkingQuota, setCheckingQuota] = useState(false);
+  const [adminKey, setAdminKey] = useState<string | null>(null);
 
-  // Load default pipeline and invite code from localStorage on mount.
-  // The debounced useEffect on inviteCode handles the initial quota check.
+  // Load default pipeline, invite code, and admin key on mount.
   useEffect(() => {
     setPipelineVariant(readDefaultPipelineVariant());
     const storedCode = localStorage.getItem("fh_invite_code") || "";
     setInviteCode(storedCode);
+    setAdminKey(sessionStorage.getItem("fh_admin_key"));
     setPipelineLoaded(true);
   }, []);
 
@@ -151,14 +152,19 @@ export default function AnalyzePage() {
       // Update stored invite code
       localStorage.setItem("fh_invite_code", inviteCode);
 
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminKey) {
+        headers["x-admin-key"] = adminKey;
+      }
+
       const res = await fetch("/api/fh/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           inputType,
           inputValue,
           pipelineVariant: pipelineToSend,
-          inviteCode: inviteCode.trim()
+          inviteCode: inviteCode.trim() || undefined
         }),
         signal: controller.signal,
       }).finally(() => clearTimeout(timeoutId));
@@ -251,44 +257,50 @@ export default function AnalyzePage() {
           </div>
         </div>
 
-        {/* Invite Code */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <label className={styles.variantLabel} style={{ margin: 0 }}>Invite Code:</label>
-            {checkingQuota && <span style={{ fontSize: 11, color: "#666" }}>Checking...</span>}
-            {quotaStatus && (
-              <span style={{ 
-                fontSize: 11, 
-                padding: "2px 8px", 
-                borderRadius: 10, 
-                background: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#d4edda" : "#f8d7da",
-                color: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545",
-                fontWeight: 600
-              }}>
-                {quotaStatus.isActive 
-                  ? `${quotaStatus.dailyRemaining} remaining today` 
-                  : "Inactive Code"}
-              </span>
-            )}
+        {/* Invite Code — hidden for logged-in admins */}
+        {adminKey ? (
+          <div style={{ marginBottom: 16, padding: "8px 12px", background: "#d4edda", borderRadius: 6, fontSize: 13, color: "#155724" }}>
+            Logged in as admin — invite code not required.
           </div>
-          <input
-            type="password"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
-            placeholder="Enter your alpha invite code"
-            className={styles.textarea}
-            style={{ 
-              height: "auto", 
-              padding: "10px", 
-              minHeight: "unset",
-              borderColor: quotaStatus ? (quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545") : "inherit"
-            }}
-            required
-          />
-          <p style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
-            A valid invite code is required to use the FactHarbor alpha preview.
-          </p>
-        </div>
+        ) : (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <label className={styles.variantLabel} style={{ margin: 0 }}>Invite Code:</label>
+              {checkingQuota && <span style={{ fontSize: 11, color: "#666" }}>Checking...</span>}
+              {quotaStatus && (
+                <span style={{
+                  fontSize: 11,
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  background: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#d4edda" : "#f8d7da",
+                  color: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545",
+                  fontWeight: 600
+                }}>
+                  {quotaStatus.isActive
+                    ? `${quotaStatus.dailyRemaining} remaining today`
+                    : "Inactive Code"}
+                </span>
+              )}
+            </div>
+            <input
+              type="password"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              placeholder="Enter your alpha invite code"
+              className={styles.textarea}
+              style={{
+                height: "auto",
+                padding: "10px",
+                minHeight: "unset",
+                borderColor: quotaStatus ? (quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545") : "inherit"
+              }}
+              required
+            />
+            <p style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+              A valid invite code is required to use the FactHarbor alpha preview.
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className={styles.errorBox}>
@@ -299,8 +311,8 @@ export default function AnalyzePage() {
         <div className={styles.buttonContainer}>
           <button
             type="submit"
-            disabled={isSubmitting || !hasInput || !inviteCode.trim()}
-            className={`${styles.submitButton} ${isSubmitting || !hasInput || !inviteCode.trim() ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
+            disabled={isSubmitting || !hasInput || (!adminKey && !inviteCode.trim())}
+            className={`${styles.submitButton} ${isSubmitting || !hasInput || (!adminKey && !inviteCode.trim()) ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
           >
             {isSubmitting ? (
               <>⏳ Starting Analysis...</>

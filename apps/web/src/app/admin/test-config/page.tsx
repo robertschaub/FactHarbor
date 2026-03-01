@@ -6,6 +6,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAdminAuth } from "../admin-auth-context";
 import styles from "./test-config.module.css";
 
 type TestResult = {
@@ -29,6 +30,7 @@ type TestResponse = {
 };
 
 export default function TestConfigPage() {
+  const { adminKey } = useAdminAuth();
   const [testing, setTesting] = useState(false);
   const [testResults, setTestResults] = useState<TestResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,11 @@ export default function TestConfigPage() {
     setTestResults(null);
 
     try {
-      const response = await fetch("/api/admin/test-config");
+      const headers: Record<string, string> = {};
+      if (adminKey) {
+        headers["x-admin-key"] = adminKey;
+      }
+      const response = await fetch("/api/admin/test-config", { headers });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

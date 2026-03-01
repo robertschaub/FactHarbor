@@ -1,3 +1,4 @@
+using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -8,7 +9,7 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateJobRequest(
     string inputType,
     string inputValue,
-    string? pipelineVariant = "orchestrated",  // "orchestrated" or "monolithic_dynamic"
+    string? pipelineVariant = "claimboundary",  // "claimboundary" (default), "monolithic_dynamic", or legacy "orchestrated"
     string? inviteCode = null
 );
 public sealed record CreateJobResponse(string jobId, string status);
@@ -52,8 +53,9 @@ public sealed class AnalyzeController : ControllerBase
             return (false, "Invalid inputType: must be 'url' or 'text'");
 
         // pipelineVariant validation
-        if (req.pipelineVariant != null && req.pipelineVariant != "orchestrated" && req.pipelineVariant != "monolithic_dynamic")
-            return (false, "Invalid pipelineVariant: must be 'orchestrated' or 'monolithic_dynamic'");
+        var validPipelines = new[] { "claimboundary", "orchestrated", "monolithic_dynamic" };
+        if (req.pipelineVariant != null && !validPipelines.Contains(req.pipelineVariant))
+            return (false, $"Invalid pipelineVariant: must be one of {string.Join(", ", validPipelines.Select(p => $"'{p}'"))}");
 
         // inputValue must be non-empty
         if (string.IsNullOrWhiteSpace(req.inputValue))
@@ -104,17 +106,21 @@ public sealed class AnalyzeController : ControllerBase
         var (inputValid, inputError) = ValidateRequest(req);
         if (!inputValid) return BadRequest(new { error = inputError });
 
-        // 1. Atomically validate and claim one invite slot
-        var (claimed, error, contentionExhausted) = await _jobs.TryClaimInviteSlotAsync(req.inviteCode);
-        if (!claimed)
+        // 1. Admins bypass invite code; everyone else must claim a slot
+        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+        if (!isAdmin)
         {
-            if (contentionExhausted)
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error });
-            return BadRequest(new { error });
+            var (claimed, error, contentionExhausted) = await _jobs.TryClaimInviteSlotAsync(req.inviteCode);
+            if (!claimed)
+            {
+                if (contentionExhausted)
+                    return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error });
+                return BadRequest(new { error });
+            }
         }
 
         // 2. Create Job
-        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "orchestrated", req.inviteCode);
+        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "claimboundary", req.inviteCode);
 
         // If we have scope factory + logger, do best-effort async trigger (POC-friendly).
         if (_scopeFactory is not null && _log is not null)

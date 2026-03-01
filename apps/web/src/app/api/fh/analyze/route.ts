@@ -46,9 +46,15 @@ export async function POST(req: Request) {
     inviteCode: (parsedBody as any).inviteCode,
   });
 
+  const upstreamHeaders: Record<string, string> = { "Content-Type": "application/json" };
+  const adminKey = req.headers.get("x-admin-key");
+  if (adminKey) {
+    upstreamHeaders["x-admin-key"] = adminKey;
+  }
+
   const res = await fetch(upstreamUrl, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: upstreamHeaders,
     body: forwardedBody,
   });
 

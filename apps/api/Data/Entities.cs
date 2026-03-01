@@ -22,9 +22,9 @@ public sealed class JobEntity
     public string? InviteCode { get; set; }
 
     /// <summary>
-    /// Pipeline variant: "orchestrated" (default) or "monolithic_dynamic"
+    /// Pipeline variant: "claimboundary" (default), "monolithic_dynamic", or legacy "orchestrated"
     /// </summary>
-    public string PipelineVariant { get; set; } = "orchestrated";
+    public string PipelineVariant { get; set; } = "claimboundary";
 
     // Retry tracking
     /// <summary>

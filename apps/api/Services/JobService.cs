@@ -16,7 +16,7 @@ public sealed class JobService
         _log = log;
     }
 
-    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "orchestrated", string? inviteCode = null)
+    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "claimboundary", string? inviteCode = null)
     {
         var job = new JobEntity
         {
