@@ -9,8 +9,7 @@
 import { useEffect, useState } from "react";
 import styles from "../../../styles/common.module.css";
 import toast from "react-hot-toast";
-
-const ADMIN_KEY_STORAGE_KEY = "factharbor_admin_key";
+import { useAdminAuth } from "../admin-auth-context";
 
 type InviteCode = {
   code: string;
@@ -24,9 +23,9 @@ type InviteCode = {
 };
 
 export default function InviteManagementPage() {
+  const { adminKey } = useAdminAuth();
   const [invites, setInvites] = useState<InviteCode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminKey, setAdminKey] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newCode, setNewCode] = useState({
     code: "",
@@ -37,10 +36,8 @@ export default function InviteManagementPage() {
   });
 
   useEffect(() => {
-    const storedKey = localStorage.getItem(ADMIN_KEY_STORAGE_KEY) || "";
-    setAdminKey(storedKey);
-    fetchInvites(storedKey);
-  }, []);
+    if (adminKey) fetchInvites(adminKey);
+  }, [adminKey]);
 
   const parseIntOrZero = (value: string): number => {
     const parsed = Number.parseInt(value, 10);
@@ -57,7 +54,7 @@ export default function InviteManagementPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/fh/admin/invites", {
-        headers: { "X-Admin-Key": key }
+        headers: { "x-admin-key": key }
       });
       if (res.ok) {
         setInvites(await res.json());
@@ -77,11 +74,11 @@ export default function InviteManagementPage() {
     try {
       const res = await fetch(`/api/fh/admin/invites/${code}`, {
         method: "DELETE",
-        headers: { "X-Admin-Key": adminKey }
+        headers: { "x-admin-key": adminKey ?? "" }
       });
       if (res.ok) {
         toast.success("Code deactivated");
-        fetchInvites(adminKey);
+        fetchInvites(adminKey ?? "");
       } else {
         toast.error("Failed to deactivate code");
       }
@@ -97,7 +94,7 @@ export default function InviteManagementPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Admin-Key": adminKey
+          "x-admin-key": adminKey ?? ""
         },
         body: JSON.stringify({
           ...newCode,
@@ -108,7 +105,7 @@ export default function InviteManagementPage() {
       if (res.ok) {
         toast.success("Invite code created");
         setShowCreateForm(false);
-        fetchInvites(adminKey);
+        fetchInvites(adminKey ?? "");
         setNewCode({
           code: "",
           description: "",
@@ -148,7 +145,7 @@ export default function InviteManagementPage() {
                 type="text" 
                 value={newCode.code} 
                 onChange={e => setNewCode({...newCode, code: e.target.value})}
-                placeholder="BETA-2026-XYZ"
+                placeholder="ALPHA-2026-XYZ"
                 style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
                 maxLength={64}
                 required

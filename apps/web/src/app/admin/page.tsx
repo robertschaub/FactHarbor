@@ -13,8 +13,7 @@ import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
 import { readDefaultPipelineVariant, writeDefaultPipelineVariant } from "@/lib/pipeline-variant";
 import toast from "react-hot-toast";
-
-const ADMIN_KEY_STORAGE_KEY = "factharbor_admin_key";
+import { useAdminAuth } from "./admin-auth-context";
 
 type ProviderHealth = {
   state: string;
@@ -38,23 +37,12 @@ export default function AdminPage() {
   const [health, setHealth] = useState<HealthState | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
   const [healthAction, setHealthAction] = useState<"resume" | "pause" | null>(null);
-  const [adminKey, setAdminKey] = useState("");
+  const { adminKey } = useAdminAuth();
   const router = useRouter();
 
   // Load saved default pipeline on mount
   useEffect(() => {
     setDefaultPipeline(readDefaultPipelineVariant());
-  }, []);
-
-  useEffect(() => {
-    try {
-      const storedAdminKey = window.localStorage.getItem(ADMIN_KEY_STORAGE_KEY);
-      if (storedAdminKey) {
-        setAdminKey(storedAdminKey);
-      }
-    } catch {
-      // ignore localStorage errors
-    }
   }, []);
 
   // Poll system health
@@ -81,8 +69,8 @@ export default function AdminPage() {
     setHealthAction(action);
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (adminKey.trim()) {
-        headers["X-Admin-Key"] = adminKey.trim();
+      if (adminKey) {
+        headers["x-admin-key"] = adminKey;
       }
       const res = await fetch("/api/fh/system-health", {
         method: "POST",
@@ -240,41 +228,6 @@ export default function AdminPage() {
               ))}
             </div>
 
-            <div style={{ marginBottom: 12 }}>
-              <label
-                htmlFor="admin-key"
-                style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 4 }}
-              >
-                Admin Key (required for pause/resume in secured environments)
-              </label>
-              <input
-                id="admin-key"
-                type="password"
-                value={adminKey}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setAdminKey(nextValue);
-                  try {
-                    if (nextValue.trim()) {
-                      window.localStorage.setItem(ADMIN_KEY_STORAGE_KEY, nextValue);
-                    } else {
-                      window.localStorage.removeItem(ADMIN_KEY_STORAGE_KEY);
-                    }
-                  } catch {
-                    // ignore localStorage errors
-                  }
-                }}
-                placeholder="FH_ADMIN_KEY"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: 6,
-                  border: "1px solid #ddd",
-                  fontSize: 13,
-                }}
-              />
-            </div>
-
             <div style={{ display: "flex", gap: 8 }}>
               {health.systemPaused ? (
                 <button
@@ -385,7 +338,7 @@ export default function AdminPage() {
             🎫 Invite Code Management
           </Link>
           <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
-            Create, manage, and monitor beta-preview invite codes and usage quotas.
+            Create, manage, and monitor alpha-preview invite codes and usage quotas.
           </p>
         </div>
       </div>

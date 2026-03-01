@@ -274,7 +274,7 @@ export default function AnalyzePage() {
             type="password"
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
-            placeholder="Enter your beta invite code"
+            placeholder="Enter your alpha invite code"
             className={styles.textarea}
             style={{ 
               height: "auto", 
@@ -285,7 +285,7 @@ export default function AnalyzePage() {
             required
           />
           <p style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
-            A valid invite code is required to use the FactHarbor beta preview.
+            A valid invite code is required to use the FactHarbor alpha preview.
           </p>
         </div>
 
