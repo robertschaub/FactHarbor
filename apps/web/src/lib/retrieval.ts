@@ -69,6 +69,13 @@ function isPrivateOrReservedHost(hostname: string): boolean {
     const mappedIpv4 = host.slice("::ffff:".length);
     return isPrivateOrReservedHost(mappedIpv4);
   }
+  const uncompressedMappedIpv4 = host.match(
+    /^(?:0{1,4}:){5}ffff:(\d{1,3}(?:\.\d{1,3}){3})$/,
+  );
+  if (uncompressedMappedIpv4) {
+    // Uncompressed IPv6-mapped IPv4 literal, e.g. 0:0:0:0:0:ffff:127.0.0.1
+    return isPrivateOrReservedHost(uncompressedMappedIpv4[1]);
+  }
 
   return false;
 }

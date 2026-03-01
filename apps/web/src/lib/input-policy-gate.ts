@@ -51,6 +51,13 @@ const VALID_MESSAGE_KEYS = new Set([
   "gate_unavailable",
 ]);
 
+function escapeXmlText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 /**
  * Evaluate an input submission against the content policy.
  *
@@ -89,7 +96,7 @@ export async function evaluateInputPolicy(
         { role: "system", content: prompt },
         {
           role: "user",
-          content: `<user_input input_type="${inputType}">\n${inputValue}\n</user_input>`,
+          content: `<user_input input_type="${inputType}">\n${escapeXmlText(inputValue)}\n</user_input>`,
         },
       ],
       maxOutputTokens: 200,
