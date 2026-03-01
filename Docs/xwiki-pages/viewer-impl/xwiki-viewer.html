@@ -1134,6 +1134,13 @@ async function renderPreview(){
         if(u==='LEANING-FALSE') return 'rv-lf';
         return 'rv-f';
       };
+      const confTier = c => {
+        if(c == null) return '';
+        if(c >= 75) return 'High confidence';
+        if(c >= 50) return 'Medium confidence';
+        if(c >= 25) return 'Low confidence';
+        return 'Insufficient evidence';
+      };
 
       let h = '';
       const remaining = []; // files without manifest entries
@@ -1151,10 +1158,12 @@ async function renderPreview(){
             const sizeKB = f.size >= 1024 ? Math.round(f.size/1024) + ' KB' : f.size + ' B';
             const verdictCls = rvClass(meta.verdict);
             const isFalseVerdict = meta.verdict && ['FALSE','MOSTLY-FALSE','LEANING-FALSE'].includes(meta.verdict.toUpperCase());
+            const vUpper = meta.verdict ? meta.verdict.toUpperCase() : '';
             const pctVal = meta.truth != null ? (isFalseVerdict ? 100 - meta.truth : meta.truth) : null;
-            const pctLabel = pctVal != null ? `${pctVal}% ${isFalseVerdict ? 'false' : 'true'}` : '';
-            const confLabel = meta.confidence != null ? ` (${meta.confidence}% sure)` : '';
-            const pctInfo = pctLabel + confLabel;
+            const pctLabel = vUpper === 'MIXED' && pctVal != null ? `${pctVal}/${100-pctVal} split`
+              : vUpper === 'UNVERIFIED' ? 'Insufficient evidence'
+              : pctVal != null ? `${pctVal}% ${isFalseVerdict ? 'false' : 'true'}` : '';
+            const confLabel = confTier(meta.confidence);
             const modelStr = meta.model && meta.model !== '—' ? meta.model : '';
             h += `<a class="report-card" href="${parser.esc(href)}" target="_blank" rel="noopener">`;
             h += `<div class="report-card-top"><span class="report-card-claim">${parser.esc(meta.claim)}</span>`;
@@ -1162,7 +1171,8 @@ async function renderPreview(){
             h += `</div>`;
             h += `<div class="report-card-meta">`;
             h += meta.verdict ? `<span class="report-card-verdict ${verdictCls}">${parser.esc(meta.verdict)}</span>` : '';
-            h += pctInfo ? `<span class="report-card-pct">${parser.esc(pctInfo)}</span>` : '';
+            h += pctLabel ? `<span class="report-card-pct">&middot; ${parser.esc(pctLabel)}</span>` : '';
+            h += confLabel ? `<span class="report-card-pct">&middot; ${parser.esc(confLabel)}</span>` : '';
             h += modelStr ? `<span class="report-card-model">${parser.esc(modelStr)}</span>` : '';
             h += `<span class="report-card-pct">${parser.esc(sizeKB)}</span>`;
             h += `</div></a>`;

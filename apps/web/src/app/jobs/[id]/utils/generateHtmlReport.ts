@@ -178,8 +178,8 @@ a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
 .inc-color{color:#b794f4}
 .meter-group{display:flex;gap:32px;flex-wrap:wrap}
 .meter{text-align:center}
-.meter-value{font-size:42px;font-weight:400;line-height:1}
-.meter-conf .meter-value{font-size:22px;font-weight:400}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
 .meter-conf .meter-bar{width:80px}
 .meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}

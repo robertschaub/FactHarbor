@@ -260,8 +260,8 @@ export default function JobsPage() {
                         : undefined;
                       return (
                         <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence !== undefined ? ` (${job.confidence}%)` : ""}`}>
-                          {vBadge.icon} {vBadge.text} {displayPct !== undefined && formatVerdictText(displayPct, job.verdictLabel)}
-                          {job.confidence !== undefined && <span className={styles.confidenceLabel}> · {getConfidenceTierLabel(job.confidence)}</span>}
+                          {vBadge.icon} {vBadge.text} <span style={{ fontWeight: 400 }}>{displayPct !== undefined && <>· {formatVerdictText(displayPct, job.verdictLabel)}</>}
+                          {job.confidence !== undefined && <> · {getConfidenceTierLabel(job.confidence)}</>}</span>
                         </span>
                       );
                     })()}

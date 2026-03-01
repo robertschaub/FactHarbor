@@ -1048,7 +1048,6 @@ export default function JobPage() {
                         <span className={styles.articleVerdictBadge} style={{ backgroundColor: cbColor.bg, color: cbColor.text }}>
                           {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
                         </span>
-                        <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
                         <span className={styles.articlePercentage}>
                           {formatVerdictText(displayCbPct, cbVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${result.confidence ?? 0}%`}>· {getConfidenceTierLabel(result.confidence ?? 0)}</span>
                           {result.truthPercentageRange && (() => {
@@ -1737,7 +1736,6 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
-          <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
           <span className={styles.answerPercentage}>{formatVerdictText(displayOverallPct, overallVerdict)} <span style={{ fontSize: 12, color: "#999" }} title={`${overallConfidence}%`}>· {getConfidenceTierLabel(overallConfidence)}</span></span>
         </div>
 
@@ -1906,7 +1904,6 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
           <span className={styles.contextAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(contextVerdict)}
           </span>
-          <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
           <span className={styles.contextPercentage}>{formatVerdictText(displayContextPct, contextVerdict)} <span style={{ fontSize: 11, color: "#999" }} title={`${contextAnswer.confidence}%`}>· {getConfidenceTierLabel(contextAnswer.confidence)}</span></span>
         </div>
 
@@ -2034,7 +2031,6 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
-          <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
           <span className={styles.articlePercentage}>
             {formatVerdictText(displayArticlePct, articleVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${articleConfidence}%`}>· {getConfidenceTierLabel(articleConfidence)}</span>
           </span>
@@ -2423,22 +2419,34 @@ function DynamicResultViewer({ result }: { result: any }) {
       </div>
 
       {/* Verdict display */}
-      {result.verdict && (
+      {result.verdict && (() => {
+        const dynVerdict = (result.verdict.label || "").toUpperCase();
+        const dynScore = result.verdict.score;
+        const dynConf = result.verdict.confidence;
+        const dynFalse = isFalseBand(dynVerdict);
+        const dynDisplayPct = dynScore !== undefined ? (dynFalse ? 100 - dynScore : dynScore) : undefined;
+        const dynWord = dynFalse ? "false" : "true";
+        const dynVerdictText = dynVerdict === "MIXED" && dynDisplayPct !== undefined
+          ? `${dynDisplayPct}/${100 - dynDisplayPct} split`
+          : dynVerdict === "UNVERIFIED" ? "Insufficient evidence"
+          : dynDisplayPct !== undefined ? `${dynDisplayPct}% ${dynWord}` : "";
+        return (
         <div className={styles.dynamicVerdict}>
           <div className={styles.verdictLabel}>
             {result.verdict.label}
-            {result.verdict.score !== undefined && (
-              <strong style={{ marginLeft: 8 }}>{result.verdict.score}%</strong>
+            {dynVerdictText && (
+              <span style={{ fontWeight: 400, marginLeft: 8 }}>· {dynVerdictText}</span>
             )}
           </div>
-          {result.verdict.confidence !== undefined && (
-            <div className={styles.verdictConfidence}>Confidence: {result.verdict.confidence}%</div>
+          {dynConf !== undefined && (
+            <div className={styles.verdictConfidence}>· {getConfidenceTierLabel(dynConf)}</div>
           )}
           {result.verdict.reasoning && (
             <div className={`${styles.verdictReasoning}${(result.verdict.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{result.verdict.reasoning}</div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Summary */}
       {result.summary && (
