@@ -75,11 +75,11 @@ export default function InviteManagementPage() {
     try {
       const res = await fetch(`/api/fh/admin/invites/${encodeURIComponent(code)}`, {
         method: "DELETE",
-        headers: { "x-admin-key": adminKey ?? "" }
+        headers: { "x-admin-key": adminKey }
       });
       if (res.ok) {
         toast.success("Code deactivated");
-        fetchInvites(adminKey ?? "");
+        fetchInvites(adminKey);
       } else {
         toast.error("Failed to deactivate code");
       }
@@ -96,7 +96,7 @@ export default function InviteManagementPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-key": adminKey ?? ""
+          "x-admin-key": adminKey
         },
         body: JSON.stringify({
           ...newCode,
@@ -107,7 +107,7 @@ export default function InviteManagementPage() {
       if (res.ok) {
         toast.success("Invite code created");
         setShowCreateForm(false);
-        fetchInvites(adminKey ?? "");
+        fetchInvites(adminKey);
         setNewCode({
           code: "",
           description: "",

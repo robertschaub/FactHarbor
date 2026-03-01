@@ -55,7 +55,9 @@ function escapeXmlText(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 /**
@@ -85,6 +87,9 @@ export async function evaluateInputPolicy(
       };
     }
 
+    // L3: Input length cap to prevent token exhaustion and stay within Haiku efficiency limits
+    const gateInput = inputValue.length > 4000 ? inputValue.slice(0, 4000) : inputValue;
+
     // Substitute UCM-managed prompt variables
     const prompt = config.content
       .replace(/\$\{INPUT_TEXT\}/g, "<provided in separate user_input message>")
@@ -96,7 +101,7 @@ export async function evaluateInputPolicy(
         { role: "system", content: prompt },
         {
           role: "user",
-          content: `<user_input input_type="${inputType}">\n${escapeXmlText(inputValue)}\n</user_input>`,
+          content: `<user_input input_type="${inputType}">\n${escapeXmlText(gateInput)}\n</user_input>`,
         },
       ],
       maxOutputTokens: 200,
@@ -129,11 +134,6 @@ export async function evaluateInputPolicy(
       ? (parsed.decision as PolicyDecision)
       : "allow";
 
-    // Log metadata only — not the raw input text
-    console.log(
-      `[InputGate] decision=${decision} reasonCode=${parsed.reasonCode} inputType=${inputType} confidence=${parsed.confidence}`,
-    );
-
     const reasonCode = VALID_REASON_CODES.has(parsed.reasonCode)
       ? parsed.reasonCode
       : "unknown";
@@ -144,6 +144,11 @@ export async function evaluateInputPolicy(
 
     const confidenceRaw = typeof parsed.confidence === "number" ? parsed.confidence : 0.5;
     const confidence = Math.max(0, Math.min(1, confidenceRaw));
+
+    // L2: Log metadata only AFTER validation to ensure high signal
+    console.log(
+      `[InputGate] decision=${decision} reasonCode=${reasonCode} inputType=${inputType} confidence=${confidence}`,
+    );
 
     return {
       decision,

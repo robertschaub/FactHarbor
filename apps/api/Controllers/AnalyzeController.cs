@@ -32,6 +32,7 @@ public sealed class AnalyzeController : ControllerBase
     }
 
     [HttpGet("status")]
+    [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> GetStatus([FromQuery] string code)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -49,6 +50,10 @@ public sealed class AnalyzeController : ControllerBase
         // inputType must be "url" or "text"
         if (req.inputType != "url" && req.inputType != "text")
             return (false, "Invalid inputType: must be 'url' or 'text'");
+
+        // pipelineVariant validation
+        if (req.pipelineVariant != null && req.pipelineVariant != "orchestrated" && req.pipelineVariant != "monolithic_dynamic")
+            return (false, "Invalid pipelineVariant: must be 'orchestrated' or 'monolithic_dynamic'");
 
         // inputValue must be non-empty
         if (string.IsNullOrWhiteSpace(req.inputValue))
@@ -82,7 +87,7 @@ public sealed class AnalyzeController : ControllerBase
         // Prevent link-heavy free text (>3 embedded URLs is unusual for a factual claim)
         if (req.inputType == "text")
         {
-            var urlMatches = System.Text.RegularExpressions.Regex.Matches(req.inputValue, @"https?://");
+            var urlMatches = System.Text.RegularExpressions.Regex.Matches(req.inputValue, @"https?://", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromSeconds(1));
             if (urlMatches.Count > 3)
                 return (false, "Free-text input may not contain more than 3 embedded URLs");
         }

@@ -39,7 +39,12 @@ export async function POST(req: Request) {
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/analyze`;
 
-  const forwardedBody = JSON.stringify(parsedBody);
+  const forwardedBody = JSON.stringify({
+    inputType: parsedBody.inputType,
+    inputValue: parsedBody.inputValue,
+    pipelineVariant: (parsedBody as any).pipelineVariant,
+    inviteCode: (parsedBody as any).inviteCode,
+  });
 
   const res = await fetch(upstreamUrl, {
     method: "POST",

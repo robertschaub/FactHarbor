@@ -10,6 +10,7 @@
 
 import * as cheerio from "cheerio";
 import { promises as fs } from "fs";
+import { lookup } from "dns/promises";
 import * as os from "os";
 import * as path from "path";
 import { Worker } from "worker_threads";
@@ -26,7 +27,7 @@ const MAX_RESPONSE_SIZE_BYTES = 10 * 1024 * 1024;
  * otherwise reserved address range. Used to block SSRF attempts.
  *
  * Checks:
- *  - Loopback / localhost
+ *  - Loopback / localhost / *.localhost
  *  - RFC 1918 private ranges (10/8, 172.16/12, 192.168/16)
  *  - Link-local / AWS metadata (169.254/16)
  *  - Shared address space (100.64/10)
@@ -40,7 +41,7 @@ function isPrivateOrReservedHost(hostname: string): boolean {
     : hostname.toLowerCase();
 
   // Obvious name-based loopback
-  if (host === "localhost") return true;
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
 
   // IPv4
   const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
@@ -81,6 +82,38 @@ function isPrivateOrReservedHost(hostname: string): boolean {
 }
 
 /**
+ * Resolves a hostname to its IP address(es) and validates them against
+ * private/reserved ranges to prevent DNS rebinding attacks.
+ */
+async function resolveAndValidateHost(hostname: string): Promise<void> {
+  // Fast-path: check the hostname string itself (no DNS needed for obvious IPs or localhost)
+  if (isPrivateOrReservedHost(hostname)) {
+    throw new Error(
+      "URL host not allowed: private or reserved address ranges are blocked",
+    );
+  }
+
+  try {
+    // Resolve hostname to all associated IP addresses
+    const addresses = await lookup(hostname, { all: true });
+    for (const { address } of addresses) {
+      if (isPrivateOrReservedHost(address)) {
+        throw new Error(
+          "URL host not allowed: private or reserved address ranges are blocked",
+        );
+      }
+    }
+  } catch (err: any) {
+    // If DNS resolution fails, the host is unreachable anyway.
+    // ENOTFOUND is common for invalid domains.
+    if (err.code === "ENOTFOUND") return;
+    // For other errors (timeout, system error), we block to be safe.
+    if (err.message?.includes("URL host not allowed")) throw err;
+    throw new Error("URL host validation failed");
+  }
+}
+
+/**
  * Validates a URL is safe for outbound fetching.
  * Throws an Error with a descriptive message if the URL is unsafe.
  *
@@ -88,12 +121,12 @@ function isPrivateOrReservedHost(hostname: string): boolean {
  *  - Only http: and https: schemes are permitted
  *  - Private/reserved IP ranges and localhost are blocked (SSRF protection)
  */
-function validateUrlForFetch(url: string): void {
+async function validateUrlForFetch(url: string): Promise<void> {
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    throw new Error(`Invalid URL: ${url}`);
+    throw new Error("Invalid URL provided");
   }
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
@@ -102,11 +135,7 @@ function validateUrlForFetch(url: string): void {
     );
   }
 
-  if (isPrivateOrReservedHost(parsed.hostname)) {
-    throw new Error(
-      `URL host not allowed: fetching from private or reserved IP ranges is blocked`,
-    );
-  }
+  await resolveAndValidateHost(parsed.hostname);
 }
 
 /**
@@ -467,7 +496,7 @@ export async function extractTextFromUrl(
   const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = DEFAULT_PDF_PARSE_TIMEOUT_MS } = options;
 
   // SSRF: validate URL before any network access
-  validateUrlForFetch(url);
+  await validateUrlForFetch(url);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -489,7 +518,7 @@ export async function extractTextFromUrl(
     // SSRF: validate the final URL after redirect following to catch open-redirect attacks
     if (response.url && response.url !== url) {
       try {
-        validateUrlForFetch(response.url);
+        await validateUrlForFetch(response.url);
       } catch {
         throw new Error(`Redirect target blocked: destination is a private or reserved address`);
       }
