@@ -47,6 +47,10 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("AnalyzePerIp", httpContext =>
     {
+        // Admins bypass rate limiting
+        if (FactHarbor.Api.Helpers.AuthHelper.IsAdminKeyValid(httpContext.Request))
+            return RateLimitPartition.GetNoLimiter("admin");
+
         var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
         {

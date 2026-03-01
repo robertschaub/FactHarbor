@@ -18,6 +18,13 @@ public static class AuthHelper
 
         var expectedBytes = Encoding.UTF8.GetBytes(expected);
         var gotBytes = Encoding.UTF8.GetBytes(got);
-        return CryptographicOperations.FixedTimeEquals(expectedBytes, gotBytes);
+        // Pad to equal length to prevent timing leak on length mismatch
+        var maxLen = Math.Max(expectedBytes.Length, gotBytes.Length);
+        var ePadded = new byte[maxLen];
+        var gPadded = new byte[maxLen];
+        expectedBytes.CopyTo(ePadded, 0);
+        gotBytes.CopyTo(gPadded, 0);
+        return CryptographicOperations.FixedTimeEquals(ePadded, gPadded)
+            && expectedBytes.Length == gotBytes.Length;
     }
 }
