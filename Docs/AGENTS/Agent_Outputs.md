@@ -2,6 +2,15 @@
 
 
 ---
+### 2026-03-01 | Senior Developer | Claude Code (Opus 4.6) | Claim Strength Preservation Study + Auth/Branding Fixes
+**Task:** (1) Fix admin invite management auth and beta→alpha branding. (2) Investigate 30-43pp verdict variance for near-identical German inputs.
+**Files touched:** `apps/web/src/app/admin/invites/page.tsx`, `apps/web/src/app/admin/page.tsx`, `apps/web/src/app/analyze/page.tsx`, `Docs/WIP/2026-03-01_Claim_Strength_Preservation_Study.md` (new), `Docs/WIP/README.md`.
+**Key decisions:** Auth fix: invite page used stale `localStorage("factharbor_admin_key")` while admin layout uses `sessionStorage("fh_admin_key")` via `AdminAuthContext` — migrated both admin pages to use context. Investigation: identified Stage 1 claim softening as root cause ("bedingt" → "Komponente" for general claim but not qualified variants).
+**Open items:** Multi-agent study needed (Phase A: characterize, Phase B: design solutions, Phase C: implement). See study document for full plan.
+**Warnings:** The GENERAL claim at 75% is arguably wrong (too high) — it passes all integrity checks because the SOFTENED claim is genuinely supported. The qualified claims at 32-35% may be MORE accurate for the literal German meaning.
+**For next agent:** Study document at `Docs/WIP/2026-03-01_Claim_Strength_Preservation_Study.md`. All 6 jobs preserved in current `factharbor.db`. Phase A1 (LLM Expert linguistic analysis) and A2 (evidence direction audit) can run in parallel.
+
+---
 ### 2026-03-01 | Security Expert | Claude Code (Opus 4.6) | Pre-Release Readiness Security Review
 **Task:** Security review of Limited Public Pre-Release Readiness Plan.
 **Files touched:** None (review only). Handoff file created.
@@ -2817,3 +2826,34 @@ ext phase).
 **For next agent:**
 - Run functional smoke checks from plan Step 8b against a running stack, especially retry quota claim behavior and contention path mapping to 503.
 **Learnings:** Appended to Role_Learnings.md? No.
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Synced Inverse-Asymmetry Plan to Implemented State
+**Task:** Update `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md` to reflect current implementation reality (as-of 2026-03-01).
+**Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit implementation-sync snapshot section (Phase 0/1 accepted, Phase 2 implemented, Phase 3 in progress).
+- Updated Phase 1 hardening note to reflect shared derived cap (`INSUFFICIENT_CONFIDENCE_MAX = CONFIDENCE_TIER_MIN.LOW - 1`) instead of duplicated local constants.
+- Reconciled complementarity-threshold narrative: documented Phase 2 initial 30/20 and current tightened defaults 20/15.
+- Updated status wording for Phase 3 from not-started to in-progress to match landed hardening work.
+**Open items:**
+- Final Phase 3 rollout posture remains pending (`calibrationInverseGateAction` warn-to-fail decision after baseline).
+**Warnings:**
+- Plan retains historical implementation notes and timestamps intentionally; not all line references are guaranteed stable over time.
+**For next agent:**
+- If Phase 3 proceeds, update this plan again immediately after deciding global gate-action default and CI enforcement policy.
+**Learnings:** no
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Re-ran German Inverse Pair via Live App + Generated Audit Report
+**Task:** Re-run the German strict-inverse pair through the running application and produce operator-viewable reports.
+**Files touched:** `apps/api/factharbor.db` (local migration-history metadata row inserted), generated outputs under `apps/web/test/output/audit/`
+**Key decisions:**
+- Diagnosed jobs-page/API 500 to EF migration history drift (`InviteCodes` table existed but `20260301125738_InitialInviteSystem` missing from `__EFMigrationsHistory`).
+- Applied minimal local DB metadata repair by inserting migration row (`20260301125738_InitialInviteSystem`, `8.0.8`) so API can start.
+- Submitted both German claims through app endpoint (`/api/fh/analyze`, pipelineVariant=`claimboundary`) with invite code `BETA-PREVIEW-2026`.
+- Ran paired-job audit CLI to generate HTML summary report.
+**Open items:**
+- Optional: fix Node assertion in `run-paired-audit.ts` process shutdown (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`), which occurs after report generation.
+**Warnings:**
+- `run-paired-audit.ts` returned exit code 1 due Node async-handle assertion despite successful audit completion and HTML output.
+**For next agent:**
+- German run result pair: `dd8513f3ba1b498ea45b4360344b2166` (75, MOSTLY-TRUE) vs `c1835061d55c4bb78cecf878abedbc93` (22, MOSTLY-FALSE), CE=3pp (PASS @ threshold 20).
+- Open report: `apps/web/test/output/audit/dd8513f3ba1b498ea45b4360344b2166-c1835061d55c4bb78cecf878abedbc93-2026-03-01T15-15-32-572Z.html`.
+**Learnings:** no

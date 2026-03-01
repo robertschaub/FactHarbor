@@ -48,6 +48,12 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Symmetry audit, complementarity error metrics, integrity gating (Safe Downgrade).
 - **Next Step:** Phase 3: Calibration automated gate (CI enforcement).
 
+#### Claim Strength Preservation Study (2026-03-01) — NEW
+**Status:** 🔬 Investigation — Multi-agent study required
+- **Document:** [2026-03-01_Claim_Strength_Preservation_Study.md](2026-03-01_Claim_Strength_Preservation_Study.md)
+- **Scope:** Stage 1 silently weakens claim assertions (e.g., "bedingt" → "Komponente"), causing 30-43pp variance for near-identical inputs. Distinct from ICA Plan (post-verdict integrity); this is pre-evidence claim extraction.
+- **Next Step:** Phase A parallel investigation (A1: Linguistic analysis, A2: Evidence audit, A3: Broader fidelity audit).
+
 ---
 
 ### 3. Alpha Strategy & Architecture (3 files)
