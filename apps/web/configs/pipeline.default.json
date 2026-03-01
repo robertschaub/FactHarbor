@@ -34,7 +34,7 @@
   "sourceFetchTimeoutMs": 20000,
   "maxIterationsPerContext": 5,
   "maxTotalIterations": 10,
-  "maxTotalTokens": 750000,
+  "maxTotalTokens": 1000000,
   "maxTokensPerCall": 100000,
   "enforceBudgets": false,
   "defaultPipelineVariant": "claimboundary",
@@ -114,7 +114,7 @@
   "selfConsistencyMode": "full",
   "selfConsistencyTemperature": 0.4,
   "challengerTemperature": 0.3,
-  "calibrationInverseGateAction": "fail",
+  "calibrationInverseGateAction": "warn",
   "verdictGroundingPolicy": "safe_downgrade",
   "verdictDirectionPolicy": "retry_once_then_safe_downgrade",
   "debateModelProviders": { "challenger": "openai" }
