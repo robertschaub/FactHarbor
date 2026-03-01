@@ -693,7 +693,8 @@ export type AnalysisWarningType =
   | "inverse_consistency_error"        // Strict inverse pair complementarity check failed
   | "verdict_integrity_failure"        // Integrity policy downgraded verdict to safe fallback
   | "verdict_grounding_issue"          // Verdict grounding validation found invalid evidence references
-  | "verdict_direction_issue";         // Verdict direction validation found truth%/evidence misalignment
+  | "verdict_direction_issue"          // Verdict direction validation found truth%/evidence misalignment
+  | "challenger_failure";              // Adversarial challenger LLM call failed (malformed output, timeout, etc.) — verdict proceeds without challenge
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

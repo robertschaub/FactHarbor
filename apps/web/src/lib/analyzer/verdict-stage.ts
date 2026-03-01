@@ -360,9 +360,21 @@ export async function runVerdictStage(
   );
 
   // Steps 2 & 3: Run in parallel
+  // Challenger is wrapped in try/catch — malformed LLM output (e.g. OpenAI returning
+  // invalid JSON) must not crash the entire analysis. An empty ChallengeDocument means
+  // the reconciler proceeds with no challenger input (advocate verdict stands).
   const [consistencyResults, challengeDoc] = await Promise.all([
     selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config),
-    adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config),
+    adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config)
+      .catch((err): ChallengeDocument => {
+        warnings?.push({
+          type: "challenger_failure",
+          severity: "warning",
+          message: `Adversarial challenger failed: ${err?.message ?? "unknown error"}. Proceeding without challenger input.`,
+          details: { errorName: err?.name, errorMessage: err?.message },
+        });
+        return { challenges: [] };
+      }),
   ]);
 
   // Step 4: Reconciliation — reconciler sees FULL evidence (needs complete picture)
