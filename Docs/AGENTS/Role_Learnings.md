@@ -329,7 +329,23 @@ _(No entries yet)_
 
 ## Security Expert
 
-_(No entries yet)_
+### 2026-03-01 — Retry endpoints are a hidden quota bypass vector
+**Role:** Security Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** `POST /v1/jobs/{jobId}/retry` creates a new job using the original job's invite code but never calls `TryClaimInviteSlotAsync`. Combined with unauthenticated access and public job listing, this gives an attacker 3 free analyses per failed job (MAX_RETRY_DEPTH=3). When reviewing any endpoint that creates jobs, always verify it goes through the invite slot claim path. The cancel endpoint has the same unauth issue but no quota bypass.
+**Files:** `apps/api/Controllers/JobsController.cs` (RetryJob), `apps/api/Services/JobService.cs` (CreateRetryJobAsync)
+
+### 2026-03-01 — Content-Length check is insufficient for SSRF size caps
+**Role:** Security Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** Checking `Content-Length` header before buffering only works when the server sends that header. Chunked transfer-encoded responses (common for dynamic content) have no Content-Length. `response.text()` and `response.arrayBuffer()` buffer the entire body regardless. A streaming byte counter that aborts at the limit is required for robust size enforcement. The existing `maxLength` parameter only slices extracted text after the full response is already in memory.
+**Files:** `apps/web/src/lib/retrieval.ts` (extractTextFromUrl, lines 450-494)
+
+### 2026-03-01 — Cross-check Next.js and .NET auth patterns independently
+**Role:** Security Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** tip
+**Learning:** The Next.js layer had 25+ admin routes all correctly using `checkAdminKey()` with timing-safe comparison, while the .NET layer's `AdminInviteCodesController` used plain `==`. Different tech stacks in the same project can drift on security patterns. Always audit both layers independently — don't assume one layer's security posture applies to the other.
+**Files:** `apps/web/src/lib/auth.ts`, `apps/api/Controllers/AdminInviteCodesController.cs`
 
 ## DevOps Expert
 

@@ -2,6 +2,39 @@
 
 
 ---
+### 2026-03-01 | Security Expert | Claude Code (Opus 4.6) | Pre-Release Readiness Security Review
+**Task:** Security review of Limited Public Pre-Release Readiness Plan.
+**Files touched:** None (review only). Handoff file created.
+**Key decisions:** 12 findings (1 BLOCKER, 5 HIGH, 5 MEDIUM, 1 LOW). 9 net-new beyond Round 1.
+**Open items:** BLOCKER S-1 (unauthenticated cancel/retry) not yet in plan. Captain decisions #8, #9 needed.
+**For next agent:** See `Docs/AGENTS/Handoffs/2026-03-01_Security_Expert_PreRelease_Review.md` for full findings.
+
+---
+### 2026-03-01 | Senior Developer | Claude Code (Sonnet 4.6) | Verdict Display Format Refactor
+**Task:** Update all verdict display sites to show `{pct}% true ({conf}% sure)` for above-center bands and `{100-pct}% false ({conf}% sure)` for below-center bands (LEANING-FALSE, MOSTLY-FALSE, FALSE). Update all 18 TESTREPORTS HTML files to match.
+**Files touched:**
+- `apps/web/src/lib/analyzer/truth-scale.ts` — added `isFalseBand()` as canonical export
+- `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts` — imported `isFalseBand` from truth-scale, removed local def; updated `buildVerdictBanner()`, `buildClaimVerdicts()`, `buildBoundaryFindingsGrid()` to use display percentage + axis word; fixed `buildVisualTruthMeter()` calls and range complement-flip
+- `apps/web/src/app/jobs/[id]/page.tsx` — imported `isFalseBand` from truth-scale, removed local def; updated 5 display locations (CB pipeline banner, MultiContextStatementBanner, ContextCard, ArticleVerdictBanner, ClaimCard); fixed VisualTruthMeter + range flip at CB banner and ClaimCard badge
+- `Docs/TESTREPORTS/*.html` (18 files) — all updated via Python transformation script (deleted after use)
+
+**Key decisions:**
+- `isFalseBand()` canonical definition placed in `truth-scale.ts` (single source of truth, imported by both display files).
+- Range complement-flip: `[min, max]` → `[100-max, 100-min]` (min/max swap preserves ordering).
+- VisualTruthMeter receives display percentage (not raw truth%) so the visual bar axis matches the badge text.
+- "Confidence" label renamed to "sure" across HTML reports for consistency with new format.
+- TESTREPORTS transformed via single-pass Python regex script rather than 18 individual edits.
+
+**Open items:** None. Task fully complete.
+
+**Warnings:**
+- The `isFalseBand()` export in `truth-scale.ts` is now consumed by both `generateHtmlReport.ts` and `page.tsx`. Any future verdict label changes (e.g., renaming "LEANING-FALSE") must update `isFalseBand()` in truth-scale.ts.
+- TESTREPORTS files are static snapshots — if new test reports are generated, they will use the updated code automatically. Existing 18 files were manually updated.
+
+**For next agent:** All code review findings resolved (L1 dedup, M1 VisualTruthMeter axis, M2 range flip at 2 sites). Build clean. 1113/1113 tests passing. Changes not yet committed — commit when user requests.
+**Learnings:** No new role learnings.
+
+---
 ### 2026-03-01 | Senior Developer | Claude Code (Sonnet 4.6) | Invite Code Access Control — Full Implementation
 **Task:** Implement the approved invite code access control plan (12 files, 6 steps): daily+lifetime quotas, atomic slot-claim, job search, privacy fixes, calibration code-quality fixes.
 **Files touched:**
@@ -2665,3 +2698,103 @@ ext phase).
 **For next agent:**
 - Execute requested review round using the included prompt pack and capture findings by severity.
 **Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Added Invite Quota Admin UI Scope to Pre-Release Plan
+**Task:** Incorporate Captain feedback by adding UI/API plan scope for setting/resetting quotas by invite code.
+**Files touched:** Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md, Docs/AGENTS/Agent_Outputs.md.
+**Key decisions:**
+- Added Step 6 for invite quota admin operations (API endpoints, web proxies, admin page, audit requirement, acceptance criteria).
+- Renumbered downstream sections and updated references (verification/deployment/security steps).
+- Added API-side X-Admin-Key enforcement requirement for new admin invite endpoints.
+- Expanded planned files, review checklist, captain decisions, and review questions to include invite quota operations.
+**Open items:**
+- Captain decision remains on reset-only vs reset+edit scope in Round 1.
+**Warnings:**
+- New admin surface increases need for auth regression tests and audit logging validation.
+**For next agent:**
+- Review Step 6 scope and approve endpoint contract before implementation starts.
+**Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Added Input Policy Gate to Pre-Release Plan
+**Task:** Incorporate problematic-input blocking recommendations into 2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md.
+**Files touched:** Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md, Docs/AGENTS/Agent_Outputs.md.
+**Key decisions:**
+- Added Step 6 Input Policy Gate with deterministic structural checks and LLM semantic gate (llow|reject|review) using UCM-managed prompt text.
+- Explicitly prohibited keyword/regex semantic blocking and required multilingual-neutral semantic handling.
+- Added logging/privacy contract for blocked input handling and fallback policy decision on LLM gate failures.
+- Renumbered downstream plan steps and updated smoke checks, planned files, captain decisions, review checklist, and review questions.
+**Open items:**
+- Captain decisions needed on LLM gate fallback mode and public API ingress policy.
+**Warnings:**
+- New semantic gate introduces policy surface; fallback behavior must be explicitly chosen before implementation.
+**For next agent:**
+- Review Step 6 contract and approve fallback/ingress decisions prior to coding.
+**Learnings:** Appended to Role_Learnings.md? No.
+
+---
+### 2026-03-01 | Code Reviewer | Claude Code (Opus 4.6) | Pre-Release Plan Review Round 1
+**Task:** Assess plan quality and verification completeness for `Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md`.
+**Files touched:** None (review-only).
+**Key decisions:**
+- Verdict: REQUEST CHANGES — 3 blockers, 5 high, 4 medium, 2 low findings.
+- B1: Step 7 marked COMPLETED but Next.js proxy routes (`/api/fh/admin/invites/`) don't exist — admin UI will 404.
+- B2: No .NET test project exists; backend hardening steps (3, 4, 5) ship untestable.
+- B3: Step 6d.2 "semantically abusive" acceptance criterion is not testable — no examples, no language set, no boundary definition.
+- H4: Per-IP throttling at API layer is ineffective — all requests arrive from `127.0.0.1` via Next.js proxy.
+- H5: Deployment rollback doesn't address EF migration state.
+- 5 residual risks identified including invite code brute-force and dev-mode auth bypass.
+**Open items:**
+- All findings require plan revision before implementation begins.
+- Planned Files table rows 9-12 have path mismatches with actual implementation (`invite-codes` vs `invites`).
+**Warnings:**
+- Steps 1, 2, 3 (admin auth sweep) and 5 (privacy guard) are already complete in code — plan should reflect actual state to avoid redundant implementation.
+- Step 6b (semantic LLM gate) and Step 3a (rate limiting) are the only unimplemented hardening steps.
+**For next agent:**
+- Full review report: see plan file or ask Code Reviewer to reproduce. Key action: Senior Developer should revise the plan addressing B1-B3 and H1-H5 before implementation proceeds.
+**Learnings:** Appended to Role_Learnings.md? No.
+
+---
+### 2026-03-01 | Senior Developer | Claude Code (Sonnet 4.6) | Pre-Release Hardening: Steps 1, 2, 6
+**Task:** Implement SSRF hardening (Step 1), admin auth sweep (Step 2), and input policy gate (Step 6) from the pre-release readiness plan.
+**Files touched:**
+- `apps/web/src/lib/retrieval.ts` — SSRF: added `isPrivateOrReservedHost()`, `validateUrlForFetch()`; pre-fetch validation; post-redirect final-URL validation; Content-Length cap (10 MB); post-buffer size guard for PDF; scheme enforcement (http/https only)
+- `apps/web/src/app/api/admin/test-config/route.ts` — removed TODO auth bypass; added `checkAdminKey` call
+- `apps/web/src/app/api/admin/config/active-summary/route.ts` — added request param + `checkAdminKey`
+- `apps/web/src/app/api/admin/config/diff/route.ts` — added `checkAdminKey` import + call
+- `apps/web/src/app/api/admin/config/export-all/route.ts` — added request param + `checkAdminKey`
+- `apps/web/src/app/api/admin/config/warnings/route.ts` — added `checkAdminKey` import + call
+- `apps/web/src/app/api/admin/config/search-hash/route.ts` — added `checkAdminKey` import + call
+- `apps/web/src/app/api/admin/config/default-comparison/route.ts` — added `checkAdminKey` import + call
+- `apps/web/src/app/api/admin/quality/job/[jobId]/config/route.ts` — renamed `_request` → `request`, added `checkAdminKey` call
+- `apps/api/Controllers/AnalyzeController.cs` — added `ValidateRequest()` static method: inputType enum check, non-empty value, max size (32k text / 2k URL), http/https scheme, control-char density (<5%), max 3 embedded URLs in free text
+- `apps/web/src/lib/config-storage.ts` — registered `"input-policy-gate"` in `VALID_PROMPT_PROFILES`
+- `apps/web/src/lib/config-schemas.ts` — added `"input-policy-gate"` to valid pipeline names
+- `apps/web/prompts/input-policy-gate.prompt.md` — new UCM-managed prompt for semantic input gate
+- `apps/web/src/lib/input-policy-gate.ts` — new gate module: `evaluateInputPolicy()`, fail-open on errors, privacy-safe logging
+- `apps/web/src/app/api/fh/analyze/route.ts` — wired semantic gate before upstream forward; returns 422 on reject; parses body to extract inputValue/inputType for gate evaluation
+
+**Key decisions:**
+- SSRF: fail-closed on private IP / non-http(s) scheme before fetch; fail-open NOT an option for SSRF (security-critical). Post-redirect check catches open-redirect SSRF bypasses.
+- Auth sweep: `test-config` had explicit TODO to bypass auth — enforced now. 7 other routes simply lacked the import+call (likely written before auth.ts existed).
+- Structural gate (C#): runs before invite-slot claim to fail fast without wasting quota. Control-char threshold 5%, URL-in-text limit 3.
+- Semantic gate (TS): fail-open on LLM/config errors to avoid blocking legitimate requests. Haiku model (lightweight binary classification). Privacy contract: log decision metadata only, never raw blocked text.
+- `"review"` decision allows submission to continue; only `"reject"` returns 422. This keeps human-review workflow possible without requiring a review queue in pre-release.
+- Prompt is principle-based (no keyword lists); explicitly instructs LLM NOT to reject on topic sensitivity.
+
+**Open items:**
+- Step 3 (Rate limiting / per-IP throttling on AnalyzeController.cs) — not implemented; requires Captain decision on throttle rate
+- Step 4 (SQLite contention retry/backoff in TryClaimInviteSlotAsync) — not implemented
+- Step 5 (inviteCode privacy guard) — verify JobsController.cs does not expose inviteCode in list responses (was addressed in prior session but should be smoke-tested)
+- Step 8 (Release verification smoke checks) — to be run on deployed instance
+- Step 10 (Security headers, CORS, log redaction, dependency scan) — deferred post-gate
+
+**Warnings:**
+- `evaluateInputPolicy` adds ~1–2s latency per submission (Haiku LLM call). Monitor in production.
+- SSRF `isPrivateOrReservedHost` is string/pattern based — does NOT do actual DNS resolution. A hostname that DNS-resolves to a private IP but does not match the patterns would NOT be blocked. Full SSRF protection requires an HTTP agent with post-DNS IP validation (Node.js limitation with undici).
+- `input-policy-gate.prompt.md` is now UCM-managed. Admin edits to the prompt are live immediately — no deploy needed. Test prompt changes before activating.
+
+**For next agent:**
+- Remaining plan steps: 3 (rate limiting), 4 (contention retry), 8 (smoke gates), 10 (security headers).
+- Captain decision required before Step 3: throttle rate (requests/minute per IP) and whether 429 or 503 is the right response code.
+- The semantic gate (Step 6b) is wired but NOT covered by automated tests (requires real LLM). Manual smoke test: submit a prompt-injection attempt and verify 422 is returned.
+**Learnings:** No new learnings to append (patterns followed standard Senior Developer approach).
