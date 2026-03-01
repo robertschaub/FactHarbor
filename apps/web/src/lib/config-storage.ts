@@ -1277,6 +1277,8 @@ export const VALID_PROMPT_PROFILES = [
   "text-analysis-verdict",
   // ClaimBoundary pipeline prompts (all stages)
   "claimboundary",
+  // Pre-pipeline gates
+  "input-policy-gate",
 ] as const;
 
 export type PromptProfile = (typeof VALID_PROMPT_PROFILES)[number];
