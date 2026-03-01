@@ -6,7 +6,7 @@ on:
     paths:
       - 'Docs/xwiki-pages/FactHarbor/**'
       - 'Docs/xwiki-pages/viewer-impl/**'
-      - 'Docs/xwiki-pages/scripts/build_ghpages.py'
+      - 'Docs/xwiki-pages/scripts/*.py'
       - 'Docs/TESTREPORTS/*.html'
   workflow_dispatch:
 
