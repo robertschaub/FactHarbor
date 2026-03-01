@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 
 type JobSummary = {
@@ -254,10 +255,13 @@ export default function JobsPage() {
                     {job.verdictLabel && (() => {
                       const vBadge = getVerdictBadge(job.verdictLabel);
                       if (!vBadge) return null;
+                      const displayPct = job.truthPercentage !== undefined
+                        ? (isFalseBand(job.verdictLabel) ? 100 - job.truthPercentage : job.truthPercentage)
+                        : undefined;
                       return (
-                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence !== undefined ? ` (${job.confidence}% sure)` : ""}`}>
-                          {vBadge.icon} {vBadge.text} {job.truthPercentage !== undefined && `(${job.truthPercentage}%)`}
-                          {job.confidence !== undefined && <span className={styles.confidenceLabel}> ({job.confidence}% sure)</span>}
+                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence !== undefined ? ` (${job.confidence}%)` : ""}`}>
+                          {vBadge.icon} {vBadge.text} {displayPct !== undefined && formatVerdictText(displayPct, job.verdictLabel)}
+                          {job.confidence !== undefined && <span className={styles.confidenceLabel}> · {getConfidenceTierLabel(job.confidence)}</span>}
                         </span>
                       );
                     })()}

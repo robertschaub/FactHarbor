@@ -23,6 +23,8 @@ import {
   percentageToArticleVerdict,
   percentageToClaimVerdict,
   isFalseBand,
+  getConfidenceTierLabel,
+  formatVerdictText,
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 import { BoundaryFindings } from "./components/BoundaryFindings";
@@ -1036,7 +1038,7 @@ export default function JobPage() {
                           {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
                         </span>
                         <span className={styles.articlePercentage}>
-                          {displayCbPct}% <span style={{ fontSize: 12, color: "#999" }}>({result.confidence ?? 0}% sure)</span>
+                          {formatVerdictText(displayCbPct, cbVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${result.confidence ?? 0}%`}>· {getConfidenceTierLabel(result.confidence ?? 0)}</span>
                           {result.truthPercentageRange && (() => {
                             const r = result.truthPercentageRange;
                             const rMin = isFalseBand(cbVerdictLabel) ? 100 - r.max : r.min;
@@ -1723,7 +1725,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
-          <span className={styles.answerPercentage}>{displayOverallPct}% <span style={{ fontSize: 12, color: "#999" }}>({overallConfidence}% sure)</span></span>
+          <span className={styles.answerPercentage}>{formatVerdictText(displayOverallPct, overallVerdict)} <span style={{ fontSize: 12, color: "#999" }} title={`${overallConfidence}%`}>· {getConfidenceTierLabel(overallConfidence)}</span></span>
         </div>
 
         {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
@@ -1891,7 +1893,7 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
           <span className={styles.contextAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(contextVerdict)}
           </span>
-          <span className={styles.contextPercentage}>{displayContextPct}% <span style={{ fontSize: 11, color: "#999" }}>({contextAnswer.confidence}% sure)</span></span>
+          <span className={styles.contextPercentage}>{formatVerdictText(displayContextPct, contextVerdict)} <span style={{ fontSize: 11, color: "#999" }} title={`${contextAnswer.confidence}%`}>· {getConfidenceTierLabel(contextAnswer.confidence)}</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -2019,7 +2021,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
           <span className={styles.articlePercentage}>
-            {displayArticlePct}% <span style={{ fontSize: 12, color: "#999" }}>({articleConfidence}% sure)</span>
+            {formatVerdictText(displayArticlePct, articleVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${articleConfidence}%`}>· {getConfidenceTierLabel(articleConfidence)}</span>
           </span>
           {isPseudo && (
             <span className={styles.pseudoscienceBadge}>
@@ -2283,7 +2285,7 @@ function ClaimCard({
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claimVerdictLabel)} {displayClaimPct}% ({claim.confidence}% sure){claim.truthPercentageRange ? ` (range: ${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%)` : ""}
+          {color.icon} {getVerdictLabel(claimVerdictLabel)} {formatVerdictText(displayClaimPct, claimVerdictLabel)} · {getConfidenceTierLabel(claim.confidence)}{claim.truthPercentageRange ? ` (range: ${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%)` : ""}
         </Badge>
         {isTangential && (
           <Badge bg="#eeeeee" color="#757575">Not in verdict</Badge>

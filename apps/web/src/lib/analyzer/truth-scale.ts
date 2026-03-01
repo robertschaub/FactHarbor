@@ -278,6 +278,48 @@ export function isFalseBand(verdict: string): boolean {
   return v === "FALSE" || v === "MOSTLY-FALSE" || v === "LEANING-FALSE";
 }
 
+// ============================================================================
+// VERDICT DISPLAY HELPERS
+// ============================================================================
+
+/**
+ * Map raw confidence percentage to a human-readable tier label.
+ * Tiers align with CONFIDENCE_TIER_MIN in types.ts (HIGH ≥75, MEDIUM ≥50, LOW ≥25).
+ * Raw percentage is hidden behind the label to avoid misleading "X% sure" displays.
+ */
+export function getConfidenceTierLabel(confidence: number): string {
+  const c = normalizePercentage(confidence);
+  if (c >= 75) return "High confidence";
+  if (c >= 50) return "Medium confidence";
+  if (c >= 25) return "Low confidence";
+  return "Insufficient evidence";
+}
+
+/**
+ * Format the verdict percentage text based on the verdict band.
+ * - TRUE/MOSTLY-TRUE/LEANING-TRUE bands: "X% true"
+ * - MIXED band: "X/Y split" (reframes away from misleading "X% true")
+ * - UNVERIFIED: "Insufficient evidence"
+ * - FALSE bands: "X% false" (already flipped by caller via isFalseBand)
+ *
+ * @param displayPct - The display percentage (already flipped for false bands)
+ * @param verdict - The 7-point verdict label
+ * @returns Formatted string for the truth percentage display
+ */
+export function formatVerdictText(displayPct: number, verdict: string): string {
+  const v = (verdict || "").toUpperCase();
+  if (v === "MIXED") {
+    return `${displayPct}/${100 - displayPct} split`;
+  }
+  if (v === "UNVERIFIED") {
+    return "Insufficient evidence";
+  }
+  if (isFalseBand(v)) {
+    return `${displayPct}% false`;
+  }
+  return `${displayPct}% true`;
+}
+
 /**
  * Simple 3-color highlight (legacy)
  */

@@ -7,7 +7,7 @@
  */
 
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
-import { isFalseBand } from "@/lib/analyzer/truth-scale";
+import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -399,13 +399,12 @@ function buildVerdictBanner(input: HtmlReportInput): string {
     </div>
     <div class="meter-group">
       <div class="meter">
-        <div class="meter-value ${v.color}">${displayPct}%</div>
-        <div class="meter-label">${displayWord}</div>
+        <div class="meter-value ${v.color}">${esc(formatVerdictText(displayPct, verdict))}</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${displayPct}%;background:${v.fill}"></div></div>
       </div>
       <div class="meter meter-conf">
-        <div class="meter-value" style="color:#a0aec0">${conf}%</div>
-        <div class="meter-label">sure</div>
+        <div class="meter-value" style="color:#a0aec0">${esc(getConfidenceTierLabel(conf))}</div>
+        <div class="meter-label" title="${conf}% confidence">confidence</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${conf}%;background:#4a5568"></div></div>
       </div>
     </div>
@@ -489,12 +488,11 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
       <div class="claim-statement">${esc(ac.statement || cv.claimId || "")}</div>
       <div class="claim-meters">
         <div class="small-meter">
-          <div class="small-meter-val ${v.color}">${displayTp}%</div>
-          <div class="small-meter-label">${displayTpWord}</div>
+          <div class="small-meter-val ${v.color}">${esc(formatVerdictText(displayTp, verdict))}</div>
         </div>
         <div class="small-meter small-meter-conf">
-          <div class="small-meter-val" style="color:#a0aec0">${conf}%</div>
-          <div class="small-meter-label">sure</div>
+          <div class="small-meter-val" style="color:#a0aec0">${esc(getConfidenceTierLabel(conf))}</div>
+          <div class="small-meter-label" title="${conf}%">confidence</div>
         </div>
       </div>
     </div>
@@ -537,8 +535,8 @@ function buildBoundaryFindingsGrid(findings: any[]): string {
           const displayBfWord = isFalseBand(verdictStr) ? "false" : "true";
           return `<div class="bf-card">
           <div class="bf-name">${esc(bf.boundaryId)} · ${esc(bf.boundaryName)}</div>
-          <div class="bf-row"><span class="bf-key">${displayBfWord}</span><span class="bf-val ${tpColor}">${displayBfPct}%</span></div>
-          <div class="bf-row"><span class="bf-key">sure</span><span class="bf-val">${conf}%</span></div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val ${tpColor}">${esc(formatVerdictText(displayBfPct, verdictStr))}</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="${conf}%">${esc(getConfidenceTierLabel(conf))}</span></div>
           <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" ${dirColor}>${esc(dir)}</span></div>
           <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">${bf.evidenceCount ?? 0} items</span></div>
           <div class="bf-bar-bg"><div class="bf-bar-fill ${dirFillClass(dir)}" style="width:${displayBfPct}%"></div></div>
