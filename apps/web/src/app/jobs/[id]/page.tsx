@@ -22,6 +22,7 @@ import remarkGfm from "remark-gfm";
 import {
   percentageToArticleVerdict,
   percentageToClaimVerdict,
+  isFalseBand,
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 import { BoundaryFindings } from "./components/BoundaryFindings";
@@ -1023,6 +1024,7 @@ export default function JobPage() {
               {isCBSchema && typeof result?.truthPercentage === "number" && (() => {
                 const cbVerdictLabel = percentageToArticleVerdict(result.truthPercentage, result.confidence ?? 0);
                 const cbColor = ARTICLE_VERDICT_COLORS[cbVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
+                const displayCbPct = isFalseBand(cbVerdictLabel) ? 100 - result.truthPercentage : result.truthPercentage;
                 return (
                   <div className={styles.articleBanner} style={{ borderColor: cbColor.border }}>
                     <div className={styles.articleBannerContent}>
@@ -1034,12 +1036,13 @@ export default function JobPage() {
                           {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
                         </span>
                         <span className={styles.articlePercentage}>
-                          {result.truthPercentage}% <span style={{ fontSize: 12, color: "#999" }}>({result.confidence ?? 0}% confidence)</span>
-                          {result.truthPercentageRange && (
-                            <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>
-                              Range: {result.truthPercentageRange.min}%&ndash;{result.truthPercentageRange.max}%
-                            </span>
-                          )}
+                          {displayCbPct}% <span style={{ fontSize: 12, color: "#999" }}>({result.confidence ?? 0}% sure)</span>
+                          {result.truthPercentageRange && (() => {
+                            const r = result.truthPercentageRange;
+                            const rMin = isFalseBand(cbVerdictLabel) ? 100 - r.max : r.min;
+                            const rMax = isFalseBand(cbVerdictLabel) ? 100 - r.min : r.max;
+                            return <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>Range: {rMin}%&ndash;{rMax}%</span>;
+                          })()}
                         </span>
                       </div>
                       {result.verdictNarrative?.headline && (
@@ -1668,6 +1671,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
   const overallConfidence = verdictSummary?.confidence ?? fallbackConfidence ?? 0;
   const overallVerdict = percentageToClaimVerdict(overallTruth, overallConfidence);
   const overallColor = CLAIM_VERDICT_COLORS[overallVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const displayOverallPct = isFalseBand(overallVerdict) ? 100 - overallTruth : overallTruth;
 
   // v2.6.38: Check if overall verdict is reliable (single context vs multiple distinct contexts)
   const verdictReliability = articleAnalysis?.articleVerdictReliability || "high";
@@ -1719,7 +1723,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
-          <span className={styles.answerPercentage}>{overallTruth}% <span style={{ fontSize: 12, color: "#999" }}>({overallConfidence}% confidence)</span></span>
+          <span className={styles.answerPercentage}>{displayOverallPct}% <span style={{ fontSize: 12, color: "#999" }}>({overallConfidence}% sure)</span></span>
         </div>
 
         {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
@@ -1816,6 +1820,7 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
   const contextConfidence = contextAnswer?.confidence ?? 0;
   const contextVerdict = percentageToClaimVerdict(contextTruth, contextConfidence);
   const color = CLAIM_VERDICT_COLORS[contextVerdict] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const displayContextPct = isFalseBand(contextVerdict) ? 100 - contextTruth : contextTruth;
 
   const factors = contextAnswer.keyFactors || [];
   const positiveCount = factors.filter((f: any) => f.supports === "yes").length;
@@ -1886,7 +1891,7 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
           <span className={styles.contextAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(contextVerdict)}
           </span>
-          <span className={styles.contextPercentage}>{contextTruth}% <span style={{ fontSize: 11, color: "#999" }}>({contextAnswer.confidence}%  confidence)</span></span>
+          <span className={styles.contextPercentage}>{displayContextPct}% <span style={{ fontSize: 11, color: "#999" }}>({contextAnswer.confidence}% sure)</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -1987,6 +1992,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
 
   const articlePct = articleTruth;
+  const displayArticlePct = isFalseBand(articleVerdictLabel) ? 100 - articlePct : articlePct;
 
   // Get the verdict reason - try multiple sources (include summary as fallback)
   const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.nuancedAnswer || verdictSummary?.summary || "";
@@ -2013,7 +2019,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
           <span className={styles.articlePercentage}>
-            {articlePct}% <span style={{ fontSize: 12, color: "#999" }}>({articleConfidence}% confidence)</span>
+            {displayArticlePct}% <span style={{ fontSize: 12, color: "#999" }}>({articleConfidence}% sure)</span>
           </span>
           {isPseudo && (
             <span className={styles.pseudoscienceBadge}>
@@ -2259,6 +2265,7 @@ function ClaimCard({
   const claimConfidence = claim?.confidence ?? 0;
   const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
   const color = CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const displayClaimPct = isFalseBand(claimVerdictLabel) ? 100 - claimTruth : claimTruth;
 
   // Only show CONTESTED label when opposition has actual counter-evidence
   const hasEvidenceBasedContestation = claim.isContested &&
@@ -2276,7 +2283,7 @@ function ClaimCard({
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claimVerdictLabel)} {claimTruth}% ({claim.confidence}% confidence){claim.truthPercentageRange ? ` (range: ${claim.truthPercentageRange.min}%–${claim.truthPercentageRange.max}%)` : ""}
+          {color.icon} {getVerdictLabel(claimVerdictLabel)} {displayClaimPct}% ({claim.confidence}% sure){claim.truthPercentageRange ? ` (range: ${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%)` : ""}
         </Badge>
         {isTangential && (
           <Badge bg="#eeeeee" color="#757575">Not in verdict</Badge>
@@ -2306,7 +2313,12 @@ function ClaimCard({
       <div className={styles.claimLabel}>Claim Being Evaluated:</div>
       <div className={styles.claimText}>"{claim.claimText}"</div>
       
-      <VisualTruthMeter truth={claimTruth} range={claim.truthPercentageRange} />
+      <VisualTruthMeter
+        truth={displayClaimPct}
+        range={claim.truthPercentageRange && isFalseBand(claimVerdictLabel)
+          ? { min: 100 - claim.truthPercentageRange.max, max: 100 - claim.truthPercentageRange.min }
+          : claim.truthPercentageRange}
+      />
 
       <div className={`${styles.claimReasoning}${(claim.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{claim.reasoning}</div>
       {claim.isContested && claim.contestedBy && (

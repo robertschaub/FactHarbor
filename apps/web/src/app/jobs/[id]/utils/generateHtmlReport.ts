@@ -7,6 +7,7 @@
  */
 
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
+import { isFalseBand } from "@/lib/analyzer/truth-scale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -380,6 +381,14 @@ function buildVerdictBanner(input: HtmlReportInput): string {
   const narrative = result?.verdictNarrative;
   const keyFinding = narrative?.keyFinding || "";
 
+  const displayPct = isFalseBand(verdict) ? 100 - truthPct : truthPct;
+  const displayWord = isFalseBand(verdict) ? "false" : "true";
+  const displayRange = result?.truthPercentageRange
+    ? (isFalseBand(verdict)
+        ? { min: 100 - result.truthPercentageRange.max, max: 100 - result.truthPercentageRange.min }
+        : result.truthPercentageRange)
+    : undefined;
+
   return `<!-- VERDICT BANNER -->
 <div class="verdict-banner ${v.cls}">
   <div class="verdict-header">
@@ -390,19 +399,19 @@ function buildVerdictBanner(input: HtmlReportInput): string {
     </div>
     <div class="meter-group">
       <div class="meter">
-        <div class="meter-value ${v.color}">${truthPct}%</div>
-        <div class="meter-label">Truth</div>
-        <div class="meter-bar"><div class="meter-fill" style="width:${truthPct}%;background:${v.fill}"></div></div>
+        <div class="meter-value ${v.color}">${displayPct}%</div>
+        <div class="meter-label">${displayWord}</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:${displayPct}%;background:${v.fill}"></div></div>
       </div>
       <div class="meter meter-conf">
         <div class="meter-value" style="color:#a0aec0">${conf}%</div>
-        <div class="meter-label">Confidence</div>
+        <div class="meter-label">sure</div>
         <div class="meter-bar"><div class="meter-fill" style="width:${conf}%;background:#4a5568"></div></div>
       </div>
     </div>
     
     <div style="margin-top:20px">
-      ${buildVisualTruthMeter(truthPct, result?.truthPercentageRange)}
+      ${buildVisualTruthMeter(displayPct, displayRange)}
     </div>
 
     ${keyFinding && keyFinding.length > 120 ? `<div style="max-width:380px">
@@ -457,6 +466,13 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
     const conf = norm(cv.confidence);
     const verdict = cv.verdict || verdictFromPct(tp, conf);
     const v = vs(verdict);
+    const displayTp = isFalseBand(verdict) ? 100 - tp : tp;
+    const displayTpWord = isFalseBand(verdict) ? "false" : "true";
+    const displayTpRange = cv.truthPercentageRange
+      ? (isFalseBand(verdict)
+          ? { min: 100 - cv.truthPercentageRange.max, max: 100 - cv.truthPercentageRange.min }
+          : cv.truthPercentageRange)
+      : undefined;
     const bfs = cv.boundaryFindings || [];
     const challenges = cv.challengeResponses || [];
     const tri = cv.triangulationScore;
@@ -473,17 +489,17 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
       <div class="claim-statement">${esc(ac.statement || cv.claimId || "")}</div>
       <div class="claim-meters">
         <div class="small-meter">
-          <div class="small-meter-val ${v.color}">${tp}%</div>
-          <div class="small-meter-label">Truth</div>
+          <div class="small-meter-val ${v.color}">${displayTp}%</div>
+          <div class="small-meter-label">${displayTpWord}</div>
         </div>
         <div class="small-meter small-meter-conf">
           <div class="small-meter-val" style="color:#a0aec0">${conf}%</div>
-          <div class="small-meter-label">Confidence</div>
+          <div class="small-meter-label">sure</div>
         </div>
       </div>
     </div>
 
-    ${buildVisualTruthMeter(tp, cv.truthPercentageRange)}
+    ${buildVisualTruthMeter(displayTp, displayTpRange)}
 
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
       ${ac.category ? `<span class="chip chip-gray">Category: ${esc(ac.category)}</span>` : ""}
@@ -517,13 +533,15 @@ function buildBoundaryFindingsGrid(findings: any[]): string {
                            dir === "supports" ? 'style="color:#68d391"' :
                            'style="color:#90cdf4"';
           const tpColor = vs(verdictStr).color;
+          const displayBfPct = isFalseBand(verdictStr) ? 100 - tp : tp;
+          const displayBfWord = isFalseBand(verdictStr) ? "false" : "true";
           return `<div class="bf-card">
           <div class="bf-name">${esc(bf.boundaryId)} · ${esc(bf.boundaryName)}</div>
-          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val ${tpColor}">${tp}%</span></div>
-          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val">${conf}%</span></div>
+          <div class="bf-row"><span class="bf-key">${displayBfWord}</span><span class="bf-val ${tpColor}">${displayBfPct}%</span></div>
+          <div class="bf-row"><span class="bf-key">sure</span><span class="bf-val">${conf}%</span></div>
           <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" ${dirColor}>${esc(dir)}</span></div>
           <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">${bf.evidenceCount ?? 0} items</span></div>
-          <div class="bf-bar-bg"><div class="bf-bar-fill ${dirFillClass(dir)}" style="width:${tp}%"></div></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill ${dirFillClass(dir)}" style="width:${displayBfPct}%"></div></div>
         </div>`;
         }).join("\n        ")}
       </div>

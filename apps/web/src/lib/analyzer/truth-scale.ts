@@ -268,6 +268,17 @@ export function getHighlightColor7Point(
 
 
 /**
+ * Returns true when the verdict falls in the false band
+ * (LEANING-FALSE, MOSTLY-FALSE, FALSE).
+ * Used by display logic to flip percentages: show (100 - truthPct)% false
+ * instead of truthPct% true for these verdicts.
+ */
+export function isFalseBand(verdict: string): boolean {
+  const v = (verdict || "").toUpperCase();
+  return v === "FALSE" || v === "MOSTLY-FALSE" || v === "LEANING-FALSE";
+}
+
+/**
  * Simple 3-color highlight (legacy)
  */
 export function getHighlightColor(truthPercentage: number, bands?: VerdictBandConfig): "green" | "yellow" | "red" {
