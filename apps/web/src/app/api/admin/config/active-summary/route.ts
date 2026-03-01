@@ -8,10 +8,15 @@
  * Part of UCM Pre-Validation Sprint - Day 2 (Active Config Dashboard)
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const db = await getDb();
 

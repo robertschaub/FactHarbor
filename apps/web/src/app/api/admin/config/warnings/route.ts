@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAdminKey } from '@/lib/auth';
 
 // Force dynamic rendering - this route uses request.url for query params
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,10 @@ import { PipelineConfigSchema, SearchConfigSchema, type PipelineConfig, type Sea
 import { getAllConfigWarnings, groupWarningsBySeverity, hasCriticalWarnings } from '@/lib/config-validation-warnings';
 
 export async function GET(request: NextRequest) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const pipelineHash = searchParams.get('pipeline');

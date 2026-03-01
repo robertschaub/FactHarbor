@@ -13,6 +13,7 @@ import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/conf
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
 import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import { getActiveConfig, loadDefaultConfigFromFile } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +110,10 @@ function findDifferences(
 }
 
 export async function GET(request: NextRequest) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const configType = searchParams.get("type");

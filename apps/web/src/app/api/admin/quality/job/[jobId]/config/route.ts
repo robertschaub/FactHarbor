@@ -9,11 +9,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getConfigSnapshot, formatSnapshotForDisplay } from '@/lib/config-snapshots';
+import { checkAdminKey } from '@/lib/auth';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ jobId: string }> }
 ) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { jobId } = await context.params;
 

@@ -10,10 +10,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/config-storage";
+import { checkAdminKey } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
