@@ -34,12 +34,12 @@ export default function AnalyzePage() {
   const [checkingQuota, setCheckingQuota] = useState(false);
 
   // Load default pipeline and invite code from localStorage on mount.
+  // The debounced useEffect on inviteCode handles the initial quota check.
   useEffect(() => {
     setPipelineVariant(readDefaultPipelineVariant());
     const storedCode = localStorage.getItem("fh_invite_code") || "";
     setInviteCode(storedCode);
     setPipelineLoaded(true);
-    if (storedCode) checkQuota(storedCode);
   }, []);
 
   const checkQuota = async (code: string) => {
@@ -47,6 +47,7 @@ export default function AnalyzePage() {
       setQuotaStatus(null);
       return;
     }
+    setQuotaStatus(null);
     setCheckingQuota(true);
     try {
       const res = await fetch(`/api/fh/analyze/status?code=${encodeURIComponent(code.trim())}`);

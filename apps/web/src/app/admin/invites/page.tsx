@@ -69,10 +69,11 @@ export default function InviteManagementPage() {
   };
 
   const handleDeactivate = async (code: string) => {
+    if (!adminKey) return;
     if (!confirm(`Are you sure you want to deactivate ${code}?`)) return;
-    
+
     try {
-      const res = await fetch(`/api/fh/admin/invites/${code}`, {
+      const res = await fetch(`/api/fh/admin/invites/${encodeURIComponent(code)}`, {
         method: "DELETE",
         headers: { "x-admin-key": adminKey ?? "" }
       });
@@ -89,6 +90,7 @@ export default function InviteManagementPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!adminKey) return;
     try {
       const res = await fetch("/api/fh/admin/invites", {
         method: "POST",
@@ -153,12 +155,13 @@ export default function InviteManagementPage() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Description (Optional)</label>
-              <input 
-                type="text" 
-                value={newCode.description} 
+              <input
+                type="text"
+                value={newCode.description}
                 onChange={e => setNewCode({...newCode, description: e.target.value})}
                 placeholder="For marketing partner X"
                 style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                maxLength={256}
               />
             </div>
             <div>

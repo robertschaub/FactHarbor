@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getBaseUrl(): string | null {
   const base = process.env.FH_API_BASE_URL;
@@ -38,9 +39,10 @@ export async function GET(req: NextRequest) {
         "Content-Type": res.headers.get("content-type") ?? "application/json",
       },
     });
-  } catch (error: any) {
+  } catch (error) {
+    console.error("[AdminInvites] Proxy error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch invite codes", message: error?.message ?? "Unknown error" },
+      { error: "Failed to process invite operation" },
       { status: 500 },
     );
   }
@@ -80,9 +82,10 @@ export async function POST(req: NextRequest) {
         "Content-Type": res.headers.get("content-type") ?? "application/json",
       },
     });
-  } catch (error: any) {
+  } catch (error) {
+    console.error("[AdminInvites] Proxy error:", error);
     return NextResponse.json(
-      { error: "Failed to create invite code", message: error?.message ?? "Unknown error" },
+      { error: "Failed to process invite operation" },
       { status: 500 },
     );
   }

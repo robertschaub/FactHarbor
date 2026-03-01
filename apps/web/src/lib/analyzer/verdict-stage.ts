@@ -574,38 +574,45 @@ export async function selfConsistencyCheck(
     llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency, callContext: { debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" } }),
   ]);
 
-  // Guard: LLM may return null/undefined/non-array on transient failure.
-  // Degrade gracefully — missing runs are excluded from consistency measurement
-  // rather than crashing the pipeline. Claims with fewer data points get wider
-  // confidence intervals via the spread calculation.
-  const run2Verdicts = Array.isArray(run2) ? run2 as Array<Record<string, unknown>> : [];
-  const run3Verdicts = Array.isArray(run3) ? run3 as Array<Record<string, unknown>> : [];
+  // Graceful degradation: if a run returned a non-array (LLM error, soft refusal),
+  // treat it as missing rather than crashing.
+  const run2Verdicts = Array.isArray(run2) ? run2 as Array<Record<string, unknown>> : null;
+  const run3Verdicts = Array.isArray(run3) ? run3 as Array<Record<string, unknown>> : null;
 
-  if (!Array.isArray(run2) || !Array.isArray(run3)) {
-    const failed = [!Array.isArray(run2) && "run2", !Array.isArray(run3) && "run3"].filter(Boolean);
+  if (!run2Verdicts || !run3Verdicts) {
+    const failed = [!run2Verdicts && "run2", !run3Verdicts && "run3"].filter(Boolean);
     console.warn(`[VerdictStage] Self-consistency degraded: ${failed.join(", ")} returned non-array (${typeof run2}/${typeof run3}). Using advocate-only fallback for affected runs.`);
   }
 
   return claims.map((claim) => {
     const v1 = advocateVerdicts.find((v) => v.claimId === claim.id)?.truthPercentage ?? 50;
-    // Only include runs that produced valid arrays with matching claim data
+
+    // Collect valid run values; null runs contribute nothing.
+    // Claims missing from a valid run are also excluded (no fallback to 50).
     const percentages: number[] = [v1];
-    if (run2Verdicts.length > 0) {
-      percentages.push(Number(run2Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50));
+    if (run2Verdicts) {
+      const found = run2Verdicts.find((v) => String(v.claimId) === claim.id);
+      if (found && found.truthPercentage != null) percentages.push(Number(found.truthPercentage));
     }
-    if (run3Verdicts.length > 0) {
-      percentages.push(Number(run3Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50));
+    if (run3Verdicts) {
+      const found = run3Verdicts.find((v) => String(v.claimId) === claim.id);
+      if (found && found.truthPercentage != null) percentages.push(Number(found.truthPercentage));
     }
 
     const average = percentages.reduce((a, b) => a + b, 0) / percentages.length;
-    const spread = Math.max(...percentages) - Math.min(...percentages);
+    const rawSpread = Math.max(...percentages) - Math.min(...percentages);
+
+    // A single data point cannot assess stability — apply a minimum spread floor
+    // so degraded runs don't produce artificially high confidence.
+    const validRunCount = percentages.length;
+    const spread = validRunCount < 2 ? Math.max(rawSpread, 15) : rawSpread;
 
     return {
       claimId: claim.id,
       percentages,
       average,
       spread,
-      stable: spread <= config.stableThreshold,
+      stable: validRunCount >= 2 && spread <= config.stableThreshold,
       assessed: true,
     };
   });

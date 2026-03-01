@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type RouteParams = { code?: string };
 type RouteContext = { params: Promise<RouteParams> };
@@ -52,9 +53,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
         "Content-Type": res.headers.get("content-type") ?? "application/json",
       },
     });
-  } catch (error: any) {
+  } catch (error) {
+    console.error("[AdminInvites] Proxy error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch invite code", message: error?.message ?? "Unknown error" },
+      { error: "Failed to process invite operation" },
       { status: 500 },
     );
   }
@@ -90,9 +92,10 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
         "Content-Type": res.headers.get("content-type") ?? "application/json",
       },
     });
-  } catch (error: any) {
+  } catch (error) {
+    console.error("[AdminInvites] Proxy error:", error);
     return NextResponse.json(
-      { error: "Failed to deactivate invite code", message: error?.message ?? "Unknown error" },
+      { error: "Failed to process invite operation" },
       { status: 500 },
     );
   }
