@@ -547,11 +547,16 @@ export async function runMonolithicDynamic(
   // Primary root cause of failures: schema validation errors (missing required fields,
   // null in z.object({}), content-sensitive LLM soft-refusals producing partial JSON).
   // generateWithSchemaRetry handles NoObjectGeneratedError + provides Zod-aware retry prompt.
+  // Temperature jitter on retries helps bypass non-deterministic content-policy soft refusals.
   let analysis: any;
+  let verdictAttempt = 0;
+  const baseTemperature = getDeterministicTemperature(0.15, pipelineConfig);
   try {
     analysis = await generateWithSchemaRetry(
       dynamicOutputSchema,
       async (retryPrompt) => {
+        const attemptTemperature = baseTemperature + (verdictAttempt * 0.05);
+        verdictAttempt++;
         const userContent = retryPrompt
           ? `${renderedDynamicUser.content}\n\n${retryPrompt}`
           : renderedDynamicUser.content;
@@ -565,14 +570,14 @@ export async function runMonolithicDynamic(
             },
             { role: "user", content: userContent },
           ],
-          temperature: getDeterministicTemperature(0.15, pipelineConfig),
+          temperature: Math.min(attemptTemperature, 0.7),
           output: Output.object({ schema: dynamicOutputSchema }),
           providerOptions: getStructuredOutputProviderOptions(pipelineConfig?.llmProvider ?? "anthropic"),
         });
         return extractStructuredOutput(result);
       },
       {
-        maxRetries: 1,
+        maxRetries: 2,
         provider: verdictProvider as "anthropic" | "openai" | "google" | "mistral",
         onRetry: (attempt, err) => {
           console.warn(`[MonolithicDynamic] Analysis schema retry ${attempt}: ${err}`);
