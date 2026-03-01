@@ -1,9 +1,36 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-03-01
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Metrics integration (Phase 1) complete. 1079 tests passing (53 files), build clean. Cross-provider debate active (OpenAI challenger).
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Invite code access control live. Inverse Claim Asymmetry calibration (Phases 0–3) complete. 1113 tests passing (54 files), build clean. Cross-provider debate active (OpenAI challenger). Phase 1 integrity policies enabled.
+
+---
+
+## Recent Changes (2026-03-01)
+
+**Invite code access control (limited public beta):**
+- ✅ `InviteCodeUsageEntity` — daily quota tracking (composite PK on InviteCode+Date, UTC string storage)
+- ✅ `TryClaimInviteSlotAsync` — atomic daily+lifetime slot claim (`IsolationLevel.Serializable` → `BEGIN IMMEDIATE`)
+- ✅ Job search (`?q=`) on `JobsController` + web forwarding + debounced search bar UI
+- ✅ `inviteCode` removed from public List/Get responses (privacy fix)
+- ✅ DB rebuilt with new schema (EnsureCreated pattern, `factharbor.db` 2026-02-28)
+- ✅ Commit `976539f`
+
+**Inverse Claim Asymmetry — Phases 0–3 complete:**
+- ✅ Phase 1: integrity policies implemented (`safeDowngradeVerdict`, `retryOnceThenSafeDowngrade`)
+- ✅ Phase 1 policies **activated**: `verdictGroundingPolicy: safe_downgrade`, `verdictDirectionPolicy: retry_once_then_safe_downgrade` — commit `8e4a0d0`
+- ✅ Phase 2 (7 tasks): 4 strict inverse fixture pairs, CE gate (`strictInverseGatePassed`), `InverseConsistencyDiagnostic`, root-cause tags, HTML panel, `inverse_consistency_error` warning, paired-job audit tool
+- ✅ Phase 3: `inverse-minwage-employment-en` mandatory in smoke lane, CE threshold enforced — commit `3fc9c0b`
+- ✅ Canary baselines: minwage-en CE=12 pp, fluoride-en CE=16 pp, gmo-de CE runs completed (2026-02-28)
+- ✅ `diagnosticPairs` filter now excludes `isStrictInverse` pairs (own gate)
+- ✅ Code review fixes (MEDIUM vacuous-truth + 3 LOW items) — commits `2ead57b`, `b072da7`
+
+**Claim Fidelity Fix — all phases done:**
+- ✅ Phase 3 (payload compression): `buildPreliminaryEvidencePayload()` truncates Pass 2 evidence to 120-char topic signals, removes rich statement text that caused claim drift
+
+**Model auto-resolution — done:**
+- ✅ `apps/web/src/lib/analyzer/model-resolver.ts` — tier aliases resolved to concrete model IDs, UCM-configurable. Commit `c0d452a`
 
 ---
 

@@ -22,7 +22,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Step | Description | Domain | Urgency | Status | Notes |
 |------|-------------|--------|---------|--------|-------|
 | **Phase 1a** | **Metrics integration**: Wire metrics infrastructure into Stages 2, 3, 5 and add `debateRole` attribution. Critical for cost/observability. | Analyzer / Observability | high | done | Alpha Plan Phase 1 |
-| **Phase 1b** | **Model auto-resolution**: Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases; code auto-resolves via `model-resolver.ts` using provider `-latest` aliases (version-lock by default). Covers all providers. | Maintenance / Stability | high | PLANNED | Alpha Plan Phase 1 |
+| **Phase 1b** | **Model auto-resolution**: Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases; code auto-resolves via `model-resolver.ts` using provider `-latest` aliases (version-lock by default). Covers all providers. | Maintenance / Stability | high | done | Commit `c0d452a` — `model-resolver.ts` implemented |
 | **Phase 1c** | **Manual-test checkpoint + runbook restart**: Temporarily defer Alpha execution while manual tests run, then resume from Gate 0 using `Docs/WIP/Phase1_Pipeline_Execution_Checklist_2026-02-25.md`. | QA / Execution Governance | high | IN PROGRESS | Captain direction (2026-02-25): manual tests first, then resume gated execution |
 | **Phase 5i** | **Final cleanup**: V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests) | Cleanup | med | NOT STARTED | Alpha polish |
 | **Phase 5k** | **UI adaptations**: Admin config panel (24 CB params), coverage matrix + verdictNarrative + qualityGates components, xWiki diagrams | Web UI | med | NOT STARTED | Alpha polish |
@@ -38,6 +38,16 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Advanced triangulation | Cross-boundary correlation analysis | Architecture §8.5.2 |
 | Contestation weight reduction | Requires `factualBasis` field on CBClaimVerdict | Legacy getClaimWeight() incompatibility |
 | Derivative detection improvements | Enhanced derivative source identification | Architecture §8.5.3 |
+
+---
+
+## Recently Completed (March 1, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Invite code access control**: Daily+lifetime quotas, atomic slot-claim (`IsolationLevel.Serializable`), job search (`?q=`), privacy fix (inviteCode removed from public responses), DB rebuilt. | Auth / API / UI | 2026-03-01 | Commit `976539f`, `Docs/WIP/2026-02-28_Invite_Code_Implementation_Plan.md` |
+| ✅ **Inverse Claim Asymmetry — Phases 0–3**: Phase 1 integrity policies (implemented + activated: `safe_downgrade`, `retry_once_then_safe_downgrade`). Phase 2: CE gate, `InverseConsistencyDiagnostic`, root-cause tags, HTML panel, warning emission, paired-job audit CLI. Phase 3: mandatory inverse pair in smoke lane, CE threshold enforced. | Calibration / Quality | 2026-02-28 | Commits `2a17ac0`→`3fc9c0b`, `8e4a0d0`, `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md` |
+| ✅ **Claim Fidelity Fix Phase 3**: `buildPreliminaryEvidencePayload()` compresses Pass 2 evidence to 120-char topic signals — eliminates rich statement text that caused claim drift. | Analyzer / Quality | 2026-02-28 | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` |
 
 ---
 

@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-02-25 (Added Phase 1 Pipeline Execution Checklist)
-**Status**: 12 active files — Decision log + cost optimization + claim fidelity + evidence retrieval + Alpha execution proposals
+**Last Updated**: 2026-03-01
+**Status**: Claim Fidelity Fix complete (ready to archive). New WIP files added since last README update: Inverse Claim Asymmetry Plan, Report Quality Investigation, Invite Code Architecture+Implementation Plans, Limited Public Pre-Release Readiness Plan, Agent Knowledge Restructuring, MSR Review. See Active Documents below — README not fully synced; next WIP consolidation will reconcile.
 
 ---
 
@@ -56,11 +56,13 @@ For completed work, historical documents, and reference materials, see:
 ### Pipeline Quality (1 file)
 
 #### Claim Fidelity Fix (2026-02-18)
-**Status:** 🔧 Phase 1+2 Committed — Phase 3 NOT Committed — Phase 4 Pending
+**Status:** ✅ All phases complete — ready to archive
 - **Document:** [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
 - **Type:** Pipeline Quality / P0 Bug Fix
-- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence (claim drift). Phases 1+2 committed (`8d66ee7`). Phase 3 applied but not committed. Phase 4 (validation) pending.
-- **Remaining:** Phase 3 commit + Phase 4 validation (needs Captain approval)
+- **Scope:** Fix Stage 1 Pass 2 over-anchoring to evidence (claim drift). All phases implemented.
+- **Phase 1+2** (`8d66ee7`): prompt hardening + `passedFidelity` Gate 1 validation.
+- **Phase 3**: `buildPreliminaryEvidencePayload()` compresses evidence to 120-char topic signals (committed, verified in `claimboundary-pipeline.ts:1367`).
+- **Phase 4**: Validated via canary runs. No residual drift observed.
 
 ---
 
