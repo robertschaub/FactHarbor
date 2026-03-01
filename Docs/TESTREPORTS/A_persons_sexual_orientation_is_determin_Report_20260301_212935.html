@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="A person&#39;s sexual orientation is determined after birth.">
+<meta name="fh:verdict" content="MOSTLY-FALSE">
+<meta name="fh:truth" content="18">
+<meta name="fh:confidence" content="82">
+<meta name="fh:date" content="2026-03-01">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — A person&#39;s sexual orientation is determined after birth.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: f68ee28e3ef04c7bbddf92f98bc640f4</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-03-01 18:13 UTC</div>
+      <div>Completed: 2026-03-01 18:20 UTC</div>
+      <div>Duration: ~7 min 41 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">A person&#39;s sexual orientation is determined after birth.</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE</span>
+    <span class="chip chip-gray">21 LLM calls</span>
+    <span class="chip chip-gray">8 searches</span>
+    <span class="chip chip-gray">1 claim · 5 boundaries · 61 evidence items · 17 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-f">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge f-color">MOSTLY-FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The overwhelming majority of evidence (43 items from biological studies, 6 from genetic research) demonstrates that sexu…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value f-color">82% false</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:82%;background:#c53030"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">High confidence</div>
+        <div class="meter-label" title="82% confidence">confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:82%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:82%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">82%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The overwhelming majority of evidence (43 items from biological studies, 6 from genetic research) demonstrates that sexual orientation has strong prenatal hormonal and heritable foundations, directly contradicting claims of post-natal environmental determination. While 11 evidence items document sexual orientation fluidity and developmental changes—particularly during adolescence—this fluidity does not support the notion that orientation is freely chosen or primarily shaped by post-natal socialization. The evidence shows biological predisposition with some developmental variability, not volitional choice.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claim that sexual orientation is primarily a post-natal choice or learned behavior is mostly false, contradicted by substantial biological evidence.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">61 evidence items analyzed across 5 distinct analytical boundaries, examining prenatal hormonal influences, genetic contributions, environmental factors, and developmental fluidity.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The overwhelming majority of evidence (43 items from biological studies, 6 from genetic research) demonstrates that sexual orientation has strong prenatal hormonal and heritable foundations, directly contradicting claims of post-natal environmental determination. While 11 evidence items document sexual orientation fluidity and developmental changes—particularly during adolescence—this fluidity does not support the notion that orientation is freely chosen or primarily shaped by post-natal socialization. The evidence shows biological predisposition with some developmental variability, not volitional choice.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Boundaries CB_04 and CB_05 (sexual orientation fluidity studies) show supporting evidence, while CB_01, CB_02, and CB_03 (biological, genetic, and environmental mechanisms) show contradicting evidence. This divergence reflects a critical distinction: fluidity studies document that some individuals experience changes in self-reported orientation over time, but this developmental variability does not validate claims that orientation is chosen or primarily environmentally determined. The biological boundaries reveal prenatal and genetic foundations that precede and constrain post-natal development, while fluidity research captures phenotypic expression across the lifespan without negating underlying biological architecture.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not fully resolve the relative contributions of prenatal hormones versus genetic factors, nor could it determine precise mechanisms by which biological predispositions interact with developmental contexts. The evidence base for post-natal environmental influences (CB_02) was notably sparse (1 item), limiting conclusions about social factors. Additionally, the relationship between reported orientation fluidity and underlying biological substrates remains incompletely characterized, particularly regarding whether fluidity reflects measurement issues, genuine phenotypic plasticity, or changes in self-identification rather than underlying disposition.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">A person&#39;s sexual orientation is determined after birth</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val f-color">82% false</div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">High confidence</div>
+          <div class="small-meter-label" title="82%">confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:82%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">82%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: highly_misleading</span>
+      <span class="chip chip-gray">Triangulation: conflicted (+0.0)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ While the claim is factually false (18% truth, 82% false), it is HIGHLY MISLEADING in the opposite direction: it implies sexual orientation is a postnatal social construct or choice, when the overwhelming scientific consensus establishes prenatal biological determination as the primary mechanism. The claim cherry-picks fluidity evidence (which applies to a minority, especially adolescents, and often reflects identity exploration rather than orientation change) while omitting the robust prenatal hormonal, genetic, and neurobiological evidence. By framing orientation as &#39;determined after birth,&#39; the claim creates a false impression that postnatal environment, socialization, or choice are primary determinants—a conclusion contradicted by 24+ evidence items across multiple methodologies. This framing has been historically weaponized to justify conversion therapy and discrimination. Even though ~18% truth value acknowledges some postnatal fluidity, the claim&#39;s structure misleads by inverting the causal primacy: prenatal biology is primary; postnatal fluidity is secondary and applies to a minority. A more accurate claim would be: &#39;Sexual orientation is primarily determined before birth through prenatal biological mechanisms, though identity labels and attractions can shift postnatally for some individuals, especially during adolescence.&#39;</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Prenatal hormonal influence on sexual orientation - animal and human biological studies</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">95% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="92%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">26 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:95%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_02 · Post-natal environmental and social influences on sexual orientation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">100% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="75%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:100%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Genetic and heritable contributions to sexual orientation</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">92% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="90%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">6 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:92%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_04 · Sexual orientation fluidity and developmental change - longitudinal studies</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">45/55 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="82%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">6 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:45%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Sexual orientation fluidity and developmental change - literature reviews</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">60% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="78%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">5 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:60%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(6 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict adjusts slightly upward from the advocate&#39;s 15% to 18%, with reduced confidence from 88% to 82%. The self-consistency check shows perfect stability (15% across all runs, spread=0), indicating the advocate&#39;s analytical framework was robust. However, several valid challenges warrant adjustments:
+
+**Challenge CP_AC_01_0 (Independence concern - ACCEPTED):** The challenge correctly identifies that multiple CB_01 evidence items derive from a small set of primary reviews (particularly PMC6677266 and PMID 21094885), with Wikipedia entries explicitly citing these same sources. This reduces the effective independence of the 26 &#39;contradicting&#39; evidence items in CB_01. While the underlying findings remain valid, the apparent breadth is overstated. This reduces confidence in the prenatal determination case from 92% to ~85% for CB_01, and overall confidence drops from 88% to 82%.
+
+**Challenge CP_AC_01_1 (Missing evidence - PARTIALLY ACCEPTED):** The challenge notes CB_02&#39;s thin evidence base (only 1-2 items) and absence of large-scale null findings from adoption studies, natural experiments, or cross-cultural longitudinal research directly testing postnatal determinants. This is a valid methodological gap. However, the challenge cites one invalid evidence ID (EV_014 does not exist), weakening its force. The absence of robust negative evidence does not prove postnatal influence exists, but it does reduce confidence in the 0% postnatal verdict for CB_02. Confidence in CB_02 adjusted from 75% to 65%.
+
+**Challenge CP_AC_01_2 (Assumption - ACCEPTED WITH ADJUSTMENT):** This challenge argues the verdict may be too LOW by underweighting fluidity evidence. The advocate interpreted fluidity studies as measuring only identity labels, not underlying orientation. However, the cited studies (EV_1772392522263, EV_1772392537057, EV_1772392522267) document changes in self-reported attractions and behaviors, not just labels. While the distinction between &#39;identity exploration&#39; and &#39;orientation change&#39; is analytically important, the evidence shows that for some individuals (especially adolescents), attractions themselves shift over time. The advocate&#39;s reasoning that &#39;identity labels can change post-natally&#39; already grants 15% truth value, but the challenge correctly notes this may underestimate the proportion of genuine attraction/orientation change. Truth percentage adjusted upward from 15% to 18% to reflect that postnatal changes in orientation (not just labels) occur in a meaningful minority, particularly during adolescence.
+
+**Challenge CP_AC_01_3 (Missing evidence - ACCEPTED):** The challenge identifies a critical gap: no large-scale, prospective, population-based human studies directly linking measured prenatal hormone/genetic profiles to later sexual orientation. The strongest evidence is indirect (2D:4D ratios, brain structure differences in adults, animal models, rare clinical cases). This is a significant methodological limitation. While indirect evidence can be compelling, the absence of direct prospective human studies reduces confidence in the prenatal determination claim. This challenge reinforces the confidence reduction already applied via CP_AC_01_0.
+
+**Challenge CP_AC_01_4 (Independence concern - ACKNOWLEDGED):** The challenge notes overlap between CB_01 and CB_03 evidence sources, suggesting convergence may reflect shared frameworks rather than independent confirmation. This is a valid concern but does not warrant further adjustment beyond that already made for CP_AC_01_0, as both challenges address evidence independence.
+
+**Challenge CP_AC_01_5 (Methodology weakness - PARTIALLY ACCEPTED):** The challenge argues that supporting evidence (fluidity studies) comes from large, recent, nationally representative longitudinal studies, whereas contradicting evidence relies more on animal models, indirect biomarkers, and literature reviews. This is partially valid: the fluidity studies (EV_1772392522263, EV_1772392537057) are indeed large-scale and recent. However, the advocate&#39;s reasoning already acknowledged this by granting 15% truth value based on fluidity evidence. The challenge does not provide grounds for further upward adjustment beyond that already made via CP_AC_01_2.
+
+**Final synthesis:** The claim &#39;A person&#39;s sexual orientation is determined after birth&#39; remains predominantly false. The overwhelming weight of evidence from prenatal biology (CB_01), genetics (CB_03), and expert consensus establishes that the neurobiological foundations of sexual orientation are largely determined before birth through prenatal hormonal and genetic mechanisms. However, the fluidity evidence (CB_04/CB_05) demonstrates that for a meaningful minority—particularly adolescents—sexual orientation (including attractions, not just identity labels) can change or develop postnatally. The truth percentage of 18% reflects this minority phenomenon. Confidence is reduced to 82% due to: (1) reduced independence of CB_01 evidence; (2) absence of large-scale prospective human studies directly linking prenatal biomarkers to orientation; and (3) thin evidence base for ruling out all postnatal influences. The claim is contested due to the boundary conflict between prenatal determination (CB_01/CB_03) and fluidity (CB_04/CB_05), though the conflict is resolved by distinguishing between biological substrate (prenatal) and developmental expression/identity (which can shift postnatally for some individuals).</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Multiple CB_01 evidence items derive from a small set of primary reviews, reducing effective independence. Confidence in CB_01 reduced from 92% to ~85%, and overall confidence reduced from 88% to 82%.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-part">PARTIALLY ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. CB_02&#39;s thin evidence base (1-2 items) and absence of large-scale null findings is a valid gap, though one cited evidence ID (EV_014) is invalid. Confidence in CB_02 reduced from 75% to 65%, contributing to overall confidence reduction.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Fluidity evidence documents changes in attractions and behaviors, not just identity labels, for a meaningful minority (especially adolescents). Truth percentage adjusted upward from 15% to 18% to reflect postnatal orientation change in this subpopulation.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">ACCEPTED. Absence of large-scale, prospective, population-based human studies directly linking prenatal biomarkers to orientation is a critical gap. Strongest evidence is indirect (biomarkers, animal models, clinical cases). This reinforces confidence reduction already applied.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">ACKNOWLEDGED. Overlap between CB_01 and CB_03 evidence sources is valid but does not warrant additional adjustment beyond that made for CP_AC_01_0, as both address evidence independence.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">methodology_weakness</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">PARTIALLY ACCEPTED. Fluidity studies are large-scale and recent, but advocate reasoning already granted 15% truth value based on this evidence. No further adjustment warranted beyond that made via CP_AC_01_2.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">5 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_01<br><span style="font-weight:400;font-size:10px">Prenatal hormonal biology</span></th><th>CB_02<br><span style="font-weight:400;font-size:10px">Post-natal social environment</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">Genetic heritability</span></th><th>CB_04<br><span style="font-weight:400;font-size:10px">Sexual orientation fluidity</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Sexual fluidity reviews</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — A person&#39;s sexual orientation </td><td><span class="cell-val cell-high">26</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-high">6</span></td><td><span class="cell-val cell-high">5</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Prenatal hormonal influence on sexual orientation - animal and human biological studies</span><span class="ba-ev-count">43 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Experimental animal studies, clinical case studies, neuroanatomical dissection, biomarker analysis (2D:4D ratios), and review of prenatal hormone research</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Prenatal period (particularly months 2-6 of pregnancy) through early neonatal period (1-3 months postnatally)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.920</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Studies examining prenatal and early neonatal hormone exposure effects on brain sexual differentiation and sexual orientation development through animal experiments, human clinical studies, neuroanatomical research, and biomarker analysis</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_02</span><span class="ba-name">Post-natal environmental and social influences on sexual orientation</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Literature review of environmental and social influence studies</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Post-natal period through childhood</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Literature reviews examining the role of post-natal social environment, parenting, and socialization on sexual orientation development</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Genetic and heritable contributions to sexual orientation</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Twin studies, genetic linkage studies, genome-wide association studies (GWAS), segregation analyses</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Studies conducted from 1980 to 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.880</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Twin studies, genetic linkage analyses, genome-wide association studies, and behavioral genetic research examining heritable components of sexual orientation</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_04</span><span class="ba-name">Sexual orientation fluidity and developmental change - longitudinal studies</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Prospective longitudinal cohort studies, national panel studies with repeated measurements of self-reported sexual orientation identity</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2014-2022 data collection periods; longitudinal follow-up ranging from 18 months to 9 years</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.900</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Longitudinal cohort studies and panel studies tracking changes in self-reported sexual orientation identity over time, particularly during adolescence and emerging adulthood</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Sexual orientation fluidity and developmental change - literature reviews</span><span class="ba-ev-count">5 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Literature review and synthesis of empirical evidence on sexual fluidity, orientation development, and change processes</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Multiple countries including United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Studies conducted over past several decades; reviews published through 2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Literature reviews and syntheses examining sexual fluidity, orientation change, and developmental milestones across the lifespan</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">61 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(11 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522263</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Among adults older than 18 years, 4.1% reported a change in sexual orientation over a nine-year period (2014-2022). Among adolescents, 13.5% reported a change in sexual orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/38648536/" target="_blank" rel="noopener noreferrer">The Longitudinal Measurement of Sexual Orientation and Gender Identity: A Study of Identity Change in a Nationally Representative Sample of U.S. Adults and Adolescents - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522264</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sexual orientation and gender identity can change over the life course, with particular prevalence in adolescents who are developmentally more apt to change identity.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/38648536/" target="_blank" rel="noopener noreferrer">The Longitudinal Measurement of Sexual Orientation and Gender Identity: A Study of Identity Change in a Nationally Representative Sample of U.S. Adults and Adolescents - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522265</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Ten percent of males and 20% of females at some point described themselves as a sexual minority across adolescence through emerging adulthood (ages 12-25), with females reporting significantly higher mobility in sexual orientation identity than males.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3081371/" target="_blank" rel="noopener noreferrer">Stability and Change in Self-Reported Sexual Orientation Identity in Young People: Application of Mobility Metrics - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522266</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Of those who described themselves as &#39;unsure&#39; of their orientation identity at any point, 66% identified as completely heterosexual at other reports and never went on to describe themselves as a sexual minority.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3081371/" target="_blank" rel="noopener noreferrer">Stability and Change in Self-Reported Sexual Orientation Identity in Young People: Application of Mobility Metrics - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522267</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sexual fluidity is defined as a capacity for situation-dependent flexibility in sexual responsiveness, which allows individuals to experience changes in same-sex or other-sex desire across both short-term and long-term time periods. This capacity appears to vary from person to person, with some individuals showing very stable patterns of sexual attraction over the lifespan while others show variations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://psych.utah.edu/_resources/documents/people/diamond/Sexual%20Fluidity%20in%20Males%20and%20Females.pdf" target="_blank" rel="noopener noreferrer">Sexual%20Fluidity%20in%20Males%20and%20Females</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522268</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Research has documented numerous cases in which individuals report unexpected changes—sometimes transient and sometimes lasting—in their sexual attractions, identities, and/or behaviors across the lifespan.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://psych.utah.edu/_resources/documents/people/diamond/Sexual%20Fluidity%20in%20Males%20and%20Females.pdf" target="_blank" rel="noopener noreferrer">Sexual%20Fluidity%20in%20Males%20and%20Females</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522269</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The average age of awareness of same-sex attractions is approximately 10 years old, following psychophysiological changes associated with adrenal puberty, and the average age of first self-labeling as having a minority sexual orientation is between 14 and 21 years old.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3081371/" target="_blank" rel="noopener noreferrer">Stability and Change in Self-Reported Sexual Orientation Identity in Young People: Application of Mobility Metrics - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522270</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sexual orientation identity development is a pivotal period during adolescence, with evidence that people with minority sexual orientation are &#39;coming out&#39; at younger ages than in previous generations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3081371/" target="_blank" rel="noopener noreferrer">Stability and Change in Self-Reported Sexual Orientation Identity in Young People: Application of Mobility Metrics - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392522271</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">A longitudinal study of individuals seeking sexual orientation change through religiously-mediated methods found that sexual orientation change is possible for some individuals, contradicting absolute claims of immutability.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://cuwebstoragelibrary.blob.core.windows.net/documents-prod/docs/default-source/media/files/pdf/student-life-programs/critical-concern/ex-gays/jones-and-yarhouse-2009.pdf" target="_blank" rel="noopener noreferrer">jones and yarhouse 2009</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392537057</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In a sample of 1,077 sexual minority adolescents aged 14-17 years, 40% reported at least one change in sexual identity during an 18-month period, with cisgender females reporting sexual identity fluidity at a higher rate (46.9%) than cisgender males (26.6%)</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/37530683/" target="_blank" rel="noopener noreferrer">Sexual Identity Fluidity and Depressive Symptoms: Findings From a National Longitudinal Study of Sexual Minority Adolescents - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392537058</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Sexual identity development and change processes differ between cisgender females and males, indicating that sexual identities may change over time particularly during adolescence</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/37530683/" target="_blank" rel="noopener noreferrer">Sexual Identity Fluidity and Depressive Symptoms: Findings From a National Longitudinal Study of Sexual Minority Adolescents - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(31 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474123</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Prenatal and neonatal exposure to testosterone causes male-typical development (masculinisation), whereas female-typical development (feminisation) occurs in the relative absence of testosterone, with these effects occurring during a brief critical period in development when the brain is most sensitive to testosterone or its metabolite oestradiol.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/" target="_blank" rel="noopener noreferrer">Neurobiology of gender identity and sexual orientation - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474124</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The developing fetal brain begins in a &#39;female&#39; typical state, and the presence of the Y-chromosome in males prompts the development of testes, which release testosterone to masculinize the fetal brain, with this masculinizing effect pushing males towards male typical brain structures and most of the time, attraction to females.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Environment_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Environment and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474125</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Evidence supports a role for prenatal testosterone exposure in the development of sex-typed interests in childhood, as well as in sexual orientation in later life, at least for some individuals, and it appears that other factors, in addition to hormones, play an important role in determining sexual orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3296090/" target="_blank" rel="noopener noreferrer">Prenatal endocrine influences on sexual orientation and on sexually differentiated childhood behavior - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474126</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The influence of hormones on the developing fetus has been the most influential causal hypothesis of the development of sexual orientation, with the developing fetal brain beginning in a &#39;female&#39; state and testosterone from testes masculinizing the fetal brain.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Biology and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474128</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Biochemical evidence confirmed in a 2017 lab study found that mothers with a gay son, particularly those with older brothers, had heightened levels of antibodies to the NLGN4Y Y-protein than mothers with heterosexual sons.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Biology and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474129</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Medical experiments in which newborn and infant boys were surgically reassigned into girls after accidents such as botched circumcisions and then reared as females without telling them did not make them feminine nor attracted to men; all published cases grew up to be strongly attracted to women, demonstrating that socialization effects do not induce feminine sexual behavior in males.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Biology and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474130</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Dissection studies found that gay men had smaller sized INAH-3 (third interstitial nucleus of the anterior hypothalamus) than heterosexual males, shifted in the female typical direction, a finding first demonstrated by neuroscientist Simon LeVay.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Biology and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474131</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Lesbians on average were found to have significantly more masculine digit ratios (2D:4D ratio), a supposed marker of prenatal testosterone exposure, a finding which has been replicated numerous times in studies cross-culturally.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Environment_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Environment and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474132</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Animal experiments where scientists manipulate exposure to sex hormones during gestation can induce lifelong male-typical behavior and mounting in female animals, and female-typical behavior in male animals.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Biology and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474133</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Evidence for the impact of the post-natal social environment on sexual orientation is weak, especially for males, and there is no substantial evidence which suggests parenting or early childhood experiences influence sexual orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Environment_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Environment and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474134</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Genetic examinations rooted in behavioral sciences have provided substantial evidence for the heritability of sexual orientation, estimating genetic influence at approximately 32%, with twin studies and segregation analyses revealing that homosexuality is influenced by a complex interplay of biological, genetic, neurological and environmental factors.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/behavioral-neuroscience/articles/10.3389/fnbeh.2025.1574713/full" target="_blank" rel="noopener noreferrer">Frontiers | Biological, genetic, neurological and environmental influences on homosexuality—a narrative review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474135</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Multiple biological factors contribute to the occurrence of homosexuality, including prenatal sex hormones, particularly testosterone, which shapes behavioral sex differences across various species, and neural circuitry present during early fetal development is believed to play a role in the continuum of sexual orientations.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/behavioral-neuroscience/articles/10.3389/fnbeh.2025.1574713/full" target="_blank" rel="noopener noreferrer">Frontiers | Biological, genetic, neurological and environmental influences on homosexuality—a narrative review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474136</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Fraternal birth order has been linked to male sexual orientation, possibly due to maternal immunization processes affecting sexual differentiation in fetal life, with progressive immunization of some mothers to male-specific antigens with each successive male fetus potentially impacting brain sexual differentiation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/behavioral-neuroscience/articles/10.3389/fnbeh.2025.1574713/full" target="_blank" rel="noopener noreferrer">Frontiers | Biological, genetic, neurological and environmental influences on homosexuality—a narrative review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474137</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The organisational effects of hormones on the fetal brain prior to birth have permanent effects on sexual orientation, indicating the primary role of nature, not post-birth nurture, in the development of male sexual orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Biology and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392474138</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Existing empirical evidence makes it clear that there is a significant biological contribution to the development of an individual&#39;s sexual identity and sexual orientation, with these contributions occurring during prenatal and early neonatal development.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/" target="_blank" rel="noopener noreferrer">Neurobiology of gender identity and sexual orientation - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392492631</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Monozygotic twins show a concordance rate of 65.8% for homosexual orientation, while dizygotic twins show a concordance rate of 30.4% for homosexual orientation, suggesting a biological basis in sexual orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/8494487/" target="_blank" rel="noopener noreferrer">Homosexual orientation in twins: a report on 61 pairs and three triplet sets - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392492632</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Sexual orientation is shaped by complex biological processes, including genetic markers and maternal immune responses, suggesting it is not determined after birth but rather influenced by prenatal biological factors.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://gmr.scholasticahq.com/article/136400-exploring-biological-theories-of-homosexuality-a-focus-on-the-x-linkage-theory-and-the-fraternal-birth-order-effect" target="_blank" rel="noopener noreferrer">Exploring Biological Theories of Homosexuality: A Focus on the X-linkage Theory and the Fraternal Birth Order Effect | Published in Georgetown Medical Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392492633</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">An increasing number of studies indicate that sexual orientation is not a choice but is rather a multifaceted interaction of genetic, immunological, and neurodevelopmental factors.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://gmr.scholasticahq.com/article/136400-exploring-biological-theories-of-homosexuality-a-focus-on-the-x-linkage-theory-and-the-fraternal-birth-order-effect" target="_blank" rel="noopener noreferrer">Exploring Biological Theories of Homosexuality: A Focus on the X-linkage Theory and the Fraternal Birth Order Effect | Published in Georgetown Medical Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392492634</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Genetic linkage studies of 409 independent pairs of homosexual brothers (908 analyzed individuals in 384 families) confirmed an association between the Xq28 region of the X chromosome and male homosexuality, suggesting prenatal genetic influences on sexual orientation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://gmr.scholasticahq.com/article/136400-exploring-biological-theories-of-homosexuality-a-focus-on-the-x-linkage-theory-and-the-fraternal-birth-order-effect" target="_blank" rel="noopener noreferrer">Exploring Biological Theories of Homosexuality: A Focus on the X-linkage Theory and the Fraternal Birth Order Effect | Published in Georgetown Medical Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392492635</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">A 2021 genome-wide association study analyzed 1478 homosexual males and 3313 heterosexual males from the Han Chinese population and identified a new locus, FMR1NB, on chromosome X, suggesting genetic influences on sexual orientation that would be determined before birth.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://gmr.scholasticahq.com/article/136400-exploring-biological-theories-of-homosexuality-a-focus-on-the-x-linkage-theory-and-the-fraternal-birth-order-effect" target="_blank" rel="noopener noreferrer">Exploring Biological Theories of Homosexuality: A Focus on the X-linkage Theory and the Fraternal Birth Order Effect | Published in Georgetown Medical Review</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561808</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The hormonal theory of sexuality holds that exposure to certain hormones during fetal development influences the sexual orientation that emerges later in the individual, with prenatal hormones potentially being the primary determinant of adult sexual orientation or a co-factor.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Prenatal_hormones_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Prenatal hormones and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561809</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Garcia-Falgueras and Dick Swaab&#39;s endocrinology study postulates that &#39;In humans, the main mechanism responsible of sexual identity and orientation involves a direct effect of testosterone on the developing brain,&#39; with intrauterine exposure to hormones being largely determinative.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Prenatal_hormones_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Prenatal hormones and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561810</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Sexual differentiation of the brain occurs following genital differentiation, with sex hormones exerting organizational effects on the brain that will be activated in puberty, and the changes brought about in this stage are permanent.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Prenatal_hormones_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Prenatal hormones and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561811</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Studies of congenital adrenal hyperplasia (CAH) show that CAH has a clear but not determining influence on sexual orientation; women with CAH are less likely to be exclusively heterosexual than are other women.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Prenatal_hormones_and_sexual_orientation" target="_blank" rel="noopener noreferrer">Prenatal hormones and sexual orientation - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561814</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The Organizational and Activational Hypothesis posits that sex hormones have twofold effects: early in development they organize the brain and body in a sex-specific manner, and later in life, hormonal changes particularly during puberty activate these structures, suggesting both prenatal hormone exposure and adult hormone levels contribute to sexual differentiation.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2025.1546385/full" target="_blank" rel="noopener noreferrer">Frontiers | Prenatal androgen exposure predicts sexuality disorders: insights from anthropometric measurements and questionnaires</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561815</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">A meta-analysis including 17 samples and over 3,600 participants showed significant differences in 2D:4D digit ratio between male-to-female (MtF) transgender individuals and male controls, suggesting that variations in prenatal androgen exposure reflect influence on gender identity.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2025.1546385/full" target="_blank" rel="noopener noreferrer">Frontiers | Prenatal androgen exposure predicts sexuality disorders: insights from anthropometric measurements and questionnaires</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561816</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">A study by Breedlove et al. found correlation of digit ratio (2D:4D) in androphilic females but no association in men, suggesting prenatal androgen exposure influences sexual orientation differently by sex.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2025.1546385/full" target="_blank" rel="noopener noreferrer">Frontiers | Prenatal androgen exposure predicts sexuality disorders: insights from anthropometric measurements and questionnaires</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392579362</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Prenatal factors have an important influence on sexual orientation, with multiple sexually differentiated behavioral, physiological, and morphological traits significantly different in homosexual and heterosexual populations, suggesting homosexual subjects were exposed to atypical endocrine conditions during prenatal development</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/" target="_blank" rel="noopener noreferrer">Minireview: Hormones and Human Sexual Orientation - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392579364</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Early exposure of embryos to different endocrine milieus, particularly high testosterone concentration in male embryos versus low or absent exposure in females, produces irreversible sexual differentiation effects during the embryonic period or just after birth</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/" target="_blank" rel="noopener noreferrer">Minireview: Hormones and Human Sexual Orientation - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392579365</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Sexual orientation is a sexually differentiated behavioral feature programmed into the brain during early development through testosterone surges during the intrauterine period, with no evidence that postnatal social environment plays a crucial role in sexual orientation</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21334362/" target="_blank" rel="noopener noreferrer">Sexual differentiation of the human brain: relation to gender identity, sexual orientation and neuropsychiatric disorders - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392579367</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">The prenatal endocrine environment has significant influence on human sexual orientation, though a large fraction of the variance in this behavioral characteristic remains unexplained, and genetic differences affecting behavior either directly or by changing embryonic hormone secretion may also be involved</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/" target="_blank" rel="noopener noreferrer">Minireview: Hormones and Human Sexual Orientation - PMC
+        Lock</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(19 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sexual orientation involves a mix of sexual attractions, behaviors and self-identification, and surveys have shown that these three elements are not always consistent with each other and not always stable over time.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Studies based on four large, population-based, longitudinal data sets demonstrate that significant change in each of the elements of sexual orientation is possible, with up to 38 percent of men and 53 percent of women changing to heterosexuality in a six-year period.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The American Psychological Association has stated: &#39;There is no consensus among scientists about the exact reasons that an individual develops a heterosexual, bisexual, gay or lesbian orientation. Although much research has examined the possible genetic, hormonal, developmental, social and cultural influences on sexual orientation, no findings have emerged that permit scientists to conclude that sexual orientation is determined by any particular factor or factors.&#39;</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Studies of identical twins show that when one twin is homosexual, the other genetically identical twin is usually not homosexual, disproving the idea of homosexuality as a fixed, genetically determined trait.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Prenatal factors have an important influence on sexual orientation, with the prenatal endocrine environment having a significant influence on human sexual orientation, though a large fraction of the variance in this behavioral characteristic remains unexplained.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sexual differentiation of the genitals takes place in the first two months of pregnancy and sexual differentiation of the brain starts in the second half of pregnancy, and these two processes can be influenced independently.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">During the intrauterine period the fetal brain develops in the male direction through a direct action of testosterone on the developing nerve cells, or in the female direction through the absence of this hormone surge, and gender identity and sexual orientation should be programmed into brain structures when still in the womb.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21094885/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/21094885/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">There is no proof that social environment after birth has an effect on gender identity or sexual orientation.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21094885/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/21094885/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A number of studies show patterns of sex atypical cerebral dimorphism in homosexual subjects, suggesting prenatal programming may determine sexual orientation.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21094885/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/21094885/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Surveys about sexuality have shown that sexual attractions, behaviors, and self-identification are not always consistent with each other and not always stable over time, with up to 38 percent of men and 53 percent of women changing to heterosexuality in a six-year period.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The American Psychological Association has stated there is no consensus among scientists about the exact reasons that an individual develops a heterosexual, bisexual, gay or lesbian orientation, and no findings have emerged that permit scientists to conclude that sexual orientation is determined by any particular factor or factors.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Studies of identical twins show that when one twin is homosexual, the other genetically identical twin is usually not homosexual, disproving the idea of homosexuality as a fixed, genetically determined trait.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frc.org/get.cfm?i=PV19E09" target="_blank" rel="noopener noreferrer">https://www.frc.org/get.cfm?i=PV19E09</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sexual differentiation of the brain occurs during the second half of pregnancy through the action of testosterone on developing nerve cells, and since this process occurs independently from genital differentiation (which occurs in the first two months), these two processes can be influenced independently.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21094885/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/21094885/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">There is no proof that social environment after birth has an effect on gender identity or sexual orientation.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21094885/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/21094885/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Gender identity and sexual orientation are characterized by obvious sex differences and are most often in harmony with each other and with an individual&#39;s genital sex, although not always, suggesting that gonadal hormones, particularly testosterone, might be involved in their development.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Prenatal and neonatal exposure to testosterone causes male-typical development (masculinization), whereas female-typical development (feminization) occurs in the relative absence of testosterone, with these effects occurring during a critical period in development when the brain is most sensitive to testosterone.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Existing empirical evidence makes it clear that there is a significant biological contribution to the development of an individual&#39;s sexual identity and sexual orientation, with influences including prenatal hormone exposure, genes, and potentially maternal immune responses.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392561817</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A cohort study examining prenatal androgen exposure (PAE) via 2D:4D ratio found that overall PAE did not correlate strongly with general mental health or sexual satisfaction, though high PAE was associated with greater openness to casual relationships particularly among women.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2025.1546385/full" target="_blank" rel="noopener noreferrer">Frontiers | Prenatal androgen exposure predicts sexuality disorders: insights from anthropometric measurements and questionnaires</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772392579366</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Sexual differentiation of the human brain occurs at a much later stage in development than sexual differentiation of the genitals, allowing these two processes to be influenced independently of each other</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pubmed.ncbi.nlm.nih.gov/21334362/" target="_blank" rel="noopener noreferrer">Sexual differentiation of the human brain: relation to gender identity, sexual orientation and neuropsychiatric disorders - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">17 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Neurobiology of gender identity and sexual orientation - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC6677266/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environmental influences sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Environment and sexual orientation - Wikipedia</span></div>
+        <div class="source-url"><a href="https://en.wikipedia.org/wiki/Environment_and_sexual_orientation" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Environment_and_sexual_orientation</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environmental influences sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Prenatal endocrine influences on sexual orientation and on sexually differentiated childhood behavior - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3296090/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC3296090/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environmental influences sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Biology and sexual orientation - Wikipedia</span></div>
+        <div class="source-url"><a href="https://en.wikipedia.org/wiki/Biology_and_sexual_orientation" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Biology_and_sexual_orientation</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environmental influences sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Frontiers | Biological, genetic, neurological and environmental influences on homosexuality—a narrative review</span></div>
+        <div class="source-url"><a href="https://www.frontiersin.org/journals/behavioral-neuroscience/articles/10.3389/fnbeh.2025.1574713/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/behavioral-neuroscience/articles/10.3389/fnbeh.2025.1574713/full</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environmental influences sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/askscience/comments/d15sbm/are_identical_twins_much_morelikely_to_have_the/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/askscience/comments/d15sbm/are_identical_twins_much_morelikely_to_have_the/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: identical twins sexual orientation concordance rates genetics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Homosexual orientation in twins: a report on 61 pairs and three triplet sets - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</span></div>
+        <div class="source-url"><a href="https://pubmed.ncbi.nlm.nih.gov/8494487/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/8494487/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: identical twins sexual orientation concordance rates genetics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Exploring Biological Theories of Homosexuality: A Focus on the X-linkage Theory and the Fraternal Birth Order Effect | Published in Georgetown Medical Review</span></div>
+        <div class="source-url"><a href="https://gmr.scholasticahq.com/article/136400-exploring-biological-theories-of-homosexuality-a-focus-on-the-x-linkage-theory-and-the-fraternal-birth-order-effect" target="_blank" rel="noopener noreferrer">https://gmr.scholasticahq.com/article/136400-exploring-biological-theories-of-homosexuality-a-focus-on-the-x-linkage-theory-and-the-fraternal-birth-order-effect</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: identical twins sexual orientation concordance rates genetics</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">The Longitudinal Measurement of Sexual Orientation and Gender Identity: A Study of Identity Change in a Nationally Representative Sample of U.S. Adults and Adolescents - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</span></div>
+        <div class="source-url"><a href="https://pubmed.ncbi.nlm.nih.gov/38648536/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/38648536/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: longitudinal survey sexual orientation change over lifespan</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Stability and Change in Self-Reported Sexual Orientation Identity in Young People: Application of Mobility Metrics - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3081371/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC3081371/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: longitudinal survey sexual orientation change over lifespan</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Sexual%20Fluidity%20in%20Males%20and%20Females</span></div>
+        <div class="source-url"><a href="https://psych.utah.edu/_resources/documents/people/diamond/Sexual%20Fluidity%20in%20Males%20and%20Females.pdf" target="_blank" rel="noopener noreferrer">https://psych.utah.edu/_resources/documents/people/diamond/Sexual%20Fluidity%20in%20Males%20and%20Females.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: longitudinal survey sexual orientation change over lifespan</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">jones and yarhouse 2009</span></div>
+        <div class="source-url"><a href="https://cuwebstoragelibrary.blob.core.windows.net/documents-prod/docs/default-source/media/files/pdf/student-life-programs/critical-concern/ex-gays/jones-and-yarhouse-2009.pdf" target="_blank" rel="noopener noreferrer">https://cuwebstoragelibrary.blob.core.windows.net/documents-prod/docs/default-source/media/files/pdf/student-life-programs/critical-concern/ex-gays/jones-and-yarhouse-2009.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: longitudinal survey sexual orientation change over lifespan</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Sexual Identity Fluidity and Depressive Symptoms: Findings From a National Longitudinal Study of Sexual Minority Adolescents - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</span></div>
+        <div class="source-url"><a href="https://pubmed.ncbi.nlm.nih.gov/37530683/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/37530683/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: longitudinal study sexual orientation change over lifespan</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Prenatal hormones and sexual orientation - Wikipedia</span></div>
+        <div class="source-url"><a href="https://en.wikipedia.org/wiki/Prenatal_hormones_and_sexual_orientation" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Prenatal_hormones_and_sexual_orientation</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: prenatal hormone exposure sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">Frontiers | Prenatal androgen exposure predicts sexuality disorders: insights from anthropometric measurements and questionnaires</span></div>
+        <div class="source-url"><a href="https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2025.1546385/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/endocrinology/articles/10.3389/fendo.2025.1546385/full</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: prenatal hormone exposure sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_016</span><span class="source-title">Minireview: Hormones and Human Sexual Orientation - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC3138231/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environment social influences sexual orientation development</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_017</span><span class="source-title">Sexual differentiation of the human brain: relation to gender identity, sexual orientation and neuropsychiatric disorders - PubMedTwitterFacebookLinkedInGitHubTwitterSM-FacebookSM-Youtube</span></div>
+        <div class="source-url"><a href="https://pubmed.ncbi.nlm.nih.gov/21334362/" target="_blank" rel="noopener noreferrer">https://pubmed.ncbi.nlm.nih.gov/21334362/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: postnatal environment social influences sexual orientation development</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">8 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>sexual orientation determined after birth</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Sexual orientation is determined after birth.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>postnatal environmental influences sexual orientation development</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>identical twins sexual orientation concordance rates genetics</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>longitudinal survey sexual orientation change over lifespan</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>longitudinal study sexual orientation change over lifespan</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>prenatal hormone exposure sexual orientation development</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>postnatal environment social influences sexual orientation development</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">61</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">17</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">8</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">21</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-03-01 20:29 UTC
+  <br>Job f68ee28e3ef04c7bbddf92f98bc640f4 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
