@@ -62,27 +62,46 @@ def _extract_verdict_badge(html: str) -> Optional[str]:
 
 def _extract_meter_values(html: str) -> tuple[Optional[int], Optional[int]]:
     """Extract truth% and confidence% from meter-value divs.
-    Meters show display values: 'X% true/false' then 'Y% sure'.
-    If the label is 'false', convert to raw truth% (100 - value)
-    so the manifest always stores raw truth percentage.
+
+    Handles two HTML formats:
+    - Combined: <div class="meter-value ...">78% true</div> (value+label in one div)
+    - Separate: <div class="meter-value ...">78%</div><div class="meter-label">true</div>
+
+    Confidence may appear as "Medium confidence" text with actual % in
+    the meter-label title attribute: title="72% confidence".
+
+    Always stores raw truth% (0=fully false, 100=fully true).
     """
     truth = None
     confidence = None
 
-    # Extract meter value + following label pairs
-    pairs = re.findall(
-        r'class="meter-value[^"]*"[^>]*>(\d+)%<[^<]*<div class="meter-label">([^<]+)<',
-        html
-    )
-    for val_str, label in pairs:
-        val = int(val_str)
-        label = label.strip().lower()
-        if label in ('true', 'false') and truth is None:
-            truth = val if label == 'true' else 100 - val
-        elif label == 'sure' and confidence is None:
-            confidence = val
+    # Format 1: combined "X% true/false" inside meter-value div
+    m = re.search(r'class="meter-value[^"]*"[^>]*>(\d+)%\s*(true|false)\s*<', html, re.IGNORECASE)
+    if m:
+        val = int(m.group(1))
+        label = m.group(2).lower()
+        truth = val if label == 'true' else 100 - val
 
-    # Fallback: raw meter-value extraction if no labels found
+    # Confidence: check meter-label title="N% confidence"
+    cm = re.search(r'class="meter-label"[^>]*title="(\d+)%\s*confidence"', html, re.IGNORECASE)
+    if cm:
+        confidence = int(cm.group(1))
+
+    # Format 2: separate meter-value + meter-label divs
+    if truth is None:
+        pairs = re.findall(
+            r'class="meter-value[^"]*"[^>]*>(\d+)%<[^<]*<div class="meter-label">([^<]+)<',
+            html
+        )
+        for val_str, label in pairs:
+            val = int(val_str)
+            label = label.strip().lower()
+            if label in ('true', 'false') and truth is None:
+                truth = val if label == 'true' else 100 - val
+            elif label == 'sure' and confidence is None:
+                confidence = val
+
+    # Fallback: raw meter-value extraction if nothing else worked
     if truth is None and confidence is None:
         meter_vals = re.findall(r'class="meter-value[^"]*"[^>]*>(\d+)%<', html)
         if len(meter_vals) >= 1:
