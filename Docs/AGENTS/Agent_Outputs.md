@@ -2650,3 +2650,18 @@ ext phase).
 **For next agent:**
 - Execute P0-P1 steps, then run deployment gate checks in order before public pre-release go-live.
 **Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Prepared Pre-Release Plan for Formal Review Round
+**Task:** Make the limited public pre-release readiness plan explicitly ready for a structured review round and provide reviewer prompts.
+**Files touched:** Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md, Docs/AGENTS/Agent_Outputs.md.
+**Key decisions:**
+- Updated status to READY FOR REVIEW ROUND 1.
+- Added Review Round Package section with objective, reviewer roles, input docs, findings format, required review questions, and out-of-scope boundaries.
+- Kept implementation scope unchanged; only review readiness scaffolding was added.
+**Open items:**
+- Await reviewer findings and Captain decisions listed in the plan.
+**Warnings:**
+- None.
+**For next agent:**
+- Execute requested review round using the included prompt pack and capture findings by severity.
+**Learnings:** Appended to Role_Learnings.md? No.

@@ -2,7 +2,7 @@
 
 **Role:** Senior Developer
 **Date:** 2026-03-01
-**Status:** READY FOR REVIEW
+**Status:** READY FOR REVIEW ROUND 1
 **Based on:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/KNOWN_ISSUES.md`, `Docs/STATUS/Backlog.md` (security + reliability + cost-control items)
 
 ## Context
@@ -256,3 +256,47 @@ These are recommended for limited public pre-release hardening after P0 gates la
 - [ ] Captain decision points are explicit and actionable
 - [ ] Deployment + rollback path is documented and testable
 - [ ] Additional security controls are prioritized by phase
+
+---
+
+## Review Round Package
+
+### Review Objective
+
+Validate that this plan is implementation-ready for a limited public pre-release without introducing unnecessary production-scope expansion.
+
+### Requested Reviewer Roles
+
+- Lead Architect: scope integrity, deployment safety, and sequencing
+- Senior Developer: implementation feasibility and testability
+- Security Expert: abuse paths and minimum viable hardening sufficiency
+- Code Reviewer: regression risk, missing tests, edge-case handling
+
+### Review Inputs
+
+1. This plan: `Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md`
+2. Invite code implementation plan: `Docs/WIP/2026-02-28_Invite_Code_Implementation_Plan.md`
+3. Current status: `Docs/STATUS/Current_Status.md`
+4. Known issues: `Docs/STATUS/KNOWN_ISSUES.md`
+5. Backlog priorities: `Docs/STATUS/Backlog.md`
+
+### Findings Format (for all reviewers)
+
+- Severity: `BLOCKER`, `HIGH`, `MEDIUM`, `LOW`
+- Include exact file/section reference
+- State expected risk if unresolved
+- Provide concrete fix recommendation
+
+### Required Review Questions
+
+1. Are any P0 controls missing for limited public pre-release?
+2. Is the deployment/rollback procedure sufficient for single-instance SQLite operations?
+3. Are security controls correctly phased (`must add`, `same window`, `next phase`)?
+4. Are Step 6 and Step 7 verification gates specific enough to prevent risky release?
+5. Are Captain decision points complete and unambiguous?
+
+### Out of Scope for This Review Round
+
+- Re-architecting to multi-instance or non-SQLite infrastructure
+- Full enterprise identity platform design
+- Post-launch optimization work not required for go-live gate
