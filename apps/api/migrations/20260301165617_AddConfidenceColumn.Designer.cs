@@ -3,6 +3,7 @@ using System;
 using FactHarbor.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FactHarbor.Api.Migrations
 {
     [DbContext(typeof(FhDbContext))]
-    partial class FhDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260301165617_AddConfidenceColumn")]
+    partial class AddConfidenceColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");

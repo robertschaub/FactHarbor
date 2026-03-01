@@ -57,7 +57,8 @@ public sealed class JobsController : ControllerBase
                 inputPreview = j.InputPreview,
                 pipelineVariant = j.PipelineVariant,
                 verdictLabel = j.VerdictLabel,
-                truthPercentage = j.TruthPercentage
+                truthPercentage = j.TruthPercentage,
+                confidence = j.Confidence
             }),
             pagination = new
             {
@@ -94,6 +95,7 @@ public sealed class JobsController : ControllerBase
             pipelineVariant = j.PipelineVariant,
             verdictLabel = j.VerdictLabel,
             truthPercentage = j.TruthPercentage,
+            confidence = j.Confidence,
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });

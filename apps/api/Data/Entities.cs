@@ -69,6 +69,11 @@ public sealed class JobEntity
     /// Calculated truth percentage (0-100) extracted from ResultJson.
     /// </summary>
     public int? TruthPercentage { get; set; }
+
+    /// <summary>
+    /// Calculated confidence percentage (0-100) extracted from ResultJson.
+    /// </summary>
+    public int? Confidence { get; set; }
 }
 
 public sealed class JobEventEntity

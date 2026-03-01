@@ -80,12 +80,17 @@ public sealed class JobService
             var doc = JsonDocument.Parse(job.ResultJson);
             var root = doc.RootElement;
 
-            // Try multiple paths to find the overall truth percentage and confidence
+            // Try multiple paths to find the overall truth percentage and confidence.
+            // ClaimBoundary pipeline: top-level truthPercentage + confidence
+            // Dynamic pipeline: verdictSummary.overallVerdict + verdictSummary.overallConfidence
+            // Legacy formats: articleAnalysis, twoPanelSummary
             int? truthPct = null;
             int? confidence = null;
 
             if (root.TryGetProperty("truthPercentage", out var tpProp) && tpProp.ValueKind == JsonValueKind.Number)
                 truthPct = (int)tpProp.GetDouble();
+            else if (root.TryGetProperty("verdictSummary", out var vsProp) && vsProp.TryGetProperty("overallVerdict", out var vsOvProp) && vsOvProp.ValueKind == JsonValueKind.Number)
+                truthPct = (int)vsOvProp.GetDouble();
             else if (root.TryGetProperty("articleAnalysis", out var aaProp) && aaProp.TryGetProperty("articleTruthPercentage", out var atpProp) && atpProp.ValueKind == JsonValueKind.Number)
                 truthPct = (int)atpProp.GetDouble();
             else if (root.TryGetProperty("twoPanelSummary", out var tpsProp) && tpsProp.TryGetProperty("factharborAnalysis", out var faProp) && faProp.TryGetProperty("overallVerdict", out var ovProp) && ovProp.ValueKind == JsonValueKind.Number)
@@ -93,6 +98,8 @@ public sealed class JobService
 
             if (root.TryGetProperty("confidence", out var cProp) && cProp.ValueKind == JsonValueKind.Number)
                 confidence = (int)cProp.GetDouble();
+            else if (root.TryGetProperty("verdictSummary", out var vsProp2) && vsProp2.TryGetProperty("overallConfidence", out var vsConfProp) && vsConfProp.ValueKind == JsonValueKind.Number)
+                confidence = (int)vsConfProp.GetDouble();
             else if (root.TryGetProperty("twoPanelSummary", out var tpsProp2) && tpsProp2.TryGetProperty("factharborAnalysis", out var faProp2) && faProp2.TryGetProperty("confidence", out var cProp2) && cProp2.ValueKind == JsonValueKind.Number)
                 confidence = (int)cProp2.GetDouble();
 
@@ -101,6 +108,7 @@ public sealed class JobService
                 job.TruthPercentage = truthPct.Value;
                 job.VerdictLabel = MapPercentageToVerdict(truthPct.Value, confidence ?? 0);
             }
+            job.Confidence = confidence;
         }
         catch (Exception ex)
         {
