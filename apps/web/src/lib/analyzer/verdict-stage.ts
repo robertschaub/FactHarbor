@@ -574,15 +574,29 @@ export async function selfConsistencyCheck(
     llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency, callContext: { debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" } }),
   ]);
 
-  const run2Verdicts = run2 as Array<Record<string, unknown>>;
-  const run3Verdicts = run3 as Array<Record<string, unknown>>;
+  // Guard: LLM may return null/undefined/non-array on transient failure.
+  // Degrade gracefully — missing runs are excluded from consistency measurement
+  // rather than crashing the pipeline. Claims with fewer data points get wider
+  // confidence intervals via the spread calculation.
+  const run2Verdicts = Array.isArray(run2) ? run2 as Array<Record<string, unknown>> : [];
+  const run3Verdicts = Array.isArray(run3) ? run3 as Array<Record<string, unknown>> : [];
+
+  if (!Array.isArray(run2) || !Array.isArray(run3)) {
+    const failed = [!Array.isArray(run2) && "run2", !Array.isArray(run3) && "run3"].filter(Boolean);
+    console.warn(`[VerdictStage] Self-consistency degraded: ${failed.join(", ")} returned non-array (${typeof run2}/${typeof run3}). Using advocate-only fallback for affected runs.`);
+  }
 
   return claims.map((claim) => {
     const v1 = advocateVerdicts.find((v) => v.claimId === claim.id)?.truthPercentage ?? 50;
-    const v2 = Number(run2Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50);
-    const v3 = Number(run3Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50);
+    // Only include runs that produced valid arrays with matching claim data
+    const percentages: number[] = [v1];
+    if (run2Verdicts.length > 0) {
+      percentages.push(Number(run2Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50));
+    }
+    if (run3Verdicts.length > 0) {
+      percentages.push(Number(run3Verdicts.find((v) => String(v.claimId) === claim.id)?.truthPercentage ?? 50));
+    }
 
-    const percentages = [v1, v2, v3];
     const average = percentages.reduce((a, b) => a + b, 0) / percentages.length;
     const spread = Math.max(...percentages) - Math.min(...percentages);
 
