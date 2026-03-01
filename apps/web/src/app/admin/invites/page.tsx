@@ -42,6 +42,17 @@ export default function InviteManagementPage() {
     fetchInvites(storedKey);
   }, []);
 
+  const parseIntOrZero = (value: string): number => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const toUtcIsoOrNull = (value: string): string | null => {
+    if (!value.trim()) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  };
+
   const fetchInvites = async (key: string) => {
     setLoading(true);
     try {
@@ -90,7 +101,7 @@ export default function InviteManagementPage() {
         },
         body: JSON.stringify({
           ...newCode,
-          expiresUtc: newCode.expiresUtc || null
+          expiresUtc: toUtcIsoOrNull(newCode.expiresUtc)
         })
       });
 
@@ -139,6 +150,7 @@ export default function InviteManagementPage() {
                 onChange={e => setNewCode({...newCode, code: e.target.value})}
                 placeholder="BETA-2026-XYZ"
                 style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                maxLength={64}
                 required
               />
             </div>
@@ -157,8 +169,10 @@ export default function InviteManagementPage() {
               <input 
                 type="number" 
                 value={newCode.maxJobs} 
-                onChange={e => setNewCode({...newCode, maxJobs: parseInt(e.target.value)})}
+                onChange={e => setNewCode({...newCode, maxJobs: Math.max(1, parseIntOrZero(e.target.value))})}
                 style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                min={1}
+                step={1}
                 required
               />
             </div>
@@ -167,9 +181,20 @@ export default function InviteManagementPage() {
               <input 
                 type="number" 
                 value={newCode.dailyLimit} 
-                onChange={e => setNewCode({...newCode, dailyLimit: parseInt(e.target.value)})}
+                onChange={e => setNewCode({...newCode, dailyLimit: Math.max(0, parseIntOrZero(e.target.value))})}
                 style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                min={0}
+                step={1}
                 required
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Expiration (Optional)</label>
+              <input
+                type="datetime-local"
+                value={newCode.expiresUtc}
+                onChange={e => setNewCode({...newCode, expiresUtc: e.target.value})}
+                style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
               />
             </div>
             <div style={{ gridColumn: "span 2" }}>
