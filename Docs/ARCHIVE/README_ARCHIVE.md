@@ -20,6 +20,32 @@ The following documents had valuable content extracted and merged into active do
 
 ## What's Archived
 
+### WIP Consolidation #3 (2026-03-01) — Invite Code, Readiness, Quality Investigations
+
+**Description**: Archived 11 WIP files after the core Invite Code system and EF Migrations were implemented. Quality investigations for report asymmetry and fidelity were concluded with fixes committed.
+
+**Completed implementation & architecture** (5 files — DONE):
+1. `2026-02-28_Invite_Code_Architecture_Plan.md` — Tiered access design (invite vs guest). Implemented.
+2. `2026-02-28_Invite_Code_Implementation_Plan.md` — Core invite code/quota logic. Implemented & verified (v1.1).
+3. `Agent_Knowledge_Restructuring_2026-02-24.md` — Agent role file split and instructions optimization. Executed.
+4. `Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md` — Phases 1-4 of claim drift fixes. Implemented & verified.
+5. `2026-02-27_Report_Quality_Investigation.md` — Audit of 15 weak areas; 8 fixes applied (spread adjustment, token trimming, probativeValue preservation). Concluded.
+
+**Analysis complete, findings absorbed** (4 files — DONE):
+6. `Investigation_Report_Potential_Report_Quality_Degradation.md` — Early quality audit findings; absorbed into CB v1.0.
+7. `Report_Quality_Improvement_2026-02-24.md` — Quality prioritization findings.
+8. `MSR_Review_UCM_AgentRules_2026-02-24.md` — Review of Multi-Source Retrieval rules; findings merged into MSR implementation plan.
+9. `Runtime_Issues_Analysis_2026-02-17.md` — Input for Alpha hardening (SSRF, rate limits).
+
+**Historical & Temporary** (2 files):
+10. `Decision_Log_D1-D5_Calibration_Debate_2026-02-21.md` — Historical record of early CB decisions.
+11. `Captain_Temp.md` — Temporary notes.
+
+**Remaining WIP (Active Documents):**
+Release Readiness (Readiness Plan, Execution Checklist), Evidence/Consistency (MSR Plan, Inverse Asymmetry), Alpha Strategy (Acceleration Plan, Model Auto-resolution, Cross-Provider Debate), Backlog Proposals (Cost Strategy, Test/Tuning).
+
+---
+
 ### WIP Consolidation #2 (2026-02-23) — Framing Symmetry v3, Calibration Redesign, Debate Plans
 
 **Description**: Archived 5 WIP files after framing-symmetry v3.2.0 fixture, diagnostic gate, direction check, and accuracy-control bypass were implemented. Calibration test renamed from "political-bias" to "framing-symmetry". Extracted 2 forward items to Backlog (Verdict Accuracy Test Set, conditional re-reconciliation).

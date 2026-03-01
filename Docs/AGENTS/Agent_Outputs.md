@@ -2798,3 +2798,22 @@ ext phase).
 - Captain decision required before Step 3: throttle rate (requests/minute per IP) and whether 429 or 503 is the right response code.
 - The semantic gate (Step 6b) is wired but NOT covered by automated tests (requires real LLM). Manual smoke test: submit a prompt-injection attempt and verify 422 is returned.
 **Learnings:** No new learnings to append (patterns followed standard Senior Developer approach).
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Implemented P0 + P1 Security/Pre-Release Hardening Fixes
+**Task:** Implement the 6 P0 fixes (B-1, S-1, H-3, S-3, S-8, S-2) and, if possible, P1 fixes (H-5, L-2) from the consolidated review report in Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md.
+**Files touched:** pps/api/Helpers/AuthHelper.cs (new), pps/api/Controllers/AdminInviteCodesController.cs, pps/api/Controllers/InternalJobsController.cs, pps/api/Controllers/SystemHealthController.cs, pps/api/Controllers/JobsController.cs, pps/api/Controllers/AnalyzeController.cs, pps/api/Program.cs, pps/api/Services/JobService.cs, pps/web/src/lib/retrieval.ts.
+**Key decisions:**
+- Implemented timing-safe admin-key validation via shared AuthHelper.IsAdminKeyValid(HttpRequest) using CryptographicOperations.FixedTimeEquals and removed API controller == auth checks.
+- Secured POST /v1/jobs/{jobId}/cancel and POST /v1/jobs/{jobId}/retry behind admin key; retry now consumes invite quota via TryClaimInviteSlotAsync(originalJob.InviteCode).
+- Added named CORS policy allowlisting http://localhost:3000 + optional FH_CORS_ORIGIN origins; enabled before controller mapping.
+- Guarded Swagger/SwaggerUI to development environments only.
+- Added [RequestSizeLimit(65_536)] and per-IP rate-limiting (5 req/min) on /v1/analyze using ASP.NET rate limiter middleware/policy.
+- Upgraded retrieval size enforcement to streaming cumulative-byte checks for chunked/no-Content-Length responses (removed unsafe esponse.text()/arrayBuffer() direct buffering paths).
+- Implemented SQLITE_BUSY-only retry loop in TryClaimInviteSlotAsync with 3 retries and 50/100/200ms backoff, plus contention exhaustion signaling mapped to HTTP 503 in analyze/retry flows.
+**Open items:**
+- Consolidated report items outside this requested set (e.g., invite code in URL query for /v1/analyze/status, public inputValue exposure policy, SSE connection caps) remain as separate decisions/work.
+**Warnings:**
+- CORS enforces browser-origin policy, not non-browser direct API callers.
+**For next agent:**
+- Run functional smoke checks from plan Step 8b against a running stack, especially retry quota claim behavior and contention path mapping to 503.
+**Learnings:** Appended to Role_Learnings.md? No.

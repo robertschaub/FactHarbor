@@ -26,18 +26,19 @@ Resume protocol is fixed and must restart at **Gate 0** of:
 ### Phase 1: Observability & Stability
 *Estimated Effort: 1-2 days | Risk: Low*
 
-1.  **Observability Gap Closure (Instrumentation & Taxonomy Alignment)**
+1.  **Observability Gap Closure (Instrumentation & Taxonomy Alignment) (COMPLETED)**
     - **Ref**: `SD-1`, `SD-2`, `SD-4`, `Lead Architect Review #1`
     - **Action**: 
         - Aligned `LLMTaskType` taxonomy: `[understand, research, cluster, verdict, aggregate]`.
         - Fixed `result.usage` type mismatches in all pipeline stages.
         - Wired `recordLLMCall` into Stage 2 (research), Stage 3 (cluster), and Stage 5 (aggregate).
         - Added `debateRole` attribution to all Stage 4 verdict calls.
-    - **Acceptance Gate**: metrics.json contains all 5 taxonomy keys with role attribution.
-2.  **Model Auto-resolution (Alpha Priority #2)**
+    - **Acceptance Gate**: metrics.json contains all 5 taxonomy keys with role attribution. Verified in `claimboundary-pipeline.ts`.
+
+2.  **Model Auto-resolution (Alpha Priority #2) (IN PROGRESS)**
     - **Ref**: [`Docs/WIP/Model_Auto_Resolution_Plan.md`](Model_Auto_Resolution_Plan.md), `SD-3`, `Lead Architect Review #5`
-    - **Action**: Implemented `model-resolver.ts`. Replaced hardcoded IDs in `llm.ts`, `config-schemas.ts`, and `runner.ts` with logical tiers.
-    - **Constraint**: **Version-lock by default** for Alpha; `-latest` aliases are opt-in via UCM.
+    - **Action**: Implemented `model-resolver.ts`. Logical tiers (haiku, sonnet, opus) mapped to provider IDs with version-lock (default) and latest (opt-in).
+    - **Next Step**: Replace hardcoded IDs in `llm.ts`, `config-schemas.ts`, and `runner.ts` with `resolveModel()` calls.
     - **Goal**: Zero hardcoded model ID strings in `src/`.
 
 ### Phase 1.5: Validation Cost Governance
