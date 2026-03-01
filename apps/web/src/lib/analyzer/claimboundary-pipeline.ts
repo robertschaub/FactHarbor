@@ -1022,9 +1022,11 @@ export async function runPreliminarySearch(
 
         if (fetchFailed > 0 && sourcesToFetch.length > 0) {
           const failureRatio = fetchFailed / sourcesToFetch.length;
+          // Per-query fetch failures are routine (paywalls, 403s). Only info-level.
+          // Aggregate degradation is assessed separately at the research stage level.
           state.warnings.push({
             type: "source_fetch_failure",
-            severity: failureRatio >= 0.5 ? "warning" : "info",
+            severity: "info",
             message:
               `Preliminary source fetch failed for ${fetchFailed}/${sourcesToFetch.length} source(s) on query "${query.slice(0, 120)}"`,
             details: {
@@ -3000,9 +3002,11 @@ export async function fetchSources(
 
   if (fetchFailed > 0 && fetchAttempted > 0) {
     const failureRatio = fetchFailed / fetchAttempted;
+    // Per-query fetch failures are routine (paywalls, 403s, 401s). Info-level only.
+    // Aggregate degradation is assessed below (source_fetch_degradation).
     state.warnings.push({
       type: "source_fetch_failure",
-      severity: failureRatio >= 0.5 ? "error" : "warning",
+      severity: "info",
       message:
         `Source fetch failed for ${fetchFailed}/${fetchAttempted} source(s) while researching query "${searchQuery.slice(0, 120)}"`,
       details: {
@@ -3019,9 +3023,12 @@ export async function fetchSources(
     });
 
     if (failureRatio >= 0.4 && fetchAttempted >= 3) {
+      // Aggregate degradation: warn when a significant portion of a query's sources failed.
+      // Only "warning" — individual query degradation doesn't make the report unreliable.
+      // "error" is reserved for total research failure (zero evidence retrieved).
       state.warnings.push({
         type: "source_fetch_degradation",
-        severity: failureRatio >= 0.7 ? "error" : "warning",
+        severity: "warning",
         message:
           `Source fetch degradation detected (${Math.round(failureRatio * 100)}% failures, ${fetchFailed}/${fetchAttempted})`,
         details: {

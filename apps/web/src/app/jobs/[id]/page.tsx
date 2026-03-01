@@ -66,9 +66,11 @@ const PROVIDER_ISSUE_TYPES = new Set([
 const NON_DEGRADING_PROVIDER_WARNING_TYPES = new Set([
   "debate_provider_fallback",
   "search_fallback",
-  // Per-query fetch misses are noisy and expected at web scale.
-  // Only aggregate fetch degradation should trip the prominent quality banner.
+  // Per-query fetch failures are routine (paywalls, 403s, 401s).
   "source_fetch_failure",
+  // Per-query aggregate degradation is common for paywalled news sources.
+  // Only total evidence collapse (no_successful_sources) is truly degrading.
+  "source_fetch_degradation",
 ]);
 
 type WarningSeverity = "error" | "warning" | "info" | "unknown";
@@ -510,10 +512,12 @@ export default function JobPage() {
   const analysisWarnings = allAnalysisWarnings.filter((w: any) => !PROVIDER_ISSUE_TYPES.has(w?.type));
   const reportIntegrity = result?.meta?.reportIntegrity;
   const reportDamagedWarning = analysisWarnings.find((w: any) => w?.type === "report_damaged");
+  // Report is "damaged" only when explicitly flagged — not from routine error-severity warnings.
+  // The pipeline emits "report_damaged" or sets reportIntegrity.damaged for true failures
+  // (e.g., zero evidence, verdict stage crash). Individual fetch/integrity errors are not damage.
   const isReportDamaged =
     !!reportIntegrity?.damaged ||
-    !!reportDamagedWarning ||
-    analysisWarnings.some((w: any) => w?.severity === "error");
+    !!reportDamagedWarning;
   const reportDamageTriggerTypes: string[] =
     reportDamagedWarning?.details?.triggeredWarningTypes ||
     reportIntegrity?.triggerTypes ||
@@ -530,8 +534,15 @@ export default function JobPage() {
     reportDamagedWarning?.details?.recommendedNextStep ||
     reportDamageHints[0] ||
     "Resolve critical warning causes and rerun analysis.";
+  // Integrity checks that were evaluated and handled (not downgraded) are informational,
+  // not quality-degrading. Only unhandled/critical warnings count toward the banner.
+  const HANDLED_INTEGRITY_TYPES = new Set([
+    "verdict_direction_issue",   // Direction check noted but verdict was reasonable
+    "verdict_grounding_issue",   // Grounding check noted but safe_downgrade handled it
+    "evidence_partition_stats",  // Informational D5 partition stats
+  ]);
   const qualityWarnings = analysisWarnings.filter(
-    (w: any) => w?.severity === "error" || w?.severity === "warning",
+    (w: any) => (w?.severity === "error" || w?.severity === "warning") && !HANDLED_INTEGRITY_TYPES.has(w?.type),
   );
   const fallbackCount = classificationFallbacks?.totalFallbacks ?? 0;
   const hasQualityDegradationStatus =
@@ -1037,6 +1048,7 @@ export default function JobPage() {
                         <span className={styles.articleVerdictBadge} style={{ backgroundColor: cbColor.bg, color: cbColor.text }}>
                           {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
                         </span>
+                        <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
                         <span className={styles.articlePercentage}>
                           {formatVerdictText(displayCbPct, cbVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${result.confidence ?? 0}%`}>· {getConfidenceTierLabel(result.confidence ?? 0)}</span>
                           {result.truthPercentageRange && (() => {
@@ -1725,6 +1737,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
+          <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
           <span className={styles.answerPercentage}>{formatVerdictText(displayOverallPct, overallVerdict)} <span style={{ fontSize: 12, color: "#999" }} title={`${overallConfidence}%`}>· {getConfidenceTierLabel(overallConfidence)}</span></span>
         </div>
 
@@ -1893,6 +1906,7 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
           <span className={styles.contextAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(contextVerdict)}
           </span>
+          <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
           <span className={styles.contextPercentage}>{formatVerdictText(displayContextPct, contextVerdict)} <span style={{ fontSize: 11, color: "#999" }} title={`${contextAnswer.confidence}%`}>· {getConfidenceTierLabel(contextAnswer.confidence)}</span></span>
         </div>
 
@@ -2020,6 +2034,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
+          <span style={{ margin: "0 6px", opacity: 0.5 }}>·</span>
           <span className={styles.articlePercentage}>
             {formatVerdictText(displayArticlePct, articleVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${articleConfidence}%`}>· {getConfidenceTierLabel(articleConfidence)}</span>
           </span>
@@ -2285,7 +2300,7 @@ function ClaimCard({
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
         <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claimVerdictLabel)} {formatVerdictText(displayClaimPct, claimVerdictLabel)} · {getConfidenceTierLabel(claim.confidence)}{claim.truthPercentageRange ? ` (range: ${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%)` : ""}
+          {color.icon} {getVerdictLabel(claimVerdictLabel)} <span style={{ fontWeight: 400 }}>· {formatVerdictText(displayClaimPct, claimVerdictLabel)} · {getConfidenceTierLabel(claim.confidence)}{claim.truthPercentageRange ? ` (range: ${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%)` : ""}</span>
         </Badge>
         {isTangential && (
           <Badge bg="#eeeeee" color="#757575">Not in verdict</Badge>

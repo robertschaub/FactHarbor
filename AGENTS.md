@@ -98,6 +98,12 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 - **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 - **Evidence-weighted contestation:** Challenges to a verdict must be backed by documented evidence to count as "contested". Unsubstantiated objections (opinion, political criticism, denial without counter-evidence) are classified as "doubted" — they MUST NOT reduce a verdict's truth percentage or confidence. Only evidence-backed counter-arguments may alter verdicts. This applies to debate challenger outputs, aggregation weighting, and any future contestation logic. Existing implementation: `contestationWeights` in `aggregation.ts` (opinion=1.0, disputed=0.7, established=0.5) and `factualBasis` classification in verdict prompts.
 
+### Analysis Report Display
+- **No false alarms.** Fallbacks, retries, and operational events (e.g., individual source fetch failures, model fallbacks, cache misses) MUST NOT be displayed as errors or warnings to the user unless they **measurably degrade report quality** (e.g., zero evidence retrieved, entire research stage failed, verdict could not be produced).
+- **Severity reflects impact, not occurrence.** A single paywalled source returning HTTP 403 is normal operation — severity `info` at most. Only escalate to `warning` when the *aggregate* effect threatens analysis quality (e.g., majority of sources for a query failed, evidence pool critically thin). Reserve `error` severity for events that make the report unreliable or incomplete.
+- **Normal situations are silent.** Events that occur routinely in healthy analyses (partial fetch failures, expected retries, cache operations) should not be surfaced in the UI at all. The user sees the report, not the plumbing.
+- **"Quality-degrading" banner requires real degradation.** The UI quality-degradation banner must only appear when the report is genuinely compromised — not because of routine operational events that were handled gracefully.
+
 ### Configuration Placement
 When introducing a tunable parameter, place it in the correct tier:
 
