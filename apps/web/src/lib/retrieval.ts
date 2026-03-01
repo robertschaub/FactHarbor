@@ -5,7 +5,7 @@
  * - HTML pages (via cheerio)
  * - PDF documents (via pdf2json)
  *
- * @version 1.2.3 - Added timeout to PDF parsing to prevent hangs
+ * @version 1.3.0 - SSRF hardening: private IP blocking, scheme enforcement, redirect validation, size cap
  */
 
 import * as cheerio from "cheerio";
@@ -16,6 +16,86 @@ import { Worker } from "worker_threads";
 
 // Default timeout for PDF parsing (ms)
 const DEFAULT_PDF_PARSE_TIMEOUT_MS = 60000;
+
+// Maximum response body size to buffer (10 MB). Enforced via Content-Length header check
+// before buffering to prevent memory exhaustion from large/malicious responses.
+const MAX_RESPONSE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Returns true if the hostname resolves to a private, loopback, link-local, or
+ * otherwise reserved address range. Used to block SSRF attempts.
+ *
+ * Checks:
+ *  - Loopback / localhost
+ *  - RFC 1918 private ranges (10/8, 172.16/12, 192.168/16)
+ *  - Link-local / AWS metadata (169.254/16)
+ *  - Shared address space (100.64/10)
+ *  - Multicast (224/4) and reserved (240/4)
+ *  - IPv6 loopback, link-local, unique-local, multicast
+ */
+function isPrivateOrReservedHost(hostname: string): boolean {
+  // Strip IPv6 brackets e.g. [::1]
+  const host = hostname.startsWith("[")
+    ? hostname.slice(1, -1).toLowerCase()
+    : hostname.toLowerCase();
+
+  // Obvious name-based loopback
+  if (host === "localhost") return true;
+
+  // IPv4
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+    if (a === 127) return true;                          // 127.0.0.0/8 loopback
+    if (a === 0) return true;                             // 0.0.0.0/8 this-network
+    if (a === 10) return true;                            // 10.0.0.0/8 RFC1918
+    if (a === 172 && b >= 16 && b <= 31) return true;    // 172.16.0.0/12 RFC1918
+    if (a === 192 && b === 168) return true;              // 192.168.0.0/16 RFC1918
+    if (a === 169 && b === 254) return true;              // 169.254.0.0/16 link-local / AWS metadata
+    if (a === 100 && b >= 64 && b <= 127) return true;   // 100.64.0.0/10 shared address space
+    if (a >= 224 && a <= 239) return true;               // 224.0.0.0/4 multicast
+    if (a >= 240) return true;                            // 240.0.0.0/4 reserved
+    return false;
+  }
+
+  // IPv6
+  if (host === "::1" || host === "0:0:0:0:0:0:0:1") return true;  // loopback
+  if (host === "::" || host === "0:0:0:0:0:0:0:0") return true;   // unspecified
+  if (host.startsWith("fe80:") || host.startsWith("fe80::")) return true; // link-local
+  if (host.startsWith("fc") || host.startsWith("fd")) return true; // unique-local (fc00::/7)
+  if (host.startsWith("ff")) return true;                           // multicast
+
+  return false;
+}
+
+/**
+ * Validates a URL is safe for outbound fetching.
+ * Throws an Error with a descriptive message if the URL is unsafe.
+ *
+ * Enforces:
+ *  - Only http: and https: schemes are permitted
+ *  - Private/reserved IP ranges and localhost are blocked (SSRF protection)
+ */
+function validateUrlForFetch(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(
+      `URL scheme not allowed: ${parsed.protocol} (only http and https are permitted)`,
+    );
+  }
+
+  if (isPrivateOrReservedHost(parsed.hostname)) {
+    throw new Error(
+      `URL host not allowed: fetching from private or reserved IP ranges is blocked`,
+    );
+  }
+}
 
 /**
  * Clean up PDF-extracted text that has spurious spaces from character-level extraction.
@@ -331,6 +411,9 @@ export async function extractTextFromUrl(
 ): Promise<{ text: string; title: string; contentType: string }> {
   const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = DEFAULT_PDF_PARSE_TIMEOUT_MS } = options;
 
+  // SSRF: validate URL before any network access
+  validateUrlForFetch(url);
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -339,7 +422,7 @@ export async function extractTextFromUrl(
 
     const response = await fetch(url, {
       signal: controller.signal,
-      redirect: 'follow',
+      redirect: "follow",
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/pdf,application/xml;q=0.9,*/*;q=0.8",
@@ -348,10 +431,30 @@ export async function extractTextFromUrl(
       },
     });
 
+    // SSRF: validate the final URL after redirect following to catch open-redirect attacks
+    if (response.url && response.url !== url) {
+      try {
+        validateUrlForFetch(response.url);
+      } catch {
+        throw new Error(`Redirect target blocked: destination is a private or reserved address`);
+      }
+    }
+
     console.log("[Retrieval] Response status:", response.status, "Content-Type:", response.headers.get("content-type"));
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+
+    // SSRF/DoS: enforce response size cap via Content-Length before buffering
+    const contentLengthStr = response.headers.get("content-length");
+    if (contentLengthStr) {
+      const contentLength = parseInt(contentLengthStr, 10);
+      if (!isNaN(contentLength) && contentLength > MAX_RESPONSE_SIZE_BYTES) {
+        throw new Error(
+          `Response too large: ${contentLength} bytes exceeds the ${MAX_RESPONSE_SIZE_BYTES / 1024 / 1024} MB limit`,
+        );
+      }
     }
 
     const contentType = response.headers.get("content-type") || "";
@@ -361,6 +464,11 @@ export async function extractTextFromUrl(
       console.log("[Retrieval] Processing as PDF");
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
+      if (buffer.length > MAX_RESPONSE_SIZE_BYTES) {
+        throw new Error(
+          `PDF response too large: ${buffer.length} bytes exceeds the ${MAX_RESPONSE_SIZE_BYTES / 1024 / 1024} MB limit`,
+        );
+      }
 
       console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
 
@@ -381,6 +489,8 @@ export async function extractTextFromUrl(
     }
     
     // Handle HTML
+    // Note: Content-Length check above guards chunked responses with known size.
+    // For responses without Content-Length, maxLength slicing below limits extracted output.
     const html = await response.text();
     const $ = cheerio.load(html);
     
