@@ -141,6 +141,73 @@ For `TryClaimInviteSlotAsync`:
 
 ---
 
+## Step 7: Deployment and Rollback Plan
+
+### 7a. Deployment scope
+
+- Single-instance rolling restart deployment (no blue/green in this phase)
+- Deploy web + API with existing scripts, then run post-deploy health checks
+
+### 7b. Pre-deploy checklist
+
+1. Confirm API/web builds are green (Step 6a)
+2. Backup `apps/api/factharbor.db` before release
+3. Confirm env vars are present and consistent:
+   - `FH_ADMIN_KEY`
+   - `FH_INTERNAL_RUNNER_KEY`
+   - LLM/search provider keys used by current UCM config
+4. Confirm invite-code seed/migration assumptions for the target environment
+
+### 7c. Deployment procedure
+
+1. Stop services: `scripts/stop-services.ps1`
+2. Deploy updated code/config
+3. Start services: `scripts/restart-clean.ps1` (or `scripts/build-and-restart.ps1`)
+4. Validate service health: `scripts/health.ps1`
+5. Run smoke checks from Step 6b on deployed instance
+
+### 7d. Rollback procedure
+
+1. Stop services
+2. Revert to previous known-good code revision
+3. Restore `factharbor.db` backup if schema/data incompatibility is detected
+4. Restart services and re-run health/smoke checks
+
+### 7e. Deployment acceptance gate
+
+- No blocking errors in health checks
+- No regression in invite quota enforcement or privacy guard
+- No unauthorized admin-route access
+
+---
+
+## Step 8: Additional Security Measures (Beyond Minimum Gate)
+
+These are recommended for limited public pre-release hardening after P0 gates land.
+
+### 8a. Must add before broadening traffic
+
+- CORS allowlist (only approved front-end origins)
+- Security headers (`HSTS`, `X-Content-Type-Options`, `X-Frame-Options`, CSP baseline)
+- Log redaction for secrets (`X-Admin-Key`, `X-Runner-Key`, API keys)
+- Dependency and vulnerability scan in CI (npm + NuGet)
+
+### 8b. Strongly recommended in the same release window
+
+- Per-route request body size limits (especially analyze endpoints)
+- Stricter timeout/cancellation propagation to avoid request pileups
+- Basic audit trail for admin config mutations (who/when/what changed)
+- Simple alerting on repeated `401/403/429/5xx` spikes
+
+### 8c. Next phase (post pre-release)
+
+- WAF/CDN front-door rules
+- Secret rotation schedule and runbook
+- Separate internal/admin surface from public surface
+- Full AuthN/AuthZ (OIDC/RBAC) and least-privilege admin model
+
+---
+
 ## Planned Files
 
 | # | File | Action | Addresses |
@@ -153,6 +220,9 @@ For `TryClaimInviteSlotAsync`:
 | 6 | `apps/api/Controllers/JobsController.cs` | Modify - inviteCode privacy guard in public responses | Privacy |
 | 7 | `apps/web/src/app/api/fh/analyze/route.ts` | Optional modify - early guard parity | Security-S3 |
 | 8 | `apps/web/test/**` and/or `apps/api` tests | Modify/add - regression coverage for auth/privacy/contention | QA Gate |
+| 9 | `scripts/stop-services.ps1` | Use in deployment runbook validation | Deployment |
+| 10 | `scripts/restart-clean.ps1` / `scripts/build-and-restart.ps1` | Use in deployment runbook validation | Deployment |
+| 11 | `scripts/health.ps1` | Use for post-deploy health gate | Deployment |
 
 ---
 
@@ -172,6 +242,8 @@ For `TryClaimInviteSlotAsync`:
 2. SQLite contention retry policy (attempt count + backoff)
 3. Status code policy for contention exhaustion (`429` vs `503`)
 4. Whether to include quota-remaining endpoint in pre-release scope
+5. Deployment rollback policy: DB restore allowed automatically vs manual approval gate
+6. Security-header policy strictness for pre-release (minimal vs strict CSP)
 
 ---
 
@@ -182,3 +254,5 @@ For `TryClaimInviteSlotAsync`:
 - [ ] No hidden architecture expansion in this phase
 - [ ] Expensive test policy remains respected
 - [ ] Captain decision points are explicit and actionable
+- [ ] Deployment + rollback path is documented and testable
+- [ ] Additional security controls are prioritized by phase

@@ -2634,3 +2634,19 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - Use this plan as review baseline; upon approval, implement in step order and validate smoke gates.
 **Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Added Deployment + Security Addendum to Pre-Release Plan
+**Task:** Update 2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md to include deployment details and additional security measures.
+**Files touched:** Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md, Docs/AGENTS/Agent_Outputs.md.
+**Key decisions:**
+- Added Step 7 deployment section with pre-deploy checklist, deployment procedure, rollback, and acceptance gates.
+- Added Step 8 phased security addendum (must add, same window, 
+ext phase).
+- Expanded planned files and captain decisions to include deployment and security-policy decisions.
+**Open items:**
+- Pending captain choices on throttling defaults, contention retry budget, rollback policy, and security-header strictness.
+**Warnings:**
+- Plan still assumes single-instance SQLite operational model for this launch phase.
+**For next agent:**
+- Execute P0-P1 steps, then run deployment gate checks in order before public pre-release go-live.
+**Learnings:** Appended to Role_Learnings.md? No.
