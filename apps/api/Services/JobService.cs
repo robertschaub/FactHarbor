@@ -240,6 +240,80 @@ public sealed class JobService
         return (items, total);
     }
 
+    #region Invite Code Management (Admin & Status)
+
+    public async Task<List<InviteCodeEntity>> ListInviteCodesAsync()
+        => await _db.InviteCodes.OrderByDescending(x => x.CreatedUtc).ToListAsync();
+
+    public async Task<InviteCodeEntity?> GetInviteCodeAsync(string code)
+        => await _db.InviteCodes.FindAsync(code);
+
+    public async Task<InviteCodeEntity> CreateInviteCodeAsync(InviteCodeEntity invite)
+    {
+        _db.InviteCodes.Add(invite);
+        await _db.SaveChangesAsync();
+        return invite;
+    }
+
+    public async Task<bool> DeactivateInviteCodeAsync(string code)
+    {
+        var invite = await _db.InviteCodes.FindAsync(code);
+        if (invite == null) return false;
+        invite.IsActive = false;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteInviteCodeAsync(string code)
+    {
+        var invite = await _db.InviteCodes.FindAsync(code);
+        if (invite == null) return false;
+
+        // Clean up usage history
+        var usages = await _db.InviteCodeUsage.Where(u => u.InviteCode == code).ToListAsync();
+        _db.InviteCodeUsage.RemoveRange(usages);
+
+        _db.InviteCodes.Remove(invite);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public sealed record InviteCodeStatus(
+        string code,
+        bool isActive,
+        int dailyLimit,
+        int dailyUsed,
+        int dailyRemaining,
+        int lifetimeLimit,
+        int lifetimeUsed,
+        int lifetimeRemaining,
+        DateTime? expiresUtc
+    );
+
+    public async Task<InviteCodeStatus?> GetInviteCodeStatusAsync(string code)
+    {
+        var invite = await _db.InviteCodes.FindAsync(code);
+        if (invite == null) return null;
+
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var usage = await _db.InviteCodeUsage.FindAsync(code, today);
+        var dailyUsed = usage?.UsageCount ?? 0;
+
+        return new InviteCodeStatus(
+            invite.Code,
+            invite.IsActive,
+            invite.DailyLimit,
+            dailyUsed,
+            invite.DailyLimit > 0 ? Math.Max(0, invite.DailyLimit - dailyUsed) : 999,
+            invite.MaxJobs,
+            invite.UsedJobs,
+            Math.Max(0, invite.MaxJobs - invite.UsedJobs),
+            invite.ExpiresUtc
+        );
+    }
+
+    #endregion
+
     /// <summary>
     /// Create a retry job from a failed job, optionally with a different pipeline variant.
     /// </summary>

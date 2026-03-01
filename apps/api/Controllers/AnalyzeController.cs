@@ -30,9 +30,72 @@ public sealed class AnalyzeController : ControllerBase
         _log = log;
     }
 
+    [HttpGet("status")]
+    public async Task<IActionResult> GetStatus([FromQuery] string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return BadRequest(new { error = "Invite code is required" });
+
+        var status = await _jobs.GetInviteCodeStatusAsync(code);
+        if (status == null)
+            return NotFound(new { error = "Invalid invite code" });
+
+        return Ok(status);
+    }
+
+    private static (bool valid, string? error) ValidateRequest(CreateJobRequest req)
+    {
+        // inputType must be "url" or "text"
+        if (req.inputType != "url" && req.inputType != "text")
+            return (false, "Invalid inputType: must be 'url' or 'text'");
+
+        // inputValue must be non-empty
+        if (string.IsNullOrWhiteSpace(req.inputValue))
+            return (false, "Input cannot be empty");
+
+        // Max size limits
+        const int maxTextChars = 32_000;
+        const int maxUrlChars = 2_000;
+        var maxChars = req.inputType == "url" ? maxUrlChars : maxTextChars;
+        if (req.inputValue.Length > maxChars)
+            return (false, $"Input too long: max {maxChars} characters allowed for {req.inputType} input");
+
+        // URL scheme enforcement
+        if (req.inputType == "url")
+        {
+            var url = req.inputValue.Trim();
+            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                return (false, "URL must use http or https scheme");
+        }
+
+        // Control character density check (allow \r \n \t; reject heavy binary/obfuscation payloads)
+        var nonSpaceLen = req.inputValue.Count(c => !char.IsWhiteSpace(c));
+        if (nonSpaceLen > 0)
+        {
+            var controlCount = req.inputValue.Count(c => char.IsControl(c) && c != '\r' && c != '\n' && c != '\t');
+            if ((double)controlCount / nonSpaceLen > 0.05)
+                return (false, "Input contains too many control characters");
+        }
+
+        // Prevent link-heavy free text (>3 embedded URLs is unusual for a factual claim)
+        if (req.inputType == "text")
+        {
+            var urlMatches = System.Text.RegularExpressions.Regex.Matches(req.inputValue, @"https?://");
+            if (urlMatches.Count > 3)
+                return (false, "Free-text input may not contain more than 3 embedded URLs");
+        }
+
+        return (true, null);
+    }
+
     [HttpPost]
     public async Task<ActionResult<CreateJobResponse>> Create([FromBody] CreateJobRequest req, CancellationToken ct)
     {
+        // 0. Structural input validation (scheme, length, control chars)
+        var (inputValid, inputError) = ValidateRequest(req);
+        if (!inputValid) return BadRequest(new { error = inputError });
+
         // 1. Atomically validate and claim one invite slot
         var (claimed, error) = await _jobs.TryClaimInviteSlotAsync(req.inviteCode);
         if (!claimed) return BadRequest(new { error });

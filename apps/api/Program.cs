@@ -36,11 +36,11 @@ builder.Services.AddHttpClient<RunnerClient>(client =>
 
 var app = builder.Build();
 
-// Create DB automatically for POC (no dotnet-ef required)
+// Run migrations and seed data
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FhDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 
     // Seed default invite code if none exist
     if (!db.InviteCodes.Any())
