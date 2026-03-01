@@ -23,6 +23,7 @@ type JobSummary = {
   pipelineVariant?: string;
   verdictLabel?: string;
   truthPercentage?: number;
+  confidence?: number;
 };
 
 type PaginationInfo = {
@@ -254,8 +255,9 @@ export default function JobsPage() {
                       const vBadge = getVerdictBadge(job.verdictLabel);
                       if (!vBadge) return null;
                       return (
-                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}`}>
+                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence !== undefined ? ` (${job.confidence}% sure)` : ""}`}>
                           {vBadge.icon} {vBadge.text} {job.truthPercentage !== undefined && `(${job.truthPercentage}%)`}
+                          {job.confidence !== undefined && <span className={styles.confidenceLabel}> ({job.confidence}% sure)</span>}
                         </span>
                       );
                     })()}

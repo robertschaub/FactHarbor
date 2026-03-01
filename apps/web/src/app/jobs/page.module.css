@@ -309,6 +309,13 @@
   border: 1px solid #dee2e6;
 }
 
+.confidenceLabel {
+  font-weight: 400;
+  font-size: 10px;
+  opacity: 0.8;
+  text-transform: none;
+}
+
 .jobPreview {
   font-size: 14px;
   color: #333;
