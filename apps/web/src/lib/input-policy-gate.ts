@@ -34,6 +34,23 @@ export interface PolicyGateResult {
   error?: string;
 }
 
+const VALID_REASON_CODES = new Set([
+  "legitimate_claim",
+  "prompt_injection",
+  "no_factual_content",
+  "jailbreak_attempt",
+  "harmful_content",
+  "spam_seo",
+  "personal_data_extraction",
+]);
+
+const VALID_MESSAGE_KEYS = new Set([
+  "legitimate_claim",
+  "invalid_input",
+  "policy_violation",
+  "gate_unavailable",
+]);
+
 /**
  * Evaluate an input submission against the content policy.
  *
@@ -63,12 +80,18 @@ export async function evaluateInputPolicy(
 
     // Substitute UCM-managed prompt variables
     const prompt = config.content
-      .replace(/\$\{INPUT_TEXT\}/g, inputValue)
+      .replace(/\$\{INPUT_TEXT\}/g, "<provided in separate user_input message>")
       .replace(/\$\{INPUT_TYPE\}/g, inputType);
 
     const result = await generateText({
       model: anthropic(ANTHROPIC_MODELS.budget.modelId),
-      prompt,
+      messages: [
+        { role: "system", content: prompt },
+        {
+          role: "user",
+          content: `<user_input input_type="${inputType}">\n${inputValue}\n</user_input>`,
+        },
+      ],
       maxOutputTokens: 200,
     });
 
@@ -104,11 +127,22 @@ export async function evaluateInputPolicy(
       `[InputGate] decision=${decision} reasonCode=${parsed.reasonCode} inputType=${inputType} confidence=${parsed.confidence}`,
     );
 
+    const reasonCode = VALID_REASON_CODES.has(parsed.reasonCode)
+      ? parsed.reasonCode
+      : "unknown";
+
+    const messageKey = VALID_MESSAGE_KEYS.has(parsed.messageKey)
+      ? parsed.messageKey
+      : "unknown";
+
+    const confidenceRaw = typeof parsed.confidence === "number" ? parsed.confidence : 0.5;
+    const confidence = Math.max(0, Math.min(1, confidenceRaw));
+
     return {
       decision,
-      reasonCode: parsed.reasonCode || "unknown",
-      messageKey: parsed.messageKey || "unknown",
-      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
+      reasonCode,
+      messageKey,
+      confidence,
     };
   } catch (err: any) {
     console.error("[InputGate] Gate error — failing open:", err?.message);

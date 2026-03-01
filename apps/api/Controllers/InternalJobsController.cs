@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,25 +13,16 @@ public sealed record ResultStoreRequest(object resultJson, string? reportMarkdow
 public sealed class InternalJobsController : ControllerBase
 {
     private readonly JobService _jobs;
-    private readonly IConfiguration _cfg;
 
-    public InternalJobsController(JobService jobs, IConfiguration cfg)
+    public InternalJobsController(JobService jobs)
     {
         _jobs = jobs;
-        _cfg = cfg;
-    }
-
-    private bool IsAuthorized()
-    {
-        var expected = _cfg["Admin:Key"];
-        var got = Request.Headers["X-Admin-Key"].ToString();
-        return !string.IsNullOrWhiteSpace(expected) && got == expected;
     }
 
     [HttpPut("{jobId}/status")]
     public async Task<IActionResult> PutStatus(string jobId, [FromBody] StatusUpdateRequest req)
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
         var status = (req.status ?? "RUNNING").Trim().ToUpperInvariant();
         await _jobs.UpdateStatusAsync(jobId, status, req.progress, req.level ?? "info", req.message ?? "");
@@ -40,7 +32,7 @@ public sealed class InternalJobsController : ControllerBase
     [HttpPut("{jobId}/result")]
     public async Task<IActionResult> PutResult(string jobId, [FromBody] ResultStoreRequest req)
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
         await _jobs.StoreResultAsync(jobId, req.resultJson, req.reportMarkdown);
         return Ok(new { ok = true });
@@ -49,7 +41,7 @@ public sealed class InternalJobsController : ControllerBase
     [HttpDelete("{jobId}")]
     public async Task<IActionResult> DeleteJob(string jobId)
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
         var job = await _jobs.GetJobAsync(jobId);
         if (job is null) return NotFound();

@@ -17,8 +17,8 @@ import { Worker } from "worker_threads";
 // Default timeout for PDF parsing (ms)
 const DEFAULT_PDF_PARSE_TIMEOUT_MS = 60000;
 
-// Maximum response body size to buffer (10 MB). Enforced via Content-Length header check
-// before buffering to prevent memory exhaustion from large/malicious responses.
+// Maximum response body size to buffer (10 MB). Enforced both via Content-Length pre-check
+// and streaming cumulative-byte checks for chunked responses without Content-Length.
 const MAX_RESPONSE_SIZE_BYTES = 10 * 1024 * 1024;
 
 /**
@@ -64,6 +64,11 @@ function isPrivateOrReservedHost(hostname: string): boolean {
   if (host.startsWith("fe80:") || host.startsWith("fe80::")) return true; // link-local
   if (host.startsWith("fc") || host.startsWith("fd")) return true; // unique-local (fc00::/7)
   if (host.startsWith("ff")) return true;                           // multicast
+  if (host.startsWith("::ffff:")) {
+    // IPv6-mapped IPv4 literal, e.g. ::ffff:127.0.0.1
+    const mappedIpv4 = host.slice("::ffff:".length);
+    return isPrivateOrReservedHost(mappedIpv4);
+  }
 
   return false;
 }
@@ -398,6 +403,49 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
+ * Read a response body while enforcing a strict cumulative byte cap.
+ * This closes the chunked-transfer gap where Content-Length is absent.
+ */
+async function readResponseBodyWithLimit(response: Response, maxBytes: number): Promise<Uint8Array> {
+  const stream = response.body;
+  if (!stream) {
+    throw new Error("Response body is empty");
+  }
+
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel("Response exceeds configured size limit");
+        throw new Error(
+          `Response too large: exceeded the ${maxBytes / 1024 / 1024} MB limit`,
+        );
+      }
+
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return merged;
+}
+
+/**
  * Fetch and extract text from a URL
  * Supports HTML pages and PDF documents
  */
@@ -462,13 +510,8 @@ export async function extractTextFromUrl(
     // Handle PDF
     if (isPdfUrl(url, contentType)) {
       console.log("[Retrieval] Processing as PDF");
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      if (buffer.length > MAX_RESPONSE_SIZE_BYTES) {
-        throw new Error(
-          `PDF response too large: ${buffer.length} bytes exceeds the ${MAX_RESPONSE_SIZE_BYTES / 1024 / 1024} MB limit`,
-        );
-      }
+      const responseBytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
+      const buffer = Buffer.from(responseBytes);
 
       console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
 
@@ -488,10 +531,9 @@ export async function extractTextFromUrl(
       };
     }
     
-    // Handle HTML
-    // Note: Content-Length check above guards chunked responses with known size.
-    // For responses without Content-Length, maxLength slicing below limits extracted output.
-    const html = await response.text();
+    // Handle HTML with streaming size enforcement for chunked/no-Content-Length responses.
+    const htmlBytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
+    const html = new TextDecoder("utf-8").decode(htmlBytes);
     const $ = cheerio.load(html);
     
     // Extract title
@@ -513,4 +555,3 @@ export async function extractTextFromUrl(
     clearTimeout(timeout);
   }
 }
-

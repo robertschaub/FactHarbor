@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using FactHarbor.Api.Services;
+using FactHarbor.Api.Helpers;
 
 namespace FactHarbor.Api.Controllers;
 
@@ -31,14 +32,6 @@ public sealed class SystemHealthController : ControllerBase
         return baseUrl;
     }
 
-    private bool IsAdminAuthorized()
-    {
-        var expected = _cfg["Admin:Key"];
-        if (string.IsNullOrWhiteSpace(expected)) return false;
-        var got = Request.Headers["X-Admin-Key"].ToString();
-        return got == expected;
-    }
-
     /// <summary>
     /// GET /v1/system/health — public endpoint returning current system health state.
     /// </summary>
@@ -65,7 +58,7 @@ public sealed class SystemHealthController : ControllerBase
     [HttpPost("resume")]
     public async Task<IActionResult> Resume()
     {
-        if (!IsAdminAuthorized())
+        if (!AuthHelper.IsAdminKeyValid(Request))
             return Unauthorized(new { ok = false, error = "Admin key required" });
 
         try
@@ -104,7 +97,7 @@ public sealed class SystemHealthController : ControllerBase
     [HttpPost("pause")]
     public async Task<IActionResult> Pause([FromBody] PauseRequest? req)
     {
-        if (!IsAdminAuthorized())
+        if (!AuthHelper.IsAdminKeyValid(Request))
             return Unauthorized(new { ok = false, error = "Admin key required" });
 
         try

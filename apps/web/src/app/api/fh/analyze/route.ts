@@ -39,10 +39,12 @@ export async function POST(req: Request) {
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/analyze`;
 
+  const forwardedBody = JSON.stringify(parsedBody);
+
   const res = await fetch(upstreamUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body,
+    body: forwardedBody,
   });
 
   const text = await res.text();

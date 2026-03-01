@@ -1,12 +1,63 @@
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// CORS allowlist: localhost web app for development + optional configured origin(s) for pre-release.
+var corsOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "http://localhost:3000"
+};
+var configuredCorsOrigins = Environment.GetEnvironmentVariable("FH_CORS_ORIGIN");
+if (!string.IsNullOrWhiteSpace(configuredCorsOrigins))
+{
+    foreach (var origin in configuredCorsOrigins.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        if (Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            corsOrigins.Add(uri.GetLeftPart(UriPartial.Authority));
+        }
+    }
+}
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FactHarborCors", policy =>
+        policy.WithOrigins(corsOrigins.ToArray())
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            "{\"error\":\"Rate limit exceeded: max 5 analyze requests per minute per IP\"}",
+            token);
+    };
+
+    options.AddPolicy("AnalyzePerIp", httpContext =>
+    {
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = true
+        });
+    });
+});
 
 var provider = builder.Configuration["Db:Provider"]?.ToLowerInvariant() ?? "sqlite";
 builder.Services.AddDbContext<FhDbContext>(opt =>
@@ -58,8 +109,14 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors("FactHarborCors");
+app.UseRateLimiter();
 
 // Root route: redirect to Swagger in dev, return API info in prod
 app.MapGet("/", () =>

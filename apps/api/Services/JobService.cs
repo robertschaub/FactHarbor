@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FactHarbor.Api.Data;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace FactHarbor.Api.Services;
@@ -7,8 +8,13 @@ namespace FactHarbor.Api.Services;
 public sealed class JobService
 {
     private readonly FhDbContext _db;
+    private readonly ILogger<JobService> _log;
 
-    public JobService(FhDbContext db) { _db = db; }
+    public JobService(FhDbContext db, ILogger<JobService> log)
+    {
+        _db = db;
+        _log = log;
+    }
 
     public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "orchestrated", string? inviteCode = null)
     {
@@ -175,47 +181,84 @@ public sealed class JobService
     /// IsolationLevel.Serializable maps to BEGIN IMMEDIATE in Microsoft.Data.Sqlite,
     /// which blocks concurrent writers for the duration of the transaction.
     /// </summary>
-    public async Task<(bool claimed, string? error)> TryClaimInviteSlotAsync(string? code)
+    public async Task<(bool claimed, string? error, bool contentionExhausted)> TryClaimInviteSlotAsync(string? code)
     {
-        if (string.IsNullOrWhiteSpace(code)) return (false, "Invite code required");
+        if (string.IsNullOrWhiteSpace(code)) return (false, "Invite code required", false);
 
-        using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
-        try
+        const int maxRetries = 3;
+        var backoffMs = new[] { 50, 100, 200 };
+
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
         {
-            var invite = await _db.InviteCodes.FindAsync(code);
-            if (invite == null)    { await tx.RollbackAsync(); return (false, "Invalid invite code"); }
-            if (!invite.IsActive)  { await tx.RollbackAsync(); return (false, "Invite code is disabled"); }
-            if (invite.ExpiresUtc.HasValue && invite.ExpiresUtc.Value < DateTime.UtcNow)
-                { await tx.RollbackAsync(); return (false, "Invite code has expired"); }
-            if (invite.UsedJobs >= invite.MaxJobs)
-                { await tx.RollbackAsync(); return (false, $"Lifetime limit reached ({invite.MaxJobs} total)"); }
-
-            var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
-            if (invite.DailyLimit > 0)
+            try
             {
-                var usage = await _db.InviteCodeUsage.FindAsync(code, today);
-                if (usage != null && usage.UsageCount >= invite.DailyLimit)
-                    { await tx.RollbackAsync(); return (false, $"Daily limit reached ({invite.DailyLimit}/day)"); }
+                using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+                try
+                {
+                    var invite = await _db.InviteCodes.FindAsync(code);
+                    if (invite == null)    { await tx.RollbackAsync(); return (false, "Invalid invite code", false); }
+                    if (!invite.IsActive)  { await tx.RollbackAsync(); return (false, "Invite code is disabled", false); }
+                    if (invite.ExpiresUtc.HasValue && invite.ExpiresUtc.Value < DateTime.UtcNow)
+                        { await tx.RollbackAsync(); return (false, "Invite code has expired", false); }
+                    if (invite.UsedJobs >= invite.MaxJobs)
+                        { await tx.RollbackAsync(); return (false, $"Lifetime limit reached ({invite.MaxJobs} total)", false); }
+
+                    var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+                    if (invite.DailyLimit > 0)
+                    {
+                        var usage = await _db.InviteCodeUsage.FindAsync(code, today);
+                        if (usage != null && usage.UsageCount >= invite.DailyLimit)
+                            { await tx.RollbackAsync(); return (false, $"Daily limit reached ({invite.DailyLimit}/day)", false); }
+                    }
+
+                    // All checks passed — apply increments.
+                    invite.UsedJobs++;
+
+                    if (invite.DailyLimit > 0)
+                    {
+                        var usage = await _db.InviteCodeUsage.FindAsync(code, today);
+                        if (usage == null)
+                            _db.InviteCodeUsage.Add(new InviteCodeUsageEntity
+                                { InviteCode = code, Date = today, UsageCount = 1 });
+                        else
+                            usage.UsageCount++;
+                    }
+
+                    await _db.SaveChangesAsync();
+                    await tx.CommitAsync();
+                    return (true, null, false);
+                }
+                catch
+                {
+                    await tx.RollbackAsync();
+                    throw;
+                }
             }
-
-            // All checks passed — apply increments
-            invite.UsedJobs++;
-
-            if (invite.DailyLimit > 0)
+            catch (SqliteException ex) when (ex.SqliteErrorCode == 5)
             {
-                var usage = await _db.InviteCodeUsage.FindAsync(code, today);
-                if (usage == null)
-                    _db.InviteCodeUsage.Add(new InviteCodeUsageEntity
-                        { InviteCode = code, Date = today, UsageCount = 1 });
-                else
-                    usage.UsageCount++;
-            }
+                if (attempt == maxRetries)
+                {
+                    _log.LogError(
+                        ex,
+                        "Invite slot claim failed after {Retries} retries due to SQLite contention. Code={InviteCode}",
+                        maxRetries,
+                        code);
+                    return (false, "Service temporarily unavailable due to database contention. Please retry.", true);
+                }
 
-            await _db.SaveChangesAsync();
-            await tx.CommitAsync();
-            return (true, null);
+                var delay = backoffMs[attempt];
+                _log.LogWarning(
+                    ex,
+                    "SQLite contention while claiming invite slot. Attempt={Attempt}/{MaxRetries}, DelayMs={DelayMs}, Code={InviteCode}",
+                    attempt + 1,
+                    maxRetries,
+                    delay,
+                    code);
+                await Task.Delay(delay);
+            }
         }
-        catch { await tx.RollbackAsync(); throw; }
+
+        return (false, "Service temporarily unavailable due to database contention. Please retry.", true);
     }
 
     /// <summary>

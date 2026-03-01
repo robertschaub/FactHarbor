@@ -1,5 +1,6 @@
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 
 namespace FactHarbor.Api.Controllers;
@@ -90,6 +91,8 @@ public sealed class AnalyzeController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("AnalyzePerIp")]
+    [RequestSizeLimit(65_536)]
     public async Task<ActionResult<CreateJobResponse>> Create([FromBody] CreateJobRequest req, CancellationToken ct)
     {
         // 0. Structural input validation (scheme, length, control chars)
@@ -97,8 +100,13 @@ public sealed class AnalyzeController : ControllerBase
         if (!inputValid) return BadRequest(new { error = inputError });
 
         // 1. Atomically validate and claim one invite slot
-        var (claimed, error) = await _jobs.TryClaimInviteSlotAsync(req.inviteCode);
-        if (!claimed) return BadRequest(new { error });
+        var (claimed, error, contentionExhausted) = await _jobs.TryClaimInviteSlotAsync(req.inviteCode);
+        if (!claimed)
+        {
+            if (contentionExhausted)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error });
+            return BadRequest(new { error });
+        }
 
         // 2. Create Job
         var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "orchestrated", req.inviteCode);

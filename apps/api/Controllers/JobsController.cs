@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FactHarbor.Api.Data;
+using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -101,6 +102,9 @@ public sealed class JobsController : ControllerBase
     [HttpPost("{jobId}/cancel")]
     public async Task<IActionResult> CancelJob(string jobId)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         var job = await _jobs.CancelJobAsync(jobId);
         if (job is null) return NotFound();
 
@@ -124,6 +128,9 @@ public sealed class JobsController : ControllerBase
     [HttpPost("{jobId}/retry")]
     public async Task<IActionResult> RetryJob(string jobId, [FromBody] RetryJobRequest? req)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         var originalJob = await _jobs.GetJobAsync(jobId);
         if (originalJob is null)
             return NotFound(new { error = "Job not found" });
@@ -154,6 +161,16 @@ public sealed class JobsController : ControllerBase
 
         try
         {
+            // Retry jobs also consume invite quota, same as first-run submissions.
+            var (claimed, claimError, contentionExhausted) =
+                await _jobs.TryClaimInviteSlotAsync(originalJob.InviteCode);
+            if (!claimed)
+            {
+                if (contentionExhausted)
+                    return StatusCode(503, new { error = claimError });
+                return BadRequest(new { error = claimError });
+            }
+
             var retryJob = await _jobs.CreateRetryJobAsync(jobId, newPipelineVariant, retryReason);
 
             // Trigger runner (same pattern as AnalyzeController.Create)

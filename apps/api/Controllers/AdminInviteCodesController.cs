@@ -1,4 +1,5 @@
 using FactHarbor.Api.Data;
+using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,25 +18,17 @@ public sealed record CreateInviteCodeRequest(
 public sealed class AdminInviteCodesController : ControllerBase
 {
     private readonly JobService _jobs;
-    private readonly IConfiguration _cfg;
 
-    public AdminInviteCodesController(JobService jobs, IConfiguration cfg)
+    public AdminInviteCodesController(JobService jobs)
     {
         _jobs = jobs;
-        _cfg = cfg;
-    }
-
-    private bool IsAuthorized()
-    {
-        var expected = _cfg["Admin:Key"];
-        var got = Request.Headers["X-Admin-Key"].ToString();
-        return !string.IsNullOrWhiteSpace(expected) && got == expected;
     }
 
     [HttpGet]
     public async Task<IActionResult> List()
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
         var list = await _jobs.ListInviteCodesAsync();
         return Ok(list);
     }
@@ -43,31 +36,58 @@ public sealed class AdminInviteCodesController : ControllerBase
     [HttpGet("{code}")]
     public async Task<IActionResult> Get(string code)
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
         var invite = await _jobs.GetInviteCodeAsync(code);
-        if (invite == null) return NotFound();
+        if (invite == null) return NotFound(new { error = "Invite code not found" });
         return Ok(invite);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateInviteCodeRequest req)
     {
-        if (!IsAuthorized()) return Unauthorized();
-        
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         if (string.IsNullOrWhiteSpace(req.code))
             return BadRequest(new { error = "Code is required" });
 
-        var existing = await _jobs.GetInviteCodeAsync(req.code);
+        var normalizedCode = req.code.Trim();
+
+        if (normalizedCode.Length > 64)
+            return BadRequest(new { error = "Code must be 64 characters or fewer" });
+
+        if (req.maxJobs < 1)
+            return BadRequest(new { error = "MaxJobs must be at least 1" });
+
+        if (req.dailyLimit < 0)
+            return BadRequest(new { error = "DailyLimit must be greater than or equal to 0" });
+
+        DateTime? normalizedExpiresUtc = null;
+        if (req.expiresUtc.HasValue)
+        {
+            normalizedExpiresUtc = req.expiresUtc.Value.Kind switch
+            {
+                DateTimeKind.Utc => req.expiresUtc.Value,
+                DateTimeKind.Local => req.expiresUtc.Value.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(req.expiresUtc.Value, DateTimeKind.Utc)
+            };
+
+            if (normalizedExpiresUtc.Value <= DateTime.UtcNow)
+                return BadRequest(new { error = "ExpiresUtc must be in the future" });
+        }
+
+        var existing = await _jobs.GetInviteCodeAsync(normalizedCode);
         if (existing != null)
             return Conflict(new { error = "Invite code already exists" });
 
         var invite = new InviteCodeEntity
         {
-            Code = req.code,
+            Code = normalizedCode,
             Description = req.description,
             MaxJobs = req.maxJobs,
             DailyLimit = req.dailyLimit,
-            ExpiresUtc = req.expiresUtc,
+            ExpiresUtc = normalizedExpiresUtc,
             IsActive = true,
             CreatedUtc = DateTime.UtcNow
         };
@@ -79,18 +99,20 @@ public sealed class AdminInviteCodesController : ControllerBase
     [HttpDelete("{code}")]
     public async Task<IActionResult> Deactivate(string code)
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
         var deactivated = await _jobs.DeactivateInviteCodeAsync(code);
-        if (!deactivated) return NotFound();
+        if (!deactivated) return NotFound(new { error = "Invite code not found" });
         return Ok(new { ok = true, message = "Code deactivated" });
     }
 
     [HttpDelete("{code}/hard")]
     public async Task<IActionResult> Delete(string code)
     {
-        if (!IsAuthorized()) return Unauthorized();
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
         var deleted = await _jobs.DeleteInviteCodeAsync(code);
-        if (!deleted) return NotFound();
+        if (!deleted) return NotFound(new { error = "Invite code not found" });
         return Ok(new { ok = true, message = "Code deleted" });
     }
 }
