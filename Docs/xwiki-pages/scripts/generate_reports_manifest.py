@@ -62,18 +62,33 @@ def _extract_verdict_badge(html: str) -> Optional[str]:
 
 def _extract_meter_values(html: str) -> tuple[Optional[int], Optional[int]]:
     """Extract truth% and confidence% from meter-value divs.
-    First meter-value in .meter (not .meter-conf) = truth.
-    meter-value in .meter-conf = confidence.
+    Meters show display values: 'X% true/false' then 'Y% sure'.
+    If the label is 'false', convert to raw truth% (100 - value)
+    so the manifest always stores raw truth percentage.
     """
     truth = None
     confidence = None
 
-    # All meter-value occurrences (skip CSS definitions by looking for > before the value)
-    meter_vals = re.findall(r'class="meter-value[^"]*"[^>]*>(\d+)%<', html)
-    if len(meter_vals) >= 1:
-        truth = int(meter_vals[0])
-    if len(meter_vals) >= 2:
-        confidence = int(meter_vals[1])
+    # Extract meter value + following label pairs
+    pairs = re.findall(
+        r'class="meter-value[^"]*"[^>]*>(\d+)%<[^<]*<div class="meter-label">([^<]+)<',
+        html
+    )
+    for val_str, label in pairs:
+        val = int(val_str)
+        label = label.strip().lower()
+        if label in ('true', 'false') and truth is None:
+            truth = val if label == 'true' else 100 - val
+        elif label == 'sure' and confidence is None:
+            confidence = val
+
+    # Fallback: raw meter-value extraction if no labels found
+    if truth is None and confidence is None:
+        meter_vals = re.findall(r'class="meter-value[^"]*"[^>]*>(\d+)%<', html)
+        if len(meter_vals) >= 1:
+            truth = int(meter_vals[0])
+        if len(meter_vals) >= 2:
+            confidence = int(meter_vals[1])
 
     return truth, confidence
 
