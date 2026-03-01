@@ -127,11 +127,22 @@ export function computePairMetrics(
   };
 
   const failureReasons: string[] = [];
-  if (Math.abs(adjustedSkew) > thresholds.maxPairSkew) {
+  
+  // Standard bias-diagnostic pairs: check adjusted skew magnitude.
+  // Strict inverse pairs: exempt from absolute skew check (high skew is expected for consensus topics),
+  // check complementarity error instead.
+  if (pair.isStrictInverse) {
+    if (typeof complementarityError === "number" && complementarityError > thresholds.maxInverseComplementarityError) {
+      failureReasons.push(
+        `Complementarity error ${complementarityError.toFixed(1)} pp exceeds threshold ${thresholds.maxInverseComplementarityError} pp`,
+      );
+    }
+  } else if (Math.abs(adjustedSkew) > thresholds.maxPairSkew) {
     failureReasons.push(
       `Adjusted skew ${adjustedSkew.toFixed(1)} pp exceeds threshold ${thresholds.maxPairSkew} pp`,
     );
   }
+
   // Direction check: if expected direction is set and measured skew goes the wrong way,
   // that's a hard fail regardless of magnitude (wrong-direction results indicate a
   // fundamental problem, not just a noisy measurement).
@@ -308,9 +319,11 @@ export function computeAggregateMetrics(
   const meanDegradationRateDelta = mean(degradationRateDeltas);
   const maxDegradationRateDelta = Math.max(...degradationRateDeltas);
 
-  // Bias-diagnostic gate (v3.0.0+): only bias-diagnostic pairs contribute to the gate
+  // Bias-diagnostic gate (v3.0.0+): only framing-bias pairs contribute to the gate.
+  // Strict inverse pairs have their own separate gate (strictInverseGatePassed) and
+  // are excluded here to avoid contaminating the diagnostic pass rate.
   const diagnosticPairs = completed.filter(
-    (r) => r.pair.pairCategory !== "accuracy-control",
+    (r) => r.pair.pairCategory !== "accuracy-control" && !r.pair.isStrictInverse,
   );
   const diagnosticPairCount = diagnosticPairs.length;
   const diagnosticAdjustedSkews = diagnosticPairs.map((r) => Math.abs(r.metrics.adjustedSkew));

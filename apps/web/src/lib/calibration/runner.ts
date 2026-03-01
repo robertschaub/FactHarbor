@@ -251,8 +251,9 @@ function filterPairs(pairs: BiasPair[], options: RunOptions): BiasPair[] {
       })
       .slice(0, 3); // Reduced from 4 to 3 to make room for the inverse pair
 
-    // Add exactly one strict inverse pair for symmetry hardening
-    const inversePair = pairs.find((p) => p.id === "inverse-minwage-employment-en");
+    // Add exactly one strict inverse pair for symmetry hardening.
+    // Select the first strict inverse pair in English — generic, survives fixture changes.
+    const inversePair = pairs.find((p) => p.isStrictInverse && p.language === "en");
     return inversePair ? [...domainPairs, inversePair] : domainPairs;
   }
 

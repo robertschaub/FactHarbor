@@ -10,6 +10,7 @@ public sealed class FhDbContext : DbContext
     public DbSet<JobEventEntity> JobEvents => Set<JobEventEntity>();
     public DbSet<Models.AnalysisMetrics> AnalysisMetrics => Set<Models.AnalysisMetrics>();
     public DbSet<InviteCodeEntity> InviteCodes => Set<InviteCodeEntity>();
+    public DbSet<InviteCodeUsageEntity> InviteCodeUsage => Set<InviteCodeUsageEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,6 +18,19 @@ public sealed class FhDbContext : DbContext
         {
             e.HasKey(x => x.Code);
             e.Property(x => x.Code).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<InviteCodeUsageEntity>(e =>
+        {
+            e.HasKey(x => new { x.InviteCode, x.Date });
+            e.HasIndex(x => x.InviteCode);
+            // SQLite has no native Date type — store as "yyyy-MM-dd" string.
+            // ParseExact + SpecifyKind(Utc) prevents timezone drift on non-UTC hosts.
+            e.Property(x => x.Date).HasConversion(
+                v => v.ToString("yyyy-MM-dd"),
+                v => DateTime.SpecifyKind(
+                    DateTime.ParseExact(v, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    DateTimeKind.Utc));
         });
 
         modelBuilder.Entity<JobEntity>(e =>

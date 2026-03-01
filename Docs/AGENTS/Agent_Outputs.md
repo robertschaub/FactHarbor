@@ -2,6 +2,42 @@
 
 
 ---
+### 2026-03-01 | Senior Developer | Claude Code (Sonnet 4.6) | Invite Code Access Control — Full Implementation
+**Task:** Implement the approved invite code access control plan (12 files, 6 steps): daily+lifetime quotas, atomic slot-claim, job search, privacy fixes, calibration code-quality fixes.
+**Files touched:**
+- `apps/api/Data/InviteCodeEntity.cs` — added `DailyLimit` field
+- `apps/api/Data/InviteCodeUsageEntity.cs` — new file (composite PK on InviteCode+Date)
+- `apps/api/Data/FhDbContext.cs` — InviteCodeUsage DbSet + EF model config with date converter
+- `apps/api/Program.cs` — DailyLimit=2 in seed
+- `apps/api/Services/JobService.cs` — replaced validate+increment with `TryClaimInviteSlotAsync` (Serializable tx), added `SearchJobsAsync`, added InviteCode propagation to retry jobs
+- `apps/api/Controllers/AnalyzeController.cs` — use `TryClaimInviteSlotAsync` (atomic)
+- `apps/api/Controllers/JobsController.cs` — add `?q=` search, remove inviteCode from List and Get
+- `apps/web/src/app/api/fh/jobs/route.ts` — forward `q` param to backend
+- `apps/web/src/app/jobs/page.tsx` — search bar + 400ms debounce + search empty state
+- `apps/web/src/app/jobs/page.module.css` — search bar styles
+- `apps/web/src/app/analyze/page.tsx` — fix button guard to also check `!inviteCode.trim()`
+- `apps/web/src/lib/calibration/runner.ts` — replace hardcoded fixture ID with generic selector
+- `apps/web/test/calibration/framing-symmetry.test.ts` — UCM-aware gate assertion (quick mode)
+- `apps/web/src/lib/calibration/metrics.ts` — bug fix: exclude strict inverse pairs from `diagnosticPairs` filter (they have their own gate)
+
+**Key decisions:**
+- `IsolationLevel.Serializable` maps to BEGIN IMMEDIATE in Microsoft.Data.Sqlite — blocks concurrent writers atomically.
+- Date stored as "yyyy-MM-dd" string in SQLite; read with `ParseExact` + `SpecifyKind(Utc)` to prevent timezone drift.
+- `inviteCode` removed from BOTH List and Get public responses (no display value for users; access-control data).
+- `diagnosticPairs` filter now excludes `isStrictInverse` pairs — they have their own `strictInverseGatePassed` gate and were contaminating the diagnostic pass rate. This fixed a pre-existing unit test failure.
+
+**Open items:**
+- DB reset required before running API: delete `apps/api/factharbor.db` and restart (EnsureCreated() won't alter existing schema).
+- Admin UI for invite code management (deferred).
+
+**Warnings:**
+- DB reset is a MANUAL step — the agent output cannot delete the database.
+- `TryClaimInviteSlotAsync` re-calls `FindAsync` for `InviteCodeUsage` twice (check + write) within the same transaction. This is safe since the serializable tx holds the lock, but could be optimized to a single FindAsync with the result cached.
+- The `diagnosticPairs` bug fix was in uncommitted `metrics.ts` from a previous session (Task 3 work) — verify the fix is correct by reviewing the three gate-mode tests in `calibration-metrics.test.ts`.
+
+**For next agent:** All 1113 tests pass. `dotnet build` compiles (file-lock error is from running process, not a compile error). Next.js build clean. DB reset + API restart needed for schema changes to take effect.
+
+---
 ### 2026-02-27 | Lead Architect | Claude Code (Opus 4.6) | Inverse Claim Asymmetry — Full Lifecycle (Phase 0–2 + Root-Cause Analysis)
 **Task:** Architect and shepherd the Inverse Claim Asymmetry Plan from problem diagnosis through Phase 2 completion, including delta review, Phase 2 architecture plan, implementation oversight, post-implementation root-cause analysis of the motivating German pair, and policy activation recommendation.
 **Files touched:** `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md` (3 major updates), `Docs/AGENTS/Agent_Outputs.md` (this entry), `Docs/AGENTS/Role_Learnings.md` (new entries).
@@ -2534,3 +2570,67 @@ See detailed handoff: `Docs/AGENTS/Handoffs/2026-02-22_Lead_Developer_B4_Query_S
 **For next agent:**
 - If Phase 2 starts, use calibration/audit-only scope per Captain decision; no runtime cross-job mutation.
 **Learnings:** no
+---
+### 2026-02-28 | Senior Developer | Codex (GPT-5) | Review: Invite Code & Access Control Implementation Plan
+**Task:** Review `Docs/WIP/2026-02-28_Invite_Code_Implementation_Plan.md` for approval readiness before implementation.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:**
+- Reviewed plan against current `apps/api` and `apps/web` implementation state.
+- Identified blocker-level concerns on invite-code exposure and quota-claim atomicity details.
+- Did not approve implementation start pending plan corrections.
+**Open items:**
+- Resolve public invite-code leakage path in single-job response exposure model.
+- Strengthen claim-slot logic to be truly race-safe under concurrent submissions.
+- Fix date conversion strategy to avoid timezone/date drift risk for daily usage keys.
+**Warnings:**
+- Current proposed `DateTime.Parse(... AssumeUniversal)` converter can produce local-time shifted values depending on host timezone.
+- Transaction wrapper alone does not guarantee quota correctness with read-check-write patterns.
+**For next agent:**
+- Update the WIP plan with concrete fixes for the three review findings, then re-run Senior Developer review before coding.
+**Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-02-28 | Senior Developer | Codex (GPT-5) | Re-Review: Invite Code & Access Control Plan (HIGH fixes)
+**Task:** Re-review `Docs/WIP/2026-02-28_Invite_Code_Implementation_Plan.md` after claimed closure of 3 HIGH findings.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:**
+- Confirmed invite code exposure fix is now specified for both list and single-job public responses.
+- Confirmed timezone-safe Date converter approach now uses `ParseExact` + `SpecifyKind(Utc)` and UTC date write normalization.
+- Confirmed atomic slot-claim design upgraded to explicit serializable transaction.
+- Noted one non-blocking correction: Microsoft.Data.Sqlite `Serializable` uses `BEGIN IMMEDIATE`, not `BEGIN EXCLUSIVE`.
+**Open items:**
+- Optional doc wording correction for SQLite lock mode description in Step 2b comment.
+**Warnings:**
+- Under sustained concurrent writes, blocked writers can still hit `SQLITE_BUSY` after timeout unless handled explicitly.
+**For next agent:**
+- Proceed with implementation; optionally adjust Step 2b comment to reflect provider-accurate lock statement.
+**Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Created Limited Public Pre-Release Readiness Plan
+**Task:** Create a review-ready .md plan for limited public pre-release hardening and launch gates.
+**Files touched:** Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md, Docs/AGENTS/Agent_Outputs.md.
+**Key decisions:**
+- Defined P0 launch-gate scope around SSRF hardening, admin auth sweep, rate limiting/quotas, SQLite contention handling, invite-code privacy guard, and release smoke gates.
+- Kept architecture intentionally minimal for current single-instance SQLite pre-release assumptions.
+- Explicitly marked costly calibration runs as opt-in, aligned with repo test-cost policy.
+**Open items:**
+- Captain decisions required for throttling defaults, contention retry policy, and status-code policy.
+**Warnings:**
+- Plan assumes controlled limited launch (single-instance topology).
+**For next agent:**
+- Run review on the new WIP plan; once approved, execute P0 steps in order and validate acceptance criteria before opening public pre-release.
+**Learnings:** Appended to Role_Learnings.md? No.
+---
+### 2026-03-01 | Senior Developer | Codex (GPT-5) | Reformatted Pre-Release Plan to Implementation-Plan Style
+**Task:** Second-pass rewrite of 2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md to match repository implementation-plan style used by invite-code plan.
+**Files touched:** Docs/WIP/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md, Docs/AGENTS/Agent_Outputs.md.
+**Key decisions:**
+- Added Based on metadata and step-wise implementation layout (Step 0 through Step 6).
+- Added Planned Files mapping table, deferred section, explicit captain decisions, and numbered verification gates.
+- Kept scope aligned to limited pre-release (no production-architecture expansion).
+**Open items:**
+- Captain decisions on throttling defaults, contention retry budget, and status-code policy remain pending.
+**Warnings:**
+- Plan assumes single-instance SQLite operating model for launch.
+**For next agent:**
+- Use this plan as review baseline; upon approval, implement in step order and validate smoke gates.
+**Learnings:** Appended to Role_Learnings.md? No.

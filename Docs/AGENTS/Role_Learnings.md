@@ -78,6 +78,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** After Phase 2 implementation, the German motivating pair still showed CE=34pp — seemingly poor improvement. Root-cause analysis of actual job results revealed 3 compounding factors (asymmetric claim decomposition, silent integrity failures, source fetch degradation). The fix was not threshold tuning or new code — it was enabling the already-implemented Phase 1 policies (which shipped as `disabled` for backward compatibility). One config change (commit 8e4a0d0) was predicted to reduce CE from 34pp to ~7pp. Lesson: when metrics don't improve after a feature lands, investigate the actual data before adding more features. The gap is often operational (config, deployment) not architectural.
 **Files:** `apps/web/configs/pipeline.default.json`, `Docs/WIP/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`
 
+### 2026-02-28 — Strict inverse pairs must be gated on CE, not absolute skew
+**Role:** Lead Architect  **Agent/Tool:** Gemini CLI (pro)
+**Category:** gotcha
+**Learning:** Strict inverse pairs (`isStrictInverse: true`) must be exempt from standard absolute skew thresholds. For these pairs, high skew is expected if the topic has a strong evidence consensus (e.g., GMO safety where L=10% and R=75% results in -65pp skew). Gating them on skew produces false positives; they should instead be gated on Complementarity Error (CE), which measures system consistency regardless of topic balance.
+**Files:** `apps/web/src/lib/calibration/metrics.ts`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas
@@ -141,6 +147,12 @@ After completing a task, if you discovered something that would help future agen
 **Category:** useful-pattern
 **Learning:** Creating a `GEMINI.md` file that references the project's central `AGENTS.md` ensures that the agent prioritizes project-specific engineering standards over its general system defaults from the start of every session. This "thin pointer" pattern maintains a single source of truth while providing tool-specific entry points.
 **Files:** `GEMINI.md`, `AGENTS.md`
+
+### 2026-02-28 — Use IsolationLevel.Serializable for atomic check-and-increment in SQLite
+**Role:** Senior Developer  **Agent/Tool:** Gemini CLI (pro)
+**Category:** useful-pattern
+**Learning:** In `Microsoft.Data.Sqlite`, `IsolationLevel.Serializable` is the only level that maps to `BEGIN IMMEDIATE`. This is critical for atomic check-and-increment operations (like claiming an invite slot or decrementing a quota). A standard `BEGIN` (Deferred) only acquires a read lock; a second concurrent transaction can also read the same state before either tries to write. Using `Serializable` ensures the first transaction acquires a reserved write lock immediately, blocking other writers and preventing race conditions on quota limits.
+**Files:** `apps/api/Services/JobService.cs` (`TryClaimInviteSlotAsync`)
 
 ## Technical Writer
 

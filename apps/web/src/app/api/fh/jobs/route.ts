@@ -17,13 +17,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Extract pagination parameters from query string
+    // Extract pagination and search parameters from query string
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
     const pageSize = searchParams.get("pageSize") || "50";
+    const q = searchParams.get("q");
 
-    // Forward pagination params to backend API
-    const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?page=${page}&pageSize=${pageSize}`;
+    // Forward params to backend API
+    const upstreamParams = new URLSearchParams({ page, pageSize });
+    if (q) upstreamParams.set("q", q);
+    const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?${upstreamParams}`;
     const res = await fetch(upstreamUrl, { method: "GET", cache: "no-store" });
     const text = await res.text();
     return new NextResponse(text, {

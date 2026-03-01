@@ -47,6 +47,17 @@ export default function JobsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // Debounce search input — reset to page 1 after 400ms of no typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -55,6 +66,7 @@ export default function JobsPage() {
           page: currentPage.toString(),
           pageSize: pageSize.toString()
         });
+        if (debouncedQuery) params.set("q", debouncedQuery);
         const res = await fetch(`/api/fh/jobs?${params}`, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`Failed to load jobs: ${res.status}`);
@@ -77,7 +89,7 @@ export default function JobsPage() {
     // Refresh current page every 5 seconds
     const interval = setInterval(loadJobs, 5000);
     return () => clearInterval(interval);
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, debouncedQuery]);
 
   // Reset to page 1 when page size changes
   const handlePageSizeChange = (newSize: number) => {
@@ -165,6 +177,17 @@ export default function JobsPage() {
         </Link>
       </div>
 
+      <div className={styles.searchBar}>
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search jobs..."
+          className={styles.searchInput}
+          aria-label="Search jobs"
+        />
+      </div>
+
       {error && (
         <div className={styles.errorBox}>
           <strong>Error:</strong> {error}
@@ -178,11 +201,20 @@ export default function JobsPage() {
       ) : jobs.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>📭</div>
-          <h3 className={styles.emptyTitle}>No analysis jobs yet</h3>
-          <p className={styles.emptyText}>Start your first verification analysis</p>
-          <Link href="/analyze" className={styles.emptyButton}>
-            Start Analysis
-          </Link>
+          {debouncedQuery ? (
+            <>
+              <h3 className={styles.emptyTitle}>No results for &ldquo;{debouncedQuery}&rdquo;</h3>
+              <p className={styles.emptyText}>Try a different search term</p>
+            </>
+          ) : (
+            <>
+              <h3 className={styles.emptyTitle}>No analysis jobs yet</h3>
+              <p className={styles.emptyText}>Start your first verification analysis</p>
+              <Link href="/analyze" className={styles.emptyButton}>
+                Start Analysis
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div className={styles.jobsList}>

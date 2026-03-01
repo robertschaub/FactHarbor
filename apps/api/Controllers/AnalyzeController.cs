@@ -33,14 +33,11 @@ public sealed class AnalyzeController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CreateJobResponse>> Create([FromBody] CreateJobRequest req, CancellationToken ct)
     {
-        // 1. Validate Invite Code
-        var (isValid, error) = await _jobs.ValidateInviteCodeAsync(req.inviteCode);
-        if (!isValid) return BadRequest(new { error });
+        // 1. Atomically validate and claim one invite slot
+        var (claimed, error) = await _jobs.TryClaimInviteSlotAsync(req.inviteCode);
+        if (!claimed) return BadRequest(new { error });
 
-        // 2. Increment Usage
-        await _jobs.IncrementInviteUsageAsync(req.inviteCode!);
-
-        // 3. Create Job
+        // 2. Create Job
         var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "orchestrated", req.inviteCode);
 
         // If we have scope factory + logger, do best-effort async trigger (POC-friendly).

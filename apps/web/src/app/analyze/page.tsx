@@ -235,8 +235,8 @@ export default function AnalyzePage() {
         <div className={styles.buttonContainer}>
           <button
             type="submit"
-            disabled={isSubmitting || !hasInput}
-            className={`${styles.submitButton} ${isSubmitting || !hasInput ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
+            disabled={isSubmitting || !hasInput || !inviteCode.trim()}
+            className={`${styles.submitButton} ${isSubmitting || !hasInput || !inviteCode.trim() ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
           >
             {isSubmitting ? (
               <>⏳ Starting Analysis...</>

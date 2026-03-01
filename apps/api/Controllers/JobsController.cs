@@ -24,14 +24,24 @@ public sealed class JobsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List(int? page = null, int? pageSize = null)
+    public async Task<IActionResult> List(int? page = null, int? pageSize = null, string? q = null)
     {
         // Default to page 1, pageSize 50 if not provided
         var actualPage = page ?? 1;
         var actualPageSize = pageSize ?? 50;
 
-        var totalCount = await _db.Jobs.CountAsync();
-        var items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize);
+        int totalCount;
+        List<JobEntity> items;
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            (items, totalCount) = await _jobs.SearchJobsAsync(q, (actualPage - 1) * actualPageSize, actualPageSize);
+        }
+        else
+        {
+            totalCount = await _db.Jobs.CountAsync();
+            items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize);
+        }
 
         return Ok(new
         {
@@ -44,7 +54,6 @@ public sealed class JobsController : ControllerBase
                 updatedUtc = j.UpdatedUtc.ToString("o"),
                 inputType = j.InputType,
                 inputPreview = j.InputPreview,
-                inviteCode = j.InviteCode,
                 pipelineVariant = j.PipelineVariant,
                 verdictLabel = j.VerdictLabel,
                 truthPercentage = j.TruthPercentage
@@ -81,7 +90,6 @@ public sealed class JobsController : ControllerBase
             inputType = j.InputType,
             inputValue = j.InputValue,
             inputPreview = j.InputPreview,
-            inviteCode = j.InviteCode,
             pipelineVariant = j.PipelineVariant,
             verdictLabel = j.VerdictLabel,
             truthPercentage = j.TruthPercentage,

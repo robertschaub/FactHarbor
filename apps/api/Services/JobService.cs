@@ -152,24 +152,92 @@ public sealed class JobService
     public async Task<(bool isValid, string? error)> ValidateInviteCodeAsync(string? code)
     {
         if (string.IsNullOrWhiteSpace(code)) return (false, "Invite code required");
-
         var invite = await _db.InviteCodes.FirstOrDefaultAsync(x => x.Code == code);
         if (invite == null) return (false, "Invalid invite code");
         if (!invite.IsActive) return (false, "Invite code is disabled");
-        if (invite.ExpiresUtc.HasValue && invite.ExpiresUtc.Value < DateTime.UtcNow) return (false, "Invite code has expired");
-        if (invite.UsedJobs >= invite.MaxJobs) return (false, "Invite code limit reached (max " + invite.MaxJobs + " reports)");
-
+        if (invite.ExpiresUtc.HasValue && invite.ExpiresUtc.Value < DateTime.UtcNow)
+            return (false, "Invite code has expired");
+        if (invite.UsedJobs >= invite.MaxJobs)
+            return (false, $"Invite code lifetime limit reached ({invite.MaxJobs} total)");
+        if (invite.DailyLimit > 0)
+        {
+            var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+            var usage = await _db.InviteCodeUsage
+                .FirstOrDefaultAsync(x => x.InviteCode == code && x.Date == today);
+            if (usage != null && usage.UsageCount >= invite.DailyLimit)
+                return (false, $"Daily limit reached ({invite.DailyLimit} analyses per day)");
+        }
         return (true, null);
     }
 
-    public async Task IncrementInviteUsageAsync(string code)
+    /// <summary>
+    /// Atomically validates the invite code and claims one submission slot.
+    /// IsolationLevel.Serializable maps to BEGIN IMMEDIATE in Microsoft.Data.Sqlite,
+    /// which blocks concurrent writers for the duration of the transaction.
+    /// </summary>
+    public async Task<(bool claimed, string? error)> TryClaimInviteSlotAsync(string? code)
     {
-        var invite = await _db.InviteCodes.FirstOrDefaultAsync(x => x.Code == code);
-        if (invite != null)
+        if (string.IsNullOrWhiteSpace(code)) return (false, "Invite code required");
+
+        using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
         {
+            var invite = await _db.InviteCodes.FindAsync(code);
+            if (invite == null)    { await tx.RollbackAsync(); return (false, "Invalid invite code"); }
+            if (!invite.IsActive)  { await tx.RollbackAsync(); return (false, "Invite code is disabled"); }
+            if (invite.ExpiresUtc.HasValue && invite.ExpiresUtc.Value < DateTime.UtcNow)
+                { await tx.RollbackAsync(); return (false, "Invite code has expired"); }
+            if (invite.UsedJobs >= invite.MaxJobs)
+                { await tx.RollbackAsync(); return (false, $"Lifetime limit reached ({invite.MaxJobs} total)"); }
+
+            var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+            if (invite.DailyLimit > 0)
+            {
+                var usage = await _db.InviteCodeUsage.FindAsync(code, today);
+                if (usage != null && usage.UsageCount >= invite.DailyLimit)
+                    { await tx.RollbackAsync(); return (false, $"Daily limit reached ({invite.DailyLimit}/day)"); }
+            }
+
+            // All checks passed — apply increments
             invite.UsedJobs++;
+
+            if (invite.DailyLimit > 0)
+            {
+                var usage = await _db.InviteCodeUsage.FindAsync(code, today);
+                if (usage == null)
+                    _db.InviteCodeUsage.Add(new InviteCodeUsageEntity
+                        { InviteCode = code, Date = today, UsageCount = 1 });
+                else
+                    usage.UsageCount++;
+            }
+
             await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return (true, null);
         }
+        catch { await tx.RollbackAsync(); throw; }
+    }
+
+    /// <summary>
+    /// Case-insensitive LIKE search across InputValue and InputPreview.
+    /// Acceptable at POC scale (~10k jobs); revisit with FTS5 at larger scale.
+    /// </summary>
+    public async Task<(List<JobEntity> items, int totalCount)> SearchJobsAsync(
+        string query, int skip = 0, int take = 50)
+    {
+        var q = $"%{query.Trim()}%";
+        var baseQuery = _db.Jobs.Where(j =>
+            EF.Functions.Like(j.InputValue, q) ||
+            EF.Functions.Like(j.InputPreview ?? "", q));
+
+        var total = await baseQuery.CountAsync();
+        var items = await baseQuery
+            .OrderByDescending(x => x.CreatedUtc)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+
+        return (items, total);
     }
 
     /// <summary>
@@ -208,6 +276,7 @@ public sealed class JobService
             RetryCount = retryCount,
             RetriedFromUtc = DateTime.UtcNow,
             RetryReason = retryReason,
+            InviteCode = originalJob.InviteCode,  // Preserve for audit trail
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };

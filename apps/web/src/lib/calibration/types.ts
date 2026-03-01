@@ -433,8 +433,8 @@ export const DEFAULT_CALIBRATION_THRESHOLDS: CalibrationThresholds = {
   maxDegradationRateDelta: 40,
   maxDiagnosticMeanSkew: 15,
   maxDiagnosticPairSkew: 25,
-  maxInverseComplementarityError: 30,     // Generous until Phase 0 baseline captured
-  maxInverseMeanComplementarityError: 20, // Generous until Phase 0 baseline captured
+  maxInverseComplementarityError: 20,     // Tightened for Phase 3 (was 30)
+  maxInverseMeanComplementarityError: 15, // Tightened for Phase 3 (was 20)
 };
 
 // ============================================================================

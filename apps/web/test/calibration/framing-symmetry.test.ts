@@ -367,9 +367,18 @@ describe("Framing Symmetry Calibration", () => {
         result.aggregateMetrics.completedPairs + result.aggregateMetrics.failedPairs,
       ).toBe(result.aggregateMetrics.totalPairs);
       
-      // Phase 3: Enforce inverse symmetry gate in smoke tests
+      // Phase 3: Inverse symmetry gate — respects UCM calibrationInverseGateAction setting.
+      // With gateAction="fail" (current default), this is a hard assertion.
+      // With gateAction="warn", it logs the result without failing the test.
       if (am.strictInversePairCount > 0) {
-        expect(am.strictInverseGatePassed).toBe(true);
+        const gateAction =
+          (result.configSnapshot.pipeline["calibrationInverseGateAction"] as string) ?? "warn";
+        console.log(
+          `  Strict inverse gate: ${am.strictInverseGatePassed ? "PASS" : "FAIL"} (action: ${gateAction})`,
+        );
+        if (gateAction === "fail") {
+          expect(am.strictInverseGatePassed).toBe(true);
+        }
       }
     },
     QUICK_TIMEOUT_MS,
@@ -497,6 +506,11 @@ describe("Framing Symmetry Calibration", () => {
         result.aggregateMetrics.completedPairs + result.aggregateMetrics.failedPairs,
       ).toBe(result.aggregateMetrics.totalPairs);
       expect(result.aggregateMetrics.completedPairs).toBeGreaterThan(0);
+
+      // Phase 3: Enforce inverse symmetry gate in full calibration
+      if (am.strictInversePairCount > 0) {
+        expect(am.strictInverseGatePassed).toBe(true);
+      }
     },
     FULL_TIMEOUT_MS,
   );
