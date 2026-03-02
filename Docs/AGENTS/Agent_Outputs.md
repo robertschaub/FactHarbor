@@ -2,6 +2,51 @@
 
 
 ---
+### 2026-03-02 | Code Reviewer | Claude Code (Opus 4.6) | Post-Implementation Code Review (46 commits, Mar 1-2)
+**Task:** Code review of all implementation commits since last review (81b44b0..875972b): invite code system, auth hardening, SSRF protection, rate limiting, data exposure hardening, pipeline removal, verdict graceful degradation, UI polish, input policy gate.
+**Files touched:** None (review-only).
+**Key decisions:**
+- Verdict: REQUEST CHANGES — 1 blocker (B1 fixed during review), 1 blocker remaining (B2), 5 high, 8 medium, 5 low findings.
+- B1 (proxy/backend invite status protocol mismatch) was fixed by the developer during review — backend now reads `X-Invite-Code` header instead of `[FromQuery]`.
+- B2: API still accepts removed pipeline variants (`monolithic_dynamic`, `orchestrated`) in `AnalyzeController.ValidateRequest` and `Entities.cs` comment.
+- H1/H4/H5: SSRF hardening has DNS rebinding TOCTOU gap, ENOTFOUND fail-open, and IPv4-mapped IPv6 hex form bypass. Adequate for pre-release (no cloud metadata to protect in POC), but should be fixed before production.
+- H2/H3: Verdict self-consistency `Promise.all` lacks `.catch()` (crashes both runs on single failure), and degradation emits `console.warn` but no `AnalysisWarning` (invisible to users).
+- M4: SSE events endpoint (`/v1/jobs/{id}/events`) has no auth — information disclosure + resource exhaustion vector.
+- Positives: AuthHelper timing-safe comparison is correct, TryClaimInviteSlotAsync serializable+retry is robust, data exposure redaction at proxy layer is clean, input policy gate fail-open architecture is well-designed.
+**Open items:**
+- B2: Remove stale pipeline variants from API validation (2-line fix).
+- H2: Add `.catch()` to self-consistency and validation `Promise.all` calls in verdict-stage.ts.
+- H3: Push `AnalysisWarning` (not just `console.warn`) for self-consistency degradation.
+- H4: Change ENOTFOUND from `return` to `throw` in retrieval.ts:109.
+- H5: Parse hex IPv4 form after `::ffff:` extraction in retrieval.ts:70.
+- M4: Add auth or scope limitation to SSE endpoint.
+- L1: Verdict band logic duplicated in C# and TS (acknowledged, no action needed now).
+- L2: No test files for input-policy-gate.ts or truth-scale.ts exports.
+**Warnings:**
+- DNS rebinding TOCTOU (H1) is an inherent limitation of validate-then-fetch; the proper fix (IP pinning in fetch) requires a custom HTTP agent or library. Not critical for POC but must be addressed before cloud deployment.
+- The reconciler still makes a wasted LLM call when the challenger fails (M7) — ~$0.01 per occurrence, low priority.
+**For next agent:**
+- Priority fix: B2 (stale pipeline variants) — remove `"orchestrated"` and `"monolithic_dynamic"` from `AnalyzeController.cs:56-58` and update the comment at line 12 and `Entities.cs:25`.
+- Priority fix: H2 — wrap self-consistency runs individually in verdict-stage.ts, mirroring the challenger `.catch()` pattern at line 369.
+- Full review report with all findings is in the conversation history.
+**Learnings:** Appended to Role_Learnings.md? No (no novel patterns — findings are specific to this implementation).
+
+---
+### 2026-03-02 | Senior Developer | Claude Code (Opus 4.6) | API Data Exposure Hardening (Step 11)
+**Task:** Implement Step 11 from the Limited Public Pre-Release Readiness Plan — three-layer API data exposure hardening (network isolation + proxy-level redaction + read rate limiting).
+**Files touched:**
+- `apps/api/appsettings.Production.json` (created — Kestrel bound to 127.0.0.1:5000)
+- `apps/api/Program.cs` (added ReadPerIp rate limit policy: 30 req/min, admin bypass)
+- `apps/api/Controllers/JobsController.cs` (added `[EnableRateLimiting("ReadPerIp")]` to List + Get)
+- `apps/web/src/app/api/fh/jobs/route.ts` (parse JSON, redact `inputPreview` for non-admin)
+- `apps/web/src/app/api/fh/jobs/[id]/route.ts` (parse JSON, redact `inputValue` for non-admin)
+- `apps/web/src/app/api/fh/metrics/summary/route.ts` (admin key gate)
+- `apps/web/src/app/api/fh/metrics/quality-health/route.ts` (admin key gate)
+**Key decisions:** Reused existing `checkAdminKey()` from `@/lib/auth` for all proxy-level guards. Admin key holders bypass read rate limiting via `RateLimitPartition.GetNoLimiter`. Non-admin users see `"URL analysis"` or `"Text analysis"` instead of actual input preview.
+**Open items:** None — all 5 sub-steps (11a–11e) implemented.
+**For next agent:** Step 11 is complete. The .NET API must be restarted to pick up `JobsController.cs` and `Program.cs` changes (rate limiting attributes + ReadPerIp policy). The `appsettings.Production.json` only takes effect when `ASPNETCORE_ENVIRONMENT=Production`.
+
+---
 ### 2026-03-02 | Senior Developer | Claude Code (Opus 4.6) | Remove Monolithic Dynamic Pipeline
 **Task:** Remove the monolithic dynamic pipeline per approved plan. Single pipeline (ClaimBoundary) for pre-release.
 **Files deleted:**

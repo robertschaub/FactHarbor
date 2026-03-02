@@ -697,7 +697,7 @@ Validate that this plan is implementation-ready for a limited public pre-release
 
 | ID | Finding | Source | Impl Status |
 |----|---------|--------|-------------|
-| **S-5** | Invite code in URL query string (`GET /v1/analyze/status?code=...`) — logged in access logs/Referer | Security | **NOT FIXED** |
+| **S-5** | Invite code in URL query string (`GET /v1/analyze/status?code=...`) — logged in access logs/Referer | Security | ✅ **FIXED** — moved to `X-Invite-Code` header |
 | **S-6** | `GET /v1/jobs/{jobId}` returns full `inputValue` unauthenticated | Security | **Step 11** — proxy-level redaction planned |
 | **S-7** | Input gate fail-open on LLM errors — attacker can trigger failures then submit abuse | Security | **BY DESIGN** — needs Captain #8 |
 | **S-8** | No request body size limit on API (30MB default) — memory exhaustion before `ValidateRequest` runs | Security | ✅ **FIXED** — `[RequestSizeLimit(65_536)]` on Create (`0cd802d`) |
@@ -738,7 +738,7 @@ Validate that this plan is implementation-ready for a limited public pre-release
 
 | ID | Item | Rationale |
 |----|------|-----------|
-| **S-5** | Invite code in URL query string | Low-traffic beta, no untrusted proxies. Fix when adding proper auth. |
+| ~~**S-5**~~ | ~~Invite code in URL query string~~ | ✅ **FIXED** — moved to `X-Invite-Code` header (API + proxy + UI) |
 | **S-6** | `inputValue` exposure in job detail | **Addressed by Step 11** (proxy-level redaction for non-admin). |
 | **S-9** | SSE connection exhaustion | Invite gating limits attack surface. Monitor. |
 | **S-7** | Fail-open vs fail-closed | Acceptable for beta if structural gate (Step 6a) always runs. Re-evaluate with metrics. |
@@ -784,4 +784,4 @@ All 2 blockers, 5 high-severity, and key medium-severity findings have been reso
 4. Run Step 8a/8b verification after Step 11
 
 **Deferred items (acceptable for limited pre-release):**
-- S-5 (invite code in URL), S-9 (SSE limits), M-2 (gate test fixtures), L-3 (docs update)
+- ~~S-5 (invite code in URL)~~ ✅ FIXED, S-9 (SSE limits), M-2 (gate test fixtures), L-3 (docs update)

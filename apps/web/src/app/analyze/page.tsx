@@ -47,7 +47,9 @@ export default function AnalyzePage() {
     setQuotaStatus(null);
     setCheckingQuota(true);
     try {
-      const res = await fetch(`/api/fh/analyze/status?code=${encodeURIComponent(code.trim())}`);
+      const res = await fetch("/api/fh/analyze/status", {
+        headers: { "X-Invite-Code": code.trim() },
+      });
       if (res.ok) {
         const data = await res.json();
         setQuotaStatus({

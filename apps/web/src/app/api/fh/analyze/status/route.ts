@@ -9,19 +9,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "FH_API_BASE_URL not set" }, { status: 503 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
+  const code = request.headers.get("x-invite-code");
   if (!code || !code.trim()) {
     return NextResponse.json({ error: "Invite code is required" }, { status: 400 });
   }
 
-  const upstreamParams = new URLSearchParams({ code: code.trim() });
-  const upstreamUrl = `${base.replace(/\/$/, "")}/v1/analyze/status?${upstreamParams}`;
+  const upstreamUrl = `${base.replace(/\/$/, "")}/v1/analyze/status`;
 
   try {
     const res = await fetch(upstreamUrl, {
       method: "GET",
       cache: "no-store",
+      headers: { "X-Invite-Code": code.trim() },
     });
 
     const text = await res.text();

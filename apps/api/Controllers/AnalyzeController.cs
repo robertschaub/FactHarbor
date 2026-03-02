@@ -34,10 +34,11 @@ public sealed class AnalyzeController : ControllerBase
 
     [HttpGet("status")]
     [EnableRateLimiting("AnalyzePerIp")]
-    public async Task<IActionResult> GetStatus([FromQuery] string code)
+    public async Task<IActionResult> GetStatus()
     {
+        var code = Request.Headers["X-Invite-Code"].FirstOrDefault();
         if (string.IsNullOrWhiteSpace(code))
-            return BadRequest(new { error = "Invite code is required" });
+            return BadRequest(new { error = "Invite code is required (send via X-Invite-Code header)" });
 
         var status = await _jobs.GetInviteCodeStatusAsync(code);
         if (status == null)
