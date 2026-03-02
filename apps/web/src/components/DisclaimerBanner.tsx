@@ -14,7 +14,7 @@ export function DisclaimerBanner() {
         lineHeight: 1.4,
       }}
     >
-      This is an early pre-release. Analyses are provided without warranty. Verdicts may still contain errors, biases, or contradictions and should not be cited as authoritative.
+      This is an early pre-release. Analyses are provided without warranty. Verdicts may still contain imperfections and inconsistencies and should not be cited as authoritative.
     </div>
   );
 }
