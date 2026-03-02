@@ -1,6 +1,8 @@
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Trust only local reverse proxies (Caddy on same host) for forwarded headers.
+    options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
+    options.KnownProxies.Add(IPAddress.Parse("::1"));
+});
 
 // CORS allowlist: localhost web app for development + optional configured origin(s) for pre-release.
 var corsOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -136,6 +145,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 app.UseCors("FactHarborCors");
 app.UseRateLimiter();
 

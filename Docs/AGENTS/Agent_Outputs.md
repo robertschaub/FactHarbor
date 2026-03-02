@@ -2,6 +2,22 @@
 
 
 ---
+### 2026-03-02 | Deputy Captain | Claude Code (Opus 4.6) | Deployment Strategy — Review Findings Incorporated
+**Task:** Address Lead Architect review findings (1 BLOCKER, 2 HIGH, 3 MEDIUM, 1 LOW) on `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md` and apply Captain decisions D-1 through D-5.
+**Files touched:** `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- BLOCKER (prompt path): Resolved via `FH_PROMPT_DIR` + `FH_CONFIG_DEFAULTS_DIR` env vars — codebase already supports them, just needed explicit paths in `.env.production`
+- HIGH (rate limiting): `ForwardedHeaders` middleware required in `Program.cs` before deployment — documented with code snippet
+- HIGH (backup): `cp` → `sqlite3 .backup` in dedicated backup script
+- MEDIUM (Vercel): Stateful in-memory architecture added as primary rejection reason (Blocker 1), timeout demoted to Blocker 2
+- Captain D-2: `app.factharbor.ch` subdomain (not root) — applied throughout document
+- Captain D-3: Git clone + pinned release tags for reproducible deployments
+**Open items:**
+- `ForwardedHeaders` middleware code change in `apps/api/Program.cs` — documented but not implemented yet (deployment-time change)
+- `output: "standalone"` in `next.config.js` — documented but not implemented yet
+**For next agent:** Document is now REVISED status. Two code changes needed before deployment: (1) `next.config.js` standalone output, (2) `Program.cs` forwarded headers. Both are documented in §6 with code snippets.
+
+---
 ### 2026-03-02 | Senior Developer | Claude Code (Opus 4.6) | Step 8 — Release Verification and Smoke Gates
 **Task:** Execute Step 8 (build verification + 11 functional smoke checks) from the Limited Public Pre-Release Readiness Plan.
 **Files touched:** None (verification-only step).
@@ -2998,4 +3014,36 @@ ext phase).
 **Open items:** None. All 6 sub-tasks implemented and verified.
 **Warnings:** The existing `ConditionalFooter` (admin-only, renders `AboutBox`) still exists and renders via `LayoutClientShell`. The new `Footer` renders after it. Both are visible on admin pages. If this double-footer is undesired, the `ConditionalFooter` could be removed or the `AboutBox` integrated elsewhere.
 **For next agent:** Build clean, 1086 tests passing (53 files). No functional changes to analysis pipeline.
+**Learnings:** no
+
+---
+### 2026-03-02 | Lead Architect | Codex (GPT-5) | Review: Pre-Release Deployment Strategy
+**Task:** Review `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md` for architecture soundness, security posture, operations readiness, and D-1..D-5 recommendations.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Rated the single-VPS + Caddy direction as valid for current architecture, but identified one deployment blocker and multiple high-priority gaps.
+- Cross-checked strategy assumptions against current code paths (`run-job` async ACK + in-memory queue, prompt/config filesystem loading, API rate-limit implementation, production bind/CORS/Swagger configuration).
+- Cross-checked Vercel timeout claims against current official documentation and flagged stale timeout assumptions while keeping the same practical recommendation (do not use Vercel for current runner architecture).
+**Open items:**
+- Update deployment doc with blocker/high findings and revised D-1..D-5 recommendations before execution.
+- Add explicit pre-release runbook items: SQLite-safe backups, log retention/rotation policy, OS patching, SSH hardening, and secret rotation cadence.
+**Warnings:**
+- `output: "standalone"` with current `WorkingDirectory=/opt/factharbor/apps/web/.next/standalone` can break prompt seeding on a fresh deployment unless prompt files are copied or `FH_PROMPT_DIR` is set to the real prompts directory.
+- API per-IP rate limiting currently keys off `RemoteIpAddress`; behind Next.js proxy this is likely `127.0.0.1`, collapsing limits across all users unless client IP forwarding/trust is implemented.
+**For next agent:**
+- Prioritize fixing the standalone prompt-path blocker and proxy/IP rate-limit behavior before first production deploy.
+- Re-run strategy review after doc updates and verify with a full smoke run on the target VPS.
+**Learnings:** no
+
+---
+### 2026-03-02 | Lead Architect | Codex (GPT-5) | Implemented Remaining Deployment Prerequisite Code Changes
+**Task:** Apply the two pending pre-deployment code changes from the deployment strategy: Next.js standalone output and API forwarded-header support behind Caddy.
+**Files touched:** `apps/web/next.config.js`, `apps/api/Program.cs`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Enabled Next.js standalone build output via `output: "standalone"`.
+- Added ASP.NET forwarded-header configuration (`X-Forwarded-For`, `X-Forwarded-Proto`) and trusted local proxy addresses (`127.0.0.1`, `::1`), then inserted `app.UseForwardedHeaders()` before CORS/rate limiter middleware.
+- Validation: `npm -w apps/web run build` passed; `dotnet build -c Release` passed. Debug build failed only due a running API process locking `bin/Debug` executable.
+**Open items:** Ensure deployment env includes the already-documented `FH_PROMPT_DIR`/`FH_CONFIG_DEFAULTS_DIR` paths so standalone runtime can find prompt/config source files.
+**Warnings:** API debug build in this workspace is currently blocked by running process `FactHarbor.Api (PID 51536)` locking debug output binary.
+**For next agent:** Re-run functional smoke checks on deployed VPS after systemd+Caddy rollout to verify forwarded-client IP rate limiting behavior end-to-end.
 **Learnings:** no

@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-02-23 (WIP consolidation #2 — 5 files archived, framing-symmetry v3 + diagnostic gate complete)
+**Last Updated**: 2026-03-02 (WIP consolidation #4 — 4 files archived, pre-release readiness + dynamic removal + UI texts + calibration cost)
 
 ---
 
@@ -19,6 +19,21 @@ The following documents had valuable content extracted and merged into active do
 ---
 
 ## What's Archived
+
+### WIP Consolidation #4 (2026-03-02) — Pre-Release Readiness Complete, Dynamic Pipeline Removed
+
+**Description**: Archived 4 WIP files. Pre-release readiness plan fully implemented (Steps 0-12). Monolithic Dynamic pipeline removed (commit `122f34b`). UI texts implemented. Calibration cost optimization policy ratified and in use.
+
+**Completed plans** (4 files — DONE):
+1. `2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md` — Steps 0-12 all complete. Security hardening (SSRF, admin auth, rate limiting, CORS, data exposure), invite code system, UI polish, dynamic pipeline removal. Remaining deployment covered by Deployment Strategy doc.
+2. `2026-03-02_Remove_Monolithic_Dynamic_Pipeline.md` — 902-line pipeline + tests + prompts removed. Commit `122f34b`. Single pipeline (ClaimBoundary) for pre-release.
+3. `2026-03-02_PreRelease_UI_Texts.md` — All UI text content (disclaimer banner, footer, methodology note). Implemented in commits `53f3ab4`, `829834f`.
+4. `Calibration_Cost_Optimization_Review_Plan_2026-02-22.md` — Gate/smoke lane split policy. Ratified and operational. Smoke lane uses 1-pair canary; gate lane uses full 10-pair fixture.
+
+**Remaining WIP (10 files):**
+Forward-looking: Deployment Strategy (active), Alpha Acceleration (partially done), Model Auto-resolution (partially done), Inverse Claim Asymmetry (partially done), Multi-Source Retrieval (partially done), Claim Strength Study (investigation), Cross-Provider Debate (proposal), API Cost Reduction (proposal), TestTuning Mode+UI (proposals).
+
+---
 
 ### WIP Consolidation #3 (2026-03-01) — Invite Code, Readiness, Quality Investigations
 

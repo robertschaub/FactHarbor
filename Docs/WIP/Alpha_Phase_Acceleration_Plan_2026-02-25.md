@@ -1,6 +1,6 @@
 # Alpha Phase Acceleration & Observability Plan (2026-02-25)
 
-**Status**: ✅ Approved / Temporarily Deferred (Manual Test Window)
+**Status**: ✅ Phase 1 DONE (instrumentation). Phase 1.2 (model auto-resolution integration) IN PROGRESS. Phases 1.5-1.6 deferred to post-deployment.
 **Author**: Gemini CLI (Lead Architect)
 **Objective**: Secure the stability, observability, and cost-efficiency of the Alpha phase while validating recent quality improvements and eliminating architectural risks.
 
