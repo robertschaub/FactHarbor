@@ -3061,3 +3061,17 @@ ext phase).
 **Warnings:** Existing `/jobs/[id]` page still polls job detail every 2 seconds; this is functional but contributes significant read traffic by design.
 **For next agent:** Validate in production with 2-3 concurrent tabs/users and confirm `429` frequency drops; adjust env limits if needed without code change.
 **Learnings:** no
+---
+### 2026-03-02 | Lead Developer | Codex (GPT-5) | Source Reliability Access Split (Public Read, Admin Evaluate)
+**Task:** Make `/admin/source-reliability` reachable for any user while keeping domain evaluation and cache mutation admin-only.
+**Files touched:** `apps/web/src/app/admin/layout.tsx`, `apps/web/src/app/api/admin/source-reliability/route.ts`, `apps/web/src/app/admin/source-reliability/page.tsx`, `apps/web/src/app/admin/source-reliability/source-reliability.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added route-level exception in admin layout so `/admin/source-reliability` is no longer blocked by global admin login gate.
+- Changed source-reliability API auth policy: `GET` listing/stats is public; `GET?action=cleanup`, `POST`, and `DELETE` remain admin-key protected.
+- Refactored SR page into read-only public mode with inline admin-auth unlock for privileged actions; evaluate/delete/cleanup controls are shown only in authenticated admin mode.
+- Removed invite-code header usage from SR admin actions to align behavior with admin-only evaluation requirement.
+- Validation: `npm -w apps/web run build` passed.
+**Open items:** None.
+**Warnings:** Public cache view now exposes cached SR entries to unauthenticated users by design; if that is too broad, introduce a separate public-sanitized view endpoint.
+**For next agent:** Verify deployed behavior with two browser states: anonymous user can view cache but cannot mutate; admin user can authenticate inline and evaluate/delete/cleanup successfully.
+**Learnings:** no

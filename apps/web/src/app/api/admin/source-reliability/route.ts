@@ -1,7 +1,7 @@
 /**
- * Admin API - Source Reliability Cache
+ * Source Reliability Cache API
  *
- * Returns cached source reliability data for admin viewing.
+ * GET: Returns cached source reliability data for read-only viewing.
  * POST: Evaluate domains and add to cache.
  */
 
@@ -24,10 +24,6 @@ async function getWeightConfig() {
 }
 
 export async function GET(req: Request) {
-  if (!checkAdminKey(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
@@ -38,6 +34,9 @@ export async function GET(req: Request) {
     }
 
     if (action === "cleanup") {
+      if (!checkAdminKey(req)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       const deleted = await cleanupExpired();
       return NextResponse.json({ deleted });
     }

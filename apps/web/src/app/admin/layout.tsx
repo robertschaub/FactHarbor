@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import styles from "./admin.module.css";
 import { AdminAuthContext } from "./admin-auth-context";
 
@@ -41,6 +42,8 @@ async function verifyAdminKey(key: string): Promise<boolean> {
 }
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isPublicAdminRoute = pathname === "/admin/source-reliability";
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [adminKey, setAdminKey] = useState<string | null>(null);
@@ -109,7 +112,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
 
   // Show loading state
-  if (isLoading) {
+  if (isLoading && !isPublicAdminRoute) {
     return (
       <div className={styles.loginContainer}>
         <div className={styles.loginBox}>
@@ -120,7 +123,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   // Show login form if not authenticated
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isPublicAdminRoute) {
     return (
       <div className={styles.loginContainer}>
         <div className={styles.loginBox}>
@@ -164,12 +167,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <AdminAuthContext.Provider value={{ isAuthenticated, isLoading, adminKey, login, logout, getHeaders }}>
       <div className={styles.adminWrapper}>
-        <div className={styles.adminHeader}>
-          <span className={styles.adminBadge}>Admin</span>
-          <button onClick={logout} className={styles.logoutButton}>
-            Logout
-          </button>
-        </div>
+        {isAuthenticated && (
+          <div className={styles.adminHeader}>
+            <span className={styles.adminBadge}>Admin</span>
+            <button onClick={logout} className={styles.logoutButton}>
+              Logout
+            </button>
+          </div>
+        )}
         {children}
       </div>
     </AdminAuthContext.Provider>

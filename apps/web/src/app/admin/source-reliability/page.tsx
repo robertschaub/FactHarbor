@@ -59,6 +59,27 @@ function setAdminKey(key: string): void {
   }
 }
 
+function clearAdminKey(): void {
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("fh_admin_key");
+  }
+}
+
+async function verifyAdminKey(key: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/admin/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": key,
+      },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export default function SourceReliabilityPage() {
   const [data, setData] = useState<CacheData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +88,7 @@ export default function SourceReliabilityPage() {
   const [sortBy, setSortBy] = useState("evaluated_at");
   const [sortOrder, setSortOrder] = useState("desc");
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminKeyInput, setAdminKeyInput] = useState("");
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
@@ -96,17 +118,39 @@ export default function SourceReliabilityPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  // Helper to build fetch headers with admin key and/or invite code
+  useEffect(() => {
+    const checkStoredAdminKey = async () => {
+      const existingKey = getAdminKey();
+      if (!existingKey) {
+        setIsAdminAuthenticated(false);
+        return;
+      }
+
+      const isValid = await verifyAdminKey(existingKey);
+      if (isValid) {
+        setIsAdminAuthenticated(true);
+        setNeedsAuth(false);
+      } else {
+        clearAdminKey();
+        setIsAdminAuthenticated(false);
+      }
+    };
+
+    checkStoredAdminKey();
+  }, []);
+
+  useEffect(() => {
+    if (!isAdminAuthenticated) {
+      setSelectedDomains(new Set());
+    }
+  }, [isAdminAuthenticated]);
+
+  // Helper to build fetch headers with admin key
   const getHeaders = useCallback((): HeadersInit => {
     const headers: Record<string, string> = {};
     const adminKey = getAdminKey();
     if (adminKey) {
       headers["x-admin-key"] = adminKey;
-    }
-    // Also send invite code for non-admin users (evaluate endpoint accepts either)
-    const inviteCode = typeof window !== "undefined" ? localStorage.getItem("fh_invite_code") : null;
-    if (inviteCode) {
-      headers["x-invite-code"] = inviteCode;
     }
     return headers;
   }, []);
@@ -130,14 +174,9 @@ export default function SourceReliabilityPage() {
         headers: getHeaders(),
       });
       if (!response.ok) {
-        if (response.status === 401) {
-          setNeedsAuth(true);
-          throw new Error("Unauthorized - admin key required");
-        }
-        throw new Error(`Failed to fetch: ${response.statusText}`);
+        throw new Error(`Failed to fetch: HTTP ${response.status}`);
       }
 
-      setNeedsAuth(false);
       const result = await response.json();
       setData(result);
     } catch (err) {
@@ -234,17 +273,38 @@ export default function SourceReliabilityPage() {
     };
   }, [isDragging, dragStart]);
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminKeyInput.trim()) {
-      setAdminKey(adminKeyInput.trim());
-      setNeedsAuth(false);
-      setError(null);
-      fetchData();
+  const requireAdminAction = (): boolean => {
+    if (isAdminAuthenticated) {
+      return true;
     }
+    setNeedsAuth(true);
+    toast.error("Admin login required for this action");
+    return false;
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = adminKeyInput.trim();
+    if (!key) {
+      return;
+    }
+
+    const isValid = await verifyAdminKey(key);
+    if (!isValid) {
+      setIsAdminAuthenticated(false);
+      toast.error("Invalid admin key");
+      return;
+    }
+
+    setAdminKey(key);
+    setIsAdminAuthenticated(true);
+    setNeedsAuth(false);
+    setAdminKeyInput("");
+    toast.success("Admin mode enabled");
   };
 
   const handleCleanup = async () => {
+    if (!requireAdminAction()) return;
     if (!confirm("Remove all expired entries from the cache?")) return;
 
     try {
@@ -253,6 +313,8 @@ export default function SourceReliabilityPage() {
       });
       if (!response.ok) {
         if (response.status === 401) {
+          clearAdminKey();
+          setIsAdminAuthenticated(false);
           setNeedsAuth(true);
           throw new Error("Unauthorized");
         }
@@ -267,6 +329,7 @@ export default function SourceReliabilityPage() {
   };
 
   const handleDelete = async (domain: string) => {
+    if (!requireAdminAction()) return;
     if (!confirm(`Delete cached score for "${domain}"?\n\nThis will be re-evaluated on next analysis.`)) return;
 
     try {
@@ -276,6 +339,8 @@ export default function SourceReliabilityPage() {
       });
       if (!response.ok) {
         if (response.status === 401) {
+          clearAdminKey();
+          setIsAdminAuthenticated(false);
           setNeedsAuth(true);
           throw new Error("Unauthorized");
         }
@@ -296,6 +361,7 @@ export default function SourceReliabilityPage() {
   };
 
   const handleDeleteSelected = async () => {
+    if (!requireAdminAction()) return;
     if (selectedDomains.size === 0) return;
     
     const count = selectedDomains.size;
@@ -314,6 +380,8 @@ export default function SourceReliabilityPage() {
       });
       if (!response.ok) {
         if (response.status === 401) {
+          clearAdminKey();
+          setIsAdminAuthenticated(false);
           setNeedsAuth(true);
           throw new Error("Unauthorized");
         }
@@ -368,6 +436,7 @@ export default function SourceReliabilityPage() {
     data.entries.every(e => selectedDomains.has(e.domain));
 
   const handleEvaluateDomains = async () => {
+    if (!requireAdminAction()) return;
     if (!domainsInput.trim()) return;
     
     setEvaluating(true);
@@ -385,6 +454,8 @@ export default function SourceReliabilityPage() {
       
       if (!response.ok) {
         if (response.status === 401) {
+          clearAdminKey();
+          setIsAdminAuthenticated(false);
           setNeedsAuth(true);
           throw new Error("Unauthorized");
         }
@@ -793,39 +864,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
     );
   }
 
-  if (needsAuth) {
-    return (
-      <div className={styles.container}>
-        <h1>Source Reliability Cache</h1>
-        <div className={styles.error}>
-          Authentication required. Enter your admin key to access this page.
-        </div>
-        <form onSubmit={handleAuthSubmit} style={{ marginTop: "16px", marginBottom: "16px" }}>
-          <input
-            type="password"
-            value={adminKeyInput}
-            onChange={(e) => setAdminKeyInput(e.target.value)}
-            placeholder="Enter FH_ADMIN_KEY"
-            style={{
-              padding: "8px 12px",
-              fontSize: "14px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "6px",
-              marginRight: "8px",
-              width: "250px",
-            }}
-          />
-          <button type="submit" className={styles.button}>
-            Authenticate
-          </button>
-        </form>
-        <Link href="/admin" className={styles.backLink}>
-          ← Back to Admin
-        </Link>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className={styles.container}>
@@ -853,7 +891,7 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
           </p>
         </div>
         <div className={styles.actions}>
-          {selectedDomains.size > 0 && (
+          {isAdminAuthenticated && selectedDomains.size > 0 && (
             <button 
               onClick={handleDeleteSelected} 
               className={styles.buttonDanger}
@@ -865,11 +903,13 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
           <button onClick={fetchData} className={styles.button} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </button>
-          <button onClick={handleCleanup} className={styles.buttonSecondary}>
-            Cleanup Expired
-          </button>
+          {isAdminAuthenticated && (
+            <button onClick={handleCleanup} className={styles.buttonSecondary}>
+              Cleanup Expired
+            </button>
+          )}
           <Link href="/admin" className={styles.backLink}>
-            ← Admin
+            {isAdminAuthenticated ? "← Admin" : "Admin Login"}
           </Link>
         </div>
       </header>
@@ -923,41 +963,76 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
         )}
       </div>
 
+      {!isAdminAuthenticated && (
+        <div className={styles.readOnlyNotice}>
+          <p>
+            Read-only mode. Viewing cache data is public, but evaluating or deleting domains requires admin login.
+          </p>
+          {!needsAuth ? (
+            <button onClick={() => setNeedsAuth(true)} className={styles.buttonSecondary}>
+              Enter Admin Key
+            </button>
+          ) : (
+            <form onSubmit={handleAuthSubmit} className={styles.adminAuthForm}>
+              <input
+                type="password"
+                value={adminKeyInput}
+                onChange={(e) => setAdminKeyInput(e.target.value)}
+                placeholder="Enter FH_ADMIN_KEY"
+                className={styles.adminKeyInput}
+              />
+              <button type="submit" className={styles.button} disabled={!adminKeyInput.trim()}>
+                Authenticate
+              </button>
+              <button type="button" className={styles.buttonSecondary} onClick={() => setNeedsAuth(false)}>
+                Cancel
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
       {/* Evaluate Domains Section */}
       <div className={styles.evaluateSection}>
         <h3>Evaluate Domains</h3>
-        <p className={styles.evaluateHelp}>
-          Enter domains to evaluate (one per line, comma-separated, or space-separated). 
-          Max 20 domains per request.
-        </p>
-        <div className={styles.evaluateForm}>
-          <textarea
-            className={styles.domainsInput}
-            placeholder="example.com&#10;news.example.org&#10;blog.example.net"
-            value={domainsInput}
-            onChange={(e) => setDomainsInput(e.target.value)}
-            rows={4}
-            disabled={evaluating}
-          />
-          <div className={styles.evaluateActions}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={forceReevaluate}
-                onChange={(e) => setForceReevaluate(e.target.checked)}
+        {isAdminAuthenticated ? (
+          <>
+            <p className={styles.evaluateHelp}>
+              Enter domains to evaluate (one per line, comma-separated, or space-separated). 
+              Max 20 domains per request.
+            </p>
+            <div className={styles.evaluateForm}>
+              <textarea
+                className={styles.domainsInput}
+                placeholder="example.com&#10;news.example.org&#10;blog.example.net"
+                value={domainsInput}
+                onChange={(e) => setDomainsInput(e.target.value)}
+                rows={4}
                 disabled={evaluating}
               />
-              Re-evaluate existing domains
-            </label>
-            <button
-              onClick={handleEvaluateDomains}
-              className={styles.button}
-              disabled={evaluating || !domainsInput.trim()}
-            >
-              {evaluating ? "Evaluating..." : "Evaluate Domains"}
-            </button>
-          </div>
-        </div>
+              <div className={styles.evaluateActions}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={forceReevaluate}
+                    onChange={(e) => setForceReevaluate(e.target.checked)}
+                    disabled={evaluating}
+                  />
+                  Re-evaluate existing domains
+                </label>
+                <button
+                  onClick={handleEvaluateDomains}
+                  className={styles.button}
+                  disabled={evaluating || !domainsInput.trim()}
+                >
+                  {evaluating ? "Evaluating..." : "Evaluate Domains"}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className={styles.evaluateHelp}>Admin login required to evaluate domains.</p>
+        )}
         
         {/* Evaluation Results */}
         {evalResults && evalResults.length > 0 && (
@@ -1038,14 +1113,16 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.checkboxCol}>
-                    <input
-                      type="checkbox"
-                      checked={isAllSelected || false}
-                      onChange={toggleSelectAll}
-                      title="Select all on this page"
-                    />
-                  </th>
+                  {isAdminAuthenticated && (
+                    <th className={styles.checkboxCol}>
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected || false}
+                        onChange={toggleSelectAll}
+                        title="Select all on this page"
+                      />
+                    </th>
+                  )}
                   <th onClick={() => handleSort("domain")} className={styles.sortable}>
                     Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
@@ -1070,13 +1147,15 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
               <tbody>
                 {data.entries.map((entry) => (
                   <tr key={entry.domain} className={selectedDomains.has(entry.domain) ? styles.selectedRow : ""}>
-                    <td className={styles.checkboxCol}>
-                      <input
-                        type="checkbox"
-                        checked={selectedDomains.has(entry.domain)}
-                        onChange={() => toggleSelect(entry.domain)}
-                      />
-                    </td>
+                    {isAdminAuthenticated && (
+                      <td className={styles.checkboxCol}>
+                        <input
+                          type="checkbox"
+                          checked={selectedDomains.has(entry.domain)}
+                          onChange={() => toggleSelect(entry.domain)}
+                        />
+                      </td>
+                    )}
                     <td className={styles.domain}>{entry.domain}</td>
                     <td className={styles.entity} title={entry.identifiedEntity || ""}>
                       {entry.identifiedEntity || "—"}
@@ -1137,13 +1216,15 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                         >
                           👁
                         </button>
-                        <button
-                          onClick={() => handleDelete(entry.domain)}
-                          className={styles.deleteButton}
-                          title="Delete this entry"
-                        >
-                          🗑
-                        </button>
+                        {isAdminAuthenticated && (
+                          <button
+                            onClick={() => handleDelete(entry.domain)}
+                            className={styles.deleteButton}
+                            title="Delete this entry"
+                          >
+                            🗑
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
