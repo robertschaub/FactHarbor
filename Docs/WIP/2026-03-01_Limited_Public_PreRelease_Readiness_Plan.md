@@ -455,11 +455,12 @@ Create `apps/api/appsettings.Production.json`:
 
 ---
 
-## Step 12: UI Polish & Pre-Release Disclaimer
+## Step 12: UI Polish & Pre-Release Disclaimer (COMPLETED)
 
 **Priority:** P1 (must ship with pre-release)
 **Effort:** ~2-4 hours total
 **Addresses:** Visual identity, legal protection, user expectations
+**Commit:** `53f3ab4`
 
 ### 12a. Visual polish — Global background and branding
 
@@ -529,12 +530,12 @@ Create `apps/api/appsettings.Production.json`:
 | 20 | `apps/web/src/app/api/fh/metrics/summary/route.ts` | Modify — add admin key gate to GET | API Protection 11d | TODO |
 | 21 | `apps/web/src/app/api/fh/metrics/quality-health/route.ts` | Modify — add admin key gate to GET | API Protection 11d | TODO |
 | 22 | `apps/api/Controllers/JobsController.cs` | Modify — add ReadPerIp rate limiting | API Protection 11e | TODO |
-| 23 | `apps/web/src/styles/globals.css` | Modify — background color, visual consistency | UI Polish 12a | TODO |
-| 24 | `apps/web/src/app/layout.tsx` | Modify — integrate disclaimer banner, footer, alpha badge | UI Polish 12b/c | TODO |
-| 25 | `apps/web/src/components/DisclaimerBanner.tsx` (new) | Create — pre-release disclaimer banner component | UI Polish 12b | TODO |
-| 26 | `apps/web/src/components/Footer.tsx` (new) | Create — footer with FactHarbor.ch link + version | UI Polish 12c | TODO |
-| 27 | `apps/web/src/app/analyze/page.tsx` | Modify — methodology note | UI Polish 12d | TODO |
-| 28 | `apps/web/src/app/jobs/[id]/page.tsx` | Modify — result disclaimer | UI Polish 12e | TODO |
+| 23 | `apps/web/src/app/globals.css` | Background #f5f6f8 | UI Polish 12a | ✅ Done |
+| 24 | `apps/web/src/app/layout.tsx` | Banner + footer + Alpha badge | UI Polish 12b/c | ✅ Done |
+| 25 | `apps/web/src/components/DisclaimerBanner.tsx` | Persistent amber disclaimer | UI Polish 12b | ✅ Done |
+| 26 | `apps/web/src/components/Footer.tsx` | Copyright + factharbor.ch link | UI Polish 12c | ✅ Done |
+| 27 | `apps/web/src/app/analyze/page.tsx` | Methodology note | UI Polish 12d | ✅ Done |
+| 28 | `apps/web/src/app/jobs/[id]/page.tsx` | Result disclaimer (SUCCEEDED only) | UI Polish 12e | ✅ Done |
 
 ---
 
@@ -657,7 +658,7 @@ Validate that this plan is implementation-ready for a limited public pre-release
 | 9 (Deployment) | ~1-2h | Ready — procedure documented, EF migrations active |
 | 10 (Additional security) | deferred | Phased — CORS promoted to P0 (done), rest post-launch |
 | **11 (Data exposure)** | **~4-6h** | **TODO — next implementation step** |
-| **12 (UI polish + disclaimer)** | **~2-4h** | **TODO — parallel with Step 11** |
+| 12 (UI polish + disclaimer) | ~2-4h | ✅ DONE — banner, footer, background, methodology note, result disclaimer (`53f3ab4`) |
 
 ### Remaining Doc Updates Needed (Outside This Plan)
 
@@ -778,9 +779,9 @@ All 2 blockers, 5 high-severity, and key medium-severity findings have been reso
 
 **Remaining before GO:**
 1. **Step 11** (API data exposure hardening) — network isolation, proxy-level redaction, metrics gating (~4-6h)
-2. **Step 12** (UI polish + disclaimer) — background, branding, disclaimer banner, footer, methodology note (~2-4h)
+2. ~~Step 12 (UI polish + disclaimer)~~ — ✅ DONE (`53f3ab4`)
 3. Monolithic dynamic pipeline removal — in progress (2026-03-02), tracked in `Docs/WIP/2026-03-02_Remove_Monolithic_Dynamic_Pipeline.md`
-4. Run Step 8a/8b verification after Steps 11-12
+4. Run Step 8a/8b verification after Step 11
 
 **Deferred items (acceptable for limited pre-release):**
 - S-5 (invite code in URL), S-9 (SSE limits), M-2 (gate test fixtures), L-3 (docs update)
