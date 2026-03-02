@@ -574,6 +574,7 @@ export default function JobPage() {
   // LEGACY: analysisContexts fallback for old orchestrated pipeline schemas (backward compatibility)
   const contexts = result?.analysisContexts || [];
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
+  const atomicClaimsForDisplay: any[] = result?.understanding?.atomicClaims || [];
   const hasContestedFactors = result?.meta?.hasContestedFactors;
   const searchQueries = result?.searchQueries || [];
   const researchStats = result?.researchStats;
@@ -1173,6 +1174,28 @@ export default function JobPage() {
                     boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
                   />
                 </section>
+              )}
+
+              {atomicClaimsForDisplay.length > 0 && (
+                <div className={styles.atomicClaimsSection}>
+                  <h3 className={styles.claimsSectionTitle}>Extracted Claims</h3>
+                  <p className={styles.atomicClaimsExplainer}>
+                    These specific claims were extracted from your input and verified independently.
+                  </p>
+                  <ol className={styles.atomicClaimsList}>
+                    {atomicClaimsForDisplay.map((ac: any) => (
+                      <li key={ac.id} className={styles.atomicClaimItem}>
+                        <span className={styles.atomicClaimStatement}>{ac.statement}</span>
+                        <span className={styles.atomicClaimMeta}>
+                          <span className={styles.atomicClaimBadge}>{ac.category}</span>
+                          {ac.claimDirection === "contradicts_thesis" && (
+                            <span className={styles.atomicClaimBadge}>counter-claim</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               )}
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
