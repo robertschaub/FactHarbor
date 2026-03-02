@@ -11,13 +11,13 @@ public sealed class InviteCodeEntity
 
     public string? Description { get; set; }
 
-    public int MaxJobs { get; set; } = 5;
+    public int MaxJobs { get; set; } = 25;
 
     /// <summary>Max submissions allowed per UTC calendar day. 0 = unlimited.</summary>
-    public int DailyLimit { get; set; } = 2;
+    public int DailyLimit { get; set; } = 6;
 
     /// <summary>Max submissions allowed per rolling 60-minute window. 0 = unlimited.</summary>
-    public int HourlyLimit { get; set; } = 5;
+    public int HourlyLimit { get; set; } = 3;
 
     public int UsedJobs { get; set; } = 0;
 

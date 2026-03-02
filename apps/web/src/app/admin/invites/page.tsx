@@ -31,9 +31,9 @@ export default function InviteManagementPage() {
   const [newCode, setNewCode] = useState({
     code: "",
     description: "",
-    maxJobs: 10,
-    hourlyLimit: 5,
-    dailyLimit: 2,
+    maxJobs: 25,
+    hourlyLimit: 3,
+    dailyLimit: 6,
     expiresUtc: ""
   });
 
@@ -113,9 +113,9 @@ export default function InviteManagementPage() {
         setNewCode({
           code: "",
           description: "",
-          maxJobs: 10,
-          hourlyLimit: 5,
-          dailyLimit: 2,
+          maxJobs: 25,
+          hourlyLimit: 3,
+          dailyLimit: 6,
           expiresUtc: ""
         });
       } else {

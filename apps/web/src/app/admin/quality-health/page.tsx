@@ -7,6 +7,7 @@ import {
   Tooltip, Legend, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import styles from './quality-health.module.css';
+import { useAdminAuth } from '../admin-auth-context';
 
 // -- Types -------------------------------------------------------------------
 
@@ -195,6 +196,7 @@ function BreakdownTable({
 // -- Component ---------------------------------------------------------------
 
 export default function QualityHealthPage() {
+  const { getHeaders } = useAdminAuth();
   const [data, setData] = useState<QualityHealthData | null>(null);
   const [stats, setStats] = useState<SummaryStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,11 +237,15 @@ export default function QualityHealthPage() {
       // Fetch both endpoints via Next.js proxy (same-origin, no CORS issues).
       // Use allSettled so partial data still renders if one endpoint fails.
       const [qhResult, summaryResult] = await Promise.allSettled([
-        fetch(`/api/fh/metrics/quality-health?${qhParams}`).then(async (r) => {
+        fetch(`/api/fh/metrics/quality-health?${qhParams}`, {
+          headers: getHeaders(),
+        }).then(async (r) => {
           if (!r.ok) throw new Error(`Quality health API returned ${r.status}`);
           return r.json();
         }),
-        fetch(`/api/fh/metrics/summary?${summaryParams}`).then(async (r) => {
+        fetch(`/api/fh/metrics/summary?${summaryParams}`, {
+          headers: getHeaders(),
+        }).then(async (r) => {
           if (!r.ok) throw new Error(`Summary API returned ${r.status}`);
           return r.json();
         }),
@@ -257,7 +263,7 @@ export default function QualityHealthPage() {
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, getHeaders]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

@@ -129,9 +129,9 @@ using (var scope = app.Services.CreateScope())
         {
             Code = "BETA-PREVIEW-2026",
             Description = "Default public preview code",
-            MaxJobs = 10,
-            HourlyLimit = 5,
-            DailyLimit = 2,
+            MaxJobs = 25,
+            HourlyLimit = 3,
+            DailyLimit = 6,
             UsedJobs = 0,
             IsActive = true
         });

@@ -245,7 +245,7 @@ export default function JobsPage() {
                         ? (isFalseBand(job.verdictLabel) ? 100 - job.truthPercentage : job.truthPercentage)
                         : undefined;
                       return (
-                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence !== undefined ? ` (${job.confidence}%)` : ""}`}>
+                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence != null ? ` · Confidence: ${job.confidence}%` : ""}`}>
                           {vBadge.icon} {vBadge.text} <span style={{ fontWeight: 400 }}>{displayPct !== undefined && <>· {formatVerdictText(displayPct, job.verdictLabel)}</>}
                           {job.confidence !== undefined && <> · {getConfidenceTierLabel(job.confidence)}</>}</span>
                         </span>

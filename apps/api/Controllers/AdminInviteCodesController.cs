@@ -8,9 +8,9 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateInviteCodeRequest(
     string code,
     string? description = null,
-    int maxJobs = 5,
-    int hourlyLimit = 5,
-    int dailyLimit = 2,
+    int maxJobs = 25,
+    int hourlyLimit = 3,
+    int dailyLimit = 6,
     DateTime? expiresUtc = null
 );
 

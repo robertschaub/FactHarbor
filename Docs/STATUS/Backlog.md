@@ -41,6 +41,21 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 ---
 
+## Recently Completed (March 2, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Pre-release readiness Steps 0-12**: SSRF hardening, admin auth sweep, rate limiting, CORS lockdown, invite code management UI, EF migrations, smoke tests, deployment strategy, API data exposure hardening, UI polish (disclaimer, footer), monolithic dynamic removal. | Security / Ops / UI | 2026-03-02 | `Docs/ARCHIVE/2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md` |
+| ✅ **Monolithic Dynamic pipeline removed**: 902 lines + prompts + tests deleted. Single pipeline (ClaimBoundary) for pre-release. | Architecture / Cleanup | 2026-03-02 | Commit `122f34b`, `Docs/ARCHIVE/2026-03-02_Remove_Monolithic_Dynamic_Pipeline.md` |
+| ✅ **Pre-release UI texts**: Disclaimer banner, footer, methodology note, result disclaimer. | UI | 2026-03-02 | Commits `53f3ab4`, `829834f`, `Docs/ARCHIVE/2026-03-02_PreRelease_UI_Texts.md` |
+| ✅ **API data exposure hardening (Step 11)**: Sensitive fields stripped from public API responses. | Security | 2026-03-02 | Commit `875972b` |
+| ✅ **Invite code header migration (S-5)**: Moved from URL query string to `X-Invite-Code` header. | Security | 2026-03-02 | Commit `ccb3e88` |
+| ✅ **Deployment strategy document**: VPS selection (Infomaniak), Caddy config, systemd services, staging instance design, backup procedures, rollback plan. Lead Architect review incorporated. | Ops / Architecture | 2026-03-02 | `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md` |
+| ✅ **Next.js standalone output**: `output: "standalone"` in `next.config.js`. | Ops | 2026-03-02 | `apps/web/next.config.js` |
+| ✅ **ForwardedHeaders middleware**: `X-Forwarded-For` support for real client IP behind Caddy proxy. | Security / Ops | 2026-03-02 | `apps/api/Program.cs` |
+
+---
+
 ## Recently Completed (March 1, 2026)
 
 | Description | Domain | Completed | Reference |

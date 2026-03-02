@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-01
-**Status**: WIP Consolidation #3 complete. Archived 11 completed/superseded files. Active tracks: (1) Limited Public Pre-Release Readiness, (2) Multi-Source Retrieval integration, (3) Inverse Claim Asymmetry (Phase 3), (4) Model Auto-resolution (Phase 2 integration).
+**Last Updated**: 2026-03-02
+**Status**: WIP Consolidation #4 complete. Archived 4 files (pre-release readiness, dynamic removal, UI texts, calibration cost). 10 active files remain. Primary track: Deployment Strategy execution.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** POC declared complete (`v1.0.0-poc`). The ClaimAssessmentBoundary pipeline v1.1 is operational with tiered access control (invite codes), wildcard search, and automated daily/lifetime quotas. 1113 tests passing. 
+**Forward direction:** Pre-release readiness Steps 0-12 complete. Monolithic Dynamic pipeline removed. Single pipeline (ClaimBoundary). Next: VPS deployment (Infomaniak).
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** - Completed plans, reviews, and historical documentation
@@ -19,56 +19,44 @@ For completed work, historical documents, and reference materials, see:
 
 ## Active Documents
 
-### 1. Release Readiness & Operations (3 files)
-
-#### Limited Public Pre-Release Readiness Plan (2026-03-01)
-**Status:** ✅ Steps 0-12 DONE — Smoke checks (Step 8b) + Deployment (Step 9) remaining
-- **Document:** [2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md](2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md)
-- **Scope:** Hardening, security (SSRF), rate limiting, admin auth, invite code management UI, EF migrations, data exposure, UI polish.
-- **Next Step:** Step 8b (smoke checks) then Step 9 (deployment)
+### 1. Deployment (1 file)
 
 #### Deployment Strategy — Pre-Release (2026-03-02)
-**Status:** 📋 DRAFT — Awaiting review
+**Status:** 📋 REVISED — Lead Architect review incorporated, Captain decisions applied, Infomaniak VPS selected
 - **Document:** [2026-03-02_Deployment_Strategy_PreRelease.md](2026-03-02_Deployment_Strategy_PreRelease.md)
-- **Scope:** Single VPS + Caddy deployment. Gap analysis of existing docs, platform evaluation, implementation plan.
-- **Depends on:** Pre-Release Readiness Plan (all steps complete)
-
-#### Invite Code & Access Control Plan (2026-02-28)
-**Status:** ✅ Core implemented / Hardening in progress
-- **Document:** [2026-02-28_Invite_Code_Architecture_Plan.md](2026-02-28_Invite_Code_Architecture_Plan.md)
-- **Scope:** Tiered access (guest search/view vs invite submission), daily/lifetime quotas.
+- **Scope:** Single VPS (Infomaniak Lite M) + Caddy deployment. Implementation plan, staging instance, rollback procedures, cost estimate.
+- **Next Step:** Provision VPS, execute Phase 1-4 deployment plan
 
 ---
 
-### 2. Evidence Quality & Consistency (2 files)
+### 2. Evidence Quality & Consistency (3 files)
 
 #### Multi-Source Evidence Retrieval Plan v2.1 (2026-02-24)
 **Status:** 🔧 In Progress — Provider layer complete, pipeline integration pending
 - **Document:** [Multi-Source_Evidence_Retrieval_Plan.md](Multi-Source_Evidence_Retrieval_Plan.md)
-- **Scope:** Add Wikipedia, Semantic Scholar, and Google Fact Check Tools API. 
-- **Next Step:** Phase 3: Google Fact Check pipeline integration (seeding + dedup).
+- **Scope:** Wikipedia, Semantic Scholar, Google Fact Check Tools API.
+- **Next Step:** Phase 3.2-3.6: Google Fact Check pipeline integration (seeding + dedup).
 
 #### Inverse Claim Asymmetry Plan (2026-02-27)
-**Status:** 🔧 In Progress — Phase 0-2 DONE
+**Status:** 🔧 In Progress — Phases 0-2 DONE, Phase 3 pending
 - **Document:** [2026-02-27_Inverse_Claim_Asymmetry_Plan.md](2026-02-27_Inverse_Claim_Asymmetry_Plan.md)
 - **Scope:** Symmetry audit, complementarity error metrics, integrity gating (Safe Downgrade).
 - **Next Step:** Phase 3: Calibration automated gate (CI enforcement).
 
-#### Claim Strength Preservation Study (2026-03-01) — NEW
-**Status:** 🔬 Investigation — Multi-agent study required
+#### Claim Strength Preservation Study (2026-03-01)
+**Status:** 🔬 Investigation — Not started
 - **Document:** [2026-03-01_Claim_Strength_Preservation_Study.md](2026-03-01_Claim_Strength_Preservation_Study.md)
-- **Scope:** Stage 1 silently weakens claim assertions (e.g., "bedingt" → "Komponente"), causing 30-43pp variance for near-identical inputs. Distinct from ICA Plan (post-verdict integrity); this is pre-evidence claim extraction.
-- **Next Step:** Phase A parallel investigation (A1: Linguistic analysis, A2: Evidence audit, A3: Broader fidelity audit).
+- **Scope:** Stage 1 weakens claim assertions (30-43pp variance). Pre-evidence claim extraction issue.
+- **Next Step:** Phase A parallel investigation.
 
 ---
 
 ### 3. Alpha Strategy & Architecture (3 files)
 
 #### Alpha Phase Acceleration & Observability Plan (2026-02-25)
-**Status:** 🧭 In Progress
+**Status:** ✅ Phase 1 DONE (instrumentation). Phase 1.2 IN PROGRESS (model auto-resolution). Phases 1.5-1.6 deferred.
 - **Document:** [Alpha_Phase_Acceleration_Plan_2026-02-25.md](Alpha_Phase_Acceleration_Plan_2026-02-25.md)
-- **Scope:** Instrumentation (understand/research/cluster/verdict/aggregate), Model Auto-resolution.
-- **Next Step:** Verify instrumentation via `metrics.json` + finish Step 1.2 (integration).
+- **Next Step:** Finish model auto-resolution integration (Step 1.2).
 
 #### Model Auto-Resolution Plan (2026-02-23)
 **Status:** 🔧 In Progress — Resolver implemented, integration pending
@@ -81,12 +69,12 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### 4. Backlog Proposals (4 files)
+### 4. Backlog Proposals (3 files)
 
 #### API Cost Reduction Strategy (2026-02-13)
-**Status:** 🧭 Proposal — Awaiting Implementation
+**Status:** 🧭 Proposal — Key items: Batch API, NPO/OSS credits
 - **Document:** [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md)
-- **Next Step:** Prompt Caching / Batch API pilot.
+- **Next Step:** NPO credit applications (highest ROI).
 
 #### Test/Tuning Mode Design (2026-02-17)
 **Status:** 🧭 Proposal — Pending Approval
@@ -96,9 +84,17 @@ For completed work, historical documents, and reference materials, see:
 **Status:** 🧭 Proposal — Pending Approval
 - **Document:** [TestTuning_UI_Design_2026-02-17.md](TestTuning_UI_Design_2026-02-17.md)
 
-#### Calibration Cost Optimization Review Plan (2026-02-22)
-**Status:** 🧭 Proposal — Awaiting review
-- **Document:** [Calibration_Cost_Optimization_Review_Plan_2026-02-22.md](Calibration_Cost_Optimization_Review_Plan_2026-02-22.md)
+---
+
+## Cleanup History
+
+| Date | Action | Files |
+|------|--------|-------|
+| 2026-03-02 | **Consolidation #4**: Archived 4 files (pre-release readiness Steps 0-12 done, dynamic pipeline removal done, UI texts done, calibration cost policy done). 14→10 files. | See `ARCHIVE/README_ARCHIVE.md` |
+| 2026-03-01 | **Consolidation #3**: Archived 11 files (invite code, quality investigations, fidelity, runtime issues). | See `ARCHIVE/README_ARCHIVE.md` |
+| 2026-02-23 | **Consolidation #2**: Archived 5 files (framing-symmetry v3, debate analysis, execution plans). | See `ARCHIVE/README_ARCHIVE.md` |
+| 2026-02-23 | **Consolidation #1**: Archived 8 files (CB architecture, cross-provider, quality map decisions, code reviews). | See `ARCHIVE/README_ARCHIVE.md` |
+| 2026-02-22 | **Consolidation #0**: Archived 17 files (code reviews, quality map reviews, process docs). | See `ARCHIVE/README_ARCHIVE.md` |
 
 ---
 
