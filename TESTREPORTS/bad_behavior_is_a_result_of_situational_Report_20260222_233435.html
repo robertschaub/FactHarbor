@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="&quot;bad&quot; behavior is a result of situational factors rather than inherent &quot;evil&quot; in the individuals">
+<meta name="fh:verdict" content="LEANING-TRUE">
+<meta name="fh:truth" content="58">
+<meta name="fh:confidence" content="65">
+<meta name="fh:date" content="2026-02-22">
+<meta name="fh:model" content="claude-sonnet-4-5-20250929">
+<title>FactHarbor Report — &quot;bad&quot; behavior is a result of situational factors rather than inherent &quot;evil&quot; in the individuals</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 2c0bd1b4039847feb8627254197e8c75</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-22 21:09 UTC</div>
+      <div>Completed: 2026-02-22 21:19 UTC</div>
+      <div>Duration: ~10 min 28 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">&quot;bad&quot; behavior is a result of situational factors rather than inherent &quot;evil&quot; in the individuals</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; claude-sonnet-4-5-20250929</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE (cached)</span>
+    <span class="chip chip-gray">23 LLM calls</span>
+    <span class="chip chip-gray">10 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 61 evidence items · 15 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-lt">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge lt-color">LEANING-TRUE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">The evidence base shows substantial situational influence on behavior across multiple experimental paradigms, particular…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value lt-color">58% true</div>
+        <div class="meter-label"></div>
+        <div class="meter-bar"><div class="meter-fill" style="width:58%;background:#276749"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">Medium confidence</div>
+        <div class="meter-label" title="65% confidence">confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:65%;background:#4a5568"></div></div>
+      </div>
+      
+    </div>
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">The evidence base shows substantial situational influence on behavior across multiple experimental paradigms, particularly in conformity and obedience contexts, but also reveals significant limitations in generalizability and methodological concerns with foundational studies. Literature on psychopathy etiology and longitudinal parenting research provides supporting evidence that environmental factors (particularly parenting quality) can shape even traits traditionally considered stable, though genetic and temperamental factors remain influential. The moderate truth rating reflects genuine situational effects tempered by replication failures, experimental artifacts, and the persistence of individual differences across contexts.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claim that situations and environments shape behavior more than inherent personality traits receives moderate support, leaning toward truth at 58% with mixed evidence across experimental and developmental research domains.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">61 evidence items analyzed across 6 analytical boundaries, spanning classic experimental psychology (Stanford Prison Experiment, Milgram obedience studies, Asch conformity experiments), psychopathy etiology research, longitudinal parenting studies, and theoretical frameworks on situational influences.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">The evidence base shows substantial situational influence on behavior across multiple experimental paradigms, particularly in conformity and obedience contexts, but also reveals significant limitations in generalizability and methodological concerns with foundational studies. Literature on psychopathy etiology and longitudinal parenting research provides supporting evidence that environmental factors (particularly parenting quality) can shape even traits traditionally considered stable, though genetic and temperamental factors remain influential. The moderate truth rating reflects genuine situational effects tempered by replication failures, experimental artifacts, and the persistence of individual differences across contexts.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Boundary CB_01 (Stanford Prison Experiment original and replication studies, 13 evidence items) shows mixed evidence direction, with critical analyses revealing experimenter demand effects and scripting that undermine claims of pure situational determinism, while CB_05 (Comparative classic experiments including Asch conformity, 13 items) and CB_07 (Literature reviews on psychopathy and parenting, 23 items) both support the claim, creating tension between experimental psychology&#39;s replication crisis and developmental psychology&#39;s longitudinal findings.</div>
+        <div class="disagreement-item">Boundary CB_03 (Milgram experiments and longitudinal psychopathy studies, 8 items) presents mixed evidence, suggesting that while obedience to authority demonstrates situational power, the developmental trajectory of psychopathic traits shows both environmental sensitivity and biological constraints, limiting the claim&#39;s universality.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not definitively determine the relative magnitude of situational versus dispositional influences across different behavioral domains, nor establish clear boundary conditions for when environmental factors override personality traits. Significant evidence gaps exist regarding long-term behavioral change from situational interventions, the interaction effects between strong situations and strong dispositions, and cross-cultural generalizability of findings derived primarily from Western samples. The theoretical boundary (CB_09) contained only 2 evidence items, limiting synthesis of overarching frameworks that might reconcile experimental and correlational findings.</div>
+    </div>
+  </div>
+</div>
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Situational factors are the primary cause of &#39;bad&#39; behavior rather than inherent &#39;evil&#39; characteristics in individuals</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val lt-color">58% true</div>
+          <div class="small-meter-label"></div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">Medium confidence</div>
+          <div class="small-meter-label" title="65%">confidence</div>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Stanford Prison Experiment - Original Study and Direct Analyses + Replication and Critical Analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">75% true</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="70%">Medium confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">13 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:75%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Milgram Obedience Experiments + Longitudinal Studies of Psychopathic Traits</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">58% true</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="78%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:58%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Comparative Analysis of Classic Social Psychology Experiments + Asch Conformity + Environmental Constraints</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val t-color">78% true</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="82%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">13 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:78%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Literature Reviews on Psychopathy Etiology and Parenting</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">62% true</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="68%">Medium confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">23 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:62%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_09 · Theoretical Analysis of Situational Influences on Behavior</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">50/50 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="60%">Medium confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_10 · Longitudinal Analysis of Parenting Effects on Adolescent Offenders</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lt-color">65% true</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="75%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:65%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(6 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict adjusts downward from the advocate&#39;s initial assessment of 68% truth/72% confidence to 58% truth/65% confidence. This reconciliation addresses several critical weaknesses:
+
+**Challenge Response Integration:**
+
+1. **Independence Concern (CP_AC_01_0) - ACCEPTED**: The challenger correctly identifies that the supporting evidence base suffers from source clustering. Multiple SPE-derived evidences (EV_1771798259451-459, EV_1771798319831-833) and Asch variations (EV_1771798370113-122) create an illusion of breadth while stemming from limited primary sources. This reduces the effective independent corroboration of situational primacy. The advocate&#39;s boundary analysis already noted SPE replication failures (EV_1771798259460), but did not sufficiently discount the overweighting of clustered sources. **Verdict adjusted downward by 5 points.**
+
+2. **Dispositional Underweighting (CP_AC_01_1) - ACCEPTED**: The challenge validly highlights that individual variation within identical situations (EV_1771798259461: guards behaved vastly differently in the same environment) and failed SPE replication (EV_1771798259460: participants did NOT automatically conform to roles) directly contradict situational determinism. The advocate acknowledged this tension but may have insufficiently weighted these contradictions against the claim&#39;s assertion of PRIMACY. The evidence shows situations are powerful but not categorically primary. **Verdict adjusted downward by 5 points.**
+
+3. **Missing Longitudinal Field Data (CP_AC_01_2) - PARTIALLY ACCEPTED**: The challenger correctly notes the absence of large-scale, real-world longitudinal studies demonstrating situational variables overriding dispositional traits over time. The existing longitudinal evidence (EV_1771798337923-924) shows dispositional traits predict behavior across 52 years even when controlling for situational factors—this is the opposite of what we&#39;d expect if situations were primary. However, the advocate already cited this contradicting evidence prominently. The challenge adds emphasis but not new information. **No additional adjustment, but reinforces existing contradictions.**
+
+4. **Experimental Evidence Underweighting (CP_AC_01_3) - REJECTED**: The challenger argues the verdict underweights Milgram and Asch experimental evidence showing situational primacy in specific contexts. However, the advocate already assigned CB_05 (Asch + environmental constraints) the highest boundary truth percentage (78%) and explicitly noted these experiments demonstrate &quot;powerful situational effects.&quot; The advocate&#39;s synthesis correctly distinguishes between situational power in controlled experimental contexts versus primacy across all contexts and timeframes. The claim asserts PRIMACY as a general principle, not context-specific dominance. The experimental evidence does not support universal primacy when weighed against longitudinal dispositional predictors. **Challenge rejected; no adjustment.**
+
+5. **Missing Neurobiological Evidence (CP_AC_01_4) - REJECTED**: While neurobiological/genetic evidence would enrich understanding of person-situation interactions, its absence does not invalidate existing behavioral evidence. The cited evidences (EV_1771798278952, 954, 955) address environmental contributions to psychopathy development, which the advocate already incorporated in CB_10. The challenge does not identify a critical gap that would change the verdict on situational PRIMACY versus dispositional factors. **Challenge rejected; no adjustment.**
+
+6. **Evidence Quality Asymmetry (CP_AC_01_5) - ACCEPTED**: The challenger validly identifies that supporting evidence includes secondary sources and classic experiments (some from educational websites like simplypsychology.org), while contradicting evidence includes high-quality, large-scale, peer-reviewed longitudinal cohort studies with rigorous statistical controls (EV_1771798337923-924: 52-year follow-up, HR=1.33 for violent crime after controlling for situational factors). The advocate noted the longitudinal evidence but may have insufficiently weighted its methodological superiority over classic experimental demonstrations. Longitudinal prediction across decades with statistical controls for situational variables provides stronger evidence against situational primacy than experimental demonstrations of situational influence in controlled settings provide for it. **Verdict adjusted downward by 5 points.**
+
+**Self-Consistency Analysis:**
+
+The self-consistency check revealed instability: percentages of [68, 50, 68] with an 18-point spread and average of 62%. The middle assessment (50%) suggests the claim&#39;s ambiguity around &quot;PRIMARY&quot; creates interpretive variance. This instability indicates the evidence does not robustly support a single clear verdict, warranting reduced confidence. The reconciled 58% falls between the advocate&#39;s 68% and the consistency average of 62%, reflecting both challenge-based adjustments and the uncertainty flagged by inconsistent assessments. **Confidence reduced by 7 points due to instability.**
+
+**Final Synthesis:**
+
+The evidence demonstrates that situational factors are powerful, often underestimated, and can override dispositions in specific experimental contexts (conformity, obedience, environmental nudges). However, the claim&#39;s assertion of situational PRIMACY is contradicted by: (1) individual variation within identical situations, (2) failed replications of situational determinism, (3) longitudinal evidence showing dispositional traits predict behavior across decades even when controlling for situational factors, and (4) the modest independent contribution of psychopathic traits when behavioral problems are controlled. The relationship is interactive rather than hierarchical, with situations being more influential than intuition suggests but not demonstrably primary over dispositional factors. The adjusted verdict of 58% reflects that situational factors are highly influential (supporting the claim&#39;s direction) but not primary (contradicting the claim&#39;s core assertion).</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">independence_concern</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. The evidence base suffers from source clustering, with multiple SPE-derived and Asch-variation evidences creating an illusion of independent corroboration. The effective evidence base supporting situational primacy is thinner than raw counts suggest, particularly given SPE replication failures.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. Individual variation within identical situations and failed SPE replication directly contradict situational determinism. The advocate acknowledged this tension but insufficiently weighted these contradictions against the claim&#39;s assertion of PRIMACY.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Partially accepted. The absence of large-scale longitudinal field data showing situational variables overriding dispositional traits is notable, and existing longitudinal evidence contradicts situational primacy. However, the advocate already prominently cited this contradicting evidence, so the challenge reinforces rather than reveals new weaknesses.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. The advocate already assigned high truth percentages to experimental evidence (CB_05: 78%) and correctly distinguished between situational power in controlled contexts versus primacy as a general principle. The experimental evidence does not support universal primacy when weighed against longitudinal dispositional predictors.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Rejected. While neurobiological/genetic evidence would enrich understanding, its absence does not invalidate existing behavioral evidence or change the verdict on situational primacy versus dispositional factors. The advocate already incorporated environmental contributions to trait development.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Accepted. Supporting evidence includes secondary sources and classic experiments, while contradicting evidence includes high-quality, large-scale, peer-reviewed longitudinal cohort studies with rigorous statistical controls. Longitudinal prediction across decades with controls for situational variables provides stronger evidence against situational primacy than experimental demonstrations provide for it.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_07<br><span style="font-weight:400;font-size:10px">Psychopathy Reviews</span></th><th>CB_09<br><span style="font-weight:400;font-size:10px">Situational Theory</span></th><th>CB_10<br><span style="font-weight:400;font-size:10px">Parenting-Offending</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Comparative Analysis</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">SPE Original</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">Milgram</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Situational factors are the pr</td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-high">13</span></td><td><span class="cell-val cell-high">13</span></td><td><span class="cell-val cell-high">8</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Literature Reviews on Psychopathy Etiology and Parenting</span><span class="ba-ev-count">23 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Literature review and synthesis of cross-sectional and longitudinal studies examining associations between environmental factors and psychopathic traits</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Reviews published 2021 and 2025; synthesizing studies spanning multiple decades</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.880</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Narrative literature reviews synthesizing research on the etiology of psychopathy, including temperamental, neurocognitive, genetic, and environmental factors, with particular focus on parenting influences during childhood and adolescence.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_09</span><span class="ba-name">Theoretical Analysis of Situational Influences on Behavior</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Theoretical analysis and review of empirical evidence; synthesis of research on situational versus dispositional explanations for behavior</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Historical debate spanning over a century in psychology; contemporary environmental psychology research</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Theoretical analyses and reviews examining the role of situational constraints and environmental variables in shaping behavior, including attitude-behavior models and the debate over personality consistency across situations.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_10</span><span class="ba-name">Longitudinal Analysis of Parenting Effects on Adolescent Offenders</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Multilevel regression models analyzing within-individual variation in parenting over time; time-lagged analysis to examine causality; adjusted for demographic and behavioral confounders</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">United States (1354 offending adolescents, 14.3% female, 40.1% Black)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Eight follow-ups from longitudinal study; published 2021</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.920</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Multilevel regression analysis of within-individual variation in parenting quality over time and its association with psychopathic traits in a sample of adolescent offenders, using time-lagged analysis to examine causality.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Comparative Analysis of Classic Social Psychology Experiments + Asch Conformity Experiments + Experimental Studies of Environmental Constraints on Pro-Environmental Behavior</span><span class="ba-ev-count">13 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Comparative analysis and synthesis of findings from multiple experimental studies examining situational influences on behavior</div></div>
+          
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1961-1971 (original experiments); 2023 (contemporary analysis)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.830</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Synthetic analyses examining multiple classic experiments (Zimbardo, Milgram, Asch) to identify common situational factors affecting behavior across different experimental paradigms.; Merged: The classic Asch conformity experiments from the 1950s examining social conformity through line-length judgment tasks with confederates providing incorrect answers. Includes variations examining group size, unanimity, and public versus private response conditions.; Experimental and observational studies examining how physical environmental factors (infrastructure placement, lighting, accessibility) influence pro-environmental behaviors such as recycling, independent of attitudes or intentions.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Stanford Prison Experiment - Original Study and Direct Analyses + Stanford Prison Experiment - Replication and Critical Analysis</span><span class="ba-ev-count">13 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Randomized controlled experiment with role assignment in simulated prison environment; pre-screened participants; behavioral observation via audio/video recording</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Stanford University, Palo Alto, California</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1971 (original experiment); 1972-1973 (immediate analyses)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: The original 1971 Stanford Prison Experiment conducted by Zimbardo and colleagues, including direct analyses and reports of the original study findings. All scopes share the same experimental design, participants, setting, and temporal period.; Replication studies of the Stanford Prison Experiment and subsequent critical analyses examining the validity and generalizability of the original findings. Includes the 2006 Reicher and Haslam replication and meta-analytical critiques.</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Milgram Obedience Experiments + Longitudinal Studies of Psychopathic Traits and Environmental Influences</span><span class="ba-ev-count">8 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Controlled laboratory experiment with deception; participants assigned teacher role administering (fake) electric shocks to learner based on authority instructions; standardized verbal prods</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Yale University, United States</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1961 (original experiment); 1963 (publication)</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.885</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: The original Milgram obedience experiments conducted at Yale University in 1961, examining compliance with authority figures instructing participants to administer electric shocks. Includes direct analyses of the experimental mechanism.; Prospective longitudinal studies examining the relationship between environmental factors (particularly parenting) and psychopathic personality traits across development, using large cohort samples with extended follow-up periods.</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">61 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(35 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259451</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">College students randomly assigned as guards in a simulated prison quickly became abusive toward prisoners, demonstrating that ordinary people can conform to social roles and situations can strongly shape behavior regardless of their baseline personality characteristics.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.simplypsychology.org/zimbardo.html" target="_blank" rel="noopener noreferrer">Stanford Prison Experiment</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259452</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Men assigned as guards began behaving sadistically, inflicting humiliation and suffering on prisoners, despite being screened as psychologically healthy and normal individuals, indicating that situational forces rather than dispositional factors drove the abusive behavior.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.simplypsychology.org/zimbardo.html" target="_blank" rel="noopener noreferrer">Stanford Prison Experiment</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259453</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Zimbardo predicted and demonstrated that the situation made people act the way they do rather than their disposition (personality), with the experiment designed to test whether brutality in prisons was due to sadistic personalities of guards (dispositional) or the prison environment (situational).</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.simplypsychology.org/zimbardo.html" target="_blank" rel="noopener noreferrer">Stanford Prison Experiment</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259454</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The Stanford Prison Experiment demonstrated the power of situations to alter human behavior dramatically, showing that even good, normal people can do evil things when situational forces push them in that direction.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.simplypsychology.org/zimbardo.html" target="_blank" rel="noopener noreferrer">Stanford Prison Experiment</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259455</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Milgram obedience experiment, 65% of participants administered the maximum level of electric shock (450V) when instructed by an authority figure, demonstrating that situational factors including authority and organizational hierarchy can override individual moral principles.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.shs-conferences.org/articles/shsconf/pdf/2023/07/shsconf_icpahd2023_01023.pdf" target="_blank" rel="noopener noreferrer">shsconf icpahd2023 01023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259456</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Zimbardo&#39;s study found that not only the power of the organization and authority figures can influence individuals&#39; actions, but other situational factors including one&#39;s belief, the role which the individual plays and the setting of reward and punishment may also affect people&#39;s behaviors.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.shs-conferences.org/articles/shsconf/pdf/2023/07/shsconf_icpahd2023_01023.pdf" target="_blank" rel="noopener noreferrer">shsconf icpahd2023 01023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259457</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Haney et al. (1972) stated that the actions subjects displayed in the Stanford Prison Experiment were &#39;the result of an Intrinsically pathological situation which could distort and rechannel the behavior of essentially normal individuals,&#39; indicating situational factors rather than inherent dispositions caused the behavior.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.shs-conferences.org/articles/shsconf/pdf/2023/07/shsconf_icpahd2023_01023.pdf" target="_blank" rel="noopener noreferrer">shsconf icpahd2023 01023</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259458</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Zimbardo concluded that people quickly conform to social roles, even when the role goes against their moral principles, and that situational factors were largely responsible for the behavior found, as none of the participants had ever demonstrated these behaviors previously.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tutor2u.net/psychology/reference/conformity-to-social-roles-as-investigated-by-zimbardo" target="_blank" rel="noopener noreferrer">Conformity to Social Roles as Investigated by Zimbardo | Reference Library | Psychology | tutor2u</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259459</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Zimbardo&#39;s aim was to examine whether the behavior displayed in prisons was due to internal dispositional factors (the people themselves) or external situational factors (the environment and conditions of the prison), with findings supporting the primacy of situational factors.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tutor2u.net/psychology/reference/conformity-to-social-roles-as-investigated-by-zimbardo" target="_blank" rel="noopener noreferrer">Conformity to Social Roles as Investigated by Zimbardo | Reference Library | Psychology | tutor2u</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798278951</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Parental warmth was associated with lower psychopathic traits, and parental hostility with higher psychopathic traits among young offenders. The more supportive and nurturing the parent, the lower the levels of psychopathic traits, whereas the more hostile the parent, the higher the levels.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_10</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10826-021-01921-7" target="_blank" rel="noopener noreferrer">Parental Warmth and Hostility and the Development of Psychopathic Behaviors: A Longitudinal Study of Young Offenders | Journal of Child and Family Studies | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798278952</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Environmental factors may contribute to the development and manifestation of psychopathy, and psychopathic traits are not unchangeable during development despite being relatively stable across childhood and adolescence.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10826-021-01921-7" target="_blank" rel="noopener noreferrer">Parental Warmth and Hostility and the Development of Psychopathic Behaviors: A Longitudinal Study of Young Offenders | Journal of Child and Family Studies | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798278953</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Parental warmth may protect against development of psychopathic traits in adolescence, whereas parental hostility may strengthen these traits. Parenting quality matters in adolescence, with warm parenting style associating with lower psychopathic features among young offenders.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_10</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10826-021-01921-7" target="_blank" rel="noopener noreferrer">Parental Warmth and Hostility and the Development of Psychopathic Behaviors: A Longitudinal Study of Young Offenders | Journal of Child and Family Studies | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798278954</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Personality traits exhibit both stability and malleability during adolescence, with longitudinal research demonstrating that personality traits predict long-term outcomes such as academic achievement, mental health disorders, and criminal behavior.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.accscience.com/journal/GHES/articles/online_first/4775" target="_blank" rel="noopener noreferrer">Shaping adolescent lives: The influence of personality traits on mental health and behavioral outcomes</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798278955</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Negative parenting and low parental warmth are associated with psychopathic-like traits in adolescence, while positive parenting and high parental warmth link to reduction in callous-unemotional traits and prevention of antisocial behavior among young people.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s10826-021-01921-7" target="_blank" rel="noopener noreferrer">Parental Warmth and Hostility and the Development of Psychopathic Behaviors: A Longitudinal Study of Young Offenders | Journal of Child and Family Studies | Springer Nature Link</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798300567</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Spatial positioning of bins explained more than half of the variance in recycling behavior, whilst self-reported recycling intentions were not related to which bin participants used, demonstrating that external situational factors can override internal psychological factors in determining behavior.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.699410/full" target="_blank" rel="noopener noreferrer">Frontiers | Internal and External Factors’ Influence on Recycling: Insights From a Laboratory Experiment With Observed Behavior</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798300568</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Situational factors set boundary conditions for how well attitude-behavior models predict behavior; features of the physical environment may facilitate or hinder intention leading to action, and can shape behavior in the absence of intention, helping explain intention-behavior gaps.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.699410/full" target="_blank" rel="noopener noreferrer">Frontiers | Internal and External Factors’ Influence on Recycling: Insights From a Laboratory Experiment With Observed Behavior</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798300569</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Even subtle changes in the physical environment, such as whether light is on or off in a public bathroom or smaller serving plates at buffets, can lead to drastic changes in behavioral outcomes, independent of individual intentions or characteristics.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.699410/full" target="_blank" rel="noopener noreferrer">Frontiers | Internal and External Factors’ Influence on Recycling: Insights From a Laboratory Experiment With Observed Behavior</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798300570</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Inconvenient access to recycling infrastructure can cause even the best-intentioned recyclers to not recycle, demonstrating that situational constraints override internal motivation and intentions.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.699410/full" target="_blank" rel="noopener noreferrer">Frontiers | Internal and External Factors’ Influence on Recycling: Insights From a Laboratory Experiment With Observed Behavior</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798319831</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The Stanford prison experiment involved 24 healthy undergraduate participants with no hint of severe emotional problems or predilections toward violence who were randomly assigned to guard or prisoner roles. Despite their psychological health and lack of violent tendencies, guards exhibited sadistic behaviors and prisoners showed emotional distress and submissiveness within six days, demonstrating that situational factors rather than inherent characteristics drove the harmful behaviors.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ebsco.com/research-starters/health-and-medicine/stanford-prison-experiment" target="_blank" rel="noopener noreferrer">Stanford prison experiment | Health and Medicine | Research Starters | EBSCO ResearchEBSCO, research databases, ebooks, discovery serviceEBSCO, research databases, ebooks, discovery service</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798319832</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The transformation of student participants into abusive guards and submissive prisoners was facilitated by situational processes including deindividualization (hiding behind uniforms, badges, and titles) and dehumanization (demeaning clothing, insulting names, ritualized depersonalization). These environmental and role-based factors, rather than individual characteristics, drove the behavioral changes.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ebsco.com/research-starters/health-and-medicine/stanford-prison-experiment" target="_blank" rel="noopener noreferrer">Stanford prison experiment | Health and Medicine | Research Starters | EBSCO ResearchEBSCO, research databases, ebooks, discovery serviceEBSCO, research databases, ebooks, discovery service</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798319833</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The study demonstrates that &#39;the power of a situation can transform those who are generally regarded as good people into authoritarians and sadists&#39; and that &#39;the dark side of human nature can emerge under certain circumstances,&#39; illustrating how situational dynamics rather than inherent evil characteristics drive harmful behavior.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ebsco.com/research-starters/health-and-medicine/stanford-prison-experiment" target="_blank" rel="noopener noreferrer">Stanford prison experiment | Health and Medicine | Research Starters | EBSCO ResearchEBSCO, research databases, ebooks, discovery serviceEBSCO, research databases, ebooks, discovery service</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798337925</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The independent contribution of psychopathic personality traits to criminality was modest at best when childhood behavioral problems were accounted for, suggesting that behavioral problems explain much of the association with criminal outcomes</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0047235220302555" target="_blank" rel="noopener noreferrer">Do psychopathic personality traits in childhood predict subsequent criminality and psychiatric outcomes over and above childhood behavioral problems? - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798337926</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Associations between psychopathic personality traits and psychiatric outcomes (substance use disorders, anxiety, and depression) were mainly explained by childhood behavioral problems rather than by psychopathic traits independently</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0047235220302555" target="_blank" rel="noopener noreferrer">Do psychopathic personality traits in childhood predict subsequent criminality and psychiatric outcomes over and above childhood behavioral problems? - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370111</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Milgram experiment, 65% of subjects administered the maximum 450-volt shock when instructed by an authority figure, despite believing they were causing severe pain to another person, suggesting situational pressure from authority overrode personal moral judgment</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://en.wikipedia.org/wiki/Milgram_experiment" target="_blank" rel="noopener noreferrer">Milgram experiment - Wikipedia</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370112</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Milgram found that the individual does not see himself/herself responsible for his/her behavior while doing what someone else wants, indicating that situational authority displaced personal responsibility</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mozartcultures.com/en/asch-and-milgram-experiments-social-psychology/" target="_blank" rel="noopener noreferrer">Asch and Milgram Experiments : Social Psychology - MozartCultures</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370113</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Asch conformity experiments, 76% of participants conformed to group pressure at least once by indicating an incorrect line length, despite the correct answer being obvious, demonstrating that situational social pressure influenced behavior</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/conformity-compliance-and-obedience/" target="_blank" rel="noopener noreferrer">Conformity and Obedience | Introduction to Psychology</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370114</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Conformity increased with the size of the majority up to seven individuals, and conformity rates dropped to near zero when at least one dissenter was present, showing that situational group composition directly influenced conformity behavior</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/conformity-compliance-and-obedience/" target="_blank" rel="noopener noreferrer">Conformity and Obedience | Introduction to Psychology</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370115</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Participants in Asch&#39;s study complied by giving wrong answers publicly but privately did not accept that the wrong answers were correct, demonstrating that the situational context of public versus private response determined behavior rather than genuine belief change</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/conformity-compliance-and-obedience/" target="_blank" rel="noopener noreferrer">Conformity and Obedience | Introduction to Psychology</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370116</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Asch conformity experiments, 76% of participants conformed to group pressure at least once, and conformity was influenced by factors such as group size, presence of dissenters, and whether responses were public or private, demonstrating situational factors determined behavior</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://nobaproject.com/modules/conformity-and-obedience" target="_blank" rel="noopener noreferrer">Conformity and Obedience | Noba</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370117</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Milgram&#39;s obedience study showed that most participants continued administering shocks when instructed by the experimenter despite vehement protests from the person receiving shocks, demonstrating that situational authority and institutional context overrode personal moral concerns</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://nobaproject.com/modules/conformity-and-obedience" target="_blank" rel="noopener noreferrer">Conformity and Obedience | Noba</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370118</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Asch conformity experiments, conformity was significantly less likely when participants believed confederates would not hear their responses, indicating that fear of social rejection and situational concern about others&#39; judgments drove conformity rather than inherent traits</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://nobaproject.com/modules/conformity-and-obedience" target="_blank" rel="noopener noreferrer">Conformity and Obedience | Noba</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370119</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Asch conformity experiments, even when the correct answer was obvious, a large portion of naive participants agreed with confederates&#39; incorrect responses, and conformity increased with group size up to about five confederates, demonstrating situational factors determined behavior</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.labvanced.com/content/research/en/blog/2024-04-5-famous-social-psychology-experiments/" target="_blank" rel="noopener noreferrer">5 Famous &amp; Classic Experiments | Social Psychology | Research</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370120</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Asch conformity experiments, a participant was far less likely to comply if even one other person in the group provided the correct response, demonstrating that situational presence of social support dramatically reduced conformity pressure</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.labvanced.com/content/research/en/blog/2024-04-5-famous-social-psychology-experiments/" target="_blank" rel="noopener noreferrer">5 Famous &amp; Classic Experiments | Social Psychology | Research</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370121</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">In the Asch conformity experiments, when participants were required to provide answers in public, they were more likely to comply with group pressure compared to when providing answers privately, demonstrating that situational context of public visibility determined behavior</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.labvanced.com/content/research/en/blog/2024-04-5-famous-social-psychology-experiments/" target="_blank" rel="noopener noreferrer">5 Famous &amp; Classic Experiments | Social Psychology | Research</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798370122</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">The Stanford Prison Experiment showed that participants randomly assigned to guard roles began acting abusively and authoritatively toward inmates, while inmates displayed severe stress, demonstrating that situational role assignment and institutional context determined behavior rather than pre-existing personality traits</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.labvanced.com/content/research/en/blog/2024-04-5-famous-social-psychology-experiments/" target="_blank" rel="noopener noreferrer">5 Famous &amp; Classic Experiments | Social Psychology | Research</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(4 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259460</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">A replication of the Stanford Prison Experiment by Reicher and Haslam (2006) found that participants did not automatically conform to their social roles, with guards refusing to impose authority and prisoners organizing to challenge guard authority, contradicting Zimbardo&#39;s findings about situational determinism.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tutor2u.net/psychology/reference/conformity-to-social-roles-as-investigated-by-zimbardo" target="_blank" rel="noopener noreferrer">Conformity to Social Roles as Investigated by Zimbardo | Reference Library | Psychology | tutor2u</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798259461</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">In Zimbardo&#39;s original Stanford Prison Experiment, the behavior of the guards varied dramatically, from extremely sadistic behavior to a few good guards who helped the prisoners, suggesting that situational factors are not the only cause of conformity to social roles and dispositional factors also play a role.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.tutor2u.net/psychology/reference/conformity-to-social-roles-as-investigated-by-zimbardo" target="_blank" rel="noopener noreferrer">Conformity to Social Roles as Investigated by Zimbardo | Reference Library | Psychology | tutor2u</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798337923</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Psychopathic personality traits remain predictive of violent convictions across the life-course even after controlling for childhood risk factors such as convicted father, parental discipline, and socioeconomic status</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0047235221000374" target="_blank" rel="noopener noreferrer">Psychopathic personality and criminal violence across the life-course in a prospective longitudinal study: Does psychopathic personality predict violence when controlling for other risk factors? - ScienceDirectScienceDirect</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798337924</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Childhood psychopathic personality traits predicted subsequent violent crime suspicions (HR = 1.33, 95% CI: 1.23-1.45) and non-violent crime suspicions (HR = 1.28, 95% CI: 1.22-1.36) even after accounting for childhood behavioral problems including conduct disorder and ADHD symptoms</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0047235220302555" target="_blank" rel="noopener noreferrer">Do psychopathic personality traits in childhood predict subsequent criminality and psychiatric outcomes over and above childhood behavioral problems? - ScienceDirectScienceDirect</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(22 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Research has shown how situational and other outside factors can subconsciously and negatively affect how we engage in ethical decision-making.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.legalethicstexas.com/cle-courses/how-situational-factors-can-subconsciously-affect/" target="_blank" rel="noopener noreferrer">https://www.legalethicstexas.com/cle-courses/how-situational-factors-can-subconsciously-affect/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Situational and other outside factors can subconsciously affect ethical behavior, implying that factors beyond individual character traits influence behavioral outcomes.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.legalethicstexas.com/cle-courses/how-situational-factors-can-subconsciously-affect/" target="_blank" rel="noopener noreferrer">https://www.legalethicstexas.com/cle-courses/how-situational-factors-can-subconsciously-affect/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Social psychologists assert that an individual&#39;s thoughts, feelings, and behaviors are very much influenced by social situations. People will change their behavior to align with the social situation at hand.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/" target="_blank" rel="noopener noreferrer">https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Behavior is a product of both the situation (e.g., cultural influences, social roles, and the presence of bystanders) and of the person (e.g., personality characteristics). Modern approaches to social psychology take both the situation and the individual into account when studying human behavior.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/" target="_blank" rel="noopener noreferrer">https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In the quizmaster study, questioners and contestants were randomly assigned roles. Contestants answered questions correctly only 4 out of 10 times. However, both contestants and observers rated the questioners as more intelligent, overlooking the obvious situational influence that questioners had written the questions and thus had an advantage.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/" target="_blank" rel="noopener noreferrer">https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The fundamental attribution error demonstrates that people tend to overemphasize internal factors as explanations for the behavior of other people and underestimate the power of the situation on behavior. People tend to assume behavior is a trait of that person rather than recognizing when behavior is due to situational variables.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/" target="_blank" rel="noopener noreferrer">https://courses.lumenlearning.com/waymaker-psychology/chapter/what-is-social-psychology/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Ethical and unethical decisions are seen as being evoked and maintained by environmental variables. Antecedents in the environment can trigger unethical responses, and consequences in the environment can shape future unethical responses. Environmental variables exert significant influence over behavior.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8586372/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC8586372/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Research indicates that unethical behavior often occurs by professionals who report that they know ethical rules and state that they are ethical people. Despite 92% of Americans being satisfied with their moral character and 80% thinking of themselves as more ethical than others, unethical behavior still occurs, suggesting situational factors override individual character.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8586372/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC8586372/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">There is a lack of correlation between moral reasoning and behavior, indicating that what people think is ethically correct does not always predict their actual behavior. Contextual variables of a situation may exert significant influence over behavior.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8586372/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC8586372/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Fundamental Attribution Error (FAE) is the tendency for individuals to over-emphasize personality-based or dispositional explanations for other people&#39;s behavior while under-emphasizing situational explanations. Individual behavior is heavily influenced and guided by situational and external factors.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">People sometimes demonstrate a cognitive bias by inferring that a person&#39;s actions depend on what &#39;kind&#39; of person they are rather than on the social and environmental forces that influence the person. An observer will likely attribute reasons for a behavior to internal characteristics and not external factors.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Research has demonstrated that the FAE may distort an observer&#39;s judgment of an individual, especially in the case of overattribution of individual responsibility for large achievements or grave mistakes. Individuals who commit the FAE assign too much personal responsibility for both positive and negative outcomes.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Students who were primed by watching a video about the power of social and environmental influences on individual behavior attributed the cause of a bad day more to situational factors, demonstrating that broader construal may help attenuate the FAE.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2021.788242/full</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">One of the traits associated with bullying is moral disengagement, which is linked to apathy or indifference to bullying-related actions. Moral disengagement in bullying cases has been related to low scores in consideration of others and poor self-control, not inherent moral deficiency.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s12144-021-02396-x" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1007/s12144-021-02396-x</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bullies have been victims of domestic violence and present more externalizing problems such as external anguish and consumption of toxic substances. Bullies present lower levels of social and emotional skills compared to students not involved in bullying practices, indicating situational and developmental factors rather than inherent evil.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s12144-021-02396-x" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1007/s12144-021-02396-x</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Changes in moral disengagement altered bullying behavior and increased the collective efficacy of the class, which stopped aggression towards other students, demonstrating that behavioral change is possible through situational and developmental interventions rather than being fixed by inherent character.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://link.springer.com/article/10.1007/s12144-021-02396-x" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1007/s12144-021-02396-x</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The division of ideologies and institutions into &#39;religious&#39; and &#39;secular&#39; categories is arbitrary and incoherent; what counts as religion is based on subjective and indefensible assumptions, resulting in certain kinds of violence being condemned while others are ignored.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bulletin.hds.harvard.edu/does-religion-cause-violence/" target="_blank" rel="noopener noreferrer">https://bulletin.hds.harvard.edu/does-religion-cause-violence/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The myth of religious violence helps create a blind spot about the violence of the putatively secular nation-state; Western societies attribute their own violence to rational necessity while attributing others&#39; violence to religious fanaticism, suggesting that behavior is shaped by institutional and ideological frameworks rather than inherent moral character.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bulletin.hds.harvard.edu/does-religion-cause-violence/" target="_blank" rel="noopener noreferrer">https://bulletin.hds.harvard.edu/does-religion-cause-violence/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Our actions are entirely caused by external factors; whether someone forces you to do something or manipulates you into wanting to do an action, the end result is the same—you do the action that they wanted you to do, indicating that behavior is determined by external influences rather than inherent moral deficiency.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/philosophy/comments/e7lr8/the_problems_with_libertarianism/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/philosophy/comments/e7lr8/the_problems_with_libertarianism/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The system of power operates through manipulatory instruments and structural frameworks rather than through the inherent moral deficiency of individuals; dissidents and powerless people can effect change through understanding and working within the nature of power structures, suggesting behavior is shaped by systemic conditions rather than individual moral character.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://bruces.medium.com/the-power-of-the-powerless-by-vaclav-havel-84b2b8d3a84a" target="_blank" rel="noopener noreferrer">https://bruces.medium.com/the-power-of-the-powerless-by-vaclav-havel-84b2b8d3a84a</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798300566</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The consistency of human behavior across situations, including environmental context, remains highly debated, with several studies arguing for consistency and others arguing against it, placing the person-situation relationship at the core of personality psychology.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_09</span>
+          </div>
+          <div class="ev-source-link"><a href="https://elifesciences.org/reviewed-preprints/98171" target="_blank" rel="noopener noreferrer">Individuality across environmental context in Drosophila melanogaster</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1771798319834</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Subsequent studies have scrutinized the conclusions drawn from the Stanford prison experiment, suggesting that individual characteristics may also play a critical role in the dynamics observed, indicating that the relationship between situational factors and behavior may be more complex than initially concluded.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.ebsco.com/research-starters/health-and-medicine/stanford-prison-experiment" target="_blank" rel="noopener noreferrer">Stanford prison experiment | Health and Medicine | Research Starters | EBSCO ResearchEBSCO, research databases, ebooks, discovery serviceEBSCO, research databases, ebooks, discovery service</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">15 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Stanford Prison Experiment</span></div>
+        <div class="source-url"><a href="https://www.simplypsychology.org/zimbardo.html" target="_blank" rel="noopener noreferrer">https://www.simplypsychology.org/zimbardo.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: situational factors behavior Stanford prison experiment obedience</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">shsconf icpahd2023 01023</span></div>
+        <div class="source-url"><a href="https://www.shs-conferences.org/articles/shsconf/pdf/2023/07/shsconf_icpahd2023_01023.pdf" target="_blank" rel="noopener noreferrer">https://www.shs-conferences.org/articles/shsconf/pdf/2023/07/shsconf_icpahd2023_01023.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: situational factors behavior Stanford prison experiment obedience</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Conformity to Social Roles as Investigated by Zimbardo | Reference Library | Psychology | tutor2u</span></div>
+        <div class="source-url"><a href="https://www.tutor2u.net/psychology/reference/conformity-to-social-roles-as-investigated-by-zimbardo" target="_blank" rel="noopener noreferrer">https://www.tutor2u.net/psychology/reference/conformity-to-social-roles-as-investigated-by-zimbardo</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: situational factors behavior Stanford prison experiment obedience</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Parental Warmth and Hostility and the Development of Psychopathic Behaviors: A Longitudinal Study of Young Offenders | Journal of Child and Family Studies | Springer Nature Link</span></div>
+        <div class="source-url"><a href="https://link.springer.com/article/10.1007/s10826-021-01921-7" target="_blank" rel="noopener noreferrer">https://link.springer.com/article/10.1007/s10826-021-01921-7</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: personality traits predict criminal behavior longitudinal study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Shaping adolescent lives: The influence of personality traits on mental health and behavioral outcomes</span></div>
+        <div class="source-url"><a href="https://www.accscience.com/journal/GHES/articles/online_first/4775" target="_blank" rel="noopener noreferrer">https://www.accscience.com/journal/GHES/articles/online_first/4775</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: personality traits predict criminal behavior longitudinal study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Individuality across environmental context in Drosophila melanogaster</span></div>
+        <div class="source-url"><a href="https://elifesciences.org/reviewed-preprints/98171" target="_blank" rel="noopener noreferrer">https://elifesciences.org/reviewed-preprints/98171</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: environmental context situational variables behavioral outcomes meta-analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Frontiers | Internal and External Factors’ Influence on Recycling: Insights From a Laboratory Experiment With Observed Behavior</span></div>
+        <div class="source-url"><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.699410/full" target="_blank" rel="noopener noreferrer">https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.699410/full</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: environmental context situational variables behavioral outcomes meta-analysis</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">Stanford prison experiment | Health and Medicine | Research Starters | EBSCO ResearchEBSCO, research databases, ebooks, discovery serviceEBSCO, research databases, ebooks, discovery service</span></div>
+        <div class="source-url"><a href="https://www.ebsco.com/research-starters/health-and-medicine/stanford-prison-experiment" target="_blank" rel="noopener noreferrer">https://www.ebsco.com/research-starters/health-and-medicine/stanford-prison-experiment</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: situational factors behavior Stanford prison experiment</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Psychopathic personality and criminal violence across the life-course in a prospective longitudinal study: Does psychopathic personality predict violence when controlling for other risk factors? - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0047235221000374" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/abs/pii/S0047235221000374</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: personality traits predict criminal behavior longitudinal study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Do psychopathic personality traits in childhood predict subsequent criminality and psychiatric outcomes over and above childhood behavioral problems? - ScienceDirectScienceDirect</span></div>
+        <div class="source-url"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0047235220302555" target="_blank" rel="noopener noreferrer">https://www.sciencedirect.com/science/article/abs/pii/S0047235220302555</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: personality traits predict criminal behavior longitudinal study</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Milgram experiment - Wikipedia</span></div>
+        <div class="source-url"><a href="https://en.wikipedia.org/wiki/Milgram_experiment" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Milgram_experiment</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: obedience conformity social psychology Milgram Asch experiments</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Asch and Milgram Experiments : Social Psychology - MozartCultures</span></div>
+        <div class="source-url"><a href="https://mozartcultures.com/en/asch-and-milgram-experiments-social-psychology/" target="_blank" rel="noopener noreferrer">https://mozartcultures.com/en/asch-and-milgram-experiments-social-psychology/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: obedience conformity social psychology Milgram Asch experiments</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">Conformity and Obedience | Introduction to Psychology</span></div>
+        <div class="source-url"><a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/conformity-compliance-and-obedience/" target="_blank" rel="noopener noreferrer">https://courses.lumenlearning.com/waymaker-psychology/chapter/conformity-compliance-and-obedience/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: obedience conformity social psychology Milgram Asch experiments</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Conformity and Obedience | Noba</span></div>
+        <div class="source-url"><a href="https://nobaproject.com/modules/conformity-and-obedience" target="_blank" rel="noopener noreferrer">https://nobaproject.com/modules/conformity-and-obedience</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: obedience conformity social psychology Milgram Asch experiments</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">5 Famous &amp; Classic Experiments | Social Psychology | Research</span></div>
+        <div class="source-url"><a href="https://www.labvanced.com/content/research/en/blog/2024-04-5-famous-social-psychology-experiments/" target="_blank" rel="noopener noreferrer">https://www.labvanced.com/content/research/en/blog/2024-04-5-famous-social-psychology-experiments/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: obedience conformity social psychology Milgram Asch experiments</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">10 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>situational factors behavior influence</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Situational factors influence bad behavior more than individual character traits</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>behavior situational versus dispositional</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Bad behavior is not primarily caused by inherent evil or moral deficiency in ind</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>situational factors behavior Stanford prison experiment obedience</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>personality traits predict criminal behavior longitudinal study</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>environmental context situational variables behavioral outcomes meta-analysis</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>situational factors behavior Stanford prison experiment</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>personality traits predict criminal behavior longitudinal study</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>obedience conformity social psychology Milgram Asch experiments</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">61</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">15</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">10</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">23</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.0.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.0.0-cb · Generated 2026-02-22 22:34 UTC
+  <br>Job 2c0bd1b4039847feb8627254197e8c75 · claude-sonnet-4-5-20250929 · anthropic
+</div>
+</div>
+</body>
+</html>
