@@ -2,7 +2,7 @@
 
 **Role:** Senior Developer
 **Date:** 2026-03-01
-**Status:** ✅ ALL P0/P1 IMPLEMENTED — pending verification (Step 8a/8b)
+**Status:** ✅ Steps 0-7b DONE — Step 11 (data exposure hardening) pending implementation. Dynamic pipeline removed (2026-03-02).
 **Based on:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/KNOWN_ISSUES.md`, `Docs/STATUS/Backlog.md` (security + reliability + cost-control items)
 
 ## Context
@@ -17,13 +17,14 @@ FactHarbor is in Alpha and the ClaimAssessmentBoundary pipeline is operational. 
 
 - Single API instance (no multi-instance deployment in this phase)
 - SQLite remains the system database
-- Public read/search remains open
+- Single pipeline: ClaimBoundary only (monolithic dynamic removed 2026-03-02)
+- Public read/search remains open (with proxy-level data redaction per Step 11)
 - Analysis submission remains invite-code-gated
 - No full AuthN/AuthZ platform in this phase
 
 ---
 
-## Step 0: Pre-Implementation Baseline
+## Step 0: Pre-Implementation Baseline (COMPLETED)
 
 **Action:** Confirm current baseline behavior before hardening changes.
 
@@ -36,7 +37,7 @@ FactHarbor is in Alpha and the ClaimAssessmentBoundary pipeline is operational. 
 
 ---
 
-## Step 1: SSRF Hardening (VERIFICATION ONLY)
+## Step 1: SSRF Hardening (COMPLETED)
 
 > **Review finding [M-1]:** `retrieval.ts` v1.3.0 already implements all protections below (IPv4/IPv6 private IP blocking, scheme enforcement, redirect validation, 10MB size cap, 30s timeout, fail-closed DNS). This step is verification-only — no new code expected. Update `KNOWN_ISSUES.md` S1 status from "NOT IMPLEMENTED" to "IMPLEMENTED".
 
@@ -56,7 +57,7 @@ Add/extend tests for blocked host/IP paths, redirect chain cap, and oversize res
 
 ---
 
-## Step 2: Admin Endpoint Auth Sweep
+## Step 2: Admin Endpoint Auth Sweep (COMPLETED)
 
 ### 2a. `apps/web/src/app/api/admin/**/route.ts` - standardize auth checks
 
@@ -81,7 +82,7 @@ After edits, verify no inline admin-key equality checks remain in admin route ha
 
 ---
 
-## Step 3: Rate Limiting, Submission Quotas, and CORS
+## Step 3: Rate Limiting, Submission Quotas, and CORS (COMPLETED)
 
 ### 3a. `apps/api/Controllers/AnalyzeController.cs` - request throttling
 
@@ -109,7 +110,7 @@ After edits, verify no inline admin-key equality checks remain in admin route ha
 
 ---
 
-## Step 4: SQLite Contention Handling for Invite Slot Claim
+## Step 4: SQLite Contention Handling for Invite Slot Claim (COMPLETED)
 
 ### 4a. `apps/api/Services/JobService.cs` - busy/lock retry path
 
@@ -149,7 +150,7 @@ Implementation guidance:
 
 ---
 
-## Step 6: Input Policy Gate (Block Problematic Inputs)
+## Step 6: Input Policy Gate (COMPLETED)
 
 ### 6a. Deterministic structural gate (API authoritative)
 
@@ -341,25 +342,131 @@ These are recommended for limited public pre-release hardening after P0 gates la
 
 | # | File | Action | Addresses | Status |
 |---|------|--------|-----------|--------|
-| 1 | `apps/web/src/lib/retrieval.ts` | Verify (no code changes expected) + add tests | Security-S1 | Protections exist |
-| 2 | `apps/web/src/lib/auth.ts` | Verify — already provides `checkAdminKey()` | Security-S2 | ✅ Done |
-| 3 | `apps/web/src/app/api/admin/**/route.ts` | Verify — all 25+ routes already use `checkAdminKey()` | Security-S2 | ✅ Done |
-| 3b | `apps/api/Controllers/AdminInviteCodesController.cs` | **Modify** — fix timing-unsafe `==` auth [B-1] | Security-S2 | **BLOCKER** |
-| 3c | `apps/api/Helpers/AuthHelper.cs` (new) | **Create** — shared API auth helper | Security-S2 | TODO |
-| 4 | `apps/api/Controllers/AnalyzeController.cs` | Modify — structural input validation + rate limiting setup | Security-S3, Input Policy | TODO |
-| 4b | `apps/api/Program.cs` | Modify — add rate limiting middleware + CORS | Security-S3, CORS | TODO |
-| 5 | `apps/api/Services/JobService.cs` | Modify — bounded retry/backoff for SQLite lock contention | Reliability | TODO |
-| 6 | `apps/api/Controllers/JobsController.cs` | Verify only — inviteCode already excluded | Privacy | ✅ Done |
-| 7 | `apps/web/src/app/api/fh/analyze/route.ts` | Modify — semantic input gate before API proxy | Input Policy | TODO |
-| 8 | `apps/web/test/**` and/or `apps/api` tests | Modify/add — regression coverage for auth/privacy/contention | QA Gate | TODO |
-| 9 | `apps/api/Controllers/AdminInviteCodesController.cs` | ✅ Created — admin invite quota endpoints | Operations | ✅ Done |
-| 10 | `apps/web/src/app/admin/invites/page.tsx` | ✅ Created — invite management UI | Operations | ✅ Done |
-| 11 | `scripts/stop-services.ps1` | Use in deployment runbook validation | Deployment | Exists |
-| 12 | `scripts/restart-clean.ps1` / `scripts/build-and-restart.ps1` | Use in deployment runbook validation | Deployment | Exists |
-| 13 | `scripts/health.ps1` | Use for post-deploy health gate | Deployment | Exists |
-| 14 | `apps/web/src/lib/input-policy-gate.ts` | Create — LLM semantic input gate helper | Input Policy | TODO |
-| 15 | `apps/web/prompts/text-analysis/input-policy-gate.prompt.md` | Create — UCM-managed semantic input gate prompt | Input Policy | TODO |
-| 16 | `scripts/smoke-test.ps1` (new) | Create — automated smoke test runner | QA Gate | Recommended |
+| 1 | `apps/web/src/lib/retrieval.ts` | SSRF hardening + streaming size enforcement | Security-S1, S-2 | ✅ Done |
+| 2 | `apps/web/src/lib/auth.ts` | Timing-safe `checkAdminKey()` | Security-S2 | ✅ Done |
+| 3 | `apps/web/src/app/api/admin/**/route.ts` | All 25+ routes use `checkAdminKey()` | Security-S2 | ✅ Done |
+| 3b | `apps/api/Controllers/AdminInviteCodesController.cs` | Timing-safe auth via `AuthHelper` [B-1] | Security-S2 | ✅ Done |
+| 3c | `apps/api/Helpers/AuthHelper.cs` | Shared API auth helper (`CryptographicOperations.FixedTimeEquals`) | Security-S2 | ✅ Done |
+| 4 | `apps/api/Controllers/AnalyzeController.cs` | Structural validation + rate limiting + body size limit | Security-S3, Input Policy, S-8 | ✅ Done |
+| 4b | `apps/api/Program.cs` | Rate limiting + CORS + Swagger guard | Security-S3, H-3, S-3 | ✅ Done |
+| 5 | `apps/api/Services/JobService.cs` | SQLite contention retry (3x, SQLITE_BUSY only) | Reliability H-5 | ✅ Done |
+| 6 | `apps/api/Controllers/JobsController.cs` | Cancel/retry auth + inviteCode excluded | Privacy S-1 | ✅ Done |
+| 7 | `apps/web/src/app/api/fh/analyze/route.ts` | LLM input policy gate integration | Input Policy | ✅ Done |
+| 8 | `apps/web/test/**` | 1113 tests passing; calibration smoke PASS | QA Gate | ✅ Done |
+| 9 | `apps/api/Controllers/AdminInviteCodesController.cs` | Admin invite CRUD endpoints | Operations | ✅ Done |
+| 10 | `apps/web/src/app/admin/invites/page.tsx` | Invite management UI | Operations | ✅ Done |
+| 11-13 | Deployment scripts | Exist and documented in Step 9 | Deployment | Exists |
+| 14 | `apps/web/src/lib/input-policy-gate.ts` | LLM semantic gate (Haiku, structured output, XML escaping) | Input Policy | ✅ Done |
+| 15 | `apps/web/prompts/input-policy-gate.prompt.md` | UCM-managed gate prompt | Input Policy | ✅ Done |
+| 16 | `scripts/smoke-test.ps1` | Automated smoke test runner | QA Gate | Deferred |
+
+---
+
+## Step 11: API Data Exposure Hardening
+
+**Priority:** P0 (network isolation) + P1 (data redaction) + P2 (read rate limiting)
+**Effort:** ~4-6 hours total
+**Addresses:** S-6 (inputValue exposure), metrics exposure, enumeration protection
+
+**Problem:** All read endpoints (job list, job detail, metrics) are completely unauthenticated. Anyone can enumerate all analyses, read full user input text, and access system-wide operational metrics.
+
+**Strategy:** Three-layer hybrid protection — network isolation + proxy-level data redaction + read rate limiting.
+
+### 11a. Network isolation — Bind .NET API to localhost only (P0)
+
+Create `apps/api/appsettings.Production.json`:
+```json
+{
+  "Kestrel": {
+    "Endpoints": {
+      "Http": { "Url": "http://127.0.0.1:5000" }
+    }
+  }
+}
+```
+
+- Next.js is the sole public-facing surface; .NET API unreachable from outside the host
+- Verify `FH_API_BASE_URL` points to `http://localhost:5000` or `http://127.0.0.1:5000`
+- **Test:** Attempt connection to port 5000 from different machine — must fail
+
+**Effort:** ~15 minutes
+
+### 11b. Proxy-level data redaction — Job list (P1)
+
+**File:** `apps/web/src/app/api/fh/jobs/route.ts`
+
+- Parse upstream JSON response (instead of raw passthrough)
+- Non-admin: replace `inputPreview` with generic label based on `inputType` ("Text analysis" / "URL analysis")
+- Admin (valid `x-admin-key`): pass through unmodified
+- Keep visible for all: `jobId`, `status`, `progress`, `createdUtc`, `inputType`, `pipelineVariant`, `verdictLabel`, `truthPercentage`, `confidence`
+
+**Rationale:** Job list serves discovery/demo. Users see analyses exist with verdicts, but cannot read what others submitted.
+
+**Effort:** ~1 hour
+
+### 11c. Proxy-level data redaction — Job detail (P1)
+
+**File:** `apps/web/src/app/api/fh/jobs/[id]/route.ts`
+
+- Parse upstream JSON response
+- Non-admin: replace `inputValue` with `inputPreview` (truncated) or `"[Details visible to admin]"`
+- Keep `resultJson`, `reportMarkdown` visible (derived analysis, not private user data — demo value)
+- Admin: full response, unmodified
+
+**Effort:** ~1 hour
+
+### 11d. Admin-gate metrics endpoints (P1)
+
+**Files:**
+- `apps/web/src/app/api/fh/metrics/summary/route.ts`
+- `apps/web/src/app/api/fh/metrics/quality-health/route.ts`
+
+- Add `if (!checkAdminKey(request)) return 401` guard to GET handlers
+- Metrics reveal costs, token counts, failure rates, quality trends — operational intelligence
+
+**Effort:** ~30 minutes
+
+### 11e. Rate limiting on read endpoints (P2)
+
+**Files:** `apps/api/Program.cs`, `apps/api/Controllers/JobsController.cs`
+
+- Add `ReadPerIp` policy: 30 req/min per IP (admin bypasses)
+- Apply `[EnableRateLimiting("ReadPerIp")]` to `List()` and `Get()` in `JobsController`
+- Prevents scripted enumeration while allowing normal browsing
+
+**Effort:** ~1 hour
+
+### 11f. Acceptance criteria
+
+1. Direct connection to .NET API port 5000 from external machine is refused
+2. `GET /api/fh/jobs` without admin key returns job list with `inputPreview` replaced by generic label
+3. `GET /api/fh/jobs/{id}` without admin key returns `inputValue` as redacted text
+4. `GET /api/fh/metrics/summary` without admin key returns 401
+5. Admin key holders see full, unredacted data on all endpoints
+6. UI jobs list page renders correctly with redacted preview text
+7. UI job detail page renders correctly with redacted input (results, verdict, report still display)
+
+### 11g. Design decisions (not done)
+
+- **No per-user job scoping:** Invite codes are shared (not per-user identifiers). No "my jobs" concept without session management.
+- **No SSE events gating:** Events contain only progress messages. JobIds are 32-char hex GUIDs (unguessable without enumeration).
+- **No deep resultJson scrubbing:** Fragile and error-prone. Analysis is derived data, not private input.
+- **No session management:** Explicitly out of scope for pre-release.
+
+---
+
+## Planned Files (Updated)
+
+> Includes Step 11 files.
+
+| # | File | Action | Addresses | Status |
+|---|------|--------|-----------|--------|
+| 17 | `apps/api/appsettings.Production.json` (new) | Create — Kestrel localhost binding | API Protection 11a | TODO |
+| 18 | `apps/web/src/app/api/fh/jobs/route.ts` | Modify — parse + redact inputPreview for non-admin | API Protection 11b | TODO |
+| 19 | `apps/web/src/app/api/fh/jobs/[id]/route.ts` | Modify — parse + redact inputValue for non-admin | API Protection 11c | TODO |
+| 20 | `apps/web/src/app/api/fh/metrics/summary/route.ts` | Modify — add admin key gate to GET | API Protection 11d | TODO |
+| 21 | `apps/web/src/app/api/fh/metrics/quality-health/route.ts` | Modify — add admin key gate to GET | API Protection 11d | TODO |
+| 22 | `apps/api/Controllers/JobsController.cs` | Modify — add ReadPerIp rate limiting | API Protection 11e | TODO |
 
 ---
 
@@ -369,6 +476,7 @@ These are recommended for limited public pre-release hardening after P0 gates la
 - Full AuthN/AuthZ platform (OIDC/SSO/RBAC)
 - Multi-instance deployment topology
 - Normalized relational analytics schema
+- Per-user job scoping (requires session management or per-user invite codes)
 - ~~Invite quota introspection endpoint~~ — **[M-6]:** Already shipped as `GET /v1/analyze/status` in `AnalyzeController.cs:33-43`. Removed from deferred list.
 
 ---
@@ -377,17 +485,17 @@ These are recommended for limited public pre-release hardening after P0 gates la
 
 > **Review update:** Decisions #4 and #7 removed (already shipped). Two new decisions added. Decision #8 is implementation-blocking.
 
-1. Per-IP throttle default for `/v1/analyze` (requests/minute)
-2. SQLite contention retry policy (attempt count + backoff). Recommendation: 3 retries, 50/100/200ms exponential backoff.
-3. Status code policy for contention exhaustion (`429` vs `503`). Recommendation: `503` — server-side contention, not client rate violation.
-4. ~~Whether to include quota-remaining endpoint in pre-release scope~~ — **SHIPPED** (`GET /v1/analyze/status`)
-5. Deployment rollback policy: DB restore allowed automatically vs manual approval gate
-6. Security-header policy strictness for pre-release (minimal vs strict CSP)
-7. ~~Admin invite UI scope: reset-only vs reset+edit in Round 1~~ — **SHIPPED** (full CRUD implemented)
-8. **[IMPLEMENTATION-BLOCKING]** Input gate fallback policy on LLM errors (`fail-open` vs `fail-closed`). Must decide before Step 6 implementation starts.
-9. Public API exposure policy: web-only ingress vs direct API access allowed in pre-release. **Linked to CORS (Step 3a2)** — if direct API access is disallowed, CORS is the enforcement mechanism. Decide together.
-10. **(NEW)** Input gate latency budget: LLM call adds 1-3s per submission. Acceptable for pre-release?
-11. **(NEW)** Input gate `review` workflow: cut for v1 (plan assumes `allow | reject` only). Confirm or override.
+1. ~~Per-IP throttle default~~ — **DECIDED & SHIPPED**: 5 req/min fixed-window per-IP on `/v1/analyze`
+2. ~~SQLite contention retry~~ — **DECIDED & SHIPPED**: 3 retries, 50/100/200ms, SQLITE_BUSY only
+3. ~~Contention exhaustion status code~~ — **DECIDED & SHIPPED**: `503`
+4. ~~Quota-remaining endpoint~~ — **SHIPPED** (`GET /v1/analyze/status`)
+5. Deployment rollback policy: DB restore allowed automatically vs manual approval gate — **Pending**
+6. Security-header policy strictness for pre-release (minimal vs strict CSP) — **Pending**
+7. ~~Admin invite UI scope~~ — **SHIPPED** (full CRUD)
+8. ~~Input gate fallback~~ — **DECIDED & SHIPPED**: Fail-open (structural gate always runs first)
+9. ~~Public API exposure~~ — **DECIDED & SHIPPED**: Web-only; CORS enforces (`FH_CORS_ORIGIN`)
+10. ~~Input gate latency~~ — **DECIDED**: Acceptable for pre-release (1-3s)
+11. ~~Input gate `review` workflow~~ — **DECIDED**: Cut for v1 (allow/reject only)
 
 ---
 
@@ -469,16 +577,18 @@ Validate that this plan is implementation-ready for a limited public pre-release
 
 | Step | Effort | Status |
 |------|--------|--------|
-| 0 (Baseline) | ~1-2h | Practical |
-| 1 (SSRF) | ~1-2h | Verification-only + tests |
-| 2 (Auth sweep) | ~30min | API fix only (web done) |
-| 3 (Rate limiting + CORS) | ~2-4h | Needs Captain decision #1 |
-| 4 (SQLite contention) | ~2-3h | Practical with error code spec |
-| 5 (Privacy guard) | ~15min | Already done, verify only |
-| 6 (Input policy gate) | ~8-16h | Most complex; needs decisions #8, #10, #11 |
-| 7/7b (Invite admin + EF) | 0h | COMPLETED |
-| 8 (Verification) | ~2-4h | Recommend scripted smoke tests |
-| 9 (Deployment) | ~1-2h | Practical with EF step added |
+| 0 (Baseline) | ~1-2h | ✅ DONE |
+| 1 (SSRF) | ~1-2h | ✅ DONE — streaming size + DNS rebinding + private IP blocking |
+| 2 (Auth sweep) | ~30min | ✅ DONE — `AuthHelper.cs` + `CryptographicOperations.FixedTimeEquals` |
+| 3 (Rate limiting + CORS) | ~2-4h | ✅ DONE — `AnalyzePerIp` + `FactHarborCors` + Swagger guard |
+| 4 (SQLite contention) | ~2-3h | ✅ DONE — 3 retries, SQLITE_BUSY only, 503 on exhaustion |
+| 5 (Privacy guard) | ~15min | ✅ DONE |
+| 6 (Input policy gate) | ~8-16h | ✅ DONE — LLM gate + structural validation + injection hardening |
+| 7/7b (Invite admin + EF) | 0h | ✅ DONE |
+| 8 (Verification) | ~2-4h | Partial — build+tests pass, smoke checks pending after Step 11 |
+| 9 (Deployment) | ~1-2h | Ready — procedure documented, EF migrations active |
+| 10 (Additional security) | deferred | Phased — CORS promoted to P0 (done), rest post-launch |
+| **11 (Data exposure)** | **~4-6h** | **TODO — next implementation step** |
 
 ### Remaining Doc Updates Needed (Outside This Plan)
 
@@ -518,7 +628,7 @@ Validate that this plan is implementation-ready for a limited public pre-release
 | ID | Finding | Source | Impl Status |
 |----|---------|--------|-------------|
 | **S-5** | Invite code in URL query string (`GET /v1/analyze/status?code=...`) — logged in access logs/Referer | Security | **NOT FIXED** |
-| **S-6** | `GET /v1/jobs/{jobId}` returns full `inputValue` unauthenticated | Security | **NOT FIXED** |
+| **S-6** | `GET /v1/jobs/{jobId}` returns full `inputValue` unauthenticated | Security | **Step 11** — proxy-level redaction planned |
 | **S-7** | Input gate fail-open on LLM errors — attacker can trigger failures then submit abuse | Security | **BY DESIGN** — needs Captain #8 |
 | **S-8** | No request body size limit on API (30MB default) — memory exhaustion before `ValidateRequest` runs | Security | ✅ **FIXED** — `[RequestSizeLimit(65_536)]` on Create (`0cd802d`) |
 | **S-9** | SSE connection exhaustion — no per-IP concurrent limit, 10min thread hold | Security | Deferred — invite gating limits attack surface |
@@ -559,7 +669,7 @@ Validate that this plan is implementation-ready for a limited public pre-release
 | ID | Item | Rationale |
 |----|------|-----------|
 | **S-5** | Invite code in URL query string | Low-traffic beta, no untrusted proxies. Fix when adding proper auth. |
-| **S-6** | `inputValue` exposure in job detail | Data is user-submitted claims (not secrets). Address with Captain #9. |
+| **S-6** | `inputValue` exposure in job detail | **Addressed by Step 11** (proxy-level redaction for non-admin). |
 | **S-9** | SSE connection exhaustion | Invite gating limits attack surface. Monitor. |
 | **S-7** | Fail-open vs fail-closed | Acceptable for beta if structural gate (Step 6a) always runs. Re-evaluate with metrics. |
 | **L-3** | KNOWN_ISSUES.md updates | Documentation hygiene, not code risk. |
@@ -598,9 +708,9 @@ All 2 blockers, 5 high-severity, and key medium-severity findings have been reso
 - ✅ DNS rebinding protection in retrieval.ts
 
 **Remaining before GO:**
-1. Run Step 8a (build + test) — verify compilation and 1100+ tests pass
-2. Run Step 8b smoke checks — functional verification of hardening
-3. DB reset required (EF migrations replace `EnsureCreated`)
+1. **Step 11** (API data exposure hardening) — network isolation, proxy-level redaction, metrics gating (~4-6h)
+2. Monolithic dynamic pipeline removal — in progress (2026-03-02), tracked in `Docs/WIP/2026-03-02_Remove_Monolithic_Dynamic_Pipeline.md`
+3. Run Step 8a/8b verification after Step 11
 
 **Deferred items (acceptable for limited pre-release):**
-- S-5 (invite code in URL), S-6 (inputValue exposure), S-9 (SSE limits), M-2 (gate test fixtures), L-3 (docs update)
+- S-5 (invite code in URL), S-9 (SSE limits), M-2 (gate test fixtures), L-3 (docs update)
