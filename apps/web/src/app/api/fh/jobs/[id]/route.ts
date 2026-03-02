@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -29,11 +28,6 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const data = await res.json();
-  const isAdmin = checkAdminKey(request);
-
-  if (!isAdmin) {
-    data.inputValue = "[Submission text visible to admin only]";
-  }
 
   return NextResponse.json(data);
 }

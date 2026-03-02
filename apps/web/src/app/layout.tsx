@@ -34,6 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               >
                 Alpha
               </span>
+              <div style={{ fontSize: 11, fontWeight: 400, color: "#6b7280", marginTop: 2 }}>
+                AI-powered fact-checking — every verdict backed by evidence you can inspect.
+              </div>
             </div>
             <nav className={styles.nav}>
               <a href="/analyze" className={styles.navLink}>Analyze</a>

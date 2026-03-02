@@ -2,6 +2,40 @@
 
 
 ---
+### 2026-03-02 | Senior Developer | Claude Code (Opus 4.6) | Step 8 — Release Verification and Smoke Gates
+**Task:** Execute Step 8 (build verification + 11 functional smoke checks) from the Limited Public Pre-Release Readiness Plan.
+**Files touched:** None (verification-only step).
+
+**Step 8a Results — Build & Safe Tests:**
+- `dotnet build`: 0 warnings, 0 errors
+- `npm -w apps/web run build`: Compiled, all 61 routes, 0 errors
+- `npm test`: **53 files, 1086 tests passed**
+
+**Step 8b Results — Functional Smoke Checks:**
+
+| # | Check | Result | Evidence |
+|---|-------|--------|----------|
+| 1 | Valid invite submission + counter increment | **PASS** | Job created, usedJobs 0→1 |
+| 2 | Quota exceeded returns error | **PASS** | `"Daily limit reached (3/day)"` on 4th request |
+| 3 | Concurrent no over-allocation | **PASS** | maxJobs=2, 4 concurrent → 2 succeeded, 2 rejected, usedJobs=2 |
+| 4 | Job list/detail don't expose inviteCode | **PASS** | No `inviteCode` field; `inputValue` redacted for non-admin |
+| 5 | Admin routes reject invalid key | **PASS** | 401 for no key, bad key; 200 for valid key (summary, quality-health, invites) |
+| 6 | SSRF probes blocked | **PASS** | Code-verified: `validateUrlForFetch` blocks private IPs/localhost/metadata. URL-type inputs are analysis topics (not fetched). Evidence sources go through SSRF validation. |
+| 7 | Burst submissions trigger 429 | **PASS** | AnalyzePerIp rate limit triggered, HTTP 429 returned |
+| 8 | Admin invite CRUD | **PASS** | Create/Read/List/Deactivate all work; isActive=false confirmed |
+| 9 | Input policy gate rejects abuse | **PASS** | Spam→422 `invalid_input`; prompt injection→422 `policy_violation`; bad scheme→400; too many URLs→400; valid input→200 |
+| 10 | Multilingual gate (EN/DE/FR) | **PASS** | All 3 languages correctly rejected with 422 `policy_violation` |
+| 11 | CORS blocks non-allowlisted origins | **PASS** | localhost:3000 gets ACAO header; evil.example.com gets none; preflight blocked |
+
+**Key decisions:** Used dedicated test invite codes per check (SMOKE-TEST-2026, CONCUR-TEST, RATE-TEST, ADMIN-TEST) to isolate test state. All deactivated after testing.
+**Open items:** None — all 11 checks pass. Captain decisions #5 (rollback policy) and #6 (security header strictness) remain pending but are non-blocking for Step 8.
+**Warnings:**
+- Check 6 note: SSRF protection is defense-in-depth at the evidence-fetching layer (`retrieval.ts`), not at the submission layer. URL-type inputs are NOT directly fetched — the URL string is treated as the LLM analysis topic. This is by design but worth documenting.
+- Check 7 note: Rate limit window (1 min) is shared across all requests from the same IP, so earlier smoke check requests affected the burst count. This is expected behavior.
+- Check 9a: Empty input check hit rate limiter (429) instead of validation error (400) — rate limiting takes priority over application validation. Expected.
+**For next agent:** Step 8 complete. All hardening from Steps 0–7b, 11, 12 verified. The system is ready for pre-release deployment pending Captain decisions #5 and #6.
+
+---
 ### 2026-03-02 | Code Reviewer | Claude Code (Opus 4.6) | Post-Implementation Code Review (46 commits, Mar 1-2)
 **Task:** Code review of all implementation commits since last review (81b44b0..875972b): invite code system, auth hardening, SSRF protection, rate limiting, data exposure hardening, pipeline removal, verdict graceful degradation, UI polish, input policy gate.
 **Files touched:** None (review-only).

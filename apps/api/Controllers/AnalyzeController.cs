@@ -9,7 +9,7 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateJobRequest(
     string inputType,
     string inputValue,
-    string? pipelineVariant = "claimboundary",  // "claimboundary" (default), "monolithic_dynamic", or legacy "orchestrated"
+    string? pipelineVariant = "claimboundary",
     string? inviteCode = null
 );
 public sealed record CreateJobResponse(string jobId, string status);
@@ -54,7 +54,7 @@ public sealed class AnalyzeController : ControllerBase
             return (false, "Invalid inputType: must be 'url' or 'text'");
 
         // pipelineVariant validation
-        var validPipelines = new[] { "claimboundary", "orchestrated", "monolithic_dynamic" };
+        var validPipelines = new[] { "claimboundary" };
         if (req.pipelineVariant != null && !validPipelines.Contains(req.pipelineVariant))
             return (false, $"Invalid pipelineVariant: must be one of {string.Join(", ", validPipelines.Select(p => $"'{p}'"))}");
 

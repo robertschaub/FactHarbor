@@ -9,6 +9,7 @@ public sealed record CreateInviteCodeRequest(
     string code,
     string? description = null,
     int maxJobs = 5,
+    int hourlyLimit = 5,
     int dailyLimit = 2,
     DateTime? expiresUtc = null
 );
@@ -60,6 +61,9 @@ public sealed class AdminInviteCodesController : ControllerBase
         if (req.maxJobs < 1)
             return BadRequest(new { error = "MaxJobs must be at least 1" });
 
+        if (req.hourlyLimit < 0)
+            return BadRequest(new { error = "HourlyLimit must be greater than or equal to 0" });
+
         if (req.dailyLimit < 0)
             return BadRequest(new { error = "DailyLimit must be greater than or equal to 0" });
 
@@ -86,6 +90,7 @@ public sealed class AdminInviteCodesController : ControllerBase
             Code = normalizedCode,
             Description = req.description,
             MaxJobs = req.maxJobs,
+            HourlyLimit = req.hourlyLimit,
             DailyLimit = req.dailyLimit,
             ExpiresUtc = normalizedExpiresUtc,
             IsActive = true,

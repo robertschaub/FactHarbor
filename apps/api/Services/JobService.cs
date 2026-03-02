@@ -211,12 +211,21 @@ public sealed class JobService
                     if (invite.UsedJobs >= invite.MaxJobs)
                         { await tx.RollbackAsync(); return (false, $"Lifetime limit reached ({invite.MaxJobs} total)", false); }
 
+                    // Hourly limit check (rolling 60-minute window)
+                    if (invite.HourlyLimit > 0)
+                    {
+                        var hourCutoff = DateTime.UtcNow.AddHours(-1);
+                        var hourlyUsed = await _db.Jobs.CountAsync(j => j.InviteCode == code && j.CreatedUtc >= hourCutoff);
+                        if (hourlyUsed >= invite.HourlyLimit)
+                            { await tx.RollbackAsync(); return (false, $"Hourly limit reached ({invite.HourlyLimit}/hour). Try again in a few minutes.", false); }
+                    }
+
                     var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
                     if (invite.DailyLimit > 0)
                     {
                         var usage = await _db.InviteCodeUsage.FindAsync(code, today);
                         if (usage != null && usage.UsageCount >= invite.DailyLimit)
-                            { await tx.RollbackAsync(); return (false, $"Daily limit reached ({invite.DailyLimit}/day)", false); }
+                            { await tx.RollbackAsync(); return (false, $"Daily limit reached ({invite.DailyLimit}/day). Try again after midnight UTC.", false); }
                     }
 
                     // All checks passed — apply increments.
@@ -332,6 +341,9 @@ public sealed class JobService
     public sealed record InviteCodeStatus(
         string code,
         bool isActive,
+        int hourlyLimit,
+        int hourlyUsed,
+        int hourlyRemaining,
         int dailyLimit,
         int dailyUsed,
         int dailyRemaining,
@@ -346,6 +358,9 @@ public sealed class JobService
         var invite = await _db.InviteCodes.FindAsync(code);
         if (invite == null) return null;
 
+        var hourCutoff = DateTime.UtcNow.AddHours(-1);
+        var hourlyUsed = await _db.Jobs.CountAsync(j => j.InviteCode == code && j.CreatedUtc >= hourCutoff);
+
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
         var usage = await _db.InviteCodeUsage.FindAsync(code, today);
         var dailyUsed = usage?.UsageCount ?? 0;
@@ -353,6 +368,9 @@ public sealed class JobService
         return new InviteCodeStatus(
             invite.Code,
             invite.IsActive,
+            invite.HourlyLimit,
+            hourlyUsed,
+            invite.HourlyLimit > 0 ? Math.Max(0, invite.HourlyLimit - hourlyUsed) : 999,
             invite.DailyLimit,
             dailyUsed,
             invite.DailyLimit > 0 ? Math.Max(0, invite.DailyLimit - dailyUsed) : 999,

@@ -14,7 +14,7 @@ export function DisclaimerBanner() {
         lineHeight: 1.4,
       }}
     >
-      This is an early pre-release. Analyses are provided without warranty. Verdicts may still contain imperfections and inconsistencies and should not be cited as authoritative.
+      FactHarbor pre-release reports still contain imperfections and should not be cited as authoritative. Reports are provided without warranty.
     </div>
   );
 }

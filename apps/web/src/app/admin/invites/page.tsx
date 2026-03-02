@@ -15,6 +15,7 @@ type InviteCode = {
   code: string;
   description: string | null;
   maxJobs: number;
+  hourlyLimit: number;
   dailyLimit: number;
   usedJobs: number;
   isActive: boolean;
@@ -31,6 +32,7 @@ export default function InviteManagementPage() {
     code: "",
     description: "",
     maxJobs: 10,
+    hourlyLimit: 5,
     dailyLimit: 2,
     expiresUtc: ""
   });
@@ -112,6 +114,7 @@ export default function InviteManagementPage() {
           code: "",
           description: "",
           maxJobs: 10,
+          hourlyLimit: 5,
           dailyLimit: 2,
           expiresUtc: ""
         });
@@ -177,10 +180,22 @@ export default function InviteManagementPage() {
               />
             </div>
             <div>
+              <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Hourly Limit (per 60 min)</label>
+              <input
+                type="number"
+                value={newCode.hourlyLimit}
+                onChange={e => setNewCode({...newCode, hourlyLimit: Math.max(0, parseIntOrZero(e.target.value))})}
+                style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                min={0}
+                step={1}
+                required
+              />
+            </div>
+            <div>
               <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Daily Limit (24h Quota)</label>
-              <input 
-                type="number" 
-                value={newCode.dailyLimit} 
+              <input
+                type="number"
+                value={newCode.dailyLimit}
                 onChange={e => setNewCode({...newCode, dailyLimit: Math.max(0, parseIntOrZero(e.target.value))})}
                 style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
                 min={0}
@@ -212,6 +227,7 @@ export default function InviteManagementPage() {
             <tr>
               <th style={{ padding: 12 }}>Code</th>
               <th style={{ padding: 12 }}>Usage</th>
+              <th style={{ padding: 12 }}>Hourly</th>
               <th style={{ padding: 12 }}>Daily</th>
               <th style={{ padding: 12 }}>Status</th>
               <th style={{ padding: 12 }}>Created</th>
@@ -230,7 +246,8 @@ export default function InviteManagementPage() {
                     {invite.usedJobs} / {invite.maxJobs}
                   </span>
                 </td>
-                <td style={{ padding: 12 }}>{invite.dailyLimit} / day</td>
+                <td style={{ padding: 12 }}>{invite.hourlyLimit > 0 ? `${invite.hourlyLimit} / hr` : "unlimited"}</td>
+                <td style={{ padding: 12 }}>{invite.dailyLimit > 0 ? `${invite.dailyLimit} / day` : "unlimited"}</td>
                 <td style={{ padding: 12 }}>
                   <span style={{ 
                     padding: "2px 8px", 

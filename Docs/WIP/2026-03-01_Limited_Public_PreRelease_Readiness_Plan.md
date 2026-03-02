@@ -2,7 +2,7 @@
 
 **Role:** Senior Developer
 **Date:** 2026-03-01
-**Status:** ✅ Steps 0-7b DONE — Step 11 (data exposure hardening) pending implementation. Dynamic pipeline removed (2026-03-02).
+**Status:** ✅ Steps 0-12 DONE. All security findings resolved. Dynamic pipeline removed. S-5 fixed (`ccb3e88`). **Next: Step 8 smoke gates + Step 9 deployment.**
 **Based on:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/KNOWN_ISSUES.md`, `Docs/STATUS/Backlog.md` (security + reliability + cost-control items)
 
 ## Context
@@ -654,10 +654,10 @@ Validate that this plan is implementation-ready for a limited public pre-release
 | 5 (Privacy guard) | ~15min | ✅ DONE |
 | 6 (Input policy gate) | ~8-16h | ✅ DONE — LLM gate + structural validation + injection hardening |
 | 7/7b (Invite admin + EF) | 0h | ✅ DONE |
-| 8 (Verification) | ~2-4h | Partial — build+tests pass, smoke checks pending after Step 11 |
+| 8 (Verification) | ~2-4h | **NEXT** — build+tests pass, smoke checks pending |
 | 9 (Deployment) | ~1-2h | Ready — procedure documented, EF migrations active |
 | 10 (Additional security) | deferred | Phased — CORS promoted to P0 (done), rest post-launch |
-| **11 (Data exposure)** | **~4-6h** | **TODO — next implementation step** |
+| 11 (Data exposure) | ~4-6h | ✅ DONE — localhost binding, proxy redaction, metrics gating, read rate limiting (`875972b`) |
 | 12 (UI polish + disclaimer) | ~2-4h | ✅ DONE — banner, footer, background, methodology note, result disclaimer (`53f3ab4`) |
 
 ### Remaining Doc Updates Needed (Outside This Plan)
@@ -762,9 +762,9 @@ Validate that this plan is implementation-ready for a limited public pre-release
 
 ### 5. Go / No-Go Recommendation
 
-**~~NO-GO~~ → CONDITIONAL GO — all P0 and P1 items implemented.**
+**~~NO-GO~~ → ~~CONDITIONAL GO~~ → GO pending smoke checks (Step 8b) — all implementation complete.**
 
-All 2 blockers, 5 high-severity, and key medium-severity findings have been resolved across commits `0cd802d` through `9ea5eb5`. Implementation includes:
+All 2 blockers, 5 high-severity, and all actionable medium-severity findings have been resolved across commits `0cd802d` through `ccb3e88`. Implementation includes:
 
 - ✅ Timing-safe auth (`AuthHelper.cs` + `CryptographicOperations.FixedTimeEquals`)
 - ✅ Cancel/retry gated behind admin key + retry consumes invite quota
@@ -773,15 +773,21 @@ All 2 blockers, 5 high-severity, and key medium-severity findings have been reso
 - ✅ Request body size limit (65KB)
 - ✅ Streaming SSRF size enforcement (chunked response protection)
 - ✅ SQLite contention retry (3x, 50/100/200ms, SQLITE_BUSY only)
-- ✅ Per-IP rate limiting (`AnalyzePerIp` fixed-window policy)
+- ✅ Per-IP rate limiting (`AnalyzePerIp` + `ReadPerIp` fixed-window policies)
 - ✅ Input gate injection hardening (XML escaping, 4000-char cap, structured output)
 - ✅ DNS rebinding protection in retrieval.ts
+- ✅ API data exposure hardening (localhost binding, proxy redaction, metrics gating)
+- ✅ Invite code moved from URL to `X-Invite-Code` header (S-5)
+- ✅ Monolithic dynamic pipeline removed (single pipeline: ClaimBoundary)
+- ✅ UI polish, disclaimer banner, footer, methodology note
 
 **Remaining before GO:**
-1. **Step 11** (API data exposure hardening) — network isolation, proxy-level redaction, metrics gating (~4-6h)
+1. ~~Step 11 (API data exposure hardening)~~ — ✅ DONE (`875972b`)
 2. ~~Step 12 (UI polish + disclaimer)~~ — ✅ DONE (`53f3ab4`)
-3. Monolithic dynamic pipeline removal — in progress (2026-03-02), tracked in `Docs/WIP/2026-03-02_Remove_Monolithic_Dynamic_Pipeline.md`
-4. Run Step 8a/8b verification after Step 11
+3. ~~Monolithic dynamic pipeline removal~~ — ✅ DONE (`122f34b`)
+4. ~~S-5 (invite code in URL)~~ — ✅ FIXED (`ccb3e88`)
+5. **Step 8b: Functional smoke checks** — run against live services
+6. **Step 9: Deployment procedure** — execute on target environment
 
 **Deferred items (acceptable for limited pre-release):**
 - ~~S-5 (invite code in URL)~~ ✅ FIXED, S-9 (SSE limits), M-2 (gate test fixtures), L-3 (docs update)

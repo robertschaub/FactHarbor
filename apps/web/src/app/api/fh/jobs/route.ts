@@ -3,11 +3,9 @@
  *
  * GET /api/fh/jobs - Returns list of all analysis jobs
  * Proxies to the backend API at FH_API_BASE_URL
- * Non-admin: inputPreview redacted to generic label
  */
 
 import { NextResponse } from "next/server";
-import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,13 +36,6 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
-    const isAdmin = checkAdminKey(request);
-
-    if (!isAdmin && Array.isArray(data.jobs)) {
-      for (const job of data.jobs) {
-        job.inputPreview = job.inputType === "url" ? "URL analysis" : "Text analysis";
-      }
-    }
 
     return NextResponse.json(data);
   } catch (error: any) {

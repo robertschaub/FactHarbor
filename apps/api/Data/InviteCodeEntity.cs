@@ -16,6 +16,9 @@ public sealed class InviteCodeEntity
     /// <summary>Max submissions allowed per UTC calendar day. 0 = unlimited.</summary>
     public int DailyLimit { get; set; } = 2;
 
+    /// <summary>Max submissions allowed per rolling 60-minute window. 0 = unlimited.</summary>
+    public int HourlyLimit { get; set; } = 5;
+
     public int UsedJobs { get; set; } = 0;
 
     public bool IsActive { get; set; } = true;

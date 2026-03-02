@@ -25,9 +25,13 @@ export default function AnalyzePage() {
   const [error, setError] = useState<string | null>(null);
   const pipelineVariant: PipelineVariant = "claimboundary";
   const [quotaStatus, setQuotaStatus] = useState<{
+    hourlyLimit: number;
+    hourlyRemaining: number;
+    dailyLimit: number;
     dailyRemaining: number;
     lifetimeRemaining: number;
     isActive: boolean;
+    expiresUtc: string | null;
   } | null>(null);
   const [checkingQuota, setCheckingQuota] = useState(false);
   const [adminKey, setAdminKey] = useState<string | null>(null);
@@ -53,9 +57,13 @@ export default function AnalyzePage() {
       if (res.ok) {
         const data = await res.json();
         setQuotaStatus({
-          dailyRemaining: data.dailyRemaining,
-          lifetimeRemaining: data.lifetimeRemaining,
-          isActive: data.isActive
+          hourlyLimit: data.hourlyLimit ?? 0,
+          hourlyRemaining: data.hourlyRemaining ?? 999,
+          dailyLimit: data.dailyLimit ?? 0,
+          dailyRemaining: data.dailyRemaining ?? 999,
+          lifetimeRemaining: data.lifetimeRemaining ?? 999,
+          isActive: data.isActive,
+          expiresUtc: data.expiresUtc ?? null,
         });
       } else {
         setQuotaStatus(null);
@@ -199,7 +207,7 @@ export default function AnalyzePage() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Examples:&#10;• Was the Bolsonaro judgment fair and based on Brazil's law?&#10;• Climate change is primarily caused by human activities&#10;• https://example.com/article-to-analyze"
+            placeholder={"Examples:\n• Was the Bolsonaro judgment fair and based on Brazil's law?\n• Climate change is primarily caused by human activities\n• https://example.com/article-to-analyze"}
             className={styles.textarea}
           />
         </div>
@@ -231,8 +239,8 @@ export default function AnalyzePage() {
           subjects the evidence to a multi-step debate between an advocate, a
           challenger, and a reconciler before producing a verdict. Each conclusion
           is scored on a 7-point scale from TRUE to FALSE with an associated
-          confidence level. Analysis typically takes 2&ndash;5 minutes depending on
-          complexity.{" "}
+          confidence level. Analysis can take 5 minutes or more depending on
+          complexity and system load.{" "}
           <a
             href="https://factharbor.ch"
             target="_blank"
@@ -255,20 +263,28 @@ export default function AnalyzePage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <label className={styles.variantLabel} style={{ margin: 0 }}>Invite Code:</label>
               {checkingQuota && <span style={{ fontSize: 11, color: "#666" }}>Checking...</span>}
-              {quotaStatus && (
-                <span style={{
-                  fontSize: 11,
-                  padding: "2px 8px",
-                  borderRadius: 10,
-                  background: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#d4edda" : "#f8d7da",
-                  color: quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545",
-                  fontWeight: 600
-                }}>
-                  {quotaStatus.isActive
-                    ? `${quotaStatus.dailyRemaining} remaining today`
-                    : "Inactive Code"}
-                </span>
-              )}
+              {quotaStatus && (() => {
+                const canSubmit = quotaStatus.isActive
+                  && quotaStatus.hourlyRemaining > 0
+                  && quotaStatus.dailyRemaining > 0
+                  && quotaStatus.lifetimeRemaining > 0
+                  && (!quotaStatus.expiresUtc || new Date(quotaStatus.expiresUtc) > new Date());
+                return (
+                  <span style={{
+                    fontSize: 11,
+                    padding: "2px 8px",
+                    borderRadius: 10,
+                    background: canSubmit ? "#d4edda" : "#f8d7da",
+                    color: canSubmit ? "#28a745" : "#dc3545",
+                    fontWeight: 600
+                  }}>
+                    {!quotaStatus.isActive ? "Inactive Code"
+                      : quotaStatus.expiresUtc && new Date(quotaStatus.expiresUtc) <= new Date() ? "Expired"
+                      : canSubmit ? `${quotaStatus.hourlyRemaining} remaining this hour`
+                      : "Limit reached"}
+                  </span>
+                );
+              })()}
             </div>
             <input
               type="password"
@@ -280,10 +296,35 @@ export default function AnalyzePage() {
                 height: "auto",
                 padding: "10px",
                 minHeight: "unset",
-                borderColor: quotaStatus ? (quotaStatus.isActive && quotaStatus.dailyRemaining > 0 ? "#28a745" : "#dc3545") : "inherit"
+                borderColor: quotaStatus ? (
+                  quotaStatus.isActive
+                    && quotaStatus.hourlyRemaining > 0
+                    && quotaStatus.dailyRemaining > 0
+                    && quotaStatus.lifetimeRemaining > 0
+                    ? "#28a745" : "#dc3545"
+                ) : "inherit"
               }}
               required
             />
+            {quotaStatus && quotaStatus.isActive && (quotaStatus.hourlyRemaining <= 0 || quotaStatus.dailyRemaining <= 0 || quotaStatus.lifetimeRemaining <= 0) && (
+              <div style={{ background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 6, padding: "8px 12px", marginTop: 8, fontSize: 12, color: "#856404", lineHeight: 1.5 }}>
+                {quotaStatus.lifetimeRemaining <= 0
+                  ? "You have used all available analyses for this invite code. Contact the administrator for additional quota."
+                  : quotaStatus.dailyRemaining <= 0
+                    ? `Daily limit reached (${quotaStatus.dailyLimit}/day). You can submit again after midnight UTC.`
+                    : `Hourly limit reached (${quotaStatus.hourlyLimit}/hour). You can submit again in a few minutes.`}
+              </div>
+            )}
+            {quotaStatus && !quotaStatus.isActive && (
+              <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 6, padding: "8px 12px", marginTop: 8, fontSize: 12, color: "#721c24", lineHeight: 1.5 }}>
+                This invite code has been deactivated. Contact the administrator for a new code.
+              </div>
+            )}
+            {quotaStatus && quotaStatus.isActive && quotaStatus.expiresUtc && new Date(quotaStatus.expiresUtc) <= new Date() && (
+              <div style={{ background: "#f8d7da", border: "1px solid #f5c6cb", borderRadius: 6, padding: "8px 12px", marginTop: 8, fontSize: 12, color: "#721c24", lineHeight: 1.5 }}>
+                This invite code has expired. Contact the administrator for a new code.
+              </div>
+            )}
             <p style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
               A valid invite code is required to use the FactHarbor alpha preview.
             </p>
@@ -320,44 +361,6 @@ export default function AnalyzePage() {
         </div>
       </form>
 
-      {/* Example queries */}
-      <div className={styles.examplesSection}>
-        <h3 className={styles.examplesTitle}>Try these examples:</h3>
-        <div className={styles.examplesList}>
-          {[
-            "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?",
-            "Is climate change primarily caused by human activities?",
-            "Did the 2020 US election have widespread fraud?",
-          ].map((example, i) => (
-            <button
-              key={i}
-              onClick={() => setInput(example)}
-              className={styles.exampleButton}
-            >
-              📝 {example}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* How it works */}
-      <div className={styles.howItWorksSection}>
-        <h3 className={styles.howItWorksTitle}>How FactHarbor Works</h3>
-        <div className={styles.stepsGrid}>
-          {[
-            { icon: "🔍", title: "Research", desc: "Searches multiple sources" },
-            { icon: "📊", title: "Extract", desc: "Identifies claims & evidence" },
-            { icon: "⚖️", title: "Analyze", desc: "Weighs evidence" },
-            { icon: "📋", title: "Report", desc: "Transparent verdict" },
-          ].map((step, i) => (
-            <div key={i} className={styles.stepItem}>
-              <div className={styles.stepIcon}>{step.icon}</div>
-              <div className={styles.stepTitle}>{step.title}</div>
-              <div className={styles.stepDescription}>{step.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

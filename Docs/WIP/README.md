@@ -22,10 +22,16 @@ For completed work, historical documents, and reference materials, see:
 ### 1. Release Readiness & Operations (3 files)
 
 #### Limited Public Pre-Release Readiness Plan (2026-03-01)
-**Status:** 🚀 Active Execution — Steps 7, 9, 10, 11 COMPLETED
+**Status:** ✅ Steps 0-12 DONE — Smoke checks (Step 8b) + Deployment (Step 9) remaining
 - **Document:** [2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md](2026-03-01_Limited_Public_PreRelease_Readiness_Plan.md)
-- **Scope:** Hardening, security (SSRF), rate limiting, admin auth, invite code management UI, EF migrations.
-- **Next Step:** Step 1 (SSRF Hardening)
+- **Scope:** Hardening, security (SSRF), rate limiting, admin auth, invite code management UI, EF migrations, data exposure, UI polish.
+- **Next Step:** Step 8b (smoke checks) then Step 9 (deployment)
+
+#### Deployment Strategy — Pre-Release (2026-03-02)
+**Status:** 📋 DRAFT — Awaiting review
+- **Document:** [2026-03-02_Deployment_Strategy_PreRelease.md](2026-03-02_Deployment_Strategy_PreRelease.md)
+- **Scope:** Single VPS + Caddy deployment. Gap analysis of existing docs, platform evaluation, implementation plan.
+- **Depends on:** Pre-Release Readiness Plan (all steps complete)
 
 #### Invite Code & Access Control Plan (2026-02-28)
 **Status:** ✅ Core implemented / Hardening in progress
