@@ -25,7 +25,17 @@ export async function GET(request: Request) {
     const upstreamParams = new URLSearchParams({ page, pageSize });
     if (q) upstreamParams.set("q", q);
     const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?${upstreamParams}`;
-    const res = await fetch(upstreamUrl, { method: "GET", cache: "no-store" });
+    const upstreamHeaders: Record<string, string> = {};
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    if (forwardedFor) upstreamHeaders["x-forwarded-for"] = forwardedFor;
+    if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
+
+    const res = await fetch(upstreamUrl, {
+      method: "GET",
+      cache: "no-store",
+      headers: upstreamHeaders,
+    });
 
     if (!res.ok) {
       const text = await res.text();

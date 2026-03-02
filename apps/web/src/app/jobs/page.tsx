@@ -74,6 +74,7 @@ export default function JobsPage() {
           throw new Error(`Failed to load jobs: ${res.status}`);
         }
         const data: JobsResponse = await res.json();
+        setError(null);
         setJobs(data.jobs || []);
         if (data.pagination) {
           setTotalCount(data.pagination.totalCount);

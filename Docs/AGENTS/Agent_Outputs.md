@@ -3047,3 +3047,17 @@ ext phase).
 **Warnings:** API debug build in this workspace is currently blocked by running process `FactHarbor.Api (PID 51536)` locking debug output binary.
 **For next agent:** Re-run functional smoke checks on deployed VPS after systemd+Caddy rollout to verify forwarded-client IP rate limiting behavior end-to-end.
 **Learnings:** no
+
+---
+### 2026-03-02 | Lead Architect | Codex (GPT-5) | Fix: Frequent 429 on Jobs UI after deployment
+**Task:** Resolve recurring `Failed to load jobs: 429` errors on `/jobs` (often cleared only by hard refresh).
+**Files touched:** `apps/api/Program.cs`, `apps/web/src/app/api/fh/jobs/route.ts`, `apps/web/src/app/api/fh/jobs/[id]/route.ts`, `apps/web/src/app/api/fh/jobs/[id]/events/route.ts`, `apps/web/src/app/jobs/page.tsx`, `apps/web/.env.example`
+**Key decisions:**
+- Preserved client forwarding headers (`x-forwarded-for`, `x-forwarded-proto`) through Next.js FH job proxy routes so API `ReadPerIp` can distinguish real clients instead of collapsing traffic into localhost.
+- Raised default API read limit from fixed 30/min to configurable env-backed default 120/min (`FH_READ_PER_IP_PER_MIN`) to support polling-heavy pages; kept analyze limit at default 5/min with env override (`FH_ANALYZE_PER_IP_PER_MIN`).
+- Improved 429 rejection message to reflect read vs analyze policy path.
+- Cleared stale jobs-page error state on successful refresh (`setError(null)` after successful load).
+**Open items:** If production still shows read 429 under concurrent load, tune `FH_READ_PER_IP_PER_MIN` upward (e.g., 180-240) and monitor.
+**Warnings:** Existing `/jobs/[id]` page still polls job detail every 2 seconds; this is functional but contributes significant read traffic by design.
+**For next agent:** Validate in production with 2-3 concurrent tabs/users and confirm `429` frequency drops; adjust env limits if needed without code change.
+**Learnings:** no

@@ -43,14 +43,25 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
+var readPerIpPermitLimit = int.TryParse(Environment.GetEnvironmentVariable("FH_READ_PER_IP_PER_MIN"), out var readLimit) && readLimit > 0
+    ? readLimit
+    : 120;
+var analyzePerIpPermitLimit = int.TryParse(Environment.GetEnvironmentVariable("FH_ANALYZE_PER_IP_PER_MIN"), out var analyzeLimit) && analyzeLimit > 0
+    ? analyzeLimit
+    : 5;
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, token) =>
     {
+        var path = context.HttpContext.Request.Path.Value ?? "";
+        var message = path.StartsWith("/v1/analyze", StringComparison.OrdinalIgnoreCase)
+            ? $"Rate limit exceeded: max {analyzePerIpPermitLimit} analyze requests per minute per IP"
+            : $"Rate limit exceeded: max {readPerIpPermitLimit} read requests per minute per IP";
         context.HttpContext.Response.ContentType = "application/json";
         await context.HttpContext.Response.WriteAsync(
-            "{\"error\":\"Rate limit exceeded: max 5 analyze requests per minute per IP\"}",
+            $"{{\"error\":\"{message}\"}}",
             token);
     };
 
@@ -62,7 +73,7 @@ builder.Services.AddRateLimiter(options =>
         var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter($"read-{ip}", _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 30,
+            PermitLimit = readPerIpPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
@@ -79,7 +90,7 @@ builder.Services.AddRateLimiter(options =>
         var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 5,
+            PermitLimit = analyzePerIpPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,

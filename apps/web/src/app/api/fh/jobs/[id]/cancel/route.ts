@@ -19,11 +19,15 @@ export async function POST(
     return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
   }
   const baseUrl = process.env.FH_API_BASE_URL || "http://localhost:5000";
+  const adminKey = req.headers.get("x-admin-key") ?? "";
 
   const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/v1/jobs/${jobId}/cancel`;
 
   try {
-    const res = await fetch(upstreamUrl, { method: "POST" });
+    const res = await fetch(upstreamUrl, {
+      method: "POST",
+      headers: { "X-Admin-Key": adminKey },
+    });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
