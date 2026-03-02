@@ -2,6 +2,45 @@
 
 
 ---
+### 2026-03-02 | Senior Developer | Claude Code (Opus 4.6) | Remove Monolithic Dynamic Pipeline
+**Task:** Remove the monolithic dynamic pipeline per approved plan. Single pipeline (ClaimBoundary) for pre-release.
+**Files deleted:**
+- `apps/web/src/lib/analyzer/monolithic-dynamic.ts` (902 lines)
+- `apps/web/prompts/monolithic-dynamic.prompt.md` (~200 lines)
+- `apps/web/test/unit/lib/analyzer/prompts/monolithic-dynamic-prompt.test.ts` (350 lines)
+
+**Files modified (20):**
+- `internal-runner-queue.ts` — removed dynamic import, branch, queue partitioning (isSlow/maxSlowConcurrency)
+- `pipeline-variant.ts` — simplified to single `"claimboundary"` type
+- `analyze/page.tsx` — removed pipeline selection cards, single pipeline info display
+- `jobs/[id]/page.tsx` — kept DynamicResultViewer for backward compat (legacy label), kept conditional rendering for old dynamic results
+- `jobs/page.tsx` — simplified `getPipelineBadge()` to always return ClaimBoundary
+- `admin/page.tsx` — removed Dynamic pipeline card from admin defaults
+- `admin/config/page.tsx` — removed `monolithic-dynamic` from prompt profiles + dropdown
+- `admin/config/[type]/[profile]/export/route.ts` — removed from VALID_PROFILES
+- `config-schemas.ts` — removed monolithicDynamic* params (schema, defaults, transform), `defaultPipelineVariant` enum → `["claimboundary"]` only
+- `config-storage.ts` — removed from VALID_PROMPT_PROFILES
+- `prompt-loader.ts` — kept `"orchestrated"` as legacy prompt profile (grounding-check.ts still loads prompts from it)
+- `metrics.ts`, `metrics-integration.ts` — widened pipelineVariant type to `string` for backward compat
+- `pipeline.default.json` — removed monolithicDynamicTimeoutMs + monolithicMaxEvidenceBeforeStop
+- `components/AboutBox.tsx` — removed monolithic_dynamic type + label
+- `config-loader.ts` — updated comment
+- `AnalyzeController.cs` — kept backward compat (accepts `monolithic_dynamic` + `orchestrated` silently)
+- `AGENTS.md` — updated pipeline variants, architecture diagram
+- Test files: `config-schemas.test.ts` (monolithic_dynamic now invalid), `drain-runner-pause.integration.test.ts` (removed mock)
+
+**Key decisions:**
+- DynamicResultViewer kept in page.tsx for backward compat (old job results must still render). Badge shows "Dynamic (legacy)".
+- API accepts `monolithic_dynamic` and `orchestrated` in pipelineVariant without error — silently routes to claimboundary. DB column unchanged.
+- `"orchestrated"` kept as valid prompt profile (shared grounding prompts still stored under this key in UCM).
+- Queue partitioning removed entirely (was fast/slow slot reservation for two pipelines).
+
+**Open items:** None.
+**Warnings:** Old `defaultPipelineVariant` in UCM DB may still be `"monolithic_dynamic"` — the runner ignores it and always runs ClaimBoundary. migrate-env-to-db.ts script has stale type but is a one-time migration, not worth updating.
+**For next agent:** Build clean, 53 test files / 1086 tests passing (down from 54/1113 — removed 1 test file + 27 monolithic tests). Grep shows only intentional backward-compat remnants (API, job viewer, UCM test fixtures, legacy prompt profile).
+**Learnings:** No new role learnings.
+
+---
 ### 2026-03-01 | Senior Developer | Claude Code (Opus 4.6) | Claim Strength Preservation Study + Auth/Branding Fixes
 **Task:** (1) Fix admin invite management auth and beta→alpha branding. (2) Investigate 30-43pp verdict variance for near-identical German inputs.
 **Files touched:** `apps/web/src/app/admin/invites/page.tsx`, `apps/web/src/app/admin/page.tsx`, `apps/web/src/app/analyze/page.tsx`, `Docs/WIP/2026-03-01_Claim_Strength_Preservation_Study.md` (new), `Docs/WIP/README.md`.
@@ -2856,4 +2895,28 @@ ext phase).
 **For next agent:**
 - German run result pair: `dd8513f3ba1b498ea45b4360344b2166` (75, MOSTLY-TRUE) vs `c1835061d55c4bb78cecf878abedbc93` (22, MOSTLY-FALSE), CE=3pp (PASS @ threshold 20).
 - Open report: `apps/web/test/output/audit/dd8513f3ba1b498ea45b4360344b2166-c1835061d55c4bb78cecf878abedbc93-2026-03-01T15-15-32-572Z.html`.
+**Learnings:** no
+
+---
+### 2026-03-02 | Senior Developer | Claude Code (Opus 4.6) | Pre-Release UI Polish and Disclaimers (Step 12)
+**Task:** Implement Step 12 of the pre-release plan: disclaimer banner, footer, background color, Alpha badge, methodology note, and result disclaimer.
+**Files touched:**
+- `apps/web/src/app/globals.css` — added body background `#f5f6f8`
+- `apps/web/src/components/DisclaimerBanner.tsx` — NEW: persistent amber top banner with alpha disclaimer
+- `apps/web/src/components/Footer.tsx` — NEW: site-wide footer with copyright and factharbor.ch link
+- `apps/web/src/app/layout.tsx` — integrated DisclaimerBanner (top), Footer (bottom), Alpha badge next to logo
+- `apps/web/src/app/analyze/page.tsx` — added methodology note below textarea, above pipeline info
+- `apps/web/src/app/jobs/[id]/page.tsx` — added result disclaimer (light blue info box) above tabs, shown only when SUCCEEDED
+
+**Key decisions:**
+- All text taken from PRIMARY variants in `Docs/WIP/2026-03-02_PreRelease_UI_Texts.md`
+- Used inline styles throughout to avoid CSS class conflicts (per task rules)
+- DisclaimerBanner and Footer are server components (no state, no effects) for simplicity
+- Alpha badge replaces the previous "FactHarbor Alpha" plain text with a styled badge
+- Result disclaimer is conditionally rendered only for SUCCEEDED jobs (not shown for RUNNING/FAILED/QUEUED)
+- Methodology note link to factharbor.ch opens in new tab with `rel="noopener noreferrer"`
+
+**Open items:** None. All 6 sub-tasks implemented and verified.
+**Warnings:** The existing `ConditionalFooter` (admin-only, renders `AboutBox`) still exists and renders via `LayoutClientShell`. The new `Footer` renders after it. Both are visible on admin pages. If this double-footer is undesired, the `ConditionalFooter` could be removed or the `AboutBox` integrated elsewhere.
+**For next agent:** Build clean, 1086 tests passing (53 files). No functional changes to analysis pipeline.
 **Learnings:** no

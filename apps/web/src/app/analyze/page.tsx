@@ -15,7 +15,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
 import type { PipelineVariant } from "@/lib/pipeline-variant";
-import { readDefaultPipelineVariant } from "@/lib/pipeline-variant";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 export default function AnalyzePage() {
@@ -24,8 +23,7 @@ export default function AnalyzePage() {
   const [inviteCode, setInviteCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pipelineVariant, setPipelineVariant] = useState<PipelineVariant>("claimboundary");
-  const [pipelineLoaded, setPipelineLoaded] = useState(false);
+  const pipelineVariant: PipelineVariant = "claimboundary";
   const [quotaStatus, setQuotaStatus] = useState<{
     dailyRemaining: number;
     lifetimeRemaining: number;
@@ -34,13 +32,11 @@ export default function AnalyzePage() {
   const [checkingQuota, setCheckingQuota] = useState(false);
   const [adminKey, setAdminKey] = useState<string | null>(null);
 
-  // Load default pipeline, invite code, and admin key on mount.
+  // Load invite code and admin key on mount.
   useEffect(() => {
-    setPipelineVariant(readDefaultPipelineVariant());
     const storedCode = localStorage.getItem("fh_invite_code") || "";
     setInviteCode(storedCode);
     setAdminKey(sessionStorage.getItem("fh_admin_key"));
-    setPipelineLoaded(true);
   }, []);
 
   const checkQuota = async (code: string) => {
@@ -139,9 +135,7 @@ export default function AnalyzePage() {
     try {
       const inputType = getInputType();
       const inputValue = inputType === "url" ? normalizeUrl(input) : input.trim();
-      // If the user submits immediately after a hard refresh, React state can still be the SSR default.
-      // In that case, fall back to the browser-local default from storage.
-      const pipelineToSend = pipelineLoaded ? pipelineVariant : readDefaultPipelineVariant();
+      const pipelineToSend = pipelineVariant;
 
       // Guard against the UI getting stuck disabled if the server is under load.
       // If the request doesn't return promptly, abort and allow the user to retry.
@@ -220,39 +214,44 @@ export default function AnalyzePage() {
           </div>
         )}
 
-        {/* Pipeline selection cards */}
+        {/* Methodology note */}
+        <p
+          style={{
+            fontSize: 12,
+            color: "#6b7280",
+            lineHeight: 1.6,
+            maxWidth: 640,
+            margin: "8px 0 16px",
+          }}
+        >
+          When you submit a claim, question, or article, FactHarbor extracts the
+          core verifiable assertions, researches them using live web sources, and
+          subjects the evidence to a multi-step debate between an advocate, a
+          challenger, and a reconciler before producing a verdict. Each conclusion
+          is scored on a 7-point scale from TRUE to FALSE with an associated
+          confidence level. Analysis typically takes 2&ndash;5 minutes depending on
+          complexity.{" "}
+          <a
+            href="https://factharbor.ch"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#6b7280", textDecoration: "underline" }}
+          >
+            Learn more at FactHarbor.ch
+          </a>
+        </p>
+
+        {/* Pipeline info */}
         <div className={styles.pipelineInfo} style={{ marginBottom: 16 }}>
-          <label className={styles.variantLabel} style={{ display: "block", marginBottom: 8 }}>Pipeline:</label>
-          <div className={styles.pipelineInfoGrid} style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-            <div
-              className={`${styles.pipelineInfoCard} ${pipelineVariant === "claimboundary" ? styles.pipelineInfoCardSelected : ""}`}
-              onClick={() => setPipelineVariant("claimboundary")}
-            >
-              <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
-                <span>🎯</span>
-                <strong>ClaimBoundary</strong>
-                <span className={styles.pipelineInfoBadge} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#28a745", color: "#fff", borderRadius: 3 }}>Default</span>
-              </div>
-              <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-                <span title="Approach">5-stage + debate</span>
-                <span title="Speed">2-5 min</span>
-                <span title="Cost">$0.50-$2</span>
-              </div>
+          <div className={`${styles.pipelineInfoCard} ${styles.pipelineInfoCardSelected}`} style={{ cursor: "default" }}>
+            <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
+              <span>🎯</span>
+              <strong>ClaimBoundary Pipeline</strong>
             </div>
-            <div
-              className={`${styles.pipelineInfoCard} ${pipelineVariant === "monolithic_dynamic" ? styles.pipelineInfoCardSelected : ""}`}
-              onClick={() => setPipelineVariant("monolithic_dynamic")}
-            >
-              <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
-                <span>⚡</span>
-                <strong>Dynamic</strong>
-                <span className={styles.pipelineInfoBadgeFast} style={{ marginLeft: "auto", padding: "2px 6px", fontSize: 10, fontWeight: 600, backgroundColor: "#1976d2", color: "#fff", borderRadius: 3 }}>Fast</span>
-              </div>
-              <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-                <span title="Approach">Streamlined</span>
-                <span title="Speed">20-60s</span>
-                <span title="Cost">$0.10-$0.40</span>
-              </div>
+            <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
+              <span title="Approach">5-stage + debate</span>
+              <span title="Speed">2-5 min</span>
+              <span title="Cost">$0.50-$2</span>
             </div>
           </div>
         </div>
