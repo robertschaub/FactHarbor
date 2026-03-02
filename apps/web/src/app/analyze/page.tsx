@@ -241,20 +241,7 @@ export default function AnalyzePage() {
           </a>
         </p>
 
-        {/* Pipeline info */}
-        <div className={styles.pipelineInfo} style={{ marginBottom: 16 }}>
-          <div className={`${styles.pipelineInfoCard} ${styles.pipelineInfoCardSelected}`} style={{ cursor: "default" }}>
-            <div className={styles.pipelineInfoHeader} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
-              <span>🎯</span>
-              <strong>ClaimBoundary Pipeline</strong>
-            </div>
-            <div className={styles.pipelineInfoStats} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666" }}>
-              <span title="Approach">5-stage + debate</span>
-              <span title="Speed">2-5 min</span>
-              <span title="Cost">$0.50-$2</span>
-            </div>
-          </div>
-        </div>
+
 
         {/* Invite Code — hidden for logged-in admins */}
         {adminKey ? (

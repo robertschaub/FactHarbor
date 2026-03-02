@@ -16,7 +16,6 @@ export const runtime = "nodejs";
 
 const VALID_PROFILES = [
   "claimboundary",
-  "monolithic-dynamic",
   "source-reliability",
   "text-analysis-input",
   "text-analysis-evidence",

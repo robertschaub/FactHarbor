@@ -30,7 +30,7 @@ type HealthStatus = {
 
 type PipelineConfig = {
   content: {
-    defaultPipelineVariant: "claimboundary" | "monolithic_dynamic";
+    defaultPipelineVariant: string;
     analysisMode: "quick" | "deep";
   };
 };
@@ -56,7 +56,6 @@ function shortSha(sha?: string | null) {
 function formatPipelineVariant(variant?: string | null) {
   if (!variant) return "—";
   if (variant === "claimboundary") return "ClaimBoundary";
-  if (variant === "monolithic_dynamic") return "Monolithic Dynamic";
   return variant;
 }
 
@@ -128,7 +127,6 @@ export function AboutBox() {
               {web && <><div>Environment</div><div><code>{web.node_env ?? "—"}</code></div></>}
               {web && <><div>LLM Provider</div><div><code>{web.llm_provider ?? "—"}</code></div></>}
               {web && web.search_providers && <><div>Search Providers</div><div><code>{formatSearchProviders(web.search_providers)}</code></div></>}
-              {pipeline && <><div>Pipeline Variant</div><div><code>{formatPipelineVariant(pipeline.content?.defaultPipelineVariant)}</code></div></>}
               {pipeline && <><div>Analysis Mode</div><div><code>{formatAnalysisMode(pipeline.content?.analysisMode)}</code></div></>}
               {api && <><div>API Version</div><div><code>{api.assembly_version ?? "—"}</code></div></>}
               {(web?.git_sha || api?.git_sha) && (

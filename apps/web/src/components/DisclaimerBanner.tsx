@@ -14,8 +14,7 @@ export function DisclaimerBanner() {
         lineHeight: 1.4,
       }}
     >
-      FactHarbor Alpha &mdash; AI-generated analysis may contain errors. Not a
-      substitute for professional fact-checking. No warranty is provided.
+      This is an early pre-release. Analyses are provided without warranty. Verdicts may still contain errors, biases, or contradictions and should not be cited as authoritative.
     </div>
   );
 }

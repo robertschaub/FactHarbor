@@ -1,10 +1,9 @@
-export type PipelineVariant = "claimboundary" | "monolithic_dynamic";
+export type PipelineVariant = "claimboundary";
 
 export const PIPELINE_STORAGE_KEY = "fh_default_pipeline";
 
 const VALID: ReadonlySet<string> = new Set([
   "claimboundary",
-  "monolithic_dynamic",
 ]);
 
 export function isPipelineVariant(value: unknown): value is PipelineVariant {
@@ -17,13 +16,7 @@ export function isPipelineVariant(value: unknown): value is PipelineVariant {
  * NOTE: This must be safe to call in SSR contexts (returns "claimboundary" when window is unavailable).
  */
 export function readDefaultPipelineVariant(): PipelineVariant {
-  if (typeof window === "undefined") return "claimboundary";
-  try {
-    const v = window.localStorage.getItem(PIPELINE_STORAGE_KEY);
-    return isPipelineVariant(v) ? v : "claimboundary";
-  } catch {
-    return "claimboundary";
-  }
+  return "claimboundary";
 }
 
 export function writeDefaultPipelineVariant(v: PipelineVariant): void {
@@ -34,4 +27,3 @@ export function writeDefaultPipelineVariant(v: PipelineVariant): void {
     // Ignore storage failures (e.g. privacy mode).
   }
 }
-

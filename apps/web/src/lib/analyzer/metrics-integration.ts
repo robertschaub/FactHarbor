@@ -22,7 +22,7 @@ let currentMetrics: MetricsCollector | null = null;
  */
 export function initializeMetrics(
   jobId: string,
-  pipelineVariant: 'orchestrated' | 'monolithic-dynamic' | 'claimboundary',
+  pipelineVariant: string,
   config?: PipelineConfig,
   searchConfig?: SearchConfig,
 ): void {

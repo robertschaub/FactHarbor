@@ -1,4 +1,3 @@
-import { runMonolithicDynamic } from "@/lib/analyzer/monolithic-dynamic";
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { debugLog } from "@/lib/analyzer/debug";
 import { classifyError } from "@/lib/error-classification";
@@ -12,7 +11,7 @@ import {
 import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
 
-type PipelineVariant = "claimboundary" | "monolithic_dynamic";
+type PipelineVariant = "claimboundary";
 
 type RunnerQueueState = {
   runningCount: number;
@@ -74,17 +73,6 @@ function getMaxConcurrency(): number {
     1,
     Number.parseInt(process.env.FH_RUNNER_MAX_CONCURRENCY ?? "3", 10) || 3,
   );
-}
-
-/** Max slots for slow pipelines (claimboundary). Reserves capacity for fast jobs. */
-function getMaxSlowConcurrency(): number {
-  const maxTotal = getMaxConcurrency();
-  const raw = Number.parseInt(process.env.FH_RUNNER_MAX_SLOW_CONCURRENCY ?? "", 10);
-  if (Number.isFinite(raw) && raw >= 1) {
-    return Math.min(raw, maxTotal);
-  }
-  // Default: total - 1 (reserve at least 1 slot for fast jobs), min 1
-  return Math.max(1, maxTotal - 1);
 }
 
 function getMaxQueueWaitMs(): number {
@@ -175,38 +163,24 @@ async function runJobBackground(jobId: string) {
     const job = await apiGet(apiBase, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
-    const pipelineVariant = (job.pipelineVariant || "claimboundary") as PipelineVariant;
+    const requestedVariant = (job.pipelineVariant || "claimboundary") as string;
 
-    await emit("info", `Preparing input (pipeline: ${pipelineVariant})`, 5);
+    await emit("info", "Preparing input (pipeline: claimboundary)", 5);
 
     let result: any;
 
-    if (pipelineVariant === "claimboundary") {
-      result = await runClaimBoundaryAnalysis({
-        jobId,
-        inputType,
-        inputValue,
-        onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
-      });
-    } else if (pipelineVariant === "monolithic_dynamic") {
-      result = await runMonolithicDynamic({
-        jobId,
-        inputType,
-        inputValue,
-        onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
-      });
-    } else {
-      await emit("warn", `Unknown pipeline variant '${pipelineVariant}', using claimboundary`, 5);
-      result = await runClaimBoundaryAnalysis({
-        jobId,
-        inputType,
-        inputValue,
-        onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
-      });
-    }
+    result = await runClaimBoundaryAnalysis({
+      jobId,
+      inputType,
+      inputValue,
+      onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
+    });
 
     if (result?.resultJson?.meta) {
-      result.resultJson.meta.pipelineVariant = pipelineVariant;
+      result.resultJson.meta.pipelineVariant = "claimboundary";
+      if (requestedVariant !== "claimboundary") {
+        result.resultJson.meta.pipelineVariantRequested = requestedVariant;
+      }
     }
 
     await emit("info", "Storing result", 95);
@@ -333,7 +307,6 @@ export async function drainRunnerQueue() {
 
     const now = Date.now();
     let effectiveRunningCount = qs.runningCount;
-    let runningSlowCount = 0; // Track slow (claimboundary) jobs for queue partitioning
 
     // **P0 FIX**: Detect and recover stale RUNNING jobs
     // Note: runningJobIds is process-local; in multi-process/runtime scenarios it cannot be used
@@ -383,7 +356,6 @@ export async function drainRunnerQueue() {
         if (lastUpdateMs === null) {
           console.warn(`[Runner] Skipping stale check for ${jobId}: invalid updatedUtc "${job.updatedUtc}"`);
           nonStaleRunningCount++;
-          if (job.pipelineVariant === "claimboundary") runningSlowCount++;
           continue;
         }
         const staleDurationMs = now - lastUpdateMs;
@@ -409,7 +381,6 @@ export async function drainRunnerQueue() {
           }
         } else {
           nonStaleRunningCount++;
-          if (job.pipelineVariant === "claimboundary") runningSlowCount++;
         }
       }
       effectiveRunningCount = nonStaleRunningCount;
@@ -456,9 +427,6 @@ export async function drainRunnerQueue() {
     }
     qs.queue = remaining;
 
-    const maxSlowConcurrency = getMaxSlowConcurrency();
-    const skippedSlowJobs: Array<{ jobId: string; enqueuedAt: number }> = [];
-
     while (effectiveRunningCount < maxConcurrency && qs.queue.length > 0) {
       const next = qs.queue.shift();
       if (!next) break;
@@ -473,26 +441,13 @@ export async function drainRunnerQueue() {
         }
         jobVariant = (j.pipelineVariant || "claimboundary") as PipelineVariant;
       } catch {}
-      // If we couldn't determine variant, don't classify as slow — avoid starving unknown jobs
-      if (!jobVariant) jobVariant = "monolithic_dynamic";
-
-      // Queue partitioning: cap slow (claimboundary) jobs to reserve slots for fast jobs
-      const isSlow = jobVariant === "claimboundary";
-      if (isSlow && runningSlowCount >= maxSlowConcurrency) {
-        skippedSlowJobs.push(next);
-        continue;
-      }
+      // All jobs are claimboundary now — no queue partitioning needed
+      if (!jobVariant) jobVariant = "claimboundary";
 
       effectiveRunningCount++;
-      if (isSlow) runningSlowCount++;
       qs.runningCount = effectiveRunningCount;
       qs.runningJobIds.add(next.jobId);
       void runJobBackground(next.jobId);
-    }
-
-    // Re-queue skipped slow jobs (they'll be picked up when a CB slot frees)
-    if (skippedSlowJobs.length > 0) {
-      qs.queue.unshift(...skippedSlowJobs);
     }
   } finally {
     qs.isDraining = false;

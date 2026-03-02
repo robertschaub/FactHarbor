@@ -799,13 +799,11 @@ export default function JobPage() {
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span><b>ID:</b> <code>{job.jobId}</code></span>
-            <Badge
-              bg={pipelineVariant === "monolithic_dynamic" ? "#fce4ec" : "#e3f2fd"}
-              color={pipelineVariant === "monolithic_dynamic" ? "#c2185b" : "#1565c0"}
-              title={`Pipeline: ${pipelineVariant || "claimboundary"}`}
-            >
-              {pipelineVariant === "monolithic_dynamic" ? "⚗️ Dynamic (legacy)" : "🎯 ClaimBoundary"}
-            </Badge>
+            {pipelineVariant === "monolithic_dynamic" && (
+              <Badge bg="#fce4ec" color="#c2185b" title="Legacy dynamic pipeline">
+                ⚗️ Dynamic (legacy)
+              </Badge>
+            )}
           </div>
           <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
           <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>

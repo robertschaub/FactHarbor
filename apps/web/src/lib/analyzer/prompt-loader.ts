@@ -26,15 +26,13 @@ const activePromptFiles = new Map<Pipeline, string>();
 
 /** Valid pipeline identifiers */
 export type Pipeline =
-  | "orchestrated"
-  | "monolithic-dynamic"
+  | "orchestrated"     // Legacy prompt profile (shared prompts still stored under this key)
   | "source-reliability"
   | "text-analysis"    // LLM text analysis prompts
   | "claimboundary";   // ClaimBoundary pipeline prompts
 
 const VALID_PIPELINES: Pipeline[] = [
   "orchestrated",
-  "monolithic-dynamic",
   "source-reliability",
   "text-analysis",
   "claimboundary",

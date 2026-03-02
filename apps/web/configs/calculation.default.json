@@ -29,7 +29,7 @@
   "sourceReliability": {
     "confidenceThreshold": 0.8,
     "consensusThreshold": 0.2,
-    "defaultScore": 0.5
+    "defaultScore": 0.4
   },
   "qualityGates": {
     "gate1OpinionThreshold": 0.7,

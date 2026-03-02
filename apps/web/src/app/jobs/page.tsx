@@ -145,13 +145,7 @@ export default function JobsPage() {
   };
 
   const getPipelineBadge = (variant?: string): { icon: string; label: string; className: string } => {
-    switch (variant) {
-      case "monolithic_dynamic":
-        return { icon: "⚡", label: "Dynamic", className: styles.pipelineBadgeDyn };
-      case "claimboundary":
-      default:
-        return { icon: "🎯", label: "ClaimBoundary", className: styles.pipelineBadgeDefault };
-    }
+    return { icon: "🎯", label: "ClaimBoundary", className: styles.pipelineBadgeDefault };
   };
 
   const getVerdictBadge = (label?: string): { icon: string; text: string; className: string } | null => {
@@ -241,14 +235,6 @@ export default function JobsPage() {
                 <div className={styles.jobInfo}>
                   <div className={styles.jobMeta}>
                     <code className={styles.jobIdCode}>{job.jobId.slice(0, 8)}...</code>
-                    {(() => {
-                      const badge = getPipelineBadge(job.pipelineVariant);
-                      return (
-                        <span className={`${styles.pipelineBadge} ${badge.className}`} title={`Pipeline: ${badge.label}`}>
-                          {badge.icon} {badge.label}
-                        </span>
-                      );
-                    })()}
                     <span className={`${styles.statusBadge} ${getStatusBadgeClass(job.status)}`}>
                       {job.status}
                     </span>

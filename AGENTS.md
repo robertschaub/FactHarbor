@@ -126,7 +126,7 @@ User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port
              ├─ src/lib/analyzer/                 ├─ Controllers/ (Jobs, Analyze, Internal)
              │  claimboundary-pipeline.ts          ├─ Services/ (JobService, RunnerClient)
              │  verdict-stage.ts                   ├─ Data/ (Entities, FhDbContext)
-             │  monolithic-dynamic.ts              └─ SQLite: factharbor.db
+             │                                     └─ SQLite: factharbor.db
              ├─ src/app/api/internal/run-job/     Swagger: http://localhost:5000/swagger
              └─ LLM calls via AI SDK
 ```
@@ -435,7 +435,7 @@ Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/we
 
 ## Current State (Pre-release, targeting v1.0)
 
-Pipeline variants: ClaimAssessmentBoundary (default, production), Monolithic Dynamic (alternative). Orchestrated was removed in v2.11.0 (replaced by ClaimAssessmentBoundary). Monolithic Canonical was removed in v2.10.x. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`.
+Pipeline: ClaimAssessmentBoundary (single production pipeline). Monolithic Dynamic removed pre-release. Orchestrated removed in v2.11.0. Monolithic Canonical removed in v2.10.x.
 
 LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
 

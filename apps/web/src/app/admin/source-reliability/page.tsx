@@ -96,12 +96,17 @@ export default function SourceReliabilityPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  // Helper to build fetch headers with admin key
+  // Helper to build fetch headers with admin key and/or invite code
   const getHeaders = useCallback((): HeadersInit => {
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     const adminKey = getAdminKey();
     if (adminKey) {
       headers["x-admin-key"] = adminKey;
+    }
+    // Also send invite code for non-admin users (evaluate endpoint accepts either)
+    const inviteCode = typeof window !== "undefined" ? localStorage.getItem("fh_invite_code") : null;
+    if (inviteCode) {
+      headers["x-invite-code"] = inviteCode;
     }
     return headers;
   }, []);

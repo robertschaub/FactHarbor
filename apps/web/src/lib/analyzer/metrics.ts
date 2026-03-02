@@ -126,7 +126,7 @@ export interface AnalysisMetrics {
   // Identification
   jobId: string;
   schemaVersion: string;
-  pipelineVariant: 'orchestrated' | 'monolithic-dynamic' | 'claimboundary';
+  pipelineVariant: string;
   timestamp: Date;
   
   // Performance

@@ -1268,7 +1268,6 @@ import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 
 export const VALID_PROMPT_PROFILES = [
-  "monolithic-dynamic",
   "source-reliability",
   // LLM text analysis prompts (4 analysis points)
   "text-analysis-input",

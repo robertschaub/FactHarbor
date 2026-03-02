@@ -279,7 +279,6 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = SHARED_DEFAULT_PIPELINE_CONFIG;
 
 const DEFAULT_PROMPT_PROFILES = [
   "claimboundary",
-  "monolithic-dynamic",
   "source-reliability",
   "text-analysis-input",
   "text-analysis-evidence",
@@ -1943,20 +1942,6 @@ function PipelineConfigForm({
         ⚠️ <strong>Stage 4 Self-Consistency Spread Thresholds</strong> and <strong>Stage 5 Aggregation parameters</strong> (harm multipliers, triangulation, derivative multiplier) are configured in the <strong>Calculation Config</strong> section, not Pipeline Config. Navigate to Calculation config type to edit these parameters.
       </div>
 
-      {/* Pipeline Selection */}
-      <h3 className={styles.formSectionTitle}>Default Pipeline</h3>
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Default Pipeline Variant</label>
-        <select
-          className={styles.formInput}
-          value={config.defaultPipelineVariant || "claimboundary"}
-          onChange={(e) => updateField("defaultPipelineVariant", e.target.value as PipelineConfig["defaultPipelineVariant"])}
-        >
-          <option value="claimboundary">ClaimAssessmentBoundary (production default)</option>
-          <option value="monolithic_dynamic">Monolithic Dynamic (fast alternative)</option>
-        </select>
-        <div className={styles.formHelp}>User can override per-job in UI</div>
-      </div>
     </div>
   );
 }

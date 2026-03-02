@@ -361,7 +361,6 @@ function buildHeader(input: HtmlReportInput): string {
   <div class="input-claim">${esc(job.inputValue)}</div>
   <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">${esc(inputType)}</strong></div>
   <div class="pipeline-meta">
-    <span class="chip chip-blue">&#127891; ${esc(meta.pipeline || "claimboundary")} pipeline</span>
     <span class="chip chip-gray">&#129302; ${esc(usedModelsLabel)}</span>
     ${meta.searchProviders ? `<span class="chip chip-gray">&#128269; ${esc(Array.isArray(meta.searchProviders) ? meta.searchProviders.join(" &amp; ") : meta.searchProviders)}</span>` : ""}
     <span class="chip chip-gray">${esc(llmCalls)} LLM calls</span>
@@ -802,7 +801,7 @@ function buildFooter(meta: any, jobId: string): string {
   const usedModelsLabel = formatUsedModels(collectUsedModels(meta)) || String(meta?.llmModel || meta?.model || "—");
 
   return `<div class="footer">
-  FactHarbor Alpha · ${esc(meta?.pipeline || "claimboundary")} pipeline ${esc(meta?.schemaVersion || "")} · Generated ${ts}
+  FactHarbor Alpha · ${esc(meta?.schemaVersion || "")} · Generated ${ts}
   <br>Job ${esc(jobId)} · ${esc(usedModelsLabel)} · ${esc(meta?.llmProvider || meta?.provider || "anthropic")}
 </div>`;
 }

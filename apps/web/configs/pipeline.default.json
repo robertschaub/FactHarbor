@@ -19,8 +19,6 @@
   "understandMaxChars": 12000,
   "understandLlmTimeoutMs": 600000,
   "extractEvidenceLlmTimeoutMs": 300000,
-  "monolithicDynamicTimeoutMs": 150000,
-  "monolithicMaxEvidenceBeforeStop": 8,
   "thesisRelevanceValidationEnabled": true,
   "thesisRelevanceLowConfidenceThreshold": 70,
   "thesisRelevanceAutoDowngradeThreshold": 60,

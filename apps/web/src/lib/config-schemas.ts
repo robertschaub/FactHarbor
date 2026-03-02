@@ -367,7 +367,7 @@ export const PipelineConfigSchema = z.object({
   searchRetryBeforeFallback: z.boolean().optional()
     .describe("Retry original queries with modified terms before triggering adaptive fallback (default: true)"),
   planningMaxSearchQueries: z.number().int().min(3).max(12).optional()
-    .describe("Max search queries generated during planning phase in monolithic-dynamic pipeline (default: 8)"),
+    .describe("Max search queries generated during planning phase (default: 8)"),
   contextClaimsAnchorDivergenceThreshold: z.number().int().min(0).max(50).optional()
     .describe("Min divergence between context verdict and claims average to trigger anchoring (default: 15)"),
   contextClaimsAnchorClaimsWeight: z.number().min(0).max(1).optional()
@@ -394,17 +394,6 @@ export const PipelineConfigSchema = z.object({
     .describe("Max gap research iterations after main research completes"),
   gapResearchMaxQueries: z.number().int().min(1).max(20).optional()
     .describe("Max total queries issued during gap research (separate from main research budget)"),
-
-  // === Pipeline Runtime Timeouts ===
-  monolithicDynamicTimeoutMs: z.number().int().min(60000).max(600000).optional().describe(
-    "Max runtime for monolithic dynamic pipeline (ms)"
-  ),
-  monolithicMaxIterations: z.number().int().min(1).max(10).optional().describe("Max research iterations for monolithic pipeline"),
-  monolithicMaxSearches: z.number().int().min(1).max(20).optional().describe("Max searches per monolithic analysis"),
-  monolithicMaxFetches: z.number().int().min(1).max(30).optional().describe("Max page fetches per monolithic analysis"),
-  monolithicMaxEvidenceBeforeStop: z.number().int().min(5).max(20).optional().describe(
-    "Max evidence items collected before stopping monolithic research (default: 8)"
-  ),
 
   // === Claim Filtering Enhancements ===
   thesisRelevanceValidationEnabled: z.boolean().optional()
@@ -512,7 +501,7 @@ export const PipelineConfigSchema = z.object({
     .describe("Fallback OpenAI model used by TPM guard (default: gpt-4.1-mini)."),
 
   // === Pipeline Selection ===
-  defaultPipelineVariant: z.enum(["claimboundary", "monolithic_dynamic"])
+  defaultPipelineVariant: z.enum(["claimboundary"])
     .optional()
     .describe("Default pipeline variant for new jobs"),
 }).transform((data) => {
@@ -534,12 +523,6 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.extractEvidenceLlmTimeoutMs === undefined) {
     data.extractEvidenceLlmTimeoutMs = 300000;
-  }
-  if (data.monolithicDynamicTimeoutMs === undefined) {
-    data.monolithicDynamicTimeoutMs = 150000;
-  }
-  if (data.monolithicMaxEvidenceBeforeStop === undefined) {
-    data.monolithicMaxEvidenceBeforeStop = 8;
   }
   if (data.thesisRelevanceValidationEnabled === undefined) {
     data.thesisRelevanceValidationEnabled = true;
@@ -811,11 +794,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   understandMaxChars: 12000,
   understandLlmTimeoutMs: 600000,
   extractEvidenceLlmTimeoutMs: 300000,
-  monolithicDynamicTimeoutMs: 150000,
-  monolithicMaxIterations: 4,
-  monolithicMaxSearches: 6,
-  monolithicMaxFetches: 8,
-  monolithicMaxEvidenceBeforeStop: 8,
   thesisRelevanceValidationEnabled: true,
   thesisRelevanceLowConfidenceThreshold: 70,
   thesisRelevanceAutoDowngradeThreshold: 60,
@@ -1121,7 +1099,7 @@ export const CalcConfigSchema = z.object({
     consensusThreshold: z.number().min(0).max(1),
     // Consumer fallback for unknown/unrated sources (SR module itself returns null).
     defaultScore: z.number().min(0).max(1)
-      .describe("Fallback score used by consuming pipelines when source reliability is unknown (e.g., monolithic_dynamic)"),
+      .describe("Fallback score used by consuming pipelines when source reliability is unknown"),
   }),
 
   qualityGates: z
@@ -1565,8 +1543,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
 const PromptFrontmatterSchema = z.object({
   version: z.string().regex(/^\d+\.\d+(\.\d+)?(-[\w]+)?$/),
   pipeline: z.enum([
-    "orchestrated",
-    "monolithic-dynamic",
+    "orchestrated",     // Legacy prompt profile (shared prompts still stored under this key)
     "source-reliability",
     "text-analysis",  // LLM text analysis prompts (input, evidence, context, verdict)
     "claimboundary",  // ClaimBoundary pipeline prompts (extraction, clustering, verdict, narrative)
@@ -1670,7 +1647,7 @@ export function validatePromptContent(content: string): ValidationResult {
     // Validate pipeline value if we got it
     const pipeline = frontmatter.pipeline;
     if (pipeline && typeof pipeline === "string") {
-      const validPipelines = ["orchestrated", "monolithic-dynamic", "source-reliability", "text-analysis", "claimboundary", "input-policy-gate"];
+      const validPipelines = ["orchestrated", "source-reliability", "text-analysis", "claimboundary", "input-policy-gate"];
       if (!validPipelines.includes(pipeline)) {
         errors.push(`Invalid pipeline: ${pipeline}. Valid: ${validPipelines.join(", ")}`);
       }
