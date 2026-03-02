@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ async function resolveJobId(context: RouteContext): Promise<string | null> {
   return id.length > 0 ? id : null;
 }
 
-export async function GET(_: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const base = process.env.FH_API_BASE_URL;
   if (!base) return NextResponse.json({ ok: false, error: "FH_API_BASE_URL not set" }, { status: 503 });
   const jobId = await resolveJobId(context);
@@ -21,6 +22,18 @@ export async function GET(_: Request, context: RouteContext) {
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs/${jobId}`;
   const res = await fetch(upstreamUrl, { method: "GET", cache: "no-store" });
-  const text = await res.text();
-  return new NextResponse(text, { status: res.status, headers: { "Content-Type": res.headers.get("content-type") ?? "application/json" } });
+
+  if (!res.ok) {
+    const text = await res.text();
+    return new NextResponse(text, { status: res.status, headers: { "Content-Type": res.headers.get("content-type") ?? "application/json" } });
+  }
+
+  const data = await res.json();
+  const isAdmin = checkAdminKey(request);
+
+  if (!isAdmin) {
+    data.inputValue = "[Submission text visible to admin only]";
+  }
+
+  return NextResponse.json(data);
 }

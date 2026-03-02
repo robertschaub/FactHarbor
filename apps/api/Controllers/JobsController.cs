@@ -3,6 +3,7 @@ using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace FactHarbor.Api.Controllers;
@@ -25,6 +26,7 @@ public sealed class JobsController : ControllerBase
     }
 
     [HttpGet]
+    [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> List(int? page = null, int? pageSize = null, string? q = null)
     {
         // Default to page 1, pageSize 50 if not provided
@@ -71,6 +73,7 @@ public sealed class JobsController : ControllerBase
     }
 
     [HttpGet("{jobId}")]
+    [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> Get(string jobId)
     {
         var j = await _jobs.GetJobAsync(jobId);

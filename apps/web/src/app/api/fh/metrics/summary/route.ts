@@ -6,12 +6,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getEnv } from "@/lib/auth";
+import { getEnv, checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!checkAdminKey(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const apiBaseUrl = getEnv("FH_API_BASE_URL") || "http://localhost:5000";
     const adminKey = getEnv("FH_ADMIN_KEY");

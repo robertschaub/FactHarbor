@@ -1,11 +1,13 @@
 /**
- * Jobs List API Endpoint v2.4.4
+ * Jobs List API Endpoint
  *
  * GET /api/fh/jobs - Returns list of all analysis jobs
  * Proxies to the backend API at FH_API_BASE_URL
+ * Non-admin: inputPreview redacted to generic label
  */
 
 import { NextResponse } from "next/server";
+import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,22 +19,34 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Extract pagination and search parameters from query string
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
     const pageSize = searchParams.get("pageSize") || "50";
     const q = searchParams.get("q");
 
-    // Forward params to backend API
     const upstreamParams = new URLSearchParams({ page, pageSize });
     if (q) upstreamParams.set("q", q);
     const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?${upstreamParams}`;
     const res = await fetch(upstreamUrl, { method: "GET", cache: "no-store" });
-    const text = await res.text();
-    return new NextResponse(text, {
-      status: res.status,
-      headers: { "Content-Type": res.headers.get("content-type") ?? "application/json" }
-    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      return new NextResponse(text, {
+        status: res.status,
+        headers: { "Content-Type": res.headers.get("content-type") ?? "application/json" },
+      });
+    }
+
+    const data = await res.json();
+    const isAdmin = checkAdminKey(request);
+
+    if (!isAdmin && Array.isArray(data.jobs)) {
+      for (const job of data.jobs) {
+        job.inputPreview = job.inputType === "url" ? "URL analysis" : "Text analysis";
+      }
+    }
+
+    return NextResponse.json(data);
   } catch (error: any) {
     console.error("Failed to fetch jobs:", error);
     return NextResponse.json(

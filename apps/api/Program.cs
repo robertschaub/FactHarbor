@@ -45,6 +45,22 @@ builder.Services.AddRateLimiter(options =>
             token);
     };
 
+    options.AddPolicy("ReadPerIp", httpContext =>
+    {
+        if (FactHarbor.Api.Helpers.AuthHelper.IsAdminKeyValid(httpContext.Request))
+            return RateLimitPartition.GetNoLimiter("admin");
+
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter($"read-{ip}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = true
+        });
+    });
+
     options.AddPolicy("AnalyzePerIp", httpContext =>
     {
         // Admins bypass rate limiting
