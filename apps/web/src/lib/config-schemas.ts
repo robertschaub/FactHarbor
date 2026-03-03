@@ -1294,6 +1294,18 @@ export const CalcConfigSchema = z.object({
   evidenceSufficiencyMinSourceTypes: z.number().int().min(1).max(10).optional(),
 
   /**
+   * D5 Control 1: Evidence Sufficiency Gate — minimum distinct normalized domains per claim.
+   * Domain normalization rules:
+   * - Parse hostname from sourceUrl
+   * - Lowercase
+   * - Strip leading "www."
+   * Claims pass source-diversity sufficiency when EITHER sourceType diversity OR
+   * normalized domain diversity meets threshold.
+   * Default 3.
+   */
+  evidenceSufficiencyMinDistinctDomains: z.number().int().min(1).max(20).optional(),
+
+  /**
    * D5 Control 2: Evidence Partitioning — route institutional sources to advocate
    * and general sources to challenger for structural independence.
    * When enabled, advocate sees institutional evidence (peer_reviewed_study,
@@ -1524,7 +1536,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   evidenceBalanceSkewThreshold: 0.8,
   evidenceBalanceMinDirectional: 3,
   evidenceSufficiencyMinItems: 3,
-  evidenceSufficiencyMinSourceTypes: 2,
+  evidenceSufficiencyMinSourceTypes: 1, // Temporary mitigation approved 2026-03-03 until domain-diversity fallback stabilizes in production
+  evidenceSufficiencyMinDistinctDomains: 3,
   evidencePartitioningEnabled: true,
   contrarianRetrievalEnabled: true,
   contrarianMaxQueriesPerClaim: 2,

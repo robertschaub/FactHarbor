@@ -102,7 +102,8 @@
     "floorRatio": 0.1
   },
   "evidenceSufficiencyMinItems": 3,
-  "evidenceSufficiencyMinSourceTypes": 2,
+  "evidenceSufficiencyMinSourceTypes": 1,
+  "evidenceSufficiencyMinDistinctDomains": 3,
   "evidencePartitioningEnabled": true,
   "contrarianRetrievalEnabled": true,
   "contrarianMaxQueriesPerClaim": 2,

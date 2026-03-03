@@ -50,6 +50,7 @@ import {
   checkDebateProviderCredentials,
   checkExplanationStructure,
   evaluateExplanationRubric,
+  extractDomain,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -1634,6 +1635,55 @@ describe("Stage 2: extractResearchEvidence", () => {
     const result = await extractResearchEvidence(claim, [], mockPipelineConfig, "2026-02-17");
     expect(result).toHaveLength(0);
   });
+
+  it("should keep evidence and normalize non-canonical sourceType to 'other'", async () => {
+    const claim = createAtomicClaim({ id: "AC_03", statement: "Test claim" });
+    const sources = [
+      { url: "https://example.com/1", title: "Source 1", text: "Long text content..." },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "extract prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Evidence item from non-canonical source type output",
+          category: "evidence",
+          claimDirection: "supports",
+          evidenceScope: {
+            methodology: "Document analysis",
+            temporal: "2024",
+          },
+          probativeValue: "medium",
+          sourceType: "official_government_portal",
+          isDerivative: false,
+          derivedFromSourceUrl: null,
+          relevantClaimIds: ["AC_03"],
+        },
+      ],
+    });
+
+    const result = await extractResearchEvidence(claim, sources, mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].sourceType).toBe("other");
+  });
+});
+
+describe("extractDomain", () => {
+  it("normalizes hostname to lowercase and strips leading www", () => {
+    expect(extractDomain("https://WWW.Example.COM/path?x=1")).toBe("example.com");
+  });
+
+  it("keeps non-www subdomains", () => {
+    expect(extractDomain("https://api.example.com/v1")).toBe("api.example.com");
+  });
+
+  it("returns null for invalid URLs", () => {
+    expect(extractDomain("not-a-valid-url")).toBeNull();
+    expect(extractDomain("")).toBeNull();
+    expect(extractDomain(undefined)).toBeNull();
+  });
 });
 
 describe("Stage 2: fetchSources", () => {
@@ -2708,7 +2758,7 @@ describe("Stage 4: createProductionLLMCall", () => {
       expect(mockGenerateText).toHaveBeenCalledTimes(1);
       expect(mockGenerateText.mock.calls[0]?.[0]?.model).toBe("openai-mini");
       expect(warnings).toHaveLength(1);
-      expect(warnings[0].type).toBe("llm_provider_error");
+      expect(warnings[0].type).toBe("llm_tpm_guard_fallback");
       expect(warnings[0].details.reason).toBe("tpm_guard");
       expect(warnings[0].details.guardPhase).toBe("tpm_guard_precheck");
     } finally {

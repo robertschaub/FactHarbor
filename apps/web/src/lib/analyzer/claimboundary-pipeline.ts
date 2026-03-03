@@ -308,6 +308,7 @@ export async function runClaimBoundaryAnalysis(
     // D5 Control 1: Evidence Sufficiency Gate — per-claim evidence check
     const sufficiencyMinItems = initialCalcConfig.evidenceSufficiencyMinItems ?? 3;
     const sufficiencyMinSourceTypes = initialCalcConfig.evidenceSufficiencyMinSourceTypes ?? 2;
+    const sufficiencyMinDistinctDomains = initialCalcConfig.evidenceSufficiencyMinDistinctDomains ?? 3;
     const insufficientClaimIds = new Set<string>();
     for (const claim of understanding.atomicClaims) {
       const claimEvidence = state.evidenceItems.filter(
@@ -316,14 +317,24 @@ export async function runClaimBoundaryAnalysis(
       const distinctSourceTypes = new Set(
         claimEvidence.map(e => e.sourceType).filter(Boolean)
       );
-      if (claimEvidence.length < sufficiencyMinItems || distinctSourceTypes.size < sufficiencyMinSourceTypes) {
+      const distinctDomains = new Set(
+        claimEvidence
+          .map((e) => extractDomain(e.sourceUrl))
+          .filter((domain): domain is string => Boolean(domain))
+      );
+      const hasSufficientItems = claimEvidence.length >= sufficiencyMinItems;
+      const hasSufficientSourceDiversity =
+        distinctSourceTypes.size >= sufficiencyMinSourceTypes ||
+        distinctDomains.size >= sufficiencyMinDistinctDomains;
+      if (!hasSufficientItems || !hasSufficientSourceDiversity) {
         insufficientClaimIds.add(claim.id);
         state.warnings.push({
           type: "insufficient_evidence",
           severity: "warning",
           message: `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
             `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +
-            `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}). ` +
+            `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}), ` +
+            `${distinctDomains.size} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
             `Verdict set to UNVERIFIED.`,
         });
       }
@@ -356,8 +367,10 @@ export async function runClaimBoundaryAnalysis(
 
     // D5 Control 1: Only send sufficient claims through verdict stage
     const verdictInputClaims = insufficientClaimIds.size > 0 ? sufficientClaims : understanding.atomicClaims;
-    const sufficientVerdicts = verdictInputClaims.length > 0
-      ? await generateVerdicts(
+    let sufficientVerdicts: CBClaimVerdict[] = [];
+    if (verdictInputClaims.length > 0) {
+      try {
+        sufficientVerdicts = await generateVerdicts(
           verdictInputClaims,
           state.evidenceItems,
           boundaries,
@@ -366,29 +379,48 @@ export async function runClaimBoundaryAnalysis(
           state.warnings,
           recordRuntimeModelUsage,
           roleTraceRecorder,
-        )
-      : [];
+        );
+      } catch (verdictError: unknown) {
+        const errorMessage = verdictError instanceof Error
+          ? verdictError.message
+          : String(verdictError);
+        if (errorMessage.includes("was cancelled")) {
+          throw verdictError;
+        }
+        const errorFingerprint = createErrorFingerprint(verdictError);
+        console.error("[Pipeline] Stage 4 verdict generation failed; returning fallback verdicts:", verdictError);
+        state.warnings.push({
+          type: "analysis_generation_failed",
+          severity: "error",
+          message:
+            `Verdict generation failed for ${verdictInputClaims.length} claim(s); fallback UNVERIFIED verdicts returned.`,
+          details: {
+            stage: "verdict",
+            claimCount: verdictInputClaims.length,
+            errorFingerprint,
+            errorName: verdictError instanceof Error ? verdictError.name : "UnknownError",
+            errorMessage: errorMessage.slice(0, 300),
+          },
+        });
+        sufficientVerdicts = verdictInputClaims.map((claim) =>
+          createUnverifiedFallbackVerdict(
+            claim,
+            "analysis_generation_failed",
+            "Verdict generation failed due to an internal runtime error. Claim marked UNVERIFIED as a fail-open fallback.",
+          )
+        );
+      }
+    }
 
     // D5 Control 1: Create UNVERIFIED verdicts for insufficient claims
-    const insufficientVerdicts: CBClaimVerdict[] = insufficientClaims.map(claim => ({
-      id: `CV_${claim.id}`,
-      claimId: claim.id,
-      truthPercentage: 50,
-      verdictReason: "insufficient_evidence",
-      verdict: "UNVERIFIED" as ClaimVerdict7Point,
-      confidence: 0,
-      confidenceTier: "INSUFFICIENT" as const,
-      reasoning: "Insufficient evidence to produce a reliable verdict. " +
-        "This claim did not meet the minimum evidence requirements (items or source type diversity).",
-      harmPotential: "low" as const,
-      isContested: false,
-      supportingEvidenceIds: [],
-      contradictingEvidenceIds: [],
-      boundaryFindings: [],
-      consistencyResult: { claimId: claim.id, percentages: [50], average: 50, spread: 0, stable: true, assessed: false },
-      challengeResponses: [],
-      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak" as const, factor: 1.0 },
-    }));
+    const insufficientVerdicts: CBClaimVerdict[] = insufficientClaims.map((claim) =>
+      createUnverifiedFallbackVerdict(
+        claim,
+        "insufficient_evidence",
+        "Insufficient evidence to produce a reliable verdict. " +
+          "This claim did not meet the minimum evidence requirements (items plus source-type/domain diversity).",
+      )
+    );
 
     const claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
     endPhase("verdict");
@@ -675,6 +707,10 @@ const Gate1OutputSchema = z.object({
   })),
 });
 
+function normalizeExtractedSourceType(sourceType?: string): SourceType | undefined {
+  return mapSourceType(sourceType);
+}
+
 const PreliminaryEvidenceItemSchema = z.object({
   statement: z.string(),
   sourceUrl: z.string().optional(), // URL of the source this evidence came from
@@ -687,7 +723,8 @@ const PreliminaryEvidenceItemSchema = z.object({
     boundaries: z.string().optional(),
   }).optional(),
   probativeValue: z.enum(["high", "medium", "low"]).optional(),
-  sourceType: z.string().optional(),
+  sourceType: z.string().optional()
+    .transform((value) => normalizeExtractedSourceType(value)),
   isDerivative: z.boolean().optional(),
   derivedFromSourceUrl: z.string().nullable().optional(),
   relevantClaimIds: z.array(z.string()).optional(),
@@ -1634,8 +1671,8 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                 if (state) {
                   state.warnings.push({
                     type: "structured_output_failure",
-                    severity: "warning",
-                    message: `Stage 1 Pass 2 recovered via fallback model (${fallbackModel.modelName}) after primary model soft refusal. Claim extraction quality may be reduced; review claim-level outputs.`,
+                    severity: "info",
+                    message: `Stage 1 Pass 2 recovered via fallback model (${fallbackModel.modelName}) after primary model soft refusal.`,
                     details: {
                       stage: "stage1_pass2",
                       reason: "content_policy_soft_refusal",
@@ -2034,7 +2071,8 @@ const Stage2EvidenceItemSchema = z.object({
     additionalDimensions: z.record(z.string()).optional(),
   }),
   probativeValue: z.enum(["high", "medium", "low"]),
-  sourceType: z.string().optional(),
+  sourceType: z.string().optional()
+    .transform((value) => normalizeExtractedSourceType(value)),
   isDerivative: z.boolean().optional(),
   derivedFromSourceUrl: z.string().nullable().optional(),
   relevantClaimIds: z.array(z.string()),
@@ -2246,24 +2284,35 @@ export async function researchEvidence(
     state.onEvent?.("Evaluating source reliability...", 58);
     const srPrefetch = await prefetchSourceReliability(allSourceUrls);
     if (srPrefetch.errorCount > 0) {
-      const severity: AnalysisWarning["severity"] =
-        srPrefetch.errorCount >= Math.max(3, Math.ceil(srPrefetch.domains.length * 0.3))
-          ? "error"
-          : "warning";
-      state.warnings.push({
-        type: "source_reliability_error",
-        severity,
-        message:
-          `Source reliability prefetch had ${srPrefetch.errorCount} error(s) across ` +
-          `${srPrefetch.failedDomains.length} domain(s). Reliability scores for those domains default to unknown.`,
-        details: {
-          stage: "research_sr",
-          errorCount: srPrefetch.errorCount,
-          errorByType: srPrefetch.errorByType,
-          failedDomains: srPrefetch.failedDomains.slice(0, 20),
-          noConsensusCount: srPrefetch.noConsensusCount,
-        },
-      });
+      const failedDomainCount = srPrefetch.failedDomains.length;
+      const domainCount = Math.max(1, srPrefetch.domains.length);
+      const failedDomainRatio = failedDomainCount / domainCount;
+
+      // Captain decision (2026-03-03): routine low-ratio SR partial failures are normal
+      // and should be silent. Surface only when degradation is substantial.
+      if (failedDomainRatio >= 0.25 || srPrefetch.errorCount >= 3) {
+        const severity: AnalysisWarning["severity"] =
+          failedDomainRatio >= 0.5 || srPrefetch.errorCount >= Math.max(4, Math.ceil(domainCount * 0.5))
+            ? "error"
+            : "warning";
+        state.warnings.push({
+          type: "source_reliability_error",
+          severity,
+          message:
+            `Source reliability prefetch had ${srPrefetch.errorCount} error(s) across ` +
+            `${failedDomainCount}/${domainCount} domain(s). Reliability scores for those domains default to unknown.`,
+          details: {
+            stage: "research_sr",
+            errorCount: srPrefetch.errorCount,
+            errorByType: srPrefetch.errorByType,
+            failedDomainCount,
+            domainCount,
+            failedDomainRatio,
+            failedDomains: srPrefetch.failedDomains.slice(0, 20),
+            noConsensusCount: srPrefetch.noConsensusCount,
+          },
+        });
+      }
     }
   }
 
@@ -3279,6 +3328,25 @@ function mapCategory(category: string): EvidenceItem["category"] {
 }
 
 /**
+ * Normalize source URL to a distinct-domain key for sufficiency checks.
+ * Rules:
+ * - Parse URL hostname
+ * - Lowercase
+ * - Strip leading "www."
+ * Invalid or empty URLs return null and are ignored.
+ */
+export function extractDomain(sourceUrl?: string): string | null {
+  if (!sourceUrl || typeof sourceUrl !== "string") return null;
+  try {
+    const hostname = new URL(sourceUrl).hostname.trim().toLowerCase();
+    if (!hostname) return null;
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Map LLM sourceType strings to SourceType enum values.
  */
 function mapSourceType(sourceType?: string): SourceType | undefined {
@@ -3295,6 +3363,38 @@ function mapSourceType(sourceType?: string): SourceType | undefined {
     organization_report: "organization_report",
   };
   return validTypes[normalized] ?? "other";
+}
+
+function createErrorFingerprint(error: unknown): string {
+  const raw = error instanceof Error
+    ? `${error.name}:${error.message}:${error.stack ?? ""}`
+    : String(error);
+  return raw.replace(/\s+/g, " ").slice(0, 320);
+}
+
+function createUnverifiedFallbackVerdict(
+  claim: AtomicClaim,
+  verdictReason: string,
+  reasoning: string,
+): CBClaimVerdict {
+  return {
+    id: `CV_${claim.id}`,
+    claimId: claim.id,
+    truthPercentage: 50,
+    verdictReason,
+    verdict: "UNVERIFIED" as ClaimVerdict7Point,
+    confidence: 0,
+    confidenceTier: "INSUFFICIENT" as const,
+    reasoning,
+    harmPotential: claim.harmPotential,
+    isContested: false,
+    supportingEvidenceIds: [],
+    contradictingEvidenceIds: [],
+    boundaryFindings: [],
+    consistencyResult: { claimId: claim.id, percentages: [50], average: 50, spread: 0, stable: true, assessed: false },
+    challengeResponses: [],
+    triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak" as const, factor: 1.0 },
+  };
 }
 
 // ============================================================================
@@ -4278,8 +4378,8 @@ export function createProductionLLMCall(
       originalError?: string,
     ) => {
       warnings?.push({
-        type: "llm_provider_error",
-        severity: "warning",
+        type: "llm_tpm_guard_fallback",
+        severity: "info",
         message: `Stage 4 TPM guard used fallback model "${fallbackModel}" for "${promptKey}" (configured: "${configuredModel}").`,
         details: {
           stage,

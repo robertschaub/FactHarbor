@@ -406,7 +406,7 @@ Given a claim and source content, extract evidence items with full metadata incl
 - `claimDirection`: How this relates to the claim ("supports", "contradicts", "contextual")
 - `evidenceScope`: **REQUIRED** — methodology, temporal bounds, geographic/system boundaries
 - `probativeValue`: Quality assessment ("high", "medium", "low")
-- `sourceType`: Source classification (peer_reviewed_study, news_primary, government_report, etc.)
+- `sourceType`: Source classification (must be one of: peer_reviewed_study, fact_check_report, government_report, legal_document, news_primary, news_secondary, expert_statement, organization_report, other)
 - `sourceUrl`: The URL of the source this evidence came from (copy exactly from the source header)
 - `isDerivative`: **boolean** — true if this evidence cites another source's underlying study rather than presenting independent findings
 - `derivedFromSourceUrl`: **string (optional)** — URL of the original source if `isDerivative` is true
@@ -424,6 +424,7 @@ Given a claim and source content, extract evidence items with full metadata incl
   - "contradicts": Evidence refutes the claim
   - "contextual": Evidence provides relevant context but doesn't affirm/refute
 - `probativeValue`: Assess based on source quality, methodology rigor, and directness.
+- `sourceType` must use exactly one canonical value from this list: `peer_reviewed_study`, `fact_check_report`, `government_report`, `legal_document`, `news_primary`, `news_secondary`, `expert_statement`, `organization_report`, `other`. Use `other` only when no listed type fits.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 
 ### Input
@@ -462,7 +463,7 @@ Return a JSON object:
         "additionalDimensions": {}
       },
       "probativeValue": "high",
-      "sourceType": "peer_reviewed_study",
+      "sourceType": "peer_reviewed_study | fact_check_report | government_report | legal_document | news_primary | news_secondary | expert_statement | organization_report | other",
       "isDerivative": false,
       "derivedFromSourceUrl": null,
       "relevantClaimIds": ["AC_01"]

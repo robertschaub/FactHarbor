@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-02
-**Status**: WIP Consolidation #4 complete. Archived 4 files (pre-release readiness, dynamic removal, UI texts, calibration cost). 10 active files remain. Primary track: Deployment Strategy execution.
+**Last Updated**: 2026-03-03
+**Status**: WIP Consolidation #4 complete. Archived 4 files (pre-release readiness, dynamic removal, UI texts, calibration cost). 11 active files remain. Primary track: Deployment quality stabilization and warning-noise reduction.
 
 ---
 
@@ -19,7 +19,7 @@ For completed work, historical documents, and reference materials, see:
 
 ## Active Documents
 
-### 1. Deployment & Operations (2 files)
+### 1. Deployment & Operations (3 files)
 
 #### Deployment Strategy — Pre-Release (2026-03-02)
 **Status:** 📋 REVISED — Lead Architect review incorporated, Captain decisions applied, Infomaniak VPS selected
@@ -33,6 +33,12 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Fix divergence between code defaults and file defaults causing verdict downgrades on deployed system. 4 files, no architectural changes.
 - **Review:** Captain Deputy + Codex agent
 - **Next Step:** Captain approval, then implement + re-deploy
+
+#### Post-UCM Quality Regression Investigation and Stabilization Plan (2026-03-03)
+**Status:** ✅ P0 IMPLEMENTED LOCALLY — pending deployment validation
+- **Document:** [2026-03-03_Post_UCM_Quality_Regression_Investigation.md](2026-03-03_Post_UCM_Quality_Regression_Investigation.md)
+- **Scope:** Root-cause analysis for perceived quality degradation and warning/error volume; concrete P0-P2 fix plan.
+- **Next Step:** Deploy and validate on production-like inputs (`ab2beed39af946d283ef3ff6ea9d5396` and multilingual regression set)
 
 ---
 

@@ -3075,3 +3075,91 @@ ext phase).
 **Warnings:** Public cache view now exposes cached SR entries to unauthenticated users by design; if that is too broad, introduce a separate public-sanitized view endpoint.
 **For next agent:** Verify deployed behavior with two browser states: anonymous user can view cache but cannot mutate; admin user can authenticate inline and evaluate/delete/cleanup successfully.
 **Learnings:** no
+
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Fix: Stage 4 verdict crash (`a.map is not a function`)
+**Task:** Fix production failure in verdict generation where jobs ended with `TypeError: a.map is not a function` during Stage 4.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Hardened verdict parsing to support both direct array responses and object-wrapped arrays from LLM output (`{ verdicts: [...] }`, etc.) in `advocateVerdict` and `reconcileVerdicts`.
+- Added explicit shape error (`Stage4MalformedShapeError`) for malformed advocate output instead of uncaught `.map` runtime failure.
+- Made reconciliation fail-soft: if reconciliation shape is invalid, preserve advocate verdicts and continue analysis instead of failing the whole job.
+- Added regression tests for wrapped-array parsing and invalid-shape reconciliation fallback.
+**Open items:** Deploy this patch and monitor new jobs that previously failed in "Generating verdicts...".
+**Warnings:** If `VERDICT_ADVOCATE` returns a non-array and non-wrapper object, jobs still fail by design (explicit malformed-shape error), which is safer than silently inventing verdicts.
+**For next agent:** If failures persist, capture the raw Stage 4 LLM JSON payload for the failing prompt key to extend wrapper-key normalization with exact observed shape.
+**Learnings:** no
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Investigation: Post-UCM quality degradation and warning/error volume
+**Task:** Investigate suspected report-quality degradation after UCM defaults alignment and explain/fix "so many Quality Issues/errors" signals.
+**Files touched:** `Docs/WIP/2026-03-03_Post_UCM_Quality_Regression_Investigation.md`, `Docs/WIP/README.md`
+**Key decisions:**
+- Determined UCM defaults alignment is not the primary cause of the observed warning surge; warning volume is dominated by operational fetch warnings.
+- Identified high-impact quality risk: D5 sufficiency gate can force `UNVERIFIED` when source-type diversity is low even with high evidence/domain diversity.
+- Proposed prioritized P0-P2 fix plan: sufficiency gate domain-diversity fallback, sourceType enum hardening, fail-open verdict-stage crash handling, warning aggregation/severity tuning, and UI grouping.
+- Documented concrete temporary production mitigations and verification criteria.
+**Open items:** Captain approval needed for P0 implementation scope and temporary mitigation values.
+**Warnings:** Production-specific `a.map is not a function` stack could not be revalidated from local DB; plan includes fail-open guard + runtime instrumentation.
+**For next agent:** Implement P0 items from the new WIP document first (`claimboundary-pipeline.ts`, `config-schemas.ts`, `calculation.default.json`, `claimboundary.prompt.md`), then run regression set and compare `insufficient_evidence` rate and warning counts.
+**Learnings:** no
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Prep: Post-UCM quality plan review package
+**Task:** Make the post-UCM quality investigation plan review-ready and prepare external reviewer prompts.
+**Files touched:** `Docs/WIP/2026-03-03_Post_UCM_Quality_Regression_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Upgraded plan status to REVIEW READY and added a dedicated review package section (objective, scope, required output format, and review constraints).
+- Updated WIP index entry to reflect review-ready status and next step (Gemini + Claude review).
+**Open items:** Execute external reviews and consolidate findings into the plan before implementation.
+**Warnings:** None.
+**For next agent:** Use the new section "Review package (for Gemini / Claude)" as the source of truth for review instructions and expected response format.
+**Learnings:** no
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Integrate Gemini review into post-UCM plan
+**Task:** Ingest Gemini external review results into the quality regression investigation plan and update WIP status.
+**Files touched:** `Docs/WIP/2026-03-03_Post_UCM_Quality_Regression_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Recorded Gemini verdict (`APPROVED WITH CHANGES`) and mapped accepted HIGH/MEDIUM findings into the plan.
+- Clarified implementation scope note for fail-open placement and telemetry retention.
+- Updated WIP index to "Gemini done, Claude pending".
+**Open items:** Claude review pending; final consolidation and Captain decision pending.
+**Warnings:** None.
+**For next agent:** Run Claude review against the updated plan and reconcile any deltas with Gemini findings before implementation.
+**Learnings:** no
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Consolidate Gemini+Claude review decisions
+**Task:** Integrate Claude review findings into the post-UCM quality plan and finalize consolidated implementation constraints.
+**Files touched:** `Docs/WIP/2026-03-03_Post_UCM_Quality_Regression_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Marked plan as review complete and implementation-ready.
+- Added Claude critical constraints: no hard `z.enum()` rejection at extraction boundary for sourceType; define normalized `extractDomain()` semantics for distinct-domain sufficiency.
+- Added consolidated Gemini+Claude P0 rules and preserved P1/P2 deferrals.
+**Open items:** Captain go/no-go decision for P0 implementation.
+**Warnings:** None.
+**For next agent:** Implement P0 exactly per section 12 consolidated rules, then run targeted validation on known insufficient-evidence edge cases.
+**Learnings:** no
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Record Captain decisions for post-UCM quality plan
+**Task:** Apply Captain decisions to the review-complete quality regression plan and update WIP status.
+**Files touched:** `Docs/WIP/2026-03-03_Post_UCM_Quality_Regression_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Recorded explicit Captain decisions in section 9.1.
+- Set policy that routine low-ratio SR partial failures should be unsurfaced (no info/warning).
+- Updated plan/WIP status to captain-decisions-recorded and implementation-ready.
+**Open items:** Implement P0 code changes.
+**Warnings:** None.
+**For next agent:** Implement P0 honoring Claude constraint on sourceType parsing and Captain SR visibility policy.
+**Learnings:** no
+---
+### 2026-03-03 | Senior Developer | Codex (GPT-5) | Implement P0 quality fixes (sufficiency, fail-open, sourceType hardening)
+**Task:** Execute approved P0 fixes from post-UCM quality investigation and Captain decisions.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/calculation.default.json`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-03_Post_UCM_Quality_Regression_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Updated D5 sufficiency gate to allow source diversity by either sourceType count or normalized distinct domains (`extractDomain` with lowercase + leading `www.` stripping).
+- Added new calc config key `evidenceSufficiencyMinDistinctDomains` (default 3) and set temporary mitigation `evidenceSufficiencyMinSourceTypes` default to 1 per Captain decision.
+- Implemented fail-open verdict-stage handling in pipeline: catch verdict-generation runtime errors, emit `analysis_generation_failed`, return explicit fallback `UNVERIFIED` verdicts (except cancellation errors, which still abort).
+- Hardened sourceType contract via prompt canonical list while keeping extraction parse fail-soft (no strict enum rejection at Zod boundary).
+- Applied Captain policy to suppress routine low-ratio SR partial failures from surfaced warnings.
+**Open items:** Deploy and validate against production regression set, especially job profile matching `ab2beed39af946d283ef3ff6ea9d5396`.
+**Warnings:** Worktree contains additional pre-existing modified files outside this change scope; left untouched.
+**For next agent:** Run production validation and confirm reduction in false `insufficient_evidence` + warning-noise without masking true degradation.
+**Learnings:** no
