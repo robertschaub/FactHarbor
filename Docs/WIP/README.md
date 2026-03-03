@@ -19,13 +19,20 @@ For completed work, historical documents, and reference materials, see:
 
 ## Active Documents
 
-### 1. Deployment (1 file)
+### 1. Deployment & Operations (2 files)
 
 #### Deployment Strategy — Pre-Release (2026-03-02)
 **Status:** 📋 REVISED — Lead Architect review incorporated, Captain decisions applied, Infomaniak VPS selected
 - **Document:** [2026-03-02_Deployment_Strategy_PreRelease.md](2026-03-02_Deployment_Strategy_PreRelease.md)
 - **Scope:** Single VPS (Infomaniak Lite M) + Caddy deployment. Implementation plan, staging instance, rollback procedures, cost estimate.
 - **Next Step:** Provision VPS, execute Phase 1-4 deployment plan
+
+#### UCM Defaults Alignment — Post-Deployment Quality Fix (2026-03-03)
+**Status:** 🔧 PLANNED — Awaiting Captain review and approval
+- **Document:** [2026-03-03_UCM_Defaults_Alignment.md](2026-03-03_UCM_Defaults_Alignment.md)
+- **Scope:** Fix divergence between code defaults and file defaults causing verdict downgrades on deployed system. 4 files, no architectural changes.
+- **Review:** Captain Deputy + Codex agent
+- **Next Step:** Captain approval, then implement + re-deploy
 
 ---
 
