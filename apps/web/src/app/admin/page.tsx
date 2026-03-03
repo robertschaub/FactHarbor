@@ -320,7 +320,7 @@ export default function AdminPage() {
           Source Reliability (SR) Administration
         </h2>
         <div style={{ display: "grid", gap: "16px" }}>
-          <Link href="/admin/source-reliability" className={styles.btnPrimary}>
+          <Link href="/source-reliability" className={styles.btnPrimary}>
             📊 Source Reliability Cache
           </Link>
           <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>

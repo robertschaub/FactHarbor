@@ -992,13 +992,12 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
         </div>
       )}
 
-      {/* Evaluate Domains Section */}
+      {/* Evaluate Domains Section — admin only */}
+      {isAdminAuthenticated && (
       <div className={styles.evaluateSection}>
         <h3>Evaluate Domains</h3>
-        {isAdminAuthenticated ? (
-          <>
             <p className={styles.evaluateHelp}>
-              Enter domains to evaluate (one per line, comma-separated, or space-separated). 
+              Enter domains to evaluate (one per line, comma-separated, or space-separated).
               Max 20 domains per request.
             </p>
             <div className={styles.evaluateForm}>
@@ -1029,10 +1028,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                 </button>
               </div>
             </div>
-          </>
-        ) : (
-          <p className={styles.evaluateHelp}>Admin login required to evaluate domains.</p>
-        )}
         
         {/* Evaluation Results */}
         {evalResults && evalResults.length > 0 && (
@@ -1105,6 +1100,7 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
           </div>
         )}
       </div>
+      )}
 
       {/* Data Table */}
       {data && data.entries.length > 0 ? (
