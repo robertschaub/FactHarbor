@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-03-03
-**Status**: WIP Consolidation #4 complete. Archived 4 files (pre-release readiness, dynamic removal, UI texts, calibration cost). 11 active files remain. Primary track: Deployment quality stabilization and warning-noise reduction.
+**Status**: WIP Consolidation #5 complete. Archived 3 files (deployment strategy, UCM defaults, quality regression). 9 active files remain. Primary track: VPS operational; quality stabilization deployed; next focus is evidence quality features and cost reduction.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Pre-release readiness Steps 0-12 complete. Monolithic Dynamic pipeline removed. Single pipeline (ClaimBoundary). Next: VPS deployment (Infomaniak).
+**Forward direction:** VPS deployment operational (`app.factharbor.ch` + `test.factharbor.ch`). Pre-release live. Quality P0 fixes deployed. Next: evidence quality features, cost optimization, model auto-resolution completion.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** - Completed plans, reviews, and historical documentation
@@ -19,70 +19,47 @@ For completed work, historical documents, and reference materials, see:
 
 ## Active Documents
 
-### 1. Deployment & Operations (3 files)
-
-#### Deployment Strategy — Pre-Release (2026-03-02)
-**Status:** 📋 REVISED — Lead Architect review incorporated, Captain decisions applied, Infomaniak VPS selected
-- **Document:** [2026-03-02_Deployment_Strategy_PreRelease.md](2026-03-02_Deployment_Strategy_PreRelease.md)
-- **Scope:** Single VPS (Infomaniak Lite M) + Caddy deployment. Implementation plan, staging instance, rollback procedures, cost estimate.
-- **Next Step:** Provision VPS, execute Phase 1-4 deployment plan
-
-#### UCM Defaults Alignment — Post-Deployment Quality Fix (2026-03-03)
-**Status:** 🔧 PLANNED — Awaiting Captain review and approval
-- **Document:** [2026-03-03_UCM_Defaults_Alignment.md](2026-03-03_UCM_Defaults_Alignment.md)
-- **Scope:** Fix divergence between code defaults and file defaults causing verdict downgrades on deployed system. 4 files, no architectural changes.
-- **Review:** Captain Deputy + Codex agent
-- **Next Step:** Captain approval, then implement + re-deploy
-
-#### Post-UCM Quality Regression Investigation and Stabilization Plan (2026-03-03)
-**Status:** ✅ P0 IMPLEMENTED LOCALLY — pending deployment validation
-- **Document:** [2026-03-03_Post_UCM_Quality_Regression_Investigation.md](2026-03-03_Post_UCM_Quality_Regression_Investigation.md)
-- **Scope:** Root-cause analysis for perceived quality degradation and warning/error volume; concrete P0-P2 fix plan.
-- **Next Step:** Deploy and validate on production-like inputs (`ab2beed39af946d283ef3ff6ea9d5396` and multilingual regression set)
-
----
-
-### 2. Evidence Quality & Consistency (3 files)
+### 1. Evidence Quality & Consistency (3 files)
 
 #### Multi-Source Evidence Retrieval Plan v2.1 (2026-02-24)
-**Status:** 🔧 In Progress — Provider layer complete, pipeline integration pending
+**Status:** 🔧 In Progress — Provider layer complete, pipeline integration pending (~60% done)
 - **Document:** [Multi-Source_Evidence_Retrieval_Plan.md](Multi-Source_Evidence_Retrieval_Plan.md)
 - **Scope:** Wikipedia, Semantic Scholar, Google Fact Check Tools API.
 - **Next Step:** Phase 3.2-3.6: Google Fact Check pipeline integration (seeding + dedup).
 
 #### Inverse Claim Asymmetry Plan (2026-02-27)
-**Status:** 🔧 In Progress — Phases 0-2 DONE, Phase 3 pending
+**Status:** 🔧 Mostly Done — Phases 0-2 DONE, Phase 3 partially started
 - **Document:** [2026-02-27_Inverse_Claim_Asymmetry_Plan.md](2026-02-27_Inverse_Claim_Asymmetry_Plan.md)
 - **Scope:** Symmetry audit, complementarity error metrics, integrity gating (Safe Downgrade).
-- **Next Step:** Phase 3: Calibration automated gate (CI enforcement).
+- **Next Step:** Phase 3: Validate German pair re-run, confirm CI rollout posture (warn vs fail).
 
 #### Claim Strength Preservation Study (2026-03-01)
 **Status:** 🔬 Investigation — Not started
 - **Document:** [2026-03-01_Claim_Strength_Preservation_Study.md](2026-03-01_Claim_Strength_Preservation_Study.md)
 - **Scope:** Stage 1 weakens claim assertions (30-43pp variance). Pre-evidence claim extraction issue.
-- **Next Step:** Phase A parallel investigation.
+- **Next Step:** Phase A parallel investigation (multi-agent: LLM Expert, Senior Dev, Lead Architect).
 
 ---
 
-### 3. Alpha Strategy & Architecture (3 files)
+### 2. Alpha Strategy & Architecture (3 files)
 
 #### Alpha Phase Acceleration & Observability Plan (2026-02-25)
-**Status:** ✅ Phase 1 DONE (instrumentation). Phase 1.2 IN PROGRESS (model auto-resolution). Phases 1.5-1.6 deferred.
+**Status:** ✅ Phase 1 DONE (instrumentation). Phase 1.2 IN PROGRESS (model auto-resolution). Phases 1.5-1.6 deferred post-deployment.
 - **Document:** [Alpha_Phase_Acceleration_Plan_2026-02-25.md](Alpha_Phase_Acceleration_Plan_2026-02-25.md)
 - **Next Step:** Finish model auto-resolution integration (Step 1.2).
 
 #### Model Auto-Resolution Plan (2026-02-23)
-**Status:** 🔧 In Progress — Resolver implemented, integration pending
+**Status:** 🔧 In Progress — Resolver implemented, full consumer wiring pending
 - **Document:** [Model_Auto_Resolution_Plan.md](Model_Auto_Resolution_Plan.md)
-- **Next Step:** Replace hardcoded model IDs in `src/` with `resolveModel()` calls.
+- **Next Step:** Replace hardcoded model IDs in `src/` with `resolveModel()` calls. Config validation update.
 
 #### Multi-Agent Cross-Provider Debate (2026-02-27)
-**Status:** 🧭 Proposal — Awaiting Prioritization
+**Status:** 🧭 Proposal — Awaiting Prioritization (prerequisite: self-consistency baseline experiment)
 - **Document:** [Multi_Agent_Cross_Provider_Debate_2026-02-27.md](Multi_Agent_Cross_Provider_Debate_2026-02-27.md)
 
 ---
 
-### 4. Backlog Proposals (3 files)
+### 3. Backlog Proposals (3 files)
 
 #### API Cost Reduction Strategy (2026-02-13)
 **Status:** 🧭 Proposal — Key items: Batch API, NPO/OSS credits
@@ -103,6 +80,7 @@ For completed work, historical documents, and reference materials, see:
 
 | Date | Action | Files |
 |------|--------|-------|
+| 2026-03-03 | **Consolidation #5**: Archived 3 files (deployment strategy done, UCM defaults done, quality P0 done). Moved LinkedIn Article to Marketing. Extracted P1/P2 to Backlog. 13→9 files. | See `ARCHIVE/README_ARCHIVE.md` |
 | 2026-03-02 | **Consolidation #4**: Archived 4 files (pre-release readiness Steps 0-12 done, dynamic pipeline removal done, UI texts done, calibration cost policy done). 14→10 files. | See `ARCHIVE/README_ARCHIVE.md` |
 | 2026-03-01 | **Consolidation #3**: Archived 11 files (invite code, quality investigations, fidelity, runtime issues). | See `ARCHIVE/README_ARCHIVE.md` |
 | 2026-02-23 | **Consolidation #2**: Archived 5 files (framing-symmetry v3, debate analysis, execution plans). | See `ARCHIVE/README_ARCHIVE.md` |

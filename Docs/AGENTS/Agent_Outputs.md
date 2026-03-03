@@ -3163,3 +3163,16 @@ ext phase).
 **Warnings:** Worktree contains additional pre-existing modified files outside this change scope; left untouched.
 **For next agent:** Run production validation and confirm reduction in false `insufficient_evidence` + warning-noise without masking true degradation.
 **Learnings:** no
+---
+### 2026-03-03 | Captain (consolidation) | Claude Code (Opus) | WIP Consolidation #5
+**Task:** Consolidate WIP directory — audit all 13 files, archive completed, extract forward items.
+**Files touched:** `Docs/WIP/README.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Archived 3 completed files: Deployment Strategy (VPS operational), UCM Defaults Alignment (implemented+deployed), Post-UCM Quality Investigation (P0 deployed).
+- Moved `LinkedIn Article.md` from WIP to `Docs/MARKETING/`.
+- Extracted P1/P2 quality items + sufficiency temp mitigation sunset to Backlog.
+- 9 WIP files remain: 4 partially done, 2 investigations/proposals, 3 backlog proposals.
+**Open items:** None — clean consolidation.
+**Warnings:** `Backlog.md` has stale reference to `WIP/2026-02-27_Report_Quality_Investigation.md` (was archived in consolidation #3 but link not updated). Low priority.
+**For next agent:** WIP is lean. Priority tracks: (1) finish model auto-resolution wiring, (2) Multi-Source Retrieval pipeline integration, (3) Inverse Asymmetry Phase 3 CI gate.
+**Learnings:** no

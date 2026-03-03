@@ -20,6 +20,23 @@ The following documents had valuable content extracted and merged into active do
 
 ## What's Archived
 
+### WIP Consolidation #5 (2026-03-03) — Deployment Complete, Quality Stabilized
+
+**Description**: Archived 3 WIP files + moved 1 non-WIP file. VPS deployment operational (prod + test instances). UCM defaults alignment implemented. P0 quality stabilization deployed. Extracted P1/P2 items to Backlog.
+
+**Completed plans** (3 files — DONE):
+1. `2026-03-02_Deployment_Strategy_PreRelease.md` — VPS provisioned (Infomaniak), both instances operational (`app.factharbor.ch`, `test.factharbor.ch`), deploy scripts, backup cron, Caddy config with maintenance page. All phases executed.
+2. `2026-03-03_UCM_Defaults_Alignment.md` — Reviewed (Captain Deputy + Codex), implemented (commit `3085b91`). Pipeline defaults, config-schemas, AboutBox aligned.
+3. `2026-03-03_Post_UCM_Quality_Regression_Investigation.md` — P0 implemented (commit `c8c0a69`): sufficiency gate, fail-open verdicts, sourceType hardening, SR noise suppression. P1/P2 extracted to Backlog.
+
+**Non-WIP file moved** (not archived):
+- `LinkedIn Article.md` → `Docs/MARKETING/LinkedIn Article - PreRelease.md`
+
+**Remaining WIP (9 files):**
+Partially done: Alpha Acceleration (Phase 1.2 in progress), Model Auto-Resolution (partial), Multi-Source Retrieval (providers done, pipeline pending), Inverse Claim Asymmetry (Phase 3 pending). Proposals: Claim Strength Study, Cross-Provider Debate, API Cost Reduction, TestTuning Mode+UI.
+
+---
+
 ### WIP Consolidation #4 (2026-03-02) — Pre-Release Readiness Complete, Dynamic Pipeline Removed
 
 **Description**: Archived 4 WIP files. Pre-release readiness plan fully implemented (Steps 0-12). Monolithic Dynamic pipeline removed (commit `122f34b`). UI texts implemented. Calibration cost optimization policy ratified and in use.

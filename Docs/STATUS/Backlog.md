@@ -41,6 +41,18 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 ---
 
+## Recently Completed (March 3, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **VPS deployment operational**: Production (`app.factharbor.ch`) and test (`test.factharbor.ch`) instances running on Infomaniak VPS. Automated deploy script, test instance setup script, backup cron, Caddy reverse proxy with TLS. | Ops / Deployment | 2026-03-03 | `scripts/DEPLOYMENT.md`, `Docs/ARCHIVE/2026-03-02_Deployment_Strategy_PreRelease.md` |
+| ✅ **UCM defaults alignment**: Fixed divergence between code defaults and file defaults causing verdict downgrades. Pipeline config, config-schemas, AboutBox updated. | Config / Quality | 2026-03-03 | Commit `3085b91`, `Docs/ARCHIVE/2026-03-03_UCM_Defaults_Alignment.md` |
+| ✅ **P0 quality stabilization**: Sufficiency gate updated (sourceType OR distinct domains), verdict-stage fail-open wrapper, sourceType prompt hardening, SR partial-failure noise suppressed. | Analyzer / Quality | 2026-03-03 | Commit `c8c0a69`, `Docs/ARCHIVE/2026-03-03_Post_UCM_Quality_Regression_Investigation.md` |
+| ✅ **Deploy script OOM prevention**: `deploy.sh` now stops test services before build to prevent OOM on 4 GB VPS. | Ops / Reliability | 2026-03-03 | Commit `e833fce` |
+| ✅ **Maintenance page UX**: Caddy content-negotiation (JSON for API, HTML for pages), client-side maintenance detection on jobs pages. | Ops / UX | 2026-03-03 | Commit `e833fce`, `scripts/Caddyfile.reference` |
+
+---
+
 ## Recently Completed (March 2, 2026)
 
 | Description | Domain | Completed | Reference |
@@ -50,7 +62,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | ✅ **Pre-release UI texts**: Disclaimer banner, footer, methodology note, result disclaimer. | UI | 2026-03-02 | Commits `53f3ab4`, `829834f`, `Docs/ARCHIVE/2026-03-02_PreRelease_UI_Texts.md` |
 | ✅ **API data exposure hardening (Step 11)**: Sensitive fields stripped from public API responses. | Security | 2026-03-02 | Commit `875972b` |
 | ✅ **Invite code header migration (S-5)**: Moved from URL query string to `X-Invite-Code` header. | Security | 2026-03-02 | Commit `ccb3e88` |
-| ✅ **Deployment strategy document**: VPS selection (Infomaniak), Caddy config, systemd services, staging instance design, backup procedures, rollback plan. Lead Architect review incorporated. | Ops / Architecture | 2026-03-02 | `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md` |
+| ✅ **Deployment strategy document**: VPS selection (Infomaniak), Caddy config, systemd services, staging instance design, backup procedures, rollback plan. Lead Architect review incorporated. | Ops / Architecture | 2026-03-02 | `Docs/ARCHIVE/2026-03-02_Deployment_Strategy_PreRelease.md` |
 | ✅ **Next.js standalone output**: `output: "standalone"` in `next.config.js`. | Ops | 2026-03-02 | `apps/web/next.config.js` |
 | ✅ **ForwardedHeaders middleware**: `X-Forwarded-For` support for real client IP behind Caddy proxy. | Security / Ops | 2026-03-02 | `apps/api/Program.cs` |
 
@@ -192,6 +204,9 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **C13 active rebalancing**: D5 Control 3 (contrarian retrieval) implemented — runs targeted searches when evidence pool imbalance detected. Full rebalancing loop (A/B target: ≥30% reduction in `meanAbsoluteSkew` vs Baseline v1) still needs validation with real runs. | Analyzer / Quality | high | high | [Stammbach §5.3 item 3](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Baseline_v1.md §6](Calibration_Baseline_v1.md) |
 | **Verdict Accuracy Test Set**: Curate 50 claims with independently verified outcomes (15+ T/F, 15+ contested, 10+ multilingual, 10+ fact-check anchors) from Climate Feedback, PolitiFact, Snopes, AFP, Full Fact. Metric: `verdictAccuracyRate` = % where pipeline verdict matches ground truth category. Measures correctness, not just symmetry. | Analyzer / Quality | high | high | [Report_Quality_Opportunity_Map](../ARCHIVE/Report_Quality_Opportunity_Map_2026-02-22.md) §5 |
 | **W15 domain-aware fetch batching**: Add domain-level URL grouping + 500ms stagger for same-domain requests in batch fetch (`claimboundary-pipeline.ts:2909`). Prevents 100% fetch failure when search results cluster on one domain. ~50-100 lines, new UCM param `fetchSameDomainDelayMs`. | Analyzer / Reliability | high | high | [Report_Quality_Investigation](../WIP/2026-02-27_Report_Quality_Investigation.md) W15 |
+| **P1: Warning aggregation for source_fetch_failure noise**: Aggregate per-query `source_fetch_failure` warnings into a single summary. Suppress routine low-ratio partial failures per Captain policy. Reduce warning noise without masking true degradation. | Analyzer / UX | med | med | `Docs/ARCHIVE/2026-03-03_Post_UCM_Quality_Regression_Investigation.md` P1 |
+| **P2: UI grouping of operational notes vs quality signals**: Separate operational notes (fetch retries, SR cache misses) from hard quality signals in the UI warning display. | Web UI | low | med | `Docs/ARCHIVE/2026-03-03_Post_UCM_Quality_Regression_Investigation.md` P2 |
+| **Revert sufficiency temp mitigation**: `evidenceSufficiencyMinSourceTypes` is temporarily set to `1` (should be `2`). Revert once deployed system proves stable (~7 days without false `insufficient_evidence`). | Config / Quality | med | med | `Docs/ARCHIVE/2026-03-03_Post_UCM_Quality_Regression_Investigation.md` §13 |
 | **Self-consistency Haiku experiment**: Test self-consistency (Step 2) on Haiku instead of Sonnet via UCM `debateModelTiers.selfConsistency: "haiku"`. Measure spread/diversity vs cost. No code change needed — UCM config test only. | Analyzer / Cost | med | med | [Report_Quality_Investigation](../WIP/2026-02-27_Report_Quality_Investigation.md) Phase 1 item #2 |
 | **Multi-challenger cross-provider debate (Phase 2)**: Replace Steps 2+3 with cross-provider debate round (Claude, GPT, Gemini). Deferred pending 4 prerequisite corrections: reconciliation contract update, confidence tier semantics, label alignment, UCM-managed reasoning instructions. | Analyzer / Quality | low | high | [Multi_Agent_Cross_Provider_Debate](../WIP/Multi_Agent_Cross_Provider_Debate_2026-02-27.md) |
 | **Conditional re-reconciliation (B-3 add-on)**: After reconciliation, if self-consistency spread >20pp AND contrarian evidence present, re-run reconciliation once with prompt addendum. UCM-flagged (`reDeliberationEnabled`, default off). Max 1 extra Sonnet call per triggered claim (~10-20% trigger rate). Not Debate V2 — scoped addition to existing topology. | Analyzer / Quality | med | med | [Debate_Iteration_Analysis](../ARCHIVE/Debate_Iteration_Analysis_2026-02-21.md) §5 |
