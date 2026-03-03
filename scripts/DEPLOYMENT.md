@@ -460,7 +460,73 @@ df -h /
 top -bn1 | head -20
 
 # Check if ports are listening
-sudo ss -tlnp | grep -E ':(80|443|3000|5000) '
+sudo ss -tlnp | grep -E ':(80|443|3000|3001|5000|5001) '
+```
+
+---
+
+## Test Instance (`test.factharbor.ch`)
+
+A second isolated instance sharing the same code/builds but with separate databases, config, and services.
+
+### Architecture
+
+```
+test.factharbor.ch → Caddy :443 → localhost:3001 (Next.js test) → localhost:5001 (API test) → data-test/*.db
+app.factharbor.ch  → Caddy :443 → localhost:3000 (Next.js prod) → localhost:5000 (API prod)  → data/*.db
+```
+
+### Components
+
+| Component | Prod | Test |
+|-----------|------|------|
+| Next.js port | 3000 | 3001 |
+| API port | 5000 | 5001 |
+| Systemd services | `factharbor-api`, `factharbor-web` | `factharbor-api-test`, `factharbor-web-test` |
+| Env file | `deploy/.env.production` | `deploy/.env.test` |
+| Data directory | `data/` | `data-test/` |
+| Domain | `app.factharbor.ch` | `test.factharbor.ch` |
+
+### Service management
+
+```bash
+# Status
+sudo systemctl status factharbor-api-test factharbor-web-test
+
+# Restart test only
+sudo systemctl restart factharbor-api-test factharbor-web-test
+
+# Logs
+sudo journalctl -u factharbor-api-test -f
+sudo journalctl -u factharbor-web-test -f
+
+# Health checks
+curl -s http://localhost:5001/health
+curl -s http://localhost:3001/api/health
+curl -s https://test.factharbor.ch/api/health
+```
+
+### Key differences in `.env.test`
+
+| Variable | Value |
+|----------|-------|
+| `FH_API_BASE_URL` | `http://localhost:5001` |
+| `FH_CORS_ORIGIN` | `https://test.factharbor.ch` |
+| `FH_CONFIG_DB_PATH` | `/opt/factharbor/data-test/config.db` |
+| `FH_SR_CACHE_PATH` | `/opt/factharbor/data-test/source-reliability.db` |
+| `FH_ADMIN_KEY` | *(separate key)* |
+| `FH_INTERNAL_RUNNER_KEY` | *(separate key)* |
+| `FH_RUNNER_MAX_CONCURRENCY` | `1` |
+
+### Deployment
+
+`deploy.sh` automatically restarts test services (if enabled) after the production services. No separate deploy needed — a single `deploy.sh` run deploys both instances since they share the same code and build artifacts.
+
+### Stop/disable test instance
+
+```bash
+sudo systemctl stop factharbor-api-test factharbor-web-test
+sudo systemctl disable factharbor-api-test factharbor-web-test
 ```
 
 ---

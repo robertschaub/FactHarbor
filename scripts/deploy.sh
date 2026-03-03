@@ -74,10 +74,18 @@ cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 ok "Web build complete."
 
 # --- Step 5: Restart services ---
-log "Restarting services..."
+log "Restarting production services..."
 sudo systemctl restart factharbor-api
 sudo systemctl restart factharbor-web
-ok "Services restarted."
+ok "Production services restarted."
+
+# --- Step 5b: Restart test services (if enabled) ---
+if systemctl is-enabled factharbor-api-test &>/dev/null 2>&1; then
+    log "Restarting test services..."
+    sudo systemctl restart factharbor-api-test
+    sudo systemctl restart factharbor-web-test
+    ok "Test services restarted."
+fi
 
 # --- Step 6: Health checks ---
 log "Waiting ${HEALTH_WAIT}s for services to start..."
@@ -103,6 +111,12 @@ check_health() {
 FAILED=0
 check_health "http://localhost:5000/health" "API" || FAILED=1
 check_health "http://localhost:3000/api/health" "Web" || FAILED=1
+
+# Health-check test instance (if enabled)
+if systemctl is-enabled factharbor-web-test &>/dev/null 2>&1; then
+    check_health "http://localhost:5001/health" "API (test)" || FAILED=1
+    check_health "http://localhost:3001/api/health" "Web (test)" || FAILED=1
+fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
