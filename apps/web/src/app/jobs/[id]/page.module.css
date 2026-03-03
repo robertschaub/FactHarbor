@@ -553,6 +553,22 @@
   color: #856404;
 }
 
+.maintenanceBox {
+  padding: 16px;
+  background-color: #fef3c7;
+  color: #92400e;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #fde68a;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .noDataError {
   padding: 16px;
   background-color: #f8d7da;

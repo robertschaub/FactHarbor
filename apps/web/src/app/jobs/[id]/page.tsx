@@ -345,6 +345,7 @@ export default function JobPage() {
   const [tab, setTab] = useState<"summary" | "article" | "sources" | "report" | "json" | "events">("summary");
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [maintenance, setMaintenance] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   // Job action states
@@ -474,17 +475,32 @@ export default function JobPage() {
   useEffect(() => {
     if (!jobId) return;
     let alive = true;
+    const isMaintErr = (msg: string) =>
+      /\b50[23]\b|NetworkError|Failed to fetch|ECONNREFUSED/.test(msg);
+
     const load = async () => {
       const res = await fetch(`/api/fh/jobs/${jobId}`, { cache: "no-store" });
       if (!res.ok) {
+        if (res.status === 502 || res.status === 503) {
+          setMaintenance(true);
+          return; // Keep existing job data visible
+        }
         const text = await res.text();
         throw new Error(`${res.status}: ${text}`);
       }
       const data = (await res.json()) as Job;
-      if (alive) setJob(data);
+      if (alive) { setJob(data); setMaintenance(false); }
     };
-    load().catch((e: any) => setErr(e?.message ?? String(e)));
-    const id = setInterval(() => { load().catch(() => {}); }, 2000);
+    load().catch((e: any) => {
+      const msg = e?.message ?? String(e);
+      if (isMaintErr(msg)) { setMaintenance(true); } else { setErr(msg); }
+    });
+    const id = setInterval(() => {
+      load().catch((e: any) => {
+        const msg = e?.message ?? String(e);
+        if (isMaintErr(msg)) setMaintenance(true);
+      });
+    }, 2000);
     return () => { alive = false; clearInterval(id); };
   }, [jobId]);
 
@@ -805,6 +821,12 @@ export default function JobPage() {
     <div className={styles.pageContainer}>
       <SystemHealthBanner />
       <h1 className={styles.pageTitle}>FactHarbor Analysis</h1>
+
+      {maintenance && (
+        <div className={styles.maintenanceBox}>
+          &#9881; System update in progress — data will refresh automatically when the service is back.
+        </div>
+      )}
 
       {err && (
         <div className={styles.noDataError}>

@@ -117,7 +117,9 @@ User → HTTPS :443 → Caddy (auto-TLS) → Next.js :3000 → .NET API :5000 �
 └── scripts/
     ├── deploy.sh                 # Deploy script (restarts prod + test)
     ├── setup-test-instance.sh    # One-time test instance setup
-    └── backup-dbs.sh             # Backup script (cron daily 03:00 UTC)
+    ├── backup-dbs.sh             # Backup script (cron daily 03:00 UTC)
+    ├── Caddyfile.reference       # Reference Caddyfile (both instances, maintenance handling)
+    └── maintenance.html          # Maintenance page served by Caddy on 502/503
 ```
 
 ---
@@ -289,15 +291,27 @@ sudo systemctl restart caddy
 
 ### Maintenance page
 
-Caddy automatically serves `/opt/factharbor/scripts/maintenance.html` when the backend is unreachable (e.g., during service restarts). No manual toggling needed — the page appears on 502/503 errors and disappears when services come back.
+Caddy automatically handles 502/503 errors when backends are unreachable (e.g., during service restarts). No manual toggling needed.
 
-**Setup** (already done during initial deployment):
+**Two-layer approach:**
 
-The Caddyfile includes a `handle_errors` block:
+1. **Caddy (server-side):** Content-negotiates based on request path:
+   - `/api/*` requests → JSON `{"error":"maintenance","message":"..."}` (so the SPA can detect it)
+   - All other requests → serves the visual `maintenance.html` page
+2. **Client-side (SPA):** The jobs pages detect 502/503 and network errors, showing a pulsing amber "System update in progress" banner instead of a red error. Auto-recovers when the service comes back.
+
+**Caddyfile `handle_errors` block** (must exist in each site block):
 
 ```
 handle_errors {
     @backend_down expression `{err.status_code} in [502, 503]`
+
+    @api_request path /api/*
+    handle @backend_down @api_request {
+        header Content-Type "application/json"
+        respond `{"error":"maintenance","message":"FactHarbor is being updated. Please try again in a moment."}` {http.error.status_code}
+    }
+
     handle @backend_down {
         root * /opt/factharbor/scripts
         rewrite * /maintenance.html
@@ -306,7 +320,18 @@ handle_errors {
 }
 ```
 
-To test: stop the web service (`sudo systemctl stop factharbor-web`), visit the site, then restart.
+**Reference:** A complete Caddyfile template with both instances is at `scripts/Caddyfile.reference`.
+
+**To apply on VPS** (if the current Caddyfile uses the old HTML-only pattern):
+
+```bash
+sudo nano /etc/caddy/Caddyfile    # Replace handle_errors blocks
+sudo caddy fmt --overwrite /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+```
+
+**To test:** stop the web service (`sudo systemctl stop factharbor-web`), visit the site in a browser (should see maintenance.html) and test an API URL (`curl -s https://app.factharbor.ch/api/health` should return the JSON maintenance response), then restart.
 
 ### Systemd service files
 

@@ -1,0 +1,63 @@
+# FactHarbor Caddyfile Reference
+# Copy to /etc/caddy/Caddyfile on the VPS and adjust as needed.
+# After changes: sudo caddy fmt --overwrite /etc/caddy/Caddyfile
+#                sudo caddy validate --config /etc/caddy/Caddyfile
+#                sudo systemctl reload caddy
+
+# ── Shared error-handling snippet ──────────────────────────────────
+# Caddy v2 doesn't support snippet reuse across site blocks,
+# so duplicate the handle_errors block in each site.
+#
+# Logic:
+#   /api/* requests → JSON response (so the SPA can detect maintenance)
+#   Everything else → visual maintenance.html page
+
+# ── Production ─────────────────────────────────────────────────────
+app.factharbor.ch {
+	reverse_proxy localhost:3000
+
+	log {
+		output file /var/log/caddy/app-access.log
+	}
+
+	handle_errors {
+		@backend_down expression `{err.status_code} in [502, 503]`
+
+		@api_request path /api/*
+		handle @backend_down @api_request {
+			header Content-Type "application/json"
+			respond `{"error":"maintenance","message":"FactHarbor is being updated. Please try again in a moment."}` {http.error.status_code}
+		}
+
+		handle @backend_down {
+			root * /opt/factharbor/scripts
+			rewrite * /maintenance.html
+			file_server
+		}
+	}
+}
+
+# ── Test Instance ──────────────────────────────────────────────────
+test.factharbor.ch {
+	reverse_proxy localhost:3001
+
+	log {
+		output file /var/log/caddy/test-access.log
+	}
+
+	handle_errors {
+		@backend_down expression `{err.status_code} in [502, 503]`
+
+		@api_request path /api/*
+		handle @backend_down @api_request {
+			header Content-Type "application/json"
+			respond `{"error":"maintenance","message":"FactHarbor is being updated. Please try again in a moment."}` {http.error.status_code}
+		}
+
+		handle @backend_down {
+			root * /opt/factharbor/scripts
+			rewrite * /maintenance.html
+			file_server
+		}
+	}
+}

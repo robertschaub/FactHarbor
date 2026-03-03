@@ -57,13 +57,24 @@ else
 fi
 ok "Code updated: $(git log --oneline -1)"
 
-# --- Step 3: Build .NET API ---
+# --- Step 3: Free memory for build ---
+# Stop test services (if running) to free RAM — VPS has 4 GB shared across all services.
+# npm ci + dotnet publish can OOM if everything is running.
+TEST_WAS_RUNNING=0
+if systemctl is-active factharbor-api-test &>/dev/null 2>&1; then
+    TEST_WAS_RUNNING=1
+    log "Stopping test services to free memory for build..."
+    sudo systemctl stop factharbor-api-test factharbor-web-test
+    ok "Test services stopped."
+fi
+
+# --- Step 4: Build .NET API ---
 log "Building .NET API..."
 cd "$DEPLOY_DIR/apps/api"
 dotnet publish -c Release -o "$API_PUBLISH_DIR" --verbosity quiet
 ok "API build complete."
 
-# --- Step 4: Build Next.js ---
+# --- Step 5: Build Next.js ---
 log "Installing npm dependencies..."
 cd "$DEPLOY_DIR"
 npm ci --silent
@@ -73,21 +84,21 @@ npm -w apps/web run build
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 ok "Web build complete."
 
-# --- Step 5: Restart services ---
+# --- Step 6a: Restart production services ---
 log "Restarting production services..."
 sudo systemctl restart factharbor-api
 sudo systemctl restart factharbor-web
 ok "Production services restarted."
 
-# --- Step 5b: Restart test services (if enabled) ---
-if systemctl is-enabled factharbor-api-test &>/dev/null 2>&1; then
-    log "Restarting test services..."
-    sudo systemctl restart factharbor-api-test
-    sudo systemctl restart factharbor-web-test
-    ok "Test services restarted."
+# --- Step 6b: Restart test services (if they were running) ---
+if [ "$TEST_WAS_RUNNING" -eq 1 ]; then
+    log "Starting test services..."
+    sudo systemctl start factharbor-api-test
+    sudo systemctl start factharbor-web-test
+    ok "Test services started."
 fi
 
-# --- Step 6: Health checks ---
+# --- Step 7: Health checks ---
 log "Waiting ${HEALTH_WAIT}s for services to start..."
 sleep "$HEALTH_WAIT"
 

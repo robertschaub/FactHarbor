@@ -45,6 +45,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [maintenance, setMaintenance] = useState(false);
   const [pageSize, setPageSize] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -71,17 +72,31 @@ export default function JobsPage() {
         if (debouncedQuery) params.set("q", debouncedQuery);
         const res = await fetch(`/api/fh/jobs?${params}`, { cache: "no-store" });
         if (!res.ok) {
+          if (res.status === 502 || res.status === 503) {
+            setMaintenance(true);
+            setError(null);
+            return; // Keep existing jobs visible
+          }
           throw new Error(`Failed to load jobs: ${res.status}`);
         }
         const data: JobsResponse = await res.json();
         setError(null);
+        setMaintenance(false);
         setJobs(data.jobs || []);
         if (data.pagination) {
           setTotalCount(data.pagination.totalCount);
           setTotalPages(data.pagination.totalPages);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to load jobs");
+        const msg = err.message || "";
+        // Network errors during deployment — show maintenance banner, not red error
+        if (msg.includes("NetworkError") || msg.includes("Failed to fetch") || msg.includes("ECONNREFUSED")) {
+          setMaintenance(true);
+          setError(null);
+        } else {
+          setError(msg || "Failed to load jobs");
+          setMaintenance(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -184,6 +199,12 @@ export default function JobsPage() {
           aria-label="Search jobs"
         />
       </div>
+
+      {maintenance && (
+        <div className={styles.maintenanceBox}>
+          &#9881; System update in progress — data will refresh automatically when the service is back.
+        </div>
+      )}
 
       {error && (
         <div className={styles.errorBox}>
