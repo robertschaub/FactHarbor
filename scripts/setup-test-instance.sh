@@ -100,6 +100,7 @@ Environment="ASPNETCORE_ENVIRONMENT=Production"
 Environment="ASPNETCORE_URLS=http://127.0.0.1:5001"
 Environment="Kestrel__Endpoints__Http__Url=http://127.0.0.1:5001"
 Environment="ConnectionStrings__FhDbSqlite=Data Source=$DATA_TEST_DIR/factharbor.db"
+Environment="Runner__BaseUrl=http://localhost:3001"
 Restart=always
 RestartSec=5
 
