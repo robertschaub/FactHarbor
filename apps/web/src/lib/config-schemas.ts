@@ -500,10 +500,6 @@ export const PipelineConfigSchema = z.object({
   openaiTpmGuardFallbackModel: z.string().min(1).optional()
     .describe("Fallback OpenAI model used by TPM guard (default: gpt-4.1-mini)."),
 
-  // === Pipeline Selection ===
-  defaultPipelineVariant: z.enum(["claimboundary"])
-    .optional()
-    .describe("Default pipeline variant for new jobs"),
 }).transform((data) => {
   // Runtime migration warnings (no legacy field aliases in v3.1+)
   const warnings: string[] = [];
@@ -768,10 +764,10 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
   llmProvider: "anthropic",
   llmTiering: true,
-  modelUnderstand: "claude-haiku-4-5-20251001",
-  modelExtractEvidence: "claude-haiku-4-5-20251001",
-  modelVerdict: "claude-sonnet-4-6",
-  modelOpus: "claude-opus-4-6", // B-5b: explicit Opus model ID for opus debate tier
+  modelUnderstand: "haiku",
+  modelExtractEvidence: "haiku",
+  modelVerdict: "sonnet",
+  modelOpus: "opus",
 
   // LLM text analysis (all enabled by default per v2.8.3)
   llmInputClassification: true,
@@ -866,8 +862,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   gapResearchMaxIterations: 2,
   gapResearchMaxQueries: 8,
 
-  // Pipeline selection
-  defaultPipelineVariant: "claimboundary",
   openaiTpmGuardEnabled: true,
   openaiTpmGuardInputTokenThreshold: 24000,
   openaiTpmGuardFallbackModel: "gpt-4.1-mini",

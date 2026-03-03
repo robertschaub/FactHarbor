@@ -27,7 +27,7 @@ describe("tiered model routing", () => {
     const config = buildConfig({ llmProvider: "anthropic", llmTiering: true });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("claude-haiku-4-5-20251001");
     expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("claude-haiku-4-5-20251001");
-    expect(getModelForTask("verdict", undefined, config).modelName).toBe("claude-sonnet-4-6");
+    expect(getModelForTask("verdict", undefined, config).modelName).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("allows per-task model overrides when tiering is on", () => {

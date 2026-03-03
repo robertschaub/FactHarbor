@@ -286,18 +286,10 @@ describe("PipelineConfigSchema", () => {
     expect(PipelineConfigSchema.safeParse(config).success).toBe(true);
   });
 
-  it("validates defaultPipelineVariant enum", () => {
+  it("accepts configs that still contain defaultPipelineVariant (legacy field stripped by Zod)", () => {
+    // Field was removed from schema — Zod strips unknown keys, so these should still parse
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary" }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "monolithic_dynamic" }).success).toBe(false);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "orchestrated" }).success).toBe(false);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "invalid" }).success).toBe(false);
-  });
-
-  it("allows optional defaultPipelineVariant", () => {
-    const config = { ...DEFAULT_PIPELINE_CONFIG };
-    delete (config as any).defaultPipelineVariant;
-    const result = PipelineConfigSchema.safeParse(config);
-    expect(result.success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "anything" }).success).toBe(true);
   });
 
   it("rejects empty model names", () => {
@@ -588,7 +580,7 @@ describe("parseTypedConfig function", () => {
     const content = JSON.stringify(DEFAULT_PIPELINE_CONFIG);
     const result = parseTypedConfig("pipeline", content);
     expect(result.llmTiering).toBe(true);
-    expect(result.modelVerdict).toBe("claude-sonnet-4-6");
+    expect(result.modelVerdict).toBe("sonnet");
   });
 
   it("parses and returns typed SR config", () => {
@@ -663,10 +655,10 @@ describe("canonicalizeContent and computeContentHash", () => {
 
 describe("Default Config Values", () => {
   describe("DEFAULT_PIPELINE_CONFIG", () => {
-    it("has correct model defaults from .env.example", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("claude-haiku-4-5-20251001");
-      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("claude-haiku-4-5-20251001");
-      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("claude-sonnet-4-6");
+    it("has correct model tier alias defaults", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("haiku");
+      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("haiku");
+      expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("sonnet");
     });
 
     it("has LLM text analysis enabled by default (v2.8.3)", () => {
@@ -722,7 +714,6 @@ describe("Default Config Values", () => {
       "tigerScoreMode",
       "tigerScoreTier",
       "tigerScoreTemperature",
-      "defaultPipelineVariant",
     ] as const;
 
     for (const field of criticalFields) {

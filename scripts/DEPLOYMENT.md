@@ -261,6 +261,27 @@ sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl restart caddy
 ```
 
+### Maintenance page
+
+Caddy automatically serves `/opt/factharbor/scripts/maintenance.html` when the backend is unreachable (e.g., during service restarts). No manual toggling needed — the page appears on 502/503 errors and disappears when services come back.
+
+**Setup** (already done during initial deployment):
+
+The Caddyfile includes a `handle_errors` block:
+
+```
+handle_errors {
+    @backend_down expression `{err.status_code} in [502, 503]`
+    handle @backend_down {
+        root * /opt/factharbor/scripts
+        rewrite * /maintenance.html
+        file_server
+    }
+}
+```
+
+To test: stop the web service (`sudo systemctl stop factharbor-web`), visit the site, then restart.
+
 ### Systemd service files
 
 ```

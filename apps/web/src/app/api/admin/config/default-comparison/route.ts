@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, DEFAULT_CALC_CONFIG } from "@/lib/config-loader";
-import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
+import { DEFAULT_SR_CONFIG, PipelineConfigSchema } from "@/lib/config-schemas";
 import { getActiveConfig, loadDefaultConfigFromFile } from "@/lib/config-storage";
 import { checkAdminKey } from "@/lib/auth";
 
@@ -21,10 +21,27 @@ function loadDefaults(configType: "pipeline" | "search" | "calculation" | "sr", 
   const content = loadDefaultConfigFromFile(configType);
   if (!content) return fallback;
   try {
-    return JSON.parse(content);
+    const raw = JSON.parse(content);
+    // For pipeline, parse through schema to get runtime-effective values (with transforms)
+    if (configType === "pipeline") {
+      const parsed = PipelineConfigSchema.safeParse(raw);
+      if (parsed.success) return parsed.data;
+    }
+    return raw;
   } catch {
     return fallback;
   }
+}
+
+/**
+ * Parse config through PipelineConfigSchema to get runtime-effective values.
+ * Uses safeParse to gracefully handle malformed legacy blobs.
+ */
+function toEffectivePipelineConfig(input: unknown, fallback: any): any {
+  const parsed = PipelineConfigSchema.safeParse(input);
+  if (parsed.success) return parsed.data;
+  // Fallback keeps endpoint operational for malformed legacy data
+  return mergeDefaults(fallback, input);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -182,9 +199,17 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Find differences (treat missing fields as defaults)
-    const effectiveActive = mergeDefaults(defaultConfig, activeConfig);
-    const customizedFields = findDifferences(defaultConfig, effectiveActive);
+    // Find differences — for pipeline, use schema-aware comparison to reflect
+    // actual runtime-effective values (transforms fill missing fields)
+    let effectiveDefault = defaultConfig;
+    let effectiveActive: any;
+    if (configType === "pipeline") {
+      effectiveDefault = toEffectivePipelineConfig(defaultConfig, DEFAULT_PIPELINE_CONFIG);
+      effectiveActive = toEffectivePipelineConfig(activeConfig, effectiveDefault);
+    } else {
+      effectiveActive = mergeDefaults(defaultConfig, activeConfig);
+    }
+    const customizedFields = findDifferences(effectiveDefault, effectiveActive);
 
     // Count total fields (rough estimate)
     const countFields = (obj: any): number => {
@@ -193,7 +218,7 @@ export async function GET(request: NextRequest) {
       return Object.keys(obj).reduce((sum, key) => sum + countFields(obj[key]), 0);
     };
 
-    const totalFields = countFields(defaultConfig);
+    const totalFields = countFields(effectiveDefault);
 
     return NextResponse.json({
       success: true,

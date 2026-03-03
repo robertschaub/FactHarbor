@@ -30,7 +30,6 @@ type HealthStatus = {
 
 type PipelineConfig = {
   content: {
-    defaultPipelineVariant: string;
     analysisMode: "quick" | "deep";
   };
 };
@@ -51,12 +50,6 @@ async function safeJson<T>(url: string): Promise<{ ok: boolean; data?: T; error?
 function shortSha(sha?: string | null) {
   if (!sha) return "—";
   return sha.length > 10 ? sha.slice(0, 10) : sha;
-}
-
-function formatPipelineVariant(variant?: string | null) {
-  if (!variant) return "—";
-  if (variant === "claimboundary") return "ClaimBoundary";
-  return variant;
 }
 
 function formatAnalysisMode(mode?: string | null) {
