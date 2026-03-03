@@ -474,9 +474,12 @@ export const PipelineConfigSchema = z.object({
   calibrationInverseGateAction: z.enum(["warn", "fail"]).optional()
     .describe("Gate action for inverse consistency violations in calibration (default: warn). warn: report only; fail: block diagnosticGatePassed."),
   verdictGroundingPolicy: z.enum(["disabled", "safe_downgrade"]).optional()
-    .describe("Integrity policy for grounding failures in verdict validation (default: disabled)."),
+    .describe("Integrity policy for grounding failures in verdict validation (default: disabled). " +
+      "safe_downgrade forces truthPercentage=50 and caps confidence at 24 on failure — disabled pre-release " +
+      "because the grounding check produces false positives that degrade report quality. See UCM_Defaults_Alignment.md."),
   verdictDirectionPolicy: z.enum(["disabled", "retry_once_then_safe_downgrade"]).optional()
-    .describe("Integrity policy for direction failures in verdict validation (default: disabled)."),
+    .describe("Integrity policy for direction failures in verdict validation (default: disabled). " +
+      "Disabled for same reason as verdictGroundingPolicy — safe_downgrade degrades verdicts on false positives."),
   debateModelTiers: z.object({
     advocate: z.enum(["haiku", "sonnet", "opus"]).optional(),
     selfConsistency: z.enum(["haiku", "sonnet", "opus"]).optional(),
