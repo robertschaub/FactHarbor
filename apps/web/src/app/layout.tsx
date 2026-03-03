@@ -32,7 +32,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   letterSpacing: "0.03em",
                 }}
               >
-                Alpha
+                Alpha{" "}
+                <span style={{ fontWeight: 400, opacity: 0.7 }}>
+                  {process.env.NEXT_PUBLIC_BUILD_DATE}
+                </span>
               </span>
               <div style={{ fontSize: 11, fontWeight: 400, color: "#6b7280", marginTop: 2 }}>
                 AI-powered fact-checking — every verdict backed by evidence you can inspect.
@@ -40,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <nav className={styles.nav}>
               <a href="/analyze" className={styles.navLink}>Analyze</a>
-              <a href="/jobs" className={styles.navLink}>Jobs</a>
+              <a href="/jobs" className={styles.navLink}>Reports</a>
               <a href="/source-reliability" className={styles.navLink}>Sources</a>
               <a href="/admin" className={styles.navLink}>Admin</a>
             </nav>

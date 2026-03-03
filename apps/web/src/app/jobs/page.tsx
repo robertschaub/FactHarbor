@@ -183,7 +183,7 @@ export default function JobsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.headerTitle}>FactHarbor Jobs</h1>
+        <h1 className={styles.headerTitle}>Fact-Check Reports</h1>
         <Link href="/analyze" className={styles.newAnalysisLink}>
           + New Analysis
         </Link>
@@ -194,9 +194,9 @@ export default function JobsPage() {
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search jobs..."
+          placeholder="Search reports..."
           className={styles.searchInput}
-          aria-label="Search jobs"
+          aria-label="Search reports"
         />
       </div>
 
@@ -214,7 +214,7 @@ export default function JobsPage() {
 
       {loading ? (
         <div className={styles.loading}>
-          Loading jobs...
+          Loading reports...
         </div>
       ) : jobs.length === 0 ? (
         <div className={styles.emptyState}>
@@ -226,7 +226,7 @@ export default function JobsPage() {
             </>
           ) : (
             <>
-              <h3 className={styles.emptyTitle}>No analysis jobs yet</h3>
+              <h3 className={styles.emptyTitle}>No reports yet</h3>
               <p className={styles.emptyText}>Start your first verification analysis</p>
               <Link href="/analyze" className={styles.emptyButton}>
                 Start Analysis

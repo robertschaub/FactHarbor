@@ -462,7 +462,7 @@ export default function JobPage() {
         throw new Error(data.error || `HTTP ${res.status}`);
       }
 
-      toast.success("Job deleted successfully");
+      toast.success("Report deleted successfully");
       // Redirect to jobs list after 1 second
       setTimeout(() => router.push("/jobs"), 1000);
     } catch (err: any) {

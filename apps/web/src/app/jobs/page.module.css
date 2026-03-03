@@ -28,7 +28,9 @@
 
 .headerTitle {
   margin: 0;
+  font-size: 1.75rem;
 }
+
 
 .newAnalysisLink {
   padding: 10px 20px;
