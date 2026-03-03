@@ -139,3 +139,7 @@ artifacts/
 /test-latest.txt
 
 /apps/web/config.db.bak
+
+# Deployment guide and connection config contain server IPs and SSH info — keep local only
+scripts/DEPLOYMENT.md
+scripts/.deploy.env

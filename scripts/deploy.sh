@@ -6,7 +6,7 @@
 #   /opt/factharbor/scripts/deploy.sh          # Deploy latest main
 #   /opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy a specific tag
 #
-# Prerequisites: SSH into ubuntu@83.228.221.114 first
+# Prerequisites: SSH into the VPS first (see scripts/.deploy.env for connection details)
 
 set -euo pipefail
 

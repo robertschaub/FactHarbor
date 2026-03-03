@@ -1,7 +1,7 @@
 param(
     [string]$Tag = "",
-    [string]$SshKey = "$env:USERPROFILE\.ssh\fh",
-    [string]$Host = "ubuntu@83.228.221.114",
+    [string]$SshKey = "",
+    [string]$SshHost = "",
     [switch]$DryRun
 )
 
@@ -11,16 +11,17 @@ param(
 
 .DESCRIPTION
     SSHes into the VPS and runs the deploy.sh script.
+    Reads connection details from scripts/.deploy.env (gitignored).
     Optionally pushes local changes to GitHub first.
 
 .PARAMETER Tag
     Optional git tag to deploy (e.g., "v1.0.0"). If omitted, deploys latest main.
 
 .PARAMETER SshKey
-    Path to SSH private key. Defaults to ~/.ssh/fh.
+    Path to SSH private key. Overrides DEPLOY_SSH_KEY from .deploy.env.
 
-.PARAMETER Host
-    SSH host string. Defaults to ubuntu@83.228.221.114.
+.PARAMETER SshHost
+    SSH host string (e.g., "user@host"). Overrides DEPLOY_SSH_HOST from .deploy.env.
 
 .PARAMETER DryRun
     Show what would be done without executing.
@@ -33,6 +34,29 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# --- Load connection config from .deploy.env ---
+$envFile = Join-Path $PSScriptRoot ".deploy.env"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        if ($_ -match '^\s*([A-Z_]+)\s*=\s*(.+)\s*$') {
+            Set-Variable -Name $Matches[1] -Value $Matches[2].Trim()
+        }
+    }
+}
+
+# Apply defaults from .deploy.env, allow param overrides
+if (-not $SshKey) { $SshKey = if ($DEPLOY_SSH_KEY) { $DEPLOY_SSH_KEY } else { "$env:USERPROFILE\.ssh\fh" } }
+if (-not $SshHost) { $SshHost = if ($DEPLOY_SSH_HOST) { $DEPLOY_SSH_HOST } else { "" } }
+
+if (-not $SshHost) {
+    Write-Host "No SSH host configured." -ForegroundColor Red
+    Write-Host "Create scripts/.deploy.env with:" -ForegroundColor Yellow
+    Write-Host "  DEPLOY_SSH_HOST=user@your-server-ip" -ForegroundColor Yellow
+    Write-Host "  DEPLOY_SSH_KEY=~/.ssh/your-key" -ForegroundColor Yellow
+    Write-Host "Or pass -Host parameter directly." -ForegroundColor Yellow
+    exit 1
+}
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  FactHarbor Remote Deploy" -ForegroundColor Cyan
@@ -40,9 +64,10 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # --- Pre-flight: Check SSH key exists ---
-if (-not (Test-Path $SshKey)) {
+$resolvedKey = $SshKey -replace '~', $env:USERPROFILE
+if (-not (Test-Path $resolvedKey)) {
     Write-Host "SSH key not found: $SshKey" -ForegroundColor Red
-    Write-Host "Set -SshKey parameter or ensure ~/.ssh/fh exists." -ForegroundColor Red
+    Write-Host "Set DEPLOY_SSH_KEY in scripts/.deploy.env or pass -SshKey parameter." -ForegroundColor Red
     exit 1
 }
 
@@ -72,28 +97,27 @@ if ($Tag) {
 } else {
     Write-Host "Deploying latest main" -ForegroundColor Yellow
 }
-Write-Host "Target: $Host" -ForegroundColor Yellow
+Write-Host "Target: $SshHost" -ForegroundColor Yellow
 Write-Host ""
 
 if ($DryRun) {
     Write-Host "[DryRun] Would run:" -ForegroundColor Gray
-    Write-Host "  ssh -i $SshKey -t $Host `"$deployCmd`"" -ForegroundColor Gray
+    Write-Host "  ssh -i $SshKey -t $SshHost `"$deployCmd`"" -ForegroundColor Gray
     exit 0
 }
 
 # --- Execute remote deployment ---
 Write-Host "Connecting to VPS..." -ForegroundColor Cyan
-ssh -i $SshKey -t $Host $deployCmd
+ssh -i $SshKey -t $SshHost $deployCmd
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "Remote deployment failed (exit code $LASTEXITCODE)" -ForegroundColor Red
-    Write-Host "SSH into VPS to investigate: ssh -i $SshKey $Host" -ForegroundColor Yellow
+    Write-Host "SSH into VPS to investigate: ssh -i $SshKey $SshHost" -ForegroundColor Yellow
     exit 1
 }
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  Remote deployment complete!" -ForegroundColor Green
-Write-Host "  Verify: https://app.factharbor.ch/api/health" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
