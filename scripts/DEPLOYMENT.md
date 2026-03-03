@@ -1,9 +1,9 @@
 # FactHarbor VPS Deployment Guide
 
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-03
 **Server:** Infomaniak VPS Lite M (2 vCPU, 4 GB RAM, 60 GB SSD)
 **OS:** Ubuntu 24.04 LTS
-**Domain:** `app.factharbor.ch`
+**Domains:** `app.factharbor.ch` (production), `test.factharbor.ch` (test)
 **IP:** `83.228.221.114` / `2001:1600:18:201::36e`
 
 ---
@@ -28,9 +28,11 @@ ssh -i ~/.ssh/fh ubuntu@83.228.221.114
 
 ```bash
 ssh -i ~/.ssh/fh ubuntu@83.228.221.114
-/opt/factharbor/scripts/deploy.sh          # Deploy latest main
-/opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy specific tag
+bash /opt/factharbor/scripts/deploy.sh          # Deploy latest main
+bash /opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy specific tag
 ```
+
+> **Note:** `deploy.sh` automatically restarts both production and test services, then health-checks all four endpoints.
 
 ### Redeploy (manual steps)
 
@@ -100,14 +102,21 @@ User → HTTPS :443 → Caddy (auto-TLS) → Next.js :3000 → .NET API :5000 �
 │   ├── prompts/                  # LLM prompt files (FH_PROMPT_DIR)
 │   └── configs/                  # Config defaults (FH_CONFIG_DEFAULTS_DIR)
 ├── deploy/
-│   ├── api/                      # Published .NET binaries
-│   └── .env.production           # Environment variables (secrets)
-├── data/                         # SQLite databases (runtime)
+│   ├── api/                      # Published .NET binaries (shared by both instances)
+│   ├── .env.production           # Production env (secrets, ports, DB paths)
+│   └── .env.test                 # Test instance env (port 3001/5001, data-test/)
+├── data/                         # Production SQLite databases
 │   ├── factharbor.db             # Jobs, events, invite codes
 │   ├── config.db                 # UCM configuration
 │   └── source-reliability.db    # Source reliability cache
+├── data-test/                    # Test instance SQLite databases (same schema)
+│   ├── factharbor.db
+│   ├── config.db
+│   └── source-reliability.db
 ├── backups/                      # Daily SQLite backups
 └── scripts/
+    ├── deploy.sh                 # Deploy script (restarts prod + test)
+    ├── setup-test-instance.sh    # One-time test instance setup
     └── backup-dbs.sh             # Backup script (cron daily 03:00 UTC)
 ```
 
@@ -261,6 +270,7 @@ Key variables:
 | `FH_SR_CACHE_PATH` | Source reliability cache path |
 | `FH_PROMPT_DIR` | Absolute path to prompt files |
 | `FH_CONFIG_DEFAULTS_DIR` | Absolute path to config defaults |
+| `PORT` | Next.js listen port (3000 prod, 3001 test) |
 
 ### Caddy (reverse proxy + TLS)
 
@@ -448,6 +458,19 @@ Check the admin dashboard at `/admin` for provider status. Common causes:
 - **Google CSE 429** — quota exceeded; system auto-falls back to Brave/SerpAPI
 - **Circuit breaker OPEN** — will auto-reset; check which providers are affected
 
+### Test instance won't start
+
+```bash
+sudo journalctl -u factharbor-api-test --no-pager -n 30
+sudo journalctl -u factharbor-web-test --no-pager -n 30
+```
+
+Common causes:
+- **API: EADDRINUSE on port 5000** — missing `Kestrel__Endpoints__Http__Url` override in service file (defaults to prod port)
+- **Web: EADDRINUSE on port 3000** — `.env.test` has `PORT=3000` instead of `PORT=3001` (check `grep ^PORT /opt/factharbor/deploy/.env.test`)
+- **Jobs stuck QUEUED** — missing `Runner__BaseUrl=http://localhost:3001` in API test service (triggers prod runner instead)
+- **Caddy won't restart after adding test** — `sudo touch /var/log/caddy/test-access.log && sudo chown caddy:caddy /var/log/caddy/test-access.log`
+
 ### General debugging
 
 ```bash
@@ -467,7 +490,7 @@ sudo ss -tlnp | grep -E ':(80|443|3000|3001|5000|5001) '
 
 ## Test Instance (`test.factharbor.ch`)
 
-A second isolated instance sharing the same code/builds but with separate databases, config, and services.
+A second isolated instance sharing the same code/builds but with separate databases, config, and services. Set up on 2026-03-03.
 
 ### Architecture
 
@@ -486,6 +509,7 @@ app.factharbor.ch  → Caddy :443 → localhost:3000 (Next.js prod) → localhos
 | Env file | `deploy/.env.production` | `deploy/.env.test` |
 | Data directory | `data/` | `data-test/` |
 | Domain | `app.factharbor.ch` | `test.factharbor.ch` |
+| Caddy log | `/var/log/caddy/access.log` | `/var/log/caddy/test-access.log` |
 
 ### Service management
 
@@ -514,9 +538,30 @@ curl -s https://test.factharbor.ch/api/health
 | `FH_CORS_ORIGIN` | `https://test.factharbor.ch` |
 | `FH_CONFIG_DB_PATH` | `/opt/factharbor/data-test/config.db` |
 | `FH_SR_CACHE_PATH` | `/opt/factharbor/data-test/source-reliability.db` |
-| `FH_ADMIN_KEY` | *(separate key)* |
-| `FH_INTERNAL_RUNNER_KEY` | *(separate key)* |
+| `PORT` | `3001` |
 | `FH_RUNNER_MAX_CONCURRENCY` | `1` |
+
+Auth keys (`FH_ADMIN_KEY`, `FH_INTERNAL_RUNNER_KEY`) are shared with production for convenience.
+
+### Critical systemd overrides for test API
+
+The test API service file (`/etc/systemd/system/factharbor-api-test.service`) requires these `Environment=` lines beyond what's in `.env.test`:
+
+```ini
+Environment="Kestrel__Endpoints__Http__Url=http://127.0.0.1:5001"  # Overrides appsettings.Production.json port 5000
+Environment="Runner__BaseUrl=http://localhost:3001"                  # Routes runner trigger to test web, not prod
+Environment="ConnectionStrings__FhDbSqlite=Data Source=/opt/factharbor/data-test/factharbor.db"
+```
+
+> **Why these are needed:** `appsettings.Production.json` hardcodes Kestrel to port 5000 (ignores `ASPNETCORE_URLS`), and `appsettings.json` hardcodes `Runner:BaseUrl` to `http://localhost:3000`. Without these overrides, the test API binds to port 5000 (conflict) and triggers the production runner.
+
+### Setup (one-time)
+
+```bash
+bash /opt/factharbor/scripts/setup-test-instance.sh
+```
+
+This script creates `data-test/`, `.env.test`, both systemd services, updates the Caddyfile, and runs health checks. See script comments for details.
 
 ### Deployment
 
