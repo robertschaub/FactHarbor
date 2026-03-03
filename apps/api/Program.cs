@@ -3,6 +3,7 @@ using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,12 +44,21 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
-var readPerIpPermitLimit = int.TryParse(Environment.GetEnvironmentVariable("FH_READ_PER_IP_PER_MIN"), out var readLimit) && readLimit > 0
-    ? readLimit
-    : 120;
-var analyzePerIpPermitLimit = int.TryParse(Environment.GetEnvironmentVariable("FH_ANALYZE_PER_IP_PER_MIN"), out var analyzeLimit) && analyzeLimit > 0
-    ? analyzeLimit
-    : 5;
+// Rate-limit config: prefer new RateLimiting__* keys, fall back to legacy FH_* env vars.
+// DEPRECATED: FH_READ_PER_IP_PER_MIN / FH_ANALYZE_PER_IP_PER_MIN — remove after all
+// deployments migrate to RateLimiting__ReadPerIpPerMin / RateLimiting__AnalyzePerIpPerMin.
+var readPerIpPermitLimit = builder.Configuration.GetValue("RateLimiting:ReadPerIpPerMin", 0);
+if (readPerIpPermitLimit < 1)
+{
+    var legacyRead = Environment.GetEnvironmentVariable("FH_READ_PER_IP_PER_MIN");
+    readPerIpPermitLimit = int.TryParse(legacyRead, out var lr) && lr > 0 ? lr : 120;
+}
+var analyzePerIpPermitLimit = builder.Configuration.GetValue("RateLimiting:AnalyzePerIpPerMin", 0);
+if (analyzePerIpPermitLimit < 1)
+{
+    var legacyAnalyze = Environment.GetEnvironmentVariable("FH_ANALYZE_PER_IP_PER_MIN");
+    analyzePerIpPermitLimit = int.TryParse(legacyAnalyze, out var la) && la > 0 ? la : 5;
+}
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -61,7 +71,7 @@ builder.Services.AddRateLimiter(options =>
             : $"Rate limit exceeded: max {readPerIpPermitLimit} read requests per minute per IP";
         context.HttpContext.Response.ContentType = "application/json";
         await context.HttpContext.Response.WriteAsync(
-            $"{{\"error\":\"{message}\"}}",
+            JsonSerializer.Serialize(new { error = message }),
             token);
     };
 
