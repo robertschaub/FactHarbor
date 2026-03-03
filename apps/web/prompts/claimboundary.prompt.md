@@ -43,13 +43,19 @@ Given the input text below, extract:
 
 - Preserve the original language of the input. Do not translate.
 - Do not assume any particular language. Instructions apply regardless of input language.
-- First, classify the input as either:
-  - **single_atomic_claim**: one standalone verifiable assertion (for example: "Entity A has property B.")
+- First, classify the input as one of:
+  - **single_atomic_claim**: one standalone verifiable assertion with a clear, unambiguous factual meaning (for example: "Entity A has property B." or "Process X takes Y days."). The assertion points to one specific verifiable dimension.
+  - **ambiguous_single_claim**: one standalone assertion whose key predicate (e.g., "is useless", "does not work", "is harmful") can be independently true or false along multiple distinct factual dimensions (e.g., technical feasibility, economic viability, environmental impact, statistical prevalence). Classify as ambiguous ONLY when at least two equally plausible interpretations exist from the wording alone — if one interpretation clearly dominates (e.g., "recycling is technically difficult" where the technical dimension is explicit), use `single_atomic_claim`. Questions ("Does X work?", "Is Y effective?") qualify if the implied assertion is ambiguous.
   - **multi_assertion_input**: multiple distinct verifiable assertions
 - If input is **single_atomic_claim**:
   - Keep `impliedClaim` very close to the input wording.
   - Return exactly 1 rough claim unless the input explicitly contains a second independent assertion.
   - Do not add mechanisms, causes, scope qualifiers, examples, or domain details that are not in the input text.
+- If input is **ambiguous_single_claim**:
+  - Keep `impliedClaim` very close to the input wording (do not narrow to one interpretation).
+  - Identify the distinct factual dimensions along which the assertion could be independently verified or refuted. These dimensions must be inherent in the wording itself — they represent the different ways a reasonable reader could interpret the claim, NOT external knowledge or evidence.
+  - Return 2-3 rough claims, one per distinct interpretation dimension. Each rough claim should restate the original assertion narrowed to one specific dimension. When more than 3 dimensions seem plausible, prioritize the most independently verifiable ones (those requiring distinct evidence types).
+  - Do not invent dimensions that are not natural interpretations of the input wording. If only 2 dimensions are genuinely distinct, return 2.
 - Extract only factual/verifiable assertions. Exclude pure opinions, predictions, rhetorical flourishes, and meta-commentary about the text itself.
 - Do not use domain-specific terminology unless it appears in the input text.
 - Keep roughClaims generic and topic-neutral — no hardcoded categories or keywords.
@@ -107,15 +113,27 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - Preserve the original language of the input and evidence. Do not translate.
 - Do not assume any particular language. Instructions apply regardless of input language.
 - **Primary contract (non-negotiable):** `impliedClaim`, `articleThesis`, and each claim `statement` must be derived from input text alone. Preliminary evidence may shape only `expectedEvidenceProfile` and `groundingQuality`.
-- First, classify whether the original input is already a **single atomic claim**.
-- If the input is a **single atomic claim**:
+- First, classify the original input as one of:
+  - **single_atomic_claim**: one assertion with a clear, unambiguous factual meaning pointing to one verifiable dimension.
+  - **ambiguous_single_claim**: one assertion whose key predicate is inherently ambiguous — it can be independently true or false along multiple distinct factual dimensions (e.g., technical, economic, environmental, statistical). Classify as ambiguous ONLY when at least two equally plausible interpretations exist from the wording alone — if one interpretation clearly dominates, use `single_atomic_claim`. This includes question forms ("Does X work?") where the implied assertion is ambiguous.
+  - **multi_assertion_input**: multiple distinct verifiable assertions.
+- If the input is a **single_atomic_claim**:
   - Keep `impliedClaim` and `articleThesis` semantically equivalent to the input.
   - Keep exactly 1 high-centrality atomic claim unless the input itself contains multiple independent assertions.
   - Do not expand the claim with new mechanisms, examples, study-specific framing, temporal windows, or geographic qualifiers unless explicitly present in input text.
+- If the input is an **ambiguous_single_claim**:
+  - Keep `impliedClaim` and `articleThesis` semantically equivalent to the original input (same wording/scope as single_atomic_claim — do NOT narrow to one interpretation).
+  - Identify the distinct factual dimensions along which the assertion's key predicate can be independently verified. These dimensions must be inherent in the input wording — they are the different ways a reasonable reader would interpret the claim, NOT dimensions discovered from preliminary evidence.
+  - Extract one atomic claim per distinct interpretation dimension. The number of claims depends on the atomicity guidance below: at "Very relaxed"/"Relaxed" levels, merge dimensions aggressively (target 1-2 claims); at "Moderate" or above, keep dimensions separate (target 2-3 claims). Each claim restates the original assertion narrowed to one specific dimension. When the number must be reduced, prioritize dimensions that are most independently verifiable with distinct evidence types.
+  - All interpretation-dimension claims must have `centrality: "high"` (they are all direct interpretations of the user's statement) and `claimDirection: "supports_thesis"`.
+  - The **primary contract** still applies: each claim `statement` must be derivable from the input text alone. The interpretation dimensions come from the inherent ambiguity of the wording (e.g., "useless" naturally encompasses technical, economic, environmental readings), not from evidence.
+  - The **backup self-check** still applies: "Could I have identified these interpretation dimensions without reading preliminary evidence?" If not, remove the dimension.
+  - Do not expand with geographic qualifiers, time windows, or study-specific framing not in the input.
 - If the input is a **question** (e.g., "Was X fair?", "Did Y happen?"):
   - The `impliedClaim` is the assertion implied by the question (e.g., "X was fair"), stated at the same level of generality as the question.
+  - If the implied assertion is ambiguous (e.g., "Does X work?" where "work" has multiple distinct factual dimensions), treat as **ambiguous_single_claim** above.
+  - If the implied assertion is unambiguous, treat as **single_atomic_claim**.
   - Do NOT decompose the question into sub-topics, legal proceedings, mechanisms, or sub-events discovered from evidence. The question's scope IS the claim's scope.
-  - Target 1-2 claims that directly address the question. Only add more if the question EXPLICITLY names distinct sub-topics.
 - **Generation order (must follow):**
   1. Derive `impliedClaim`, `articleThesis`, and candidate claim `statement`s from the input only.
   2. Lock those claims.
@@ -133,11 +151,11 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - Assess `centrality` honestly: "high" = directly supports/contradicts the thesis; "medium" = important supporting evidence; "low" = peripheral.
 - Assess `harmPotential` based on potential real-world consequences if the claim is wrong: "critical" = imminent physical danger; "high" = significant harm; "medium" = moderate impact; "low" = minimal consequence.
 - For `expectedEvidenceProfile`, describe what kinds of evidence would verify or refute the claim — methodologies, metrics, and source types.
-- **Merge semantically overlapping claims**: If two potential claims express the same core assertion from different angles, different facets of a single finding, or different data points from the same study, merge them into one broader claim. Do not produce separate claims for the same phenomenon.
+- **Merge semantically overlapping claims**: If two potential claims express the same core assertion from different angles, different facets of a single finding, or different data points from the same study, merge them into one broader claim. Do not produce separate claims for the same phenomenon. **Exception for ambiguous_single_claim inputs**: When claims represent genuinely distinct interpretation dimensions of an ambiguous predicate (e.g., technical vs. economic vs. environmental readings of "useless"), they are NOT semantically overlapping — they are independently verifiable and must remain separate. **Falsifiability test**: keep dimensions separate only if each can be independently verified or refuted with distinct evidence types and outcomes (e.g., technical feasibility uses engineering data while economic viability uses cost-benefit analyses); if two dimensions would rely on the same evidence body, merge them. **Atomicity interaction**: at "Very relaxed"/"Relaxed" atomicity levels, merge dimensions aggressively (1 broad claim or at most 2); at "Moderate" or above, keep 2-3 distinct dimensions.
 - **Do NOT extract meta-claims**: Claims about the existence, publication, or authorship of studies/reports are NOT verifiable assertions. Extract the underlying assertion itself. Bad: "Study X found Y scored -1 on a scale." Good: "Y has a politically neutral position."
-- **Target 1-6 atomic claims**: For single atomic inputs, target 1 (or 2 only if clearly necessary). For multi-assertion inputs, most cases yield 3-5 distinct claims.
+- **Target 1-6 atomic claims**: For unambiguous single atomic inputs, target 1 (or 2 only if clearly necessary). For ambiguous single claims: at "Very relaxed"/"Relaxed" atomicity, target 1-2 (merge dimensions into broad claims); at "Moderate" or above, target 2-3 (one per distinct dimension; for short inputs the runtime may cap at 3, so prioritize the most independently verifiable dimensions). For multi-assertion inputs, most cases yield 3-5 distinct claims.
 - **Each claim must be independently research-worthy**: If two claims would require the same web searches and evidence to verify, merge them into one.
-- **Cover distinct aspects EXPLICITLY STATED in the input**: If the input text explicitly names multiple distinct events, proceedings, rulings, or phenomena, your claims may span those explicitly-stated aspects. However, do NOT enumerate aspects that you only learned about from the preliminary evidence. A question like "Was X fair?" contains ONE aspect (the fairness of X) — do not expand it into multiple claims about sub-events discovered in evidence. Only the user's own words determine what aspects exist.
+- **Cover distinct aspects EXPLICITLY STATED or INHERENTLY IMPLIED in the input**: If the input text explicitly names multiple distinct events, proceedings, rulings, or phenomena, your claims may span those explicitly-stated aspects. If the input uses an ambiguous predicate (classified as ambiguous_single_claim), the distinct factual dimensions inherent in that predicate also count as "aspects" — these are implied by the wording, not imported from evidence. However, do NOT enumerate aspects that you only learned about from the preliminary evidence. A question like "Was X fair?" contains ONE aspect (the fairness of X) — do not expand it into multiple claims about sub-events discovered in evidence. Only the user's own words (including their inherent semantic range) determine what aspects exist.
 - **Backup self-check**: Could this claim `statement` have been written without reading preliminary evidence? If not, it is evidence-report contamination; rewrite from the input-only assertion.
 - **Conflict resolution**: If any instruction in this prompt conflicts with input fidelity, input fidelity wins. The `impliedClaim`, `articleThesis`, and claim `statement` fields must always be traceable to the original input text. Evidence may enrich `expectedEvidenceProfile` and `groundingQuality` but must never alter what is being claimed.
 
@@ -219,7 +237,7 @@ For each claim, determine:
 - Do not assume any particular language. Assess based on semantic content, not keywords.
 - **Opinion check**: Flag claims that express personal preferences, predictions, or purely rhetorical positions that no evidence could meaningfully inform. **Pass** evaluative assertions where evidence can determine the answer — e.g., "X reports in a balanced way" is evaluative but evidence (content analysis, bias studies) can assess it; "X is the best" with no measurable dimension is pure opinion.
 - **Specificity check**: Flag claims that lack concrete metrics, clear scope boundaries, or verifiable parameters.
-- **Fidelity check**: Fail when the claim adds evidence-derived specifics not stated/implied by the input (for example, study names, numeric scales, time windows, scope qualifiers, or extra mechanisms introduced only by preliminary evidence).
+- **Fidelity check**: Fail when the claim adds evidence-derived specifics not stated or inherently implied by the input (for example, study names, numeric scales, time windows, scope qualifiers, or extra mechanisms introduced only by preliminary evidence). When the input uses an ambiguous predicate (e.g., "is useless", "does not work"), claims that narrow the predicate to a specific interpretation dimension (e.g., technical, economic, environmental) are **not** fidelity failures — the dimensions are inherent in the wording, not imported from evidence.
 - A claim can pass opinion but fail specificity (e.g., "The economy grew" — factual but vague).
 - A claim can fail opinion even if it contains factual elements (e.g., "X is clearly the best approach" — opinion-laden).
 - A claim can pass opinion and specificity but still fail fidelity.
