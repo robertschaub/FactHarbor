@@ -16,7 +16,23 @@
 ssh -i ~/.ssh/fh ubuntu@83.228.221.114
 ```
 
-### Redeploy (update to latest code)
+### Redeploy (one command from local Windows)
+
+```powershell
+.\scripts\deploy-remote.ps1              # Deploy latest main
+.\scripts\deploy-remote.ps1 -Tag v1.0.0  # Deploy specific tag
+.\scripts\deploy-remote.ps1 -DryRun      # Preview without executing
+```
+
+### Redeploy (from VPS directly)
+
+```bash
+ssh -i ~/.ssh/fh ubuntu@83.228.221.114
+/opt/factharbor/scripts/deploy.sh          # Deploy latest main
+/opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy specific tag
+```
+
+### Redeploy (manual steps)
 
 ```bash
 ssh -i ~/.ssh/fh ubuntu@83.228.221.114
