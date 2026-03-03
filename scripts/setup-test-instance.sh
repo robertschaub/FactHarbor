@@ -79,6 +79,7 @@ sudo sed -i "s|^FH_CORS_ORIGIN=.*|FH_CORS_ORIGIN=https://test.factharbor.ch|" "$
 sudo sed -i "s|^FH_CONFIG_DB_PATH=.*|FH_CONFIG_DB_PATH=$DATA_TEST_DIR/config.db|" "$ENV_TEST"
 sudo sed -i "s|^FH_SR_CACHE_PATH=.*|FH_SR_CACHE_PATH=$DATA_TEST_DIR/source-reliability.db|" "$ENV_TEST"
 sudo sed -i "s|^FH_RUNNER_MAX_CONCURRENCY=.*|FH_RUNNER_MAX_CONCURRENCY=1|" "$ENV_TEST"
+sudo sed -i "s|^PORT=.*|PORT=3001|" "$ENV_TEST"
 
 ok ".env.test created (same keys as production, different ports and DB paths)."
 
@@ -97,6 +98,7 @@ ExecStart=/usr/bin/dotnet $DEPLOY_DIR/deploy/api/FactHarbor.Api.dll
 EnvironmentFile=$ENV_TEST
 Environment="ASPNETCORE_ENVIRONMENT=Production"
 Environment="ASPNETCORE_URLS=http://127.0.0.1:5001"
+Environment="Kestrel__Endpoints__Http__Url=http://127.0.0.1:5001"
 Environment="ConnectionStrings__FhDbSqlite=Data Source=$DATA_TEST_DIR/factharbor.db"
 Restart=always
 RestartSec=5
@@ -154,6 +156,13 @@ test.factharbor.ch {
 }
 CADDY_EOF
     ok "Caddyfile updated."
+
+    # Ensure Caddy can write the test access log
+    sudo touch /var/log/caddy/test-access.log
+    sudo chown caddy:caddy /var/log/caddy/test-access.log
+
+    # Fix formatting
+    sudo caddy fmt --overwrite "$CADDYFILE"
 
     log "Validating Caddyfile..."
     if sudo caddy validate --config "$CADDYFILE"; then
