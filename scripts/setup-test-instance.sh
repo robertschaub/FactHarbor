@@ -7,7 +7,7 @@
 #
 # What it does:
 #   1. Creates data-test/ directory with correct ownership
-#   2. Creates .env.test from .env.production (different ports, keys, paths)
+#   2. Creates .env.test from .env.production (different ports/paths, same keys)
 #   3. Copies source-reliability.db from production
 #   4. Creates systemd service files (factharbor-api-test, factharbor-web-test)
 #   5. Adds test.factharbor.ch to Caddyfile
@@ -73,25 +73,14 @@ fi
 log "Creating .env.test from production template..."
 sudo cp "$ENV_PROD" "$ENV_TEST"
 
-# Generate new keys for isolation
-NEW_ADMIN_KEY=$(openssl rand -hex 32)
-NEW_RUNNER_KEY=$(openssl rand -hex 32)
-
-# Apply test-specific overrides
+# Apply test-specific overrides (keep same API keys and auth keys as production)
 sudo sed -i "s|^FH_API_BASE_URL=.*|FH_API_BASE_URL=http://localhost:5001|" "$ENV_TEST"
 sudo sed -i "s|^FH_CORS_ORIGIN=.*|FH_CORS_ORIGIN=https://test.factharbor.ch|" "$ENV_TEST"
 sudo sed -i "s|^FH_CONFIG_DB_PATH=.*|FH_CONFIG_DB_PATH=$DATA_TEST_DIR/config.db|" "$ENV_TEST"
 sudo sed -i "s|^FH_SR_CACHE_PATH=.*|FH_SR_CACHE_PATH=$DATA_TEST_DIR/source-reliability.db|" "$ENV_TEST"
 sudo sed -i "s|^FH_RUNNER_MAX_CONCURRENCY=.*|FH_RUNNER_MAX_CONCURRENCY=1|" "$ENV_TEST"
-sudo sed -i "s|^FH_ADMIN_KEY=.*|FH_ADMIN_KEY=$NEW_ADMIN_KEY|" "$ENV_TEST"
-sudo sed -i "s|^FH_INTERNAL_RUNNER_KEY=.*|FH_INTERNAL_RUNNER_KEY=$NEW_RUNNER_KEY|" "$ENV_TEST"
 
-ok ".env.test created with separate keys and paths."
-echo ""
-echo -e "  ${YELLOW}Test Admin Key:${NC}  $NEW_ADMIN_KEY"
-echo -e "  ${YELLOW}Test Runner Key:${NC} $NEW_RUNNER_KEY"
-echo -e "  ${YELLOW}Save these keys — you'll need the Admin Key for the /admin panel.${NC}"
-echo ""
+ok ".env.test created (same keys as production, different ports and DB paths)."
 
 # --- Step 4: Create systemd services ---
 log "Creating systemd service: factharbor-api-test..."
