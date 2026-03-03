@@ -20,6 +20,8 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs/${jobId}/events`;
+  // Forward client IP/proto for API rate limiting.
+  // TRUST ASSUMPTION: same-host deployment; API trusts only 127.0.0.1/::1 as proxies.
   const upstreamHeaders: Record<string, string> = {};
   const forwardedFor = request.headers.get("x-forwarded-for");
   const forwardedProto = request.headers.get("x-forwarded-proto");

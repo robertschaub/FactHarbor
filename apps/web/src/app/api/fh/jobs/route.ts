@@ -25,6 +25,10 @@ export async function GET(request: Request) {
     const upstreamParams = new URLSearchParams({ page, pageSize });
     if (q) upstreamParams.set("q", q);
     const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?${upstreamParams}`;
+    // Forward client IP/proto so the API can rate-limit by real IP.
+    // TRUST ASSUMPTION: Next.js and API run on the same host; the API's
+    // ForwardedHeaders middleware only trusts 127.0.0.1/::1 as known proxies.
+    // If they move to separate hosts, validate these headers to prevent IP spoofing.
     const upstreamHeaders: Record<string, string> = {};
     const forwardedFor = request.headers.get("x-forwarded-for");
     const forwardedProto = request.headers.get("x-forwarded-proto");

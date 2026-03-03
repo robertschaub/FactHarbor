@@ -51,6 +51,12 @@ export async function POST(req: Request) {
   if (adminKey) {
     upstreamHeaders["x-admin-key"] = adminKey;
   }
+  // Forward client IP/proto so the API can rate-limit by real IP.
+  // TRUST ASSUMPTION: same-host deployment; API trusts only 127.0.0.1/::1 as proxies.
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  if (forwardedFor) upstreamHeaders["x-forwarded-for"] = forwardedFor;
+  if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
 
   const res = await fetch(upstreamUrl, {
     method: "POST",

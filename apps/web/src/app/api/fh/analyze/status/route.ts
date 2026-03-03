@@ -17,10 +17,18 @@ export async function GET(request: Request) {
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/analyze/status`;
 
   try {
+    // Forward client IP/proto so the API can rate-limit by real IP.
+    // TRUST ASSUMPTION: same-host deployment; API trusts only 127.0.0.1/::1 as proxies.
+    const upstreamHeaders: Record<string, string> = { "X-Invite-Code": code.trim() };
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    if (forwardedFor) upstreamHeaders["x-forwarded-for"] = forwardedFor;
+    if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
+
     const res = await fetch(upstreamUrl, {
       method: "GET",
       cache: "no-store",
-      headers: { "X-Invite-Code": code.trim() },
+      headers: upstreamHeaders,
     });
 
     const text = await res.text();
