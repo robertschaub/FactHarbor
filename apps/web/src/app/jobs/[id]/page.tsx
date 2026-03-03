@@ -767,7 +767,7 @@ export default function JobPage() {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>FactHarbor Analysis - ${escapeHtml(shortName)}</title>
+  <title>FactHarbor Report - ${escapeHtml(shortName)}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
     table { border-collapse: collapse; width: 100%; margin: 16px 0; }
@@ -820,7 +820,7 @@ export default function JobPage() {
   return (
     <div className={styles.pageContainer}>
       <SystemHealthBanner />
-      <h1 className={styles.pageTitle}>FactHarbor Analysis</h1>
+      <h1 className={styles.pageTitle}>FactHarbor Report</h1>
 
       {maintenance && (
         <div className={styles.maintenanceBox}>
@@ -2305,7 +2305,7 @@ function TwoPanelSummary({ articleSummary, factharborAnalysis }: { articleSummar
 
       <div className={`${styles.twoPanelPanel} ${styles.twoPanelPanelAnalysis}`}>
         <div className={styles.twoPanelHeader}>
-          <b>🔍 FactHarbor Analysis</b>
+          <b>🔍 FactHarbor Report</b>
         </div>
         <div className={styles.twoPanelContent}>
           {/* Source Credibility hidden at article level - TODO: show at claim level later */}
