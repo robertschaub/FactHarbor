@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getClientIp } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -20,12 +21,10 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs/${jobId}/events`;
-  // Forward client IP/proto for API rate limiting.
-  // TRUST ASSUMPTION: same-host deployment; API trusts only 127.0.0.1/::1 as proxies.
+  // Always forward client IP so the API can rate-limit by real IP (not proxy IP).
   const upstreamHeaders: Record<string, string> = {};
-  const forwardedFor = request.headers.get("x-forwarded-for");
+  upstreamHeaders["x-forwarded-for"] = getClientIp(request);
   const forwardedProto = request.headers.get("x-forwarded-proto");
-  if (forwardedFor) upstreamHeaders["x-forwarded-for"] = forwardedFor;
   if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
 
   const res = await fetch(upstreamUrl, {

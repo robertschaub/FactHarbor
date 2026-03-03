@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { getClientIp } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,14 +26,10 @@ export async function GET(request: Request) {
     const upstreamParams = new URLSearchParams({ page, pageSize });
     if (q) upstreamParams.set("q", q);
     const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?${upstreamParams}`;
-    // Forward client IP/proto so the API can rate-limit by real IP.
-    // TRUST ASSUMPTION: Next.js and API run on the same host; the API's
-    // ForwardedHeaders middleware only trusts 127.0.0.1/::1 as known proxies.
-    // If they move to separate hosts, validate these headers to prevent IP spoofing.
+    // Always forward client IP so the API can rate-limit by real IP (not proxy IP).
     const upstreamHeaders: Record<string, string> = {};
-    const forwardedFor = request.headers.get("x-forwarded-for");
+    upstreamHeaders["x-forwarded-for"] = getClientIp(request);
     const forwardedProto = request.headers.get("x-forwarded-proto");
-    if (forwardedFor) upstreamHeaders["x-forwarded-for"] = forwardedFor;
     if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
 
     const res = await fetch(upstreamUrl, {

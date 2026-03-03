@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { evaluateInputPolicy } from "@/lib/input-policy-gate";
+import { getClientIp } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -51,11 +52,9 @@ export async function POST(req: Request) {
   if (adminKey) {
     upstreamHeaders["x-admin-key"] = adminKey;
   }
-  // Forward client IP/proto so the API can rate-limit by real IP.
-  // TRUST ASSUMPTION: same-host deployment; API trusts only 127.0.0.1/::1 as proxies.
-  const forwardedFor = req.headers.get("x-forwarded-for");
+  // Always forward client IP so the API can rate-limit by real IP (not proxy IP).
+  upstreamHeaders["x-forwarded-for"] = getClientIp(req);
   const forwardedProto = req.headers.get("x-forwarded-proto");
-  if (forwardedFor) upstreamHeaders["x-forwarded-for"] = forwardedFor;
   if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
 
   const res = await fetch(upstreamUrl, {

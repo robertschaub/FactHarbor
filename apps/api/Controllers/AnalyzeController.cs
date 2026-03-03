@@ -33,7 +33,7 @@ public sealed class AnalyzeController : ControllerBase
     }
 
     [HttpGet("status")]
-    [EnableRateLimiting("AnalyzePerIp")]
+    [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> GetStatus()
     {
         var code = Request.Headers["X-Invite-Code"].FirstOrDefault();

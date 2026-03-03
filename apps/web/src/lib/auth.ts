@@ -72,6 +72,16 @@ export function checkRunnerKey(req: Request): boolean {
 }
 
 /**
+ * Resolves the real client IP from request headers for upstream forwarding.
+ * Prefers x-forwarded-for (set by upstream proxy like Caddy), falls back to x-real-ip.
+ */
+export function getClientIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("x-real-ip")
+    || "unknown";
+}
+
+/**
  * Validates a job ID to prevent injection attacks.
  * Only allows alphanumeric characters, hyphens, and underscores.
  */
