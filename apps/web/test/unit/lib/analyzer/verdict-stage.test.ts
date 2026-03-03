@@ -320,6 +320,24 @@ describe("advocateVerdict (Step 1)", () => {
     expect(result[0].contradictingEvidenceIds).toEqual([]);
     expect(result[0].boundaryFindings).toEqual([]);
   });
+
+  it("should accept object-wrapped advocate output arrays", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const mockLLM = createMockLLM({
+      VERDICT_ADVOCATE: {
+        verdicts: advocateResponse(),
+      },
+    });
+
+    const result = await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+    expect(result).toHaveLength(1);
+    expect(result[0].claimId).toBe("AC_01");
+    expect(result[0].truthPercentage).toBe(75);
+  });
 });
 
 // ============================================================================
@@ -633,6 +651,53 @@ describe("reconcileVerdicts (Step 4)", () => {
     ).rejects.toMatchObject({
       name: "Stage4NullResultError",
     });
+  });
+
+  it("should accept object-wrapped reconciliation output arrays", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, confidenceTier: "HIGH", reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: {
+        verdicts: reconciliationResponse(),
+      },
+    });
+
+    const { verdicts: result } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [createEvidenceItem({ id: "EV_01" })], mockLLM,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].truthPercentage).toBe(72);
+  });
+
+  it("should preserve advocate verdicts when reconciliation output shape is invalid", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, confidenceTier: "HIGH", reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: [], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: { note: "not-an-array" },
+    });
+
+    const { verdicts: result } = await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].confidence).toBe(80);
   });
 });
 

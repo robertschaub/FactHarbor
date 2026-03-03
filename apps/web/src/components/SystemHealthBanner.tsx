@@ -5,8 +5,11 @@
  * when providers are unhealthy or job processing is paused.
  *
  * Shows when:
- * - Any provider circuit is open or half_open (search/LLM unavailable)
+ * - A core provider circuit is open or half_open (search/LLM unavailable)
  * - System is paused (admin action or automatic circuit breaker)
+ *
+ * Silent when only fallback providers (Google CSE, Brave, SerpAPI) are
+ * affected — the system is working fine on the fallback provider.
  *
  * Non-dismissible for provider issues (reflects real-time state);
  * dismissible for paused-system state once acknowledged.
@@ -35,9 +38,6 @@ const POLL_INTERVAL_MS = 30_000;
 const PROVIDER_MESSAGES: Record<string, string> = {
   search: "Web search unavailable \u2014 analyses will have limited or no evidence",
   llm: "LLM provider experiencing issues \u2014 analyses may fail or be delayed",
-  google_cse: "Google Custom Search unavailable \u2014 using fallback provider",
-  brave: "Brave Search unavailable \u2014 using fallback provider",
-  serpapi: "SerpAPI unavailable \u2014 using fallback provider",
 };
 
 const FALLBACK_ONLY_PROVIDER_NAMES = new Set([
@@ -85,27 +85,21 @@ export function SystemHealthBanner() {
 
   const hasProviderIssues = unhealthyProviders.length > 0;
   const isPaused = health.systemPaused;
-  const hasOnlyFallbackProviderIssues =
+  const hasOnlyCoreIssues =
     hasProviderIssues &&
-    unhealthyProviders.every((provider) => FALLBACK_ONLY_PROVIDER_NAMES.has(provider.name));
-  const showAsInfo = hasOnlyFallbackProviderIssues && !isPaused;
+    !unhealthyProviders.every((provider) => FALLBACK_ONLY_PROVIDER_NAMES.has(provider.name));
 
-  // Nothing to show when all healthy
-  if (!hasProviderIssues && !isPaused) return null;
+  // Nothing to show when all healthy or only fallback providers affected
+  if (!hasOnlyCoreIssues && !isPaused) return null;
 
   const pausedDate = health.pausedAt
     ? new Date(health.pausedAt).toLocaleString()
     : "unknown time";
 
   return (
-    <div
-      className={`${styles.banner}${showAsInfo ? ` ${styles.bannerInfo}` : ""}`}
-      role={showAsInfo ? "status" : "alert"}
-    >
+    <div className={styles.banner} role="alert">
       <div className={styles.content}>
-        <div className={`${styles.icon}${showAsInfo ? ` ${styles.iconInfo}` : ""}`}>
-          {showAsInfo ? "ℹ" : "⚠"}
-        </div>
+        <div className={styles.icon}>⚠</div>
         <div className={styles.text}>
           {isPaused && (
             <>
@@ -117,21 +111,18 @@ export function SystemHealthBanner() {
               <div className={styles.timestamp}>Paused since: {pausedDate}</div>
             </>
           )}
-          {hasProviderIssues && !isPaused && (
-            <div className={`${styles.title}${showAsInfo ? ` ${styles.titleInfo}` : ""}`}>
-              {showAsInfo ? "Provider fallback active (informational)" : "Provider issues detected"}
-            </div>
+          {hasOnlyCoreIssues && !isPaused && (
+            <div className={styles.title}>Provider issues detected</div>
           )}
-          {unhealthyProviders.length > 0 && (
+          {hasOnlyCoreIssues && (
             <div className={styles.details}>
-              {unhealthyProviders.map((p) => (
-                <div
-                  key={p.name}
-                  className={`${styles.providerBadge}${showAsInfo ? ` ${styles.providerBadgeInfo}` : ""}`}
-                >
-                  {PROVIDER_MESSAGES[p.name] ?? `${p.name}: ${p.state}`}
-                </div>
-              ))}
+              {unhealthyProviders
+                .filter((p) => !FALLBACK_ONLY_PROVIDER_NAMES.has(p.name))
+                .map((p) => (
+                  <div key={p.name} className={styles.providerBadge}>
+                    {PROVIDER_MESSAGES[p.name] ?? `${p.name}: ${p.state}`}
+                  </div>
+                ))}
             </div>
           )}
         </div>

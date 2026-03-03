@@ -694,7 +694,8 @@ export type AnalysisWarningType =
   | "verdict_integrity_failure"        // Integrity policy downgraded verdict to safe fallback
   | "verdict_grounding_issue"          // Verdict grounding validation found invalid evidence references
   | "verdict_direction_issue"          // Verdict direction validation found truth%/evidence misalignment
-  | "challenger_failure";              // Adversarial challenger LLM call failed (malformed output, timeout, etc.) — verdict proceeds without challenge
+  | "challenger_failure"               // Adversarial challenger LLM call failed (malformed output, timeout, etc.) — verdict proceeds without challenge
+  | "llm_tpm_guard_fallback";          // OpenAI TPM guard swapped to smaller model (routine successful fallback)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

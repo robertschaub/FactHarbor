@@ -16,6 +16,7 @@
  */
 
 import React from "react";
+import { getConfidenceTierLabel } from "@/lib/analyzer/truth-scale";
 import styles from "../page.module.css";
 
 type BoundaryFinding = {
@@ -54,16 +55,17 @@ function getDirectionDisplay(direction: BoundaryFinding["evidenceDirection"]): {
   icon: string;
   label: string;
   color: string;
+  bg: string;
 } {
   switch (direction) {
     case "supports":
-      return { icon: "✓", label: "Supports", color: "#2e7d32" };
+      return { icon: "✓", label: "Supports", color: "#155724", bg: "#d4edda" };
     case "contradicts":
-      return { icon: "✗", label: "Refutes", color: "#c62828" };
+      return { icon: "✗", label: "Refutes", color: "#c62828", bg: "#ffcdd2" };
     case "mixed":
-      return { icon: "⚖", label: "Mixed", color: "#1565c0" };
+      return { icon: "⚖", label: "Mixed", color: "#1565c0", bg: "#e3f2fd" };
     case "neutral":
-      return { icon: "⚖", label: "Neutral", color: "#616161" };
+      return { icon: "⚖", label: "Neutral", color: "#616161", bg: "#f5f5f5" };
   }
 }
 
@@ -161,13 +163,22 @@ export function BoundaryFindings({
                 )}
               </div>
 
-              {/* Truth percentage and direction label */}
+              {/* Verdict badge + percentage · confidence */}
               <div className={styles.boundaryFindingVerdict}>
-                <span style={{ color: dirDisplay.color, fontWeight: 600 }}>
-                  {dirDisplay.label}
+                <span
+                  className={styles.boundaryVerdictBadge}
+                  style={{ backgroundColor: dirDisplay.bg, color: dirDisplay.color }}
+                >
+                  {dirDisplay.icon} {dirDisplay.label}
                 </span>
-                <span className={styles.boundaryFindingPercentage}>
+                <span className={styles.boundaryVerdictDetail}>
                   {Math.round(finding.truthPercentage)}%
+                  <span
+                    className={styles.boundaryConfidenceText}
+                    title={`${finding.confidence}%`}
+                  >
+                    {" "}· {getConfidenceTierLabel(finding.confidence)}
+                  </span>
                 </span>
               </div>
             </div>

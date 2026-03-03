@@ -61,11 +61,14 @@ const PROVIDER_ISSUE_TYPES = new Set([
   "explanation_quality_rubric_failed",
   "verdict_batch_retry",
   "verdict_partial_recovery",
+  "llm_tpm_guard_fallback",
 ]);
 
 const NON_DEGRADING_PROVIDER_WARNING_TYPES = new Set([
   "debate_provider_fallback",
   "search_fallback",
+  // TPM guard fallback is a routine successful operation (gpt-4.1 → gpt-4.1-mini).
+  "llm_tpm_guard_fallback",
   // Per-query fetch failures are routine (paywalls, 403s, 401s).
   "source_fetch_failure",
   // Per-query aggregate degradation is common for paywalled news sources.

@@ -1972,7 +1972,7 @@
 
 .boundaryFindingRow {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.5fr;
+  grid-template-columns: 2fr 1.2fr 2.5fr;
   gap: 12px;
   align-items: center;
   padding: 8px 10px;
@@ -2027,14 +2027,27 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
-.boundaryFindingPercentage {
+.boundaryVerdictBadge {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #495057;
-  min-width: 40px;
-  text-align: right;
+  white-space: nowrap;
+}
+
+.boundaryVerdictDetail {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #333;
+  white-space: nowrap;
+}
+
+.boundaryConfidenceText {
+  font-size: 0.75rem;
+  color: #999;
 }
 
 .boundaryFindingTooltip {

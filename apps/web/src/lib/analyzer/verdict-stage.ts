@@ -492,8 +492,14 @@ export async function advocateVerdict(
     throw err;
   }
 
-  // Parse LLM result into CBClaimVerdict[]
-  const rawVerdicts = result as Array<Record<string, unknown>>;
+  // Parse LLM result into CBClaimVerdict[].
+  // Be tolerant to object-wrapped arrays from LLMs (e.g., { verdicts: [...] }).
+  const rawVerdicts = extractRecordArray(result, ["verdicts", "claims", "results", "items"]);
+  if (!rawVerdicts) {
+    const err = new Error(`Stage 4 VERDICT_ADVOCATE: expected array output but received ${describeJsonShape(result)}`);
+    err.name = "Stage4MalformedShapeError";
+    throw err;
+  }
   return rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims, config));
 }
 
@@ -722,7 +728,16 @@ export async function reconcileVerdicts(
     throw err;
   }
 
-  const rawReconciled = result as Array<Record<string, unknown>>;
+  // Tolerate object-wrapped arrays (e.g., { verdicts: [...] }).
+  // If shape is invalid, degrade gracefully by preserving advocate verdicts.
+  const rawReconciled = extractRecordArray(result, ["verdicts", "reconciledVerdicts", "claims", "results", "items"]);
+  if (!rawReconciled) {
+    console.warn(
+      `[VerdictStage] Reconciliation returned unexpected shape (${describeJsonShape(result)}). ` +
+      "Using advocate verdicts unchanged."
+    );
+    return { verdicts: advocateVerdicts, validatedChallengeDoc };
+  }
 
   const verdicts = advocateVerdicts.map((original) => {
     const reconciled = rawReconciled.find((r) => String(r.claimId) === original.claimId);
@@ -1474,6 +1489,35 @@ function parseEvidenceDirection(raw: unknown): BoundaryFinding["evidenceDirectio
 function asStringArray(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.map(String);
+}
+
+function extractRecordArray(
+  raw: unknown,
+  wrapperKeys: string[],
+): Array<Record<string, unknown>> | null {
+  if (Array.isArray(raw)) {
+    return raw.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object");
+  }
+
+  if (!raw || typeof raw !== "object") return null;
+
+  const obj = raw as Record<string, unknown>;
+  for (const key of wrapperKeys) {
+    const value = obj[key];
+    if (Array.isArray(value)) {
+      return value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object");
+    }
+  }
+
+  return null;
+}
+
+function describeJsonShape(raw: unknown): string {
+  if (Array.isArray(raw)) return "array";
+  if (!raw || typeof raw !== "object") return typeof raw;
+  const keys = Object.keys(raw as Record<string, unknown>);
+  if (keys.length === 0) return "object(no keys)";
+  return `object(keys: ${keys.slice(0, 8).join(", ")})`;
 }
 
 // ============================================================================
