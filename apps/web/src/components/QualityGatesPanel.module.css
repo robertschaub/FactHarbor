@@ -16,12 +16,12 @@
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
-.panel.passed {
+.panelPassed {
   border-color: #86efac;
   background: #dcfce7;
 }
 
-.panel.failed {
+.panelFailed {
   border-color: var(--color-error-light);
   background: linear-gradient(to right, var(--color-error-bg), transparent);
 }
@@ -45,7 +45,7 @@
   background: rgba(0, 0, 0, 0.02);
 }
 
-.panel.passed .header:hover {
+.headerPassed:hover {
   background: #dcfce7;
 }
 
@@ -59,20 +59,24 @@
   font-size: 16px;
 }
 
-.panel.passed .statusIcon {
+.panelFailed .statusIcon {
+  color: var(--color-error);
+}
+
+.statusIconPassed {
   color: #16a34a;
 }
 
-.panel.passed .title {
+.titlePassed {
   color: #166534;
 }
 
-.panel.passed .expandIcon {
+.expandIconPassed {
   color: #166534;
 }
 
-.panel.failed .statusIcon {
-  color: var(--color-error);
+.headerPassed {
+  color: #166534;
 }
 
 .title {

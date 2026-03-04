@@ -580,12 +580,6 @@ export default function JobPage() {
     : qualitySummary.tone === "warning"
       ? styles.qualityGroupWarning
       : styles.qualityGroupOk;
-  const qualityGroupOkStyle = qualitySummary.tone === "ok"
-    ? { borderColor: "#86efac" }
-    : undefined;
-  const qualityGroupOkSummaryStyle = qualitySummary.tone === "ok"
-    ? { background: "#dcfce7", color: "#166534" }
-    : undefined;
   const degradingAnalysisIssues = qualityWarnings.filter((w) => w.type !== "report_damaged");
   const qualityImpactingIssueCount = degradingProviderIssues.length + degradingAnalysisIssues.length;
   const operationalNotesCount =
@@ -597,9 +591,8 @@ export default function JobPage() {
       <details
         className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`}
         open={hasQualityDegradationStatus}
-        style={qualityGroupOkStyle}
       >
-        <summary className={styles.qualityGroupSummary} style={qualityGroupOkSummaryStyle}>
+        <summary className={styles.qualityGroupSummary}>
           <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
         </summary>
         <div className={styles.qualityGroupContent}>

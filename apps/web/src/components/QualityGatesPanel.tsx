@@ -43,24 +43,20 @@ export function QualityGatesPanel({ qualityGates, collapsed = true }: QualityGat
 
   const { passed, gate1Stats, gate4Stats, summary } = qualityGates;
   const totalVerdicts = gate4Stats?.total || 0;
-  const passedPanelStyle = passed ? { borderColor: "#86efac", background: "#dcfce7" } : undefined;
-  const passedHeaderStyle = passed ? { color: "#166534" } : undefined;
-  const passedIconStyle = passed ? { color: "#166534" } : undefined;
 
   return (
-    <div className={`${styles.panel} ${passed ? styles.passed : styles.failed}`} style={passedPanelStyle}>
+    <div className={`${styles.panel} ${passed ? styles.panelPassed : styles.panelFailed}`}>
       <button
-        className={styles.header}
+        className={`${styles.header} ${passed ? styles.headerPassed : ""}`}
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
-        style={passedHeaderStyle}
       >
         <div className={styles.headerLeft}>
-          <span className={styles.expandIcon} style={passedIconStyle}>{isExpanded ? '▾' : '▸'}</span>
-          <span className={styles.statusIcon} style={passedIconStyle}>
+          <span className={`${styles.expandIcon} ${passed ? styles.expandIconPassed : ""}`}>{isExpanded ? '▾' : '▸'}</span>
+          <span className={`${styles.statusIcon} ${passed ? styles.statusIconPassed : ""}`}>
             {passed ? '✓' : '⚠'}
           </span>
-          <span className={styles.title} style={passedIconStyle}>
+          <span className={`${styles.title} ${passed ? styles.titlePassed : ""}`}>
             Quality Gates: {passed ? 'Passed' : 'Issues Detected'}
           </span>
         </div>
