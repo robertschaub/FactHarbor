@@ -1,0 +1,35 @@
+.banner {
+  border-left: 4px solid #f59e0b;
+  background: #fff8e1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+.text {
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.typeLabel {
+  color: #854d0e;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .banner {
+    background: #1f2937;
+    border-left-color: #fbbf24;
+  }
+
+  .text {
+    color: #e5e7eb;
+  }
+
+  .typeLabel {
+    color: #fbbf24;
+  }
+}

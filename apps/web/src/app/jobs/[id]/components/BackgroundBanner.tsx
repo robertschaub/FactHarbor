@@ -10,7 +10,7 @@ export function BackgroundBanner({ backgroundDetails }: BackgroundBannerProps) {
 
   return (
     <div className={styles.banner} role="note" aria-label="Background">
-      <div className={styles.label}>Background</div>
+      <div className={styles.label}>Background:</div>
       <div className={styles.text}>{background}</div>
     </div>
   );

@@ -8,15 +8,17 @@
  */
 
 import type { VerdictNarrative } from "@/lib/analyzer/types";
+import type { ReactNode } from "react";
 import styles from "./VerdictNarrative.module.css";
 import { ExpandableText } from "./ExpandableText";
 
 interface Props {
   narrative: VerdictNarrative;
   hideHeadline?: boolean;
+  beforeLimitations?: ReactNode;
 }
 
-export function VerdictNarrativeDisplay({ narrative, hideHeadline = false }: Props) {
+export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, beforeLimitations }: Props) {
   const { headline, evidenceBaseSummary, keyFinding, boundaryDisagreements, limitations } = narrative;
 
   return (
@@ -29,9 +31,10 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false }: Pro
       )}
 
       <div className={styles.keyFinding}>
-        <strong className={styles.label}>Key Finding:</strong>
         <ExpandableText text={keyFinding} className={styles.findingText} modalTitle="Key Finding" bare />
       </div>
+
+      <h3 className={styles.qualityTitle}>Quality</h3>
 
       <div className={styles.evidenceBase}>
         <strong className={styles.label}>Evidence Base:</strong>
@@ -53,6 +56,8 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false }: Pro
           </ul>
         </details>
       )}
+
+      {beforeLimitations}
 
       <details className={styles.details}>
         <summary className={styles.summary}>

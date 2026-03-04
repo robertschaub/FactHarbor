@@ -32,6 +32,7 @@ import { ExpandableText } from "./components/ExpandableText";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { BackgroundBanner } from "./components/BackgroundBanner";
+import { InputBanner } from "./components/InputBanner";
 import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { generateHtmlReport } from "./utils/generateHtmlReport";
 import { PromptViewer } from "./components/PromptViewer";
@@ -569,6 +570,103 @@ export default function JobPage() {
     : qualitySummary.tone === "warning"
       ? styles.qualityGroupWarning
       : styles.qualityGroupOk;
+  const reportQualityPanel = (
+    <details className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`} open={isReportDamaged}>
+      <summary className={styles.qualityGroupSummary}>
+        <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
+      </summary>
+      <div className={styles.qualityGroupContent}>
+        {isReportDamaged && (
+          <div className={styles.reportDamageBanner}>
+            <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
+            <div className={styles.reportDamageText}>
+              {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
+            </div>
+            {reportDamageTriggerTypes.length > 0 && (
+              <div className={styles.reportDamageMeta}>
+                Triggers: {reportDamageTriggerTypes.join(", ")}
+              </div>
+            )}
+            {reportDamageIssues.length > 0 && (
+              <ul className={styles.reportDamageList}>
+                {reportDamageIssues.slice(0, 5).map((issue, idx) => (
+                  <li key={`issue-${idx}`}>
+                    <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {reportDamageHints.length > 0 && (
+              <ul className={styles.reportDamageHints}>
+                {reportDamageHints.slice(0, 3).map((hint, idx) => (
+                  <li key={`hint-${idx}`}>{hint}</li>
+                ))}
+              </ul>
+            )}
+            <div className={styles.reportDamageNextStep}>
+              Next step: {reportDamageNextStep}
+            </div>
+          </div>
+        )}
+
+        {degradingProviderIssues.length > 0 && (
+          <details className={styles.providerIssueBanner}>
+            <summary className={styles.providerIssueSummary}>
+              {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
+            </summary>
+            <ul className={styles.providerIssueList}>
+              {degradingProviderIssues.map((w, idx: number) => (
+                <li key={`pi-${idx}`}>
+                  <strong>{w.type}:</strong> {w.message}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {informationalProviderIssues.length > 0 && (
+          <details className={styles.providerInfoBanner}>
+            <summary className={styles.providerInfoSummary}>
+              {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
+            </summary>
+            <ul className={styles.providerInfoList}>
+              {informationalProviderIssues.map((w, idx: number) => (
+                <li key={`pi-info-${idx}`}>
+                  <strong>{w.type}:</strong> {w.message}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {showWarningDiagnostics && (
+          <details className={styles.devWarningPanel}>
+            <summary className={styles.devWarningSummary}>
+              Dev warning diagnostics ({warningDiagnostics.length})
+            </summary>
+            <div className={styles.devWarningHint}>
+              Development-only view of warning bucketing and display severity normalization.
+            </div>
+            <ul className={styles.devWarningList}>
+              {warningDiagnostics.map((diag, idx) => (
+                <li key={`wd-${idx}`} className={styles.devWarningItem}>
+                  <code className={styles.devWarningType}>{diag.type}</code>
+                  <span className={styles.devWarningMeta}>
+                    bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
+                  </span>
+                  <div className={styles.devWarningMessage}>{diag.message}</div>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
+
+        <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
+      </div>
+    </details>
+  );
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
   // LEGACY: analysisContexts fallback for old orchestrated pipeline schemas (backward compatibility)
@@ -804,6 +902,42 @@ export default function JobPage() {
       <SystemHealthBanner />
       <h1 className={styles.pageTitle}>FactHarbor Report</h1>
 
+      {/* Tabs */}
+      <div className={styles.tabsContainer}>
+        {hasV22Data && (
+          <>
+            <button onClick={() => setTab("summary")} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
+            <button onClick={() => setTab("sources")} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
+          </>
+        )}
+        <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
+        <button onClick={() => setTab("events")} className={`${styles.tab} ${tab === "events" ? styles.tabActive : ""}`}>📋 Events ({events.length})</button>
+
+        {/* Export + admin actions */}
+        {(job?.status === "SUCCEEDED" || hasAdminKey) && (
+          <div className={styles.exportButtons}>
+            {hasAdminKey && (
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className={`${styles.tab} ${styles.deleteTab}`}
+                title="Delete"
+              >
+                {isDeleting ? "Deleting…" : "🗑️ Delete"}
+              </button>
+            )}
+            {job?.status === "SUCCEEDED" && (
+              <>
+                <button onClick={handlePrint} className={styles.tab} title="Print">🖨️</button>
+                <button onClick={handleExportHTML} className={styles.tab} title="Export HTML">📄</button>
+                <button onClick={handleExportMarkdown} className={styles.tab} title="Export Markdown">📝</button>
+                <button onClick={handleExportJSON} className={styles.tab} title="Export JSON">💾</button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {maintenance && (
         <div className={styles.maintenanceBox}>
           &#9881; System update in progress — data will refresh automatically when the service is back.
@@ -818,11 +952,6 @@ export default function JobPage() {
 
       {job ? (
         <div className={styles.jobInfoCard}>
-          {hasAdminKey && (
-            <button onClick={handleDelete} disabled={isDeleting} className={styles.deleteBtn}>
-              {isDeleting ? "Deleting…" : "🗑️ Delete"}
-            </button>
-          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span><b>ID:</b> <code>{job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" /></span>
             {pipelineVariant === "monolithic_dynamic" && (
@@ -831,20 +960,10 @@ export default function JobPage() {
               </Badge>
             )}
           </div>
-          <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
+          {job.status !== "SUCCEEDED" && (
+            <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
+          )}
           <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
-          <div className={styles.inputRow}>
-            <div className={styles.inputMeta}><b>Input:</b> <code>{job.inputType}</code></div>
-            {(() => {
-              const inputText = job.inputValue || job.inputPreview || "—";
-              const isLong = inputText.length > 1000;
-              return (
-                <div className={`${styles.inputValueBox}${isLong ? ` ${styles.inputValueBoxLong}` : ""}`}>
-                  {inputText}
-                </div>
-              );
-            })()}
-          </div>
           {hasV22Data && (
             <div className={styles.badgesRow}>
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
@@ -927,43 +1046,10 @@ export default function JobPage() {
 
       {/* Result disclaimer — shown only for completed analyses */}
       {job?.status === "SUCCEEDED" && (
-        <div
-          style={{
-            background: "#eff6ff",
-            border: "1px solid #dbeafe",
-            borderRadius: 6,
-            padding: "8px 14px",
-            fontSize: 12,
-            color: "#374151",
-            lineHeight: 1.5,
-            marginBottom: 12,
-          }}
-        >
+        <div className={styles.printOnlyDisclaimer}>
           Analyses report generated by FactHarbor pre-release. Such reports still contain imperfections and should not be cited as authoritative. Reports are provided without warranty.
         </div>
       )}
-
-      {/* Tabs */}
-      <div className={styles.tabsContainer}>
-        {hasV22Data && (
-          <>
-            <button onClick={() => setTab("summary")} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
-            <button onClick={() => setTab("sources")} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
-          </>
-        )}
-        <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
-        <button onClick={() => setTab("events")} className={`${styles.tab} ${tab === "events" ? styles.tabActive : ""}`}>📋 Events ({events.length})</button>
-
-        {/* Export dropdown */}
-        {job?.status === "SUCCEEDED" && (
-          <div className={styles.exportButtons}>
-            <button onClick={handlePrint} className={styles.tab} title="Print">🖨️</button>
-            <button onClick={handleExportHTML} className={styles.tab} title="Export HTML">📄</button>
-            <button onClick={handleExportMarkdown} className={styles.tab} title="Export Markdown">📝</button>
-            <button onClick={handleExportJSON} className={styles.tab} title="Export JSON">💾</button>
-          </div>
-        )}
-      </div>
 
       {/* Summary Tab */}
       {tab === "summary" && hasV22Data && (
@@ -977,6 +1063,16 @@ export default function JobPage() {
                 <ArticleSummaryBox
                   articleSummary={twoPanelSummary.articleSummary}
                 />
+              )}
+
+              {job && (
+                <>
+                  <h3 className={styles.sectionTitle}>Input</h3>
+                  <InputBanner
+                    inputType={job.inputType || "text"}
+                    inputValue={job.inputValue || job.inputPreview || "—"}
+                  />
+                </>
               )}
 
               {backgroundDetails && (
@@ -1016,102 +1112,8 @@ export default function JobPage() {
                 </div>
               )}
 
-              {/* Quality & Diagnostics — grouped collapsible */}
-              <details className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`} open={isReportDamaged}>
-                <summary className={styles.qualityGroupSummary}>
-                  <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
-                </summary>
-                <div className={styles.qualityGroupContent}>
-                      {isReportDamaged && (
-                        <div className={styles.reportDamageBanner}>
-                          <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
-                          <div className={styles.reportDamageText}>
-                            {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
-                          </div>
-                          {reportDamageTriggerTypes.length > 0 && (
-                            <div className={styles.reportDamageMeta}>
-                              Triggers: {reportDamageTriggerTypes.join(", ")}
-                            </div>
-                          )}
-                          {reportDamageIssues.length > 0 && (
-                            <ul className={styles.reportDamageList}>
-                              {reportDamageIssues.slice(0, 5).map((issue, idx) => (
-                                <li key={`issue-${idx}`}>
-                                  <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          {reportDamageHints.length > 0 && (
-                            <ul className={styles.reportDamageHints}>
-                              {reportDamageHints.slice(0, 3).map((hint, idx) => (
-                                <li key={`hint-${idx}`}>{hint}</li>
-                              ))}
-                            </ul>
-                          )}
-                          <div className={styles.reportDamageNextStep}>
-                            Next step: {reportDamageNextStep}
-                          </div>
-                        </div>
-                      )}
-
-                      {degradingProviderIssues.length > 0 && (
-                        <details className={styles.providerIssueBanner}>
-                          <summary className={styles.providerIssueSummary}>
-                            {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
-                          </summary>
-                          <ul className={styles.providerIssueList}>
-                            {degradingProviderIssues.map((w, idx: number) => (
-                              <li key={`pi-${idx}`}>
-                                <strong>{w.type}:</strong> {w.message}
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-
-                      {informationalProviderIssues.length > 0 && (
-                        <details className={styles.providerInfoBanner}>
-                          <summary className={styles.providerInfoSummary}>
-                            {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
-                          </summary>
-                          <ul className={styles.providerInfoList}>
-                            {informationalProviderIssues.map((w, idx: number) => (
-                              <li key={`pi-info-${idx}`}>
-                                <strong>{w.type}:</strong> {w.message}
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-
-                      {showWarningDiagnostics && (
-                        <details className={styles.devWarningPanel}>
-                          <summary className={styles.devWarningSummary}>
-                            Dev warning diagnostics ({warningDiagnostics.length})
-                          </summary>
-                          <div className={styles.devWarningHint}>
-                            Development-only view of warning bucketing and display severity normalization.
-                          </div>
-                          <ul className={styles.devWarningList}>
-                            {warningDiagnostics.map((diag, idx) => (
-                              <li key={`wd-${idx}`} className={styles.devWarningItem}>
-                                <code className={styles.devWarningType}>{diag.type}</code>
-                                <span className={styles.devWarningMeta}>
-                                  bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
-                                </span>
-                                <div className={styles.devWarningMessage}>{diag.message}</div>
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-
-                      <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
-
-                      <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
-                </div>
-              </details>
+              {!isCBSchema && reportQualityPanel}
+              {isCBSchema && !result?.verdictNarrative && reportQualityPanel}
 
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
@@ -1176,8 +1178,7 @@ export default function JobPage() {
               {/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */}
               {isCBSchema && result?.verdictNarrative && (
                 <section className={styles.cbSection}>
-                  <h3 className={styles.sectionTitle}>Assessment Overview</h3>
-                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} hideHeadline />
+                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} hideHeadline beforeLimitations={reportQualityPanel} />
                 </section>
               )}
 
@@ -1191,7 +1192,7 @@ export default function JobPage() {
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
                 <div className={styles.claimsSection}>
                   {/* v2.6.31: Input Neutrality - same label for all inputs */}
-                  <h3 className={styles.claimsSectionTitle}>Claims Analyzed</h3>
+                  <h3 className={styles.sectionTitle}>Atomic Claims Checked</h3>
                   {/* CB pipeline: flat list with inline BoundaryFindings */}
                   {claimVerdicts.map((cv: any) => {
                     // CB pipeline: inject claimText from understanding.atomicClaims
