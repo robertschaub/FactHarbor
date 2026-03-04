@@ -20,18 +20,3 @@
   display: inline-block;
   margin-bottom: 2px;
 }
-
-@media (prefers-color-scheme: dark) {
-  .banner {
-    background: #1f2937;
-    border-left-color: #94a3b8;
-  }
-
-  .text {
-    color: #e5e7eb;
-  }
-
-  .typeLabel {
-    color: #cbd5e1;
-  }
-}

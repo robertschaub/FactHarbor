@@ -111,9 +111,9 @@ type EventItem = { id: number; tsUtc: string; level: string; message: string };
  */
 const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
   // Positive (True side)
-  "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
-  "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
-  "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  "TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✅" },
+  "MOSTLY-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✓" },
+  "LEANING-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "◐" },
   // Neutral
   "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix (evidence on both sides)
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
@@ -128,9 +128,9 @@ const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: s
  */
 const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
   // Positive (Yes side)
-  "YES": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
-  "MOSTLY-YES": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
-  "LEANING-YES": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "↗" },
+  "YES": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✅" },
+  "MOSTLY-YES": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✓" },
+  "LEANING-YES": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "↗" },
   // Neutral
   "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
@@ -145,9 +145,9 @@ const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border:
  */
 const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
   // Positive
-  "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745", icon: "✅" },
-  "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a", icon: "✓" },
-  "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b", icon: "◐" },
+  "TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✅" },
+  "MOSTLY-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✓" },
+  "LEANING-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "◐" },
   // Neutral
   "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
@@ -580,6 +580,12 @@ export default function JobPage() {
     : qualitySummary.tone === "warning"
       ? styles.qualityGroupWarning
       : styles.qualityGroupOk;
+  const qualityGroupOkStyle = qualitySummary.tone === "ok"
+    ? { borderColor: "#86efac" }
+    : undefined;
+  const qualityGroupOkSummaryStyle = qualitySummary.tone === "ok"
+    ? { background: "#dcfce7", color: "#166534" }
+    : undefined;
   const degradingAnalysisIssues = qualityWarnings.filter((w) => w.type !== "report_damaged");
   const qualityImpactingIssueCount = degradingProviderIssues.length + degradingAnalysisIssues.length;
   const operationalNotesCount =
@@ -588,11 +594,40 @@ export default function JobPage() {
     fallbackCount;
   const reportQualityPanel = (
     <>
-      <details className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`} open={isReportDamaged}>
-        <summary className={styles.qualityGroupSummary}>
+      <details
+        className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`}
+        open={hasQualityDegradationStatus}
+        style={qualityGroupOkStyle}
+      >
+        <summary className={styles.qualityGroupSummary} style={qualityGroupOkSummaryStyle}>
           <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
         </summary>
         <div className={styles.qualityGroupContent}>
+          {hasQualityDegradationStatus && (
+            <div className={styles.qualityStatusBanner}>
+              <div className={styles.qualityStatusText}>
+                Quality-degrading status detected for this report.
+              </div>
+              <div className={styles.qualityStatusMeta}>
+                {isReportDamaged
+                  ? "Report integrity compromised"
+                  : [
+                      Array.isArray(result?.evidenceItems) && result.evidenceItems.length === 0 && "no evidence retrieved",
+                      result?.meta?.boundaryCount === 0 && "no analysis boundaries formed",
+                      Array.isArray(result?.claimVerdicts) && result.claimVerdicts.length === 0 && "no verdicts produced",
+                      result?.qualityGates?.gate4Stats?.publishable === 0 &&
+                        result?.qualityGates?.gate4Stats?.total > 0 &&
+                        "all verdicts below confidence threshold",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+              </div>
+              <Link href="/admin/quality-health" className={styles.qualityStatusLink}>
+                Open Analysis Monitoring dashboard
+              </Link>
+            </div>
+          )}
+
           {isReportDamaged && (
             <div className={styles.reportDamageBanner}>
               <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
@@ -1146,31 +1181,6 @@ export default function JobPage() {
                   originalInput={job?.inputValue || job?.inputPreview || ""}
                   transformedInput={impliedClaim}
                 />
-              )}
-
-              {hasQualityDegradationStatus && (
-                <div className={styles.qualityStatusBanner}>
-                  <div className={styles.qualityStatusText}>
-                    Quality-degrading status detected for this report.
-                  </div>
-                  <div className={styles.qualityStatusMeta}>
-                    {isReportDamaged
-                      ? "Report integrity compromised"
-                      : [
-                          Array.isArray(result?.evidenceItems) && result.evidenceItems.length === 0 && "no evidence retrieved",
-                          result?.meta?.boundaryCount === 0 && "no analysis boundaries formed",
-                          Array.isArray(result?.claimVerdicts) && result.claimVerdicts.length === 0 && "no verdicts produced",
-                          result?.qualityGates?.gate4Stats?.publishable === 0 &&
-                            result?.qualityGates?.gate4Stats?.total > 0 &&
-                            "all verdicts below confidence threshold",
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                  </div>
-                  <Link href="/admin/quality-health" className={styles.qualityStatusLink}>
-                    Open Analysis Monitoring dashboard
-                  </Link>
-                </div>
               )}
 
               {!isCBSchema && reportQualityPanel}
@@ -1789,7 +1799,7 @@ function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: 
 function getTriangulationColor(level: string): { bg: string; text: string } {
   switch (level) {
     case "strong":
-      return { bg: "#d4edda", text: "#155724" }; // Green
+      return { bg: "#dcfce7", text: "#166534" }; // Green
     case "moderate":
       return { bg: "#fff9c4", text: "#f57f17" }; // Yellow
     case "weak":

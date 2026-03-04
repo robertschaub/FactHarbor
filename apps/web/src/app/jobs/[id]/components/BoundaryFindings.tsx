@@ -59,7 +59,7 @@ function getDirectionDisplay(direction: BoundaryFinding["evidenceDirection"]): {
 } {
   switch (direction) {
     case "supports":
-      return { icon: "✓", label: "Supports", color: "#155724", bg: "#d4edda" };
+      return { icon: "✓", label: "Supports", color: "#166534", bg: "#dcfce7" };
     case "contradicts":
       return { icon: "✗", label: "Refutes", color: "#c62828", bg: "#ffcdd2" };
     case "mixed":

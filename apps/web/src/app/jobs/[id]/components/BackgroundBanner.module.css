@@ -17,18 +17,3 @@
   font-size: 14px;
   color: #1f2937;
 }
-
-@media (prefers-color-scheme: dark) {
-  .banner {
-    background: #1f2937;
-    border-left-color: #94a3b8;
-  }
-
-  .label {
-    color: #cbd5e1;
-  }
-
-  .text {
-    color: #e5e7eb;
-  }
-}

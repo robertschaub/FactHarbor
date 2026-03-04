@@ -44,7 +44,6 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, befor
       {boundaryDisagreements && boundaryDisagreements.length > 0 && (
         <details className={styles.details}>
           <summary className={styles.summary}>
-            <span className={styles.summaryIcon}>📊</span>
             <span>Cross-Boundary Tensions ({boundaryDisagreements.length})</span>
           </summary>
           <ul className={styles.list}>

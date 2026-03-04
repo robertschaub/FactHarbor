@@ -160,7 +160,7 @@
 }
 
 .qualityGroupOk {
-  border-color: #d1d5db;
+  border-color: #86efac;
 }
 
 .qualityGroupWarning {
@@ -197,8 +197,12 @@
 }
 
 .qualityGroupOk .qualityGroupSummary {
-  background: #f9fafb;
-  color: #374151;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.qualityGroupOk .qualityGroupSummary::before {
+  color: #166534;
 }
 
 .qualityGroupWarning .qualityGroupSummary {

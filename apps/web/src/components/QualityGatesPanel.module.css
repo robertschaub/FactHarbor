@@ -17,8 +17,8 @@
 }
 
 .panel.passed {
-  border-color: #d1d5db;
-  background: #f9fafb;
+  border-color: #86efac;
+  background: #dcfce7;
 }
 
 .panel.failed {
@@ -31,16 +31,22 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 12px 16px;
+  padding: 8px 14px;
   background: none;
   border: none;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .header:hover {
   background: rgba(0, 0, 0, 0.02);
+}
+
+.panel.passed .header:hover {
+  background: #dcfce7;
 }
 
 .headerLeft {
@@ -54,7 +60,15 @@
 }
 
 .panel.passed .statusIcon {
-  color: #475569;
+  color: #16a34a;
+}
+
+.panel.passed .title {
+  color: #166534;
+}
+
+.panel.passed .expandIcon {
+  color: #166534;
 }
 
 .panel.failed .statusIcon {
@@ -62,9 +76,9 @@
 }
 
 .title {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text-primary, #1f2937);
+  font-weight: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
 .expandIcon {
