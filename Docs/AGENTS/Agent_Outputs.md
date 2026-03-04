@@ -3176,3 +3176,52 @@ ext phase).
 **Warnings:** `Backlog.md` has stale reference to `WIP/2026-02-27_Report_Quality_Investigation.md` (was archived in consolidation #3 but link not updated). Low priority.
 **For next agent:** WIP is lean. Priority tracks: (1) finish model auto-resolution wiring, (2) Multi-Source Retrieval pipeline integration, (3) Inverse Asymmetry Phase 3 CI gate.
 **Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Unify warning display severity rules
+**Task:** Implement shared warning classification so non-report-degrading warnings are shown as informational and real degrading warnings are surfaced as warning/error.
+**Files touched:** `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/components/FallbackReport.tsx`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added central warning-display classifier used by both page-level diagnostics and `FallbackReport`.
+- Enforced display policy: non-degrading warnings are coerced to `info`; degrading warnings are coerced to at least `warning` (or `error` if already error).
+- Removed duplicated per-file warning allowlists to prevent drift and inconsistent UI severity.
+- Added unit tests covering provider and analysis warning bucketing + severity coercion.
+**Open items:** None.
+**Warnings:** `deploy-remote.ps1` still intentionally runs only `deploy.sh`; test instance remains down by operational decision.
+**For next agent:** If new warning types are introduced in analyzer output, update `warning-display.ts` classification sets and extend `warning-display.test.ts`.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Add dev-only warning diagnostics panel
+**Task:** Add a development-only diagnostics panel to show final warning bucket + display severity mapping in report UI.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Reused shared classifier (`classifyWarningForDisplay`) so diagnostics reflect actual runtime bucketing rules.
+- Gated panel by `process.env.NODE_ENV !== "production"` to keep it dev-only.
+- Placed diagnostics inside existing Quality & Diagnostics collapsible for contextual debugging.
+**Open items:** None.
+**Warnings:** Diagnostics panel intentionally not visible in production builds.
+**For next agent:** If warning bucketing rules change, diagnostics panel updates automatically via shared classifier.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Extract quality summary IIFE into custom hook
+**Task:** Address code-review feedback by removing dense quality-summary IIFE from `JobPage.tsx` and extracting summary computation logic.
+**Files touched:** `apps/web/src/app/jobs/[id]/hooks/useQualitySummary.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `useQualitySummary` hook to compute summary label/icon/tone from quality diagnostics inputs.
+- Replaced inline JSX IIFE with hook outputs and simplified details container class selection.
+- Kept existing behavior unchanged while improving readability and future maintainability.
+**Open items:** None.
+**Warnings:** None.
+**For next agent:** Extend `useQualitySummary` if more quality-summary conditions are added; keep rendering-only concerns in `page.tsx`.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Remove BackgroundBanner JSX IIFE
+**Task:** Address review follow-up by replacing remaining small `BackgroundBanner` render IIFE in `JobPage.tsx`.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Moved background details extraction into a top-level constant (`backgroundDetails`) in component state derivation.
+- Replaced inline IIFE with direct conditional render (`{backgroundDetails && ...}`).
+- Preserved behavior; change is readability/maintainability only.
+**Open items:** None.
+**Warnings:** None.
+**For next agent:** Continue removing render-time IIFEs where simple precomputed variables are sufficient.
+**Learnings:** no

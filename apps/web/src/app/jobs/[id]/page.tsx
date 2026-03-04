@@ -42,66 +42,14 @@ import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay, BoundaryLegend } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
+import { CopyButton } from "@/components/CopyButton";
+import { useQualitySummary } from "./hooks/useQualitySummary";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
-import type { TIGERScore } from "@/lib/analyzer/types";
-
-// Provider issues (LLM/search call errors, even if recovered via fallback)
-// shown as a top-of-page indicator, not inside the report.
-const PROVIDER_ISSUE_TYPES = new Set([
-  "llm_provider_error",
-  "search_provider_error",
-  "structured_output_failure",
-  "debate_provider_fallback",
-  "search_fallback",
-  "source_reliability_error",
-  "source_fetch_failure",
-  "source_fetch_degradation",
-  "evidence_filter_degradation",
-  "grounding_check_degraded",
-  "direction_validation_degraded",
-  "explanation_quality_rubric_failed",
-  "verdict_batch_retry",
-  "verdict_partial_recovery",
-  "llm_tpm_guard_fallback",
-]);
-
-const NON_DEGRADING_PROVIDER_WARNING_TYPES = new Set([
-  "debate_provider_fallback",
-  "search_fallback",
-  // TPM guard fallback is a routine successful operation (gpt-4.1 → gpt-4.1-mini).
-  "llm_tpm_guard_fallback",
-  // llm_provider_error and search_provider_error are NOT here — they retain their
-  // original severity ("error") and show as degrading, since a real provider outage
-  // without fallback can silently degrade evidence quality.
-  // Per-query fetch failures are routine (paywalls, 403s, 401s).
-  "source_fetch_failure",
-  // Per-query aggregate degradation is common for paywalled news sources.
-  // Only total evidence collapse (no_successful_sources) is truly degrading.
-  "source_fetch_degradation",
-  // Source reliability prefetch errors default to "unknown" — normal operation.
-  "source_reliability_error",
-]);
-
-type WarningSeverity = "error" | "warning" | "info" | "unknown";
-
-function normalizeWarningSeverity(raw: unknown): WarningSeverity {
-  if (raw === "error" || raw === "warning" || raw === "info") return raw;
-  if (typeof raw === "string") {
-    const normalized = raw.trim().toLowerCase();
-    if (normalized === "error" || normalized === "warning" || normalized === "info") {
-      return normalized;
-    }
-  }
-  return "unknown";
-}
-
-function isDegradingProviderIssue(warning: any): boolean {
-  if (NON_DEGRADING_PROVIDER_WARNING_TYPES.has(warning?.type)) return false;
-  const severity = normalizeWarningSeverity(warning?.severity);
-  if (severity === "error" || severity === "warning") return true;
-  if (severity === "info") return false;
-  return true;
-}
+import {
+  classifyWarningForDisplay,
+  splitWarningsForDisplay,
+} from "@/lib/analyzer/warning-display";
+import type { AnalysisWarning, TIGERScore } from "@/lib/analyzer/types";
 
 /**
  * Outcome-based quality degradation check.
@@ -550,13 +498,34 @@ export default function JobPage() {
   const claimVerdicts = result?.claimVerdicts || [];
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
-  const allAnalysisWarnings: any[] = result?.analysisWarnings || [];
-  const providerIssues = allAnalysisWarnings.filter((w: any) => PROVIDER_ISSUE_TYPES.has(w?.type));
-  const degradingProviderIssues = providerIssues.filter((w: any) => isDegradingProviderIssue(w));
-  const informationalProviderIssues = providerIssues.filter((w: any) => !isDegradingProviderIssue(w));
-  const analysisWarnings = allAnalysisWarnings.filter((w: any) => !PROVIDER_ISSUE_TYPES.has(w?.type));
+  const allAnalysisWarnings: AnalysisWarning[] = Array.isArray(result?.analysisWarnings)
+    ? result.analysisWarnings
+    : [];
+  const warningBuckets = splitWarningsForDisplay(allAnalysisWarnings);
+  const degradingProviderIssues = warningBuckets.providerDegrading;
+  const informationalProviderIssues = warningBuckets.providerInformational;
+  const analysisWarnings = [
+    ...warningBuckets.analysisDegrading,
+    ...warningBuckets.analysisInformational,
+  ];
+  const qualityWarnings = warningBuckets.analysisDegrading;
+  const informationalAnalysisWarnings = warningBuckets.analysisInformational;
+  const warningDiagnostics = allAnalysisWarnings.map((warning) => {
+    const classification = classifyWarningForDisplay(warning);
+    const bucket = classification.isProviderIssue
+      ? (classification.isReportDegrading ? "provider_degrading" : "provider_informational")
+      : (classification.isReportDegrading ? "analysis_degrading" : "analysis_informational");
+    return {
+      type: warning.type,
+      bucket,
+      originalSeverity: warning.severity,
+      displaySeverity: classification.displaySeverity,
+      message: warning.message,
+    };
+  });
+  const showWarningDiagnostics = process.env.NODE_ENV !== "production" && warningDiagnostics.length > 0;
   const reportIntegrity = result?.meta?.reportIntegrity;
-  const reportDamagedWarning = analysisWarnings.find((w: any) => w?.type === "report_damaged");
+  const reportDamagedWarning = analysisWarnings.find((w) => w.type === "report_damaged");
   // Report is "damaged" only when explicitly flagged — not from routine error-severity warnings.
   // The pipeline emits "report_damaged" or sets reportIntegrity.damaged for true failures
   // (e.g., zero evidence, verdict stage crash). Individual fetch/integrity errors are not damage.
@@ -579,28 +548,32 @@ export default function JobPage() {
     reportDamagedWarning?.details?.recommendedNextStep ||
     reportDamageHints[0] ||
     "Resolve critical warning causes and rerun analysis.";
-  // ALLOWLIST: Only these warning types genuinely degrade report quality.
-  // Everything else is operational/informational and should not count as "issues".
-  // NOTE: When adding new warning types to the pipeline, add them here if they
-  // indicate the report is unreliable. Types not listed here are informational by default.
-  const TRULY_DEGRADING_TYPES = new Set([
-    "report_damaged",              // Report is fundamentally broken
-    "no_successful_sources",       // Zero evidence — report is unreliable
-    "source_acquisition_collapse", // All sources failed — report is unreliable
-    "analysis_generation_failed",  // Core analysis stage crashed
-  ]);
-  const qualityWarnings = analysisWarnings.filter(
-    (w: any) => TRULY_DEGRADING_TYPES.has(w?.type),
-  );
   const fallbackCount = classificationFallbacks?.totalFallbacks ?? 0;
   const hasQualityDegradationStatus =
     isReportDamaged ||
     isOutcomeDegraded(result);
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
+  const gatesFailed = !!(qualityGates && !qualityGates.passed);
+  const degradingAnalysisIssueCount = qualityWarnings.filter((w) => w.type !== "report_damaged").length;
+  const qualitySummary = useQualitySummary({
+    isReportDamaged,
+    degradingProviderIssueCount: degradingProviderIssues.length,
+    degradingAnalysisIssueCount,
+    gatesFailed,
+    informationalProviderIssueCount: informationalProviderIssues.length,
+    fallbackCount,
+    informationalAnalysisIssueCount: informationalAnalysisWarnings.length,
+  });
+  const qualityGroupClassName = qualitySummary.tone === "damaged"
+    ? styles.qualityGroupDamaged
+    : qualitySummary.tone === "warning"
+      ? styles.qualityGroupWarning
+      : styles.qualityGroupOk;
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
   // LEGACY: analysisContexts fallback for old orchestrated pipeline schemas (backward compatibility)
   const contexts = result?.analysisContexts || [];
+  const backgroundDetails = result?.understanding?.backgroundDetails || result?.rawJson?.backgroundDetails;
   const impliedClaim: string = (result?.understanding?.impliedClaim || "").trim();
   const atomicClaimsForDisplay: any[] = result?.understanding?.atomicClaims || [];
   const hasContestedFactors = result?.meta?.hasContestedFactors;
@@ -851,7 +824,7 @@ export default function JobPage() {
             </button>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span><b>ID:</b> <code>{job.jobId}</code></span>
+            <span><b>ID:</b> <code>{job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" /></span>
             {pipelineVariant === "monolithic_dynamic" && (
               <Badge bg="#fce4ec" color="#c2185b" title="Legacy dynamic pipeline">
                 ⚗️ Dynamic (legacy)
@@ -875,7 +848,7 @@ export default function JobPage() {
           {hasV22Data && (
             <div className={styles.badgesRow}>
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
-              {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code></span>}
+              {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code><CopyButton text={result.meta.analysisId} title="Copy Analysis ID" /></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
               {isCBSchema && claimBoundaries.length > 2 && (
                 <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
@@ -1006,14 +979,9 @@ export default function JobPage() {
                 />
               )}
 
-              {(() => {
-                const backgroundDetails =
-                  result?.understanding?.backgroundDetails ||
-                  result?.rawJson?.backgroundDetails;
-                return backgroundDetails ? (
-                  <BackgroundBanner backgroundDetails={backgroundDetails} />
-                ) : null;
-              })()}
+              {backgroundDetails && (
+                <BackgroundBanner backgroundDetails={backgroundDetails} />
+              )}
 
               {/* v2.6.33: Show transformed input if different from original */}
               {impliedClaim && (
@@ -1049,42 +1017,11 @@ export default function JobPage() {
               )}
 
               {/* Quality & Diagnostics — grouped collapsible */}
-              {(() => {
-                // Real issues: provider issues that degraded quality + quality-affecting analysis warnings
-                const realIssueCount = degradingProviderIssues.length
-                  + qualityWarnings.filter((w: any) => w?.type !== "report_damaged").length;
-                const gatesFailed = !!(qualityGates && !qualityGates.passed);
-                const hasRealIssues = isReportDamaged || realIssueCount > 0 || gatesFailed;
-
-                // Informational: provider fallbacks + classification fallbacks + non-quality analysis warnings
-                const infoCount = informationalProviderIssues.length
-                  + fallbackCount
-                  + (analysisWarnings.length - qualityWarnings.length);
-
-                let summaryLabel: string;
-                if (isReportDamaged) {
-                  summaryLabel = "Report Quality — Damaged";
-                } else if (realIssueCount > 0 || gatesFailed) {
-                  const issueText = gatesFailed && realIssueCount === 0
-                    ? "Quality gates failed"
-                    : `${realIssueCount} issue${realIssueCount !== 1 ? "s" : ""}`;
-                  summaryLabel = infoCount > 0
-                    ? `Report Quality — ${issueText}, ${infoCount} informational`
-                    : `Report Quality — ${issueText}`;
-                } else if (infoCount > 0) {
-                  summaryLabel = `Report Quality — ${infoCount} informational`;
-                } else {
-                  summaryLabel = "Report Quality — No issues";
-                }
-
-                const summaryIcon = isReportDamaged ? "❌" : hasRealIssues ? "⚠️" : "✓";
-
-                return (
-                  <details className={`${styles.qualityGroupDetails} ${isReportDamaged ? styles.qualityGroupDamaged : hasRealIssues ? styles.qualityGroupWarning : styles.qualityGroupOk}`} open={isReportDamaged}>
-                    <summary className={styles.qualityGroupSummary}>
-                      <span>{summaryIcon} {summaryLabel}</span>
-                    </summary>
-                    <div className={styles.qualityGroupContent}>
+              <details className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`} open={isReportDamaged}>
+                <summary className={styles.qualityGroupSummary}>
+                  <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
+                </summary>
+                <div className={styles.qualityGroupContent}>
                       {isReportDamaged && (
                         <div className={styles.reportDamageBanner}>
                           <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
@@ -1124,7 +1061,7 @@ export default function JobPage() {
                             {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
                           </summary>
                           <ul className={styles.providerIssueList}>
-                            {degradingProviderIssues.map((w: any, idx: number) => (
+                            {degradingProviderIssues.map((w, idx: number) => (
                               <li key={`pi-${idx}`}>
                                 <strong>{w.type}:</strong> {w.message}
                               </li>
@@ -1139,9 +1076,31 @@ export default function JobPage() {
                             {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
                           </summary>
                           <ul className={styles.providerInfoList}>
-                            {informationalProviderIssues.map((w: any, idx: number) => (
+                            {informationalProviderIssues.map((w, idx: number) => (
                               <li key={`pi-info-${idx}`}>
                                 <strong>{w.type}:</strong> {w.message}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+
+                      {showWarningDiagnostics && (
+                        <details className={styles.devWarningPanel}>
+                          <summary className={styles.devWarningSummary}>
+                            Dev warning diagnostics ({warningDiagnostics.length})
+                          </summary>
+                          <div className={styles.devWarningHint}>
+                            Development-only view of warning bucketing and display severity normalization.
+                          </div>
+                          <ul className={styles.devWarningList}>
+                            {warningDiagnostics.map((diag, idx) => (
+                              <li key={`wd-${idx}`} className={styles.devWarningItem}>
+                                <code className={styles.devWarningType}>{diag.type}</code>
+                                <span className={styles.devWarningMeta}>
+                                  bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
+                                </span>
+                                <div className={styles.devWarningMessage}>{diag.message}</div>
                               </li>
                             ))}
                           </ul>
@@ -1151,10 +1110,8 @@ export default function JobPage() {
                       <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
 
                       <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
-                    </div>
-                  </details>
-                );
-              })()}
+                </div>
+              </details>
 
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}

@@ -6,15 +6,15 @@
  * Short texts (<= threshold) are rendered inline without any controls.
  */
 
-import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ExpandableText.module.css";
 
-/** Render inline markdown: **bold** and reference IDs (CP_AC_01_0, EV_12345…) */
+/** Render inline markdown fragments for common generic patterns. */
 function renderInlineMarkdown(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
-  // Match **bold** or reference IDs (2+ uppercase letters + underscore + alphanumeric)
-  const regex = /\*\*(.+?)\*\*|(\b[A-Z]{2,}_[A-Z0-9_]+\b)/g;
+  // Match **bold** or `inline code`
+  const regex = /\*\*(.+?)\*\*|`([^`]+)`/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -25,9 +25,9 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     if (match[1]) {
       // **bold**
       parts.push(<strong key={key++}>{match[1]}</strong>);
-    } else {
-      // Reference ID
-      parts.push(<strong key={key++} style={{ fontWeight: 600 }}>{match[2]}</strong>);
+    } else if (match[2]) {
+      // `inline code`
+      parts.push(<code key={key++}>{match[2]}</code>);
     }
     lastIndex = regex.lastIndex;
   }
@@ -56,22 +56,38 @@ function renderParagraph(text: string, key?: number) {
 }
 
 /**
- * For long continuous text without any newlines, insert paragraph breaks
- * before sentences that start with reference-like identifiers (e.g., CP_AC_01_0, EV_123456).
- * Also breaks before "Adjusting" / "The self-consistency" sentence starters that follow a period.
+ * Structural normalization only.
+ * Keeps content semantics untouched and avoids prompt-specific formatting rules.
  */
 function normalizeText(text: string): string {
-  if (text.includes("\n") || text.length < 500) return text;
-  // Break before reference IDs: ". CP_AC_01_0 ..." or ". EV_12345 ..."
-  let normalized = text.replace(/(\.) ([A-Z]{2,}_[A-Z0-9_]+\b)/g, "$1\n\n$2");
-  // Break before common structural transitions after a sentence end
-  normalized = normalized.replace(/(\.) ((?:Adjusting|Overall|In summary|In conclusion|However|The self-consistency)\b)/g, "$1\n\n$2");
-  return normalized;
+  return text.replace(/\r\n?/g, "\n");
 }
 
 /** Render text with **bold**, paragraph breaks (\n\n), and line breaks (\n) */
 function FormattedText({ text }: { text: string }) {
-  const paragraphs = normalizeText(text).split(/\n{2,}/);
+  const normalized = normalizeText(text);
+  
+  // v2.6.40: If block has NO double newlines but is long, treat single newlines as paragraphs
+  // ONLY if they look intentional (punctuation-ending lines or list patterns)
+  const hasDoubleNewlines = normalized.includes("\n\n");
+  
+  let paragraphs: string[];
+  if (hasDoubleNewlines || normalized.length < 400) {
+    paragraphs = normalized.split(/\n{2,}/);
+  } else {
+    // Single newline heuristic: only split if it looks like intentional paragraphs/lists
+    const lines = normalized.split('\n');
+    const punctuationLines = lines.filter(l => /[.!?:]\s*$/.test(l)).length;
+    // Heuristic: at least half of lines end in punctuation, indicating they are not wraps
+    const isLikelyIntentional = lines.length > 2 && (punctuationLines / lines.length > 0.5);
+    
+    if (isLikelyIntentional) {
+      paragraphs = lines;
+    } else {
+      paragraphs = [normalized];
+    }
+  }
+
   if (paragraphs.length <= 1) {
     return <>{renderParagraph(text)}</>;
   }
@@ -95,6 +111,17 @@ interface ExpandableTextProps {
 }
 
 function TextModal({ text, title, onClose }: { text: string; title: string; onClose: () => void }) {
+  const titleId = useId();
+
+  // v2.6.40: Lock body scroll while modal is open
+  useLayoutEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -104,11 +131,11 @@ function TextModal({ text, title, onClose }: { text: string; title: string; onCl
   }, [onClose]);
 
   return createPortal(
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.modalOverlay} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalTitle}>{title}</span>
-          <button className={styles.modalClose} onClick={onClose} aria-label="Close">
+          <span className={styles.modalTitle} id={titleId}>{title}</span>
+          <button className={styles.modalClose} onClick={onClose} aria-label="Close modal">
             ✕
           </button>
         </div>
@@ -131,6 +158,7 @@ export function ExpandableText({
   const [overflows, setOverflows] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
   const handleClose = useCallback(() => setShowModal(false), []);
+  const contentId = useId();
 
   // Measure whether the collapsed content actually overflows
   useEffect(() => {
@@ -153,12 +181,17 @@ export function ExpandableText({
   if (expanded) {
     return (
       <>
-        <div className={boxClass}><FormattedText text={text} /></div>
+        <div id={contentId} className={boxClass}><FormattedText text={text} /></div>
         <div className={styles.expandBar}>
-          <button className={styles.expandButton} onClick={() => setExpanded(false)}>
+          <button 
+            className={styles.expandButton} 
+            onClick={() => setExpanded(false)}
+            aria-expanded="true"
+            aria-controls={contentId}
+          >
             Show less
           </button>
-          <button className={styles.expandButton} onClick={() => setShowModal(true)}>
+          <button className={styles.expandButton} onClick={() => setShowModal(true)} aria-haspopup="dialog">
             Open in overlay
           </button>
         </div>
@@ -169,20 +202,25 @@ export function ExpandableText({
 
   // Text fits — render without controls
   if (!overflows) {
-    return <div ref={contentRef} className={collapsedClass}><FormattedText text={text} /></div>;
+    return <div ref={contentRef} id={contentId} className={collapsedClass}><FormattedText text={text} /></div>;
   }
 
   return (
     <>
       <div className={styles.container}>
-        <div ref={contentRef} className={collapsedClass}><FormattedText text={text} /></div>
+        <div ref={contentRef} id={contentId} className={collapsedClass} aria-expanded="false"><FormattedText text={text} /></div>
         {!bare && <div className={styles.fadeOverlay} />}
       </div>
       <div className={styles.expandBar}>
-        <button className={styles.expandButton} onClick={() => setExpanded(true)}>
+        <button 
+          className={styles.expandButton} 
+          onClick={() => setExpanded(true)}
+          aria-expanded="false"
+          aria-controls={contentId}
+        >
           Show more
         </button>
-        <button className={styles.expandButton} onClick={() => setShowModal(true)}>
+        <button className={styles.expandButton} onClick={() => setShowModal(true)} aria-haspopup="dialog">
           Open in overlay
         </button>
       </div>
@@ -190,3 +228,4 @@ export function ExpandableText({
     </>
   );
 }
+

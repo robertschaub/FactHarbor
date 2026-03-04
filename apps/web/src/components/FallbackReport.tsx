@@ -6,7 +6,8 @@
 
 import styles from './FallbackReport.module.css';
 import type { FallbackSummary } from '@/lib/analyzer/classification-fallbacks';
-import type { AnalysisWarning, AnalysisWarningType } from '@/lib/analyzer/types';
+import { splitWarningsForDisplay } from '@/lib/analyzer/warning-display';
+import type { AnalysisWarning } from '@/lib/analyzer/types';
 
 interface FallbackReportProps {
   summary: FallbackSummary | undefined;
@@ -42,6 +43,9 @@ const WARNING_TYPE_LABELS: Record<string, string> = {
   baseless_challenge_blocked: "Baseless Challenge Blocked (F5)",
   baseless_challenge_detected: "Baseless Challenges Detected (F5)",
   evidence_partition_stats: "Evidence Partitioning (F6)",
+  verdict_integrity_failure: "Verdict Integrity Failure",
+  verdict_grounding_issue: "Verdict Grounding Issue",
+  verdict_direction_issue: "Verdict Direction Issue",
 };
 
 const WARNING_TYPE_HINTS: Record<string, string> = {
@@ -57,6 +61,7 @@ const WARNING_TYPE_HINTS: Record<string, string> = {
   baseless_challenge_blocked: "A verdict adjustment was reverted because the challenge lacked supporting evidence.",
   baseless_challenge_detected: "Multiple baseless challenges were detected and blocked during verdict aggregation.",
   evidence_pool_imbalance: "This is directional telemetry and can occur naturally on one-sided evidence topics.",
+  verdict_integrity_failure: "The verdict was downgraded to a safe fallback due to integrity validation failure.",
 };
 
 const SEVERITY_ICONS: Record<AnalysisWarning["severity"], string> = {
@@ -64,41 +69,6 @@ const SEVERITY_ICONS: Record<AnalysisWarning["severity"], string> = {
   warning: "⚠️",
   info: "ℹ️",
 };
-
-/**
- * Warning types that directly indicate report quality degradation.
- * Shown prominently regardless of severity level.
- * All other warning types are treated as operational/informational
- * and collapsed by default.
- */
-const QUALITY_DEGRADING_TYPES = new Set<AnalysisWarningType>([
-  // Critical failures (provider issues are filtered out at page level)
-  "report_damaged",
-  "no_successful_sources",
-  "source_acquisition_collapse",
-  // Evidence quality (F4: sufficiency, F6: balance)
-  "insufficient_evidence",
-  "low_evidence_count",
-  "low_source_count",
-  "context_without_evidence",
-  "recency_evidence_gap",
-  // Verdict quality (F5: baseless challenge enforcement)
-  "baseless_challenge_blocked",
-  "baseless_challenge_detected",
-  "verdict_direction_mismatch",
-  "grounding_check",
-  "verdict_fallback_partial",
-  "analysis_generation_failed",
-  "contested_verdict_range",
-  // Execution quality
-  "budget_exceeded",
-  "query_budget_exhausted",
-]);
-
-/** Quality-affecting if the warning type directly degrades report quality. */
-function isQualityAffecting(warning: AnalysisWarning): boolean {
-  return QUALITY_DEGRADING_TYPES.has(warning.type);
-}
 
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -160,11 +130,13 @@ function WarningCard({ warning }: { warning: AnalysisWarning }) {
 
 export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false }: FallbackReportProps) {
   const hasFallbacks = summary && summary.totalFallbacks > 0;
-  const hasWarnings = analysisWarnings.length > 0;
+  const warningBuckets = splitWarningsForDisplay(analysisWarnings);
+  const qualityWarnings = warningBuckets.analysisDegrading;
+  const operationalWarnings = warningBuckets.analysisInformational;
 
-  const qualityWarningsCount = analysisWarnings.filter(isQualityAffecting).length;
+  const qualityWarningsCount = qualityWarnings.length;
   const hasVisibleContent = hasFallbacks || qualityWarningsCount > 0
-    || (isAdmin && analysisWarnings.length > qualityWarningsCount);
+    || (isAdmin && operationalWarnings.length > 0);
 
   // Don't render if nothing to show (non-admins never see operational notes)
   if (!hasVisibleContent) {
@@ -174,10 +146,6 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
   const fieldsWithFallbacks = hasFallbacks
     ? Object.entries(summary.fallbacksByField).filter(([_, count]) => count > 0)
     : [];
-
-  // Split warnings into quality-affecting (prominent) vs operational (collapsed)
-  const qualityWarnings = analysisWarnings.filter(isQualityAffecting);
-  const operationalWarnings = analysisWarnings.filter(w => !isQualityAffecting(w));
 
   const hasErrors = qualityWarnings.some(w => w.severity === "error");
 
@@ -210,7 +178,7 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
         {hasAdminNotes && (
           <div className={styles.warningsSection}>
             {operationalWarnings.map((warning, index) => (
-              <WarningCard key={`o-${index}`} warning={{ ...warning, severity: "info" }} />
+              <WarningCard key={`o-${index}`} warning={warning} />
             ))}
           </div>
         )}
@@ -257,7 +225,7 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
               </summary>
               <div className={styles.warningsSection}>
                 {operationalWarnings.map((warning, index) => (
-                  <WarningCard key={`o-${index}`} warning={{ ...warning, severity: "info" }} />
+                  <WarningCard key={`o-${index}`} warning={warning} />
                 ))}
               </div>
             </details>

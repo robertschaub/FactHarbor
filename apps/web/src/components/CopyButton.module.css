@@ -1,0 +1,24 @@
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+  vertical-align: middle;
+  margin-left: 4px;
+  line-height: 0;
+}
+
+.copyBtn:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.copyBtn:active {
+  transform: scale(0.95);
+}
