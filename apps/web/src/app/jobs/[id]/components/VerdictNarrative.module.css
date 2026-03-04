@@ -32,10 +32,6 @@
 }
 
 .evidenceBase {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
   padding: 12px 16px;
   background: #f0f9ff;
   border-left: 4px solid #3b82f6;
@@ -74,15 +70,6 @@
   color: #374151;
   font-size: 15px;
   line-height: 1.6;
-}
-
-.findingTextLong {
-  overflow-y: auto;
-  max-height: 200px;
-  resize: vertical;
-  border: 1px solid #d9c96a;
-  border-radius: 4px;
-  padding: 6px 8px;
 }
 
 .details {

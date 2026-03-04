@@ -28,6 +28,7 @@ import {
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 import { BoundaryFindings } from "./components/BoundaryFindings";
+import { ExpandableText } from "./components/ExpandableText";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { BackgroundBanner } from "./components/BackgroundBanner";
@@ -38,7 +39,7 @@ import { ConfigViewer } from "./components/ConfigViewer";
 import FallbackReport from "@/components/FallbackReport";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
-import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
+import { CoverageMatrixDisplay, BoundaryLegend } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
@@ -69,11 +70,16 @@ const NON_DEGRADING_PROVIDER_WARNING_TYPES = new Set([
   "search_fallback",
   // TPM guard fallback is a routine successful operation (gpt-4.1 → gpt-4.1-mini).
   "llm_tpm_guard_fallback",
+  // llm_provider_error and search_provider_error are NOT here — they retain their
+  // original severity ("error") and show as degrading, since a real provider outage
+  // without fallback can silently degrade evidence quality.
   // Per-query fetch failures are routine (paywalls, 403s, 401s).
   "source_fetch_failure",
   // Per-query aggregate degradation is common for paywalled news sources.
   // Only total evidence collapse (no_successful_sources) is truly degrading.
   "source_fetch_degradation",
+  // Source reliability prefetch errors default to "unknown" — normal operation.
+  "source_reliability_error",
 ]);
 
 type WarningSeverity = "error" | "warning" | "info" | "unknown";
@@ -573,15 +579,18 @@ export default function JobPage() {
     reportDamagedWarning?.details?.recommendedNextStep ||
     reportDamageHints[0] ||
     "Resolve critical warning causes and rerun analysis.";
-  // Integrity checks that were evaluated and handled (not downgraded) are informational,
-  // not quality-degrading. Only unhandled/critical warnings count toward the banner.
-  const HANDLED_INTEGRITY_TYPES = new Set([
-    "verdict_direction_issue",   // Direction check noted but verdict was reasonable
-    "verdict_grounding_issue",   // Grounding check noted but safe_downgrade handled it
-    "evidence_partition_stats",  // Informational D5 partition stats
+  // ALLOWLIST: Only these warning types genuinely degrade report quality.
+  // Everything else is operational/informational and should not count as "issues".
+  // NOTE: When adding new warning types to the pipeline, add them here if they
+  // indicate the report is unreliable. Types not listed here are informational by default.
+  const TRULY_DEGRADING_TYPES = new Set([
+    "report_damaged",              // Report is fundamentally broken
+    "no_successful_sources",       // Zero evidence — report is unreliable
+    "source_acquisition_collapse", // All sources failed — report is unreliable
+    "analysis_generation_failed",  // Core analysis stage crashed
   ]);
   const qualityWarnings = analysisWarnings.filter(
-    (w: any) => (w?.severity === "error" || w?.severity === "warning") && !HANDLED_INTEGRITY_TYPES.has(w?.type),
+    (w: any) => TRULY_DEGRADING_TYPES.has(w?.type),
   );
   const fallbackCount = classificationFallbacks?.totalFallbacks ?? 0;
   const hasQualityDegradationStatus =
@@ -1039,68 +1048,113 @@ export default function JobPage() {
                 </div>
               )}
 
-              {degradingProviderIssues.length > 0 && (
-                <details className={styles.providerIssueBanner}>
-                  <summary className={styles.providerIssueSummary}>
-                    {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
-                  </summary>
-                  <ul className={styles.providerIssueList}>
-                    {degradingProviderIssues.map((w: any, idx: number) => (
-                      <li key={`pi-${idx}`}>
-                        <strong>{w.type}:</strong> {w.message}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
+              {/* Quality & Diagnostics — grouped collapsible */}
+              {(() => {
+                // Real issues: provider issues that degraded quality + quality-affecting analysis warnings
+                const realIssueCount = degradingProviderIssues.length
+                  + qualityWarnings.filter((w: any) => w?.type !== "report_damaged").length;
+                const gatesFailed = !!(qualityGates && !qualityGates.passed);
+                const hasRealIssues = isReportDamaged || realIssueCount > 0 || gatesFailed;
 
-              {informationalProviderIssues.length > 0 && (
-                <details className={styles.providerInfoBanner}>
-                  <summary className={styles.providerInfoSummary}>
-                    {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
-                  </summary>
-                  <ul className={styles.providerInfoList}>
-                    {informationalProviderIssues.map((w: any, idx: number) => (
-                      <li key={`pi-info-${idx}`}>
-                        <strong>{w.type}:</strong> {w.message}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
+                // Informational: provider fallbacks + classification fallbacks + non-quality analysis warnings
+                const infoCount = informationalProviderIssues.length
+                  + fallbackCount
+                  + (analysisWarnings.length - qualityWarnings.length);
 
-              {isReportDamaged && (
-                <div className={styles.reportDamageBanner}>
-                  <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
-                  <div className={styles.reportDamageText}>
-                    {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
-                  </div>
-                  {reportDamageTriggerTypes.length > 0 && (
-                    <div className={styles.reportDamageMeta}>
-                      Triggers: {reportDamageTriggerTypes.join(", ")}
+                let summaryLabel: string;
+                if (isReportDamaged) {
+                  summaryLabel = "Report Quality — Damaged";
+                } else if (realIssueCount > 0 || gatesFailed) {
+                  const issueText = gatesFailed && realIssueCount === 0
+                    ? "Quality gates failed"
+                    : `${realIssueCount} issue${realIssueCount !== 1 ? "s" : ""}`;
+                  summaryLabel = infoCount > 0
+                    ? `Report Quality — ${issueText}, ${infoCount} informational`
+                    : `Report Quality — ${issueText}`;
+                } else if (infoCount > 0) {
+                  summaryLabel = `Report Quality — ${infoCount} informational`;
+                } else {
+                  summaryLabel = "Report Quality — No issues";
+                }
+
+                const summaryIcon = isReportDamaged ? "❌" : hasRealIssues ? "⚠️" : "✓";
+
+                return (
+                  <details className={`${styles.qualityGroupDetails} ${isReportDamaged ? styles.qualityGroupDamaged : hasRealIssues ? styles.qualityGroupWarning : styles.qualityGroupOk}`} open={isReportDamaged}>
+                    <summary className={styles.qualityGroupSummary}>
+                      <span>{summaryIcon} {summaryLabel}</span>
+                    </summary>
+                    <div className={styles.qualityGroupContent}>
+                      {isReportDamaged && (
+                        <div className={styles.reportDamageBanner}>
+                          <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
+                          <div className={styles.reportDamageText}>
+                            {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
+                          </div>
+                          {reportDamageTriggerTypes.length > 0 && (
+                            <div className={styles.reportDamageMeta}>
+                              Triggers: {reportDamageTriggerTypes.join(", ")}
+                            </div>
+                          )}
+                          {reportDamageIssues.length > 0 && (
+                            <ul className={styles.reportDamageList}>
+                              {reportDamageIssues.slice(0, 5).map((issue, idx) => (
+                                <li key={`issue-${idx}`}>
+                                  <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {reportDamageHints.length > 0 && (
+                            <ul className={styles.reportDamageHints}>
+                              {reportDamageHints.slice(0, 3).map((hint, idx) => (
+                                <li key={`hint-${idx}`}>{hint}</li>
+                              ))}
+                            </ul>
+                          )}
+                          <div className={styles.reportDamageNextStep}>
+                            Next step: {reportDamageNextStep}
+                          </div>
+                        </div>
+                      )}
+
+                      {degradingProviderIssues.length > 0 && (
+                        <details className={styles.providerIssueBanner}>
+                          <summary className={styles.providerIssueSummary}>
+                            {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
+                          </summary>
+                          <ul className={styles.providerIssueList}>
+                            {degradingProviderIssues.map((w: any, idx: number) => (
+                              <li key={`pi-${idx}`}>
+                                <strong>{w.type}:</strong> {w.message}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+
+                      {informationalProviderIssues.length > 0 && (
+                        <details className={styles.providerInfoBanner}>
+                          <summary className={styles.providerInfoSummary}>
+                            {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
+                          </summary>
+                          <ul className={styles.providerInfoList}>
+                            {informationalProviderIssues.map((w: any, idx: number) => (
+                              <li key={`pi-info-${idx}`}>
+                                <strong>{w.type}:</strong> {w.message}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+
+                      <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
+
+                      <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
                     </div>
-                  )}
-                  {reportDamageIssues.length > 0 && (
-                    <ul className={styles.reportDamageList}>
-                      {reportDamageIssues.slice(0, 5).map((issue, idx) => (
-                        <li key={`issue-${idx}`}>
-                          <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {reportDamageHints.length > 0 && (
-                    <ul className={styles.reportDamageHints}>
-                      {reportDamageHints.slice(0, 3).map((hint, idx) => (
-                        <li key={`hint-${idx}`}>{hint}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className={styles.reportDamageNextStep}>
-                    Next step: {reportDamageNextStep}
-                  </div>
-                </div>
-              )}
+                  </details>
+                );
+              })()}
 
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
@@ -1110,11 +1164,10 @@ export default function JobPage() {
                 const cbColor = ARTICLE_VERDICT_COLORS[cbVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
                 const displayCbPct = isFalseBand(cbVerdictLabel) ? 100 - result.truthPercentage : result.truthPercentage;
                 return (
+                  <>
+                  <h3 className={styles.sectionTitle}>Verdict</h3>
                   <div className={styles.articleBanner} style={{ borderColor: cbColor.border }}>
                     <div className={styles.articleBannerContent}>
-                      <div className={styles.articleVerdictHeader}>
-                        <span className={styles.articleVerdictLabel}>VERDICT</span>
-                      </div>
                       <div className={styles.articleVerdictRow}>
                         <span className={styles.articleVerdictBadge} style={{ backgroundColor: cbColor.bg, color: cbColor.text }}>
                           {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
@@ -1130,12 +1183,13 @@ export default function JobPage() {
                         </span>
                       </div>
                       {result.verdictNarrative?.headline && (
-                        <div style={{ marginTop: 8, fontSize: 14, color: "#555", lineHeight: 1.5 }}>
+                        <div style={{ marginTop: 12, fontSize: 16, color: "#1f2937", lineHeight: 1.5, fontWeight: 600 }}>
                           {result.verdictNarrative.headline}
                         </div>
                       )}
                     </div>
                   </div>
+                  </>
                 );
               })()}
 
@@ -1162,15 +1216,11 @@ export default function JobPage() {
                 )
               ))}
 
-              <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
-
-              <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
-
               {/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */}
               {isCBSchema && result?.verdictNarrative && (
                 <section className={styles.cbSection}>
-                  <h3 className={styles.sectionTitle}>Verdict Overview</h3>
-                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} />
+                  <h3 className={styles.sectionTitle}>Assessment Overview</h3>
+                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} hideHeadline />
                 </section>
               )}
 
@@ -1179,48 +1229,6 @@ export default function JobPage() {
                 <section className={styles.cbSection}>
                   <TIGERScorePanel tigerScore={result.tigerScore} />
                 </section>
-              )}
-
-              {isCBSchema && result?.coverageMatrix && claimVerdicts.length > 0 && claimBoundaries.length > 0 && (
-                <section className={styles.cbSection}>
-                  <h3 className={styles.sectionTitle}>Coverage Matrix</h3>
-                  <p className={styles.sectionDescription}>
-                    Evidence distribution across claims and boundaries. Shows which claims have evidence in which analytical boundaries.
-                  </p>
-                  <CoverageMatrixDisplay
-                    matrix={result.coverageMatrix}
-                    claimLabels={claimVerdicts.map((v: any) => {
-                      // CB pipeline: verdict has claimId linking to understanding.atomicClaims
-                      const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
-                      const matched = atomicClaims.find((ac: any) => ac.id === v.claimId);
-                      const text = matched?.statement || v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
-                      return text.length > 50 ? text.slice(0, 47) + "..." : text;
-                    })}
-                    boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
-                  />
-                </section>
-              )}
-
-              {atomicClaimsForDisplay.length > 0 && (
-                <div className={styles.atomicClaimsSection}>
-                  <h3 className={styles.claimsSectionTitle}>Extracted Claims</h3>
-                  <p className={styles.atomicClaimsExplainer}>
-                    These specific claims were extracted from your input and verified independently.
-                  </p>
-                  <ol className={styles.atomicClaimsList}>
-                    {atomicClaimsForDisplay.map((ac: any) => (
-                      <li key={ac.id} className={styles.atomicClaimItem}>
-                        <span className={styles.atomicClaimStatement}>{ac.statement}</span>
-                        <span className={styles.atomicClaimMeta}>
-                          <span className={styles.atomicClaimBadge}>{ac.category}</span>
-                          {ac.claimDirection === "contradicts_thesis" && (
-                            <span className={styles.atomicClaimBadge}>counter-claim</span>
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
               )}
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
@@ -1259,6 +1267,39 @@ export default function JobPage() {
                     </details>
                   )}
                 </div>
+              )}
+
+              {/* Coverage Matrix — placed after Claims Analyzed (below "Evidence by Methodology" per claim) */}
+              {isCBSchema && result?.coverageMatrix && claimVerdicts.length > 0 && claimBoundaries.length > 0 && (
+                <section className={styles.cbSection}>
+                  <h3 className={styles.sectionTitle}>Coverage Matrix</h3>
+                  <p className={styles.sectionDescription}>
+                    Evidence distribution across claims and boundaries.
+                  </p>
+                  <CoverageMatrixDisplay
+                    matrix={result.coverageMatrix}
+                    claimLabels={claimVerdicts.map((v: any) => {
+                      const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
+                      const matched = atomicClaims.find((ac: any) => ac.id === v.claimId);
+                      const text = matched?.statement || v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
+                      return text;
+                    })}
+                    boundaryShortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
+                    boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
+                    hideLegend
+                  />
+                </section>
+              )}
+
+              {/* Boundary Legend — standalone section, separate from matrix */}
+              {isCBSchema && claimBoundaries.length > 0 && (
+                <section className={styles.cbSection}>
+                  <h3 className={styles.sectionTitle}>Boundary Legend</h3>
+                  <BoundaryLegend
+                    shortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
+                    fullLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
+                  />
+                </section>
               )}
             </>
           )}
@@ -1576,7 +1617,7 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
       <div key={item.id || item.statement} className={`${styles.evidenceItem} ${finalClassName}`}>
         <div className={styles.evidenceText}>
           {isContrarian && <span style={{ color: '#ed8936', fontWeight: 700, marginRight: '6px' }}>[CONTRARIAN]</span>}
-          {item.statement}
+          <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} />
           {item.evidenceScope && (
             <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
           )}
@@ -2383,6 +2424,7 @@ function ClaimCard({
     <div className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""} ${isTangential ? styles.claimCardTangential : ""}`} style={{ borderLeftColor: isTangential ? "#9e9e9e" : color.border }}>
       <div className={styles.claimCardHeader}>
         <span className={styles.claimId}>{claim.claimId}</span>
+        {claim.category && <Badge bg="#f3f4f6" color="#4b5563">{claim.category.toUpperCase()}</Badge>}
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         {claim.harmPotential === "high" && <Badge bg="#ffebee" color="#c62828">⚠️ High Harm</Badge>}
         {claim.verifiability && <Badge bg="#f3e5f5" color="#6a1b9a">🔍 Verifiability: {claim.verifiability.toUpperCase()}</Badge>}
@@ -2416,7 +2458,6 @@ function ClaimCard({
           </Badge>
         )}
       </div>
-      <div className={styles.claimLabel}>Claim Being Evaluated:</div>
       <div className={styles.claimText}>"{claim.claimText}"</div>
       
       <VisualTruthMeter
@@ -2426,7 +2467,11 @@ function ClaimCard({
           : claim.truthPercentageRange}
       />
 
-      <div className={`${styles.claimReasoning}${(claim.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{claim.reasoning}</div>
+      <ExpandableText
+        text={claim.reasoning || ""}
+        className={styles.claimReasoning}
+        modalTitle={`Reasoning — ${claim.claimId || "Claim"}`}
+      />
       {claim.isContested && claim.contestedBy && (
         <div className={styles.claimContestation}>
           {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {claim.contestedBy}
@@ -2535,7 +2580,7 @@ function DynamicResultViewer({ result }: { result: any }) {
             <div className={styles.verdictConfidence}>· {getConfidenceTierLabel(dynConf)}</div>
           )}
           {result.verdict.reasoning && (
-            <div className={`${styles.verdictReasoning}${(result.verdict.reasoning?.length ?? 0) > 1000 ? ` ${styles.resizableLong}` : ""}`}>{result.verdict.reasoning}</div>
+            <ExpandableText text={result.verdict.reasoning} className={styles.verdictReasoning} modalTitle="Verdict Reasoning" />
           )}
         </div>
         );

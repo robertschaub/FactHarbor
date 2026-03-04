@@ -1,4 +1,4 @@
-/* Coverage Matrix Styles */
+/* Coverage Matrix Styles — Transposed layout (boundaries as rows) */
 
 .container {
   margin: 20px 0;
@@ -8,11 +8,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
-  padding: 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
   background: #f8f9fa;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
   flex-wrap: wrap;
 }
 
@@ -24,15 +24,15 @@
 .legendItem {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   color: #6b7280;
 }
 
 .legendSwatch {
   display: inline-block;
-  width: 24px;
-  height: 16px;
-  border-radius: 3px;
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
   border: 1px solid #d1d5db;
 }
 
@@ -46,13 +46,12 @@
 .matrix {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  min-width: 500px;
+  font-size: 13px;
 }
 
 .matrix th,
 .matrix td {
-  padding: 10px 12px;
+  padding: 8px 12px;
   text-align: center;
   border: 1px solid #e5e7eb;
 }
@@ -65,13 +64,15 @@
   position: sticky;
   left: 0;
   z-index: 2;
+  white-space: nowrap;
 }
 
 .headerCell {
   background: #f3f4f6;
   color: #374151;
   font-weight: 600;
-  min-width: 100px;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .rowHeader {
@@ -82,9 +83,15 @@
   position: sticky;
   left: 0;
   z-index: 1;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 300px;
+}
+
+.totalHeader {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
   white-space: nowrap;
 }
 
@@ -108,7 +115,6 @@
   background: #fbbf24;
   font-weight: 700;
   color: #78350f;
-  font-size: 15px;
 }
 
 /* Cell color coding by evidence count */
@@ -133,6 +139,33 @@
   font-weight: 600;
 }
 
+/* Boundary legend below matrix */
+.boundaryLegend {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boundaryLegendItem {
+  line-height: 1.4;
+}
+
+.boundaryLegendLabel {
+  font-weight: 600;
+  color: #374151;
+}
+
+.boundaryLegendFull {
+  color: #6b7280;
+  margin-top: 1px;
+}
+
 .emptyState {
   padding: 40px 20px;
   text-align: center;
@@ -147,7 +180,6 @@
   font-size: 14px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .matrix {
     font-size: 12px;
@@ -155,15 +187,10 @@
 
   .matrix th,
   .matrix td {
-    padding: 8px;
-  }
-
-  .legend {
-    font-size: 12px;
-    gap: 12px;
+    padding: 6px 8px;
   }
 
   .rowHeader {
-    max-width: 150px;
+    max-width: 180px;
   }
 }

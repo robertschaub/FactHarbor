@@ -2,7 +2,8 @@
  * Coverage Matrix Display Component
  *
  * Visualizes the claims × boundaries evidence distribution matrix.
- * Shows which claims have evidence in which boundaries, with color-coded counts.
+ * Transposed layout: boundaries as rows, claims as columns.
+ * Uses short boundary labels in table, full names in legend below.
  *
  * @module components/CoverageMatrix
  */
@@ -12,30 +13,41 @@ import styles from "./CoverageMatrix.module.css";
 
 interface Props {
   matrix: CoverageMatrix;
-  claimLabels?: string[]; // Optional shortened claim statements for display
-  boundaryLabels?: string[]; // Optional boundary names for display
+  claimLabels?: string[];
+  boundaryLabels?: string[];      // Full boundary names (for legend)
+  boundaryShortLabels?: string[]; // Short labels (for table rows, matching "Evidence by Methodology")
+  hideLegend?: boolean;           // When true, boundary legend is not rendered (rendered separately)
 }
 
-export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels }: Props) {
+/** Standalone boundary legend — maps short labels to full names */
+export function BoundaryLegend({ shortLabels, fullLabels }: { shortLabels: string[]; fullLabels: string[] }) {
+  const needsLegend = fullLabels.some((full, i) => full !== shortLabels[i]);
+  if (!needsLegend) return null;
+  return (
+    <div className={styles.boundaryLegend}>
+      {fullLabels.map((full, i) => (
+        <div key={i} className={styles.boundaryLegendItem}>
+          <div className={styles.boundaryLegendLabel}>{shortLabels[i]}</div>
+          <div className={styles.boundaryLegendFull}>{full}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, boundaryShortLabels, hideLegend = false }: Props) {
   const { claims, boundaries, counts } = matrix;
 
-  // Generate display labels (use provided or fallback to IDs)
   const claimDisplayLabels = claimLabels ?? claims.map((id, i) => `Claim ${i + 1}`);
-  const boundaryDisplayLabels = boundaryLabels ?? boundaries.map((id, i) => `Boundary ${i + 1}`);
+  const fullLabels = boundaryLabels ?? boundaries.map((id, i) => `Boundary ${i + 1}`);
+  const shortLabels = boundaryShortLabels ?? fullLabels;
+  const needsLegend = fullLabels.some((full, i) => full !== shortLabels[i]);
 
-  // Color coding based on evidence count
   const getCellClass = (count: number): string => {
     if (count === 0) return styles.cellEmpty;
     if (count === 1) return styles.cellLow;
     if (count === 2) return styles.cellMedium;
-    return styles.cellHigh; // 3+
-  };
-
-  const getCellTooltip = (count: number, claimLabel: string, boundaryLabel: string): string => {
-    if (count === 0) {
-      return `No evidence for "${claimLabel}" in ${boundaryLabel}`;
-    }
-    return `${count} evidence item${count > 1 ? "s" : ""} for "${claimLabel}" in ${boundaryLabel}`;
+    return styles.cellHigh;
   };
 
   if (claims.length === 0 || boundaries.length === 0) {
@@ -52,19 +64,19 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels }: P
         <span className={styles.legendTitle}>Evidence Count:</span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.cellEmpty}`}></span>
-          0 (no coverage)
+          0
         </span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.cellLow}`}></span>
-          1 (minimal)
+          1
         </span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.cellMedium}`}></span>
-          2 (moderate)
+          2
         </span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.cellHigh}`}></span>
-          3+ (good)
+          3+
         </span>
       </div>
 
@@ -72,41 +84,40 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels }: P
         <table className={styles.matrix}>
           <thead>
             <tr>
-              <th className={styles.cornerCell}>Claims / Boundaries</th>
-              {boundaryDisplayLabels.map((label, i) => (
-                <th key={boundaries[i]} className={styles.headerCell} title={boundaries[i]}>
+              <th className={styles.cornerCell}>Boundary</th>
+              {claimDisplayLabels.map((label, i) => (
+                <th key={claims[i]} className={styles.headerCell} title={claims[i]}>
                   {label}
                 </th>
               ))}
-              <th className={styles.totalCell}>Total</th>
+              <th className={styles.totalHeader}>Total</th>
             </tr>
           </thead>
           <tbody>
-            {counts.map((row, claimIdx) => {
-              const rowTotal = row.reduce((sum, count) => sum + count, 0);
+            {boundaries.map((_, boundaryIdx) => {
+              const colTotal = counts.reduce((sum, row) => sum + row[boundaryIdx], 0);
               return (
-                <tr key={claims[claimIdx]}>
-                  <th className={styles.rowHeader} title={claims[claimIdx]}>
-                    {claimDisplayLabels[claimIdx]}
+                <tr key={boundaries[boundaryIdx]}>
+                  <th className={styles.rowHeader} title={fullLabels[boundaryIdx]}>
+                    {shortLabels[boundaryIdx]}
                   </th>
-                  {row.map((count, boundaryIdx) => (
+                  {counts.map((row, claimIdx) => (
                     <td
-                      key={`${claimIdx}-${boundaryIdx}`}
-                      className={getCellClass(count)}
-                      title={getCellTooltip(count, claimDisplayLabels[claimIdx], boundaryDisplayLabels[boundaryIdx])}
+                      key={`${boundaryIdx}-${claimIdx}`}
+                      className={getCellClass(row[boundaryIdx])}
                     >
-                      {count > 0 ? count : "—"}
+                      {row[boundaryIdx] > 0 ? row[boundaryIdx] : "—"}
                     </td>
                   ))}
-                  <td className={styles.totalCell}>{rowTotal}</td>
+                  <td className={styles.totalCell}>{colTotal}</td>
                 </tr>
               );
             })}
             <tr className={styles.totalRow}>
               <th className={styles.rowHeader}>Total</th>
-              {boundaries.map((_, boundaryIdx) => {
-                const colTotal = counts.reduce((sum, row) => sum + row[boundaryIdx], 0);
-                return <td key={boundaryIdx} className={styles.totalCell}>{colTotal}</td>;
+              {counts.map((row, claimIdx) => {
+                const rowTotal = row.reduce((sum, count) => sum + count, 0);
+                return <td key={claimIdx} className={styles.totalCell}>{rowTotal}</td>;
               })}
               <td className={styles.grandTotal}>
                 {counts.reduce((sum, row) => sum + row.reduce((s, c) => s + c, 0), 0)}
@@ -115,6 +126,17 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels }: P
           </tbody>
         </table>
       </div>
+
+      {!hideLegend && needsLegend && (
+        <div className={styles.boundaryLegend}>
+          {fullLabels.map((full, i) => (
+            <div key={i} className={styles.boundaryLegendItem}>
+              <div className={styles.boundaryLegendLabel}>{shortLabels[i]}</div>
+              <div className={styles.boundaryLegendFull}>{full}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

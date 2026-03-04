@@ -4,7 +4,6 @@
  * (verdict direction mismatches, structured output failures, budget exceeded, etc.)
  */
 
-import { useState } from 'react';
 import styles from './FallbackReport.module.css';
 import type { FallbackSummary } from '@/lib/analyzer/classification-fallbacks';
 import type { AnalysisWarning, AnalysisWarningType } from '@/lib/analyzer/types';
@@ -160,7 +159,6 @@ function WarningCard({ warning }: { warning: AnalysisWarning }) {
 }
 
 export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false }: FallbackReportProps) {
-  const [showOperational, setShowOperational] = useState(false);
   const hasFallbacks = summary && summary.totalFallbacks > 0;
   const hasWarnings = analysisWarnings.length > 0;
 
@@ -183,13 +181,46 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
 
   const hasErrors = qualityWarnings.some(w => w.severity === "error");
 
-  // Count only quality-affecting issues in the header
-  const qualityIssueCount = qualityWarnings.length + (summary?.totalFallbacks || 0);
+  // Count only quality-affecting warnings (classification fallbacks are informational)
+  const qualityIssueCount = qualityWarnings.length;
   const hasQualityIssues = qualityIssueCount > 0;
+
+  // Notes-only (no quality issues): render as a single collapsed line
+  if (!hasQualityIssues) {
+    const hasAdminNotes = isAdmin && operationalWarnings.length > 0;
+    if (!hasFallbacks && !hasAdminNotes) return null;
+
+    const parts: string[] = [];
+    if (hasFallbacks) parts.push(`${summary!.totalFallbacks} classification fallback${summary!.totalFallbacks !== 1 ? 's' : ''}`);
+    if (hasAdminNotes) parts.push(`${operationalWarnings.length} operational note${operationalWarnings.length !== 1 ? 's' : ''}`);
+
+    return (
+      <details className={styles.notesOnlyDetails}>
+        <summary className={styles.notesOnlySummary}>
+          Analysis Notes — {parts.join(', ')} (informational)
+        </summary>
+        {hasFallbacks && (
+          <div className={styles.fallbackNote}>
+            <strong>Classification Fallbacks:</strong> {summary!.totalFallbacks} field{summary!.totalFallbacks !== 1 ? 's' : ''} used safe defaults
+            {fieldsWithFallbacks.length > 0 && (
+              <span> ({fieldsWithFallbacks.map(([f]) => f).join(', ')})</span>
+            )}
+          </div>
+        )}
+        {hasAdminNotes && (
+          <div className={styles.warningsSection}>
+            {operationalWarnings.map((warning, index) => (
+              <WarningCard key={`o-${index}`} warning={{ ...warning, severity: "info" }} />
+            ))}
+          </div>
+        )}
+      </details>
+    );
+  }
 
   return (
     <div
-      className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''} ${!hasQualityIssues ? styles.notesOnly : ''}`}
+      className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''}`}
     >
       <div className={styles.header}>
         <svg
@@ -198,21 +229,15 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
           fill="currentColor"
           aria-hidden="true"
         >
-          {hasQualityIssues ? (
-            <path
-              fillRule="evenodd"
-              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          ) : (
-            <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 100 2 1 1 0 000-2zm1 4a1 1 0 10-2 0v4a1 1 0 102 0v-4z" />
-          )}
+          <path
+            fillRule="evenodd"
+            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+            clipRule="evenodd"
+          />
         </svg>
         <div className={styles.content}>
           <h3 className={styles.title}>
-            {hasQualityIssues
-              ? `Analysis Quality Issues (${qualityIssueCount})`
-              : `Analysis Notes`}
+            Analysis Quality Issues ({qualityIssueCount})
           </h3>
 
           {/* Quality-affecting warnings — always visible */}
@@ -224,26 +249,18 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
             </div>
           )}
 
-          {/* Operational/informational warnings — admin only, toggled by checkbox */}
+          {/* Operational/informational warnings — admin only, expandable */}
           {isAdmin && operationalWarnings.length > 0 && (
-            <div className={styles.operationalSection}>
-              <label className={styles.operationalToggle}>
-                <input
-                  type="checkbox"
-                  checked={showOperational}
-                  onChange={(e) => setShowOperational(e.target.checked)}
-                />
-                <span className={styles.operationalToggleIcon}>ℹ️</span>
-                {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''}
-              </label>
-              {showOperational && (
-                <div className={styles.warningsSection}>
-                  {operationalWarnings.map((warning, index) => (
-                    <WarningCard key={`o-${index}`} warning={warning} />
-                  ))}
-                </div>
-              )}
-            </div>
+            <details className={styles.operationalDetails}>
+              <summary className={styles.operationalSummary}>
+                {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''} (informational)
+              </summary>
+              <div className={styles.warningsSection}>
+                {operationalWarnings.map((warning, index) => (
+                  <WarningCard key={`o-${index}`} warning={{ ...warning, severity: "info" }} />
+                ))}
+              </div>
+            </details>
           )}
 
           {/* Classification Fallbacks Section */}
@@ -305,16 +322,8 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
           )}
 
           <div className={styles.note}>
-            {qualityIssueCount > 0 ? (
-              <>
-                <strong>Note:</strong> These issues may affect result accuracy.
-                {hasFallbacks && " Frequent fallbacks indicate LLM reliability issues."}
-              </>
-            ) : (
-              <>
-                <strong>Note:</strong> Operational notes only. No direct report-quality degradation signals detected.
-              </>
-            )}
+            <strong>Note:</strong> Quality issues above may affect result accuracy.
+            {hasFallbacks && " Classification fallbacks used safe defaults."}
           </div>
         </div>
       </div>
