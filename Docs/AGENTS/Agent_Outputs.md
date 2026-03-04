@@ -3288,3 +3288,14 @@ ext phase).
 **Warnings:** Responsive tuning currently targets `/jobs`; other pages may still need their own breakpoints.
 **For next agent:** If similar overflow appears on `/jobs/[id]`, apply matching badge-wrap and footer stacking patterns there.
 **Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Guarantee verdict badge wrapping on narrow mobile widths
+**Task:** Ensure verdict badges in jobs list never overflow card bounds on narrow phone screens.
+**Files touched:** `apps/web/src/app/jobs/page.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Set `.verdictBadge` to `display: inline-block`, `max-width: 100%`, and `overflow-wrap: anywhere`.
+- On mobile breakpoint, force verdict badge to full-row flex item (`flex: 1 1 100%`) to avoid side-by-side squeeze with status metadata.
+**Open items:** None.
+**Warnings:** Screenshoted production behavior may still show old layout until this commit is deployed.
+**For next agent:** Keep verdict badge as a dedicated row on mobile if additional metadata chips are added.
+**Learnings:** no

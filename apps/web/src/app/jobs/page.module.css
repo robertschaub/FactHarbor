@@ -275,6 +275,9 @@
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .verdictTrue {
@@ -553,10 +556,9 @@
   }
 
   .verdictBadge {
-    max-width: 100%;
+    flex: 1 1 100%;
     line-height: 1.25;
     white-space: normal;
-    overflow-wrap: anywhere;
   }
 
   .jobPreview {
