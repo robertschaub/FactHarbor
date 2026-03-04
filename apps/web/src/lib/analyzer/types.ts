@@ -652,27 +652,20 @@ export type AnalysisWarningSeverity = "error" | "warning" | "info";
  * Types of analysis warnings.
  */
 export type AnalysisWarningType =
-  | "verdict_direction_mismatch"    // Verdict percentage contradicts evidence direction
   | "report_damaged"                // Final report integrity degraded by critical failures
   | "llm_provider_error"            // LLM provider failed (quota/credits/auth/rate/service)
   | "structured_output_failure"     // LLM structured output failed, using fallback
   | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
-  | "search_fallback"               // Grounded search failed, using standard search
   | "search_provider_error"         // Search provider returned fatal error (429, quota exhaustion)
   | "source_reliability_error"      // Source-reliability evaluation infra/API errors during prefetch
   | "source_fetch_failure"          // Individual source fetch/extraction failures during research
   | "source_fetch_degradation"      // High source-fetch failure ratio; evidence acquisition degraded
   | "budget_exceeded"               // Analysis terminated early due to budget
   | "query_budget_exhausted"        // Stage 2 query budget exhausted for all claims before sufficiency
-  | "classification_fallback"       // Classification fields defaulted due to LLM failure
   | "low_evidence_count"            // Insufficient evidence for reliable verdict
-  | "context_without_evidence"      // AnalysisContext has claims but no evidence
-  | "recency_evidence_gap"          // Time-sensitive claim lacks recent evidence
-  | "confidence_calibration"        // Confidence was adjusted by calibration system
   | "low_source_count"              // Thin evidence base (few unique sources)
   | "no_successful_sources"         // Zero successfully fetched sources after research phase
   | "source_acquisition_collapse"   // Many searches performed but no sources fetched — pipeline stall
-  | "grounding_check"               // Verdict reasoning poorly grounded in cited evidence
   | "grounding_check_degraded"      // LLM grounding adjudication failed; ratios are fallback values
   | "direction_validation_degraded" // LLM direction validation failed; verdicts kept unchanged
   | "verdict_fallback_partial"      // v2.9.1: Individual claim got 50/50 fallback (LLM didn't return verdict)

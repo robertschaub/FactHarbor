@@ -188,10 +188,8 @@ export function recordOutputQuality(result: any): void {
 const DEGRADATION_WARNING_TYPES = new Set<string>([
   "structured_output_failure",
   "evidence_filter_degradation",
-  "search_fallback",
   "search_provider_error",
   "llm_provider_error",
-  "classification_fallback",
   "grounding_check_degraded",
   "direction_validation_degraded",
   "verdict_fallback_partial",
@@ -367,7 +365,6 @@ function extractStage(type: string, details: Record<string, unknown>): string {
     case "structured_output_failure":
       return "stage1_pass2";
     case "search_provider_error":
-    case "search_fallback":
       return "research_search";
     case "source_fetch_failure":
     case "source_fetch_degradation":

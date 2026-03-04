@@ -22,14 +22,12 @@ import type {
 const DEGRADATION_WARNING_TYPES = new Set<string>([
   "structured_output_failure",
   "evidence_filter_degradation",
-  "search_fallback",
   "search_provider_error",
   "source_reliability_error",
   "source_fetch_failure",
   "source_fetch_degradation",
   "query_budget_exhausted",
   "llm_provider_error",
-  "classification_fallback",
   "grounding_check_degraded",
   "direction_validation_degraded",
   "verdict_fallback_partial",
@@ -47,7 +45,6 @@ const ROOT_CAUSE_MAP: Record<string, string[]> = {
   fetch_degradation: [
     "source_fetch_failure",
     "source_fetch_degradation",
-    "search_fallback",
     "search_provider_error",
     "query_budget_exhausted",
   ],
@@ -562,7 +559,6 @@ function extractStage(
   switch (warningType) {
     case "structured_output_failure":
       return "stage1_pass2";
-    case "search_fallback":
     case "search_provider_error":
       return "research_search";
     case "source_reliability_error":

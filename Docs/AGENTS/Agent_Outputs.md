@@ -2,6 +2,17 @@
 
 
 ---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Cleanup: Dead Warning Types Removal
+**Task:** Removed 7 dead warning types from the system after final audit.
+**Files touched:** apps/web/src/lib/analyzer/types.ts, apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/components/FallbackReport.tsx, apps/web/src/lib/analyzer/metrics-integration.ts, apps/web/src/lib/calibration/metrics.ts
+**Key decisions:** Cleaned up legacy artifacts from previous architectures. Registry is now authoritative and lean.
+**Open items:** None
+**Warnings:** Registry is fully aligned with Audit_Warning_Severity.md.
+**For next agent:** None
+**Learnings:** Verified via grep and passing unit tests.
+
+
+---
 ### 2026-03-04 | Code Reviewer | Gemini CLI | Final Audit Completion
 **Task:** Completed final comprehensive audit of the warning system.
 **Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/types.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts

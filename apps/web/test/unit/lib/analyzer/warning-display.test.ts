@@ -7,7 +7,7 @@ import type { AnalysisWarning } from "@/lib/analyzer/types";
 
 function warning(overrides: Partial<AnalysisWarning>): AnalysisWarning {
   return {
-    type: "confidence_calibration",
+    type: "evidence_pool_imbalance",
     severity: "warning",
     message: "test",
     ...overrides,
@@ -17,7 +17,7 @@ function warning(overrides: Partial<AnalysisWarning>): AnalysisWarning {
 describe("warning-display classification", () => {
   it("forces non-degrading analysis warnings to info", () => {
     const result = classifyWarningForDisplay(warning({
-      type: "confidence_calibration",
+      type: "evidence_pool_imbalance",
       severity: "error",
     }));
 
@@ -193,7 +193,7 @@ describe("warning-display classification", () => {
       warning({ type: "llm_provider_error", severity: "info" }),
       warning({ type: "source_fetch_failure", severity: "error" }),
       warning({ type: "insufficient_evidence", severity: "info" }),
-      warning({ type: "confidence_calibration", severity: "warning" }),
+      warning({ type: "evidence_pool_imbalance", severity: "warning" }),
     ]);
 
     expect(buckets.providerDegrading).toHaveLength(1);

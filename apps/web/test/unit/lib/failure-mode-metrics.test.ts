@@ -35,7 +35,7 @@ describe("buildFailureModeMetrics", () => {
   it("counts fallback warnings even when emitted as info", () => {
     const metrics = buildFailureModeMetrics(makeResult({
       analysisWarnings: [
-        { type: "classification_fallback", severity: "info", message: "classification fallback used" },
+        { type: "verdict_fallback_partial", severity: "info", message: "partial fallback used" },
         { type: "contested_verdict_range", severity: "info", message: "wide verdict range" },
       ],
       meta: { llmCalls: 5 },
