@@ -149,18 +149,20 @@ test.factharbor.ch {
     handle_errors {
         @backend_down expression `{err.status_code} in [502, 503]`
 
-        # API/fetch requests get JSON so the SPA can detect maintenance
-        @api_request path /api/*
-        handle @backend_down @api_request {
-            header Content-Type "application/json"
-            respond `{"error":"maintenance","message":"FactHarbor is being updated. Please try again in a moment."}` {http.error.status_code}
-        }
-
-        # Browser page loads get the visual maintenance page
         handle @backend_down {
-            root * /opt/factharbor/scripts
-            rewrite * /maintenance.html
-            file_server
+            # API/fetch requests get JSON so the SPA can detect maintenance
+            @api_request path /api/*
+            handle @api_request {
+                header Content-Type "application/json"
+                respond `{"error":"maintenance","message":"FactHarbor is being updated. Please try again in a moment."}` {http.error.status_code}
+            }
+
+            # Browser page loads get the visual maintenance page
+            handle {
+                root * /opt/factharbor/scripts
+                rewrite * /maintenance.html
+                file_server
+            }
         }
     }
 }
