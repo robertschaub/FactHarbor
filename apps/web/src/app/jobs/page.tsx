@@ -151,6 +151,14 @@ export default function JobsPage() {
     }
   };
 
+  const isCompleteStatus = (status: string): boolean => {
+    return status === "SUCCEEDED" || status === "FAILED" || status === "CANCELLED";
+  };
+
+  const shouldHideProgressPercent = (job: JobSummary): boolean => {
+    return isCompleteStatus(job.status) && job.progress >= 100;
+  };
+
   const formatDate = (dateStr: string): string => {
     try {
       const date = new Date(dateStr);
@@ -245,7 +253,7 @@ export default function JobsPage() {
               <div className={styles.jobCard}>
                 {/* Status indicator */}
                 <div className={`${styles.statusIndicator} ${getStatusClass(job.status)}`}>
-                  {job.status === "SUCCEEDED" && <span className={styles.statusIcon}>✅</span>}
+                  {job.status === "SUCCEEDED" && <span className={`${styles.statusIcon} ${styles.statusIconSuccess}`}>✅</span>}
                   {job.status === "FAILED" && <span className={styles.statusIcon}>❌</span>}
                   {job.status === "RUNNING" && <span className={styles.statusIcon}>⏳</span>}
                   {job.status === "QUEUED" && <span className={styles.statusIcon}>🕐</span>}
@@ -287,9 +295,11 @@ export default function JobsPage() {
 
                 {/* Progress */}
                 <div className={styles.jobProgress}>
-                  <div className={`${styles.progressPercent} ${getProgressClass(job.status)}`}>
-                    {job.progress}%
-                  </div>
+                  {!shouldHideProgressPercent(job) && (
+                    <div className={`${styles.progressPercent} ${getProgressClass(job.status)}`}>
+                      {job.progress}%
+                    </div>
+                  )}
                   {job.status === "RUNNING" && (
                     <div className={styles.progressBar}>
                       <div

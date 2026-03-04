@@ -3263,3 +3263,15 @@ ext phase).
 **Warnings:** Full safe test suite (`npm test`) is verbose by design; expensive LLM suites remain excluded per repo config.
 **For next agent:** Keep heuristics and tests in lockstep; if chunking behavior changes, extend tests before adjusting thresholds.
 **Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Refine reports list completion progress visuals
+**Task:** Update jobs list cards so completed reports do not show redundant `100%` and reduce the success checkmark icon size slightly.
+**Files touched:** `apps/web/src/app/jobs/page.tsx`, `apps/web/src/app/jobs/page.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `isCompleteStatus` + `shouldHideProgressPercent` to suppress progress percent only for terminal jobs at 100%.
+- Kept progress visible for non-terminal jobs and for terminal jobs below 100%.
+- Added `statusIconSuccess` class and applied it only to `SUCCEEDED` icon for a subtle size reduction.
+**Open items:** None.
+**Warnings:** None.
+**For next agent:** If status taxonomy changes, update `isCompleteStatus` to keep progress-visibility behavior consistent.
+**Learnings:** no
