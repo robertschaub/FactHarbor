@@ -98,11 +98,40 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 - **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 - **Evidence-weighted contestation:** Challenges to a verdict must be backed by documented evidence to count as "contested". Unsubstantiated objections (opinion, political criticism, denial without counter-evidence) are classified as "doubted" — they MUST NOT reduce a verdict's truth percentage or confidence. Only evidence-backed counter-arguments may alter verdicts. This applies to debate challenger outputs, aggregation weighting, and any future contestation logic. Existing implementation: `contestationWeights` in `aggregation.ts` (opinion=1.0, disputed=0.7, established=0.5) and `factualBasis` classification in verdict prompts.
 
-### Analysis Report Display
-- **No false alarms.** Fallbacks, retries, and operational events (e.g., individual source fetch failures, model fallbacks, cache misses) MUST NOT be displayed as errors or warnings to the user unless they **measurably degrade report quality** (e.g., zero evidence retrieved, entire research stage failed, verdict could not be produced).
-- **Severity reflects impact, not occurrence.** A single paywalled source returning HTTP 403 is normal operation — severity `info` at most. Only escalate to `warning` when the *aggregate* effect threatens analysis quality (e.g., majority of sources for a query failed, evidence pool critically thin). Reserve `error` severity for events that make the report unreliable or incomplete.
-- **Normal situations are silent.** Events that occur routinely in healthy analyses (partial fetch failures, expected retries, cache operations) should not be surfaced in the UI at all. The user sees the report, not the plumbing.
-- **"Quality-degrading" banner requires real degradation.** The UI quality-degradation banner must only appear when the report is genuinely compromised — not because of routine operational events that were handled gracefully.
+### Report Quality & Event Communication
+
+**MANDATORY — before emitting or displaying any warning to users, apply this test:**
+*"Would the verdict be materially different if this event hadn't occurred?"*
+- **No** → `silent` or `info` (admin-only). Never show to users.
+- **Maybe** → `warning` at most.
+- **Yes** → `error` or `severe`.
+
+All warning types MUST be registered in `warning-display.ts`. Do not classify warnings inline in UI components.
+
+Three warning categories, five severity levels. Severity reflects **verdict impact**, not what happened internally.
+
+**Categories:**
+- **Routine operations → silent/info.** Plumbing working as designed (retries, fallbacks, cache misses). Never shown to users unless aggregate effect degrades quality.
+- **System-level failures → warning/error/severe.** Problems we could fix (provider outage, verdict crash, budget exhaustion). MUST be surfaced — never silenced or hidden. Suppressing a real quality signal is worse than a false alarm.
+- **Analytical reality → warning/error.** The real world lacks evidence — not a bug. Present as factual context, not a system error. Never `severe` (system worked correctly). Examples: `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `recency_evidence_gap`.
+
+**Severity levels:**
+
+| Severity | Verdict impact | Visible to | User action |
+|----------|---------------|------------|-------------|
+| *silent* | None — recovered | Nobody | — |
+| `info` | None — worth knowing | Admins only | Tune system later |
+| `warning` | Noticeable, but same verdict direction and confidence tier | User (low emphasis) | Note the caveat |
+| `error` | Confidence tier or verdict direction may differ | User (prominent) | Assess if verdict is reliable enough |
+| *severe* | No valid report possible | User (blocking) | Do not rely; re-run |
+
+*Code: `silent` = no warning emitted. `severe` = `error` + `report_damaged` flag.*
+
+**Escalation thresholds:**
+- **→ `warning`:** Degradation exceeds normal run-to-run variation AND a reasonable user would want to know.
+- **→ `error`:** Could change confidence tier (HIGH → MEDIUM) or verdict direction ("Mostly True" → "Mixed").
+- **→ `severe`:** No trustworthy verdict can be produced.
+- Showing warnings too often trains users to ignore them; showing too few hides real problems. Both erode trust.
 
 ### Configuration Placement
 When introducing a tunable parameter, place it in the correct tier:

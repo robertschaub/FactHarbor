@@ -154,6 +154,13 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** In `Microsoft.Data.Sqlite`, `IsolationLevel.Serializable` is the only level that maps to `BEGIN IMMEDIATE`. This is critical for atomic check-and-increment operations (like claiming an invite slot or decrementing a quota). A standard `BEGIN` (Deferred) only acquires a read lock; a second concurrent transaction can also read the same state before either tries to write. Using `Serializable` ensures the first transaction acquires a reserved write lock immediately, blocking other writers and preventing race conditions on quota limits.
 **Files:** `apps/api/Services/JobService.cs` (`TryClaimInviteSlotAsync`)
 
+### 2026-03-04 — Regex `match()` can cause data loss in sentence splitting
+**Role:** Senior Developer  **Agent/Tool:** Gemini CLI (pro)
+**Category:** gotcha
+**Learning:** Using `String.prototype.match()` with a global regex to extract sentences (e.g. `/[^.!?]+[.!?]+/g`) silently drops any text that doesn't match the pattern, such as decimal points in numbers (`3.14`) or segments without punctuation. Always prefer `String.prototype.split()` with a capturing group (e.g. `split(/([.!?]+(?:\s+|$))/)`) and recombine the segments. This ensures that 100% of the input text is preserved in the output, even if the heuristic fails to identify a sentence boundary correctly.
+**Files:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`
+
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

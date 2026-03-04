@@ -2,6 +2,105 @@
 
 
 ---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Final Audit Completion
+**Task:** Completed final comprehensive audit of the warning system.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/types.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Found that the system is fully compliant with Audit_Warning_Severity.md standards. Identified 7 dead types for final cleanup.
+**Open items:** None
+**Warnings:** Awaiting directive to remove dead types and finalise the registry.
+**For next agent:** Ensure removal of dead types doesn't break metrics visualization for historical data if applicable.
+**Learnings:** No code changes made; audit only.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Re-audit: Final Alignment
+**Task:** Identified and planned fixes for bucket and severity deviations.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Severity floor was missing and several analysis-level concerns were mis-bucketed.
+**Open items:** None
+**Warnings:** Awaiting directive to implement the final alignment fixes.
+**For next agent:** None
+**Learnings:** Verified deviations via file inspection.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Re-audit: Bucket and Severity Refinement
+**Task:** Completed re-audit focusing on bucket alignment and display severity floor rules.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/app/jobs/[id]/page.tsx, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Found deviations in severity floor implementation and budget/integrity bucketing.
+**Open items:** None
+**Warnings:** Awaiting directive to restore severity floor and re-bucket analysis-level concerns.
+**For next agent:** Verify that FallbackReport UI correctly handles the restored analysis-level buckets.
+**Learnings:** No code changes made; audit only.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Category-Aware Re-audit
+**Task:** Completed re-audit focusing on Category 3 (Analytical Reality) vs Category 2 (System Failure) distinctions.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts
+**Key decisions:** Found severity inflation for Category 3 warnings and bucket misalignment for several Category 2 failures.
+**Open items:** None
+**Warnings:** Awaiting directive to implement the classification and severity fixes.
+**For next agent:** Ensure UI correctly distinguishes between 'System Health' and 'Analysis Quality' now that buckets are realigned.
+**Learnings:** No code changes made; audit only.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Re-audit Confirmation
+**Task:** Verified that all 5 findings from the previous audit are now fully resolved.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/app/jobs/[id]/page.tsx, apps/web/src/lib/analyzer/verdict-stage.ts, apps/web/src/components/FallbackReport.tsx
+**Key decisions:** The warning system is now canonically registered and provider issues are no longer swallowed in the UI.
+**Open items:** None
+**Warnings:** System is now in compliance with Audit_Warning_Severity.md standards.
+**For next agent:** None
+**Learnings:** Verified fixes via file inspection and git status.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Re-audit per Audit_Warning_Severity.md
+**Task:** Completed comprehensive audit of warning emission, classification, and display logic.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/app/jobs/[id]/page.tsx, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Found major logic duplication in UI and several missing warning registrations. Provider issues are currently swallowed in the UI.
+**Open items:** None
+**Warnings:** Awaiting directive to implement the consolidation and registration fixes.
+**For next agent:** Verify if FallbackReport can be safely removed or if it should be the new authoritative display component.
+**Learnings:** No code changes made; audit only.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Redo Audit Warning Severity
+**Task:** Completed comprehensive re-audit of warning emissions and classifications.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Identified 10 severity misalignments and 9 unregistered warning types. Correctly classified 'insufficient_evidence' as Analytical Reality.
+**Open items:** None
+**Warnings:** Implement the fixes in the proposed Fix Plan.
+**For next agent:** Verify that analytical reality warnings are presented correctly in the UI.
+**Learnings:** Audit only, no code changes.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Re-audit Warning Severity (Docs/AGENTS/Audit_Warning_Severity.md)
+**Task:** Completed re-audit correctly classifying warnings into categories BEFORE applying the litmus test.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Identified 8 severity misalignments. Correctly classified 'insufficient_evidence' as Category 3 (Analytical Reality). Identified several dead warning types for removal.
+**Open items:** None
+**Warnings:** Implement the fixes in the proposed Fix Plan to align with AGENTS.md standards.
+**For next agent:** Verify that analytical reality warnings are presented as factual context, not system errors.
+**Learnings:** Updated findings in the audit response; no direct code changes made per audit instructions.
+
+
+---
+### 2026-03-04 | Code Reviewer | Gemini CLI | Audit Warning Severity (Docs/AGENTS/Audit_Warning_Severity.md)
+**Task:** Completed comprehensive audit of warning emission, classification, and display.
+**Files touched:** apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/lib/analyzer/claimboundary-pipeline.ts, apps/web/src/lib/analyzer/verdict-stage.ts
+**Key decisions:** Identified 5 severity misalignments and 11 unregistered warning types. Created a prioritized fix plan to align with AGENTS.md standards.
+**Open items:** None
+**Warnings:** Implement the fixes in the proposed Fix Plan to ensure accurate quality signaling to users.
+**For next agent:** Verify that upgraded 'error' warnings correctly trigger the prominent UI display and that 'info' warnings remain admin-only.
+**Learnings:** Updated findings in the audit response; no direct code changes made per audit instructions.
+
+
+---
 ### 2026-03-02 | Deputy Captain | Claude Code (Opus 4.6) | Deployment Strategy — Review Findings Incorporated
 **Task:** Address Lead Architect review findings (1 BLOCKER, 2 HIGH, 3 MEDIUM, 1 LOW) on `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md` and apply Captain decisions D-1 through D-5.
 **Files touched:** `Docs/WIP/2026-03-02_Deployment_Strategy_PreRelease.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -3239,6 +3338,20 @@ ext phase).
 **For next agent:** If paragraph splitting remains sensitive, consider extracting heuristic into a tested utility module with multilingual fixtures.
 **Learnings:** no
 ---
+### 2026-03-04 | Code Reviewer | Gemini (pro) | Fix logic bugs in ExpandableText heuristics and add regression tests
+**Task:** Review and verify `ExpandableText.tsx` changes.
+**Files touched:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`, `apps/web/test/unit/app/jobs/[id]/components/FormattedText.test.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Fixed critical data loss bug in wall-of-text sentence splitter (was using `.match()` which dropped non-matching segments like decimal points; switched to `.split()` with capture and recombination).
+- Fixed heuristic bug that prevented 2-line lists from being identified as intentional line breaks.
+- Added comprehensive unit tests for `FormattedText` heuristics (double-newlines, single-newline lists, wall-of-text splitting, and reference ID highlighting).
+- Verified no regression in `apps/web/src/app/jobs/page.tsx` (matches HEAD as expected for a clean reversion).
+**Open items:** none
+**Warnings:** none
+**For next agent:** Heuristics are now verified with unit tests. If further refinements are needed, add cases to `FormattedText.test.tsx`.
+**Learnings:** yes (added to Role_Learnings.md regarding regex data loss in sentence splitting)
+
+---
 ### 2026-03-04 | Senior Developer | Codex (GPT-5) | Extract paragraph heuristics utility and add unit coverage
 **Task:** Address Gemini review by moving `FormattedText` paragraph-splitting heuristics into a pure utility, replacing magic numbers with named constants, and adding focused tests.
 **Files touched:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`, `apps/web/src/app/jobs/[id]/utils/getTextParagraphs.ts`, `apps/web/test/unit/app/jobs/getTextParagraphs.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
@@ -3312,4 +3425,117 @@ ext phase).
 **Open items:** None.
 **Warnings:** None.
 **For next agent:** If additional table compacting is requested, adjust `source-reliability.module.css` column widths in sync with `page.tsx` order.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Reclassify baseless challenge warnings as informational
+**Task:** Enforce AGENTS no-false-alarms rule by ensuring baseless-challenge enforcement telemetry does not appear as degrading quality issues.
+**Files touched:** `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Removed `baseless_challenge_blocked` and `baseless_challenge_detected` from `REPORT_DEGRADING_ANALYSIS_WARNING_TYPES` so they are displayed as informational only.
+- Added a regression unit test asserting both warning types are non-degrading and coerced to info severity.
+- Kept true degradation paths unchanged (`report_damaged`, outcome degradation, confidence-gate collapse).
+**Open items:** Verify deployed frontend bundle includes this change; stale bundles may still show old classification.
+**Warnings:** Older reports still legitimately show degradation if quality gates fail materially (e.g., all verdicts below threshold), independent of baseless-challenge telemetry.
+**For next agent:** If additional warning types are debated, update both `warning-display.ts` and `warning-display.test.ts` together.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Resume interrupted run and verify pending warning/test changes
+**Task:** Continue after interrupted Codex session, verify in-flight warning-display and FormattedText test changes, and ensure AGENTS append-only protocol compliance.
+**Files touched:** `Docs/AGENTS/Role_Learnings.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Validated pending in-flight changes by running targeted safe tests for warning classification and FormattedText heuristics.
+- Restored append-only integrity in `Role_Learnings.md` by re-adding the pre-existing 2026-02-28 learning and keeping the 2026-03-04 learning as an appended entry.
+- Left functional code/test changes untouched because they already matched intended behavior and passed tests.
+**Open items:** None.
+**Warnings:** Working tree still contains pre-existing uncommitted changes from prior tasks (`warning-display` updates and untracked `FormattedText.test.tsx`).
+**For next agent:** If preparing a commit, include both warning-display files and the new FormattedText test file together with existing associated Agent Outputs entries.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Enforce no-false-alarms silence + transparent degrading issue visibility
+**Task:** Align jobs report warning UI with AGENTS rules: hide routine informational notes from normal users and make degrading issues visibly transparent by default.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Opened the quality panel by default when any real issue exists (`qualitySummary.hasRealIssues`) so degrading issues are not hidden behind a collapsed section.
+- Opened the nested “Quality-impacting issues” details by default when present.
+- Restricted “Operational Notes” to admin users and only when count > 0, removing non-admin noise and empty-state false alarms.
+**Open items:** None.
+**Warnings:** Focused tests passed; no dedicated unit tests currently cover `jobs/[id]/page.tsx` UI branching.
+**For next agent:** If UI-level warning rendering changes again, add component tests for degraded vs informational visibility in `jobs/[id]/page.tsx` to lock behavior.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Implement warning severity/classification audit fixes
+**Task:** Address warning audit findings by aligning emission severities with verdict impact, registering missing warning types in display classification, and enforcing degrading-vs-informational display behavior.
+**Files touched:** `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Reclassified provider degradation handling: `source_fetch_degradation` and `source_reliability_error` are now degrading provider issues (not informational).
+- Registered previously unclassified emitted analysis warning types; degrading set now includes `challenger_failure`, `structural_consistency`, `verdict_grounding_issue`, `verdict_direction_issue`, `all_same_debate_tier`, and `inverse_consistency_error`; informational set now explicitly includes `evidence_pool_imbalance`, `evidence_partition_stats`, `baseless_challenge_*`, `classification_fallback`, `confidence_calibration`, and `tiger_score_failed`.
+- Aligned emission severities to impact litmus: `insufficient_evidence` upgraded to `error`; `tiger_score_failed` downgraded to `info`; `verdict_grounding_issue` and `verdict_direction_issue` upgraded to `warning`.
+- Expanded unit coverage to lock new bucketing/severity expectations.
+**Open items:** None.
+**Warnings:** Worktree still contains pre-existing unrelated modifications (`AGENTS.md`, docs entries, jobs page warning-panel refinements, and an untracked FormattedText test file).
+**For next agent:** If warning taxonomy changes again, update both warning emission sites and `warning-display.test.ts` in the same change to avoid silent fallback-to-info regressions.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Calibrate Warning Severity + Report Damage Signaling
+**Task:** Implement redo-audit warning fixes by aligning emission severities with verdict impact, synchronizing warning display registry usage with active analyzer warnings, and surfacing report-damaged state on source acquisition collapse.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `apps/web/test/unit/lib/quality-health-metrics.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Upgraded impact-critical warnings to `error`: `insufficient_evidence`, `budget_exceeded`, both `query_budget_exhausted` sites, `structural_consistency`, `verdict_grounding_issue`, and `verdict_direction_issue`.
+- Downgraded routine/fallback warnings to `info`: `challenger_failure`, `tiger_score_failed`, and `explanation_quality_rubric_failed`.
+- Added explicit `report_damaged` warning emission when `source_acquisition_collapse` is triggered (zero usable sources after repeated searches), with structured remediation metadata consumed by UI quality panels.
+- Removed 10 superseded/unused warning-display registry entries so active emitted taxonomy is cleaner and less drift-prone.
+- Added/updated tests to lock new severity and display-classification behavior.
+**Open items:** None.
+**Warnings:** Worktree includes pre-existing unrelated modified/untracked files (`AGENTS.md`, role/docs edits, jobs page UI file, and `FormattedText.test.tsx`); left untouched.
+**For next agent:** If warning types are added in pipeline or verdict-stage, update `warning-display.ts` and `warning-display.test.ts` in the same change and re-run targeted analyzer tests.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Re-audit warning UI consolidation and degradation diagnostics
+**Task:** Address re-audit findings across emission, classification, and display layers by removing duplicated UI logic, preventing system-failure silencing, registering new warning types, and adding granular degraded/partial-recovery emissions.
+**Files touched:** `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/components/FallbackReport.tsx`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `apps/web/test/unit/components/FallbackReport.test.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced ad-hoc classification with an exhaustive typed warning registry (`Record<AnalysisWarningType, ...>`) so new warning types cannot ship unregistered.
+- Fixed severity inflation by preserving emitted `info` for degrading warning types instead of coercing to `warning`.
+- Consolidated `/jobs/[id]` warning rendering into `FallbackReport` so provider/system degrading issues are surfaced consistently and not swallowed.
+- Expanded `FallbackReport` to handle Provider/Analysis x Degrading/Informational buckets, with admin-only informational notes.
+- Added granular verdict-stage emissions for retry recovery and degraded checks: `verdict_batch_retry`, `verdict_fallback_partial`, `verdict_partial_recovery`, `grounding_check_degraded`, `direction_validation_degraded`.
+**Open items:** None.
+**Warnings:** Worktree includes unrelated pre-existing local changes outside this task scope (`AGENTS.md`, `Role_Learnings.md`, and other modified files); left untouched.
+**For next agent:** If warning taxonomy changes again, update both emission sites and `warning-display.ts` registry in the same patch and rerun targeted tests plus web build.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Re-audit category alignment for warning severities and buckets
+**Task:** Apply category-aware re-audit fixes by downgrading analytical-reality warning severities and rebucketing system/resource failures to the provider (system health) bucket.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `apps/web/test/unit/lib/analyzer/source-acquisition-warnings.test.ts`, `apps/web/test/unit/lib/failure-mode-metrics.test.ts`, `apps/web/test/unit/lib/quality-health-metrics.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Downgraded Category 3 analytical-reality emissions from `error` to `warning`:
+  - `insufficient_evidence`
+  - `no_successful_sources`
+- Moved Category 2 system/resource failures from analysis bucket to provider bucket in canonical registry:
+  - `budget_exceeded`
+  - `query_budget_exhausted`
+  - `analysis_generation_failed`
+  - `structural_consistency`
+  - `verdict_integrity_failure`
+- Kept degrading severity behavior unchanged (no inflation), only corrected category bucket assignment.
+- Updated unit tests to reflect new category semantics and keep metrics fixtures consistent with emitted severities.
+**Open items:** None.
+**Warnings:** Worktree contains additional pre-existing local edits outside this patch scope; left untouched.
+**For next agent:** If Category 2/3 definitions change again, update both emission sites and `warning-display.ts` together, then rerun warning-display + metrics tests to avoid taxonomy drift.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Re-audit fix: restore degrading warning floor and analysis-bucket mapping
+**Task:** Address re-audit findings on warning severity floor, bucket categorization, and severity inflation for selected analysis-quality warnings.
+**Files touched:** `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Restored severity floor in display classification: all degrading warnings are now shown at least as `warning` (degrading `info` => `warning`; `warning`/`error` preserved).
+- Moved user-facing analysis-quality types back to analysis bucket in `warning-display.ts`:
+  - `budget_exceeded`, `query_budget_exhausted`, `analysis_generation_failed`, `structural_consistency`, `verdict_integrity_failure`.
+- Downgraded emission severities from `error` to `warning` at source for:
+  - `budget_exceeded` and both `query_budget_exhausted` emissions in `claimboundary-pipeline.ts`
+  - `verdict_grounding_issue` in `verdict-stage.ts`
+- Updated tests to reflect warning-floor behavior and analysis-bucket mapping.
+**Open items:** None.
+**Warnings:** Repository contains pre-existing unrelated local edits outside this patch scope; they were not modified.
+**For next agent:** If warning policy changes again, keep emission severities and `warning-display.ts` classification/floor logic synchronized, then re-run warning-display + claimboundary + verdict-stage tests together.
 **Learnings:** no
