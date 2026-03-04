@@ -864,7 +864,7 @@ export async function validateVerdicts(
       console.warn(`[VerdictStage] Grounding issue for claim ${verdict.claimId}:`, grounding.issues);
       warnings?.push({
         type: "verdict_grounding_issue",
-        severity: "warning",
+        severity: "info",
         message: `Claim ${verdict.claimId}: grounding check found issues: ${joinIssues(grounding.issues)}`,
       });
       if (config.verdictGroundingPolicy === "safe_downgrade") {
@@ -882,7 +882,7 @@ export async function validateVerdicts(
       console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
       warnings?.push({
         type: "verdict_direction_issue",
-        severity: "warning",
+        severity: "info",
         message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(direction.issues)}`,
       });
 

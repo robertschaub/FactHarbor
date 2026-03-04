@@ -197,7 +197,7 @@ export default function AnalyzePage() {
   return (
     <div className={styles.container}>
       <SystemHealthBanner />
-      <h1 className={styles.title}>FactHarbor Analysis</h1>
+      <h1 className={styles.title}>FactHarbor Fact-Check</h1>
       <p className={styles.subtitle}>
         Enter a claim, question, article text, or URL to analyze
       </p>
@@ -346,7 +346,7 @@ export default function AnalyzePage() {
             {isSubmitting ? (
               <>⏳ Starting Analysis...</>
             ) : (
-              <>🔍 Analyze</>
+              <>🔍 Check</>
             )}
           </button>
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# FactHarbor VPS Deployment Script
-# Runs on the VPS to pull latest code, build, restart, and verify.
+# FactHarbor VPS Deployment Script (production)
+# Pulls latest code, builds, and restarts production services.
+# Test services are stopped during build (OOM prevention) but NOT restarted.
+# Run deploy-test.sh separately to bring test services back up.
 #
 # Usage:
 #   /opt/factharbor/scripts/deploy.sh          # Deploy latest main
@@ -88,18 +90,16 @@ npm -w apps/web run build
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 ok "Web build complete."
 
-# --- Step 6a: Start production services ---
+# --- Step 6: Start production services ---
 log "Starting production services..."
 sudo systemctl start factharbor-api
 sudo systemctl start factharbor-web
 ok "Production services started."
 
-# --- Step 6b: Restart test services (if they were running) ---
+# Note: test services were stopped for OOM but are NOT restarted here.
+# Run deploy-test.sh separately to bring them back up.
 if [ "$TEST_WAS_RUNNING" -eq 1 ]; then
-    log "Starting test services..."
-    sudo systemctl start factharbor-api-test
-    sudo systemctl start factharbor-web-test
-    ok "Test services started."
+    warn "Test services were stopped for build. Run deploy-test.sh to restart them."
 fi
 
 # --- Step 7: Health checks ---
@@ -126,12 +126,6 @@ check_health() {
 FAILED=0
 check_health "http://localhost:5000/health" "API" || FAILED=1
 check_health "http://localhost:3000/api/health" "Web" || FAILED=1
-
-# Health-check test instance (if enabled)
-if systemctl is-enabled factharbor-web-test &>/dev/null 2>&1; then
-    check_health "http://localhost:5001/health" "API (test)" || FAILED=1
-    check_health "http://localhost:3001/api/health" "Web (test)" || FAILED=1
-fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then

@@ -185,7 +185,7 @@ export default function JobsPage() {
       <div className={styles.header}>
         <h1 className={styles.headerTitle}>Fact-Check Reports</h1>
         <Link href="/analyze" className={styles.newAnalysisLink}>
-          + New Analysis
+          + New Fact-Check
         </Link>
       </div>
 

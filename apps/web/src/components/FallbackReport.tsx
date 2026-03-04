@@ -4,6 +4,7 @@
  * (verdict direction mismatches, structured output failures, budget exceeded, etc.)
  */
 
+import { useState } from 'react';
 import styles from './FallbackReport.module.css';
 import type { FallbackSummary } from '@/lib/analyzer/classification-fallbacks';
 import type { AnalysisWarning, AnalysisWarningType } from '@/lib/analyzer/types';
@@ -11,6 +12,7 @@ import type { AnalysisWarning, AnalysisWarningType } from '@/lib/analyzer/types'
 interface FallbackReportProps {
   summary: FallbackSummary | undefined;
   analysisWarnings?: AnalysisWarning[];  // P1: Analysis warnings
+  isAdmin?: boolean;
 }
 
 const fieldDefaults: Record<string, string> = {
@@ -157,12 +159,17 @@ function WarningCard({ warning }: { warning: AnalysisWarning }) {
   );
 }
 
-export function FallbackReport({ summary, analysisWarnings = [] }: FallbackReportProps) {
+export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false }: FallbackReportProps) {
+  const [showOperational, setShowOperational] = useState(false);
   const hasFallbacks = summary && summary.totalFallbacks > 0;
   const hasWarnings = analysisWarnings.length > 0;
 
-  // Don't render if nothing to show
-  if (!hasFallbacks && !hasWarnings) {
+  const qualityWarningsCount = analysisWarnings.filter(isQualityAffecting).length;
+  const hasVisibleContent = hasFallbacks || qualityWarningsCount > 0
+    || (isAdmin && analysisWarnings.length > qualityWarningsCount);
+
+  // Don't render if nothing to show (non-admins never see operational notes)
+  if (!hasVisibleContent) {
     return null;
   }
 
@@ -217,18 +224,26 @@ export function FallbackReport({ summary, analysisWarnings = [] }: FallbackRepor
             </div>
           )}
 
-          {/* Operational/informational warnings — collapsed */}
-          {operationalWarnings.length > 0 && (
-            <details className={styles.operationalSection}>
-              <summary className={styles.operationalSummary}>
-                {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''} (not affecting report quality)
-              </summary>
-              <div className={styles.warningsSection}>
-                {operationalWarnings.map((warning, index) => (
-                  <WarningCard key={`o-${index}`} warning={warning} />
-                ))}
-              </div>
-            </details>
+          {/* Operational/informational warnings — admin only, toggled by checkbox */}
+          {isAdmin && operationalWarnings.length > 0 && (
+            <div className={styles.operationalSection}>
+              <label className={styles.operationalToggle}>
+                <input
+                  type="checkbox"
+                  checked={showOperational}
+                  onChange={(e) => setShowOperational(e.target.checked)}
+                />
+                <span className={styles.operationalToggleIcon}>ℹ️</span>
+                {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''}
+              </label>
+              {showOperational && (
+                <div className={styles.warningsSection}>
+                  {operationalWarnings.map((warning, index) => (
+                    <WarningCard key={`o-${index}`} warning={warning} />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Classification Fallbacks Section */}

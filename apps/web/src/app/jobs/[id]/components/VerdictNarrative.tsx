@@ -37,8 +37,8 @@ export function VerdictNarrativeDisplay({ narrative }: Props) {
       {boundaryDisagreements && boundaryDisagreements.length > 0 && (
         <details className={styles.details}>
           <summary className={styles.summary}>
-            <span className={styles.summaryIcon}>⚠️</span>
-            <span>Boundary Disagreements ({boundaryDisagreements.length})</span>
+            <span className={styles.summaryIcon}>📊</span>
+            <span>Cross-Boundary Tensions ({boundaryDisagreements.length})</span>
           </summary>
           <ul className={styles.list}>
             {boundaryDisagreements.map((disagreement, i) => (

@@ -443,7 +443,7 @@ function buildVerdictNarrative(narrative: any): string {
       <div class="narrative-text">${esc(narrative.keyFinding)}</div>
     </div>` : ""}
     ${disagreements.length > 0 ? `<div class="narrative-block">
-      <div class="nl">Boundary Disagreements</div>
+      <div class="nl">Cross-Boundary Tensions</div>
       <div class="boundary-disagreements">
         ${disagreements.map((d: string) => `<div class="disagreement-item">${esc(d)}</div>`).join("\n        ")}
       </div>

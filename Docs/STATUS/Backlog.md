@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: February 27, 2026 (report quality investigation items + token reduction + open items)
+**Last Updated**: March 3, 2026 (added community platform backlog item)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -275,6 +275,14 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | **Synthetic failure-injection calibration fixture**: Add a small intentionally broken URL/doc fixture set to continuously verify error bubbling + warning structure regressions. | Testing / Reliability | low | med | Post-baseline telemetry hardening follow-up |
 | Persist metrics and cost estimates: tokens/search calls/cost estimation stored per job; basic admin view. | Observability | low | med | Existing |
 | Error pattern tracking: persist structured error categories and frequency to inform prompt/code fixes. | Observability | low | med | Existing |
+
+---
+
+## Community & Communication
+
+| Description | Domain | Urgency | Importance | Reference |
+|---|---|---|---|---|
+| **Community platform selection & setup**: Choose and deploy a community platform for pre-release user feedback, bug discussion with contributors, and sponsor community access. **Recommendation (pending approval):** Strategy B — GitHub Discussions (structured async) + Zulip (real-time async chat, free for OSS). Discord rejected due to 2025-2026 privacy crisis (data breach, mandatory age verification), zero data portability, and sovereignty mismatch with Swiss-hosted project. **Open decisions:** (1) Zulip Cloud acceptable short-term or Swiss self-hosting required from day one? (2) Sponsor tier wording — "Discord/community access" → platform-agnostic "Private community access"? (3) Moderation ownership before Community Lead hired. **Triggers for Discourse migration:** ≥150 MAU for 2 months, ≥25 weekly posts for 4 weeks, moderation >4 hrs/week for 3 weeks, Community Lead onboarded (2 of 4 required). | Community / Ops | low | med | Research conducted 2026-03-03 (Claude Code session). Placeholder links exist in `Docs/xwiki-pages/.../Contributor Processes/WebHome.xwiki` and sponsorship tiers in `Docs/ARCHIVE/WORKSHOP_REPORT_2026-01-21.md`. |
 
 ---
 

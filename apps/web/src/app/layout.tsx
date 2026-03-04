@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </div>
             <nav className={styles.nav}>
-              <a href="/analyze" className={styles.navLink}>Analyze</a>
+              <a href="/analyze" className={styles.navLink}>Fact-Check</a>
               <a href="/jobs" className={styles.navLink}>Reports</a>
               <a href="/source-reliability" className={styles.navLink}>Sources</a>
               <a href="/admin" className={styles.navLink}>Admin</a>

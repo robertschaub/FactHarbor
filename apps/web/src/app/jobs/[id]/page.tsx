@@ -1162,7 +1162,7 @@ export default function JobPage() {
                 )
               ))}
 
-              <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} />
+              <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
 
               <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
 

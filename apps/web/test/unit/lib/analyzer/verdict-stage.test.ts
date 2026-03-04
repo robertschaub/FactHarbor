@@ -766,7 +766,7 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].truthPercentage).toBe(50);
     expect(result[0].confidenceTier).toBe("INSUFFICIENT");
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
-    expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "warning")).toBe(true);
+    expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "info")).toBe(true);
     expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
   });
 

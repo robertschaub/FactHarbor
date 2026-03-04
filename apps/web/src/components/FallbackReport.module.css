@@ -276,14 +276,17 @@
   word-break: break-all;
 }
 
-/* Operational notes — collapsed by default */
+/* Operational notes — admin only, checkbox toggle */
 .operationalSection {
   margin-top: 0.75rem;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   padding-top: 0.5rem;
 }
 
-.operationalSummary {
+.operationalToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.75rem;
   font-weight: 500;
   color: #6b7280;
@@ -291,9 +294,12 @@
   user-select: none;
 }
 
-.operationalSummary:hover {
+.operationalToggle:hover {
   color: #374151;
-  text-decoration: underline;
+}
+
+.operationalToggleIcon {
+  font-size: 0.85rem;
 }
 
 .operationalSection .warningsSection {

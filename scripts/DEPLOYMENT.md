@@ -28,11 +28,12 @@ ssh -i ~/.ssh/fh ubuntu@83.228.221.114
 
 ```bash
 ssh -i ~/.ssh/fh ubuntu@83.228.221.114
-bash /opt/factharbor/scripts/deploy.sh          # Deploy latest main
-bash /opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy specific tag
+bash /opt/factharbor/scripts/deploy.sh          # Deploy latest main (prod only)
+bash /opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy specific tag (prod only)
+bash /opt/factharbor/scripts/deploy-test.sh     # Restart test instance (after deploy.sh)
 ```
 
-> **Note:** `deploy.sh` automatically restarts both production and test services, then health-checks all four endpoints.
+> **Note:** `deploy.sh` builds and restarts production only. Test services are stopped during build (OOM prevention) but not restarted. Run `deploy-test.sh` separately to bring them back up.
 
 ### Redeploy (manual steps)
 
@@ -115,7 +116,8 @@ User → HTTPS :443 → Caddy (auto-TLS) → Next.js :3000 → .NET API :5000 �
 │   └── source-reliability.db
 ├── backups/                      # Daily SQLite backups
 └── scripts/
-    ├── deploy.sh                 # Deploy script (restarts prod + test)
+    ├── deploy.sh                 # Deploy script (production only, stops test for OOM)
+    ├── deploy-test.sh            # Restart test instance (no build, just restart + health-check)
     ├── setup-test-instance.sh    # One-time test instance setup
     ├── backup-dbs.sh             # Backup script (cron daily 03:00 UTC)
     ├── Caddyfile.reference       # Reference Caddyfile (both instances, maintenance handling)
@@ -590,7 +592,14 @@ This script creates `data-test/`, `.env.test`, both systemd services, updates th
 
 ### Deployment
 
-`deploy.sh` automatically restarts test services (if enabled) after the production services. No separate deploy needed — a single `deploy.sh` run deploys both instances since they share the same code and build artifacts.
+Test and production have separate deploy scripts:
+
+```bash
+bash /opt/factharbor/scripts/deploy.sh          # Build + restart prod (stops test for OOM)
+bash /opt/factharbor/scripts/deploy-test.sh     # Restart test (no build, uses shared artifacts)
+```
+
+After `deploy.sh`, test services are stopped (to free RAM during build). Run `deploy-test.sh` to bring them back up. You can also run `deploy-test.sh` independently to restart just the test instance.
 
 ### Stop/disable test instance
 
