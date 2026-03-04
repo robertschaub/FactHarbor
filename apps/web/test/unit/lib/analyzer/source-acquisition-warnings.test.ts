@@ -28,7 +28,7 @@ describe("Source acquisition warning types", () => {
   it("no_successful_sources warning has correct structure", () => {
     const warning: AnalysisWarning = {
       type: "no_successful_sources",
-      severity: "error",
+      severity: "warning",
       message: "No sources were successfully fetched. Insufficient fetched evidence; results may be unreliable.",
       details: {
         uniqueSourceCount: 0,
@@ -38,7 +38,7 @@ describe("Source acquisition warning types", () => {
     };
 
     expect(warning.type).toBe("no_successful_sources");
-    expect(warning.severity).toBe("error");
+    expect(warning.severity).toBe("warning");
     expect(warning.details?.uniqueSourceCount).toBe(0);
     expect(warning.details?.totalSearches).toBe(38);
   });
@@ -72,7 +72,7 @@ describe("Source acquisition warning types", () => {
     if (uniqueSourceCount === 0) {
       warnings.push({
         type: "no_successful_sources",
-        severity: "error",
+        severity: "warning",
         message: "No sources were successfully fetched. Insufficient fetched evidence; results may be unreliable.",
         details: { uniqueSourceCount: 0, totalSearches: totalSearchCount, totalSourceCandidates: 0 },
       });
@@ -99,7 +99,7 @@ describe("Source acquisition warning types", () => {
     if (uniqueSourceCount === 0) {
       warnings.push({
         type: "no_successful_sources",
-        severity: "error",
+        severity: "warning",
         message: "No sources were successfully fetched. Insufficient fetched evidence; results may be unreliable.",
         details: { uniqueSourceCount: 0, totalSearches: totalSearchCount, totalSourceCandidates: 1 },
       });
@@ -127,7 +127,7 @@ describe("Source acquisition warning types", () => {
     if (uniqueSourceCount === 0) {
       warnings.push({
         type: "no_successful_sources",
-        severity: "error",
+        severity: "warning",
         message: "test",
       });
     }

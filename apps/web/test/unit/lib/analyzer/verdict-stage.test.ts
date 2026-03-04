@@ -625,13 +625,15 @@ describe("reconcileVerdicts (Step 4)", () => {
     }];
 
     const mockLLM = createMockLLM({ VERDICT_RECONCILIATION: [] }); // empty response
+    const warnings: AnalysisWarning[] = [];
 
     const { verdicts: result } = await reconcileVerdicts(
-      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings,
     );
 
     // Original preserved
     expect(result[0].truthPercentage).toBe(75);
+    expect(warnings.some((w) => w.type === "verdict_partial_recovery")).toBe(true);
   });
 
   it("should throw Stage4NullResultError when reconciliation returns null", async () => {
@@ -690,14 +692,16 @@ describe("reconcileVerdicts (Step 4)", () => {
     const mockLLM = createMockLLM({
       VERDICT_RECONCILIATION: { note: "not-an-array" },
     });
+    const warnings: AnalysisWarning[] = [];
 
     const { verdicts: result } = await reconcileVerdicts(
-      advocateVerdictsList, { challenges: [] }, [], [], mockLLM,
+      advocateVerdictsList, { challenges: [] }, [], [], mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings,
     );
 
     expect(result).toHaveLength(1);
     expect(result[0].truthPercentage).toBe(75);
     expect(result[0].confidence).toBe(80);
+    expect(warnings.some((w) => w.type === "verdict_fallback_partial")).toBe(true);
   });
 });
 
@@ -740,6 +744,75 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result).toEqual(verdicts);
   });
 
+  it("emits verdict_batch_retry when validation recovers on retry", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({ claimId: "AC_01" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls += 1;
+        if (groundingCalls === 1) {
+          throw new Error("transient grounding failure");
+        }
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    expect(result[0].truthPercentage).toBe(verdicts[0].truthPercentage);
+    expect(warnings.some((w) => w.type === "verdict_batch_retry")).toBe(true);
+    expect(warnings.some((w) => w.type === "grounding_check_degraded")).toBe(false);
+  });
+
+  it("emits degraded validation warning when grounding validation fails after retry", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({ claimId: "AC_01" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        throw new Error("grounding unavailable");
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    expect(result).toHaveLength(1);
+    expect(warnings.some((w) => w.type === "grounding_check_degraded" && w.severity === "warning")).toBe(true);
+  });
+
+  it("emits degraded validation warning when direction validation fails after retry", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({ claimId: "AC_01" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        throw new Error("direction unavailable");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    expect(result).toHaveLength(1);
+    expect(warnings.some((w) => w.type === "direction_validation_degraded" && w.severity === "warning")).toBe(true);
+  });
+
   it("applies safe_downgrade on grounding failure when grounding policy is enabled", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
@@ -766,7 +839,7 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].truthPercentage).toBe(50);
     expect(result[0].confidenceTier).toBe("INSUFFICIENT");
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
-    expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "info")).toBe(true);
+    expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "warning")).toBe(true);
     expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
   });
 

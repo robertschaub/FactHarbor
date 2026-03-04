@@ -364,12 +364,12 @@ export async function runVerdictStage(
   // invalid JSON) must not crash the entire analysis. An empty ChallengeDocument means
   // the reconciler proceeds with no challenger input (advocate verdict stands).
   const [consistencyResults, challengeDoc] = await Promise.all([
-    selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config),
+    selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config, warnings),
     adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config)
       .catch((err): ChallengeDocument => {
         warnings?.push({
           type: "challenger_failure",
-          severity: "warning",
+          severity: "info",
           message: `Adversarial challenger failed: ${err?.message ?? "unknown error"}. Proceeding without challenger input.`,
           details: { errorName: err?.name, errorMessage: err?.message },
         });
@@ -379,7 +379,7 @@ export async function runVerdictStage(
 
   // Step 4: Reconciliation — reconciler sees FULL evidence (needs complete picture)
   const { verdicts: reconciledVerdicts, validatedChallengeDoc } = await reconcileVerdicts(
-    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config
+    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config, warnings,
   );
 
   // Step 4b: Baseless challenge enforcement (hybrid — revert baseless adjustments)
@@ -416,7 +416,7 @@ export async function runVerdictStage(
     for (const sw of structuralWarnings) {
       warnings?.push({
         type: "structural_consistency",
-        severity: "warning",
+        severity: "error",
         message: sw,
       });
     }
@@ -558,6 +558,7 @@ export async function selfConsistencyCheck(
   advocateVerdicts: CBClaimVerdict[],
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+  warnings?: AnalysisWarning[],
 ): Promise<ConsistencyResult[]> {
   // Skip if disabled
   if (config.selfConsistencyMode === "disabled") {
@@ -587,19 +588,26 @@ export async function selfConsistencyCheck(
     },
   };
 
-  const [run2, run3] = await Promise.all([
-    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency, callContext: { debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" } }),
-    llmCall("VERDICT_ADVOCATE", input, { tier: config.debateModelTiers.selfConsistency, temperature, providerOverride: config.debateModelProviders.selfConsistency, callContext: { debateRole: "selfConsistency", promptKey: "VERDICT_ADVOCATE" } }),
+  const [run2Verdicts, run3Verdicts] = await Promise.all([
+    runSelfConsistencyAdvocateOnce("run2", input, llmCall, config, temperature, warnings),
+    runSelfConsistencyAdvocateOnce("run3", input, llmCall, config, temperature, warnings),
   ]);
 
-  // Graceful degradation: if a run returned a non-array (LLM error, soft refusal),
-  // treat it as missing rather than crashing.
-  const run2Verdicts = Array.isArray(run2) ? run2 as Array<Record<string, unknown>> : null;
-  const run3Verdicts = Array.isArray(run3) ? run3 as Array<Record<string, unknown>> : null;
-
   if (!run2Verdicts || !run3Verdicts) {
-    const failed = [!run2Verdicts && "run2", !run3Verdicts && "run3"].filter(Boolean);
-    console.warn(`[VerdictStage] Self-consistency degraded: ${failed.join(", ")} returned non-array (${typeof run2}/${typeof run3}). Using advocate-only fallback for affected runs.`);
+    const failedRuns = [!run2Verdicts ? "run2" : null, !run3Verdicts ? "run3" : null].filter(Boolean);
+    warnings?.push({
+      type: "verdict_partial_recovery",
+      severity: "warning",
+      message: `Self-consistency degraded: ${failedRuns.join(", ")} unavailable; using advocate-only fallback for affected runs.`,
+      details: {
+        stage: "self_consistency",
+        failedRuns,
+      },
+    });
+    console.warn(
+      `[VerdictStage] Self-consistency degraded: ${failedRuns.join(", ")} unavailable. ` +
+      "Using advocate-only fallback for affected runs.",
+    );
   }
 
   return claims.map((claim) => {
@@ -634,6 +642,71 @@ export async function selfConsistencyCheck(
       assessed: true,
     };
   });
+}
+
+async function runSelfConsistencyAdvocateOnce(
+  runName: "run2" | "run3",
+  input: {
+    atomicClaims: AtomicClaim[];
+    evidenceItems: VerdictPromptEvidenceItem[];
+    claimBoundaries: ClaimAssessmentBoundary[];
+    coverageMatrix: {
+      claims: string[];
+      boundaries: string[];
+      counts: number[][];
+    };
+  },
+  llmCall: LLMCallFn,
+  config: VerdictStageConfig,
+  temperature: number,
+  warnings?: AnalysisWarning[],
+): Promise<Array<Record<string, unknown>> | null> {
+  const options = {
+    tier: config.debateModelTiers.selfConsistency,
+    temperature,
+    providerOverride: config.debateModelProviders.selfConsistency,
+    callContext: { debateRole: "selfConsistency" as const, promptKey: "VERDICT_ADVOCATE" as const },
+  };
+
+  let lastErrorMessage = "unknown error";
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const raw = await llmCall("VERDICT_ADVOCATE", input, options);
+      const parsed = extractRecordArray(raw, ["verdicts", "claims", "results", "items"]);
+      if (!parsed) {
+        throw new Error(`unexpected shape ${describeJsonShape(raw)}`);
+      }
+
+      if (attempt === 2) {
+        warnings?.push({
+          type: "verdict_batch_retry",
+          severity: "warning",
+          message: `Self-consistency ${runName} recovered on retry after initial failure.`,
+          details: {
+            stage: "self_consistency",
+            run: runName,
+          },
+        });
+      }
+
+      return parsed;
+    } catch (error) {
+      lastErrorMessage = error instanceof Error ? error.message : String(error);
+      if (attempt === 1) continue;
+    }
+  }
+
+  warnings?.push({
+    type: "verdict_fallback_partial",
+    severity: "warning",
+    message: `Self-consistency ${runName} failed after retry; run excluded from spread calculation.`,
+    details: {
+      stage: "self_consistency",
+      run: runName,
+      reason: lastErrorMessage.slice(0, 200),
+    },
+  });
+  return null;
 }
 
 // ============================================================================
@@ -703,6 +776,7 @@ export async function reconcileVerdicts(
   evidence: EvidenceItem[],
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+  warnings?: AnalysisWarning[],
 ): Promise<ReconcileVerdictsResult> {
   // Validate challenge evidence IDs before reconciliation
   const validatedChallengeDoc = validateChallengeEvidence(challengeDoc, evidence);
@@ -736,7 +810,34 @@ export async function reconcileVerdicts(
       `[VerdictStage] Reconciliation returned unexpected shape (${describeJsonShape(result)}). ` +
       "Using advocate verdicts unchanged."
     );
+    warnings?.push({
+      type: "verdict_fallback_partial",
+      severity: "warning",
+      message: `Reconciliation output malformed; preserved advocate verdicts for ${advocateVerdicts.length} claim(s).`,
+      details: {
+        stage: "reconciliation",
+        claimCount: advocateVerdicts.length,
+        shape: describeJsonShape(result),
+      },
+    });
     return { verdicts: advocateVerdicts, validatedChallengeDoc };
+  }
+
+  const missingClaimIds = advocateVerdicts
+    .filter((v) => !rawReconciled.some((r) => String(r.claimId) === v.claimId))
+    .map((v) => v.claimId);
+  if (missingClaimIds.length > 0) {
+    warnings?.push({
+      type: "verdict_partial_recovery",
+      severity: "warning",
+      message: `Reconciliation returned ${rawReconciled.length}/${advocateVerdicts.length} claims; preserved advocate verdicts for missing claims.`,
+      details: {
+        stage: "reconciliation",
+        missingClaimIds,
+        recoveredClaims: rawReconciled.length,
+        expectedClaims: advocateVerdicts.length,
+      },
+    });
   }
 
   const verdicts = advocateVerdicts.map((original) => {
@@ -824,33 +925,50 @@ export async function validateVerdicts(
   const validationProvider = config.debateModelProviders.validation;
 
   // Check A + B: Grounding and direction validation (parallel — independent checks)
-  const [groundingResult, directionResult] = await Promise.all([
-    llmCall("VERDICT_GROUNDING_VALIDATION", {
-      verdicts: verdicts.map((v) => ({
-        claimId: v.claimId,
-        reasoning: v.reasoning,
-        supportingEvidenceIds: v.supportingEvidenceIds,
-        contradictingEvidenceIds: v.contradictingEvidenceIds,
-      })),
-      evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
-    }, { tier: validationTier, providerOverride: validationProvider, callContext: { debateRole: "validation", promptKey: "VERDICT_GROUNDING_VALIDATION" } }),
-    llmCall("VERDICT_DIRECTION_VALIDATION", {
-      verdicts: verdicts.map((v) => ({
-        claimId: v.claimId,
-        truthPercentage: v.truthPercentage,
-        supportingEvidenceIds: v.supportingEvidenceIds,
-        contradictingEvidenceIds: v.contradictingEvidenceIds,
-      })),
-      evidencePool: evidence.map((e) => ({
-        id: e.id,
-        statement: e.statement,
-        claimDirection: e.claimDirection,
-      })),
-    }, { tier: validationTier, providerOverride: validationProvider, callContext: { debateRole: "validation", promptKey: "VERDICT_DIRECTION_VALIDATION" } }),
+  const [groundingResults, directionResults] = await Promise.all([
+    runValidationCheckWithRetry(
+      "grounding",
+      "VERDICT_GROUNDING_VALIDATION",
+      {
+        verdicts: verdicts.map((v) => ({
+          claimId: v.claimId,
+          reasoning: v.reasoning,
+          supportingEvidenceIds: v.supportingEvidenceIds,
+          contradictingEvidenceIds: v.contradictingEvidenceIds,
+        })),
+        evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
+      },
+      "groundingValid",
+      validationTier,
+      validationProvider,
+      llmCall,
+      warnings,
+      "grounding_check_degraded",
+    ),
+    runValidationCheckWithRetry(
+      "direction",
+      "VERDICT_DIRECTION_VALIDATION",
+      {
+        verdicts: verdicts.map((v) => ({
+          claimId: v.claimId,
+          truthPercentage: v.truthPercentage,
+          supportingEvidenceIds: v.supportingEvidenceIds,
+          contradictingEvidenceIds: v.contradictingEvidenceIds,
+        })),
+        evidencePool: evidence.map((e) => ({
+          id: e.id,
+          statement: e.statement,
+          claimDirection: e.claimDirection,
+        })),
+      },
+      "directionValid",
+      validationTier,
+      validationProvider,
+      llmCall,
+      warnings,
+      "direction_validation_degraded",
+    ),
   ]);
-
-  const groundingResults = normalizeValidationEntries(groundingResult, "groundingValid");
-  const directionResults = normalizeValidationEntries(directionResult, "directionValid");
   const groundingByClaim = new Map(groundingResults.map((r) => [r.claimId, r]));
   const directionByClaim = new Map(directionResults.map((r) => [r.claimId, r]));
 
@@ -864,7 +982,7 @@ export async function validateVerdicts(
       console.warn(`[VerdictStage] Grounding issue for claim ${verdict.claimId}:`, grounding.issues);
       warnings?.push({
         type: "verdict_grounding_issue",
-        severity: "info",
+        severity: "warning",
         message: `Claim ${verdict.claimId}: grounding check found issues: ${joinIssues(grounding.issues)}`,
       });
       if (config.verdictGroundingPolicy === "safe_downgrade") {
@@ -882,7 +1000,7 @@ export async function validateVerdicts(
       console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
       warnings?.push({
         type: "verdict_direction_issue",
-        severity: "info",
+        severity: "error",
         message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(direction.issues)}`,
       });
 
@@ -955,6 +1073,70 @@ function normalizeValidationEntries(
       issues: Array.isArray(item.issues) ? item.issues.map(String) : [],
     }))
     .filter((item) => item.claimId.length > 0);
+}
+
+async function runValidationCheckWithRetry(
+  label: "grounding" | "direction",
+  promptKey: "VERDICT_GROUNDING_VALIDATION" | "VERDICT_DIRECTION_VALIDATION",
+  input: Record<string, unknown>,
+  validField: "groundingValid" | "directionValid",
+  validationTier: "haiku" | "sonnet" | "opus",
+  validationProvider: LLMProviderType | undefined,
+  llmCall: LLMCallFn,
+  warnings: AnalysisWarning[] | undefined,
+  degradedWarningType: "grounding_check_degraded" | "direction_validation_degraded",
+): Promise<NormalizedValidationEntry[]> {
+  let lastErrorMessage = "unknown error";
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const raw = await llmCall(
+        promptKey,
+        input,
+        {
+          tier: validationTier,
+          providerOverride: validationProvider,
+          callContext: { debateRole: "validation", promptKey },
+        },
+      );
+      const normalized = normalizeValidationEntries(raw, validField);
+      if (normalized.length === 0) {
+        throw new Error(`validation returned no entries (${describeJsonShape(raw)})`);
+      }
+
+      if (attempt === 2) {
+        warnings?.push({
+          type: "verdict_batch_retry",
+          severity: "warning",
+          message: `${label} validation recovered on retry after initial failure.`,
+          details: {
+            stage: "validation",
+            promptKey,
+            check: label,
+          },
+        });
+      }
+
+      return normalized;
+    } catch (error) {
+      lastErrorMessage = error instanceof Error ? error.message : String(error);
+      if (attempt === 1) continue;
+    }
+  }
+
+  warnings?.push({
+    type: degradedWarningType,
+    severity: "warning",
+    message: `${label} validation unavailable after retry; continuing without ${label} enforcement.`,
+    details: {
+      stage: "validation",
+      promptKey,
+      check: label,
+      reason: lastErrorMessage.slice(0, 250),
+    },
+  });
+
+  return [];
 }
 
 function joinIssues(issues: string[]): string {

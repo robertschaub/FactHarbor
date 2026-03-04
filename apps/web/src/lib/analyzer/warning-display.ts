@@ -8,57 +8,75 @@ export type DisplayWarning = AnalysisWarning & {
   severity: AnalysisWarningSeverity;
 };
 
-export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>([
-  "llm_provider_error",
-  "search_provider_error",
-  "structured_output_failure",
-  "debate_provider_fallback",
-  "search_fallback",
-  "source_reliability_error",
-  "source_fetch_failure",
-  "source_fetch_degradation",
-  "evidence_filter_degradation",
-  "grounding_check_degraded",
-  "direction_validation_degraded",
-  "explanation_quality_rubric_failed",
-  "verdict_batch_retry",
-  "verdict_partial_recovery",
-  "llm_tpm_guard_fallback",
-]);
+type WarningBucket = "provider" | "analysis";
+type WarningImpact = "degrading" | "informational";
+type WarningClassification = {
+  bucket: WarningBucket;
+  impact: WarningImpact;
+};
 
-const NON_DEGRADING_PROVIDER_WARNING_TYPES = new Set<AnalysisWarningType>([
-  "debate_provider_fallback",
-  "search_fallback",
-  "llm_tpm_guard_fallback",
-  "source_fetch_failure",
-  "source_fetch_degradation",
-  "source_reliability_error",
-]);
+// Canonical registry: every AnalysisWarningType must be classified here.
+// `satisfies` enforces full coverage when the union changes.
+const WARNING_CLASSIFICATION = {
+  report_damaged: { bucket: "analysis", impact: "degrading" },
+  llm_provider_error: { bucket: "provider", impact: "degrading" },
+  verdict_direction_mismatch: { bucket: "analysis", impact: "degrading" },
+  structured_output_failure: { bucket: "provider", impact: "degrading" },
+  evidence_filter_degradation: { bucket: "provider", impact: "degrading" },
+  search_fallback: { bucket: "provider", impact: "informational" },
+  search_provider_error: { bucket: "provider", impact: "degrading" },
+  source_reliability_error: { bucket: "provider", impact: "degrading" },
+  source_fetch_failure: { bucket: "provider", impact: "informational" },
+  source_fetch_degradation: { bucket: "provider", impact: "degrading" },
+  budget_exceeded: { bucket: "analysis", impact: "degrading" },
+  query_budget_exhausted: { bucket: "analysis", impact: "degrading" },
+  classification_fallback: { bucket: "analysis", impact: "informational" },
+  low_evidence_count: { bucket: "analysis", impact: "degrading" },
+  context_without_evidence: { bucket: "analysis", impact: "degrading" },
+  recency_evidence_gap: { bucket: "analysis", impact: "degrading" },
+  confidence_calibration: { bucket: "analysis", impact: "informational" },
+  low_source_count: { bucket: "analysis", impact: "degrading" },
+  no_successful_sources: { bucket: "analysis", impact: "degrading" },
+  source_acquisition_collapse: { bucket: "analysis", impact: "degrading" },
+  grounding_check: { bucket: "analysis", impact: "degrading" },
+  grounding_check_degraded: { bucket: "provider", impact: "degrading" },
+  direction_validation_degraded: { bucket: "provider", impact: "degrading" },
+  verdict_fallback_partial: { bucket: "provider", impact: "degrading" },
+  verdict_partial_recovery: { bucket: "provider", impact: "degrading" },
+  verdict_batch_retry: { bucket: "provider", impact: "informational" },
+  analysis_generation_failed: { bucket: "analysis", impact: "degrading" },
+  evidence_pool_imbalance: { bucket: "analysis", impact: "informational" },
+  evidence_partition_stats: { bucket: "analysis", impact: "informational" },
+  all_same_debate_tier: { bucket: "analysis", impact: "degrading" },
+  debate_provider_fallback: { bucket: "provider", impact: "informational" },
+  contested_verdict_range: { bucket: "analysis", impact: "degrading" },
+  baseless_challenge_detected: { bucket: "analysis", impact: "informational" },
+  baseless_challenge_blocked: { bucket: "analysis", impact: "informational" },
+  explanation_quality_rubric_failed: { bucket: "provider", impact: "informational" },
+  insufficient_evidence: { bucket: "analysis", impact: "degrading" },
+  tiger_score_failed: { bucket: "analysis", impact: "informational" },
+  structural_consistency: { bucket: "analysis", impact: "degrading" },
+  inverse_consistency_error: { bucket: "analysis", impact: "degrading" },
+  verdict_integrity_failure: { bucket: "analysis", impact: "degrading" },
+  verdict_grounding_issue: { bucket: "analysis", impact: "degrading" },
+  verdict_direction_issue: { bucket: "analysis", impact: "degrading" },
+  challenger_failure: { bucket: "analysis", impact: "informational" },
+  llm_tpm_guard_fallback: { bucket: "provider", impact: "informational" },
+} as const satisfies Record<AnalysisWarningType, WarningClassification>;
 
-export const REPORT_DEGRADING_ANALYSIS_WARNING_TYPES = new Set<AnalysisWarningType>([
-  "report_damaged",
-  "no_successful_sources",
-  "source_acquisition_collapse",
-  "insufficient_evidence",
-  "low_evidence_count",
-  "low_source_count",
-  "context_without_evidence",
-  "recency_evidence_gap",
-  "baseless_challenge_blocked",
-  "baseless_challenge_detected",
-  "verdict_direction_mismatch",
-  "grounding_check",
-  "verdict_fallback_partial",
-  "analysis_generation_failed",
-  "contested_verdict_range",
-  "budget_exceeded",
-  "query_budget_exhausted",
-  "verdict_integrity_failure",
-]);
+export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>(
+  (Object.entries(WARNING_CLASSIFICATION) as Array<[AnalysisWarningType, WarningClassification]>)
+    .filter(([, classification]) => classification.bucket === "provider")
+    .map(([type]) => type),
+);
 
-type NormalizedSeverity = AnalysisWarningSeverity | "unknown";
+export const REPORT_DEGRADING_ANALYSIS_WARNING_TYPES = new Set<AnalysisWarningType>(
+  (Object.entries(WARNING_CLASSIFICATION) as Array<[AnalysisWarningType, WarningClassification]>)
+    .filter(([, classification]) => classification.bucket === "analysis" && classification.impact === "degrading")
+    .map(([type]) => type),
+);
 
-function normalizeSeverity(raw: unknown): NormalizedSeverity {
+function normalizeSeverity(raw: unknown): AnalysisWarningSeverity {
   if (raw === "error" || raw === "warning" || raw === "info") return raw;
   if (typeof raw === "string") {
     const normalized = raw.trim().toLowerCase();
@@ -66,13 +84,7 @@ function normalizeSeverity(raw: unknown): NormalizedSeverity {
       return normalized;
     }
   }
-  return "unknown";
-}
-
-function degradingDisplaySeverity(raw: unknown): AnalysisWarningSeverity {
-  const normalized = normalizeSeverity(raw);
-  if (normalized === "error") return "error";
-  return "warning";
+  return "info";
 }
 
 function withDisplaySeverity(
@@ -85,12 +97,17 @@ function withDisplaySeverity(
   return { ...warning, severity };
 }
 
+function getClassification(type: AnalysisWarningType): WarningClassification {
+  return WARNING_CLASSIFICATION[type];
+}
+
 export function isProviderIssueType(type: AnalysisWarningType): boolean {
-  return PROVIDER_ISSUE_TYPES.has(type);
+  return getClassification(type).bucket === "provider";
 }
 
 export function isReportDegradingAnalysisWarningType(type: AnalysisWarningType): boolean {
-  return REPORT_DEGRADING_ANALYSIS_WARNING_TYPES.has(type);
+  const classification = getClassification(type);
+  return classification.bucket === "analysis" && classification.impact === "degrading";
 }
 
 export function classifyWarningForDisplay(warning: AnalysisWarning): {
@@ -98,24 +115,17 @@ export function classifyWarningForDisplay(warning: AnalysisWarning): {
   isReportDegrading: boolean;
   displaySeverity: AnalysisWarningSeverity;
 } {
-  if (isProviderIssueType(warning.type)) {
-    const isReportDegrading = !NON_DEGRADING_PROVIDER_WARNING_TYPES.has(warning.type);
-    return {
-      isProviderIssue: true,
-      isReportDegrading,
-      displaySeverity: isReportDegrading
-        ? degradingDisplaySeverity(warning.severity)
-        : "info",
-    };
-  }
+  const classification = getClassification(warning.type);
+  const normalizedSeverity = normalizeSeverity(warning.severity);
+  const isReportDegrading = classification.impact === "degrading";
+  const displaySeverity: AnalysisWarningSeverity = isReportDegrading
+    ? (normalizedSeverity === "info" ? "warning" : normalizedSeverity)
+    : "info";
 
-  const isReportDegrading = isReportDegradingAnalysisWarningType(warning.type);
   return {
-    isProviderIssue: false,
+    isProviderIssue: classification.bucket === "provider",
     isReportDegrading,
-    displaySeverity: isReportDegrading
-      ? degradingDisplaySeverity(warning.severity)
-      : "info",
+    displaySeverity,
   };
 }
 

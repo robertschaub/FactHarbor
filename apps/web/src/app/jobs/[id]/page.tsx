@@ -43,47 +43,18 @@ import { CoverageMatrixDisplay, BoundaryLegend } from "./components/CoverageMatr
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
-import { useQualitySummary } from "./hooks/useQualitySummary";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
+import FallbackReport from "@/components/FallbackReport";
 import {
   classifyWarningForDisplay,
-  splitWarningsForDisplay,
 } from "@/lib/analyzer/warning-display";
 import type { AnalysisWarning, TIGERScore } from "@/lib/analyzer/types";
-
-/**
- * Outcome-based quality degradation check.
- * Returns true only when the analysis result is genuinely compromised —
- * not because of routine operational events handled gracefully.
- * Implements the AGENTS.md "no false alarms" rule.
- */
-function isOutcomeDegraded(result: any): boolean {
-  if (!result) return false;
-  // No evidence retrieved — analysis has no factual basis
-  if (Array.isArray(result.evidenceItems) && result.evidenceItems.length === 0) return true;
-  // No boundaries formed — no analytical structure
-  if (result.meta?.boundaryCount === 0) return true;
-  // No verdicts produced — verdict stage collapsed
-  if (Array.isArray(result.claimVerdicts) && result.claimVerdicts.length === 0) return true;
-  // All verdicts insufficient — no publishable conclusions
-  const gate4 = result.qualityGates?.gate4Stats;
-  if (gate4 && gate4.total > 0 && gate4.publishable === 0) return true;
-  return false;
-}
 
 // Module-level helper — browser-safe (client component, only called from event handlers)
 function escapeHtml(str: string): string {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
-}
-
-function formatWarningTypeLabel(type: string): string {
-  return type
-    .split("_")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }
 
 type Job = {
@@ -509,15 +480,6 @@ export default function JobPage() {
   const allAnalysisWarnings: AnalysisWarning[] = Array.isArray(result?.analysisWarnings)
     ? result.analysisWarnings
     : [];
-  const warningBuckets = splitWarningsForDisplay(allAnalysisWarnings);
-  const degradingProviderIssues = warningBuckets.providerDegrading;
-  const informationalProviderIssues = warningBuckets.providerInformational;
-  const analysisWarnings = [
-    ...warningBuckets.analysisDegrading,
-    ...warningBuckets.analysisInformational,
-  ];
-  const qualityWarnings = warningBuckets.analysisDegrading;
-  const informationalAnalysisWarnings = warningBuckets.analysisInformational;
   const warningDiagnostics = allAnalysisWarnings.map((warning) => {
     const classification = classifyWarningForDisplay(warning);
     const bucket = classification.isProviderIssue
@@ -535,224 +497,35 @@ export default function JobPage() {
     hasAdminKey &&
     process.env.NODE_ENV !== "production" &&
     warningDiagnostics.length > 0;
-  const reportIntegrity = result?.meta?.reportIntegrity;
-  const reportDamagedWarning = analysisWarnings.find((w) => w.type === "report_damaged");
-  // Report is "damaged" only when explicitly flagged — not from routine error-severity warnings.
-  // The pipeline emits "report_damaged" or sets reportIntegrity.damaged for true failures
-  // (e.g., zero evidence, verdict stage crash). Individual fetch/integrity errors are not damage.
-  const isReportDamaged =
-    !!reportIntegrity?.damaged ||
-    !!reportDamagedWarning;
-  const reportDamageTriggerTypes: string[] =
-    reportDamagedWarning?.details?.triggeredWarningTypes ||
-    reportIntegrity?.triggerTypes ||
-    [];
-  const reportDamageIssues: Array<{ type?: string; severity?: string; message?: string }> =
-    reportDamagedWarning?.details?.issues ||
-    reportIntegrity?.criticalIssues ||
-    [];
-  const reportDamageHints: string[] =
-    reportDamagedWarning?.details?.remediationHints ||
-    reportIntegrity?.remediationHints ||
-    [];
-  const reportDamageNextStep: string =
-    reportDamagedWarning?.details?.recommendedNextStep ||
-    reportDamageHints[0] ||
-    "Resolve critical warning causes and rerun analysis.";
-  const fallbackCount = classificationFallbacks?.totalFallbacks ?? 0;
-  const hasQualityDegradationStatus =
-    isReportDamaged ||
-    isOutcomeDegraded(result);
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
-  const gatesFailed = !!(qualityGates && !qualityGates.passed);
-  const degradingAnalysisIssueCount = qualityWarnings.filter((w) => w.type !== "report_damaged").length;
-  const qualitySummary = useQualitySummary({
-    isReportDamaged,
-    degradingProviderIssueCount: degradingProviderIssues.length,
-    degradingAnalysisIssueCount,
-    gatesFailed,
-    informationalProviderIssueCount: informationalProviderIssues.length,
-    fallbackCount,
-    informationalAnalysisIssueCount: informationalAnalysisWarnings.length,
-  });
-  const qualityGroupClassName = qualitySummary.tone === "damaged"
-    ? styles.qualityGroupDamaged
-    : qualitySummary.tone === "warning"
-      ? styles.qualityGroupWarning
-      : styles.qualityGroupOk;
-  const degradingAnalysisIssues = qualityWarnings.filter((w) => w.type !== "report_damaged");
-  const qualityImpactingIssueCount = degradingProviderIssues.length + degradingAnalysisIssues.length;
-  const operationalNotesCount =
-    informationalProviderIssues.length +
-    informationalAnalysisWarnings.length +
-    fallbackCount;
   const reportQualityPanel = (
     <>
-      <details
-        className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`}
-        open={hasQualityDegradationStatus}
-      >
-        <summary className={styles.qualityGroupSummary}>
-          <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
-        </summary>
-        <div className={styles.qualityGroupContent}>
-          {hasQualityDegradationStatus && (
-            <div className={styles.qualityStatusBanner}>
-              <div className={styles.qualityStatusText}>
-                Quality-degrading status detected for this report.
-              </div>
-              <div className={styles.qualityStatusMeta}>
-                {isReportDamaged
-                  ? "Report integrity compromised"
-                  : [
-                      Array.isArray(result?.evidenceItems) && result.evidenceItems.length === 0 && "no evidence retrieved",
-                      result?.meta?.boundaryCount === 0 && "no analysis boundaries formed",
-                      Array.isArray(result?.claimVerdicts) && result.claimVerdicts.length === 0 && "no verdicts produced",
-                      result?.qualityGates?.gate4Stats?.publishable === 0 &&
-                        result?.qualityGates?.gate4Stats?.total > 0 &&
-                        "all verdicts below confidence threshold",
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-              </div>
-              <Link href="/admin/quality-health" className={styles.qualityStatusLink}>
-                Open Analysis Monitoring dashboard
-              </Link>
-            </div>
-          )}
-
-          {isReportDamaged && (
-            <div className={styles.reportDamageBanner}>
-              <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
-              <div className={styles.reportDamageText}>
-                {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
-              </div>
-              {reportDamageTriggerTypes.length > 0 && (
-                <div className={styles.reportDamageMeta}>
-                  Triggers: {reportDamageTriggerTypes.join(", ")}
-                </div>
-              )}
-              {reportDamageIssues.length > 0 && (
-                <ul className={styles.reportDamageList}>
-                  {reportDamageIssues.slice(0, 5).map((issue, idx) => (
-                    <li key={`issue-${idx}`}>
-                      <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {reportDamageHints.length > 0 && (
-                <ul className={styles.reportDamageHints}>
-                  {reportDamageHints.slice(0, 3).map((hint, idx) => (
-                    <li key={`hint-${idx}`}>{hint}</li>
-                  ))}
-                </ul>
-              )}
-              <div className={styles.reportDamageNextStep}>
-                Next step: {reportDamageNextStep}
-              </div>
-            </div>
-          )}
-
-          {qualityImpactingIssueCount > 0 ? (
-            <details className={styles.providerIssueBanner}>
-              <summary className={styles.providerIssueSummary}>
-                Quality-impacting issues — {qualityImpactingIssueCount}
-              </summary>
-              <ul className={styles.providerIssueList}>
-                {degradingProviderIssues.map((w, idx: number) => (
-                  <li key={`degrading-provider-${idx}`}>
-                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
-                  </li>
-                ))}
-                {degradingAnalysisIssues.map((w, idx: number) => (
-                  <li key={`degrading-analysis-${idx}`}>
-                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ) : (
-            !isReportDamaged && (
-              <div className={styles.providerInfoBanner}>
-                <div className={styles.providerInfoSummary}>
-                  Quality-impacting issues — 0
-                </div>
-                <div className={styles.providerInfoEmpty}>No quality-impacting issues detected.</div>
-              </div>
-            )
-          )}
-
-          <details className={styles.providerInfoBanner}>
-            <summary className={styles.providerInfoSummary}>
-              Operational Notes — {operationalNotesCount} informational
-            </summary>
-
-            {operationalNotesCount === 0 && (
-              <div className={styles.providerInfoEmpty}>No operational notes.</div>
-            )}
-
-            {informationalProviderIssues.length > 0 && (
-              <ul className={styles.providerInfoList}>
-                {informationalProviderIssues.map((w, idx: number) => (
-                  <li key={`provider-info-${idx}`}>
-                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {informationalAnalysisWarnings.length > 0 && (
-              <ul className={styles.providerInfoList}>
-                {informationalAnalysisWarnings.map((w, idx: number) => (
-                  <li key={`analysis-info-${idx}`}>
-                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {fallbackCount > 0 && (
-              <details className={styles.providerIssueBanner}>
-                <summary className={styles.providerIssueSummary}>
-                  Classification fallbacks — {fallbackCount} informational
-                </summary>
-                <ul className={styles.providerIssueList}>
-                  {(Object.entries(classificationFallbacks?.fallbacksByField || {}) as Array<[string, number]>)
-                    .filter(([, count]) => count > 0)
-                    .map(([field, count]) => (
-                      <li key={`fallback-field-${field}`}>
-                        <strong>{field}:</strong> {count} fallback{count !== 1 ? "s" : ""}
-                      </li>
-                    ))}
-                </ul>
-              </details>
-            )}
-          </details>
-
-          {showWarningDiagnostics && (
-            <details className={styles.devWarningPanel}>
-              <summary className={styles.devWarningSummary}>
-                Developer diagnostics ({warningDiagnostics.length})
-              </summary>
-              <div className={styles.devWarningHint}>
-                Development-only view of warning bucketing and display severity normalization.
-              </div>
-              <ul className={styles.devWarningList}>
-                {warningDiagnostics.map((diag, idx) => (
-                  <li key={`wd-${idx}`} className={styles.devWarningItem}>
-                    <code className={styles.devWarningType}>{diag.type}</code>
-                    <span className={styles.devWarningMeta}>
-                      bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
-                    </span>
-                    <div className={styles.devWarningMessage}>{diag.message}</div>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </div>
-      </details>
+      <FallbackReport
+        summary={classificationFallbacks}
+        analysisWarnings={allAnalysisWarnings}
+        isAdmin={hasAdminKey}
+      />
+      {showWarningDiagnostics && (
+        <details className={styles.devWarningPanel}>
+          <summary className={styles.devWarningSummary}>
+            Developer diagnostics ({warningDiagnostics.length})
+          </summary>
+          <div className={styles.devWarningHint}>
+            Development-only view of warning bucketing and display severity normalization.
+          </div>
+          <ul className={styles.devWarningList}>
+            {warningDiagnostics.map((diag, idx) => (
+              <li key={`wd-${idx}`} className={styles.devWarningItem}>
+                <code className={styles.devWarningType}>{diag.type}</code>
+                <span className={styles.devWarningMeta}>
+                  bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
+                </span>
+                <div className={styles.devWarningMessage}>{diag.message}</div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
     </>
   );

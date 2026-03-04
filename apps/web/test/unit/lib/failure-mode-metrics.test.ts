@@ -21,7 +21,7 @@ describe("buildFailureModeMetrics", () => {
     const metrics = buildFailureModeMetrics(makeResult({
       analysisWarnings: [
         { type: "low_source_count", severity: "warning", message: "thin evidence base" },
-        { type: "no_successful_sources", severity: "error", message: "no sources fetched" },
+        { type: "no_successful_sources", severity: "warning", message: "no sources fetched" },
       ],
       meta: { llmCalls: 10 },
     }));

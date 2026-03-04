@@ -476,7 +476,7 @@ export async function runClaimBoundaryAnalysis(
           console.warn("[Stage5] B-8 rubric evaluation failed, degrading to structural-only:", rubricError);
           state.warnings.push({
             type: "explanation_quality_rubric_failed",
-            severity: "warning",
+            severity: "info",
             message: `Explanation quality rubric evaluation failed: ${rubricError instanceof Error ? rubricError.message : String(rubricError)}. Structural checks still available.`,
           });
         }
@@ -508,7 +508,7 @@ export async function runClaimBoundaryAnalysis(
         console.warn("[Stage 6] TIGERScore evaluation failed:", tigerError);
         state.warnings.push({
           type: "tiger_score_failed",
-          severity: "warning",
+          severity: "info",
           message: `Holistic TIGERScore evaluation failed: ${tigerError instanceof Error ? tigerError.message : String(tigerError)}`,
         });
       }
@@ -2327,7 +2327,7 @@ export async function researchEvidence(
   if (totalSources === 0) {
     state.warnings.push({
       type: "no_successful_sources",
-      severity: "error",
+      severity: "warning",
       message: "No sources were successfully fetched during research — verdict is based on zero evidence.",
       details: { searchQueries: totalSearches },
     });
@@ -2337,6 +2337,25 @@ export async function researchEvidence(
         severity: "error",
         message: `${totalSearches} search queries were executed but yielded zero usable sources — search providers may be unavailable.`,
         details: { searchQueries: totalSearches },
+      });
+      state.warnings.push({
+        type: "report_damaged",
+        severity: "error",
+        message: "Report integrity is damaged: no usable sources were acquired after repeated searches.",
+        details: {
+          triggeredWarningTypes: ["no_successful_sources", "source_acquisition_collapse"],
+          issues: [
+            {
+              type: "source_acquisition_collapse",
+              severity: "error",
+              message: `${totalSearches} searches yielded zero usable sources.`,
+            },
+          ],
+          remediationHints: [
+            "Rerun later or with a different provider configuration to restore source acquisition.",
+          ],
+          recommendedNextStep: "Do not rely on this report; rerun analysis after source acquisition recovers.",
+        },
       });
     }
   } else {

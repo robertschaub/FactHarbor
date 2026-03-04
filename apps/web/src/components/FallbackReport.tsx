@@ -29,20 +29,41 @@ const WARNING_TYPE_LABELS: Record<string, string> = {
   verdict_direction_mismatch: "Verdict Direction Mismatch",
   structured_output_failure: "Structured Output Failure",
   evidence_filter_degradation: "Evidence Filter Degradation",
+  grounding_check_degraded: "Grounding Validation Degraded",
+  direction_validation_degraded: "Direction Validation Degraded",
+  verdict_fallback_partial: "Verdict Partial Fallback",
+  verdict_partial_recovery: "Verdict Partial Recovery",
+  verdict_batch_retry: "Verdict Batch Retry",
   search_fallback: "Search Fallback",
   search_provider_error: "Search Provider Error",
+  source_reliability_error: "Source Reliability Error",
+  source_fetch_failure: "Source Fetch Failure",
+  source_fetch_degradation: "Source Fetch Degradation",
+  debate_provider_fallback: "Debate Provider Fallback",
+  llm_tpm_guard_fallback: "TPM Guard Fallback",
   budget_exceeded: "Budget Exceeded",
+  query_budget_exhausted: "Query Budget Exhausted",
   classification_fallback: "Classification Fallback",
   low_evidence_count: "Low Evidence Count",
   context_without_evidence: "Context Without Evidence",
   recency_evidence_gap: "Recency Evidence Gap",
   confidence_calibration: "Confidence Calibration",
   low_source_count: "Low Source Count",
+  no_successful_sources: "No Successful Sources",
+  source_acquisition_collapse: "Source Acquisition Collapse",
   grounding_check: "Grounding Check",
   insufficient_evidence: "Insufficient Evidence (F4)",
   baseless_challenge_blocked: "Baseless Challenge Blocked (F5)",
   baseless_challenge_detected: "Baseless Challenges Detected (F5)",
   evidence_partition_stats: "Evidence Partitioning (F6)",
+  evidence_pool_imbalance: "Evidence Pool Imbalance",
+  analysis_generation_failed: "Analysis Generation Failed",
+  contested_verdict_range: "Contested Verdict Range",
+  all_same_debate_tier: "Debate Tier Homogeneity",
+  inverse_consistency_error: "Inverse Consistency Error",
+  challenger_failure: "Challenger Failure",
+  tiger_score_failed: "TIGER Score Failed",
+  explanation_quality_rubric_failed: "Explanation Rubric Failed",
   verdict_integrity_failure: "Verdict Integrity Failure",
   verdict_grounding_issue: "Verdict Grounding Issue",
   verdict_direction_issue: "Verdict Direction Issue",
@@ -51,8 +72,17 @@ const WARNING_TYPE_LABELS: Record<string, string> = {
 const WARNING_TYPE_HINTS: Record<string, string> = {
   report_damaged: "Treat this report as non-final until critical issues are resolved and the analysis is re-run.",
   llm_provider_error: "Check LLM provider credits/quota/API key/availability and rerun once provider health is restored.",
+  source_reliability_error: "Source reliability scoring encountered provider issues. Review provider health and rerun.",
+  source_fetch_degradation: "High source fetch failure ratio can miss key evidence. Rerun when network/provider health improves.",
+  source_acquisition_collapse: "No usable sources were acquired despite repeated queries. Do not rely on this report.",
   structured_output_failure: "Retry with reduced output scope or shorter prompts to avoid structured-output truncation.",
+  grounding_check_degraded: "Grounding validation model failed. Integrity checks may be less reliable for this run.",
+  direction_validation_degraded: "Direction validation model failed. Truth/evidence alignment checks may be incomplete.",
+  verdict_fallback_partial: "Some claims used fallback verdicts due model output gaps.",
+  verdict_partial_recovery: "Only part of the model output could be recovered; remaining claims were preserved/fallbacked.",
+  verdict_batch_retry: "Verdict generation required a recovery retry path.",
   budget_exceeded: "Increase token/iteration budget or narrow analysis scope.",
+  query_budget_exhausted: "Per-claim query budget was exhausted before sufficiency for at least one claim.",
   search_provider_error: "Check search provider quota/key health and rerun after recovery.",
   recency_evidence_gap: "Add fresh date-anchored evidence for recency-sensitive claims.",
   grounding_check: "Verify reasoning is explicitly linked to cited evidence IDs.",
@@ -131,8 +161,14 @@ function WarningCard({ warning }: { warning: AnalysisWarning }) {
 export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false }: FallbackReportProps) {
   const hasFallbacks = summary && summary.totalFallbacks > 0;
   const warningBuckets = splitWarningsForDisplay(analysisWarnings);
-  const qualityWarnings = warningBuckets.analysisDegrading;
-  const operationalWarnings = warningBuckets.analysisInformational;
+  const qualityWarnings = [
+    ...warningBuckets.providerDegrading,
+    ...warningBuckets.analysisDegrading,
+  ];
+  const operationalWarnings = [
+    ...warningBuckets.providerInformational,
+    ...warningBuckets.analysisInformational,
+  ];
 
   const qualityWarningsCount = qualityWarnings.length;
   const hasVisibleContent = hasFallbacks || qualityWarningsCount > 0
