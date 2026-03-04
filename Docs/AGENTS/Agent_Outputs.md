@@ -3275,3 +3275,16 @@ ext phase).
 **Warnings:** None.
 **For next agent:** If status taxonomy changes, update `isCompleteStatus` to keep progress-visibility behavior consistent.
 **Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Improve jobs list mobile responsiveness
+**Task:** Make `/jobs` list UI mobile-phone friendly while preserving desktop layout.
+**Files touched:** `apps/web/src/app/jobs/page.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `@media (max-width: 768px)` and `@media (max-width: 480px)` breakpoints for layout, typography, and touch targets.
+- Stacked header/actions, wrapped card metadata/badges, clamped preview to 2 lines, and moved progress block to a full-width bottom row.
+- Hid row arrow on mobile to reduce visual clutter and reclaim horizontal space.
+- Increased mobile form-control font sizes (`searchInput`, `limitSelect`) to reduce iOS zoom issues.
+**Open items:** None.
+**Warnings:** Responsive tuning currently targets `/jobs`; other pages may still need their own breakpoints.
+**For next agent:** If similar overflow appears on `/jobs/[id]`, apply matching badge-wrap and footer stacking patterns there.
+**Learnings:** no
