@@ -9,12 +9,13 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useRef, useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ExpandableText.module.css";
+import { getTextParagraphs } from "../utils/getTextParagraphs";
 
 /** Render inline markdown fragments for common generic patterns. */
 function renderInlineMarkdown(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
-  // Match **bold** or `inline code`
-  const regex = /\*\*(.+?)\*\*|`([^`]+)`/g;
+  // Match **bold**, `inline code`, or reference IDs (e.g. EV_12345, CP_AC_01_0)
+  const regex = /\*\*(.+?)\*\*|`([^`]+)`|(\b[A-Z]{2,}_[A-Z0-9_]+\b)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -28,6 +29,9 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     } else if (match[2]) {
       // `inline code`
       parts.push(<code key={key++}>{match[2]}</code>);
+    } else if (match[3]) {
+      // Reference ID (auto-bold for scanning)
+      parts.push(<strong key={key++} style={{ fontWeight: 600 }}>{match[3]}</strong>);
     }
     lastIndex = regex.lastIndex;
   }
@@ -55,41 +59,12 @@ function renderParagraph(text: string, key?: number) {
   );
 }
 
-/**
- * Structural normalization only.
- * Keeps content semantics untouched and avoids prompt-specific formatting rules.
- */
-function normalizeText(text: string): string {
-  return text.replace(/\r\n?/g, "\n");
-}
-
 /** Render text with **bold**, paragraph breaks (\n\n), and line breaks (\n) */
 function FormattedText({ text }: { text: string }) {
-  const normalized = normalizeText(text);
-  
-  // v2.6.40: If block has NO double newlines but is long, treat single newlines as paragraphs
-  // ONLY if they look intentional (punctuation-ending lines or list patterns)
-  const hasDoubleNewlines = normalized.includes("\n\n");
-  
-  let paragraphs: string[];
-  if (hasDoubleNewlines || normalized.length < 400) {
-    paragraphs = normalized.split(/\n{2,}/);
-  } else {
-    // Single newline heuristic: only split if it looks like intentional paragraphs/lists
-    const lines = normalized.split('\n');
-    const punctuationLines = lines.filter(l => /[.!?:]\s*$/.test(l)).length;
-    // Heuristic: at least half of lines end in punctuation, indicating they are not wraps
-    const isLikelyIntentional = lines.length > 2 && (punctuationLines / lines.length > 0.5);
-    
-    if (isLikelyIntentional) {
-      paragraphs = lines;
-    } else {
-      paragraphs = [normalized];
-    }
-  }
+  const paragraphs = getTextParagraphs(text);
 
   if (paragraphs.length <= 1) {
-    return <>{renderParagraph(text)}</>;
+    return <>{renderParagraph(paragraphs[0] ?? text)}</>;
   }
   return (
     <>
@@ -228,4 +203,3 @@ export function ExpandableText({
     </>
   );
 }
-

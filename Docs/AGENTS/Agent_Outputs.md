@@ -3225,3 +3225,41 @@ ext phase).
 **Warnings:** None.
 **For next agent:** Continue removing render-time IIFEs where simple precomputed variables are sufficient.
 **Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Address review findings on ExpandableText heuristics and scope drift
+**Task:** Fix multilingual wall-of-text splitting, tighten list/newline heuristic triggering, and revert unrelated progress visibility change in jobs list.
+**Files touched:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`, `apps/web/src/app/jobs/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced uppercase-dependent sentence splitter with language-neutral sentence extraction using punctuation classes (`.!?。！？`).
+- Updated list detection from "any single list-like line" to threshold-based detection (>=2 list lines and >=30% of non-empty lines).
+- Kept punctuation-intent heuristic but computed ratios over non-empty lines only.
+- Reverted unrelated jobs list progress display gating so terminal-state progress remains visible.
+**Open items:** No dedicated unit tests added for new paragraph heuristics.
+**Warnings:** Build initially hit transient Windows file-lock (`EBUSY` under `.next/standalone`) but succeeded on immediate retry.
+**For next agent:** If paragraph splitting remains sensitive, consider extracting heuristic into a tested utility module with multilingual fixtures.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Extract paragraph heuristics utility and add unit coverage
+**Task:** Address Gemini review by moving `FormattedText` paragraph-splitting heuristics into a pure utility, replacing magic numbers with named constants, and adding focused tests.
+**Files touched:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`, `apps/web/src/app/jobs/[id]/utils/getTextParagraphs.ts`, `apps/web/test/unit/app/jobs/getTextParagraphs.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Extracted heuristics to `getTextParagraphs(text)` so formatting logic is testable outside React rendering.
+- Introduced named constants for all heuristic thresholds/chunk sizing and centralized sentence/double-newline regexes.
+- Added test cases for double newlines, list-like single newlines, wrapped prose no-split, long wall-of-text chunking, and CJK punctuation behavior.
+- Updated sentence matching to work without whitespace boundaries so CJK wall-of-text content chunks correctly.
+**Open items:** None.
+**Warnings:** Safe tests only were run by design (no expensive LLM integration suites).
+**For next agent:** If heuristics are tuned again, update constants/tests together in `getTextParagraphs.ts` and `getTextParagraphs.test.ts`.
+**Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Fix sentence-split data retention and 2-line list detection edge case
+**Task:** Validate and apply follow-up fixes from review feedback for paragraph heuristics in report text rendering.
+**Files touched:** `apps/web/src/app/jobs/[id]/utils/getTextParagraphs.ts`, `apps/web/test/unit/app/jobs/getTextParagraphs.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced wall-of-text sentence tokenization from regex `match()` extraction to punctuation-aware `split()` with captured delimiters to avoid dropping unmatched segments.
+- Corrected intentional-break logic so `looksLikeList` is not blocked by the minimum-line punctuation gate (2-line lists now split when list semantics are present).
+- Added regression tests for two-line list handling and leading punctuation/abbreviation retention in long text.
+**Open items:** None.
+**Warnings:** Full safe test suite (`npm test`) is verbose by design; expensive LLM suites remain excluded per repo config.
+**For next agent:** Keep heuristics and tests in lockstep; if chunking behavior changes, extend tests before adjusting thresholds.
+**Learnings:** no
