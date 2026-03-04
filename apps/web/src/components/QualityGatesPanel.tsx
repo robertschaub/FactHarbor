@@ -52,6 +52,7 @@ export function QualityGatesPanel({ qualityGates, collapsed = true }: QualityGat
         aria-expanded={isExpanded}
       >
         <div className={styles.headerLeft}>
+          <span className={styles.expandIcon}>{isExpanded ? '▾' : '▸'}</span>
           <span className={styles.statusIcon}>
             {passed ? '✓' : '⚠'}
           </span>
@@ -59,9 +60,6 @@ export function QualityGatesPanel({ qualityGates, collapsed = true }: QualityGat
             Quality Gates: {passed ? 'Passed' : 'Issues Detected'}
           </span>
         </div>
-        <span className={styles.expandIcon}>
-          {isExpanded ? '▼' : '▶'}
-        </span>
       </button>
 
       {isExpanded && (

@@ -1,18 +1,20 @@
 .banner {
-  border-left: 4px solid #f59e0b;
-  background: #fff8e1;
+  border-left: 3px solid #94a3b8;
+  background: #f8fafc;
   padding: 10px 12px;
   border-radius: 6px;
   margin: 12px 0;
 }
 
 .text {
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
   color: #1f2937;
+  line-height: 1.5;
 }
 
 .typeLabel {
-  color: #854d0e;
+  color: #334155;
   font-weight: 600;
   font-size: 14px;
   display: inline-block;
@@ -22,7 +24,7 @@
 @media (prefers-color-scheme: dark) {
   .banner {
     background: #1f2937;
-    border-left-color: #fbbf24;
+    border-left-color: #94a3b8;
   }
 
   .text {
@@ -30,6 +32,6 @@
   }
 
   .typeLabel {
-    color: #fbbf24;
+    color: #cbd5e1;
   }
 }

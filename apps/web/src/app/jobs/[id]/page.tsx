@@ -37,7 +37,6 @@ import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { generateHtmlReport } from "./utils/generateHtmlReport";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
-import FallbackReport from "@/components/FallbackReport";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay, BoundaryLegend } from "./components/CoverageMatrix";
@@ -77,6 +76,14 @@ function escapeHtml(str: string): string {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+function formatWarningTypeLabel(type: string): string {
+  return type
+    .split("_")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 type Job = {
@@ -524,7 +531,10 @@ export default function JobPage() {
       message: warning.message,
     };
   });
-  const showWarningDiagnostics = process.env.NODE_ENV !== "production" && warningDiagnostics.length > 0;
+  const showWarningDiagnostics =
+    hasAdminKey &&
+    process.env.NODE_ENV !== "production" &&
+    warningDiagnostics.length > 0;
   const reportIntegrity = result?.meta?.reportIntegrity;
   const reportDamagedWarning = analysisWarnings.find((w) => w.type === "report_damaged");
   // Report is "damaged" only when explicitly flagged — not from routine error-severity warnings.
@@ -570,102 +580,153 @@ export default function JobPage() {
     : qualitySummary.tone === "warning"
       ? styles.qualityGroupWarning
       : styles.qualityGroupOk;
+  const degradingAnalysisIssues = qualityWarnings.filter((w) => w.type !== "report_damaged");
+  const qualityImpactingIssueCount = degradingProviderIssues.length + degradingAnalysisIssues.length;
+  const operationalNotesCount =
+    informationalProviderIssues.length +
+    informationalAnalysisWarnings.length +
+    fallbackCount;
   const reportQualityPanel = (
-    <details className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`} open={isReportDamaged}>
-      <summary className={styles.qualityGroupSummary}>
-        <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
-      </summary>
-      <div className={styles.qualityGroupContent}>
-        {isReportDamaged && (
-          <div className={styles.reportDamageBanner}>
-            <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
-            <div className={styles.reportDamageText}>
-              {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
-            </div>
-            {reportDamageTriggerTypes.length > 0 && (
-              <div className={styles.reportDamageMeta}>
-                Triggers: {reportDamageTriggerTypes.join(", ")}
+    <>
+      <details className={`${styles.qualityGroupDetails} ${qualityGroupClassName}`} open={isReportDamaged}>
+        <summary className={styles.qualityGroupSummary}>
+          <span>{qualitySummary.summaryIcon} {qualitySummary.summaryLabel}</span>
+        </summary>
+        <div className={styles.qualityGroupContent}>
+          {isReportDamaged && (
+            <div className={styles.reportDamageBanner}>
+              <div className={styles.reportDamageTitle}>Report Integrity Warning</div>
+              <div className={styles.reportDamageText}>
+                {reportDamagedWarning?.message || "Critical analysis issues were detected. Treat this report as damaged and review quality warnings."}
               </div>
+              {reportDamageTriggerTypes.length > 0 && (
+                <div className={styles.reportDamageMeta}>
+                  Triggers: {reportDamageTriggerTypes.join(", ")}
+                </div>
+              )}
+              {reportDamageIssues.length > 0 && (
+                <ul className={styles.reportDamageList}>
+                  {reportDamageIssues.slice(0, 5).map((issue, idx) => (
+                    <li key={`issue-${idx}`}>
+                      <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {reportDamageHints.length > 0 && (
+                <ul className={styles.reportDamageHints}>
+                  {reportDamageHints.slice(0, 3).map((hint, idx) => (
+                    <li key={`hint-${idx}`}>{hint}</li>
+                  ))}
+                </ul>
+              )}
+              <div className={styles.reportDamageNextStep}>
+                Next step: {reportDamageNextStep}
+              </div>
+            </div>
+          )}
+
+          {qualityImpactingIssueCount > 0 ? (
+            <details className={styles.providerIssueBanner}>
+              <summary className={styles.providerIssueSummary}>
+                Quality-impacting issues — {qualityImpactingIssueCount}
+              </summary>
+              <ul className={styles.providerIssueList}>
+                {degradingProviderIssues.map((w, idx: number) => (
+                  <li key={`degrading-provider-${idx}`}>
+                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
+                  </li>
+                ))}
+                {degradingAnalysisIssues.map((w, idx: number) => (
+                  <li key={`degrading-analysis-${idx}`}>
+                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            !isReportDamaged && (
+              <div className={styles.providerInfoBanner}>
+                <div className={styles.providerInfoSummary}>
+                  Quality-impacting issues — 0
+                </div>
+                <div className={styles.providerInfoEmpty}>No quality-impacting issues detected.</div>
+              </div>
+            )
+          )}
+
+          <details className={styles.providerInfoBanner}>
+            <summary className={styles.providerInfoSummary}>
+              Operational Notes — {operationalNotesCount} informational
+            </summary>
+
+            {operationalNotesCount === 0 && (
+              <div className={styles.providerInfoEmpty}>No operational notes.</div>
             )}
-            {reportDamageIssues.length > 0 && (
-              <ul className={styles.reportDamageList}>
-                {reportDamageIssues.slice(0, 5).map((issue, idx) => (
-                  <li key={`issue-${idx}`}>
-                    <strong>{issue.type || "issue"}:</strong> {issue.message || "No message"}
+
+            {informationalProviderIssues.length > 0 && (
+              <ul className={styles.providerInfoList}>
+                {informationalProviderIssues.map((w, idx: number) => (
+                  <li key={`provider-info-${idx}`}>
+                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
                   </li>
                 ))}
               </ul>
             )}
-            {reportDamageHints.length > 0 && (
-              <ul className={styles.reportDamageHints}>
-                {reportDamageHints.slice(0, 3).map((hint, idx) => (
-                  <li key={`hint-${idx}`}>{hint}</li>
+
+            {informationalAnalysisWarnings.length > 0 && (
+              <ul className={styles.providerInfoList}>
+                {informationalAnalysisWarnings.map((w, idx: number) => (
+                  <li key={`analysis-info-${idx}`}>
+                    <strong>{formatWarningTypeLabel(w.type)}:</strong> {w.message}
+                  </li>
                 ))}
               </ul>
             )}
-            <div className={styles.reportDamageNextStep}>
-              Next step: {reportDamageNextStep}
-            </div>
-          </div>
-        )}
 
-        {degradingProviderIssues.length > 0 && (
-          <details className={styles.providerIssueBanner}>
-            <summary className={styles.providerIssueSummary}>
-              {degradingProviderIssues.length} provider issue{degradingProviderIssues.length !== 1 ? "s" : ""} degraded analysis quality
-            </summary>
-            <ul className={styles.providerIssueList}>
-              {degradingProviderIssues.map((w, idx: number) => (
-                <li key={`pi-${idx}`}>
-                  <strong>{w.type}:</strong> {w.message}
-                </li>
-              ))}
-            </ul>
+            {fallbackCount > 0 && (
+              <details className={styles.providerIssueBanner}>
+                <summary className={styles.providerIssueSummary}>
+                  Classification fallbacks — {fallbackCount} informational
+                </summary>
+                <ul className={styles.providerIssueList}>
+                  {(Object.entries(classificationFallbacks?.fallbacksByField || {}) as Array<[string, number]>)
+                    .filter(([, count]) => count > 0)
+                    .map(([field, count]) => (
+                      <li key={`fallback-field-${field}`}>
+                        <strong>{field}:</strong> {count} fallback{count !== 1 ? "s" : ""}
+                      </li>
+                    ))}
+                </ul>
+              </details>
+            )}
           </details>
-        )}
 
-        {informationalProviderIssues.length > 0 && (
-          <details className={styles.providerInfoBanner}>
-            <summary className={styles.providerInfoSummary}>
-              {informationalProviderIssues.length} provider fallback event{informationalProviderIssues.length !== 1 ? "s" : ""} recorded (informational)
-            </summary>
-            <ul className={styles.providerInfoList}>
-              {informationalProviderIssues.map((w, idx: number) => (
-                <li key={`pi-info-${idx}`}>
-                  <strong>{w.type}:</strong> {w.message}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-
-        {showWarningDiagnostics && (
-          <details className={styles.devWarningPanel}>
-            <summary className={styles.devWarningSummary}>
-              Dev warning diagnostics ({warningDiagnostics.length})
-            </summary>
-            <div className={styles.devWarningHint}>
-              Development-only view of warning bucketing and display severity normalization.
-            </div>
-            <ul className={styles.devWarningList}>
-              {warningDiagnostics.map((diag, idx) => (
-                <li key={`wd-${idx}`} className={styles.devWarningItem}>
-                  <code className={styles.devWarningType}>{diag.type}</code>
-                  <span className={styles.devWarningMeta}>
-                    bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
-                  </span>
-                  <div className={styles.devWarningMessage}>{diag.message}</div>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-
-        <FallbackReport summary={classificationFallbacks} analysisWarnings={analysisWarnings} isAdmin={hasAdminKey} />
-
-        <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
-      </div>
-    </details>
+          {showWarningDiagnostics && (
+            <details className={styles.devWarningPanel}>
+              <summary className={styles.devWarningSummary}>
+                Developer diagnostics ({warningDiagnostics.length})
+              </summary>
+              <div className={styles.devWarningHint}>
+                Development-only view of warning bucketing and display severity normalization.
+              </div>
+              <ul className={styles.devWarningList}>
+                {warningDiagnostics.map((diag, idx) => (
+                  <li key={`wd-${idx}`} className={styles.devWarningItem}>
+                    <code className={styles.devWarningType}>{diag.type}</code>
+                    <span className={styles.devWarningMeta}>
+                      bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
+                    </span>
+                    <div className={styles.devWarningMessage}>{diag.message}</div>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      </details>
+      <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
+    </>
   );
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
@@ -1082,7 +1143,7 @@ export default function JobPage() {
               {/* v2.6.33: Show transformed input if different from original */}
               {impliedClaim && (
                 <TransformedInputBox
-                  originalInput={job?.inputValue || ""}
+                  originalInput={job?.inputValue || job?.inputPreview || ""}
                   transformedInput={impliedClaim}
                 />
               )}
@@ -2256,9 +2317,17 @@ function TransformedInputBox({
   originalInput: string;
   transformedInput: string;
 }) {
-  // Only show if transformation is meaningfully different from original
-  const normalizedOriginal = originalInput.trim().toLowerCase().replace(/[?!.]+$/, "");
-  const normalizedTransformed = transformedInput.trim().toLowerCase().replace(/[?!.]+$/, "");
+  // Only show if normalization materially changed the displayed input.
+  const canonicalizeForComparison = (text: string): string => {
+    return (text || "")
+      .normalize("NFKC")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/[.!?…:;,]+$/u, "");
+  };
+  const normalizedOriginal = canonicalizeForComparison(originalInput);
+  const normalizedTransformed = canonicalizeForComparison(transformedInput);
   const isTransformed = normalizedOriginal !== normalizedTransformed;
 
   if (!isTransformed || !transformedInput) return null;
@@ -2416,7 +2485,7 @@ function ClaimCard({
           </Badge>
         )}
       </div>
-      <div className={styles.claimText}>"{claim.claimText}"</div>
+      <div className={styles.claimText}>{claim.claimText}</div>
       
       <VisualTruthMeter
         truth={displayClaimPct}

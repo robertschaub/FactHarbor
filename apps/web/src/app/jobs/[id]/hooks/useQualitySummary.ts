@@ -40,18 +40,18 @@ export function useQualitySummary({
 
     let summaryLabel: string;
     if (isReportDamaged) {
-      summaryLabel = "Report Quality — Damaged";
+      summaryLabel = "Analysis Quality — Damaged";
     } else if (realIssueCount > 0 || gatesFailed) {
-      const issueText = gatesFailed && realIssueCount === 0
-        ? "Quality gates failed"
-        : `${realIssueCount} issue${realIssueCount !== 1 ? "s" : ""}`;
-      summaryLabel = infoCount > 0
-        ? `Report Quality — ${issueText}, ${infoCount} informational`
-        : `Report Quality — ${issueText}`;
-    } else if (infoCount > 0) {
-      summaryLabel = `Report Quality — ${infoCount} informational`;
+      const parts: string[] = [];
+      if (realIssueCount > 0) {
+        parts.push(`${realIssueCount} degrading issue${realIssueCount !== 1 ? "s" : ""}`);
+      }
+      if (gatesFailed) {
+        parts.push("quality gates failed");
+      }
+      summaryLabel = `Analysis Quality — ${parts.join(" · ")}`;
     } else {
-      summaryLabel = "Report Quality — No issues";
+      summaryLabel = "Analysis Quality — No degrading issues";
     }
 
     const summaryIcon: "✓" | "⚠️" | "❌" = isReportDamaged ? "❌" : hasRealIssues ? "⚠️" : "✓";

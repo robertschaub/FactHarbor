@@ -1,6 +1,6 @@
 .banner {
-  border-left: 4px solid #6366f1;
-  background: #eef2ff;
+  border-left: 3px solid #94a3b8;
+  background: #f8fafc;
   padding: 10px 12px;
   border-radius: 6px;
   margin: 12px 0;
@@ -9,7 +9,7 @@
 .label {
   font-size: 14px;
   font-weight: 600;
-  color: #1e40af;
+  color: #334155;
   margin-bottom: 4px;
 }
 
@@ -20,12 +20,12 @@
 
 @media (prefers-color-scheme: dark) {
   .banner {
-    background: #0f172a;
-    border-left-color: #818cf8;
+    background: #1f2937;
+    border-left-color: #94a3b8;
   }
 
   .label {
-    color: #a5b4fc;
+    color: #cbd5e1;
   }
 
   .text {

@@ -57,17 +57,16 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, befor
         </details>
       )}
 
-      {beforeLimitations}
-
       <details className={styles.details}>
         <summary className={styles.summary}>
-          <span className={styles.summaryIcon}>ℹ️</span>
           <span>Limitations</span>
         </summary>
         <div className={styles.limitationsContent}>
           <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" />
         </div>
       </details>
+
+      {beforeLimitations}
     </section>
   );
 }

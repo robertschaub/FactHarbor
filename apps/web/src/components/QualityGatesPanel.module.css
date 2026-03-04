@@ -17,8 +17,8 @@
 }
 
 .panel.passed {
-  border-color: var(--color-success-light);
-  background: linear-gradient(to right, var(--color-success-bg), transparent);
+  border-color: #d1d5db;
+  background: #f9fafb;
 }
 
 .panel.failed {
@@ -54,7 +54,7 @@
 }
 
 .panel.passed .statusIcon {
-  color: var(--color-success);
+  color: #475569;
 }
 
 .panel.failed .statusIcon {
@@ -68,8 +68,11 @@
 }
 
 .expandIcon {
-  font-size: 10px;
+  width: 14px;
+  font-size: 14px;
+  line-height: 1;
   color: var(--text-secondary, #6b7280);
+  text-align: center;
 }
 
 .content {
