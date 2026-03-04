@@ -496,6 +496,16 @@ export default function SourceReliabilityPage() {
     return (score * 100).toFixed(0) + "%";
   };
 
+  const getModelsTooltip = (entry: CachedScore) => {
+    if (entry.modelPrimary && entry.modelSecondary) {
+      return `Models: ${entry.modelPrimary} + ${entry.modelSecondary}`;
+    }
+    if (entry.modelPrimary) {
+      return `Models: ${entry.modelPrimary}`;
+    }
+    return "Models: Unknown";
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -858,7 +868,7 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
   if (loading && !data) {
     return (
       <div className={styles.container}>
-        <h1>Source Reliability Cache</h1>
+        <h1 className={styles.pageTitle}>Source Reliability Cache</h1>
         <div className={styles.loading}>Loading...</div>
       </div>
     );
@@ -867,7 +877,7 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
   if (error) {
     return (
       <div className={styles.container}>
-        <h1>Source Reliability Cache</h1>
+        <h1 className={styles.pageTitle}>Source Reliability Cache</h1>
         <div className={styles.error}>Error: {error}</div>
         <button onClick={fetchData} className={styles.button}>
           Retry
@@ -885,7 +895,7 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
     <div className={styles.container}>
       <header className={styles.header}>
         <div>
-          <h1>Source Reliability Cache</h1>
+          <h1 className={styles.pageTitle}>Source Reliability Cache</h1>
           <p className={styles.subtitle}>
             LLM-evaluated source reliability scores cached for reuse
           </p>
@@ -1119,25 +1129,24 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                       />
                     </th>
                   )}
+                  <th style={{ width: "70px", textAlign: "center" }}>Actions</th>
                   <th onClick={() => handleSort("domain")} className={styles.sortable}>
                     Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th>Entity</th>
                   <th onClick={() => handleSort("score")} className={styles.sortable} style={{ width: "70px", textAlign: "center" }}>
                     Score {sortBy === "score" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
                   <th onClick={() => handleSort("confidence")} className={styles.sortable} style={{ width: "70px", textAlign: "center" }}>
                     Conf. {sortBy === "confidence" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th style={{ width: "90px" }}>Models</th>
                   <th style={{ width: "60px", textAlign: "center" }}>✓</th>
+                  <th>Entity</th>
                   <th onClick={() => handleSort("evaluated_at")} className={styles.sortable} style={{ width: "110px" }}>
                     Evaluated {sortBy === "evaluated_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
                   <th onClick={() => handleSort("expires_at")} className={styles.sortable} style={{ width: "110px" }}>
                     Expires {sortBy === "expires_at" && (sortOrder === "asc" ? "↑" : "↓")}
                   </th>
-                  <th style={{ width: "70px", textAlign: "center" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1152,57 +1161,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                         />
                       </td>
                     )}
-                    <td className={styles.domain}>{entry.domain}</td>
-                    <td className={styles.entity} title={entry.identifiedEntity || ""}>
-                      {entry.identifiedEntity || "—"}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <span
-                        className={styles.scoreBadge}
-                        style={{ backgroundColor: getScoreColor(entry.score) }}
-                        title={getScoreLabel(entry.score)}
-                      >
-                        {formatScore(entry.score)}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <span 
-                        className={styles.confidence}
-                        title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'} (${formatScore(entry.confidence)})`}
-                      >
-                        {formatScore(entry.confidence)}
-                      </span>
-                    </td>
-                    <td className={styles.models}>
-                      <span title={entry.modelPrimary}>{entry.modelPrimary.split("-")[0]}</span>
-                      {entry.modelSecondary && (
-                        <>
-                          {" + "}
-                          <span title={entry.modelSecondary}>{entry.modelSecondary.split("-")[0]}</span>
-                        </>
-                      )}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {entry.score === null ? (
-                        <span className={styles.consensusNo} title="Insufficient data / low confidence">—</span>
-                      ) : entry.consensusAchieved ? (
-                        <span className={styles.consensusYes} title={entry.modelSecondary ? "Sequential refinement: Cross-checked and refined by secondary model" : "Single-model evaluation completed"}>✓</span>
-                      ) : entry.fallbackUsed ? (
-                        <span 
-                          className={styles.consensusFallback} 
-                          title={entry.fallbackReason || "Fallback: Models disagreed, used lower score"}
-                          style={{ cursor: "help" }}
-                        >
-                          ⚠️
-                        </span>
-                      ) : entry.modelSecondary ? (
-                        <span className={styles.consensusNo} title="Refinement failed or not recorded">✗</span>
-                      ) : (
-                        <span className={styles.consensusNo} title="Single-model result">—</span>
-                      )}
-                    </td>
-                    <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
-                    <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
                     <td>
                       <div className={styles.actionButtons}>
                         <button
@@ -1223,6 +1181,53 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                         )}
                       </div>
                     </td>
+                    <td className={styles.domain}>{entry.domain}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        className={styles.scoreBadge}
+                        style={{ backgroundColor: getScoreColor(entry.score) }}
+                        title={getScoreLabel(entry.score)}
+                      >
+                        {formatScore(entry.score)}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span 
+                        className={styles.confidence}
+                        title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'} (${formatScore(entry.confidence)})`}
+                      >
+                        {formatScore(entry.confidence)}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      {entry.score === null ? (
+                        <span className={styles.consensusNo} title={`Insufficient data / low confidence\n${getModelsTooltip(entry)}`}>—</span>
+                      ) : entry.consensusAchieved ? (
+                        <span
+                          className={styles.consensusYes}
+                          title={`${entry.modelSecondary ? "Sequential refinement: Cross-checked and refined by secondary model" : "Single-model evaluation completed"}\n${getModelsTooltip(entry)}`}
+                        >
+                          ✓
+                        </span>
+                      ) : entry.fallbackUsed ? (
+                        <span 
+                          className={styles.consensusFallback} 
+                          title={`${entry.fallbackReason || "Fallback: Models disagreed, used lower score"}\n${getModelsTooltip(entry)}`}
+                          style={{ cursor: "help" }}
+                        >
+                          ⚠️
+                        </span>
+                      ) : entry.modelSecondary ? (
+                        <span className={styles.consensusNo} title={`Refinement failed or not recorded\n${getModelsTooltip(entry)}`}>✗</span>
+                      ) : (
+                        <span className={styles.consensusNo} title={`Single-model result\n${getModelsTooltip(entry)}`}>—</span>
+                      )}
+                    </td>
+                    <td className={styles.entity} title={entry.identifiedEntity || ""}>
+                      {entry.identifiedEntity || "—"}
+                    </td>
+                    <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
+                    <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
                   </tr>
                 ))}
               </tbody>

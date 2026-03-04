@@ -2092,9 +2092,9 @@
 
 .boundaryFindingRow {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 2.5fr;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.6fr);
   gap: 12px;
-  align-items: center;
+  align-items: start;
   padding: 8px 10px;
   background-color: #ffffff;
   border-radius: 4px;
@@ -2109,9 +2109,10 @@
 
 .boundaryFindingName {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: 0.9rem;
+  min-width: 0;
 }
 
 .boundaryFindingIcon {
@@ -2124,14 +2125,17 @@
 .boundaryNameText {
   font-weight: 500;
   color: #212529;
+  overflow-wrap: anywhere;
 }
 
 .boundaryFindingMeta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   font-size: 0.8rem;
   color: #6c757d;
+  min-width: 0;
 }
 
 .boundaryMetaItem {
@@ -2145,9 +2149,11 @@
 .boundaryFindingVerdict {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 8px;
   font-size: 0.85rem;
+  min-width: 0;
 }
 
 .boundaryVerdictBadge {
@@ -2156,6 +2162,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .boundaryVerdictDetail {
@@ -2163,6 +2170,7 @@
   font-weight: 400;
   color: #333;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .boundaryConfidenceText {
@@ -2181,6 +2189,17 @@
 
 .boundaryFindingRow:hover .boundaryFindingTooltip {
   opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .boundaryFindingRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .boundaryFindingVerdict {
+    justify-content: flex-start;
+  }
 }
 
 /* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */

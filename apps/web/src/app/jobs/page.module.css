@@ -2,8 +2,8 @@
 
 .container {
   max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
+  margin: 0;
+  padding: 20px 0;
 }
 
 .header {
@@ -152,11 +152,11 @@
 }
 
 .statusIcon {
-  font-size: 24px;
+  font-size: 22px;
 }
 
 .statusIconSuccess {
-  font-size: 21px;
+  font-size: 19px;
 }
 
 .statusSuccess {
@@ -235,14 +235,6 @@
 .statusBadgeCancelled {
   background-color: #e0e0e0;
   color: #616161;
-}
-
-.inputTypeBadge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  background-color: #e9ecef;
-  color: #495057;
 }
 
 /* Pipeline variant badges */
@@ -505,7 +497,7 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 12px;
+    padding: 12px 0;
   }
 
   .header {
@@ -539,11 +531,11 @@
   }
 
   .statusIcon {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .statusIconSuccess {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .jobInfo {
@@ -622,7 +614,7 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 10px;
+    padding: 10px 0;
   }
 
   .headerTitle {
@@ -634,7 +626,6 @@
   }
 
   .statusBadge,
-  .inputTypeBadge,
   .verdictBadge {
     font-size: 10px;
   }

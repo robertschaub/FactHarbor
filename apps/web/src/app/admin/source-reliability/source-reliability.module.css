@@ -1,7 +1,7 @@
 .container {
   max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
+  margin: 0;
+  padding: 20px 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -14,14 +14,15 @@
   gap: 16px;
 }
 
-.header h1 {
-  margin: 0 0 4px 0;
-  font-size: 28px;
+.pageTitle {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
   color: #1a1a1a;
 }
 
 .subtitle {
-  margin: 0;
+  margin: 6px 0 0;
   color: #666;
   font-size: 14px;
 }
@@ -79,30 +80,33 @@
 
 /* Stats Cards */
 .stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .statCard {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 6px;
+  padding: 6px 10px;
   text-align: center;
+  min-width: 112px;
 }
 
 .statValue {
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 600;
   color: #1a1a1a;
+  line-height: 1.15;
 }
 
 .statLabel {
-  font-size: 12px;
+  font-size: 10px;
   color: #666;
-  margin-top: 2px;
+  margin-top: 1px;
+  line-height: 1.2;
 }
 
 /* Table */
@@ -185,12 +189,6 @@
 .confidence {
   color: #666;
   font-size: 12px;
-  white-space: nowrap;
-}
-
-.models {
-  font-size: 11px;
-  color: #666;
   white-space: nowrap;
 }
 

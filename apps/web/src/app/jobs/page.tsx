@@ -263,33 +263,36 @@ export default function JobsPage() {
 
                 {/* Job info */}
                 <div className={styles.jobInfo}>
-                  <div className={styles.jobMeta}>
-                    <code className={styles.jobIdCode}>{job.jobId.slice(0, 8)}...</code>
-                    <span className={`${styles.statusBadge} ${getStatusBadgeClass(job.status)}`}>
-                      {job.status}
-                    </span>
-                    {job.verdictLabel && (() => {
-                      const vBadge = getVerdictBadge(job.verdictLabel);
-                      if (!vBadge) return null;
-                      const displayPct = job.truthPercentage !== undefined
-                        ? (isFalseBand(job.verdictLabel) ? 100 - job.truthPercentage : job.truthPercentage)
-                        : undefined;
-                      return (
+                  {job.status !== "SUCCEEDED" && (
+                    <div className={styles.jobMeta}>
+                      <span className={`${styles.statusBadge} ${getStatusBadgeClass(job.status)}`}>
+                        {job.status}
+                      </span>
+                    </div>
+                  )}
+                  <div className={styles.jobPreview}>
+                    {job.inputPreview || "No preview available"}
+                  </div>
+                  {job.verdictLabel && (() => {
+                    const vBadge = getVerdictBadge(job.verdictLabel);
+                    if (!vBadge) return null;
+                    const displayPct = job.truthPercentage !== undefined
+                      ? (isFalseBand(job.verdictLabel) ? 100 - job.truthPercentage : job.truthPercentage)
+                      : undefined;
+                    return (
+                      <div style={{ margin: "0 0 4px" }}>
                         <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence != null ? ` · Confidence: ${job.confidence}%` : ""}`}>
                           {vBadge.icon} {vBadge.text} <span style={{ fontWeight: 400 }}>{displayPct !== undefined && <>· {formatVerdictText(displayPct, job.verdictLabel)}</>}
                           {job.confidence !== undefined && <> · {getConfidenceTierLabel(job.confidence)}</>}</span>
                         </span>
-                      );
-                    })()}
-                    <span className={styles.inputTypeBadge}>
-                      {job.inputType}
-                    </span>
-                  </div>
-                  <div className={styles.jobPreview}>
-                    {job.inputPreview || "No preview available"}
-                  </div>
+                      </div>
+                    );
+                  })()}
                   <div className={styles.jobTimestamp}>
                     Created: {formatDate(job.createdUtc)}
+                  </div>
+                  <div>
+                    <code className={styles.jobIdCode}>{job.jobId.slice(0, 8)}...</code>
                   </div>
                 </div>
 

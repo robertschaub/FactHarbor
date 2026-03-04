@@ -3299,3 +3299,17 @@ ext phase).
 **Warnings:** Screenshoted production behavior may still show old layout until this commit is deployed.
 **For next agent:** Keep verdict badge as a dedicated row on mobile if additional metadata chips are added.
 **Learnings:** no
+---
+### 2026-03-04 | Senior Developer | Codex (GPT-5) | Consolidate UI alignment and table usability fixes
+**Task:** Apply requested UI refinements across reports, analyze, and source-reliability pages (alignment, overflow, column ordering, compactness, and badge placement).
+**Files touched:** `apps/web/src/app/admin/source-reliability/page.tsx`, `apps/web/src/app/admin/source-reliability/source-reliability.module.css`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/page.module.css`, `apps/web/src/app/jobs/page.tsx`, `apps/web/src/app/layout.module.css`, `apps/web/src/components/DisclaimerBanner.tsx`, `apps/web/src/components/DisclaimerBanner.module.css`, `apps/web/src/styles/common.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Standardized top-level alignment with shared layout edge; left-aligned disclaimer text to match title edge.
+- Made jobs/report cards mobile-friendlier and adjusted card metadata placement (verdict below input text, GUID below created date, hide succeeded badge/progress 100%).
+- Fixed report boundary-findings clipping and alignment by responsive wrapping and left-anchored verdict rows.
+- Simplified source-reliability table by removing Models column and moving model details into consensus tooltips; reordered columns per request (Domain left, Actions left of Domain).
+- Reduced source-reliability stats card visual footprint.
+**Open items:** None.
+**Warnings:** None.
+**For next agent:** If additional table compacting is requested, adjust `source-reliability.module.css` column widths in sync with `page.tsx` order.
+**Learnings:** no
