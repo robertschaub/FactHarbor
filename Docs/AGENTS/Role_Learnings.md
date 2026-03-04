@@ -334,6 +334,24 @@ _(No entries yet)_
 **Learning:** For long-running calibration jobs, a failing threshold assertion can hide whether the run itself was healthy. Review should always verify diagnostic completeness (`stage`, `provider`, `model`, `promptKey`, failure-mode aggregates) and artifact integrity (`json` + `html`) before judging result significance. This prevents classifying infrastructure/reporting failures as model-quality regressions.
 **Files:** `apps/web/src/lib/calibration/runner.ts`, `apps/web/src/lib/calibration/report-generator.ts`, `apps/web/test/output/bias/*.json`
 
+### 2026-03-05 — Audit prompts must enforce category-first classification to prevent severity drift
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** useful-pattern
+**Learning:** When multiple agents audit and implement warning severity changes, the most common failure mode is classifying analytical reality (scarce evidence, recency gaps) as system failures, then inflating severity. The fix: audit prompts must require classifying each warning into a category (routine/system-failure/analytical-reality) BEFORE applying the severity litmus test, because category constrains the severity ceiling. Without this ordering, agents repeatedly escalated `insufficient_evidence` to `error`. The reusable audit prompt at `Docs/AGENTS/Audit_Warning_Severity.md` encodes this pattern.
+**Files:** `Docs/AGENTS/Audit_Warning_Severity.md`, `AGENTS.md` (§ Report Quality & Event Communication)
+
+### 2026-03-05 — Display severity floor is a safety net — never remove it
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** The `warning-display.ts` severity floor (degrading warnings promoted from `info` to `warning` minimum) was accidentally removed during a refactor by an implementing agent. This silently allowed real quality issues to be hidden from users. The floor exists as a safety net: even if emission code accidentally sets `info` on a degrading type, the display layer catches it. Always verify the floor survives refactors: `normalizedSeverity === "info" ? "warning" : normalizedSeverity` for degrading types.
+**Files:** `apps/web/src/lib/analyzer/warning-display.ts` (classifyWarningForDisplay)
+
+### 2026-03-05 — Bucket assignment: user-facing meaning, not root cause
+**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** An implementing agent moved `budget_exceeded`, `structural_consistency`, and `verdict_integrity_failure` to the `provider` bucket because their root cause could involve LLM providers. But from the user's perspective, these are analysis quality issues ("the analysis ran out of budget" / "the analysis has structural problems"), not provider issues ("a provider had trouble"). Bucket assignment rule: ask "what does the user see?" not "what caused it internally?"
+**Files:** `apps/web/src/lib/analyzer/warning-display.ts` (WARNING_CLASSIFICATION registry)
+
 ## Security Expert
 
 ### 2026-03-01 — Retry endpoints are a hidden quota bypass vector

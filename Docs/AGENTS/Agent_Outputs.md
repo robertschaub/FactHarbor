@@ -2,6 +2,39 @@
 
 
 ---
+### 2026-03-05 | Senior Developer | Claude Opus 4.6 | Report Page UI Polish (Round 10+)
+**Task:** Iterative UI polish on the report page: expandable text, verdict restructure, quality classification, coverage matrix wrapping, jobs list cleanup.
+**Files touched:** `page.tsx` (jobs/[id]), `page.module.css`, `ExpandableText.tsx` (new), `ExpandableText.module.css` (new), `VerdictNarrative.tsx`, `VerdictNarrative.module.css`, `CoverageMatrix.module.css`, `CoverageMatrix.tsx`, `FallbackReport.tsx`, `FallbackReport.module.css`, `jobs/page.tsx`.
+**Key decisions:**
+- Replaced blocklist (HANDLED_INTEGRITY_TYPES) with allowlist (TRULY_DEGRADING_TYPES) for quality issue classification. Only `report_damaged`, `no_successful_sources`, `source_acquisition_collapse`, `analysis_generation_failed` count as real issues.
+- `llm_provider_error` and `search_provider_error` kept as degrading (severity-driven) per code review M1 finding — real provider outages without fallback can silently degrade evidence quality.
+- Verdict title moved above banner box as `<h3>` section title. Section renamed from "Verdict Overview" to "Assessment Overview".
+- ExpandableText component: overflow detection via useRef, bold reference IDs, text normalization for LLM output without newlines, modal overlay.
+- Coverage matrix: text wrapping enabled, JS 50-char truncation removed.
+- Jobs list: hide 100% progress for completed/failed jobs.
+**Open items:** L1 from code review — `normalizeText()` English sentence starters are display-only but won't help non-English text. Acceptable for v1.
+**Warnings:** TRULY_DEGRADING_TYPES is an allowlist — new warning types added to the pipeline will be informational by default until explicitly added here. Comment in code documents this.
+**For next agent:** The quality classification now uses a positive allowlist approach. When adding new pipeline warning types, check if they belong in TRULY_DEGRADING_TYPES (page.tsx ~line 589). The ExpandableText component is reusable for any long text display.
+**Learnings:** Appended to Role_Learnings.md? No — no role was formally activated.
+
+---
+### 2026-03-05 | Code Reviewer | Claude Opus | Report Quality & Event Communication — Full Cycle Conclusion
+**Task:** Design, implement, audit, and verify the "Report Quality & Event Communication" framework for warning severity classification and display.
+**Files touched:** `AGENTS.md` (rules rewrite), `Docs/AGENTS/Audit_Warning_Severity.md` (new audit prompt), `apps/web/src/lib/analyzer/warning-display.ts` (WARNING_CLASSIFICATION registry, severity floor, bucket logic), `apps/web/test/unit/lib/analyzer/warning-display.test.ts` (test coverage), `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (emission severities), `apps/web/src/lib/analyzer/verdict-stage.ts` (emission severities).
+**Key decisions:**
+- Replaced old "Analysis Report Display" section with structured 3-category, 5-severity framework anchored on verdict impact
+- Three categories: routine operations (silent/info), system-level failures (warning/error/severe), analytical reality (warning/error, never severe)
+- `insufficient_evidence` classified as analytical reality, not system failure — the system correctly identified scarce evidence
+- Severity floor in display layer: degrading warnings promoted from `info` to `warning` minimum
+- Bucket assignment by user-facing meaning, not root cause
+- Created reusable audit prompt with category-first classification to prevent recurring misclassification
+- Dead types from removed orchestrated pipeline cleaned up by Gemini CLI
+**Open items:** None. Audit closed (pass).
+**Warnings:** Future agents adding new warning types must register them in `warning-display.ts` — the `satisfies Record<AnalysisWarningType, WarningClassification>` enforces compile-time coverage. Run the audit one-liner periodically: `As Code Reviewer, run the audit defined in Docs/AGENTS/Audit_Warning_Severity.md`.
+**For next agent:** The warning system is complete and lean. All 3 layers (AGENTS.md rules → warning-display.ts classification → emission sites) are aligned. No action needed unless new warning types are added.
+**Learnings:** Appended to Role_Learnings.md? Yes — see below.
+
+---
 ### 2026-03-04 | Code Reviewer | Gemini CLI | Cleanup: Dead Warning Types Removal
 **Task:** Removed 7 dead warning types from the system after final audit.
 **Files touched:** apps/web/src/lib/analyzer/types.ts, apps/web/src/lib/analyzer/warning-display.ts, apps/web/src/components/FallbackReport.tsx, apps/web/src/lib/analyzer/metrics-integration.ts, apps/web/src/lib/calibration/metrics.ts
@@ -21,6 +54,23 @@
 **Warnings:** Awaiting directive to remove dead types and finalise the registry.
 **For next agent:** Ensure removal of dead types doesn't break metrics visualization for historical data if applicable.
 **Learnings:** No code changes made; audit only.
+
+---
+### 2026-03-05 | DevOps | Claude Opus 4.6 | Deploy Script Separation + Test Instance Disabled
+**Task:** Separate test instance deployment from main deploy.sh; disable test instance on VPS to reclaim RAM.
+**Files touched:** `scripts/deploy.sh` (removed test restart/health-check), `scripts/deploy-test.sh` (new), `scripts/DEPLOYMENT.md` (updated docs for both scripts).
+**Key decisions:**
+- `deploy.sh` is now production-only: still stops test services during build (OOM prevention on 4 GB VPS) but no longer restarts them. Prints a reminder if test was running.
+- `deploy-test.sh` created as standalone script: restarts test services + health-checks ports 5001/3001. No build step (shares prod artifacts).
+- Test instance disabled on VPS (`systemctl stop + disable`) to free ~300-500 MB steady-state RAM until VPS is upgraded.
+**Open items:**
+- Test instance re-enablement when VPS is upgraded to 8 GB (scripts are ready, just `systemctl enable + start`).
+- Updated Caddyfile with content-negotiating `handle_errors` blocks needs to be applied on VPS (see `scripts/Caddyfile.reference`).
+- OOM fix v2 (stop all services during build) has not been verified on VPS yet — deploy may still need a test run.
+- `deploy-remote.ps1` may need a `deploy-test-remote.ps1` counterpart if test is re-enabled later.
+**Warnings:** The `deploy-test.sh` existence check (`systemctl list-unit-files`) may behave differently if the service files are removed vs just disabled. Currently they are disabled, not removed.
+**For next agent:** When re-enabling test: `sudo systemctl enable --now factharbor-api-test factharbor-web-test`, then verify with `deploy-test.sh`. The VPS upgrade trigger is CHF 21.60/mo for 8 GB at Infomaniak.
+**Learnings:** Appended to Role_Learnings.md? No — no role was formally activated.
 
 
 ---
