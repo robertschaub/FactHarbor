@@ -133,6 +133,7 @@ Three warning categories, five severity levels. Severity reflects **verdict impa
 - **→ `error`:** Could change confidence tier (HIGH → MEDIUM) or verdict direction ("Mostly True" → "Mixed").
 - **→ `severe`:** No trustworthy verdict can be produced.
 - Showing warnings too often trains users to ignore them; showing too few hides real problems. Both erode trust.
+- **Degrading issues must be visible.** When warnings genuinely indicate reduced report quality (insufficient evidence, failed verdict generation, source acquisition collapse, budget exhaustion), they MUST be surfaced prominently to the user — never silenced, downgraded to `info`, or hidden behind admin-only toggles. The user must be able to assess whether the report's conclusions are trustworthy. Suppressing a real quality signal is worse than a false alarm.
 
 ### Configuration Placement
 When introducing a tunable parameter, place it in the correct tier:

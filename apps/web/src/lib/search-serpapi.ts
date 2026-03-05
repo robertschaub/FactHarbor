@@ -49,8 +49,9 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     console.log(`[Search] SerpAPI: Geography bias: gl=${options.geography.toLowerCase()}`);
   }
   if (options.language) {
-    params.set("hl", options.language.toLowerCase());
-    console.log(`[Search] SerpAPI: Interface language: hl=${options.language.toLowerCase()}`);
+    const baseLang = options.language.split("-")[0].toLowerCase();
+    params.set("hl", baseLang);
+    console.log(`[Search] SerpAPI: Interface language: hl=${baseLang}`);
   }
 
   const url = `${SERPAPI_BASE}?${params.toString().replace(apiKey, "***")}`;

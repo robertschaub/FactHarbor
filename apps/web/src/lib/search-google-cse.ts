@@ -51,8 +51,9 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Google CSE: Geography bias: gl=${options.geography.toLowerCase()}`);
   }
   if (options.language) {
-    params.set("lr", `lang_${options.language.toLowerCase()}`);
-    console.log(`[Search] Google CSE: Language restrict: lr=lang_${options.language.toLowerCase()}`);
+    const baseLang = options.language.split("-")[0].toLowerCase();
+    params.set("lr", `lang_${baseLang}`);
+    console.log(`[Search] Google CSE: Language restrict: lr=lang_${baseLang}`);
   }
 
   const urlForLog = `${GOOGLE_CSE_BASE}?key=***&cx=${cx}&q=${encodeURIComponent(options.query)}&num=${Math.min(options.maxResults, 10)}`;
