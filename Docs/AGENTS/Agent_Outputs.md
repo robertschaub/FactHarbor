@@ -3662,3 +3662,15 @@ ext phase).
 **Warnings:** Analysis-affecting prompt changes should include multilingual validation checks per AGENTS rules.
 **For next agent:** If implementing, keep changes confined to prompt files and run targeted ambiguous-input validation before broad rollout.
 **Learnings:** no
+---
+### 2026-03-05 | Senior Developer | Codex (GPT-5) | Remove remaining dark surfaces in job-detail tooltips/cards
+**Task:** Make remaining dark UI items bright in job detail view (notably Evidence Scope tooltip and methodology subgroup cards).
+**Files touched:** `apps/web/src/app/jobs/[id]/components/EvidenceScopeTooltip.module.css`, `apps/web/src/app/jobs/[id]/components/MethodologySubGroup.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Switched Evidence Scope tooltip to permanent light theme (white background, dark text, light border/shadow).
+- Removed dark-mode overrides that turned methodology subgroup cards dark, so cards stay bright across devices/theme settings.
+- Removed now-redundant mobile-only light overrides in those files by making light styling the default for all breakpoints.
+**Open items:** None.
+**Warnings:** This intentionally disables dark-mode styling for these two components to satisfy the request for bright surfaces.
+**For next agent:** If dark mode is reintroduced later, keep tooltips/cards readable and avoid dark blocks in jobs detail unless explicitly requested.
+**Learnings:** no

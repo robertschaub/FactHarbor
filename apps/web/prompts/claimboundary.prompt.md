@@ -61,7 +61,7 @@ Given the input text below, extract:
 - Keep roughClaims generic and topic-neutral — no hardcoded categories or keywords.
 - Each roughClaim should be a standalone sentence that can drive a web search query.
 - **Language detection**: Detect the primary language of the input text and return the BCP-47 language code (e.g., "de", "en", "fr", "es", "pt"). Base this on the input text itself, not on entity names within it (e.g., "Zürich" in an English sentence is still English input).
-- **Geography inference**: Infer the most relevant country from the claim's content — place names, institutions, legal systems, administrative divisions mentioned. Return an ISO 3166-1 alpha-2 country code (e.g., "CH", "US", "DE", "BR"). Return `null` if the claim is not geographically specific (e.g., "the earth is flat" has no geographic anchor). Do NOT default to "US" — only return a country code when geographic signals are clearly present in the input.
+- **Geography inference**: Return a country code ONLY when the input text explicitly names a specific place, jurisdiction, or administrative division (e.g., "Kanton Zürich" → "CH", "U.S. unemployment rate" → "US", "German Autobahn speed limits" → "DE"). Return `null` in ALL other cases. Do NOT infer geography from institutions — many are international (WHO, Catholic Church, NATO). Do NOT infer geography from the input language — a German-language claim is not automatically about Germany. Do NOT infer geography from the topic's cultural associations. When in doubt, return `null`.
 
 ### Input
 
