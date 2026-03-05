@@ -1,10 +1,10 @@
 # UCM Configuration Drift — Review & Fix Plan
 
 **Date:** 2026-03-05
-**Status:** Ready for team review
+**Status:** Review 1 complete — approved with decisions. Ready for 2nd review.
 **Investigated by:** Senior Developer (Claude Code, Opus 4.6)
 **Scope:** All 4 UCM config types (search, calculation, pipeline, SR)
-**Action required:** Approve Phase 1 (critical alignment) + decide on Phase 2 (quality tuning)
+**Review 1:** 2026-03-05 — see §6 for decisions and implementation plan
 
 ---
 
@@ -84,11 +84,11 @@ No behavioral changes — purely syncing JSON files with what the TS code alread
 
 **Expected outcome:** JSON files become the complete, authoritative source. Admin UI "default comparison" shows all fields. Pre-release SR switches to `gpt-4.1-mini`.
 
-### Phase 2: Quality Improvements (P1) — Decisions needed
+### Phase 2: Quality Improvements (P1) — Review 1 decisions applied
 
-These change analysis behavior. Each needs explicit approval.
+These change analysis behavior. Review 1 decisions shown per item.
 
-#### 2a. Populate `domainBlacklist`
+#### 2a. Populate `domainBlacklist` — ✅ APPROVED
 
 **Proposal:** Add social media domains that consistently produce low-quality evidence:
 
@@ -109,57 +109,57 @@ These change analysis behavior. Each needs explicit approval.
 
 **Risk:** May miss legitimate social media posts that contain newsworthy primary sources. Mitigated by: admin can remove domains via UCM at any time.
 
-**Decision needed:** Approve this list? Add/remove domains?
+**R1 Decision:** Approved as proposed (8 domains).
 
 ---
 
-#### 2b. Lower `selfConsistencyTemperature` from 0.4 to 0.2
+#### 2b. Lower `selfConsistencyTemperature` from 0.4 to 0.2 — ❌ BLOCKED
 
 **Why:** Self-consistency measures verdict stability. Higher temperature introduces random variance that gets confused with genuine evidence-driven instability. Lower temp isolates the signal we actually care about.
 
 **Risk:** Spread thresholds (stable: 5pp, moderate: 12pp, unstable: 20pp) were calibrated at 0.4. At 0.2, fewer verdicts will be classified as "unstable" — this is correct (less noise), but existing reports will look more stable.
 
-**Decision needed:** Approve? Or adjust spread thresholds simultaneously?
+**R1 Decision:** Blocked — too aggressive without co-adjusting spread thresholds. Revisit when calibration study available.
 
 ---
 
-#### 2c. Raise `gate4QualityThresholdHigh` from 0.7 to 0.75 or 0.8
+#### 2c. Raise `gate4QualityThresholdHigh` from 0.7 to 0.75 or 0.8 — ✅ APPROVED 0.75
 
 **Why:** Gate 4 is the final quality barrier before publication. Currently, a high-centrality claim passes with 70% of sources being high/medium probative. With only 3 minimum sources, that's 2.1 → 2 items. Raising to 0.8 requires 2.4 → 3 high-quality items for high-centrality claims.
 
 **Risk:** Some borderline claims may be downgraded to UNVERIFIED. This is arguably correct behavior for a quality gate.
 
-**Decision needed:** 0.75 or 0.8? Or keep 0.7?
+**R1 Decision:** Approved at 0.75 (incremental tightening; observe impact before considering 0.8).
 
 ---
 
-#### 2d. Align `mixedConfidenceThreshold` from 40 to 45–50
+#### 2d. Align `mixedConfidenceThreshold` from 40 to 45–50 — ✅ APPROVED 50
 
 **Why:** Currently there's a gap: claims at 40–49% confidence are labeled "Mixed" but NOT downgraded for high-harm scenarios (which requires `highHarmMinConfidence: 50`). Raising to 50 closes this gap.
 
 **Risk:** More claims labeled "Mixed/Unverified" instead of receiving a directional verdict.
 
-**Decision needed:** 45 or 50?
+**R1 Decision:** Approved at 50 — closes policy gap with highHarmMinConfidence cleanly.
 
 ---
 
-#### 2e. Raise `evidenceSufficiencyMinSourceTypes` from 1 to 2
+#### 2e. Raise `evidenceSufficiencyMinSourceTypes` from 1 to 2 — ❌ BLOCKED
 
 **Why:** Currently `1` as a temporary mitigation (comment in code: "Temporary mitigation approved 2026-03-03"). This allows claims to be verified by a single source type (e.g., only news articles). Raising to 2 requires at least two different types (news + academic, or news + expert, etc.).
 
 **Risk:** Claims with limited source diversity get flagged as UNVERIFIED. May need domain-diversity fallback to stabilize first.
 
-**Decision needed:** Ready to raise, or keep temporary mitigation?
+**R1 Decision:** Blocked — keep temporary mitigation until domain-diversity fallback stability confirmed in production (1–2 weeks post-deploy).
 
 ---
 
-#### 2f. Consider `sourceReliability.defaultScore` from 0.4 to 0.45
+#### 2f. Consider `sourceReliability.defaultScore` from 0.4 to 0.45 — ✅ APPROVED 0.45
 
 **Why:** This is the fallback score for unknown/unrated sources. 0.4 is below neutral (0.5), meaning unknown sources are treated as slightly unreliable by default. 0.45 is "conservative-neutral" — slightly skeptical but less punishing. History: was 0.5, then 0.4, now proposed 0.45.
 
 **Risk:** Unknown sources get slightly more influence in verdicts.
 
-**Decision needed:** 0.4 (status quo), 0.45, or 0.5?
+**R1 Decision:** Approved at 0.45 — balanced conservative-neutral.
 
 ---
 
@@ -223,7 +223,53 @@ The `openaiModel` was changed in TS on 2026-02-21 (commit `2c5ffa4b`) but the JS
 
 ---
 
-## 5. Lower-Priority Considerations (Not in Fix Plan)
+## 5. Review 1 Decisions & Implementation Plan
+
+**Reviewer:** Captain (2026-03-05)
+
+### Findings Confirmed (severity-ordered)
+
+1. **HIGH:** SR model drift confirmed. JSON `gpt-4o-mini` ≠ TS `gpt-4.1-mini`. File defaults preferred during seeding → pre-release running wrong model.
+2. **MEDIUM:** Orphaned `defaultScore: 0.45` in SR JSON — dropped by Zod parse, misleading to ops/admin.
+3. **MEDIUM:** Search/Calculation JSON defaults incomplete vs TS — admin/UI drift and deploy ambiguity.
+4. **LOW:** No CI guard to prevent future JSON↔TS drift.
+
+### Phase Decisions
+
+| Phase | Decision |
+|-------|----------|
+| **Phase 1 (alignment)** | **APPROVED** (all 1a–1e) |
+| **Phase 3 (CI drift test)** | **APPROVED** (low priority, schedule after deployment stabilization) |
+
+### Phase 2 Item Decisions
+
+| Item | Proposal | Decision | Rationale |
+|------|----------|----------|-----------|
+| **2a** domainBlacklist | 8 social media domains | **APPROVED** | Default baseline; admin-removable via UCM |
+| **2b** selfConsistencyTemperature 0.4→0.2 | Lower for cleaner signal | **BLOCKED** | Too aggressive without spread-threshold recalibration. Revisit when thresholds can be co-adjusted. |
+| **2c** gate4QualityThresholdHigh | 0.7→0.75 or 0.8 | **APPROVED 0.75** | Incremental tightening. Not 0.8 yet — observe impact first. |
+| **2d** mixedConfidenceThreshold | 40→45 or 50 | **APPROVED 50** | Closes policy gap with highHarmMinConfidence cleanly. |
+| **2e** evidenceSufficiencyMinSourceTypes 1→2 | Remove temp mitigation | **BLOCKED** | Keep temporary mitigation until domain-diversity fallback stability confirmed in production. |
+| **2f** sourceReliability.defaultScore 0.4→0.45 | Conservative-neutral | **APPROVED 0.45** | Balanced — less punishing to unknown sources without going fully neutral. |
+
+### Implementation Order
+
+Commits must be separate to isolate alignment from behavior changes:
+
+1. **Commit 1 (Phase 1):** JSON alignment only — sync all 4 JSON files with TS constants. No behavioral changes.
+2. **Commit 2 (Phase 2 approved items):** `domainBlacklist` (2a), `gate4QualityThresholdHigh: 0.75` (2c), `mixedConfidenceThreshold: 50` (2d), `sourceReliability.defaultScore: 0.45` (2f).
+3. **Commit 3 (Phase 3):** CI drift test (post-deployment stabilization).
+
+### Blocked Items — Conditions to Unblock
+
+| Item | Condition | Tracking |
+|------|-----------|----------|
+| 2b selfConsistencyTemperature | Propose co-adjusted spread thresholds (stable/moderate/unstable) calibrated at new temperature | Backlog |
+| 2e evidenceSufficiencyMinSourceTypes | Domain-diversity fallback confirmed stable in production (monitor for 1–2 weeks post-deploy) | Backlog |
+
+---
+
+## 6. Lower-Priority Considerations (Not in Fix Plan)
 
 These warrant investigation but don't need immediate action:
 

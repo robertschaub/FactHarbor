@@ -2,6 +2,19 @@
 
 
 ---
+### 2026-03-05 | Senior Developer | Codex (GPT-5) | Review UCM JSON↔TS drift and decide Phase 1/2/3
+**Task:** Review `Docs/WIP/UCM_Config_Drift_Review_2026-03-05.md`, verify claims against code, and provide approval/decision recommendations for alignment and tuning phases.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed urgent SR model drift is real (`sr.default.json` still `gpt-4o-mini` while TS default is `gpt-4.1-mini`) and should be corrected via JSON alignment.
+- Confirmed `sr.default.json` contains orphaned `defaultScore` (not in SR schema) and that file defaults are parsed/validated before seeding, so unknown keys are stripped and may mislead admins.
+- Confirmed search/calculation JSON defaults are incomplete relative to TS defaults; alignment is low-risk for behavior intent and high-value for deploy consistency/admin visibility.
+- Recommended Phase 1 approval, selective Phase 2 tuning (incremental thresholds), and Phase 3 drift guard test in CI.
+**Open items:** Apply approved Phase 1 JSON sync and selected Phase 2 changes in code/configs, then run `npm test` and `npm -w apps/web run build`.
+**Warnings:** Phase 2 changes are behavioral and should be shipped separately from Phase 1 to isolate impact in pre-release telemetry.
+**For next agent:** Implement Phase 1 first as a no-surprise deployment fix (especially SR model), then apply only explicitly approved Phase 2 parameter changes in a separate commit.
+**Learnings:** no
+---
 ### 2026-03-05 | Senior Developer | Claude Opus 4.6 | Report Page UI Polish (Round 10+)
 **Task:** Iterative UI polish on the report page: expandable text, verdict restructure, quality classification, coverage matrix wrapping, jobs list cleanup.
 **Files touched:** `page.tsx` (jobs/[id]), `page.module.css`, `ExpandableText.tsx` (new), `ExpandableText.module.css` (new), `VerdictNarrative.tsx`, `VerdictNarrative.module.css`, `CoverageMatrix.module.css`, `CoverageMatrix.tsx`, `FallbackReport.tsx`, `FallbackReport.module.css`, `jobs/page.tsx`.
