@@ -60,6 +60,11 @@ export function refIdToNavTarget(refId: string): NavTarget | null {
     }
   }
 
+  // Boundary finding rows → Summary tab (first occurrence in claim cards)
+  if (refId.startsWith("BF_")) {
+    return { domId: `nav-bf-${refId.slice(3)}`, tab: "summary" };
+  }
+
   // Fetched sources → Sources tab
   if (refId.startsWith("SRC_")) {
     return { domId: `nav-${refId.toLowerCase()}`, tab: "sources" };

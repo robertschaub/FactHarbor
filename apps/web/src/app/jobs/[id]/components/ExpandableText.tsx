@@ -24,8 +24,36 @@ function renderInlineMarkdown(text: string, onNavigate?: (refId: string) => void
       parts.push(text.slice(lastIndex, match.index));
     }
     if (match[1]) {
-      // **bold**
-      parts.push(<strong key={key++}>{match[1]}</strong>);
+      // **bold** — recursively process reference IDs within bold text
+      const boldContent = match[1];
+      const refRegex = /(\b[A-Z]{2,}_[A-Z0-9_]+\b)/g;
+      const hasRefs = onNavigate && refRegex.test(boldContent);
+      if (hasRefs) {
+        // Re-parse bold content to linkify embedded references
+        refRegex.lastIndex = 0;
+        const boldParts: ReactNode[] = [];
+        let boldLast = 0;
+        let refMatch: RegExpExecArray | null;
+        while ((refMatch = refRegex.exec(boldContent)) !== null) {
+          if (refMatch.index > boldLast) boldParts.push(boldContent.slice(boldLast, refMatch.index));
+          const refId = refMatch[1];
+          boldParts.push(
+            <button
+              key={`b${key++}`}
+              style={{ color: "#1565c0", cursor: "pointer", textDecoration: "underline dotted", background: "none", border: "none", padding: 0, font: "inherit", fontWeight: 700 }}
+              onClick={() => onNavigate!(refId)}
+              title={`Navigate to ${refId}`}
+            >
+              {refId}
+            </button>
+          );
+          boldLast = refRegex.lastIndex;
+        }
+        if (boldLast < boldContent.length) boldParts.push(boldContent.slice(boldLast));
+        parts.push(<strong key={key++}>{boldParts}</strong>);
+      } else {
+        parts.push(<strong key={key++}>{boldContent}</strong>);
+      }
     } else if (match[2]) {
       // `inline code`
       parts.push(<code key={key++}>{match[2]}</code>);

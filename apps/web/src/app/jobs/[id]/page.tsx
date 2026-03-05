@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -287,7 +287,7 @@ export default function JobPage() {
   const [pollIntervalMs, setPollIntervalMs] = useState(DETAIL_POLL_INTERVAL_MS);
   const [isVisible, setIsVisible] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
-  const { navigateTo, goBack, canGoBack, clearHistory } = useReportNavigation(tab, setTab);
+  const { navigateTo: rawNavigateTo, goBack, canGoBack, clearHistory } = useReportNavigation(tab, setTab);
 
   // Job action states
   const [isCancelling, setIsCancelling] = useState(false);
@@ -608,6 +608,16 @@ export default function JobPage() {
   const searchQueries = result?.searchQueries || [];
   const researchStats = result?.researchStats;
   const evidenceItems = result?.evidenceItems || [];
+
+  // Wrap navigateTo to resolve BF_ (boundary) refs to first evidence item on Sources tab
+  const navigateTo = useCallback((refId: string) => {
+    if (refId.startsWith("BF_")) {
+      const bId = refId.slice(3);
+      const ev = evidenceItems.find((e: any) => e.claimBoundaryId === bId);
+      if (ev?.id) { rawNavigateTo(ev.id); return; }
+    }
+    rawNavigateTo(refId);
+  }, [rawNavigateTo, evidenceItems]);
 
   // ClaimAssessmentBoundary schema detection (Phase 3)
   const isCBSchema = (typeof result?._schemaVersion === "string" && result._schemaVersion.endsWith("-cb")) ||
@@ -1165,6 +1175,7 @@ export default function JobPage() {
                     shortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
                     fullLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
                     boundaryIds={claimBoundaries.map((b: any) => b.id)}
+                    onNavigate={navigateTo}
                   />
                 </section>
               )}
@@ -1406,25 +1417,29 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
         </div>
       )}
 
-      <h4 className={styles.sectionTitle}>Search Queries Performed</h4>
       {searchQueries.length > 0 ? (
-        <div className={styles.searchQueriesList}>
-          {searchQueries.map((sq: any, i: number) => (
-            <div key={i} id={`nav-sq_${i}`} className={styles.searchQueryItem}>
-              <span className={styles.searchQueryIcon}>🔍</span>
-              <div className={styles.searchQueryContent}>
-                <code className={styles.searchQueryText}>{sq.query}</code>
-                <div className={styles.searchQueryMeta}>
-                  Focus: {sq.focus} | Iteration: {sq.iteration}
-                  {sq.searchProvider && <> | Provider: {sq.searchProvider}</>}
+        <details className={styles.details}>
+          <summary className={styles.summary}>
+            <span>Search Queries Performed ({searchQueries.length})</span>
+          </summary>
+          <div className={styles.searchQueriesList}>
+            {searchQueries.map((sq: any, i: number) => (
+              <div key={i} id={`nav-sq_${i}`} className={styles.searchQueryItem}>
+                <span className={styles.searchQueryIcon}>🔍</span>
+                <div className={styles.searchQueryContent}>
+                  <code className={styles.searchQueryText}>{sq.query}</code>
+                  <div className={styles.searchQueryMeta}>
+                    Focus: {sq.focus} | Iteration: {sq.iteration}
+                    {sq.searchProvider && <> | Provider: {sq.searchProvider}</>}
+                  </div>
+                </div>
+                <div className={`${styles.searchResultsBadge} ${sq.resultsCount > 0 ? styles.searchResultsSuccess : styles.searchResultsFailed}`}>
+                  {sq.resultsCount} results
                 </div>
               </div>
-              <div className={`${styles.searchResultsBadge} ${sq.resultsCount > 0 ? styles.searchResultsSuccess : styles.searchResultsFailed}`}>
-                {sq.resultsCount} results
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </details>
       ) : (
         <div className={styles.noDataWarning}>
           No search queries recorded.
@@ -1617,19 +1632,14 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
       )}
 
       {neutralEvidence.length > 0 && (
-        <div className={styles.evidenceSection}>
-          <h4 className={styles.evidenceSectionTitle} style={{ color: '#757575' }}>
-            Background evidence ({neutralEvidence.length})
-          </h4>
+        <details className={styles.details}>
+          <summary className={styles.summary}>
+            <span style={{ color: '#757575' }}>Background evidence ({neutralEvidence.length})</span>
+          </summary>
           <div className={styles.evidenceList}>
-            {renderEvidenceList(neutralEvidence.slice(0, 5), styles.evidenceItemNeutral)}
-            {neutralEvidence.length > 5 && (
-              <div className={styles.evidenceMoreIndicator}>
-                + {neutralEvidence.length - 5} more background evidence
-              </div>
-            )}
+            {renderEvidenceList(neutralEvidence, styles.evidenceItemNeutral)}
           </div>
-        </div>
+        </details>
       )}
     </div>
   );
@@ -1649,7 +1659,7 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
 // Utility Components
 // ============================================================================
 
-function Badge({ children, bg, color, title, modalTitle }: { children: React.ReactNode; bg: string; color: string; title?: string; modalTitle?: string }) {
+function Badge({ children, bg, color, title, modalTitle, onNavigate }: { children: React.ReactNode; bg: string; color: string; title?: string; modalTitle?: string; onNavigate?: (refId: string) => void }) {
   const [showTip, setShowTip] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const isLong = title && title.length > 120;
@@ -1669,7 +1679,7 @@ function Badge({ children, bg, color, title, modalTitle }: { children: React.Rea
         </span>
       )}
       {isLong && showModal && (
-        <TextModal text={title} title={modalTitle || "Details"} onClose={() => setShowModal(false)} />
+        <TextModal text={title} title={modalTitle || "Details"} onClose={() => setShowModal(false)} onNavigate={onNavigate} />
       )}
     </span>
   );
@@ -1719,8 +1729,21 @@ function getTriangulationIcon(level: string): string {
  * Get tooltip text for triangulation score
  */
 function getTriangulationTooltip(score: any): string {
-  const { boundaryCount, supporting, contradicting, level, factor } = score;
-  return `Triangulation: ${level}\n${boundaryCount} boundaries | ${supporting} supporting, ${contradicting} contradicting\nAdjustment factor: ${factor.toFixed(2)}`;
+  const { boundaryCount, supporting, contradicting, level } = score;
+  switch (level) {
+    case "strong":
+      return `Strong agreement: ${supporting} of ${boundaryCount} independent evidence approaches support this claim. This is a well-corroborated finding.`;
+    case "moderate":
+      return `Moderate agreement: ${supporting} of ${boundaryCount} evidence approaches support this claim, but agreement is not unanimous. The verdict is likely reliable but has some caveats.`;
+    case "weak":
+      return boundaryCount <= 1
+        ? `Only ${boundaryCount} evidence approach available — insufficient cross-verification. Treat this verdict with caution.`
+        : `Weak agreement: evidence approaches show limited consensus (${supporting} supporting of ${boundaryCount}). Treat this verdict with caution.`;
+    case "conflicted":
+      return `Conflicted: ${supporting} evidence approach${supporting !== 1 ? "es" : ""} support and ${contradicting} contradict this claim across ${boundaryCount} independent approaches. This can happen when evidence genuinely points in different directions — review the supporting and contradicting evidence to judge for yourself.`;
+    default:
+      return `${boundaryCount} evidence approaches analyzed.`;
+  }
 }
 
 // ============================================================================
@@ -2378,7 +2401,7 @@ function ClaimCard({
           </Badge>
         )}
         {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
-          <Badge bg="#ffebee" color="#c62828" title={claim.misleadingnessReason} modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`}>
+          <Badge bg="#ffebee" color="#c62828" title={claim.misleadingnessReason} modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`} onNavigate={onNavigate}>
             ⚠️ {claim.misleadingness.replace("_", " ").toUpperCase()}
           </Badge>
         )}
@@ -2391,6 +2414,19 @@ function ClaimCard({
           ? { min: 100 - claim.truthPercentageRange.max, max: 100 - claim.truthPercentageRange.min }
           : claim.truthPercentageRange}
       />
+
+      {claim.misleadingness && claim.misleadingness !== "not_misleading" && claim.misleadingnessReason && (
+        <div className={styles.misleadingnessInline}>
+          <ExpandableText
+            text={claim.misleadingnessReason}
+            threshold={300}
+            className={styles.misleadingnessText}
+            modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`}
+            bare
+            onNavigate={onNavigate}
+          />
+        </div>
+      )}
 
       <ExpandableText
         text={claim.reasoning || ""}

@@ -166,9 +166,15 @@ export function BoundaryFindings({
 
               {/* Compact inline metadata (evidence count + temporal range) */}
               <div className={styles.boundaryFindingMeta}>
-                <span className={styles.boundaryMetaItem}>
-                  {finding.evidenceCount} items
-                </span>
+                {onNavigate ? (
+                  <button className={styles.navLink} style={{ fontSize: "inherit", fontWeight: "inherit" }} onClick={() => onNavigate(`BF_${finding.boundaryId}`)} title="Jump to evidence for this boundary">
+                    {finding.evidenceCount} items
+                  </button>
+                ) : (
+                  <span className={styles.boundaryMetaItem}>
+                    {finding.evidenceCount} items
+                  </span>
+                )}
                 {temporalRange && (
                   <>
                     <span className={styles.boundaryMetaSeparator}>·</span>

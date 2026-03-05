@@ -1602,6 +1602,21 @@ details[open] > .devWarningSummary::before {
   line-height: 1.5;
 }
 
+.misleadingnessInline {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #fff3f3;
+  border-left: 3px solid #c62828;
+  border-radius: 4px;
+}
+
+.misleadingnessText {
+  font-size: 13px;
+  color: #b71c1c;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .claimReasoning {
   font-size: 13px;
   color: #555;

@@ -33,7 +33,11 @@ export function BoundaryLegend({ shortLabels, fullLabels, boundaryIds, onNavigat
     <div className={styles.boundaryLegend}>
       {fullLabels.map((full, i) => (
         <div key={i} className={styles.boundaryLegendItem} id={boundaryIds?.[i] ? `nav-cb-${boundaryIds[i]}` : undefined}>
-          <div className={styles.boundaryLegendLabel}>{shortLabels[i]}</div>
+          {onNavigate && boundaryIds?.[i] ? (
+            <button className={`${styles.boundaryLegendLabel} ${styles.clickableHeader}`} onClick={() => onNavigate(`BF_${boundaryIds![i]}`)} title="Jump to evidence for this boundary">{shortLabels[i]}</button>
+          ) : (
+            <div className={styles.boundaryLegendLabel}>{shortLabels[i]}</div>
+          )}
           <div className={styles.boundaryLegendFull}>{full}</div>
         </div>
       ))}

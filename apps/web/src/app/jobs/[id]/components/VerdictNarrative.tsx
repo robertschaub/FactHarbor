@@ -35,38 +35,42 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, befor
         <ExpandableText text={keyFinding} className={styles.findingText} modalTitle="Key Finding" bare onNavigate={onNavigate} />
       </div>
 
-      <h3 className={styles.qualityTitle}>Quality</h3>
+      <details className={styles.qualityDetails}>
+        <summary className={styles.qualitySummary}>
+          <span>Quality</span>
+        </summary>
 
-      <div className={styles.evidenceBase}>
-        <strong className={styles.label}>Evidence Base:</strong>
-        <ExpandableText text={evidenceBaseSummary} className={styles.value} modalTitle="Evidence Base" bare onNavigate={onNavigate} />
-      </div>
+        <div className={styles.evidenceBase}>
+          <strong className={styles.label}>Evidence Base:</strong>
+          <ExpandableText text={evidenceBaseSummary} className={styles.value} modalTitle="Evidence Base" bare onNavigate={onNavigate} />
+        </div>
 
-      {boundaryDisagreements && boundaryDisagreements.length > 0 && (
+        {boundaryDisagreements && boundaryDisagreements.length > 0 && (
+          <details className={styles.details}>
+            <summary className={styles.summary}>
+              <span>Cross-Boundary Tensions ({boundaryDisagreements.length})</span>
+            </summary>
+            <ul className={styles.list}>
+              {boundaryDisagreements.map((disagreement, i) => (
+                <li key={i} className={styles.listItem}>
+                  {disagreement}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
         <details className={styles.details}>
           <summary className={styles.summary}>
-            <span>Cross-Boundary Tensions ({boundaryDisagreements.length})</span>
+            <span>Limitations</span>
           </summary>
-          <ul className={styles.list}>
-            {boundaryDisagreements.map((disagreement, i) => (
-              <li key={i} className={styles.listItem}>
-                {disagreement}
-              </li>
-            ))}
-          </ul>
+          <div className={styles.limitationsContent}>
+            <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" onNavigate={onNavigate} />
+          </div>
         </details>
-      )}
 
-      <details className={styles.details}>
-        <summary className={styles.summary}>
-          <span>Limitations</span>
-        </summary>
-        <div className={styles.limitationsContent}>
-          <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" onNavigate={onNavigate} />
-        </div>
+        {beforeLimitations}
       </details>
-
-      {beforeLimitations}
     </section>
   );
 }
