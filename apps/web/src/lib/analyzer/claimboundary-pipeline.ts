@@ -2397,9 +2397,29 @@ export async function researchEvidence(
  */
 export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void {
   const preliminary = state.understanding?.preliminaryEvidence ?? [];
+  const knownClaimIds = new Set(
+    (state.understanding?.atomicClaims ?? []).map((c) => c.id),
+  );
+  // Default to first claim if only one exists (common case for single-claim inputs)
+  const fallbackClaimId = knownClaimIds.size === 1
+    ? [...knownClaimIds][0]
+    : undefined;
   let idCounter = state.evidenceItems.length + 1;
+  let remappedCount = 0;
 
   for (const pe of preliminary) {
+    // Normalize claim IDs: LLM preliminary evidence often uses wrong formats
+    // (e.g. "claim_01", "claim_iran_deaths_february" instead of "AC_01")
+    let claimIds: string[];
+    if (pe.claimId && knownClaimIds.has(pe.claimId)) {
+      claimIds = [pe.claimId];
+    } else if (fallbackClaimId) {
+      claimIds = [fallbackClaimId];
+      if (pe.claimId) remappedCount++;
+    } else {
+      claimIds = [];
+    }
+
     state.evidenceItems.push({
       id: `EV_${String(idCounter++).padStart(3, "0")}`,
       statement: pe.snippet,
@@ -2409,10 +2429,14 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       sourceUrl: pe.sourceUrl,
       sourceTitle: "",
       sourceExcerpt: pe.snippet,
-      relevantClaimIds: pe.claimId ? [pe.claimId] : [],
+      relevantClaimIds: claimIds,
       probativeValue: pe.probativeValue ?? "medium", // Preserve LLM assessment; default "medium" if unavailable
       scopeQuality: "partial", // Preliminary evidence has limited scope data
     });
+  }
+
+  if (remappedCount > 0) {
+    debugLog(`[Stage2] Remapped ${remappedCount}/${preliminary.length} preliminary evidence claim IDs to ${fallbackClaimId}`);
   }
 }
 

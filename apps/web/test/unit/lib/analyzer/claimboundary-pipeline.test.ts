@@ -1207,6 +1207,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
   it("should convert preliminary evidence to EvidenceItem format", () => {
     const state = {
       understanding: {
+        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
         preliminaryEvidence: [
           { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01", probativeValue: "high" },
           { sourceUrl: "https://example.com/2", snippet: "Evidence B", claimId: "AC_02", probativeValue: "low" },
@@ -1230,6 +1231,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
   it("should default probativeValue to 'medium' when LLM did not produce one", () => {
     const state = {
       understanding: {
+        atomicClaims: [{ id: "AC_01" }],
         preliminaryEvidence: [
           { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01" },
         ],
@@ -1241,6 +1243,29 @@ describe("seedEvidenceFromPreliminarySearch", () => {
 
     expect(state.evidenceItems).toHaveLength(1);
     expect(state.evidenceItems[0].probativeValue).toBe("medium");
+  });
+
+  it("should remap wrong-format LLM claim IDs in preliminary evidence to known atomic claim", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }],
+        preliminaryEvidence: [
+          { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "claim_01", probativeValue: "high" },
+          { sourceUrl: "https://example.com/2", snippet: "Evidence B", claimId: "claim_iran_deaths", probativeValue: "medium" },
+          { sourceUrl: "https://example.com/3", snippet: "Evidence C", claimId: "AC_01", probativeValue: "medium" },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(3);
+    // Wrong IDs remapped to the single known claim
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01"]);
+    expect(state.evidenceItems[1].relevantClaimIds).toEqual(["AC_01"]);
+    // Correct ID preserved
+    expect(state.evidenceItems[2].relevantClaimIds).toEqual(["AC_01"]);
   });
 
   it("should handle empty preliminary evidence", () => {
