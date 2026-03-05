@@ -2,6 +2,14 @@
 
 
 ---
+### 2026-03-05 | Senior Developer | Claude Code (Opus 4.6) | Geo-Aware Search Refinement — Drop Language+Geography from Search Providers
+**Task:** Fix German vs English verdict divergence (49pp gap) caused by language restriction on search providers. Iterative refinement: dropped language, then geography, then tightened geography inference prompt.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/prompts/claimboundary.prompt.md`
+**Key decisions:** Language and geography never sent to search providers. Both kept in query generation prompt only. Geography inference prompt tightened to explicit places only. UCM overrides retained as manual escape hatch.
+**Open items:** German input doesn't decompose ambiguous claims (1 vs 3 for English) — separate prompt quality issue.
+**For next agent:** See `Docs/AGENTS/Handoffs/2026-03-05_Senior_Developer_Geo_Aware_Search_Refinement.md` for full details.
+
+---
 ### 2026-03-05 | UCM Expert / Reviewer | Claude Code (Sonnet 4.6) | UCM Config Drift Review 2 + Ambiguous Claim Decomposition Review 2
 **Task:** (1) Review 2 of UCM config drift plan — confirm/challenge R1 approved values and blocked items. (2) Review 2 of ambiguous claim decomposition prompt fixes A+B — verify genericity, multilingual safety, constraint tightness. Implement Fix C (deferred P1 wording).
 **Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/WIP/Ambiguous_Claim_Decomposition_Quality.md`, `Docs/WIP/UCM_Config_Drift_Review_2026-03-05.md`

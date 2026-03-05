@@ -160,6 +160,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Using `String.prototype.match()` with a global regex to extract sentences (e.g. `/[^.!?]+[.!?]+/g`) silently drops any text that doesn't match the pattern, such as decimal points in numbers (`3.14`) or segments without punctuation. Always prefer `String.prototype.split()` with a capturing group (e.g. `split(/([.!?]+(?:\s+|$))/)`) and recombine the segments. This ensures that 100% of the input text is preserved in the output, even if the heuristic fails to identify a sentence boundary correctly.
 **Files:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`
 
+### 2026-03-05 — Search provider geo params cause language-based evidence bias
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** Passing `lr=lang_de` (language restriction) to Google CSE for a German-language claim causes results to be dominated by one country's domestic sources (Verfassungsschutz, BKA), producing a completely different verdict than the same claim in English (which gets global sources like GTD, Pew). Even `gl` (geography) can bias toward local/censored sources for sensitive topics (e.g., Iran human rights). Solution: never send language or geography params to search providers automatically. Instead, pass `detectedLanguage` and `inferredGeography` to the query generation LLM prompt only — let the LLM write queries in the right language, but let search stay unfiltered.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/prompts/claimboundary.prompt.md`
+
+### 2026-03-05 — LLM geography inference is unreliable for search gating
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** Using an LLM to infer geography from claim text and then using that inference to gate search provider parameters is fragile. The LLM can associate input language with a country (German → Germany), infer geography from institutions that are actually international, or from cultural topic associations. If this inference then controls search API parameters (`gl`, `lr`), a wrong guess silently biases the entire evidence base. Keep LLM inference for advisory purposes (query generation) but don't let it control deterministic API parameters.
+**Files:** `apps/web/prompts/claimboundary.prompt.md`
+
 
 ## Technical Writer
 

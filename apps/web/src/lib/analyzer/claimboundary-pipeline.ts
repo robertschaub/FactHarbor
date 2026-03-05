@@ -803,12 +803,6 @@ export async function extractClaims(
     pipelineConfig,
     currentDate,
     state,
-    {
-      // Pass geography (gl) to search providers but never language (lr/hl).
-      // Language restriction biases results toward one country's evidence ecosystem.
-      // Query generation prompt already handles language — search should stay unfiltered.
-      geography: searchConfig.searchGeographyOverride ?? pass1.inferredGeography,
-    },
   );
 
   // ------------------------------------------------------------------
@@ -1010,7 +1004,6 @@ export async function runPreliminarySearch(
           query,
           maxResults: maxSources,
           config: searchConfig,
-          ...(searchGeo?.geography && { geography: searchGeo.geography }),
         });
 
         // Track the search query
@@ -2582,16 +2575,12 @@ export async function runResearchIteration(
     }
 
     try {
-      // 2. Web search — pass geography (gl) but never language (lr/hl).
-      // Language restriction biases toward one country's evidence ecosystem.
-      const effectiveGeo = searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography;
+      // 2. Web search — no geo/language params sent to search providers.
+      // Query generation prompt handles language; search stays unfiltered.
       const response = await searchWebWithProvider({
         query: queryObj.query,
         maxResults: maxSourcesPerIteration,
         config: searchConfig,
-        ...(effectiveGeo && {
-          geography: effectiveGeo!,
-        }),
       });
 
       state.searchQueries.push({
