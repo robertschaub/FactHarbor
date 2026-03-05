@@ -145,7 +145,17 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   timeoutMs: 12000,
   dateRestrict: null,
   domainWhitelist: [],
-  domainBlacklist: [],
+  domainBlacklist: [
+    "facebook.com",
+    "twitter.com",
+    "x.com",
+    "reddit.com",
+    "instagram.com",
+    "tiktok.com",
+    "pinterest.com",
+    "quora.com",
+    "youtube.com",
+  ],
   queryGeneration: {
     maxEntitiesPerClaim: 4,
     maxWordLength: 2,
@@ -1410,7 +1420,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     confidenceThreshold: 0.8,
     consensusThreshold: 0.2,
     // Consumer-owned fallback when SR returns null for unknown/unrated sources.
-    defaultScore: 0.4,
+    defaultScore: 0.45,
   },
   qualityGates: {
     gate1OpinionThreshold: 0.7,
@@ -1418,7 +1428,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     gate1MinContentWords: 3,
     gate4MinSourcesHigh: 3,
     gate4MinSourcesMedium: 2,
-    gate4QualityThresholdHigh: 0.7,
+    gate4QualityThresholdHigh: 0.75,
     gate4QualityThresholdMedium: 0.5,
     gate4AgreementThresholdHigh: 0.7,
     gate4AgreementThresholdMedium: 0.5,
@@ -1432,7 +1442,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     claimSimilarityThreshold: 0.85,
     contextMergeThreshold: 0.7,
   },
-  mixedConfidenceThreshold: 40,
+  mixedConfidenceThreshold: 50,
   probativeValueWeights: {
     high: 1.0,
     medium: 0.9,

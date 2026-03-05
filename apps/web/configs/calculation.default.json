@@ -29,7 +29,7 @@
   "sourceReliability": {
     "confidenceThreshold": 0.8,
     "consensusThreshold": 0.2,
-    "defaultScore": 0.4
+    "defaultScore": 0.45
   },
   "qualityGates": {
     "gate1OpinionThreshold": 0.7,
@@ -37,7 +37,7 @@
     "gate1MinContentWords": 3,
     "gate4MinSourcesHigh": 3,
     "gate4MinSourcesMedium": 2,
-    "gate4QualityThresholdHigh": 0.7,
+    "gate4QualityThresholdHigh": 0.75,
     "gate4QualityThresholdMedium": 0.5,
     "gate4AgreementThresholdHigh": 0.7,
     "gate4AgreementThresholdMedium": 0.5
@@ -51,7 +51,7 @@
     "claimSimilarityThreshold": 0.85,
     "contextMergeThreshold": 0.7
   },
-  "mixedConfidenceThreshold": 40,
+  "mixedConfidenceThreshold": 50,
   "probativeValueWeights": {
     "high": 1.0,
     "medium": 0.9,

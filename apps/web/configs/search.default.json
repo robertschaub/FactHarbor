@@ -8,7 +8,17 @@
   "timeoutMs": 12000,
   "dateRestrict": null,
   "domainWhitelist": [],
-  "domainBlacklist": [],
+  "domainBlacklist": [
+    "facebook.com",
+    "twitter.com",
+    "x.com",
+    "reddit.com",
+    "instagram.com",
+    "tiktok.com",
+    "pinterest.com",
+    "quora.com",
+    "youtube.com"
+  ],
   "queryGeneration": {
     "maxEntitiesPerClaim": 4,
     "maxWordLength": 2,
