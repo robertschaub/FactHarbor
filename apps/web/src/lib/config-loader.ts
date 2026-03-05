@@ -77,6 +77,56 @@ function getCacheKey(configType: ConfigType, profileKey: string): string {
   return `${configType}:${profileKey}`;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function deepClone(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => deepClone(item));
+  }
+  if (isPlainObject(value)) {
+    const cloned: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      cloned[key] = deepClone(child);
+    }
+    return cloned;
+  }
+  return value;
+}
+
+function mergeWithDefaults<T>(defaults: T, overrides: unknown): T {
+  if (!isPlainObject(defaults)) {
+    return (overrides === undefined ? defaults : overrides) as T;
+  }
+
+  if (!isPlainObject(overrides)) {
+    return deepClone(defaults) as T;
+  }
+
+  const merged: Record<string, unknown> = {};
+  const keys = new Set([...Object.keys(defaults), ...Object.keys(overrides)]);
+
+  for (const key of keys) {
+    const defaultValue = (defaults as Record<string, unknown>)[key];
+    const overrideValue = overrides[key];
+
+    if (overrideValue === undefined) {
+      merged[key] = deepClone(defaultValue);
+      continue;
+    }
+
+    if (isPlainObject(defaultValue) && isPlainObject(overrideValue)) {
+      merged[key] = mergeWithDefaults(defaultValue, overrideValue);
+      continue;
+    }
+
+    merged[key] = deepClone(overrideValue);
+  }
+
+  return merged as T;
+}
+
 
 // ============================================================================
 // CACHE MANAGEMENT
@@ -143,7 +193,8 @@ async function getOrLoadContent<T extends SearchConfig | CalcConfig | PipelineCo
   try {
     // Merge with defaults so new optional fields added to the schema
     // are populated even when the stored blob predates them.
-    const parsed = { ...defaultConfig, ...JSON.parse(blob.content) } as T;
+    const parsedBlob = JSON.parse(blob.content) as unknown;
+    const parsed = mergeWithDefaults(defaultConfig, parsedBlob);
 
     // Update cache - this is from DB, so fromDefault=false
     cache.set(key, {

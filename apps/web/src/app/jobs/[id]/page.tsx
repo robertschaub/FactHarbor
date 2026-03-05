@@ -28,7 +28,7 @@ import {
 } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 import { BoundaryFindings } from "./components/BoundaryFindings";
-import { ExpandableText } from "./components/ExpandableText";
+import { ExpandableText, TextModal } from "./components/ExpandableText";
 import { EvidenceScopeTooltip } from "./components/EvidenceScopeTooltip";
 import { MethodologySubGroup } from "./components/MethodologySubGroup";
 import { BackgroundBanner } from "./components/BackgroundBanner";
@@ -1649,22 +1649,27 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
 // Utility Components
 // ============================================================================
 
-function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: string; color: string; title?: string }) {
+function Badge({ children, bg, color, title, modalTitle }: { children: React.ReactNode; bg: string; color: string; title?: string; modalTitle?: string }) {
   const [showTip, setShowTip] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const isLong = title && title.length > 120;
   return (
     <span
       style={{ position: "relative", display: "inline-block" }}
-      onClick={title ? () => setShowTip(v => !v) : undefined}
-      onBlur={title ? () => setShowTip(false) : undefined}
+      onClick={title ? () => (isLong ? setShowModal(true) : setShowTip(v => !v)) : undefined}
+      onBlur={title && !isLong ? () => setShowTip(false) : undefined}
       tabIndex={title ? 0 : undefined}
     >
-      <span style={{ padding: "2px 8px", backgroundColor: bg, color, borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: title ? "help" : "default", display: "inline-block" }} title={title}>
+      <span style={{ padding: "2px 8px", backgroundColor: bg, color, borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: title ? "help" : "default", display: "inline-block" }} title={!isLong ? title : undefined}>
         {children}
       </span>
-      {title && showTip && (
+      {title && !isLong && showTip && (
         <span style={{ position: "absolute", left: 0, top: "calc(100% + 4px)", zIndex: 10, background: "#fff", color: "#333", fontSize: 12, padding: "6px 10px", borderRadius: 4, whiteSpace: "pre-line", minWidth: 200, maxWidth: 300, lineHeight: 1.4, boxShadow: "0 2px 8px rgba(0,0,0,0.15)", border: "1px solid #e0e0e0" }}>
           {title}
         </span>
+      )}
+      {isLong && showModal && (
+        <TextModal text={title} title={modalTitle || "Details"} onClose={() => setShowModal(false)} />
       )}
     </span>
   );
@@ -2373,7 +2378,7 @@ function ClaimCard({
           </Badge>
         )}
         {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
-          <Badge bg="#ffebee" color="#c62828" title={claim.misleadingnessReason}>
+          <Badge bg="#ffebee" color="#c62828" title={claim.misleadingnessReason} modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`}>
             ⚠️ {claim.misleadingness.replace("_", " ").toUpperCase()}
           </Badge>
         )}

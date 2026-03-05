@@ -2,6 +2,18 @@
 
 
 ---
+### 2026-03-05 | Senior Developer | Codex (GPT-5) | Fix shallow config-loader merge for nested default backfill
+**Task:** Address review finding that `config-loader.ts` only shallow-merges DB config blobs with defaults, causing nested default fields to be lost for older stored blobs.
+**Files touched:** `apps/web/src/lib/config-loader.ts`, `apps/web/test/unit/lib/config-loader.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced shallow spread merge in `getOrLoadContent()` with recursive `mergeWithDefaults()` to preserve DB overrides while backfilling missing nested defaults.
+- Merge semantics: plain objects deep-merge; arrays/scalars use override value; missing keys clone from defaults.
+- Added targeted unit tests to lock behavior for nested calc sections (`verdictStage`) and ensure array overrides are preserved.
+**Open items:** None.
+**Warnings:** Loader merge now backfills nested defaults, but call-site `??` guards remain the right defensive pattern for critical fields.
+**For next agent:** If new nested config groups are added, rely on this deep merge plus keep explicit call-site defaults for safety-sensitive runtime fields.
+**Learnings:** no
+---
 ### 2026-03-05 | Code Reviewer | Gemini CLI | UCM Config Drift - 2nd Review
 **Task:** Confirmed and approved Phase 2 decisions and implementation plan for UCM alignment.
 **Files touched:** Docs/WIP/UCM_Config_Drift_Review_2026-03-05.md, apps/web/src/lib/config-schemas.ts

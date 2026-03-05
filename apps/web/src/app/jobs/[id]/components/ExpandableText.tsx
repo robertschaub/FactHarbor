@@ -101,7 +101,7 @@ interface ExpandableTextProps {
   onNavigate?: (refId: string) => void;
 }
 
-function TextModal({ text, title, onClose, onNavigate }: { text: string; title: string; onClose: () => void; onNavigate?: (refId: string) => void }) {
+export function TextModal({ text, title, onClose, onNavigate }: { text: string; title: string; onClose: () => void; onNavigate?: (refId: string) => void }) {
   const titleId = useId();
 
   // v2.6.40: Lock body scroll while modal is open
