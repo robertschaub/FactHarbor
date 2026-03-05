@@ -131,25 +131,30 @@ describe("warning-display classification", () => {
       type: "verdict_integrity_failure",
       severity: "warning",
     }));
-    const grounding = classifyWarningForDisplay(warning({
-      type: "verdict_grounding_issue",
-      severity: "error",
-    }));
-    const direction = classifyWarningForDisplay(warning({
-      type: "verdict_direction_issue",
-      severity: "info",
-    }));
-
     expect(structural.isProviderIssue).toBe(false);
     expect(structural.isReportDegrading).toBe(true);
     expect(structural.displaySeverity).toBe("error");
     expect(integrity.isProviderIssue).toBe(false);
     expect(integrity.isReportDegrading).toBe(true);
     expect(integrity.displaySeverity).toBe("warning");
-    expect(grounding.isReportDegrading).toBe(true);
-    expect(grounding.displaySeverity).toBe("error");
-    expect(direction.isReportDegrading).toBe(true);
-    expect(direction.displaySeverity).toBe("warning");
+  });
+
+  it("treats grounding/direction checks as informational diagnostics", () => {
+    const grounding = classifyWarningForDisplay(warning({
+      type: "verdict_grounding_issue",
+      severity: "info",
+    }));
+    const direction = classifyWarningForDisplay(warning({
+      type: "verdict_direction_issue",
+      severity: "info",
+    }));
+
+    expect(grounding.isProviderIssue).toBe(false);
+    expect(grounding.isReportDegrading).toBe(false);
+    expect(grounding.displaySeverity).toBe("info");
+    expect(direction.isProviderIssue).toBe(false);
+    expect(direction.isReportDegrading).toBe(false);
+    expect(direction.displaySeverity).toBe("info");
   });
 
   it("maps budget and runtime generation failures to analysis bucket", () => {

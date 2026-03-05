@@ -111,9 +111,10 @@ All warning types MUST be registered in `warning-display.ts`. Do not classify wa
 Three warning categories, five severity levels. Severity reflects **verdict impact**, not what happened internally.
 
 **Categories:**
-- **Routine operations → silent/info.** Plumbing working as designed (retries, fallbacks, cache misses). Never shown to users unless aggregate effect degrades quality.
-- **System-level failures → warning/error/severe.** Problems we could fix (provider outage, verdict crash, budget exhaustion). MUST be surfaced — never silenced or hidden. Suppressing a real quality signal is worse than a false alarm.
-- **Analytical reality → warning/error.** The real world lacks evidence — not a bug. Present as factual context, not a system error. Never `severe` (system worked correctly). Examples: `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `recency_evidence_gap`.
+- **Routine operations → silent/info.** Plumbing working as designed (retries, fallbacks, cache misses, default values applied). Never shown to users unless aggregate effect degrades quality. **If a fallback or default fully recovers the situation (e.g., SR lookup fails → uses neutral 0.45, search provider fails → fallback provider succeeds), it is `silent` — not even `info`.** Only emit `info` if admins should tune something.
+- **System-level failures → warning/error/severe.** Problems we could fix (all search providers down with no fallback, verdict crash, budget exhaustion). MUST be surfaced — never silenced or hidden. Suppressing a real quality signal is worse than a false alarm.
+- **Analytical reality → info/warning.** The real world lacks accessible evidence — not a bug. Sources behind paywalls, domains returning 404, insufficient published research — these are facts about the world, not system failures. Present as factual context, not a system error. Never `error` or `severe` (the system worked correctly; reality is just sparse). Examples: `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `source_fetch_degradation`.
+- **Internal diagnostics → info.** Post-hoc validation checks that verify internal consistency (grounding checks, direction checks). These are developer tools, not user-facing quality signals. A heuristic disagreeing with an LLM judgment does not mean the verdict is wrong. Always `info` (admin-only).
 
 **Severity levels:**
 

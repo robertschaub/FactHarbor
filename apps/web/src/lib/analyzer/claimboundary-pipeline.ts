@@ -1141,9 +1141,12 @@ function upsertSearchProviderWarning(
   );
 
   if (!existing) {
+    // Search provider failures are routine when fallbacks exist. The pipeline continues
+    // with results from other providers. If ALL providers fail, zero results will trigger
+    // insufficient_evidence or similar downstream warnings. Info-level for admin visibility.
     state.warnings.push({
       type: "search_provider_error",
-      severity: "error",
+      severity: "info",
       message: `Search provider "${provider}" failed: ${params.message}`,
       details: {
         provider,
@@ -2288,31 +2291,25 @@ export async function researchEvidence(
       const domainCount = Math.max(1, srPrefetch.domains.length);
       const failedDomainRatio = failedDomainCount / domainCount;
 
-      // Captain decision (2026-03-03): routine low-ratio SR partial failures are normal
-      // and should be silent. Surface only when degradation is substantial.
-      if (failedDomainRatio >= 0.25 || srPrefetch.errorCount >= 3) {
-        const severity: AnalysisWarning["severity"] =
-          failedDomainRatio >= 0.5 || srPrefetch.errorCount >= Math.max(4, Math.ceil(domainCount * 0.5))
-            ? "error"
-            : "warning";
-        state.warnings.push({
-          type: "source_reliability_error",
-          severity,
-          message:
-            `Source reliability prefetch had ${srPrefetch.errorCount} error(s) across ` +
-            `${failedDomainCount}/${domainCount} domain(s). Reliability scores for those domains default to unknown.`,
-          details: {
-            stage: "research_sr",
-            errorCount: srPrefetch.errorCount,
-            errorByType: srPrefetch.errorByType,
-            failedDomainCount,
-            domainCount,
-            failedDomainRatio,
-            failedDomains: srPrefetch.failedDomains.slice(0, 20),
-            noConsensusCount: srPrefetch.noConsensusCount,
-          },
-        });
-      }
+      // SR lookup failures are routine — failed domains default to neutral score
+      // (unknownSourceScore from UCM config). Verdict is unaffected. Info-level for admin visibility.
+      state.warnings.push({
+        type: "source_reliability_error",
+        severity: "info",
+        message:
+          `Source reliability prefetch had ${srPrefetch.errorCount} error(s) across ` +
+          `${failedDomainCount}/${domainCount} domain(s). Reliability scores for those domains default to unknown.`,
+        details: {
+          stage: "research_sr",
+          errorCount: srPrefetch.errorCount,
+          errorByType: srPrefetch.errorByType,
+          failedDomainCount,
+          domainCount,
+          failedDomainRatio,
+          failedDomains: srPrefetch.failedDomains.slice(0, 20),
+          noConsensusCount: srPrefetch.noConsensusCount,
+        },
+      });
     }
   }
 
@@ -3091,12 +3088,13 @@ export async function fetchSources(
     });
 
     if (failureRatio >= 0.4 && fetchAttempted >= 3) {
-      // Aggregate degradation: warn when a significant portion of a query's sources failed.
-      // Only "warning" — individual query degradation doesn't make the report unreliable.
-      // "error" is reserved for total research failure (zero evidence retrieved).
+      // Analytical reality: real-world sources are inaccessible (paywalls, 404s, timeouts).
+      // Nothing the system can do — this is a fact about the world, not a system failure.
+      // Info-level for admin visibility. If total evidence is insufficient, downstream
+      // warnings (insufficient_evidence) will surface that to the user.
       state.warnings.push({
         type: "source_fetch_degradation",
-        severity: "warning",
+        severity: "info",
         message:
           `Source fetch degradation detected (${Math.round(failureRatio * 100)}% failures, ${fetchFailed}/${fetchAttempted})`,
         details: {
