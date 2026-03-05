@@ -61,7 +61,7 @@ Given the input text below, extract:
 - Keep roughClaims generic and topic-neutral — no hardcoded categories or keywords.
 - Each roughClaim should be a standalone sentence that can drive a web search query.
 - **Language detection**: Detect the primary language of the input text and return the BCP-47 language code (e.g., "de", "en", "fr", "es", "pt"). Base this on the input text itself, not on entity names within it (e.g., "Zürich" in an English sentence is still English input).
-- **Geography inference**: Return a country code ONLY when the claim describes events, conditions, or measurements **occurring within** a specific place (e.g., "3000 people killed in Iran on the streets" → "IR", "U.S. unemployment rate rose" → "US", "Swiss schools are underfunded" → "CH"). Return `null` when a country is merely the subject or actor but evidence would come from international sources (e.g., "Was Iran making nukes?" → `null`, "China exports too much steel" → `null`). Do NOT infer geography from institutions, input language, or cultural associations. When in doubt, return `null`.
+- **Geography inference**: Return a country code ONLY when the claim describes events, conditions, or measurements **occurring within** a specific place (e.g., "Entity A experienced event X in Country B" → country code for B, "Country C's domestic metric rose" → country code for C). Return `null` when a country is merely the subject or actor but evidence would come from international sources (e.g., "Country D developed technology Y" → `null`, "Country E exports product Z" → `null`). Do NOT infer geography from institutions, input language, or cultural associations. When in doubt, return `null`.
 
 ### Input
 

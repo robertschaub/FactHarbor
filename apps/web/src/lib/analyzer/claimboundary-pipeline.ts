@@ -2410,14 +2410,21 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   for (const pe of preliminary) {
     // Normalize claim IDs: LLM preliminary evidence often uses wrong formats
     // (e.g. "claim_01", "claim_iran_deaths_february" instead of "AC_01")
-    let claimIds: string[];
+    let claimIds: string[] = [];
     if (pe.claimId && knownClaimIds.has(pe.claimId)) {
       claimIds = [pe.claimId];
     } else if (fallbackClaimId) {
+      // If there is only one atomic claim, ALL preliminary evidence must belong to it.
       claimIds = [fallbackClaimId];
       if (pe.claimId) remappedCount++;
-    } else {
-      claimIds = [];
+    } else if (pe.claimId && pe.claimId.startsWith("claim_")) {
+      // Heuristic: map "claim_01" to "AC_01", etc.
+      const num = pe.claimId.replace("claim_", "");
+      const mappedId = `AC_${num.padStart(2, "0")}`;
+      if (knownClaimIds.has(mappedId)) {
+        claimIds = [mappedId];
+        remappedCount++;
+      }
     }
 
     state.evidenceItems.push({
@@ -2436,7 +2443,8 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   }
 
   if (remappedCount > 0) {
-    debugLog(`[Stage2] Remapped ${remappedCount}/${preliminary.length} preliminary evidence claim IDs to ${fallbackClaimId}`);
+    const target = fallbackClaimId ?? "matched AC IDs";
+    debugLog(`[Stage2] Remapped ${remappedCount}/${preliminary.length} preliminary evidence claim IDs to ${target}`);
   }
 }
 
