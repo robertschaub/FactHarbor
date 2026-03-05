@@ -72,7 +72,6 @@ import { loadAndRenderSection } from "./prompt-loader";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
-import { DEFAULT_PIPELINE_CONFIG } from "@/lib/config-schemas";
 import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
 import type { LLMProviderType } from "@/lib/analyzer/types";
 
@@ -931,7 +930,7 @@ export async function runPass1(
         },
         { role: "user", content: inputText },
       ],
-      temperature: (pipelineConfig.understandTemperature ?? DEFAULT_PIPELINE_CONFIG.understandTemperature ?? 0.15),
+      temperature: (pipelineConfig.understandTemperature ?? 0.15),
       output: Output.object({ schema: Pass1OutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -1518,7 +1517,7 @@ export async function runPass2(
           },
           { role: "user" as const, content: userContent },
         ],
-        temperature: (pipelineConfig.understandTemperature ?? DEFAULT_PIPELINE_CONFIG.understandTemperature ?? 0.15) + (attempt * 0.05), // Base from config, increase on retry
+        temperature: (pipelineConfig.understandTemperature ?? 0.15) + (attempt * 0.05), // Base from config, increase on retry
         output: Output.object({ schema: Pass2OutputSchema }),
         providerOptions: getStructuredOutputProviderOptions(
           (pipelineConfig.llmProvider) ?? "anthropic",
@@ -1663,7 +1662,7 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                 },
                 { role: "user" as const, content: fallbackUserContent },
               ],
-              temperature: (pipelineConfig.understandTemperature ?? DEFAULT_PIPELINE_CONFIG.understandTemperature ?? 0.15) + 0.2, // Base from config + fallback boost
+              temperature: (pipelineConfig.understandTemperature ?? 0.15) + 0.2, // Base from config + fallback boost
               output: Output.object({ schema: Pass2OutputSchema }),
               providerOptions: getStructuredOutputProviderOptions(
                 (pipelineConfig.llmProvider) ?? "anthropic",

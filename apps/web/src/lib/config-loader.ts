@@ -141,7 +141,9 @@ async function getOrLoadContent<T extends SearchConfig | CalcConfig | PipelineCo
   }
 
   try {
-    const parsed = JSON.parse(blob.content) as T;
+    // Merge with defaults so new optional fields added to the schema
+    // are populated even when the stored blob predates them.
+    const parsed = { ...defaultConfig, ...JSON.parse(blob.content) } as T;
 
     // Update cache - this is from DB, so fromDefault=false
     cache.set(key, {
