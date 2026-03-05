@@ -35,9 +35,18 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, befor
         <ExpandableText text={keyFinding} className={styles.findingText} modalTitle="Key Finding" bare onNavigate={onNavigate} />
       </div>
 
+      <h3 className={styles.qualityTitle}>Quality</h3>
+
+      {limitations && (
+        <div className={styles.limitationsStandalone}>
+          <h4 className={styles.limitationsHeading}>Limitations</h4>
+          <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" onNavigate={onNavigate} />
+        </div>
+      )}
+
       <details className={styles.qualityDetails}>
         <summary className={styles.qualitySummary}>
-          <span>Quality</span>
+          <span>Quality Details</span>
         </summary>
 
         <div className={styles.evidenceBase}>
@@ -59,15 +68,6 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, befor
             </ul>
           </details>
         )}
-
-        <details className={styles.details}>
-          <summary className={styles.summary}>
-            <span>Limitations</span>
-          </summary>
-          <div className={styles.limitationsContent}>
-            <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" onNavigate={onNavigate} />
-          </div>
-        </details>
 
         {beforeLimitations}
       </details>
