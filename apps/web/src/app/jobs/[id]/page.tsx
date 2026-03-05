@@ -1514,14 +1514,17 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
     return (
       <div key={item.id || item.statement} id={item.id ? `nav-ev-${item.id}` : undefined} className={`${styles.evidenceItem} ${finalClassName}`}>
         <div className={styles.evidenceText}>
+          {(item.id || item.category || item.evidenceScope) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              {item.id && <span style={{ fontSize: 10, color: "var(--color-text-muted, #888)", fontFamily: "monospace", userSelect: "all" }}>{item.id}</span>}
+              {item.category && <span className={styles.evidenceCategory}>{item.category}</span>}
+              {item.evidenceScope && <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />}
+            </div>
+          )}
           {isContrarian && <span style={{ color: '#ed8936', fontWeight: 700, marginRight: '6px' }}>[CONTRARIAN]</span>}
           <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} onNavigate={onNavigate} />
-          {item.evidenceScope && (
-            <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
-          )}
         </div>
         <div className={styles.evidenceMeta}>
-          <span className={styles.evidenceCategory}>{item.category}</span>
           {onNavigate && item.sourceUrl && sourceUrlToIndex?.has(item.sourceUrl) ? (
             <button className={`${styles.evidenceSource} ${styles.navLink}`} style={{ fontSize: "inherit" }} onClick={() => onNavigate(`SRC_${sourceUrlToIndex!.get(item.sourceUrl)}`)}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</button>
           ) : (
@@ -2401,7 +2404,7 @@ function ClaimCard({
           </Badge>
         )}
         {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
-          <Badge bg="#ffebee" color="#c62828" title={claim.misleadingnessReason} modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`} onNavigate={onNavigate}>
+          <Badge bg="#ffebee" color="#c62828">
             ⚠️ {claim.misleadingness.replace("_", " ").toUpperCase()}
           </Badge>
         )}
@@ -2457,7 +2460,7 @@ function ClaimCard({
             </>
           )}
           {claim.supportingEvidenceIds?.length > 0 && claim.contradictingEvidenceIds?.length > 0 && (
-            <span className={styles.evidenceRefSeparator}>·</span>
+            <span style={{ display: "block", width: "100%" }} />
           )}
           {claim.contradictingEvidenceIds?.length > 0 && (
             <>

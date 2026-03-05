@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import type { EvidenceScope } from "@/lib/analyzer/types";
 import styles from "./EvidenceScopeTooltip.module.css";
 
@@ -22,17 +22,28 @@ export function EvidenceScopeTooltip({
   evidenceScope,
   className = "",
 }: EvidenceScopeTooltipProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const wrapperRef = useRef<HTMLSpanElement>(null);
 
   if (!hasScopeData(evidenceScope)) return null;
 
+  const showTooltip = () => {
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setTooltipPos({ top: rect.bottom + 4, left: rect.right });
+    }
+  };
+
+  const hideTooltip = () => setTooltipPos(null);
+
   return (
     <span
+      ref={wrapperRef}
       className={`${styles.tooltipWrapper} ${className}`.trim()}
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
-      onFocus={() => setIsVisible(true)}
-      onBlur={() => setIsVisible(false)}
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocus={showTooltip}
+      onBlur={hideTooltip}
       tabIndex={0}
       role="button"
       aria-label="Show evidence scope details"
@@ -40,8 +51,12 @@ export function EvidenceScopeTooltip({
       <span className={styles.icon} aria-hidden="true">
         i
       </span>
-      {isVisible && (
-        <div className={styles.tooltip} role="tooltip">
+      {tooltipPos && (
+        <div
+          className={styles.tooltip}
+          role="tooltip"
+          style={{ position: "fixed", top: tooltipPos.top, right: `calc(100vw - ${tooltipPos.left}px)`, left: "auto" }}
+        >
           <div className={styles.tooltipHeader}>Evidence Scope</div>
           <div className={styles.tooltipContent}>
             {evidenceScope.name && (
