@@ -49,6 +49,7 @@ import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 import { filterByProbativeValue } from "./evidence-filter";
 import { prefetchSourceReliability, getTrackRecordScore } from "./source-reliability";
 import { percentageToArticleVerdict } from "./truth-scale";
+import { debugLog } from "./debug";
 
 // Verdict stage module (§8.4 — 5-step debate pattern)
 import {
@@ -3258,7 +3259,12 @@ export async function extractResearchEvidence(
 
     // Map to full EvidenceItem format
     let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
+    let claimIdMismatchCount = 0;
     const evidenceItems = validated.evidenceItems.map((ei) => {
+      // Log when LLM returns mismatched claim IDs (admin diagnostic)
+      if (ei.relevantClaimIds.length > 0 && !ei.relevantClaimIds.includes(targetClaim.id)) {
+        claimIdMismatchCount++;
+      }
       // Use LLM-attributed sourceUrl when available; fall back to first source.
       const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
 
@@ -3282,13 +3288,17 @@ export async function extractResearchEvidence(
         },
         probativeValue: ei.probativeValue,
         sourceType: mapSourceType(ei.sourceType),
-        relevantClaimIds: ei.relevantClaimIds.length > 0
-          ? ei.relevantClaimIds
-          : [targetClaim.id],
+        // Always use targetClaim.id — extraction targets a single claim,
+        // and LLM often returns wrong ID formats (e.g. "claim_01" vs "AC_01")
+        relevantClaimIds: [targetClaim.id],
         isDerivative: ei.isDerivative ?? false,
         derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
       } satisfies EvidenceItem;
     });
+
+    if (claimIdMismatchCount > 0) {
+      debugLog(`[Stage2] Corrected ${claimIdMismatchCount}/${evidenceItems.length} evidence items with mismatched claim IDs for ${targetClaim.id}`);
+    }
 
     recordLLMCall({
       taskType: "research",

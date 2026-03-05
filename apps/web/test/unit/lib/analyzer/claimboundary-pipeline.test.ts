@@ -1604,7 +1604,7 @@ describe("Stage 2: extractResearchEvidence", () => {
     expect(result[0].probativeValue).toBe("high");
   });
 
-  it("should default relevantClaimIds to target claim when LLM omits them", async () => {
+  it("should always use targetClaim.id for relevantClaimIds regardless of LLM output", async () => {
     const claim = createAtomicClaim({ id: "AC_02" });
     const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
 
@@ -1613,7 +1613,7 @@ describe("Stage 2: extractResearchEvidence", () => {
     mockExtractOutput.mockReturnValue({
       evidenceItems: [
         {
-          statement: "Some evidence",
+          statement: "Evidence with empty IDs",
           category: "evidence",
           claimDirection: "supports",
           evidenceScope: { methodology: "Study", temporal: "2024" },
@@ -1626,6 +1626,40 @@ describe("Stage 2: extractResearchEvidence", () => {
     const result = await extractResearchEvidence(claim, sources, mockPipelineConfig, "2026-02-17");
 
     expect(result[0].relevantClaimIds).toEqual(["AC_02"]);
+  });
+
+  it("should override wrong-format LLM claim IDs with targetClaim.id", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Evidence with wrong claim ID format",
+          category: "evidence",
+          claimDirection: "supports",
+          evidenceScope: { methodology: "Analysis", temporal: "2025" },
+          probativeValue: "high",
+          relevantClaimIds: ["claim_01"],
+        },
+        {
+          statement: "Evidence with different wrong format",
+          category: "evidence",
+          claimDirection: "contextual",
+          evidenceScope: { methodology: "Report review", temporal: "2025" },
+          probativeValue: "medium",
+          relevantClaimIds: ["claim_001"],
+        },
+      ],
+    });
+
+    const result = await extractResearchEvidence(claim, sources, mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(2);
+    expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
+    expect(result[1].relevantClaimIds).toEqual(["AC_01"]);
   });
 
   it("should return empty array when prompt is missing", async () => {
