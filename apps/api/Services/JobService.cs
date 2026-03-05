@@ -126,7 +126,7 @@ public sealed class JobService
         if (percentage >= 86) return "TRUE";
         if (percentage >= 72) return "MOSTLY-TRUE";
         if (percentage >= 58) return "LEANING-TRUE";
-        if (percentage >= 43) return confidence >= 40 ? "MIXED" : "UNVERIFIED";
+        if (percentage >= 43) return confidence >= 45 ? "MIXED" : "UNVERIFIED";
         if (percentage >= 29) return "LEANING-FALSE";
         if (percentage >= 15) return "MOSTLY-FALSE";
         return "FALSE";

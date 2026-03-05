@@ -126,8 +126,8 @@ export function calculateArticleTruthPercentage(
 // ============================================================================
 
 // Default confidence threshold to distinguish MIXED from UNVERIFIED
-// Must match UCM CalcConfig default (40) so UI display agrees with pipeline verdicts
-const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 40;
+// Must match UCM CalcConfig default (45) so UI display agrees with pipeline verdicts
+const DEFAULT_MIXED_CONFIDENCE_THRESHOLD = 45;
 
 /**
  * Map truth percentage to 7-point claim verdict
