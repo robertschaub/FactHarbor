@@ -52,14 +52,55 @@
     "contextMergeThreshold": 0.7
   },
   "mixedConfidenceThreshold": 40,
-  "highHarmMinConfidence": 50,
-  "highHarmFloorLevels": ["critical", "high"],
-  "evidenceBalanceSkewThreshold": 0.8,
-  "evidenceBalanceMinDirectional": 3,
+  "probativeValueWeights": {
+    "high": 1.0,
+    "medium": 0.9,
+    "low": 0.5
+  },
   "selfConsistencySpreadThresholds": {
     "stable": 5,
     "moderate": 12,
     "unstable": 20
+  },
+  "verdictStage": {
+    "spreadMultipliers": {
+      "highlyStable": 1.0,
+      "moderatelyStable": 0.9,
+      "unstable": 0.7,
+      "highlyUnstable": 0.4
+    },
+    "institutionalSourceTypes": [
+      "peer_reviewed_study",
+      "fact_check_report",
+      "government_report",
+      "legal_document",
+      "organization_report"
+    ],
+    "generalSourceTypes": [
+      "news_primary",
+      "news_secondary",
+      "expert_statement",
+      "other"
+    ]
+  },
+  "evidenceFilter": {
+    "minStatementLength": 20,
+    "maxVaguePhraseCount": 2,
+    "requireSourceExcerpt": true,
+    "minExcerptLength": 30,
+    "requireSourceUrl": true
+  },
+  "articleVerdictOverride": {
+    "misleadingTarget": 35,
+    "maxBlendStrength": 0.8,
+    "centralRefutedRatioThreshold": 0.5
+  },
+  "claimDecomposition": {
+    "minCoreClaimsPerContext": 2,
+    "minTotalClaimsWithSingleCore": 3,
+    "minDirectClaimsPerContext": 2,
+    "supplementalRepromptMaxAttempts": 2,
+    "shortSimpleInputMaxChars": 60
   },
   "contextSimilarity": {
     "nameWeight": 0.35,
@@ -70,9 +111,18 @@
     "nearDuplicateAssessedThreshold": 0.85,
     "nearDuplicateForceScore": 0.92,
     "nearDuplicateSubjectGuardThreshold": 0.5,
+    "nearDuplicateNameGuardThreshold": 0.4,
     "nearDuplicateMinNameSim": 0.25,
     "nearDuplicateMinPrimarySim": 0.15,
+    "anchorRecoveryThreshold": 0.6,
     "fallbackEvidenceCapPercent": 40
+  },
+  "tangentialPruning": {
+    "minEvidenceForTangential": 2
+  },
+  "claimClustering": {
+    "jaccardSimilarityThreshold": 0.6,
+    "duplicateWeightShare": 0.5
   },
   "fallback": {
     "step1RelaxInstitution": true,
@@ -95,17 +145,26 @@
     "nameDistinctnessThreshold": 0.35,
     "assessedDistinctnessThreshold": 0.45
   },
+  "processing": {
+    "similarityBatchSize": 25,
+    "maxEvidenceSelection": 10,
+    "maxContextsPerClaim": 5
+  },
   "groundingPenalty": {
     "enabled": true,
     "threshold": 0.5,
     "reductionFactor": 0.3,
     "floorRatio": 0.1
   },
+  "highHarmMinConfidence": 50,
+  "evidenceBalanceSkewThreshold": 0.8,
+  "evidenceBalanceMinDirectional": 3,
   "evidenceSufficiencyMinItems": 3,
   "evidenceSufficiencyMinSourceTypes": 1,
   "evidenceSufficiencyMinDistinctDomains": 3,
   "evidencePartitioningEnabled": true,
   "contrarianRetrievalEnabled": true,
   "contrarianMaxQueriesPerClaim": 2,
-  "contrarianRuntimeCeilingPct": 15
+  "contrarianRuntimeCeilingPct": 15,
+  "highHarmFloorLevels": ["critical", "high"]
 }

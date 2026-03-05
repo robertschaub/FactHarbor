@@ -2,10 +2,9 @@
   "schemaVersion": "3.0.0",
   "enabled": true,
   "multiModel": true,
-  "openaiModel": "gpt-4o-mini",
+  "openaiModel": "gpt-4.1-mini",
   "confidenceThreshold": 0.8,
   "consensusThreshold": 0.2,
-  "defaultScore": 0.45,
   "cacheTtlDays": 90,
   "filterEnabled": true,
   "skipPlatforms": [
@@ -31,5 +30,9 @@
   "evalUseSearch": true,
   "evalSearchMaxResultsPerQuery": 3,
   "evalMaxEvidenceItems": 12,
-  "evalSearchDateRestrict": null
+  "evalSearchDateRestrict": null,
+  "evalConcurrency": 5,
+  "evalTimeoutMs": 90000,
+  "defaultConfidence": 0.8,
+  "unknownSourceConfidence": 0.5
 }

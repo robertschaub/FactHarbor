@@ -8,5 +8,59 @@
   "timeoutMs": 12000,
   "dateRestrict": null,
   "domainWhitelist": [],
-  "domainBlacklist": []
+  "domainBlacklist": [],
+  "queryGeneration": {
+    "maxEntitiesPerClaim": 4,
+    "maxWordLength": 2,
+    "maxSearchTerms": 8,
+    "maxFallbackTerms": 6
+  },
+  "cache": {
+    "enabled": true,
+    "ttlDays": 7
+  },
+  "providers": {
+    "googleCse": {
+      "enabled": true,
+      "priority": 1,
+      "dailyQuotaLimit": 8000
+    },
+    "serpapi": {
+      "enabled": false,
+      "priority": 2,
+      "dailyQuotaLimit": 0
+    },
+    "brave": {
+      "enabled": false,
+      "priority": 2,
+      "dailyQuotaLimit": 10000
+    },
+    "wikipedia": {
+      "enabled": false,
+      "priority": 3,
+      "dailyQuotaLimit": 0,
+      "language": "en"
+    },
+    "semanticScholar": {
+      "enabled": false,
+      "priority": 3,
+      "dailyQuotaLimit": 0
+    },
+    "googleFactCheck": {
+      "enabled": false,
+      "priority": 4,
+      "dailyQuotaLimit": 0
+    }
+  },
+  "factCheckApi": {
+    "enabled": false,
+    "maxResultsPerClaim": 5,
+    "maxAgeDays": 365,
+    "fetchFullArticles": true
+  },
+  "circuitBreaker": {
+    "enabled": true,
+    "failureThreshold": 3,
+    "resetTimeoutSec": 300
+  }
 }
