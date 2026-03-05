@@ -973,6 +973,10 @@ export interface CBClaimUnderstanding {
   atomicClaims: AtomicClaim[];   // Replaces subClaims
   distinctEvents: Array<{ name: string; date: string; description: string }>;
   riskTier: "A" | "B" | "C";
+  /** BCP-47 language code detected from input text (e.g., "de", "en", "fr") */
+  detectedLanguage?: string;
+  /** ISO 3166-1 alpha-2 country code inferred from claim content (e.g., "CH", "US"), or null if not geographically specific */
+  inferredGeography?: string | null;
   preliminaryEvidence: Array<{
     sourceUrl: string;
     snippet: string;

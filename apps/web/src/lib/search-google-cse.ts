@@ -45,6 +45,16 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Google CSE: Applying date restriction: ${options.dateRestrict} (dateRestrict=${dateRestrictMap[options.dateRestrict]})`);
   }
 
+  // Geolocation: anchor results to claim's geography/language, not server IP
+  if (options.geography) {
+    params.set("gl", options.geography.toLowerCase());
+    console.log(`[Search] Google CSE: Geography bias: gl=${options.geography.toLowerCase()}`);
+  }
+  if (options.language) {
+    params.set("lr", `lang_${options.language.toLowerCase()}`);
+    console.log(`[Search] Google CSE: Language restrict: lr=lang_${options.language.toLowerCase()}`);
+  }
+
   const urlForLog = `${GOOGLE_CSE_BASE}?key=***&cx=${cx}&q=${encodeURIComponent(options.query)}&num=${Math.min(options.maxResults, 10)}`;
   console.log(`[Search] Google CSE: Fetching URL: ${urlForLog}`);
 

@@ -650,6 +650,10 @@ const Pass1OutputSchema = z.object({
     statement: z.string(),
     searchHint: z.string(),
   })),
+  /** BCP-47 language code detected from input text (e.g., "de", "en", "fr") */
+  detectedLanguage: z.string().catch("en"),
+  /** ISO 3166-1 alpha-2 country inferred from claim content, or null if not geographically specific */
+  inferredGeography: z.string().nullable().catch(null),
 });
 
 // Pass2AtomicClaimSchema: All non-essential fields use .catch(default) to prevent
@@ -798,6 +802,10 @@ export async function extractClaims(
     pipelineConfig,
     currentDate,
     state,
+    {
+      language: searchConfig.searchLanguageOverride ?? pass1.detectedLanguage,
+      geography: searchConfig.searchGeographyOverride ?? pass1.inferredGeography,
+    },
   );
 
   // ------------------------------------------------------------------
@@ -854,6 +862,8 @@ export async function extractClaims(
     atomicClaims: gate1Result.filteredClaims,
     distinctEvents: pass2.distinctEvents ?? [],
     riskTier: pass2.riskTier ?? "B",
+    detectedLanguage: pass1.detectedLanguage,
+    inferredGeography: pass1.inferredGeography,
     preliminaryEvidence: preliminaryEvidence.map((pe) => ({
       sourceUrl: pe.sourceUrl,
       snippet: pe.statement,
@@ -977,6 +987,7 @@ export async function runPreliminarySearch(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   state: CBResearchState,
+  searchGeo?: { language?: string; geography?: string | null },
 ): Promise<PreliminaryEvidenceItem[]> {
   const queriesPerClaim = pipelineConfig.preliminarySearchQueriesPerClaim ?? 2;
   const maxSources = pipelineConfig.preliminaryMaxSources ?? 5;
@@ -996,6 +1007,8 @@ export async function runPreliminarySearch(
           query,
           maxResults: maxSources,
           config: searchConfig,
+          ...(searchGeo?.language && { language: searchGeo.language }),
+          ...(searchGeo?.geography && { geography: searchGeo.geography }),
         });
 
         // Track the search query
@@ -2552,6 +2565,10 @@ export async function runResearchIteration(
     pipelineConfig,
     currentDate,
     remainingBudget,
+    {
+      language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
+      geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
+    },
   );
   state.llmCalls++;
   const generatedQueryCount = queries.length;
@@ -2563,11 +2580,17 @@ export async function runResearchIteration(
     }
 
     try {
-      // 2. Web search
+      // 2. Web search (with claim-derived geo context for consistent results across servers)
       const response = await searchWebWithProvider({
         query: queryObj.query,
         maxResults: maxSourcesPerIteration,
         config: searchConfig,
+        ...((searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage) && {
+          language: searchConfig.searchLanguageOverride ?? state.understanding!.detectedLanguage,
+        }),
+        ...((searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography) && {
+          geography: searchConfig.searchGeographyOverride ?? state.understanding!.inferredGeography!,
+        }),
       });
 
       state.searchQueries.push({
@@ -2715,6 +2738,7 @@ export async function generateResearchQueries(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   remainingQueryBudget?: number,
+  searchGeo?: { language?: string; geography?: string | null },
 ): Promise<Array<{ query: string; rationale: string }>> {
   const maxQueries = Math.max(0, Math.min(3, remainingQueryBudget ?? 3));
   if (maxQueries === 0) {
@@ -2728,6 +2752,8 @@ export async function generateResearchQueries(
     expectedEvidenceProfile: JSON.stringify(claim.expectedEvidenceProfile ?? {}),
     iterationType,
     queryStrategyMode,
+    detectedLanguage: searchGeo?.language ?? "en",
+    inferredGeography: searchGeo?.geography ?? "not geographically specific",
   });
   if (!rendered) {
     // Fallback: use claim statement directly

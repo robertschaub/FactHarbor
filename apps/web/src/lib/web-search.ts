@@ -25,6 +25,10 @@ export type WebSearchOptions = {
   dateRestrict?: "y" | "m" | "w";
   timeoutMs?: number;
   config?: SearchConfig;
+  /** BCP-47 language code to bias search results (e.g., "de", "en", "fr"). Detected from claim input. */
+  language?: string;
+  /** ISO 3166-1 alpha-2 country code to bias search results (e.g., "CH", "US"). Inferred from claim content. */
+  geography?: string;
 };
 
 export type SearchProviderErrorInfo = {

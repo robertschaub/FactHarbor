@@ -126,6 +126,12 @@ export const SearchConfigSchema = z.object({
     failureThreshold: z.number().int().min(1).max(10).describe("Consecutive failures before opening circuit"),
     resetTimeoutSec: z.number().int().min(10).max(3600).describe("Seconds before attempting retry"),
   }).optional().describe("Circuit breaker settings for provider health"),
+
+  // Geo-awareness overrides (normally auto-detected from claim input in Pass 1)
+  searchLanguageOverride: z.string().min(2).max(10).optional()
+    .describe("BCP-47 language code override for search (e.g., 'de', 'en'). When set, overrides auto-detected language from claim input."),
+  searchGeographyOverride: z.string().min(2).max(2).optional()
+    .describe("ISO 3166-1 alpha-2 country code override for search (e.g., 'CH', 'US'). When set, overrides auto-inferred geography from claim input."),
 });
 
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;

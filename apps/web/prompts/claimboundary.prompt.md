@@ -60,6 +60,8 @@ Given the input text below, extract:
 - Do not use domain-specific terminology unless it appears in the input text.
 - Keep roughClaims generic and topic-neutral — no hardcoded categories or keywords.
 - Each roughClaim should be a standalone sentence that can drive a web search query.
+- **Language detection**: Detect the primary language of the input text and return the BCP-47 language code (e.g., "de", "en", "fr", "es", "pt"). Base this on the input text itself, not on entity names within it (e.g., "Zürich" in an English sentence is still English input).
+- **Geography inference**: Infer the most relevant country from the claim's content — place names, institutions, legal systems, administrative divisions mentioned. Return an ISO 3166-1 alpha-2 country code (e.g., "CH", "US", "DE", "BR"). Return `null` if the claim is not geographically specific (e.g., "the earth is flat" has no geographic anchor). Do NOT default to "US" — only return a country code when geographic signals are clearly present in the input.
 
 ### Input
 
@@ -79,7 +81,9 @@ Return a JSON object:
       "statement": "string — rough verifiable assertion",
       "searchHint": "string — 3-5 word search query hint"
     }
-  ]
+  ],
+  "detectedLanguage": "string — BCP-47 code of input language (e.g., 'de', 'en', 'fr')",
+  "inferredGeography": "string | null — ISO 3166-1 alpha-2 country code inferred from claim content (e.g., 'CH', 'US'), or null if not geographically specific"
 }
 ```
 
@@ -284,7 +288,7 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
 
 ### Rules
 
-- Do not assume any particular language. Generate queries in the language most likely to find relevant evidence.
+- **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
 - `queryStrategyMode = "legacy"`:
   - Keep legacy behavior: generate 2-3 general-purpose queries for the claim.
