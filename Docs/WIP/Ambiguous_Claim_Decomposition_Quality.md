@@ -196,3 +196,31 @@ All three are prompt-only changes — no code modifications needed. They will ta
 2. **Fix C example risk:** The AGENTS.md rule says "Prompt examples must be abstract (e.g., 'Entity A did X')". The proposed example uses "Group X"/"Group Y" — is this abstract enough, or should we use a completely different domain (e.g., "Technology X is better than Technology Y")?
 3. **Gate 1 interaction:** Should we also consider adjusting the `claimSpecificityMinimum` (currently 0.6) for dimension-claims, or is the prompt fix sufficient?
 4. **Atomicity level interaction:** At level 3 ("Moderate"), the target is 2-3 claims for ambiguous inputs. Should we consider bumping to level 4 for this class of input, or is 2-3 sufficient?
+
+---
+
+## 9. Review 1 Findings & Decisions (2026-03-05)
+
+**Reviewer:** Code Reviewer (Gemini CLI)
+
+### Findings
+
+| Severity | Finding |
+|----------|---------|
+| **HIGH** | Fix C's proposed example uses domain-specific wording ("violent", "terrorism", "persecution", "political violence") — violates AGENTS.md "No test-case terms" rule for prompt examples. |
+| **MEDIUM** | Fix A's self-check guardrail ("Could I have identified this dimension without reading preliminary evidence?") is too subjective alone — LLMs can still drift into evidence contamination. |
+| **LOW** | Verification plan missing explicit multilingual validation for an analysis-affecting prompt change (AGENTS.md Multilingual Robustness rule). |
+
+### Decisions on Section 8 Questions
+
+1. **Fix A tradeoff:** APPROVED with stronger constraints. Dimension labels allowed but must: contain no proper nouns, no dates, no numbers, no regions, no dataset/source names — short neutral phrasing only. Self-check alone is NOT sufficient; explicit constraints required.
+2. **Fix C abstractness:** Current wording NOT abstract enough. Must use pattern-level placeholders: "Entity A is more [AMBIGUOUS_TRAIT] than Entity B" with abstract dimensions like "observable incidents", "institutional coercion", "attitudinal support indicators".
+3. **Gate 1 threshold:** Do NOT change `claimSpecificityMinimum` yet. Apply prompt fixes (A+B) first, then measure. Global threshold changes risk broad false-positives.
+4. **Atomicity level:** Keep level 3. 2-3 claims is the right target; bumping to 4 globally risks over-fragmentation and increased cost.
+
+### Implementation Plan (Updated)
+
+- **Fix A:** Implement with explicit dimension-label constraints (no proper nouns/dates/numbers/regions/source names)
+- **Fix B:** Implement as proposed (no changes from review)
+- **Fix C:** Rewrite example using abstract placeholders per reviewer guidance; DEFERRED to P1
+- **Verification:** Add multilingual test case (e.g., German ambiguous input)
