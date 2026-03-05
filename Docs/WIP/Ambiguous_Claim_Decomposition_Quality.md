@@ -222,5 +222,5 @@ All three are prompt-only changes — no code modifications needed. They will ta
 
 - **Fix A:** Implement with explicit dimension-label constraints (no proper nouns/dates/numbers/regions/source names)
 - **Fix B:** Implement as proposed (no changes from review)
-- **Fix C:** Rewrite example using abstract placeholders per reviewer guidance; DEFERRED to P1
+- **Fix C:** ✅ IMPLEMENTED 2026-03-05 — Dimension independence test bullet added to CLAIM_EXTRACTION_PASS2 (claimboundary.prompt.md:137). Abstract placeholders used: `Entity A`, `[AMBIGUOUS_TRAIT]`, `[trait]`. Three abstract dimension types: behavioral incidents, institutionally documented acts, attitudinal disposition.
 - **Verification:** Add multilingual test case (e.g., German ambiguous input)

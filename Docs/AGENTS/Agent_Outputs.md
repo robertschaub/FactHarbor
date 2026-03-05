@@ -2,6 +2,20 @@
 
 
 ---
+### 2026-03-05 | UCM Expert / Reviewer | Claude Code (Sonnet 4.6) | UCM Config Drift Review 2 + Ambiguous Claim Decomposition Review 2
+**Task:** (1) Review 2 of UCM config drift plan — confirm/challenge R1 approved values and blocked items. (2) Review 2 of ambiguous claim decomposition prompt fixes A+B — verify genericity, multilingual safety, constraint tightness. Implement Fix C (deferred P1 wording).
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/WIP/Ambiguous_Claim_Decomposition_Quality.md`, `Docs/WIP/UCM_Config_Drift_Review_2026-03-05.md`
+**Key decisions:**
+- UCM: All R1 approved values confirmed (gate4QualityThresholdHigh 0.75, mixedConfidenceThreshold 50, defaultScore 0.45). Added youtube.com to domainBlacklist (9 domains total). Both blocked items (2b selfConsistencyTemperature, 2e evidenceSufficiency) confirmed blocked with conditions noted.
+- Prompt Fix A (dimension labels): PASS. Genericity and explicit constraints correct. One non-blocking observation: "in terms of [dimension]" example anchors to English structure — flag for future multilingual hardening.
+- Prompt Fix B (Gate 1 specificity exception): PASS. Generic predicates, tight exception scope, context-aware.
+- Fix C: Implemented dimension independence test bullet with fully abstract placeholders (Entity A, [AMBIGUOUS_TRAIT], [trait]).
+**Open items:** Multilingual verification test case (German ambiguous input) — noted in WIP doc but not yet run.
+**Warnings:** Residual contamination risk in Fix A: a label that passes all 5 structural constraints can still be evidence-contaminated if the concept came from preliminary evidence. The backup self-check is the only guard at this margin — monitor in production.
+**For next agent:** UCM drift implementation (Commit 1 + 2) is ready to execute per the plan in `Docs/WIP/UCM_Config_Drift_Review_2026-03-05.md §5`. Deploy note: mixedConfidenceThreshold 40→50 will shift claims with confidence 40-49% from MIXED to UNVERIFIED on re-run — include in release notes.
+**Learnings:** no
+
+---
 ### 2026-03-05 | Senior Developer | Codex (GPT-5) | Fix shallow config-loader merge for nested default backfill
 **Task:** Address review finding that `config-loader.ts` only shallow-merges DB config blobs with defaults, causing nested default fields to be lost for older stored blobs.
 **Files touched:** `apps/web/src/lib/config-loader.ts`, `apps/web/test/unit/lib/config-loader.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
@@ -3635,4 +3649,16 @@ ext phase).
 **Open items:** None.
 **Warnings:** Repository contains pre-existing unrelated local edits outside this patch scope; they were not modified.
 **For next agent:** If warning policy changes again, keep emission severities and `warning-display.ts` classification/floor logic synchronized, then re-run warning-display + claimboundary + verdict-stage tests together.
+**Learnings:** no
+---
+### 2026-03-05 | Senior Developer | Codex (GPT-5) | Review ambiguous-claim decomposition prompt-fix proposal
+**Task:** Review `Docs/WIP/Ambiguous_Claim_Decomposition_Quality.md` with focus on section 8 open questions (Fix A/B/C tradeoffs and AGENTS prompt-rule compliance).
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Flagged Fix C example as too close to test-case/domain terms for prompt text; recommended abstract placeholder pattern to satisfy AGENTS no-test-case rule.
+- Considered Fix A direction correct but guardrail too subjective; recommended adding objective anti-contamination constraints (no entities/numbers/dates/geos/datasets in dimension labels).
+- Recommended prompt-only rollout first (A+B), with no immediate global threshold (`claimSpecificityMinimum`) or atomicity-level increase.
+**Open items:** Update WIP doc language for Fix C abstraction and tighten Fix A guardrails before prompt edit rollout.
+**Warnings:** Analysis-affecting prompt changes should include multilingual validation checks per AGENTS rules.
+**For next agent:** If implementing, keep changes confined to prompt files and run targeted ambiguous-input validation before broad rollout.
 **Learnings:** no
