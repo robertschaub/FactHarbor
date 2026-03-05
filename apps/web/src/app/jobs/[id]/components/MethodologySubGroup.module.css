@@ -74,3 +74,24 @@
     color: #d1d5db;
   }
 }
+
+/* Keep job-detail cards light on phones even when device dark mode is enabled. */
+@media (max-width: 768px) {
+  .group {
+    border-color: #e5e7eb;
+    background: #ffffff;
+  }
+
+  .header {
+    background: #f9fafb;
+  }
+
+  .title {
+    color: #111827;
+  }
+
+  .count {
+    background: #eef2ff;
+    color: #6b7280;
+  }
+}
