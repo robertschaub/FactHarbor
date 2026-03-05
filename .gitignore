@@ -143,3 +143,6 @@ artifacts/
 # Deployment guide and connection config contain server IPs and SSH info — keep local only
 scripts/DEPLOYMENT.md
 scripts/.deploy.env
+
+# Local test run output files
+run_*.json
