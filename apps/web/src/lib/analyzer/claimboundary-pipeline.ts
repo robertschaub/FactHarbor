@@ -2330,17 +2330,21 @@ export async function researchEvidence(
   const uniqueSourceUrls = new Set(state.sources.map((s) => s.url)).size;
 
   if (totalSources === 0) {
+    const acquisitionFailed = totalSearches > 0;
     state.warnings.push({
       type: "no_successful_sources",
-      severity: "warning",
-      message: "No sources were successfully fetched during research — verdict is based on zero evidence.",
-      details: { searchQueries: totalSearches },
+      severity: acquisitionFailed ? "error" : "warning",
+      message: acquisitionFailed 
+        ? `Search queries were executed but zero sources were successfully fetched — acquisition failed.`
+        : "No sources were found for these claims — verdict is based on zero evidence.",
+      details: { searchQueries: totalSearches, totalEvidence },
     });
+
     if (totalSearches >= 3) {
       state.warnings.push({
         type: "source_acquisition_collapse",
         severity: "error",
-        message: `${totalSearches} search queries were executed but yielded zero usable sources — search providers may be unavailable.`,
+        message: `${totalSearches} search queries were executed but yielded zero usable sources — research phase collapsed.`,
         details: { searchQueries: totalSearches },
       });
       state.warnings.push({
@@ -4777,6 +4781,8 @@ export async function aggregateAssessment(
 
   // Compute weighted averages inline (same weights for both)
   const totalWeight = weightsData.reduce((sum, item) => sum + item.weight, 0);
+
+  // If no claims were extracted, default to 50% truth and 0% confidence (UNVERIFIED)
   const weightedTruthPercentage =
     totalWeight > 0
       ? weightsData.reduce(
@@ -4790,7 +4796,7 @@ export async function aggregateAssessment(
           (sum, item) => sum + item.confidence * item.weight,
           0,
         ) / totalWeight
-      : 50;
+      : 0;
   const hasIntegrityDowngrade = claimVerdicts.some(
     (verdict) => verdict.verdictReason === "verdict_integrity_failure",
   );

@@ -281,7 +281,8 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         try {
           const providerResults = await providerInfo.provider.execute({ ...options, maxResults: remaining });
           results.push(...providerResults);
-          if (providerResults.length > 0) recordSuccess(providerInfo.provider.name, cbConfig);
+          // 0 results is a valid response (not a failure); reset consecutive failures
+          recordSuccess(providerInfo.provider.name, cbConfig);
           if (results.length >= options.maxResults) break;
         } catch (err) {
           if (err instanceof SearchProviderError) {
@@ -311,7 +312,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
           // but ensure they always contribute if enabled.
           const suppResults = await def.execute({ ...options, maxResults: 3 }); 
           results.push(...suppResults);
-          if (suppResults.length > 0) recordSuccess(def.name, cbConfig);
+          recordSuccess(def.name, cbConfig);
         } catch (err) {
           if (err instanceof SearchProviderError) {
             recordFailure(def.name, err.message, cbConfig);
@@ -393,9 +394,9 @@ async function runExplicitProviderSearch(params: {
     const results = await applyDomainFilters(provider.execute(options), options);
     console.log(`[Search] Final results from ${provider.explicitLabel}: ${results.length}`);
 
-    if (results.length > 0) {
-      recordSuccess(provider.name, cbConfig);
-    }
+    // Valid response (even with 0 results) counts as success for circuit breaker health
+    recordSuccess(provider.name, cbConfig);
+    
     await cacheSearchResults(options, results, provider.name, cacheConfig);
 
     return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };

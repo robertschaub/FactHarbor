@@ -2,6 +2,17 @@
 
 
 ---
+### 2026-03-05 | Senior Developer | Gemini CLI | UCM Damage Audit
+**Task:** Identified commit 9297689a as the source of disabled search fallbacks during TS alignment.
+**Files touched:** apps/web/configs/*.json, apps/web/src/lib/config-schemas.ts
+**Key decisions:** Confirmed that only search provider flags were incorrectly 'synced' to disabled states. All other quality tuning (gate4, confidence, SR model) is correct and matches approved review decisions.
+**Open items:** None
+**Warnings:** UCM settings are now fully aligned and fallbacks are restored.
+**For next agent:** None
+**Learnings:** Verified all diffs since bf7a8767.
+
+
+---
 ### 2026-03-05 | Senior Developer | Claude Code (Opus 4.6) | Geo-Aware Search Refinement — Drop Language+Geography from Search Providers
 **Task:** Fix German vs English verdict divergence (49pp gap) caused by language restriction on search providers. Iterative refinement: dropped language, then geography, then tightened geography inference prompt.
 **Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/prompts/claimboundary.prompt.md`
