@@ -280,6 +280,7 @@ export default function JobPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [tab, setTab] = useState<"summary" | "article" | "sources" | "report" | "json" | "events">("summary");
+  const initialTabSet = useRef(false);
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [maintenance, setMaintenance] = useState(false);
@@ -306,6 +307,24 @@ export default function JobPage() {
       setHasAdminKey(!!key);
     }
   }, []);
+
+  // Auto-select Events tab when job is still running on first load,
+  // and switch to Summary when it completes (if user hasn't navigated away).
+  const prevStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!job) return;
+    if (!initialTabSet.current) {
+      initialTabSet.current = true;
+      if (job.status === "RUNNING" || job.status === "QUEUED") {
+        setTab("events");
+      }
+    }
+    // Auto-switch from events to summary when job finishes
+    if (prevStatusRef.current === "RUNNING" && job.status === "SUCCEEDED") {
+      setTab((current) => current === "events" ? "summary" : current);
+    }
+    prevStatusRef.current = job.status;
+  }, [job]);
 
   // Pause polling/SSE when tab is hidden to reduce read pressure and background load.
   useEffect(() => {
