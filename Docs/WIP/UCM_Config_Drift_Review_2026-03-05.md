@@ -1,10 +1,11 @@
 # UCM Configuration Drift — Review & Fix Plan
 
 **Date:** 2026-03-05
-**Status:** Review 1 complete — approved with decisions. Ready for 2nd review.
+**Status:** Both reviews complete. Ready for implementation.
 **Investigated by:** Senior Developer (Claude Code, Opus 4.6)
 **Scope:** All 4 UCM config types (search, calculation, pipeline, SR)
-**Review 1:** 2026-03-05 — see §6 for decisions and implementation plan
+**Review 1:** 2026-03-05 (Captain) — see §5 for decisions
+**Review 2:** 2026-03-05 (UCM Expert) — all R1 decisions confirmed. Added youtube.com to domainBlacklist. Deploy note: MIXED→UNVERIFIED shift from 2d.
 
 ---
 
@@ -101,7 +102,8 @@ These change analysis behavior. Review 1 decisions shown per item.
   "instagram.com",
   "tiktok.com",
   "pinterest.com",
-  "quora.com"
+  "quora.com",
+  "youtube.com"
 ]
 ```
 
@@ -110,6 +112,7 @@ These change analysis behavior. Review 1 decisions shown per item.
 **Risk:** May miss legitimate social media posts that contain newsworthy primary sources. Mitigated by: admin can remove domains via UCM at any time.
 
 **R1 Decision:** Approved as proposed (8 domains).
+**R2 Decision:** Confirmed. Added `youtube.com` (video pages return no extractable text for evidence; not blocked by SR skipPlatforms). `linkedin.com` noted as optional — not added for now. Final count: **9 domains**.
 
 ---
 
@@ -120,6 +123,7 @@ These change analysis behavior. Review 1 decisions shown per item.
 **Risk:** Spread thresholds (stable: 5pp, moderate: 12pp, unstable: 20pp) were calibrated at 0.4. At 0.2, fewer verdicts will be classified as "unstable" — this is correct (less noise), but existing reports will look more stable.
 
 **R1 Decision:** Blocked — too aggressive without co-adjusting spread thresholds. Revisit when calibration study available.
+**R2 Decision:** Confirmed blocked. Optional interim: 0.3 paired with stable threshold 5pp→3pp as smaller co-adjustment. Not required for pre-release.
 
 ---
 
@@ -130,6 +134,7 @@ These change analysis behavior. Review 1 decisions shown per item.
 **Risk:** Some borderline claims may be downgraded to UNVERIFIED. This is arguably correct behavior for a quality gate.
 
 **R1 Decision:** Approved at 0.75 (incremental tightening; observe impact before considering 0.8).
+**R2 Decision:** Confirmed. Verified Gate 4 interaction with defaultScore 0.4→0.45: no unintended HIGH-tier pass-through.
 
 ---
 
@@ -140,6 +145,7 @@ These change analysis behavior. Review 1 decisions shown per item.
 **Risk:** More claims labeled "Mixed/Unverified" instead of receiving a directional verdict.
 
 **R1 Decision:** Approved at 50 — closes policy gap with highHarmMinConfidence cleanly.
+**R2 Decision:** Confirmed. Note: claims with confidence 40–49% that were MIXED will become UNVERIFIED after deployment. Stored reports unaffected; re-runs will differ. **Flag in deploy notes.**
 
 ---
 
@@ -223,49 +229,53 @@ The `openaiModel` was changed in TS on 2026-02-21 (commit `2c5ffa4b`) but the JS
 
 ---
 
-## 5. Review 1 Decisions & Implementation Plan
+## 5. Review Decisions & Implementation Plan
 
-**Reviewer:** Captain (2026-03-05)
+### Review 1 — Captain (2026-03-05)
 
-### Findings Confirmed (severity-ordered)
+Findings confirmed (severity-ordered):
+1. **HIGH:** SR model drift. JSON `gpt-4o-mini` ≠ TS `gpt-4.1-mini`. Pre-release running wrong model.
+2. **MEDIUM:** Orphaned `defaultScore: 0.45` in SR JSON — dropped by Zod parse.
+3. **MEDIUM:** Search/Calculation JSON defaults incomplete vs TS.
+4. **LOW:** No CI guard for future drift.
 
-1. **HIGH:** SR model drift confirmed. JSON `gpt-4o-mini` ≠ TS `gpt-4.1-mini`. File defaults preferred during seeding → pre-release running wrong model.
-2. **MEDIUM:** Orphaned `defaultScore: 0.45` in SR JSON — dropped by Zod parse, misleading to ops/admin.
-3. **MEDIUM:** Search/Calculation JSON defaults incomplete vs TS — admin/UI drift and deploy ambiguity.
-4. **LOW:** No CI guard to prevent future JSON↔TS drift.
+### Review 2 — UCM Expert (2026-03-05)
 
-### Phase Decisions
+All R1 decisions confirmed. Additional findings:
+- **2a:** Added `youtube.com` (video pages = no extractable text). `linkedin.com` noted as optional, not added. Final: 9 domains.
+- **2c:** Verified Gate 4 interaction with 2f (defaultScore 0.4→0.45): no unintended HIGH-tier pass-through.
+- **2d:** Deploy note: claims at confidence 40–49% shift from MIXED→UNVERIFIED. Stored reports unaffected; re-runs differ.
+- **2b blocked:** Optional interim noted (0.3 + stable threshold 5→3pp) but not required for pre-release.
 
-| Phase | Decision |
-|-------|----------|
-| **Phase 1 (alignment)** | **APPROVED** (all 1a–1e) |
-| **Phase 3 (CI drift test)** | **APPROVED** (low priority, schedule after deployment stabilization) |
+### Final Decision Summary
 
-### Phase 2 Item Decisions
-
-| Item | Proposal | Decision | Rationale |
-|------|----------|----------|-----------|
-| **2a** domainBlacklist | 8 social media domains | **APPROVED** | Default baseline; admin-removable via UCM |
-| **2b** selfConsistencyTemperature 0.4→0.2 | Lower for cleaner signal | **BLOCKED** | Too aggressive without spread-threshold recalibration. Revisit when thresholds can be co-adjusted. |
-| **2c** gate4QualityThresholdHigh | 0.7→0.75 or 0.8 | **APPROVED 0.75** | Incremental tightening. Not 0.8 yet — observe impact first. |
-| **2d** mixedConfidenceThreshold | 40→45 or 50 | **APPROVED 50** | Closes policy gap with highHarmMinConfidence cleanly. |
-| **2e** evidenceSufficiencyMinSourceTypes 1→2 | Remove temp mitigation | **BLOCKED** | Keep temporary mitigation until domain-diversity fallback stability confirmed in production. |
-| **2f** sourceReliability.defaultScore 0.4→0.45 | Conservative-neutral | **APPROVED 0.45** | Balanced — less punishing to unknown sources without going fully neutral. |
+| Item | Proposal | R1 | R2 | Final Value |
+|------|----------|----|----|-------------|
+| **Phase 1** | JSON↔TS alignment | ✅ | ✅ | Implement |
+| **2a** domainBlacklist | Social media domains | ✅ 8 | ✅ +youtube | **9 domains** |
+| **2b** selfConsistencyTemp | 0.4→0.2 | ❌ | ❌ | **Keep 0.4** |
+| **2c** gate4QualityHigh | 0.7→0.75 | ✅ | ✅ | **0.75** |
+| **2d** mixedConfidence | 40→50 | ✅ | ✅ | **50** |
+| **2e** evidenceSufficiency | 1→2 | ❌ | ❌ | **Keep 1** |
+| **2f** defaultScore | 0.4→0.45 | ✅ | ✅ | **0.45** |
+| **Phase 3** | CI drift test | ✅ | ✅ | Post-stabilization |
 
 ### Implementation Order
 
 Commits must be separate to isolate alignment from behavior changes:
 
 1. **Commit 1 (Phase 1):** JSON alignment only — sync all 4 JSON files with TS constants. No behavioral changes.
-2. **Commit 2 (Phase 2 approved items):** `domainBlacklist` (2a), `gate4QualityThresholdHigh: 0.75` (2c), `mixedConfidenceThreshold: 50` (2d), `sourceReliability.defaultScore: 0.45` (2f).
+2. **Commit 2 (Phase 2 approved items):** `domainBlacklist` 9 domains (2a), `gate4QualityThresholdHigh: 0.75` (2c), `mixedConfidenceThreshold: 50` (2d), `sourceReliability.defaultScore: 0.45` (2f).
 3. **Commit 3 (Phase 3):** CI drift test (post-deployment stabilization).
+
+**Deploy note for Commit 2:** Some claims with confidence 40–49% will shift from MIXED to UNVERIFIED on re-run. This is intentional (closes policy gap). Stored reports are unaffected.
 
 ### Blocked Items — Conditions to Unblock
 
 | Item | Condition | Tracking |
 |------|-----------|----------|
-| 2b selfConsistencyTemperature | Propose co-adjusted spread thresholds (stable/moderate/unstable) calibrated at new temperature | Backlog |
-| 2e evidenceSufficiencyMinSourceTypes | Domain-diversity fallback confirmed stable in production (monitor for 1–2 weeks post-deploy) | Backlog |
+| 2b selfConsistencyTemperature | Propose co-adjusted spread thresholds calibrated at new temperature. Optional interim: 0.3 + stable 5→3pp. | Backlog |
+| 2e evidenceSufficiencyMinSourceTypes | Domain-diversity fallback confirmed stable in production (monitor 1–2 weeks post-deploy) | Backlog |
 
 ---
 
