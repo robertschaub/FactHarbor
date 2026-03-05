@@ -2373,8 +2373,10 @@ function ClaimCard({
 
   return (
     <div id={claim.claimId ? `nav-claim-${claim.claimId}` : undefined} className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""} ${isTangential ? styles.claimCardTangential : ""}`} style={{ borderLeftColor: isTangential ? "#9e9e9e" : color.border }}>
+      <div className={styles.claimText}>
+        <span className={styles.claimId}>{claim.claimId}</span> {claim.claimText}
+      </div>
       <div className={styles.claimCardHeader}>
-        <span className={styles.claimId}>{claim.claimId}</span>
         {claim.category && <Badge bg="#f3f4f6" color="#4b5563">{claim.category.toUpperCase()}</Badge>}
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
         {claim.harmPotential === "high" && <Badge bg="#ffebee" color="#c62828">⚠️ High Harm</Badge>}
@@ -2403,31 +2405,23 @@ function ClaimCard({
             {getTriangulationIcon(claim.triangulationScore.level)} {claim.triangulationScore.level.toUpperCase()}
           </Badge>
         )}
-        {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
-          <Badge bg="#ffebee" color="#c62828">
-            ⚠️ {claim.misleadingness.replace("_", " ").toUpperCase()}
-          </Badge>
-        )}
       </div>
-      <div className={styles.claimText}>{claim.claimText}</div>
       
-      <VisualTruthMeter
-        truth={displayClaimPct}
-        range={claim.truthPercentageRange && isFalseBand(claimVerdictLabel)
-          ? { min: 100 - claim.truthPercentageRange.max, max: 100 - claim.truthPercentageRange.min }
-          : claim.truthPercentageRange}
-      />
-
-      {claim.misleadingness && claim.misleadingness !== "not_misleading" && claim.misleadingnessReason && (
+      {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
         <div className={styles.misleadingnessInline}>
-          <ExpandableText
-            text={claim.misleadingnessReason}
-            threshold={300}
-            className={styles.misleadingnessText}
-            modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`}
-            bare
-            onNavigate={onNavigate}
-          />
+          <div className={styles.misleadingnessLabel}>
+            ⚠️ {claim.misleadingness.replace("_", " ").toUpperCase()}
+          </div>
+          {claim.misleadingnessReason && (
+            <ExpandableText
+              text={claim.misleadingnessReason}
+              threshold={300}
+              className={styles.misleadingnessText}
+              modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`}
+              bare
+              onNavigate={onNavigate}
+            />
+          )}
         </div>
       )}
 

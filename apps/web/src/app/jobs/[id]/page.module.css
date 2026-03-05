@@ -1610,6 +1610,13 @@ details[open] > .devWarningSummary::before {
   border-radius: 4px;
 }
 
+.misleadingnessLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c62828;
+  margin-bottom: 6px;
+}
+
 .misleadingnessText {
   font-size: 13px;
   color: #b71c1c;
@@ -2477,17 +2484,19 @@ details[open] > .devWarningSummary::before {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 50;
-  padding: 8px 16px;
-  background: rgba(21, 101, 192, 0.9);
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  padding: 10px 18px;
+  background: rgba(21, 101, 192, 0.95);
   color: #fff;
   border: none;
   border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   transition: background 0.2s, transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 .navBackButton:hover {
   background: rgba(13, 71, 161, 0.95);
