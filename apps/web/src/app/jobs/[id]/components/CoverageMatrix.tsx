@@ -17,16 +17,22 @@ interface Props {
   boundaryLabels?: string[];      // Full boundary names (for legend)
   boundaryShortLabels?: string[]; // Short labels (for table rows, matching "Evidence by Methodology")
   hideLegend?: boolean;           // When true, boundary legend is not rendered (rendered separately)
+  onNavigate?: (refId: string) => void; // Cross-navigation callback
 }
 
 /** Standalone boundary legend — maps short labels to full names */
-export function BoundaryLegend({ shortLabels, fullLabels }: { shortLabels: string[]; fullLabels: string[] }) {
+export function BoundaryLegend({ shortLabels, fullLabels, boundaryIds, onNavigate }: {
+  shortLabels: string[];
+  fullLabels: string[];
+  boundaryIds?: string[];
+  onNavigate?: (refId: string) => void;
+}) {
   const needsLegend = fullLabels.some((full, i) => full !== shortLabels[i]);
   if (!needsLegend) return null;
   return (
     <div className={styles.boundaryLegend}>
       {fullLabels.map((full, i) => (
-        <div key={i} className={styles.boundaryLegendItem}>
+        <div key={i} className={styles.boundaryLegendItem} id={boundaryIds?.[i] ? `nav-cb-${boundaryIds[i]}` : undefined}>
           <div className={styles.boundaryLegendLabel}>{shortLabels[i]}</div>
           <div className={styles.boundaryLegendFull}>{full}</div>
         </div>
@@ -35,7 +41,7 @@ export function BoundaryLegend({ shortLabels, fullLabels }: { shortLabels: strin
   );
 }
 
-export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, boundaryShortLabels, hideLegend = false }: Props) {
+export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, boundaryShortLabels, hideLegend = false, onNavigate }: Props) {
   const { claims, boundaries, counts } = matrix;
 
   const claimDisplayLabels = claimLabels ?? claims.map((id, i) => `Claim ${i + 1}`);
@@ -86,7 +92,12 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
             <tr>
               <th className={styles.cornerCell}>Boundary</th>
               {claimDisplayLabels.map((label, i) => (
-                <th key={claims[i]} className={styles.headerCell} title={claims[i]}>
+                <th
+                  key={claims[i]}
+                  className={`${styles.headerCell} ${onNavigate ? styles.clickableHeader : ""}`}
+                  title={claims[i]}
+                  onClick={onNavigate ? () => onNavigate(claims[i]) : undefined}
+                >
                   {label}
                 </th>
               ))}
@@ -98,13 +109,18 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
               const colTotal = counts.reduce((sum, row) => sum + row[boundaryIdx], 0);
               return (
                 <tr key={boundaries[boundaryIdx]}>
-                  <th className={styles.rowHeader} title={fullLabels[boundaryIdx]}>
+                  <th
+                    className={`${styles.rowHeader} ${onNavigate ? styles.clickableHeader : ""}`}
+                    title={fullLabels[boundaryIdx]}
+                    onClick={onNavigate ? () => onNavigate(boundaries[boundaryIdx]) : undefined}
+                  >
                     {shortLabels[boundaryIdx]}
                   </th>
                   {counts.map((row, claimIdx) => (
                     <td
                       key={`${boundaryIdx}-${claimIdx}`}
-                      className={getCellClass(row[boundaryIdx])}
+                      className={`${getCellClass(row[boundaryIdx])} ${onNavigate && row[boundaryIdx] > 0 ? styles.clickableCell : ""}`}
+                      onClick={onNavigate && row[boundaryIdx] > 0 ? () => onNavigate(claims[claimIdx]) : undefined}
                     >
                       {row[boundaryIdx] > 0 ? row[boundaryIdx] : "—"}
                     </td>

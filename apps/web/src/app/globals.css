@@ -1,3 +1,12 @@
 html, body { padding: 0; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f5f6f8; }
 a { color: inherit; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+/* Cross-navigation highlight animation (global — used by useReportNavigation hook) */
+.nav-highlight {
+  animation: navFlash 1.5s ease-out;
+}
+@keyframes navFlash {
+  0% { background-color: #fff9c4; }
+  100% { background-color: transparent; }
+}

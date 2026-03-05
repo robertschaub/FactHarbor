@@ -256,7 +256,7 @@ export const PipelineConfigSchema = z.object({
   allowModelKnowledge: z.boolean().describe("Allow LLM to use training knowledge (not just web sources)"),
   deterministic: z.boolean().describe("Use temperature=0 for reproducible outputs"),
   understandTemperature: z.number().min(0).max(1).optional()
-    .describe("Temperature for UNDERSTAND step decomposition (default: 0). Decoupled from global deterministic flag for stability."),
+    .describe("Temperature for UNDERSTAND step claim extraction (default: 0.15). Lower = more deterministic, higher = more exploration of ambiguous interpretations."),
   understandMinClaimThreshold: z.number().int().min(1).max(20).optional()
     .describe("Minimum claims from initial decomposition before triggering enrichment pass (default: 4)"),
   keyFactorHints: z
@@ -787,7 +787,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   analysisMode: "quick", // v2.9.0: Default to quick mode for backwards compatibility
   allowModelKnowledge: false, // v2.9.0: Default to off for backwards compatibility
   deterministic: true,
-  understandTemperature: 0,
+  understandTemperature: 0.15,
   understandMinClaimThreshold: 4,
   keyFactorHints: undefined,
   understandMaxChars: 12000,

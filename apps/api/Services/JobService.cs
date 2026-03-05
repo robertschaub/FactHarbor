@@ -381,6 +381,42 @@ public sealed class JobService
         );
     }
 
+    public sealed record InviteCodeUsageDay(DateTime date, int count);
+
+    public async Task<List<InviteCodeUsageDay>> GetInviteCodeUsageHistoryAsync(string code)
+    {
+        return await _db.InviteCodeUsage
+            .Where(u => u.InviteCode == code)
+            .OrderByDescending(u => u.Date)
+            .Select(u => new InviteCodeUsageDay(u.Date, u.UsageCount))
+            .ToListAsync();
+    }
+
+    public async Task<InviteCodeEntity?> UpdateInviteCodeAsync(
+        string code,
+        string? description,
+        int? maxJobs,
+        int? hourlyLimit,
+        int? dailyLimit,
+        DateTime? expiresUtc,
+        bool? isActive,
+        bool clearExpiration)
+    {
+        var invite = await _db.InviteCodes.FindAsync(code);
+        if (invite == null) return null;
+
+        if (description != null) invite.Description = description;
+        if (maxJobs.HasValue) invite.MaxJobs = maxJobs.Value;
+        if (hourlyLimit.HasValue) invite.HourlyLimit = hourlyLimit.Value;
+        if (dailyLimit.HasValue) invite.DailyLimit = dailyLimit.Value;
+        if (expiresUtc.HasValue) invite.ExpiresUtc = expiresUtc.Value;
+        else if (clearExpiration) invite.ExpiresUtc = null;
+        if (isActive.HasValue) invite.IsActive = isActive.Value;
+
+        await _db.SaveChangesAsync();
+        return invite;
+    }
+
     #endregion
 
     /// <summary>

@@ -920,7 +920,7 @@ export async function runPass1(
         },
         { role: "user", content: inputText },
       ],
-      temperature: 0.15,
+      temperature: pipelineConfig.understandTemperature!,
       output: Output.object({ schema: Pass1OutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -1504,7 +1504,7 @@ export async function runPass2(
           },
           { role: "user" as const, content: userContent },
         ],
-        temperature: 0.15 + (attempt * 0.05), // Slightly increase temperature on retry
+        temperature: pipelineConfig.understandTemperature! + (attempt * 0.05), // Base from config, increase on retry
         output: Output.object({ schema: Pass2OutputSchema }),
         providerOptions: getStructuredOutputProviderOptions(
           (pipelineConfig.llmProvider) ?? "anthropic",
@@ -1649,7 +1649,7 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                 },
                 { role: "user" as const, content: fallbackUserContent },
               ],
-              temperature: 0.2,
+              temperature: pipelineConfig.understandTemperature! + 0.2, // Base from config + fallback boost
               output: Output.object({ schema: Pass2OutputSchema }),
               providerOptions: getStructuredOutputProviderOptions(
                 (pipelineConfig.llmProvider) ?? "anthropic",

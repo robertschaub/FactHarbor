@@ -46,6 +46,7 @@ type BoundaryFindingsProps = {
   boundaryFindings: BoundaryFinding[];
   claimBoundaries: ClaimAssessmentBoundary[];
   totalBoundaryCount: number;    // From result.claimBoundaries.length
+  onNavigate?: (refId: string) => void; // Cross-navigation callback
 };
 
 /**
@@ -95,6 +96,7 @@ export function BoundaryFindings({
   boundaryFindings,
   claimBoundaries,
   totalBoundaryCount,
+  onNavigate,
 }: BoundaryFindingsProps) {
   // Suppress boundary display when ≤ 2 boundaries (§18 Q10)
   if (totalBoundaryCount <= 2) {
@@ -134,6 +136,7 @@ export function BoundaryFindings({
             <div
               key={finding.boundaryId}
               className={styles.boundaryFindingRow}
+              id={`nav-bf-${finding.boundaryId}`}
               title={rowTooltip}
             >
               {/* Direction icon + boundary name */}
@@ -145,9 +148,20 @@ export function BoundaryFindings({
                 >
                   {dirDisplay.icon}
                 </span>
-                <span className={styles.boundaryNameText}>
-                  {boundary.shortName || boundary.name}
-                </span>
+                {onNavigate ? (
+                  <button
+                    className={styles.navLink}
+                    onClick={() => onNavigate(finding.boundaryId)}
+                    title={`Go to ${boundary.shortName || boundary.name} in legend`}
+                    style={{ color: dirDisplay.color, textDecoration: "underline dotted", background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    {boundary.shortName || boundary.name}
+                  </button>
+                ) : (
+                  <span className={styles.boundaryNameText}>
+                    {boundary.shortName || boundary.name}
+                  </span>
+                )}
               </div>
 
               {/* Compact inline metadata (evidence count + temporal range) */}

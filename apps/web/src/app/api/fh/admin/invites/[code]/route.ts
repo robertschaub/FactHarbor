@@ -62,6 +62,48 @@ export async function GET(req: NextRequest, context: RouteContext) {
   }
 }
 
+export async function PUT(req: NextRequest, context: RouteContext) {
+  if (!checkAdminKey(req)) {
+    return NextResponse.json({ error: "Admin key required" }, { status: 401 });
+  }
+
+  const base = getBaseUrl();
+  if (!base) {
+    return NextResponse.json({ ok: false, error: "FH_API_BASE_URL not set" }, { status: 503 });
+  }
+
+  const code = await resolveCode(context);
+  if (!code) {
+    return NextResponse.json({ error: "Missing invite code" }, { status: 400 });
+  }
+
+  try {
+    const body = await req.text();
+    const res = await fetch(`${base}/v1/admin/invites/${encodeURIComponent(code)}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Key": getForwardedAdminKey(req),
+      },
+      body,
+    });
+
+    const text = await res.text();
+    return new NextResponse(text, {
+      status: res.status,
+      headers: {
+        "Content-Type": res.headers.get("content-type") ?? "application/json",
+      },
+    });
+  } catch (error) {
+    console.error("[AdminInvites] Proxy error:", error);
+    return NextResponse.json(
+      { error: "Failed to process invite operation" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest, context: RouteContext) {
   if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Admin key required" }, { status: 401 });
@@ -78,7 +120,11 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
   }
 
   try {
-    const res = await fetch(`${base}/v1/admin/invites/${encodeURIComponent(code)}`, {
+    const isHardDelete = req.headers.get("x-hard-delete") === "true";
+    const apiPath = isHardDelete
+      ? `${base}/v1/admin/invites/${encodeURIComponent(code)}/hard`
+      : `${base}/v1/admin/invites/${encodeURIComponent(code)}`;
+    const res = await fetch(apiPath, {
       method: "DELETE",
       headers: {
         "X-Admin-Key": getForwardedAdminKey(req),

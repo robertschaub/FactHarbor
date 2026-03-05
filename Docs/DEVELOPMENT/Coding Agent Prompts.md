@@ -32,7 +32,12 @@ Multi agent collaboration shall be possible all the time, so that another agent 
 ---
 
 ## Tasks Pending:
---
+---
+As Senior Developer; 
+When the user reads a specific report, support the user to navigate between the elements in the UI, so that all items that are logically linked can be navigated. Cross links between items in "Summary" and "Sources" tabs shall also be supported. Maybe to support this well some layout changes would be needed - propose if needed.
+Also support to navigate back and forth again.
+Investigate thoroughly, make proposals, then and make a plan, make it ready for collaborative team review:
+---
 See all jobs submitted today, analyze them one by one, look into every single issue. Analyze systematically, find patterns and search for systematic problems and architecture and design problems. Analyze what changes did work an what did not, draw according conclusions. We have tried for a long time to improve the analysis - but failed.
 The report quality remains low, we cannot continue like this!
 We need to re-think concepts and design and architecture of the analysis pipeline.

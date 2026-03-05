@@ -12,7 +12,7 @@ import styles from "./ExpandableText.module.css";
 import { getTextParagraphs } from "../utils/getTextParagraphs";
 
 /** Render inline markdown fragments for common generic patterns. */
-function renderInlineMarkdown(text: string): ReactNode[] {
+function renderInlineMarkdown(text: string, onNavigate?: (refId: string) => void): ReactNode[] {
   const parts: ReactNode[] = [];
   // Match **bold**, `inline code`, or reference IDs (e.g. EV_12345, CP_AC_01_0)
   const regex = /\*\*(.+?)\*\*|`([^`]+)`|(\b[A-Z]{2,}_[A-Z0-9_]+\b)/g;
@@ -30,8 +30,22 @@ function renderInlineMarkdown(text: string): ReactNode[] {
       // `inline code`
       parts.push(<code key={key++}>{match[2]}</code>);
     } else if (match[3]) {
-      // Reference ID (auto-bold for scanning)
-      parts.push(<strong key={key++} style={{ fontWeight: 600 }}>{match[3]}</strong>);
+      // Reference ID — clickable if onNavigate provided, otherwise bold
+      if (onNavigate) {
+        const refId = match[3];
+        parts.push(
+          <button
+            key={key++}
+            style={{ color: "#1565c0", cursor: "pointer", textDecoration: "underline dotted", background: "none", border: "none", padding: 0, font: "inherit", fontWeight: 600 }}
+            onClick={() => onNavigate(refId)}
+            title={`Navigate to ${refId}`}
+          >
+            {refId}
+          </button>
+        );
+      } else {
+        parts.push(<strong key={key++} style={{ fontWeight: 600 }}>{match[3]}</strong>);
+      }
     }
     lastIndex = regex.lastIndex;
   }
@@ -42,17 +56,17 @@ function renderInlineMarkdown(text: string): ReactNode[] {
 }
 
 /** Render a single paragraph with **bold** and single-newline line breaks */
-function renderParagraph(text: string, key?: number) {
+function renderParagraph(text: string, key?: number, onNavigate?: (refId: string) => void) {
   const lines = text.split(/\n/);
   if (lines.length <= 1) {
-    return <>{renderInlineMarkdown(text)}</>;
+    return <>{renderInlineMarkdown(text, onNavigate)}</>;
   }
   return (
     <span key={key}>
       {lines.map((line, i) => (
         <span key={i}>
           {i > 0 && <br />}
-          {renderInlineMarkdown(line)}
+          {renderInlineMarkdown(line, onNavigate)}
         </span>
       ))}
     </span>
@@ -60,16 +74,16 @@ function renderParagraph(text: string, key?: number) {
 }
 
 /** Render text with **bold**, paragraph breaks (\n\n), and line breaks (\n) */
-function FormattedText({ text }: { text: string }) {
+function FormattedText({ text, onNavigate }: { text: string; onNavigate?: (refId: string) => void }) {
   const paragraphs = getTextParagraphs(text);
 
   if (paragraphs.length <= 1) {
-    return <>{renderParagraph(paragraphs[0] ?? text)}</>;
+    return <>{renderParagraph(paragraphs[0] ?? text, undefined, onNavigate)}</>;
   }
   return (
     <>
       {paragraphs.map((p, i) => (
-        <p key={i} style={{ margin: "0 0 0.6em" }}>{renderParagraph(p, i)}</p>
+        <p key={i} style={{ margin: "0 0 0.6em" }}>{renderParagraph(p, i, onNavigate)}</p>
       ))}
     </>
   );
@@ -83,9 +97,11 @@ interface ExpandableTextProps {
   modalTitle?: string;
   /** Skip the styled box wrapper (use when parent already provides container styling) */
   bare?: boolean;
+  /** Cross-navigation callback — makes reference IDs (EV_*, AC_*, CB_*, CP_*) clickable */
+  onNavigate?: (refId: string) => void;
 }
 
-function TextModal({ text, title, onClose }: { text: string; title: string; onClose: () => void }) {
+function TextModal({ text, title, onClose, onNavigate }: { text: string; title: string; onClose: () => void; onNavigate?: (refId: string) => void }) {
   const titleId = useId();
 
   // v2.6.40: Lock body scroll while modal is open
@@ -114,7 +130,7 @@ function TextModal({ text, title, onClose }: { text: string; title: string; onCl
             ✕
           </button>
         </div>
-        <div className={styles.modalBody}><FormattedText text={text} /></div>
+        <div className={styles.modalBody}><FormattedText text={text} onNavigate={onNavigate} /></div>
       </div>
     </div>,
     document.body
@@ -127,6 +143,7 @@ export function ExpandableText({
   className = "",
   modalTitle = "Full Text",
   bare = false,
+  onNavigate,
 }: ExpandableTextProps) {
   const [expanded, setExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -150,13 +167,13 @@ export function ExpandableText({
   const collapsedClass = bare ? `${styles.bareCollapsed} ${className}` : `${styles.collapsedText} ${className}`;
 
   if (!isLong) {
-    return <div className={className}><FormattedText text={text} /></div>;
+    return <div className={className}><FormattedText text={text} onNavigate={onNavigate} /></div>;
   }
 
   if (expanded) {
     return (
       <>
-        <div id={contentId} className={boxClass}><FormattedText text={text} /></div>
+        <div id={contentId} className={boxClass}><FormattedText text={text} onNavigate={onNavigate} /></div>
         <div className={styles.expandBar}>
           <button 
             className={styles.expandButton} 
@@ -170,20 +187,20 @@ export function ExpandableText({
             Open in overlay
           </button>
         </div>
-        {showModal && <TextModal text={text} title={modalTitle} onClose={handleClose} />}
+        {showModal && <TextModal text={text} title={modalTitle} onClose={handleClose} onNavigate={onNavigate} />}
       </>
     );
   }
 
   // Text fits — render without controls
   if (!overflows) {
-    return <div ref={contentRef} id={contentId} className={collapsedClass}><FormattedText text={text} /></div>;
+    return <div ref={contentRef} id={contentId} className={collapsedClass}><FormattedText text={text} onNavigate={onNavigate} /></div>;
   }
 
   return (
     <>
       <div className={styles.container}>
-        <div ref={contentRef} id={contentId} className={collapsedClass} aria-expanded="false"><FormattedText text={text} /></div>
+        <div ref={contentRef} id={contentId} className={collapsedClass} aria-expanded="false"><FormattedText text={text} onNavigate={onNavigate} /></div>
         {!bare && <div className={styles.fadeOverlay} />}
       </div>
       <div className={styles.expandBar}>
@@ -199,7 +216,7 @@ export function ExpandableText({
           Open in overlay
         </button>
       </div>
-      {showModal && <TextModal text={text} title={modalTitle} onClose={handleClose} />}
+      {showModal && <TextModal text={text} title={modalTitle} onClose={handleClose} onNavigate={onNavigate} />}
     </>
   );
 }

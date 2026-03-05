@@ -166,6 +166,20 @@
   margin-top: 1px;
 }
 
+.clickableHeader {
+  cursor: pointer;
+}
+.clickableHeader:hover {
+  background: #e5e7eb;
+}
+
+.clickableCell {
+  cursor: pointer;
+}
+.clickableCell:hover {
+  filter: brightness(0.9);
+}
+
 .emptyState {
   padding: 40px 20px;
   text-align: center;

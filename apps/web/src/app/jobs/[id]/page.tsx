@@ -48,6 +48,7 @@ import FallbackReport from "@/components/FallbackReport";
 import {
   classifyWarningForDisplay,
 } from "@/lib/analyzer/warning-display";
+import { useReportNavigation } from "./hooks/useReportNavigation";
 import type { AnalysisWarning, TIGERScore } from "@/lib/analyzer/types";
 
 // Module-level helper — browser-safe (client component, only called from event handlers)
@@ -138,6 +139,9 @@ const CLAIM_VERDICT_MIDPOINTS: Record<string, number> = {
   "MOSTLY-FALSE": 22,
   "FALSE": 7,
 };
+
+const DETAIL_POLL_INTERVAL_MS = 10_000;
+const DETAIL_RATE_LIMIT_BACKOFF_MS = 60_000;
 
 const ARTICLE_VERDICT_MIDPOINTS: Record<string, number> = {
   // Statement verdicts
@@ -279,7 +283,10 @@ export default function JobPage() {
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [maintenance, setMaintenance] = useState(false);
+  const [pollIntervalMs, setPollIntervalMs] = useState(DETAIL_POLL_INTERVAL_MS);
+  const [isVisible, setIsVisible] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
+  const { navigateTo, goBack, canGoBack, clearHistory } = useReportNavigation(tab, setTab);
 
   // Job action states
   const [isCancelling, setIsCancelling] = useState(false);
@@ -298,6 +305,17 @@ export default function JobPage() {
       const key = sessionStorage.getItem("fh_admin_key");
       setHasAdminKey(!!key);
     }
+  }, []);
+
+  // Pause polling/SSE when tab is hidden to reduce read pressure and background load.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+
+    onVisibilityChange();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   // Performs the actual cancel fetch (called both from handleCancel and after successful login)
@@ -414,6 +432,23 @@ export default function JobPage() {
     const load = async () => {
       const res = await fetch(`/api/fh/jobs/${jobId}`, { cache: "no-store" });
       if (!res.ok) {
+        if (res.status === 429) {
+          let message = `Rate limit reached. Retrying automatically in ${Math.round(DETAIL_RATE_LIMIT_BACKOFF_MS / 1000)} seconds.`;
+          try {
+            const payload = await res.json();
+            if (payload?.error && typeof payload.error === "string") {
+              message = payload.error;
+            }
+          } catch {
+            // Keep fallback message when payload is not JSON.
+          }
+          if (alive) {
+            setErr(message);
+            setMaintenance(false);
+            setPollIntervalMs(DETAIL_RATE_LIMIT_BACKOFF_MS);
+          }
+          return; // Keep existing data visible
+        }
         if (res.status === 502 || res.status === 503) {
           setMaintenance(true);
           return; // Keep existing job data visible
@@ -422,23 +457,37 @@ export default function JobPage() {
         throw new Error(`${res.status}: ${text}`);
       }
       const data = (await res.json()) as Job;
-      if (alive) { setJob(data); setMaintenance(false); }
+      if (alive) {
+        setJob(data);
+        setMaintenance(false);
+        setErr(null);
+        setPollIntervalMs(DETAIL_POLL_INTERVAL_MS);
+      }
     };
-    load().catch((e: any) => {
-      const msg = e?.message ?? String(e);
-      if (isMaintErr(msg)) { setMaintenance(true); } else { setErr(msg); }
-    });
-    const id = setInterval(() => {
+
+    if (isVisible) {
       load().catch((e: any) => {
         const msg = e?.message ?? String(e);
-        if (isMaintErr(msg)) setMaintenance(true);
+        if (isMaintErr(msg)) { setMaintenance(true); } else { setErr(msg); }
       });
-    }, 2000);
+    }
+
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      load().catch((e: any) => {
+        const msg = e?.message ?? String(e);
+        if (isMaintErr(msg)) {
+          setMaintenance(true);
+        } else {
+          setErr(msg);
+        }
+      });
+    }, pollIntervalMs);
     return () => { alive = false; clearInterval(id); };
-  }, [jobId]);
+  }, [jobId, pollIntervalMs, isVisible]);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!jobId || !isVisible) return;
     const es = new EventSource(`/api/fh/jobs/${jobId}/events`);
     es.onmessage = (evt) => {
       try {
@@ -453,7 +502,7 @@ export default function JobPage() {
       // Silently handle SSE errors
     };
     return () => es.close();
-  }, [jobId]);
+  }, [jobId, isVisible]);
 
   const report = job?.reportMarkdown ?? "";
   const reportSections = useMemo(() => {
@@ -575,6 +624,7 @@ export default function JobPage() {
         category: c.sourceType || 'citation',
       }))
     : result?.sources || [];
+  const sourceUrlToIndex = useMemo(() => new Map<string, number>(sources.map((s: any, i: number) => [s.url as string, i])), [sources]);
   const usedModels = collectUsedModels(result);
   const usedModelsLabel = formatUsedModels(usedModels);
   const subClaims = result?.understanding?.subClaims || [];
@@ -768,8 +818,8 @@ export default function JobPage() {
       <div className={styles.tabsContainer}>
         {hasV22Data && (
           <>
-            <button onClick={() => setTab("summary")} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
-            <button onClick={() => setTab("sources")} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
+            <button onClick={() => { setTab("summary"); clearHistory(); }} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
+            <button onClick={() => { setTab("sources"); clearHistory(); }} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
           </>
         )}
         <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
@@ -1015,7 +1065,7 @@ export default function JobPage() {
               {/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */}
               {isCBSchema && result?.verdictNarrative && (
                 <section className={styles.cbSection}>
-                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} hideHeadline beforeLimitations={reportQualityPanel} />
+                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} hideHeadline beforeLimitations={reportQualityPanel} onNavigate={navigateTo} />
                 </section>
               )}
 
@@ -1044,6 +1094,7 @@ export default function JobPage() {
                         claim={enrichedCv}
                         claimBoundaries={claimBoundaries}
                         totalBoundaryCount={claimBoundaries.length}
+                        onNavigate={navigateTo}
                       />
                     );
                   })}
@@ -1082,6 +1133,7 @@ export default function JobPage() {
                     boundaryShortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
                     boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
                     hideLegend
+                    onNavigate={navigateTo}
                   />
                 </section>
               )}
@@ -1093,6 +1145,7 @@ export default function JobPage() {
                   <BoundaryLegend
                     shortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
                     fullLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
+                    boundaryIds={claimBoundaries.map((b: any) => b.id)}
                   />
                 </section>
               )}
@@ -1110,12 +1163,15 @@ export default function JobPage() {
             researchStats={researchStats}
             searchProvider={result?.meta?.searchProvider}
             searchProviders={result?.meta?.searchProviders}
+            onNavigate={navigateTo}
           />
           {/* NEW v2.6.29: Display evidence with counter-evidence marking */}
           {evidenceItems.length > 0 && (
             <EvidencePanel
               evidenceItems={evidenceItems}
               disableGrouping={pipelineVariant === "monolithic_dynamic"}
+              onNavigate={navigateTo}
+              sourceUrlToIndex={sourceUrlToIndex}
             />
           )}
         </div>
@@ -1210,6 +1266,13 @@ export default function JobPage() {
           </div>
         </div>
       )}
+
+      {/* Cross-navigation: floating back button */}
+      {canGoBack && (
+        <button className={styles.navBackButton} onClick={goBack}>
+          ← Back
+        </button>
+      )}
     </div>
   );
 }
@@ -1295,7 +1358,9 @@ function TIGERScorePanel({ tigerScore }: { tigerScore?: TIGERScore }) {
 // Sources Panel
 // ============================================================================
 
-function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, searchProviders }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string; searchProviders?: string }) {
+function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, searchProviders, onNavigate }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string; searchProviders?: string; onNavigate?: (refId: string) => void }) {
+  // Build query text → index lookup for "Found via" navigation
+  const queryToIndex = onNavigate ? new Map(searchQueries.map((sq: any, i: number) => [sq.query, i])) : null;
   return (
     <div>
       <div className={styles.sourcesHeader}>
@@ -1326,7 +1391,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
       {searchQueries.length > 0 ? (
         <div className={styles.searchQueriesList}>
           {searchQueries.map((sq: any, i: number) => (
-            <div key={i} className={styles.searchQueryItem}>
+            <div key={i} id={`nav-sq_${i}`} className={styles.searchQueryItem}>
               <span className={styles.searchQueryIcon}>🔍</span>
               <div className={styles.searchQueryContent}>
                 <code className={styles.searchQueryText}>{sq.query}</code>
@@ -1351,7 +1416,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
       {sources.length > 0 ? (
         <div className={styles.sourcesList}>
           {sources.map((s: any, i: number) => (
-            <div key={i} className={`${styles.sourceItem} ${s.fetchSuccess ? styles.sourceItemSuccess : styles.sourceItemFailed}`}>
+            <div key={i} id={`nav-src_${i}`} className={`${styles.sourceItem} ${s.fetchSuccess ? styles.sourceItemSuccess : styles.sourceItemFailed}`}>
               <span className={styles.sourceIcon}>{s.fetchSuccess ? "✅" : "❌"}</span>
               <div className={styles.sourceContent}>
                 <div className={styles.sourceTitle}>
@@ -1362,7 +1427,11 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
                 </a>
                 {s.searchQuery && (
                   <div className={styles.sourceQuery}>
-                    Found via: "{s.searchQuery}"
+                    Found via: {onNavigate && queryToIndex?.has(s.searchQuery) ? (
+                      <button className={styles.navLink} style={{ fontSize: "inherit" }} onClick={() => onNavigate(`SQ_${queryToIndex!.get(s.searchQuery)}`)}>&ldquo;{s.searchQuery}&rdquo;</button>
+                    ) : (
+                      <>"{s.searchQuery}"</>
+                    )}
                   </div>
                 )}
               </div>
@@ -1390,7 +1459,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
 // Evidence Panel - NEW v2.6.29: Display extracted evidence with counter-evidence marking
 // ============================================================================
 
-function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceItems: any[]; disableGrouping?: boolean }) {
+function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sourceUrlToIndex }: { evidenceItems: any[]; disableGrouping?: boolean; onNavigate?: (refId: string) => void; sourceUrlToIndex?: Map<string, number> }) {
   if (!evidenceItems || evidenceItems.length === 0) return null;
 
   // Group evidence items by claim direction and source type
@@ -1407,19 +1476,33 @@ function EvidencePanel({ evidenceItems, disableGrouping = false }: { evidenceIte
   const renderEvidenceCard = (item: any, className: string, extraMeta?: ReactNode) => {
     const isContrarian = item.searchStrategy === "contrarian";
     const finalClassName = isContrarian ? `${styles.evidenceItemContrarian}` : className;
-    
+
     return (
-      <div key={item.id || item.statement} className={`${styles.evidenceItem} ${finalClassName}`}>
+      <div key={item.id || item.statement} id={item.id ? `nav-ev-${item.id}` : undefined} className={`${styles.evidenceItem} ${finalClassName}`}>
         <div className={styles.evidenceText}>
           {isContrarian && <span style={{ color: '#ed8936', fontWeight: 700, marginRight: '6px' }}>[CONTRARIAN]</span>}
-          <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} />
+          <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} onNavigate={onNavigate} />
           {item.evidenceScope && (
             <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />
           )}
         </div>
         <div className={styles.evidenceMeta}>
           <span className={styles.evidenceCategory}>{item.category}</span>
-          <span className={styles.evidenceSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
+          {onNavigate && item.sourceUrl && sourceUrlToIndex?.has(item.sourceUrl) ? (
+            <button className={`${styles.evidenceSource} ${styles.navLink}`} style={{ fontSize: "inherit" }} onClick={() => onNavigate(`SRC_${sourceUrlToIndex!.get(item.sourceUrl)}`)}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</button>
+          ) : (
+            <span className={styles.evidenceSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
+          )}
+          {onNavigate && item.relevantClaimIds?.length > 0 && (
+            <span className={styles.evidenceRefList} style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}>
+              {item.relevantClaimIds.map((id: string) => (
+                <button key={id} className={styles.navLink} style={{ fontSize: 11 }} onClick={() => onNavigate(id)}>{id}</button>
+              ))}
+            </span>
+          )}
+          {onNavigate && item.claimBoundaryId && (
+            <button className={styles.navLink} style={{ fontSize: 11 }} onClick={() => onNavigate(item.claimBoundaryId)}>{item.claimBoundaryId}</button>
+          )}
           {extraMeta}
         </div>
       </div>
@@ -1548,9 +1631,22 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
 // ============================================================================
 
 function Badge({ children, bg, color, title }: { children: React.ReactNode; bg: string; color: string; title?: string }) {
+  const [showTip, setShowTip] = useState(false);
   return (
-    <span style={{ padding: "2px 8px", backgroundColor: bg, color, borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: title ? "help" : "default" }} title={title}>
-      {children}
+    <span
+      style={{ position: "relative", display: "inline-block" }}
+      onClick={title ? () => setShowTip(v => !v) : undefined}
+      onBlur={title ? () => setShowTip(false) : undefined}
+      tabIndex={title ? 0 : undefined}
+    >
+      <span style={{ padding: "2px 8px", backgroundColor: bg, color, borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: title ? "help" : "default", display: "inline-block" }} title={title}>
+        {children}
+      </span>
+      {title && showTip && (
+        <span style={{ position: "absolute", left: 0, top: "calc(100% + 4px)", zIndex: 10, background: "#fff", color: "#333", fontSize: 12, padding: "6px 10px", borderRadius: 4, whiteSpace: "pre-line", minWidth: 200, maxWidth: 300, lineHeight: 1.4, boxShadow: "0 2px 8px rgba(0,0,0,0.15)", border: "1px solid #e0e0e0" }}>
+          {title}
+        </span>
+      )}
     </span>
   );
 }
@@ -2206,10 +2302,12 @@ function ClaimCard({
   claim,
   claimBoundaries = [],
   totalBoundaryCount = 0,
+  onNavigate,
 }: {
   claim: any;
   claimBoundaries?: any[];
   totalBoundaryCount?: number;
+  onNavigate?: (refId: string) => void;
 }) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
@@ -2224,7 +2322,7 @@ function ClaimCard({
   const isTangential = claim.thesisRelevance === "tangential";
 
   return (
-    <div className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""} ${isTangential ? styles.claimCardTangential : ""}`} style={{ borderLeftColor: isTangential ? "#9e9e9e" : color.border }}>
+    <div id={claim.claimId ? `nav-claim-${claim.claimId}` : undefined} className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""} ${isTangential ? styles.claimCardTangential : ""}`} style={{ borderLeftColor: isTangential ? "#9e9e9e" : color.border }}>
       <div className={styles.claimCardHeader}>
         <span className={styles.claimId}>{claim.claimId}</span>
         {claim.category && <Badge bg="#f3f4f6" color="#4b5563">{claim.category.toUpperCase()}</Badge>}
@@ -2274,6 +2372,7 @@ function ClaimCard({
         text={claim.reasoning || ""}
         className={styles.claimReasoning}
         modalTitle={`Reasoning — ${claim.claimId || "Claim"}`}
+        onNavigate={onNavigate}
       />
       {claim.isContested && claim.contestedBy && (
         <div className={styles.claimContestation}>
@@ -2286,12 +2385,38 @@ function ClaimCard({
         </div>
       )}
 
+      {/* Evidence references (navigable links to Sources tab) */}
+      {onNavigate && (claim.supportingEvidenceIds?.length > 0 || claim.contradictingEvidenceIds?.length > 0) && (
+        <div className={styles.evidenceRefList}>
+          {claim.supportingEvidenceIds?.length > 0 && (
+            <>
+              <span className={styles.evidenceRefLabel}>Supporting:</span>
+              {claim.supportingEvidenceIds.map((id: string) => (
+                <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>
+              ))}
+            </>
+          )}
+          {claim.supportingEvidenceIds?.length > 0 && claim.contradictingEvidenceIds?.length > 0 && (
+            <span className={styles.evidenceRefSeparator}>·</span>
+          )}
+          {claim.contradictingEvidenceIds?.length > 0 && (
+            <>
+              <span className={styles.evidenceRefLabel}>Contradicting:</span>
+              {claim.contradictingEvidenceIds.map((id: string) => (
+                <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
       {/* ClaimAssessmentBoundary pipeline: show boundary findings (Phase 3) */}
       {claim.boundaryFindings && (
         <BoundaryFindings
           boundaryFindings={claim.boundaryFindings}
           claimBoundaries={claimBoundaries}
           totalBoundaryCount={totalBoundaryCount}
+          onNavigate={onNavigate}
         />
       )}
     </div>

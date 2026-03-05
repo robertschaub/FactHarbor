@@ -19,7 +19,7 @@ For completed work, historical documents, and reference materials, see:
 
 ## Active Documents
 
-### 1. Evidence Quality & Consistency (3 files)
+### 1. Evidence Quality & Consistency (4 files)
 
 #### Multi-Source Evidence Retrieval Plan v2.1 (2026-02-24)
 **Status:** 🔧 In Progress — Provider layer complete, pipeline integration pending (~60% done)
@@ -38,6 +38,12 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [2026-03-01_Claim_Strength_Preservation_Study.md](2026-03-01_Claim_Strength_Preservation_Study.md)
 - **Scope:** Stage 1 weakens claim assertions (30-43pp variance). Pre-evidence claim extraction issue.
 - **Next Step:** Phase A parallel investigation (multi-agent: LLM Expert, Senior Dev, Lead Architect).
+
+#### UCM Config Drift Review (2026-03-05)
+**Status:** 📋 Ready for Review — Phase 1 (alignment) ready to implement, Phase 2 (quality tuning) needs decisions
+- **Document:** [UCM_Config_Drift_Review_2026-03-05.md](UCM_Config_Drift_Review_2026-03-05.md)
+- **Scope:** JSON ↔ TS default drift across all 4 config types. SR model mismatch affecting deployed pre-release. Quality tuning recommendations.
+- **Next Step:** Team review → approve Phase 1 → implement → deploy.
 
 ---
 

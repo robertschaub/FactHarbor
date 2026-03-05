@@ -16,7 +16,7 @@
   "analysisMode": "quick",
   "allowModelKnowledge": false,
   "deterministic": true,
-  "understandTemperature": 0,
+  "understandTemperature": 0.15,
   "understandMinClaimThreshold": 4,
   "understandMaxChars": 12000,
   "understandLlmTimeoutMs": 600000,

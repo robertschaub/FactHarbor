@@ -40,6 +40,8 @@ type JobsResponse = {
 };
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const DEFAULT_POLL_INTERVAL_MS = 10_000;
+const RATE_LIMIT_BACKOFF_MS = 60_000;
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -52,6 +54,8 @@ export default function JobsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
+  const [isVisible, setIsVisible] = useState(true);
 
   // Debounce search input — reset to page 1 after 400ms of no typing
   useEffect(() => {
@@ -61,6 +65,17 @@ export default function JobsPage() {
     }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Pause polling while tab is hidden to reduce read-rate pressure.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+
+    onVisibilityChange();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -72,6 +87,21 @@ export default function JobsPage() {
         if (debouncedQuery) params.set("q", debouncedQuery);
         const res = await fetch(`/api/fh/jobs?${params}`, { cache: "no-store" });
         if (!res.ok) {
+          if (res.status === 429) {
+            let message = `Rate limit reached. Retrying automatically in ${Math.round(RATE_LIMIT_BACKOFF_MS / 1000)} seconds.`;
+            try {
+              const payload = await res.json();
+              if (payload?.error && typeof payload.error === "string") {
+                message = payload.error;
+              }
+            } catch {
+              // Keep fallback message when payload is not JSON.
+            }
+            setError(message);
+            setMaintenance(false);
+            setPollIntervalMs(RATE_LIMIT_BACKOFF_MS);
+            return; // Keep existing jobs visible
+          }
           if (res.status === 502 || res.status === 503) {
             setMaintenance(true);
             setError(null);
@@ -82,6 +112,7 @@ export default function JobsPage() {
         const data: JobsResponse = await res.json();
         setError(null);
         setMaintenance(false);
+        setPollIntervalMs(DEFAULT_POLL_INTERVAL_MS);
         setJobs(data.jobs || []);
         if (data.pagination) {
           setTotalCount(data.pagination.totalCount);
@@ -102,12 +133,16 @@ export default function JobsPage() {
       }
     };
 
-    loadJobs();
+    if (isVisible) {
+      loadJobs();
+    }
 
-    // Refresh current page every 5 seconds
-    const interval = setInterval(loadJobs, 5000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      loadJobs();
+    }, pollIntervalMs);
     return () => clearInterval(interval);
-  }, [currentPage, pageSize, debouncedQuery]);
+  }, [currentPage, pageSize, debouncedQuery, pollIntervalMs, isVisible]);
 
   // Reset to page 1 when page size changes
   const handlePageSizeChange = (newSize: number) => {
@@ -367,7 +402,7 @@ export default function JobsPage() {
           </div>
         </div>
         <div className={styles.footerNote}>
-          Auto-refreshes every 5 seconds
+          Auto-refreshes every 10 seconds (with automatic rate-limit backoff)
         </div>
       </div>
     </div>
