@@ -82,34 +82,34 @@ type EventItem = { id: number; tsUtc: string; level: string; message: string };
  * Colors for 7-level claim verdicts
  */
 const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
-  // Positive (True side)
-  "TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✅" },
-  "MOSTLY-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✓" },
-  "LEANING-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "◐" },
+  // Positive (True side) — ColorBrewer Greens: #e5f5e0 / #a1d99b / #31a354
+  "TRUE":         { bg: "#31a354", text: "#ffffff", border: "#278a45", icon: "✅" },
+  "MOSTLY-TRUE":  { bg: "#a1d99b", text: "#1a5c2a", border: "#82c47a", icon: "✓" },
+  "LEANING-TRUE": { bg: "#e5f5e0", text: "#1a5c2a", border: "#c0e0b8", icon: "◐" },
   // Neutral
-  "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix (evidence on both sides)
-  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
-  // Negative (False side)
-  "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
-  "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
-  "FALSE": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
+  "MIXED":        { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },
+  "UNVERIFIED":   { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
+  // Negative (False side) — ColorBrewer Reds: #fee0d2 / #fc9272 / #de2d26
+  "LEANING-FALSE": { bg: "#fee0d2", text: "#7f1d1d", border: "#f0c0b0", icon: "◔" },
+  "MOSTLY-FALSE":  { bg: "#fc9272", text: "#7f1d1d", border: "#e07858", icon: "✗" },
+  "FALSE":         { bg: "#de2d26", text: "#ffffff", border: "#b8241f", icon: "❌" },
 };
 
 /**
  * Colors for 7-level question answers
  */
 const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
-  // Positive (Yes side)
-  "YES": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✅" },
-  "MOSTLY-YES": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✓" },
-  "LEANING-YES": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "↗" },
+  // Positive (Yes side) — ColorBrewer Greens: #e5f5e0 / #a1d99b / #31a354
+  "YES":         { bg: "#31a354", text: "#ffffff", border: "#278a45", icon: "✅" },
+  "MOSTLY-YES":  { bg: "#a1d99b", text: "#1a5c2a", border: "#82c47a", icon: "✓" },
+  "LEANING-YES": { bg: "#e5f5e0", text: "#1a5c2a", border: "#c0e0b8", icon: "↗" },
   // Neutral
-  "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix
-  "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
-  // Negative (No side)
-  "LEANING-NO": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "↘" },
-  "MOSTLY-NO": { bg: "#ffcdd2", text: "#c62828", border: "#f44336", icon: "✗" },
-  "NO": { bg: "#b71c1c", text: "#ffffff", border: "#b71c1c", icon: "❌" },
+  "MIXED":       { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },
+  "UNVERIFIED":  { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
+  // Negative (No side) — ColorBrewer Reds: #fee0d2 / #fc9272 / #de2d26
+  "LEANING-NO":  { bg: "#fee0d2", text: "#7f1d1d", border: "#f0c0b0", icon: "↘" },
+  "MOSTLY-NO":   { bg: "#fc9272", text: "#7f1d1d", border: "#e07858", icon: "✗" },
+  "NO":          { bg: "#de2d26", text: "#ffffff", border: "#b8241f", icon: "❌" },
 };
 
 /**

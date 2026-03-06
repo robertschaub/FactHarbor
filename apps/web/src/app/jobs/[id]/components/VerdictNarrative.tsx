@@ -40,7 +40,7 @@ export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, befor
       {limitations && (
         <div className={styles.limitationsStandalone}>
           <h4 className={styles.limitationsHeading}>Limitations</h4>
-          <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" onNavigate={onNavigate} />
+          <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" bare onNavigate={onNavigate} />
         </div>
       )}
 

@@ -273,51 +273,51 @@
 }
 
 .verdictTrue {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #28a745;
+  background-color: #31a354;
+  color: #ffffff;
+  border: 1px solid #278a45;
 }
 
 .verdictMostlyTrue {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #66bb6a;
+  background-color: #a1d99b;
+  color: #1a5c2a;
+  border: 1px solid #82c47a;
 }
 
 .verdictLeaningTrue {
-  background-color: #fff9c4;
-  color: #f57f17;
-  border: 1px solid #ffeb3b;
+  background-color: #e5f5e0;
+  color: #1a5c2a;
+  border: 1px solid #c0e0b8;
 }
 
 .verdictMixed {
   background-color: #e3f2fd;
   color: #1565c0;
-  border: 1px solid #2196f3;
+  border: 1px solid #90caf9;
 }
 
 .verdictUnverified {
   background-color: #fff3e0;
   color: #e65100;
-  border: 1px solid #ff9800;
+  border: 1px solid #ffb74d;
 }
 
 .verdictLeaningFalse {
-  background-color: #ffccbc;
-  color: #bf360c;
-  border: 1px solid #ff5722;
+  background-color: #fee0d2;
+  color: #7f1d1d;
+  border: 1px solid #f0c0b0;
 }
 
 .verdictMostlyFalse {
-  background-color: #ffcdd2;
-  color: #c62828;
-  border: 1px solid #f44336;
+  background-color: #fc9272;
+  color: #7f1d1d;
+  border: 1px solid #e07858;
 }
 
 .verdictFalse {
-  background-color: #b71c1c;
+  background-color: #de2d26;
   color: #ffffff;
-  border: 1px solid #b71c1c;
+  border: 1px solid #b8241f;
 }
 
 .verdictDefault {
