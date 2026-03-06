@@ -16,12 +16,17 @@ export function InputBanner({ inputType, inputValue }: InputBannerProps) {
       : type === "text"
         ? "Text"
         : type.charAt(0).toUpperCase() + type.slice(1);
+  const showTypeLabel = type !== "text";
 
   return (
     <div className={styles.banner} role="note" aria-label="Input">
       <div className={styles.text}>
-        <span className={styles.typeLabel}>{typeLabel}:</span>
-        <br />
+        {showTypeLabel ? (
+          <>
+            <span className={styles.typeLabel}>{typeLabel}:</span>
+            <br />
+          </>
+        ) : null}
         {text}
       </div>
     </div>

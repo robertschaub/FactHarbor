@@ -41,6 +41,7 @@ import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
+import narrativeStyles from "./components/VerdictNarrative.module.css";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
@@ -814,25 +815,32 @@ export default function JobPage() {
   const usedModelsLabel = formatUsedModels(usedModels);
   const analysisNotesMeta = (
     <>
-      {isCBSchema && claimBoundaries.length > 2 && (
-        <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
-      )}
-      {!isCBSchema && hasMultipleContexts && (
-        <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>
-      )}
       {(usedModels.length > 0 || result?.meta?.llmProvider) && (
-        <Badge
-          bg="#e3f2fd"
-          color="#1565c0"
-          title={
-            usedModels.length > 0
-              ? `Models used: ${usedModelsLabel}`
-              : (result?.meta?.llmModel || result?.meta?.llmProvider)
-          }
-        >
-          🤖 {usedModels.length > 0 ? usedModelsLabel : result?.meta?.llmProvider}
-        </Badge>
+        <div className={narrativeStyles.metaLine}>
+          <span className={narrativeStyles.metaLabel}>LLM Models Used:</span>
+          <Badge
+            bg="#e3f2fd"
+            color="#1565c0"
+            title={
+              usedModels.length > 0
+                ? `Models used: ${usedModelsLabel}`
+                : (result?.meta?.llmModel || result?.meta?.llmProvider)
+            }
+          >
+            🤖 {usedModels.length > 0 ? usedModelsLabel : result?.meta?.llmProvider}
+          </Badge>
+        </div>
       )}
+      {(isCBSchema && claimBoundaries.length > 2) || (!isCBSchema && hasMultipleContexts) ? (
+        <div className={narrativeStyles.metaLine}>
+          {isCBSchema && claimBoundaries.length > 2 && (
+            <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
+          )}
+          {!isCBSchema && hasMultipleContexts && (
+            <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>
+          )}
+        </div>
+      ) : null}
     </>
   );
   const subClaims = result?.understanding?.subClaims || [];
@@ -1125,8 +1133,12 @@ export default function JobPage() {
 
       {job ? (
         <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard} ${styles.reportMetaCard}`}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span><b>ID:</b> <code>{job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
+          <div className={styles.metaInlineRow}>
+            <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.slice(0, 10)}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
+            <span className={styles.metaInlineItem}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></span>
+            {hasV22Data && (
+              <span className={styles.metaInlineItem}><b>Schema:</b> <code>{schemaVersion}</code></span>
+            )}
             {pipelineVariant === "monolithic_dynamic" && (
               <Badge bg="#fce4ec" color="#c2185b" title="Legacy dynamic pipeline">
                 ⚗️ Dynamic (legacy)
@@ -1136,10 +1148,8 @@ export default function JobPage() {
           {job.status !== "SUCCEEDED" && (
             <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
           )}
-          <div className={styles.metaRow}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></div>
           {hasV22Data && (
             <div className={styles.badgesRow}>
-              <span><b>Schema:</b> <code>{schemaVersion}</code></span>
               {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code><CopyButton text={result.meta.analysisId} title="Copy Analysis ID" className={styles.metaCopyButton} /></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}

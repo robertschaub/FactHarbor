@@ -417,6 +417,20 @@
   color: var(--text-primary);
 }
 
+.metaInlineRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.metaInlineItem {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .reportMetaCard b {
   color: var(--text-primary);
 }
