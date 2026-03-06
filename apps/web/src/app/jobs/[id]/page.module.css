@@ -145,7 +145,7 @@
 }
 
 .reportSectionBody {
-  padding: 18px 16px 16px;
+  padding: 16px 14px 14px;
 }
 
 .qualitySectionStack {
@@ -240,8 +240,9 @@
 
 .boundarySummaryMain {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -249,6 +250,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 11px;
   color: var(--text-muted);
+  line-height: 1.2;
 }
 
 .boundarySummaryName {
@@ -351,8 +353,10 @@
 
 .boundaryFindingClaimText {
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 400;
   font-size: 14px;
+  flex: 1 1 260px;
+  min-width: 0;
 }
 
 .boundaryFindingCardGrid {
@@ -376,22 +380,18 @@
 .boundaryFindingMetricValue {
   color: var(--text-primary);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 400;
   text-align: right;
 }
 
-.boundaryFindingBar {
-  margin-top: 12px;
-  height: 6px;
+.boundaryFindingMetricVerdict {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
   border-radius: 999px;
-  overflow: hidden;
-  background: var(--bg-surface2);
-}
-
-.boundaryFindingBarFill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--link);
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .adminPanelStack {
@@ -482,12 +482,16 @@
 
 .tab {
   padding: 8px 14px;
+  min-height: 42px;
   border: 1px solid var(--border);
   border-radius: 10px;
   cursor: pointer;
   font-weight: 400;
   background-color: var(--bg-card);
   color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
@@ -515,7 +519,8 @@
 }
 
 .metaMenu {
-  display: none;
+  display: block;
+  position: relative;
 }
 
 .metaMenuSummary,
@@ -531,6 +536,25 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.metaMenuSummary {
+  width: 42px;
+  height: 42px;
+  justify-content: center;
+  padding: 0;
+}
+
+.metaMenuSummaryText {
+  font-size: 0;
+  line-height: 0;
+}
+
+.metaMenuSummary::before {
+  content: "ℹ";
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .metaMenuSummary::-webkit-details-marker,
@@ -2230,7 +2254,7 @@ details[open] > .devWarningSummary::before {
 }
 
 .claimCard {
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-left: 3px solid;
   border-radius: var(--radius-sm);
@@ -2286,11 +2310,11 @@ details[open] > .devWarningSummary::before {
 }
 
 .misleadingnessInline {
-  margin-top: 4px;
-  padding: 10px 12px;
-  background: var(--bg-card);
-  border-left: 3px solid #c62828;
-  border-radius: 4px;
+  margin: 4px -12px 0;
+  padding: 8px 10px;
+  background: rgba(198, 40, 40, 0.06);
+  border-left: none;
+  border-radius: 0;
 }
 
 .misleadingnessLabel {
@@ -2316,12 +2340,12 @@ details[open] > .devWarningSummary::before {
 
 .claimEscalation {
   margin-top: 4px;
-  padding: 8px;
-  background-color: var(--bg-card);
-  border-radius: 4px;
+  padding: 6px 8px;
+  background-color: rgba(255, 152, 0, 0.08);
+  border-radius: 0;
   font-size: 12px;
   color: var(--color-accent-amber);
-  border-left: 3px solid #ff9800;
+  border-left: none;
 }
 
 .claimCardContested {
@@ -2556,33 +2580,36 @@ details[open] > .devWarningSummary::before {
 }
 
 .evidenceItem {
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border-subtle);
-  background-color: var(--bg-surface);
+  padding: 10px 0;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: transparent;
+}
+
+.evidenceItem:last-child {
+  border-bottom: 0;
 }
 
 .evidenceItemContradicting {
-  border-left-color: #c62828;
+  background-color: rgba(198, 40, 40, 0.04);
 }
 
 .evidenceItemSupporting {
-  border-left-color: #2e7d32;
+  background-color: rgba(46, 125, 50, 0.04);
 }
 
 .evidenceItemNeutral {
-  border-left-color: var(--border-subtle);
+  background-color: transparent;
 }
 
 /* NEW v2.6.29: Opposite claim evidence styling */
 .evidenceItemOpposite {
-  border-left-color: #1565c0;
+  background-color: rgba(21, 101, 192, 0.03);
 }
 
 .evidenceItemContrarian {
-  border-left-color: #ed8936;
-  border-style: dashed;
+  background-color: rgba(237, 137, 54, 0.04);
 }
 
 .evidenceStatOpposite {
@@ -2600,9 +2627,9 @@ details[open] > .devWarningSummary::before {
   color: var(--text-muted);
   margin-bottom: 12px;
   padding: 8px;
-  background-color: var(--bg-surface);
+  background-color: rgba(21, 101, 192, 0.06);
   border-radius: 4px;
-  border-left: 3px solid #1565c0;
+  border-left: none;
 }
 
 .evidenceOppositeTag {
@@ -2625,9 +2652,17 @@ details[open] > .devWarningSummary::before {
 .evidenceMeta {
   margin-top: 8px;
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 12px;
   font-size: 12px;
   color: var(--text-muted);
+  width: 100%;
+  min-width: 0;
+}
+
+.evidenceMeta > * {
+  min-width: 0;
 }
 
 .evidenceCategory {
@@ -2641,6 +2676,18 @@ details[open] > .devWarningSummary::before {
 .evidenceSource {
   font-style: italic;
   color: var(--text-muted);
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.evidenceMeta .navLink {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .evidenceMoreIndicator {
@@ -2912,11 +2959,11 @@ details[open] > .devWarningSummary::before {
    ============================================================================ */
 
 .boundaryFindingsSection {
-  margin-top: 6px;
-  padding: 12px;
-  background-color: var(--bg-card);
-  border-radius: 6px;
-  border: 1px solid var(--border);
+  margin-top: 10px;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: 0;
 }
 
 .boundaryFindingsHeader {
@@ -2931,31 +2978,37 @@ details[open] > .devWarningSummary::before {
 .boundaryFindingsList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
 }
 
 .boundaryFindingRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.6fr);
-  gap: 12px;
-  align-items: start;
-  padding: 8px 10px;
-  background-color: var(--bg-surface);
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  padding: 8px 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
   position: relative;
 }
 
+.boundaryFindingsList .boundaryFindingRow:last-child {
+  border-bottom: 0;
+}
+
 .boundaryFindingRow:hover {
-  background-color: var(--bg-surface2);
-  border-color: var(--border-subtle);
+  background-color: transparent;
 }
 
 .boundaryFindingName {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 0.9rem;
+  flex: 1 1 240px;
   min-width: 0;
 }
 
@@ -2979,6 +3032,7 @@ details[open] > .devWarningSummary::before {
   gap: 6px;
   font-size: 0.8rem;
   color: var(--text-muted);
+  flex: 1 1 170px;
   min-width: 0;
 }
 
@@ -2994,9 +3048,10 @@ details[open] > .devWarningSummary::before {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 8px;
   font-size: 0.85rem;
+  flex: 1 1 220px;
   min-width: 0;
 }
 
@@ -3036,11 +3091,6 @@ details[open] > .devWarningSummary::before {
 }
 
 @media (max-width: 900px) {
-  .boundaryFindingRow {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
   .boundaryFindingVerdict {
     justify-content: flex-start;
   }
@@ -3049,6 +3099,24 @@ details[open] > .devWarningSummary::before {
 /* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */
 .cbSection {
   margin: 0;
+}
+
+.inputSection {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.inputSection .reportSectionHeader {
+  padding: 0 0 8px;
+  border: 0;
+  background: transparent;
+}
+
+.inputSection .reportSectionBody {
+  padding: 0;
 }
 
 .sectionDescription {
@@ -3379,19 +3447,31 @@ details[open] > .devWarningSummary::before {
 
 .evidenceRefList {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 12px;
   color: var(--text-muted);
-  margin-top: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  background: var(--bg-surface);
+  margin-top: 6px;
+  margin-bottom: 12px;
+  padding: 6px 0 0;
+}
+
+.evidenceRefGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.evidenceRefIds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
 }
 .evidenceRefLabel {
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-secondary);
 }
 .evidenceRefSeparator {
@@ -3546,7 +3626,7 @@ details[open] > .devWarningSummary::before {
    ============================================================ */
 @media (max-width: 768px) {
   .pageContainer {
-    padding: 0 8px 20px;
+    padding: 0 6px 20px;
   }
 
   .pageHeader {
@@ -3556,8 +3636,10 @@ details[open] > .devWarningSummary::before {
 
   .pageTitle {
     font-size: 20px;
-    flex-basis: 100%;
-    order: 2;
+    flex-basis: auto;
+    order: 0;
+    flex: 1;
+    min-width: 0;
   }
 
   .backToList {
@@ -3572,7 +3654,7 @@ details[open] > .devWarningSummary::before {
   }
 
   .contentCard {
-    padding: 12px 10px;
+    padding: 10px 8px;
   }
 
   .reportSection {
@@ -3585,16 +3667,16 @@ details[open] > .devWarningSummary::before {
   }
 
   .reportSectionBody {
-    padding: 12px 10px 10px;
+    padding: 10px 8px 8px;
   }
 
   .jobInfoCard {
-    padding: 10px 8px;
+    padding: 8px 6px;
     border-radius: 10px;
   }
 
   .reportMetaCard {
-    padding: 10px 8px;
+    padding: 8px 6px;
   }
 
   .metaInlineRow {
@@ -3618,6 +3700,14 @@ details[open] > .devWarningSummary::before {
     padding: 0;
   }
 
+  .exportButtons .tab {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+    justify-content: center;
+  }
+
   .metaMenuSummaryText,
   .exportMenuSummaryText {
     font-size: 0;
@@ -3625,10 +3715,10 @@ details[open] > .devWarningSummary::before {
   }
 
   .metaMenuSummary::before {
-    content: "ID";
-    font-size: 13px;
+    content: "ℹ";
+    font-size: 18px;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    line-height: 1;
   }
 
   .exportMenuIcon {
@@ -3644,6 +3734,32 @@ details[open] > .devWarningSummary::before {
 }
 
 @media (max-width: 480px) {
+  /* Tighter horizontal padding for small screens */
+  .pageContainer {
+    padding: 0 4px 16px;
+  }
+
+  .contentCard {
+    padding: 10px 8px;
+  }
+
+  .reportSectionBody {
+    padding: 10px 8px 8px;
+  }
+
+  .claimCard {
+    padding: 10px 10px;
+  }
+
+  .highlighterTextContainer {
+    padding: 12px 10px;
+  }
+
+  /* Align misleadingness callout with claim card edges on small screens */
+  .misleadingnessInline {
+    margin: 4px -10px 0;
+  }
+
   /* Verdict row: stack badge and meta vertically */
   .articleVerdictRow {
     flex-direction: column;
@@ -3705,7 +3821,9 @@ details[open] > .devWarningSummary::before {
     gap: 4px;
   }
   .tab {
-    padding: 6px 9px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 10px;
     font-size: 12px;
   }
 

@@ -423,6 +423,7 @@ export default function JobPage() {
   const [isVisible, setIsVisible] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
   const exportMenuRef = useRef<HTMLDetailsElement>(null);
+  const metaMenuRef = useRef<HTMLDetailsElement>(null);
   const { navigateTo: rawNavigateTo, goBack, canGoBack, clearHistory } = useReportNavigation(tab, setTab);
 
   // Job action states
@@ -766,21 +767,37 @@ export default function JobPage() {
                      (typeof result?.meta?.schemaVersion === "string" && result.meta.schemaVersion.endsWith("-cb")) ||
                      result?.meta?.pipeline === "claimboundary";
   const claimBoundaries = result?.claimBoundaries || [];
+  const atomicClaimTextById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const atomicClaim of atomicClaimsForDisplay) {
+      const id = String(atomicClaim?.id || "").trim();
+      const statement = String(atomicClaim?.statement || atomicClaim?.text || "").trim();
+      if (id && statement) map.set(id, statement);
+    }
+    return map;
+  }, [atomicClaimsForDisplay]);
   const boundaryFindingMap = useMemo(() => {
     const map = new Map<string, Array<any>>();
     for (const claimVerdict of claimVerdicts) {
       for (const finding of claimVerdict?.boundaryFindings || []) {
         const list = map.get(finding.boundaryId) || [];
+        const claimId = claimVerdict.claimId;
+        const claimText =
+          claimVerdict?.claim?.statement ||
+          claimVerdict?.claim?.text ||
+          claimVerdict?.claimText ||
+          (claimId ? atomicClaimTextById.get(claimId) : undefined) ||
+          "";
         list.push({
           ...finding,
-          claimId: claimVerdict.claimId,
-          claimText: claimVerdict.claimText,
+          claimId,
+          claimText,
         });
         map.set(finding.boundaryId, list);
       }
     }
     return map;
-  }, [claimVerdicts]);
+  }, [claimVerdicts, atomicClaimTextById]);
 
   // Pipeline: preserve what the job requested, but prefer the pipeline that actually executed.
   // This avoids schema/UI mismatches when monolithic pipelines fall back to claimboundary.
@@ -813,6 +830,16 @@ export default function JobPage() {
   const sourceUrlToIndex = useMemo(() => new Map<string, number>(sources.map((s: any, i: number) => [s.url as string, i])), [sources]);
   const usedModels = collectUsedModels(result);
   const usedModelsLabel = formatUsedModels(usedModels);
+  const modelRolesHint = [
+    "Role overview (multi-agent analysis):",
+    "• Extractor: identifies AtomicClaims from the input.",
+    "• Researcher: gathers supporting and contradicting evidence from external sources.",
+    "• Assessor: rates evidence quality/reliability and organizes it into ClaimAssessmentBoundaries.",
+    "• Debate agents: Advocate and Challenger stress-test the claim from opposing angles.",
+    "• Reconciler: combines debate outputs into a coherent verdict draft.",
+    "• Validator: checks consistency and evidence grounding before report finalization.",
+    "Note: exact model-to-role assignment can vary by runtime configuration."
+  ].join("\n");
   const analysisNotesMeta = (
     <>
       {(usedModels.length > 0 || result?.meta?.llmProvider) && (
@@ -823,9 +850,10 @@ export default function JobPage() {
             color="#1565c0"
             title={
               usedModels.length > 0
-                ? `Models used: ${usedModelsLabel}`
-                : (result?.meta?.llmModel || result?.meta?.llmProvider)
+                ? `Models used: ${usedModelsLabel}\n\n${modelRolesHint}`
+                : `${result?.meta?.llmModel || result?.meta?.llmProvider}\n\n${modelRolesHint}`
             }
+            modalTitle="LLM Models and Roles"
           >
             🤖 {usedModels.length > 0 ? usedModelsLabel : result?.meta?.llmProvider}
           </Badge>
@@ -837,7 +865,7 @@ export default function JobPage() {
             <>
               <span className={narrativeStyles.metaLabel}>Claim Assessment Boundaries:</span>
               <Badge
-                bg="#fff3e0"
+                bg="transparent"
                 color="#e65100"
                 title="A Boundary is a distinct analytical frame that groups compatible evidence approaches for assessing the claim. Different boundaries can reach different findings."
                 modalTitle="Claim Assessment Boundaries"
@@ -876,7 +904,7 @@ export default function JobPage() {
   const jobMetaContent = job ? (
     <>
       <div className={styles.metaInlineRow}>
-        <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.slice(0, 10)}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
+        <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.length > 10 ? `${job.jobId.slice(0, 10)}...` : job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
         <span className={styles.metaInlineItem}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></span>
         {hasV22Data && (
           <span className={styles.metaInlineItem}><b>Schema:</b> <code>{schemaVersion}</code></span>
@@ -986,17 +1014,23 @@ export default function JobPage() {
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      const menu = exportMenuRef.current;
-      if (!menu?.open) return;
-      if (event.target instanceof Node && !menu.contains(event.target)) {
-        menu.open = false;
+      if (!(event.target instanceof Node)) return;
+
+      const exportMenu = exportMenuRef.current;
+      if (exportMenu?.open && !exportMenu.contains(event.target)) {
+        exportMenu.open = false;
+      }
+
+      const metaMenu = metaMenuRef.current;
+      if (metaMenu?.open && !metaMenu.contains(event.target)) {
+        metaMenu.open = false;
       }
     };
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && exportMenuRef.current?.open) {
-        exportMenuRef.current.open = false;
-      }
+      if (event.key !== "Escape") return;
+      if (exportMenuRef.current?.open) exportMenuRef.current.open = false;
+      if (metaMenuRef.current?.open) metaMenuRef.current.open = false;
     };
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -1160,17 +1194,18 @@ export default function JobPage() {
                     onClick={handleDelete}
                     disabled={isDeleting}
                     className={`${styles.tab} ${styles.deleteTab}`}
-                    title="Delete"
+                    title={isDeleting ? "Deleting" : "Delete"}
+                    aria-label={isDeleting ? "Deleting" : "Delete"}
                   >
-                    {isDeleting ? "Deleting..." : "Delete"}
+                    {isDeleting ? "⏳" : "🗑"}
                   </button>
                 )}
                 {job?.status === "SUCCEEDED" && (
                   <>
                   {jobMetaContent && (
-                    <details className={styles.metaMenu}>
+                    <details ref={metaMenuRef} className={styles.metaMenu}>
                       <summary className={styles.metaMenuSummary} title="Report metadata" aria-label="Report metadata">
-                        <span className={styles.metaMenuSummaryText}>ID</span>
+                        <span className={styles.metaMenuSummaryText}>Metadata</span>
                       </summary>
                       <div className={styles.metaMenuList}>
                         {jobMetaContent}
@@ -1207,31 +1242,33 @@ export default function JobPage() {
       )}
 
       {job ? (
-        <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard} ${styles.reportMetaCard}`}>
-          {jobMetaContent}
-          {/* Job Action Buttons */}
-          {(job.status === "QUEUED" || job.status === "RUNNING") && (
-            <div style={{ marginTop: 16 }}>
-              <button
-                onClick={handleCancel}
-                disabled={isCancelling}
-                style={{
-                  padding: "10px 16px",
-                  backgroundColor: "#ff9800",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: isCancelling ? "wait" : "pointer",
-                  opacity: isCancelling ? 0.6 : 1,
-                }}
-              >
-                {isCancelling ? "Cancelling..." : "⏸️ Cancel Job"}
-              </button>
-            </div>
-          )}
-        </div>
+        job.status !== "SUCCEEDED" && (
+          <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard} ${styles.reportMetaCard}`}>
+            {jobMetaContent}
+            {/* Job Action Buttons */}
+            {(job.status === "QUEUED" || job.status === "RUNNING") && (
+              <div style={{ marginTop: 16 }}>
+                <button
+                  onClick={handleCancel}
+                  disabled={isCancelling}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: "#ff9800",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: isCancelling ? "wait" : "pointer",
+                    opacity: isCancelling ? 0.6 : 1,
+                  }}
+                >
+                  {isCancelling ? "Cancelling..." : "⏸️ Cancel Job"}
+                </button>
+              </div>
+            )}
+          </div>
+        )
       ) : (
         <div className={styles.contentCard} style={{ textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
       )}
@@ -1265,6 +1302,9 @@ export default function JobPage() {
                       <InputBanner
                         inputType={job.inputType || "text"}
                         inputValue={job.inputValue || job.inputPreview || "—"}
+                        textColor="#1565c0"
+                        textBackgroundColor="#e3f2fd"
+                        textBorderColor="#90caf9"
                       />
                     )}
 
@@ -1455,7 +1495,7 @@ export default function JobPage() {
               )}
 
               {isCBSchema && claimBoundaries.length > 0 && (
-                <ReportSection title="Claim Assessment Boundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection}`}>
+              <ReportSection title="Claim Assessment Boundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection} ${styles.inputSection}`}>
                   {result?.coverageMatrix && claimVerdicts.length > 0 && (
                     <CoverageMatrixDisplay
                       matrix={result.coverageMatrix}
@@ -1531,16 +1571,36 @@ export default function JobPage() {
                               {boundaryFindingMap.get(boundary.id)!.map((finding: any) => {
                                 const findingVerdict = percentageToClaimVerdict(finding.truthPercentage, finding.confidence);
                                 const displayFindingPct = isFalseBand(findingVerdict) ? 100 - finding.truthPercentage : finding.truthPercentage;
+                                const findingColor = CLAIM_VERDICT_COLORS[findingVerdict] || CLAIM_VERDICT_COLORS.UNVERIFIED;
+                                const claimIdText = String(finding.claimId || "").trim();
+                                const rawClaimText = String(finding.claimText || "").trim();
+                                const dedupedClaimText =
+                                  claimIdText && rawClaimText.toLowerCase().startsWith(claimIdText.toLowerCase())
+                                    ? rawClaimText.slice(claimIdText.length).replace(/^[\s:–—-]+/, "").trim()
+                                    : rawClaimText;
+                                const fullClaimText = dedupedClaimText || rawClaimText || "Claim text unavailable";
                                 return (
                                   <div key={`${boundary.id}-${finding.claimId}`} className={styles.boundaryFindingCard}>
                                     <div className={styles.boundaryFindingCardHeader}>
                                       <span className={styles.boundaryFindingClaimId}>{finding.claimId}</span>
-                                      <span className={styles.boundaryFindingClaimText}>{finding.claimText || finding.claimId}</span>
+                                      <ExpandableText
+                                        text={fullClaimText}
+                                        threshold={100}
+                                        className={styles.boundaryFindingClaimText}
+                                        modalTitle={`Boundary finding claim — ${finding.claimId || "Claim"}`}
+                                        bare
+                                        onNavigate={navigateTo}
+                                      />
                                     </div>
                                     <div className={styles.boundaryFindingCardGrid}>
                                       <div className={styles.boundaryFindingMetric}>
                                         <span className={styles.boundaryFindingMetricLabel}>Truth</span>
-                                        <span className={styles.boundaryFindingMetricValue}>{formatVerdictText(displayFindingPct, findingVerdict)}</span>
+                                        <span
+                                          className={`${styles.boundaryFindingMetricValue} ${styles.boundaryFindingMetricVerdict}`}
+                                          style={{ backgroundColor: findingColor.bg, color: findingColor.text }}
+                                        >
+                                          {formatVerdictText(displayFindingPct, findingVerdict)}
+                                        </span>
                                       </div>
                                       <div className={styles.boundaryFindingMetric}>
                                         <span className={styles.boundaryFindingMetricLabel}>Confidence</span>
@@ -1554,9 +1614,6 @@ export default function JobPage() {
                                         <span className={styles.boundaryFindingMetricLabel}>Evidence</span>
                                         <span className={styles.boundaryFindingMetricValue}>{finding.evidenceCount} items</span>
                                       </div>
-                                    </div>
-                                    <div className={styles.boundaryFindingBar}>
-                                      <div className={styles.boundaryFindingBarFill} style={{ width: `${displayFindingPct}%` }} />
                                     </div>
                                   </div>
                                 );
@@ -1581,7 +1638,19 @@ export default function JobPage() {
             </>
           )}
 
-          <ReportSection title="Sources" className={styles.reportSurfaceCard}>
+          {evidenceItems.length > 0 && (
+            <ReportSection title="Evidence Items" className={`${styles.reportSurfaceCard} ${styles.inputSection}`}>
+              <EvidencePanel
+                evidenceItems={evidenceItems}
+                disableGrouping={pipelineVariant === "monolithic_dynamic"}
+                onNavigate={navigateTo}
+                sourceUrlToIndex={sourceUrlToIndex}
+                showHeader={false}
+                showStats={false}
+              />
+            </ReportSection>
+          )}
+          <ReportSection title="Sources" className={`${styles.reportSurfaceCard} ${styles.inputSection}`}>
             <SourcesPanel
               searchQueries={searchQueries}
               sources={sources}
@@ -1595,7 +1664,7 @@ export default function JobPage() {
             />
           </ReportSection>
           {searchQueries.length > 0 && (
-            <ReportSection title="Search Queries" className={styles.reportSurfaceCard}>
+            <ReportSection title="Search Queries" className={`${styles.reportSurfaceCard} ${styles.inputSection}`}>
               <SourcesPanel
                 searchQueries={searchQueries}
                 sources={sources}
@@ -1606,18 +1675,6 @@ export default function JobPage() {
                 showHeader={false}
                 showStats={false}
                 showSources={false}
-              />
-            </ReportSection>
-          )}
-          {evidenceItems.length > 0 && (
-            <ReportSection title="Evidence Items" className={styles.reportSurfaceCard}>
-              <EvidencePanel
-                evidenceItems={evidenceItems}
-                disableGrouping={pipelineVariant === "monolithic_dynamic"}
-                onNavigate={navigateTo}
-                sourceUrlToIndex={sourceUrlToIndex}
-                showHeader={false}
-                showStats={false}
               />
             </ReportSection>
           )}
@@ -1972,7 +2029,7 @@ function EvidencePanel({
             </div>
           )}
           {isContrarian && <span style={{ color: '#ed8936', fontWeight: 700, marginRight: '6px' }}>[CONTRARIAN]</span>}
-          <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} onNavigate={onNavigate} />
+          <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} bare onNavigate={onNavigate} />
         </div>
         <div className={styles.evidenceMeta}>
           {onNavigate && item.sourceUrl && sourceUrlToIndex?.has(item.sourceUrl) ? (
@@ -2892,6 +2949,7 @@ function ClaimCard({
         text={claim.reasoning || ""}
         className={styles.claimReasoning}
         modalTitle={`Reasoning — ${claim.claimId || "Claim"}`}
+        bare
         onNavigate={onNavigate}
       />
       {claim.isContested && claim.contestedBy && (
@@ -2905,31 +2963,6 @@ function ClaimCard({
         </div>
       )}
 
-      {/* Evidence references (navigable links to Sources tab) */}
-      {onNavigate && (claim.supportingEvidenceIds?.length > 0 || claim.contradictingEvidenceIds?.length > 0) && (
-        <div className={styles.evidenceRefList}>
-          {claim.supportingEvidenceIds?.length > 0 && (
-            <>
-              <span className={styles.evidenceRefLabel}>Supporting:</span>
-              {claim.supportingEvidenceIds.map((id: string) => (
-                <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>
-              ))}
-            </>
-          )}
-          {claim.supportingEvidenceIds?.length > 0 && claim.contradictingEvidenceIds?.length > 0 && (
-            <span style={{ display: "block", width: "100%" }} />
-          )}
-          {claim.contradictingEvidenceIds?.length > 0 && (
-            <>
-              <span className={styles.evidenceRefLabel}>Contradicting:</span>
-              {claim.contradictingEvidenceIds.map((id: string) => (
-                <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>
-              ))}
-            </>
-          )}
-        </div>
-      )}
-
       {/* ClaimAssessmentBoundary pipeline: show boundary findings (Phase 3) */}
       {claim.boundaryFindings && (
         <BoundaryFindings
@@ -2938,6 +2971,32 @@ function ClaimCard({
           totalBoundaryCount={totalBoundaryCount}
           onNavigate={onNavigate}
         />
+      )}
+
+      {/* Evidence references (navigable links to Sources tab) */}
+      {onNavigate && (claim.supportingEvidenceIds?.length > 0 || claim.contradictingEvidenceIds?.length > 0) && (
+        <div className={styles.evidenceRefList}>
+          {claim.supportingEvidenceIds?.length > 0 && (
+            <div className={styles.evidenceRefGroup}>
+              <span className={styles.evidenceRefLabel}>Supporting Evidence:</span>
+              <div className={styles.evidenceRefIds}>
+                {claim.supportingEvidenceIds.map((id: string) => (
+                  <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {claim.contradictingEvidenceIds?.length > 0 && (
+            <div className={styles.evidenceRefGroup}>
+              <span className={styles.evidenceRefLabel}>Contridicting Evidence:</span>
+              <div className={styles.evidenceRefIds}>
+                {claim.contradictingEvidenceIds.map((id: string) => (
+                  <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

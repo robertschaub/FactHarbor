@@ -103,10 +103,11 @@ function renderParagraph(text: string, key?: number, onNavigate?: (refId: string
 
 /** Render text with **bold**, paragraph breaks (\n\n), and line breaks (\n) */
 function FormattedText({ text, onNavigate }: { text: string; onNavigate?: (refId: string) => void }) {
-  const paragraphs = getTextParagraphs(text);
+  const paragraphs = getTextParagraphs(text).filter((p) => p.trim().length > 0);
+  const safeText = text.trim();
 
   if (paragraphs.length <= 1) {
-    return <>{renderParagraph(paragraphs[0] ?? text, undefined, onNavigate)}</>;
+    return <>{renderParagraph(paragraphs[0] ?? safeText, undefined, onNavigate)}</>;
   }
   return (
     <>

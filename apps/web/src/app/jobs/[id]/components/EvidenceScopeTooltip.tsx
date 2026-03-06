@@ -30,7 +30,11 @@ export function EvidenceScopeTooltip({
   const showTooltip = () => {
     if (wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
-      setTooltipPos({ top: rect.bottom + 4, left: rect.right });
+      const viewportWidth = window.innerWidth;
+      const tooltipWidth = Math.min(400, Math.max(260, viewportWidth - 16));
+      const left = Math.max(8, Math.min(rect.left, viewportWidth - tooltipWidth - 8));
+      const top = Math.max(8, rect.bottom + 4);
+      setTooltipPos({ top, left });
     }
   };
 
@@ -55,7 +59,7 @@ export function EvidenceScopeTooltip({
         <div
           className={styles.tooltip}
           role="tooltip"
-          style={{ position: "fixed", top: tooltipPos.top, right: `calc(100vw - ${tooltipPos.left}px)`, left: "auto" }}
+          style={{ position: "fixed", top: tooltipPos.top, left: tooltipPos.left, right: "auto" }}
         >
           <div className={styles.tooltipHeader}>Evidence Scope</div>
           <div className={styles.tooltipContent}>
