@@ -834,7 +834,14 @@ export default function JobPage() {
       {(isCBSchema && claimBoundaries.length > 2) || (!isCBSchema && hasMultipleContexts) ? (
         <div className={narrativeStyles.metaLine}>
           {isCBSchema && claimBoundaries.length > 2 && (
-            <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
+            <Badge
+              bg="#fff3e0"
+              color="#e65100"
+              title="A Boundary is a distinct analytical frame that groups compatible evidence approaches for assessing the claim. Different boundaries can reach different findings."
+              modalTitle="ClaimAssessmentBoundaries"
+            >
+              🔀 BOUNDARIES: {claimBoundaries.length}
+            </Badge>
           )}
           {!isCBSchema && hasMultipleContexts && (
             <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>

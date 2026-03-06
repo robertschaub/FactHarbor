@@ -2285,6 +2285,7 @@ details[open] > .devWarningSummary::before {
   font-size: 13px;
   color: var(--text-secondary);
   line-height: var(--line-height-body);
+  margin-top: 4px;
 }
 
 .claimEscalation {
