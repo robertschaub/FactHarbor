@@ -1,7 +1,7 @@
 /* Coverage Matrix Styles — Transposed layout (boundaries as rows) */
 
 .container {
-  margin: 20px 0;
+  margin: 0;
 }
 
 .legend {
@@ -9,23 +9,23 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  padding: 0 0 8px;
+  background: transparent;
   font-size: 12px;
   flex-wrap: wrap;
+  color: var(--text-muted, #6b7280);
 }
 
 .legendTitle {
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary, #374151);
 }
 
 .legendItem {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
 }
 
 .legendSwatch {
@@ -33,14 +33,14 @@
   width: 18px;
   height: 12px;
   border-radius: 2px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-subtle, #d1d5db);
 }
 
 .tableWrapper {
   overflow-x: auto;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-subtle, #e5e7eb);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-surface, #fff);
 }
 
 .matrix {
@@ -53,12 +53,12 @@
 .matrix td {
   padding: 8px 12px;
   text-align: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-subtle, #e5e7eb);
 }
 
 .cornerCell {
-  background: #f9fafb;
-  color: #6b7280;
+  background: var(--bg-surface2, #f9fafb);
+  color: var(--text-secondary, #6b7280);
   font-weight: 600;
   text-align: left;
   position: sticky;
@@ -68,16 +68,16 @@
 }
 
 .headerCell {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-surface2, #f3f4f6);
+  color: var(--text-primary, #374151);
   font-weight: 600;
   white-space: normal;
   word-break: break-word;
 }
 
 .rowHeader {
-  background: #f9fafb;
-  color: #374151;
+  background: var(--bg-surface, #f9fafb);
+  color: var(--text-primary, #374151);
   font-weight: 500;
   text-align: left;
   position: sticky;
@@ -89,63 +89,63 @@
 }
 
 .totalHeader {
-  background: #f3f4f6;
+  background: var(--bg-surface2, #f3f4f6);
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary, #374151);
   white-space: nowrap;
 }
 
 .totalCell {
-  background: #fef3c7;
+  background: var(--bg-surface2, #f3f4f6);
   font-weight: 600;
-  color: #92400e;
+  color: var(--text-primary, #374151);
 }
 
 .totalRow {
-  background: #fef3c7;
+  background: var(--bg-surface2, #f3f4f6);
 }
 
 .totalRow .rowHeader {
-  background: #fbbf24;
-  color: #78350f;
+  background: var(--bg-surface2, #f3f4f6);
+  color: var(--text-primary, #374151);
   font-weight: 700;
 }
 
 .grandTotal {
-  background: #fbbf24;
+  background: var(--bg-surface2, #f3f4f6);
   font-weight: 700;
-  color: #78350f;
+  color: var(--text-primary, #374151);
 }
 
 /* Cell color coding by evidence count */
 .cellEmpty {
-  background: #f3f4f6;
+  background: var(--bg-card, #ffffff);
   color: #9ca3af;
 }
 
 .cellLow {
-  background: #fef3c7;
-  color: #92400e;
+  background: color-mix(in srgb, var(--bg-surface2, #f3f4f6) 85%, var(--link, #2563eb) 15%);
+  color: var(--text-primary, #374151);
 }
 
 .cellMedium {
-  background: #d9f99d;
-  color: #365314;
+  background: color-mix(in srgb, var(--bg-surface2, #f3f4f6) 72%, var(--link, #2563eb) 28%);
+  color: var(--text-primary, #374151);
 }
 
 .cellHigh {
-  background: #86efac;
-  color: #14532d;
+  background: color-mix(in srgb, var(--bg-surface2, #f3f4f6) 58%, var(--link, #2563eb) 42%);
+  color: var(--text-primary, #374151);
   font-weight: 600;
 }
 
 /* Boundary legend below matrix */
 .boundaryLegend {
   margin-top: 12px;
-  padding: 10px 14px;
-  background: #f9fafb;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  border: 0;
   font-size: 12px;
   display: flex;
   flex-direction: column;
@@ -158,7 +158,7 @@
 
 .boundaryLegendLabel {
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary, #374151);
   font-size: 14px;
   background: none;
   border: none;
@@ -167,7 +167,7 @@
 }
 
 .boundaryLegendFull {
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   margin-top: 1px;
 }
 
@@ -175,7 +175,7 @@
   cursor: pointer;
 }
 .clickableHeader:hover {
-  background: #e5e7eb;
+  background: rgba(143, 194, 255, 0.12);
 }
 
 .clickableCell {
@@ -188,10 +188,10 @@
 .emptyState {
   padding: 40px 20px;
   text-align: center;
-  color: #6b7280;
-  background: #f9fafb;
+  color: var(--text-secondary, #6b7280);
+  background: var(--bg-surface, #f9fafb);
   border-radius: 8px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--border-subtle, #d1d5db);
 }
 
 .emptyState p {

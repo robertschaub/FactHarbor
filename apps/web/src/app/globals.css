@@ -1,4 +1,75 @@
-html, body { padding: 0; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f5f6f8; }
+/* Light/dark mode CSS custom properties */
+:root {
+  --bg-page: #f5f6f8;
+  --bg-card: #ffffff;
+  --bg-surface: #f8f9fa;
+  --bg-surface2: #f3f4f6;
+  --border: #ddd;
+  --border-subtle: #e5e7eb;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --link: #1565c0;
+  --nav-highlight-start: #fff9c4;
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.06);
+  --color-text-muted: #888;
+  --radius-card: 12px;
+  --radius-sm: 8px;
+  --spacing-section: 20px;
+  --spacing-card: 16px;
+  --font-size-body: 15px;
+  --font-size-sm: 13px;
+  --font-size-xs: 12px;
+  --font-size-heading: 18px;
+  --line-height-body: 1.6;
+  --transition-fast: 0.15s ease;
+  --color-accent-amber: #854d0e;
+  --color-accent-amber-bg: #fffbeb;
+  --color-accent-amber-border: #fde68a;
+  --report-card: #ffffff;
+  --report-surface: #f6f8fb;
+  --report-surface2: #eef2f7;
+  --report-border: #d7dee9;
+  --report-border-subtle: #e3e8f0;
+  --report-text: #132033;
+  --report-text-secondary: #42506a;
+  --report-text-muted: #6d7c97;
+  --report-link: #1f4f9a;
+  --report-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page: #111827;
+    --bg-card: #1f2937;
+    --bg-surface: #374151;
+    --bg-surface2: #2d3748;
+    --border: #374151;
+    --border-subtle: #4b5563;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --link: #60a5fa;
+    --nav-highlight-start: #713f12;
+    --shadow-card: 0 1px 4px rgba(0,0,0,0.3);
+    --color-text-muted: #9ca3af;
+    --color-accent-amber: #fbbf24;
+    --color-accent-amber-bg: #3b2a06;
+    --color-accent-amber-border: #92400e;
+    --report-card: #0f1726;
+    --report-surface: #162235;
+    --report-surface2: #1d2b41;
+    --report-border: #2b3b57;
+    --report-border-subtle: #344667;
+    --report-text: #f3f6ff;
+    --report-text-secondary: #ccd5e7;
+    --report-text-muted: #90a0bf;
+    --report-link: #8fc2ff;
+    --report-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  }
+}
+
+html, body { padding: 0; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg-page); color: var(--text-primary); }
 a { color: inherit; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
@@ -7,6 +78,6 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libe
   animation: navFlash 1.5s ease-out;
 }
 @keyframes navFlash {
-  0% { background-color: #fff9c4; }
+  0% { background-color: var(--nav-highlight-start); }
   100% { background-color: transparent; }
 }

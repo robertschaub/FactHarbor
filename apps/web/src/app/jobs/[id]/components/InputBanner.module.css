@@ -1,6 +1,6 @@
 .banner {
-  border-left: 3px solid #94a3b8;
-  background: #f8fafc;
+  border-left: 3px solid var(--border-subtle, #94a3b8);
+  background: var(--bg-surface, #f8fafc);
   padding: 10px 12px;
   border-radius: 6px;
   margin: 12px 0;
@@ -9,12 +9,12 @@
 .text {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary, #1f2937);
   line-height: 1.5;
 }
 
 .typeLabel {
-  color: #334155;
+  color: var(--text-secondary, #334155);
   font-weight: 600;
   font-size: 14px;
   display: inline-block;

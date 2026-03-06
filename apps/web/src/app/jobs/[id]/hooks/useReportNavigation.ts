@@ -15,7 +15,7 @@
 
 import { useCallback, useRef, useState, useEffect } from "react";
 
-export type ReportTab = "summary" | "sources" | "article" | "report" | "json" | "events";
+export type ReportTab = "report" | "json" | "events";
 
 interface NavTarget {
   domId: string;
@@ -36,43 +36,43 @@ const MAX_HISTORY = 10;
 export function refIdToNavTarget(refId: string): NavTarget | null {
   if (!refId) return null;
 
-  // Evidence items → Sources tab
+  // Evidence items → Report tab
   if (refId.startsWith("EV_")) {
-    return { domId: `nav-ev-${refId}`, tab: "sources" };
+    return { domId: `nav-ev-${refId}`, tab: "report" };
   }
 
-  // Atomic claims → Summary tab
+  // Atomic claims → Report tab
   if (refId.startsWith("AC_")) {
-    return { domId: `nav-claim-${refId}`, tab: "summary" };
+    return { domId: `nav-claim-${refId}`, tab: "report" };
   }
 
-  // Claim assessment boundaries → Summary tab (legend)
+  // Claim assessment boundaries → Report tab (legend)
   if (refId.startsWith("CB_")) {
-    return { domId: `nav-cb-${refId}`, tab: "summary" };
+    return { domId: `nav-cb-${refId}`, tab: "report" };
   }
 
-  // Challenge points → parent claim on Summary tab
+  // Challenge points → parent claim on Report tab
   // Format: CP_AC_01_0 → extract AC_01
   if (refId.startsWith("CP_")) {
     const match = refId.match(/CP_(AC_\d+)/);
     if (match) {
-      return { domId: `nav-claim-${match[1]}`, tab: "summary" };
+      return { domId: `nav-claim-${match[1]}`, tab: "report" };
     }
   }
 
-  // Boundary finding rows → Summary tab (first occurrence in claim cards)
+  // Boundary finding rows → Report tab (first occurrence in claim cards)
   if (refId.startsWith("BF_")) {
-    return { domId: `nav-bf-${refId.slice(3)}`, tab: "summary" };
+    return { domId: `nav-bf-${refId.slice(3)}`, tab: "report" };
   }
 
-  // Fetched sources → Sources tab
+  // Fetched sources → Report tab
   if (refId.startsWith("SRC_")) {
-    return { domId: `nav-${refId.toLowerCase()}`, tab: "sources" };
+    return { domId: `nav-${refId.toLowerCase()}`, tab: "report" };
   }
 
-  // Search queries → Sources tab
+  // Search queries → Report tab
   if (refId.startsWith("SQ_")) {
-    return { domId: `nav-${refId.toLowerCase()}`, tab: "sources" };
+    return { domId: `nav-${refId.toLowerCase()}`, tab: "report" };
   }
 
   return null;

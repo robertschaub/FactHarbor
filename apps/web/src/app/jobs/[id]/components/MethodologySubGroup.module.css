@@ -1,8 +1,8 @@
 .group {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 0;
   margin-bottom: 12px;
-  background: #ffffff;
+  background: transparent;
 }
 
 .header {
@@ -10,10 +10,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
-  background: #f9fafb;
+  padding: 10px 0;
+  background: transparent;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
   text-align: left;
 }
@@ -24,22 +23,19 @@
 
 .title {
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary, #111827);
 }
 
 .count {
   margin-left: auto;
   font-size: 12px;
-  color: #6b7280;
-  background: #eef2ff;
-  padding: 2px 6px;
-  border-radius: 999px;
+  color: var(--text-muted, #6b7280);
 }
 
 .chevron {
   margin-left: 6px;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-muted, #6b7280);
   transition: transform 0.2s ease;
 }
 
@@ -48,7 +44,7 @@
 }
 
 .content {
-  padding: 8px 12px 12px;
+  padding: 0 0 12px;
 }
 
 .evidenceItem + .evidenceItem {

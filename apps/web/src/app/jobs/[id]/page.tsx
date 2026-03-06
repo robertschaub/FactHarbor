@@ -39,7 +39,7 @@ import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
-import { CoverageMatrixDisplay, BoundaryLegend } from "./components/CoverageMatrix";
+import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
@@ -272,6 +272,140 @@ function getTrackRecordClass(score: number): string {
   return styles.trackRecordLow;                        // leaning_unreliable- (<43%)
 }
 
+function getDisplayRange(
+  range: { min: number; max: number } | undefined,
+  verdictLabel: string,
+): { min: number; max: number } | null {
+  if (!range) return null;
+  if (isFalseBand(verdictLabel)) {
+    return { min: 100 - range.max, max: 100 - range.min };
+  }
+  return { min: range.min, max: range.max };
+}
+
+function hexLuminance(hex: string): number {
+  const normalized = hex.replace("#", "");
+  if (normalized.length !== 6) return 1;
+  const [r, g, b] = [0, 2, 4].map((offset) => parseInt(normalized.slice(offset, offset + 2), 16) / 255);
+  const toLinear = (channel: number) =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+function getVerdictAccentColor(
+  verdictLabel: string,
+  fallback: { bg: string; text: string; border: string },
+): string {
+  const uiPalette = CLAIM_VERDICT_COLORS[verdictLabel] || QUESTION_ANSWER_COLORS[verdictLabel] || fallback;
+
+  if (hexLuminance(uiPalette.bg) < 0.5) {
+    return uiPalette.bg;
+  }
+  if (hexLuminance(uiPalette.border) < 0.62) {
+    return uiPalette.border;
+  }
+  return uiPalette.text;
+}
+
+function getVerdictUiPalette(
+  verdictLabel: string,
+  fallback: { bg: string; text: string; border: string },
+): { bg: string; text: string; border: string } {
+  return CLAIM_VERDICT_COLORS[verdictLabel] || QUESTION_ANSWER_COLORS[verdictLabel] || fallback;
+}
+
+function VerdictMeter({
+  percentage,
+  range,
+  fillColor,
+  showValue = true,
+}: {
+  percentage: number;
+  range?: { min: number; max: number } | null;
+  fillColor: string;
+  showValue?: boolean;
+}) {
+  return (
+    <div className={styles.verdictMeterRow}>
+      {showValue ? <span className={styles.verdictMeterLabel}>{percentage}%</span> : null}
+      <div className={styles.verdictMeterBar} aria-hidden="true">
+        <div
+          className={styles.verdictMeterFill}
+          style={{ width: `${percentage}%`, backgroundColor: fillColor }}
+        />
+      </div>
+      {range && (
+        <span className={styles.verdictRange}>
+          ({range.min}% - {range.max}%)
+        </span>
+      )}
+    </div>
+  );
+}
+
+function VerdictMetricBlock({
+  label,
+  value,
+  percentage,
+  fillColor,
+  range,
+  helperText,
+}: {
+  label: string;
+  value: string;
+  percentage: number;
+  fillColor: string;
+  range?: { min: number; max: number } | null;
+  helperText?: string;
+}) {
+  return (
+    <div className={styles.verdictMetricBlock}>
+      <div className={styles.verdictMetricTitle}>{label}</div>
+      <div className={styles.verdictMetricValue}>{value}</div>
+      <div className={styles.verdictMetricHelper}>{helperText || "\u00A0"}</div>
+      <VerdictMeter percentage={percentage} range={range} fillColor={fillColor} showValue={false} />
+    </div>
+  );
+}
+
+function ReportSection({
+  title,
+  children,
+  className = "",
+  collapsible = false,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const classes = className ? `${styles.reportSection} ${className}` : styles.reportSection;
+  if (collapsible) {
+    return (
+      <details className={classes} open={defaultOpen}>
+        <summary className={styles.reportSectionToggle}>
+          <h2 className={styles.reportSectionTitle}>{title}</h2>
+        </summary>
+        <div className={styles.reportSectionBody}>
+          {children}
+        </div>
+      </details>
+    );
+  }
+  return (
+    <section className={classes}>
+      <div className={styles.reportSectionHeader}>
+        <h2 className={styles.reportSectionTitle}>{title}</h2>
+      </div>
+      <div className={styles.reportSectionBody}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
 export default function JobPage() {
   const params = useParams();
   const router = useRouter();
@@ -279,7 +413,7 @@ export default function JobPage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [tab, setTab] = useState<"summary" | "article" | "sources" | "report" | "json" | "events">("summary");
+  const [tab, setTab] = useState<"report" | "json" | "events">("report");
   const initialTabSet = useRef(false);
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -287,6 +421,7 @@ export default function JobPage() {
   const [pollIntervalMs, setPollIntervalMs] = useState(DETAIL_POLL_INTERVAL_MS);
   const [isVisible, setIsVisible] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDetailsElement>(null);
   const { navigateTo: rawNavigateTo, goBack, canGoBack, clearHistory } = useReportNavigation(tab, setTab);
 
   // Job action states
@@ -309,7 +444,7 @@ export default function JobPage() {
   }, []);
 
   // Auto-select Events tab when job is still running on first load,
-  // and switch to Summary when it completes (if user hasn't navigated away).
+  // and switch to Report when it completes (if user hasn't navigated away).
   const prevStatusRef = useRef<string | null>(null);
   useEffect(() => {
     if (!job) return;
@@ -319,9 +454,9 @@ export default function JobPage() {
         setTab("events");
       }
     }
-    // Auto-switch from events to summary when job finishes
+    // Auto-switch from events to report when job finishes
     if (prevStatusRef.current === "RUNNING" && job.status === "SUCCEEDED") {
-      setTab((current) => current === "events" ? "summary" : current);
+      setTab((current) => current === "events" ? "report" : current);
     }
     prevStatusRef.current = job.status;
   }, [job]);
@@ -566,37 +701,43 @@ export default function JobPage() {
     process.env.NODE_ENV !== "production" &&
     warningDiagnostics.length > 0;
   const qualityGates = result?.qualityGates;  // P1: Quality gates for UI
-  const reportQualityPanel = (
-    <>
-      <FallbackReport
-        summary={classificationFallbacks}
-        analysisWarnings={allAnalysisWarnings}
-        isAdmin={hasAdminKey}
-      />
-      {showWarningDiagnostics && (
-        <details className={styles.devWarningPanel}>
-          <summary className={styles.devWarningSummary}>
-            Developer diagnostics ({warningDiagnostics.length})
-          </summary>
-          <div className={styles.devWarningHint}>
-            Development-only view of warning bucketing and display severity normalization.
-          </div>
-          <ul className={styles.devWarningList}>
-            {warningDiagnostics.map((diag, idx) => (
-              <li key={`wd-${idx}`} className={styles.devWarningItem}>
-                <code className={styles.devWarningType}>{diag.type}</code>
-                <span className={styles.devWarningMeta}>
-                  bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
-                </span>
-                <div className={styles.devWarningMessage}>{diag.message}</div>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      <QualityGatesPanel qualityGates={qualityGates} collapsed={true} />
-    </>
+  const qualityExpanded = warningDiagnostics.some((diag) => diag.displaySeverity === "error") || qualityGates?.passed === false;
+  const fallbackReportPanel = (
+    <FallbackReport
+      summary={classificationFallbacks}
+      analysisWarnings={allAnalysisWarnings}
+      isAdmin={hasAdminKey}
+    />
   );
+  const warningDiagnosticsPanel = showWarningDiagnostics ? (
+    <details className={styles.devWarningPanel}>
+      <summary className={styles.devWarningSummary}>
+        Developer diagnostics ({warningDiagnostics.length})
+      </summary>
+      <div className={styles.devWarningHint}>
+        Development-only view of warning bucketing and display severity normalization.
+      </div>
+      <ul className={styles.devWarningList}>
+        {warningDiagnostics.map((diag, idx) => (
+          <li key={`wd-${idx}`} className={styles.devWarningItem}>
+            <code className={styles.devWarningType}>{diag.type}</code>
+            <span className={styles.devWarningMeta}>
+              bucket: <code>{diag.bucket}</code> | original: <code>{diag.originalSeverity}</code> | shown: <code>{diag.displaySeverity}</code>
+            </span>
+            <div className={styles.devWarningMessage}>{diag.message}</div>
+          </li>
+        ))}
+      </ul>
+    </details>
+  ) : null;
+  const qualityGatesPanel = (
+    <QualityGatesPanel qualityGates={qualityGates} collapsed={!qualityExpanded} />
+  );
+  const hasQualitySectionContent =
+    Boolean(qualityGates) ||
+    Boolean(hasAdminKey) ||
+    Boolean(classificationFallbacks?.totalFallbacks) ||
+    allAnalysisWarnings.length > 0;
   const hasMultipleContexts =
     result?.meta?.hasMultipleContexts ?? articleAnalysis?.hasMultipleContexts ?? false;
   // LEGACY: analysisContexts fallback for old orchestrated pipeline schemas (backward compatibility)
@@ -624,6 +765,21 @@ export default function JobPage() {
                      (typeof result?.meta?.schemaVersion === "string" && result.meta.schemaVersion.endsWith("-cb")) ||
                      result?.meta?.pipeline === "claimboundary";
   const claimBoundaries = result?.claimBoundaries || [];
+  const boundaryFindingMap = useMemo(() => {
+    const map = new Map<string, Array<any>>();
+    for (const claimVerdict of claimVerdicts) {
+      for (const finding of claimVerdict?.boundaryFindings || []) {
+        const list = map.get(finding.boundaryId) || [];
+        list.push({
+          ...finding,
+          claimId: claimVerdict.claimId,
+          claimText: claimVerdict.claimText,
+        });
+        map.set(finding.boundaryId, list);
+      }
+    }
+    return map;
+  }, [claimVerdicts]);
 
   // Pipeline: preserve what the job requested, but prefer the pipeline that actually executed.
   // This avoids schema/UI mismatches when monolithic pipelines fall back to claimboundary.
@@ -656,6 +812,29 @@ export default function JobPage() {
   const sourceUrlToIndex = useMemo(() => new Map<string, number>(sources.map((s: any, i: number) => [s.url as string, i])), [sources]);
   const usedModels = collectUsedModels(result);
   const usedModelsLabel = formatUsedModels(usedModels);
+  const analysisNotesMeta = (
+    <>
+      {isCBSchema && claimBoundaries.length > 2 && (
+        <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
+      )}
+      {!isCBSchema && hasMultipleContexts && (
+        <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>
+      )}
+      {(usedModels.length > 0 || result?.meta?.llmProvider) && (
+        <Badge
+          bg="#e3f2fd"
+          color="#1565c0"
+          title={
+            usedModels.length > 0
+              ? `Models used: ${usedModelsLabel}`
+              : (result?.meta?.llmModel || result?.meta?.llmProvider)
+          }
+        >
+          🤖 {usedModels.length > 0 ? usedModelsLabel : result?.meta?.llmProvider}
+        </Badge>
+      )}
+    </>
+  );
   const subClaims = result?.understanding?.subClaims || [];
   const tangentialSubClaims = Array.isArray(subClaims)
     ? subClaims.filter((c: any) => c?.thesisRelevance === "tangential")
@@ -736,6 +915,29 @@ export default function JobPage() {
     }
     return () => { document.title = "FactHarbor Alpha"; };
   }, [job, twoPanelSummary]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const menu = exportMenuRef.current;
+      if (!menu?.open) return;
+      if (event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && exportMenuRef.current?.open) {
+        exportMenuRef.current.open = false;
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   // Export functions
   const handlePrint = () => {
@@ -836,48 +1038,78 @@ export default function JobPage() {
     URL.revokeObjectURL(url);
   };
 
+  const closeExportMenu = () => {
+    if (exportMenuRef.current) {
+      exportMenuRef.current.open = false;
+    }
+  };
+
+  const renderExportButtons = (buttonClassName: string) => (
+    <>
+      <button onClick={() => { closeExportMenu(); handlePrint(); }} className={buttonClassName} title="Print">Print</button>
+      <button onClick={() => { closeExportMenu(); handleExportHTML(); }} className={buttonClassName} title="Export HTML">HTML</button>
+      <button onClick={() => { closeExportMenu(); handleExportMarkdown(); }} className={buttonClassName} title="Export Markdown">Markdown</button>
+      <button onClick={() => { closeExportMenu(); handleExportJSON(); }} className={buttonClassName} title="Export JSON">JSON</button>
+    </>
+  );
+
   if (!jobId) return <div className={styles.pageContainer}>Loading job ID...</div>;
 
   return (
     <div className={styles.pageContainer}>
       <SystemHealthBanner />
-      <h1 className={styles.pageTitle}>FactHarbor Report</h1>
+      <div className={styles.pageHeader}>
+        <Link href="/jobs" className={styles.backToList} aria-label="Back to jobs" title="Back to jobs">
+          <span className={styles.backToListIcon} aria-hidden="true">←</span>
+        </Link>
+        <h1 className={styles.pageTitle}>FactHarbor Report</h1>
+      </div>
 
-      {/* Tabs */}
-      <div className={styles.tabsContainer}>
-        {hasV22Data && (
-          <>
-            <button onClick={() => { setTab("summary"); clearHistory(); }} className={`${styles.tab} ${tab === "summary" ? styles.tabActive : ""}`}>📊 Summary</button>
-            <button onClick={() => { setTab("sources"); clearHistory(); }} className={`${styles.tab} ${tab === "sources" ? styles.tabActive : ""}`}>🔍 Sources ({sources.length})</button>
-          </>
-        )}
-        <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
-        <button onClick={() => setTab("events")} className={`${styles.tab} ${tab === "events" ? styles.tabActive : ""}`}>📋 Events ({events.length})</button>
-
-        {/* Export + admin actions */}
-        {(job?.status === "SUCCEEDED" || hasAdminKey) && (
-          <div className={styles.exportButtons}>
-            {hasAdminKey && (
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className={`${styles.tab} ${styles.deleteTab}`}
-                title="Delete"
-              >
-                {isDeleting ? "Deleting…" : "🗑️ Delete"}
-              </button>
+      {/* Tabs — only show tab bar when more than one tab is visible */}
+      {(() => {
+        const showEventsTab = job?.status !== "SUCCEEDED" || hasAdminKey;
+        const showJsonTab = hasAdminKey;
+        const showReportTab = hasV22Data;
+        const visibleTabCount = [showReportTab, showJsonTab, showEventsTab].filter(Boolean).length;
+        const showTabBar = visibleTabCount > 1;
+        return (
+          <div className={styles.tabsContainer}>
+            {showTabBar && showReportTab && (
+              <button onClick={() => { setTab("report"); clearHistory(); }} className={`${styles.tab} ${tab === "report" ? styles.tabActive : ""}`}>📊 Report</button>
             )}
-            {job?.status === "SUCCEEDED" && (
-              <>
-                <button onClick={handlePrint} className={styles.tab} title="Print">🖨️</button>
-                <button onClick={handleExportHTML} className={styles.tab} title="Export HTML">📄</button>
-                <button onClick={handleExportMarkdown} className={styles.tab} title="Export Markdown">📝</button>
-                <button onClick={handleExportJSON} className={styles.tab} title="Export JSON">💾</button>
-              </>
+            {showTabBar && showJsonTab && (
+              <button onClick={() => setTab("json")} className={`${styles.tab} ${tab === "json" ? styles.tabActive : ""}`}>🔧 JSON</button>
+            )}
+            {showTabBar && showEventsTab && (
+              <button onClick={() => setTab("events")} className={`${styles.tab} ${tab === "events" ? styles.tabActive : ""}`}>📋 Events ({events.length})</button>
+            )}
+
+            {/* Export + admin actions */}
+            {(job?.status === "SUCCEEDED" || hasAdminKey) && (
+              <div className={styles.exportButtons}>
+                {hasAdminKey && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className={`${styles.tab} ${styles.deleteTab}`}
+                    title="Delete"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </button>
+                )}
+                {job?.status === "SUCCEEDED" && (
+                  <details ref={exportMenuRef} className={styles.exportMenu}>
+                  <summary className={styles.exportMenuSummary}>Export</summary>
+                  <div className={styles.exportMenuList}>
+                    {renderExportButtons(styles.exportMenuButton)}
+                  </div>
+                </details>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {maintenance && (
         <div className={styles.maintenanceBox}>
@@ -892,9 +1124,9 @@ export default function JobPage() {
       )}
 
       {job ? (
-        <div className={styles.jobInfoCard}>
+        <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard} ${styles.reportMetaCard}`}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span><b>ID:</b> <code>{job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" /></span>
+            <span><b>ID:</b> <code>{job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
             {pipelineVariant === "monolithic_dynamic" && (
               <Badge bg="#fce4ec" color="#c2185b" title="Legacy dynamic pipeline">
                 ⚗️ Dynamic (legacy)
@@ -908,14 +1140,8 @@ export default function JobPage() {
           {hasV22Data && (
             <div className={styles.badgesRow}>
               <span><b>Schema:</b> <code>{schemaVersion}</code></span>
-              {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code><CopyButton text={result.meta.analysisId} title="Copy Analysis ID" /></span>}
+              {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code><CopyButton text={result.meta.analysisId} title="Copy Analysis ID" className={styles.metaCopyButton} /></span>}
               {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
-              {isCBSchema && claimBoundaries.length > 2 && (
-                <Badge bg="#fff3e0" color="#e65100">🔀 {claimBoundaries.length} BOUNDARIES</Badge>
-              )}
-              {!isCBSchema && hasMultipleContexts && (
-                <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>
-              )}
               {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
               {result.meta.isPseudoscience && (
                 <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
@@ -933,19 +1159,6 @@ export default function JobPage() {
                   </Badge>
                 ) : null;
               })()}
-              {(usedModels.length > 0 || result.meta.llmProvider) && (
-                <Badge
-                  bg="#e3f2fd"
-                  color="#1565c0"
-                  title={
-                    usedModels.length > 0
-                      ? `Models used: ${usedModelsLabel}`
-                      : (result.meta.llmModel || result.meta.llmProvider)
-                  }
-                >
-                  🤖 {usedModels.length > 0 ? usedModelsLabel : result.meta.llmProvider}
-                </Badge>
-              )}
               {pipelineFallback && requestedPipelineVariant !== pipelineVariant && (
                 <Badge
                   bg="#fff3e0"
@@ -982,7 +1195,7 @@ export default function JobPage() {
           )}
         </div>
       ) : (
-        <div className={styles.contentCard} style={{ textAlign: "center", color: "#666" }}>Loading...</div>
+        <div className={styles.contentCard} style={{ textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
       )}
 
       {/* Result disclaimer — shown only for completed analyses */}
@@ -992,44 +1205,44 @@ export default function JobPage() {
         </div>
       )}
 
-      {/* Summary Tab */}
-      {tab === "summary" && hasV22Data && (
-        <div className={styles.contentCard}>
+      {/* Report Tab — merged Summary + Sources + (admin) Dev Diagnostics */}
+      {tab === "report" && hasV22Data && (
+        <div className={styles.reportStack}>
           {pipelineVariant === "monolithic_dynamic" ? (
-            <DynamicResultViewer result={result} />
+            <ReportSection title="Report" className={styles.reportSurfaceCard}>
+              <DynamicResultViewer result={result} />
+            </ReportSection>
           ) : (
             <>
-              {/* v2.6.31: Show article summary FIRST (Input Neutrality: same layout for all inputs) */}
-              {twoPanelSummary?.articleSummary && (
-                <ArticleSummaryBox
-                  articleSummary={twoPanelSummary.articleSummary}
-                />
-              )}
+              {(twoPanelSummary?.articleSummary || job || impliedClaim || backgroundDetails) && (
+                <ReportSection title="Input" className={styles.reportSurfaceCard}>
+                  <>
+                    {twoPanelSummary?.articleSummary && (
+                      <ArticleSummaryBox
+                        articleSummary={twoPanelSummary.articleSummary}
+                      />
+                    )}
 
-              {job && (
-                <>
-                  <h3 className={styles.sectionTitle}>Input</h3>
-                  <InputBanner
-                    inputType={job.inputType || "text"}
-                    inputValue={job.inputValue || job.inputPreview || "—"}
-                  />
-                </>
-              )}
+                    {job && (
+                      <InputBanner
+                        inputType={job.inputType || "text"}
+                        inputValue={job.inputValue || job.inputPreview || "—"}
+                      />
+                    )}
 
-              {backgroundDetails && (
-                <BackgroundBanner backgroundDetails={backgroundDetails} />
-              )}
+                    {impliedClaim && (
+                      <TransformedInputBox
+                        originalInput={job?.inputValue || job?.inputPreview || ""}
+                        transformedInput={impliedClaim}
+                      />
+                    )}
 
-              {/* v2.6.33: Show transformed input if different from original */}
-              {impliedClaim && (
-                <TransformedInputBox
-                  originalInput={job?.inputValue || job?.inputPreview || ""}
-                  transformedInput={impliedClaim}
-                />
+                    {backgroundDetails && (
+                      <BackgroundBanner backgroundDetails={backgroundDetails} />
+                    )}
+                  </>
+                </ReportSection>
               )}
-
-              {!isCBSchema && reportQualityPanel}
-              {isCBSchema && !result?.verdictNarrative && reportQualityPanel}
 
               {/* Input neutrality: same banner for all input styles */}
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
@@ -1037,78 +1250,141 @@ export default function JobPage() {
               {isCBSchema && typeof result?.truthPercentage === "number" && (() => {
                 const cbVerdictLabel = percentageToArticleVerdict(result.truthPercentage, result.confidence ?? 0);
                 const cbColor = ARTICLE_VERDICT_COLORS[cbVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
+                const cbUiPalette = getVerdictUiPalette(cbVerdictLabel, cbColor);
+                const cbAccent = getVerdictAccentColor(cbVerdictLabel, cbColor);
                 const displayCbPct = isFalseBand(cbVerdictLabel) ? 100 - result.truthPercentage : result.truthPercentage;
+                const cbDisplayRange = getDisplayRange(result.truthPercentageRange, cbVerdictLabel);
+                const verdictHeadline = result.verdictNarrative?.headline || "";
+                const verdictKeyFinding = result.verdictNarrative?.keyFinding || "";
+                const confidencePct = Math.max(0, Math.min(100, Math.round(result.confidence ?? 0)));
                 return (
-                  <>
-                  <h3 className={styles.sectionTitle}>Verdict</h3>
-                  <div className={styles.articleBanner} style={{ borderColor: cbColor.border }}>
-                    <div className={styles.articleBannerContent}>
-                      <div className={styles.articleVerdictRow}>
-                        <span className={styles.articleVerdictBadge} style={{ backgroundColor: cbColor.bg, color: cbColor.text }}>
-                          {cbColor.icon} {getVerdictLabel(cbVerdictLabel)}
-                        </span>
-                        <span className={styles.articlePercentage}>
-                          {formatVerdictText(displayCbPct, cbVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${result.confidence ?? 0}%`}>· {getConfidenceTierLabel(result.confidence ?? 0)}</span>
-                          {result.truthPercentageRange && (() => {
-                            const r = result.truthPercentageRange;
-                            const rMin = isFalseBand(cbVerdictLabel) ? 100 - r.max : r.min;
-                            const rMax = isFalseBand(cbVerdictLabel) ? 100 - r.min : r.max;
-                            return <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>Range: {rMin}%&ndash;{rMax}%</span>;
-                          })()}
-                        </span>
-                      </div>
-                      {result.verdictNarrative?.headline && (
-                        <div style={{ marginTop: 12, fontSize: 16, color: "#1f2937", lineHeight: 1.5, fontWeight: 600 }}>
-                          {result.verdictNarrative.headline}
+                  <ReportSection title="Verdict" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
+                    <div className={styles.articleBanner} style={{ borderColor: cbAccent }}>
+                      <div className={styles.articleBannerContent}>
+                        <div className={styles.articleBannerPrimary}>
+                          <div className={styles.articleVerdictHeader}>
+                            <span className={styles.articleVerdictLabel}>OVERALL VERDICT</span>
                         </div>
-                      )}
+                        <div
+                          className={styles.articleVerdictHero}
+                          style={{
+                            color: cbUiPalette.text,
+                            backgroundColor: cbUiPalette.bg,
+                            borderColor: cbUiPalette.border,
+                          }}
+                        >
+                          {getVerdictLabel(cbVerdictLabel).toUpperCase().replace(/\s+/g, "-")}
+                        </div>
+                          {verdictHeadline && (
+                            <ExpandableText
+                              text={verdictHeadline}
+                              threshold={200}
+                              className={styles.verdictSubline}
+                              modalTitle="Verdict Summary"
+                              bare
+                              onNavigate={navigateTo}
+                            />
+                          )}
+                        <div className={styles.articleBannerMetrics}>
+                          <VerdictMetricBlock
+                            label="Truth Assessment"
+                            value={formatVerdictText(displayCbPct, cbVerdictLabel)}
+                            percentage={displayCbPct}
+                            range={cbDisplayRange}
+                            fillColor={cbAccent}
+                            helperText={isFalseBand(cbVerdictLabel) ? `${Math.round(result.truthPercentage)}% true` : undefined}
+                          />
+                          <VerdictMetricBlock
+                            label="Confidence"
+                            value={getConfidenceTierLabel(result.confidence ?? 0)}
+                            percentage={confidencePct}
+                            fillColor="var(--link)"
+                            helperText={`${confidencePct}% confidence`}
+                          />
+                        </div>
+                        </div>
+                        {verdictKeyFinding && (
+                          <div className={styles.articleBannerAside}>
+                            <div className={styles.articleBannerAsideLabel}>Key Finding</div>
+                            <ExpandableText
+                              text={verdictKeyFinding}
+                              threshold={420}
+                              className={styles.articleBannerAsideText}
+                              modalTitle="Key Finding"
+                              bare
+                              onNavigate={navigateTo}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  </>
+                  </ReportSection>
                 );
               })()}
 
               {/* Legacy pipelines: use ArticleVerdictBanner */}
               {!isCBSchema && (hasMultipleContexts && contextAnswers.length > 0 ? (
-                <MultiContextStatementBanner
-                  verdictSummary={verdictSummary}
-                  contexts={contexts}
-                  articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
-                  articleAnalysis={articleAnalysis}
-                  pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
-                  fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
-                />
-              ) : (
-                /* Single-context OR multi-context with missing context answers: show ArticleVerdictBanner as fallback */
-                (articleAnalysis || verdictSummary) && (
-                  <ArticleVerdictBanner
-                    articleAnalysis={articleAnalysis}
+                <ReportSection title="Verdict" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
+                  <MultiContextStatementBanner
                     verdictSummary={verdictSummary}
-                    fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
+                    contexts={contexts}
+                    articleThesis={twoPanelSummary?.articleSummary?.mainArgument}
+                    articleAnalysis={articleAnalysis}
                     pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
                     fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
                   />
+                </ReportSection>
+              ) : (
+                /* Single-context OR multi-context with missing context answers: show ArticleVerdictBanner as fallback */
+                (articleAnalysis || verdictSummary) && (
+                  <ReportSection title="Verdict" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
+                    <ArticleVerdictBanner
+                      articleAnalysis={articleAnalysis}
+                      verdictSummary={verdictSummary}
+                      fallbackThesis={twoPanelSummary?.articleSummary?.mainArgument || job?.inputValue}
+                      pseudoscienceAnalysis={result?.pseudoscienceAnalysis}
+                      fallbackConfidence={twoPanelSummary?.factharborAnalysis?.confidence}
+                    />
+                  </ReportSection>
                 )
               ))}
 
-              {/* ClaimAssessmentBoundary Pipeline Components (Phase 5k) */}
+              {/* Holistic quality evaluation (Stage 6) */}
               {isCBSchema && result?.verdictNarrative && (
-                <section className={styles.cbSection}>
-                  <VerdictNarrativeDisplay narrative={result.verdictNarrative} hideHeadline beforeLimitations={reportQualityPanel} onNavigate={navigateTo} />
-                </section>
+                <ReportSection title="Analysis Notes" className={`${styles.reportSurfaceCard} ${styles.cbSection}`}>
+                  <VerdictNarrativeDisplay
+                    narrative={result.verdictNarrative}
+                    supplementalMeta={analysisNotesMeta}
+                    onNavigate={navigateTo}
+                  />
+                  {hasQualitySectionContent ? (
+                    <details className={styles.qualitySubsection} open={qualityExpanded}>
+                      <summary className={styles.qualitySubsectionSummary}>Quality</summary>
+                      <div className={styles.qualitySectionStack}>
+                        {qualityGatesPanel}
+                        {fallbackReportPanel}
+                        {warningDiagnosticsPanel}
+                        {hasAdminKey && job && (
+                          <div className={styles.adminPanelStack}>
+                            <PromptViewer jobId={job.jobId} />
+                            <ConfigViewer jobId={job.jobId} />
+                          </div>
+                        )}
+                      </div>
+                    </details>
+                  ) : null}
+                </ReportSection>
               )}
 
               {/* Holistic quality evaluation (Stage 6) */}
               {isCBSchema && result?.tigerScore && (
-                <section className={styles.cbSection}>
+                <ReportSection title="TIGERScore Holistic Evaluation" className={`${styles.reportSurfaceCard} ${styles.cbSection}`}>
                   <TIGERScorePanel tigerScore={result.tigerScore} />
-                </section>
+                </ReportSection>
               )}
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
-                <div className={styles.claimsSection}>
-                  {/* v2.6.31: Input Neutrality - same label for all inputs */}
-                  <h3 className={styles.sectionTitle}>Atomic Claims Checked</h3>
+                <ReportSection title="Atomic Claims Checked" className={`${styles.reportSurfaceCard} ${styles.claimsSection}`}>
                   {/* CB pipeline: flat list with inline BoundaryFindings */}
                   {claimVerdicts.map((cv: any) => {
                     // CB pipeline: inject claimText from understanding.atomicClaims
@@ -1141,69 +1417,177 @@ export default function JobPage() {
                       </ul>
                     </details>
                   )}
-                </div>
+                </ReportSection>
               )}
 
-              {/* Coverage Matrix — placed after Claims Analyzed (below "Evidence by Methodology" per claim) */}
-              {isCBSchema && result?.coverageMatrix && claimVerdicts.length > 0 && claimBoundaries.length > 0 && (
-                <section className={styles.cbSection}>
-                  <h3 className={styles.sectionTitle}>Coverage Matrix</h3>
-                  <p className={styles.sectionDescription}>
-                    Evidence distribution across claims and boundaries.
-                  </p>
-                  <CoverageMatrixDisplay
-                    matrix={result.coverageMatrix}
-                    claimLabels={claimVerdicts.map((v: any) => {
-                      const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
-                      const matched = atomicClaims.find((ac: any) => ac.id === v.claimId);
-                      const text = matched?.statement || v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
-                      return text;
-                    })}
-                    boundaryShortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
-                    boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
-                    hideLegend
-                    onNavigate={navigateTo}
-                  />
-                </section>
-              )}
-
-              {/* Boundary Legend — standalone section, separate from matrix */}
               {isCBSchema && claimBoundaries.length > 0 && (
-                <section className={styles.cbSection}>
-                  <h3 className={styles.sectionTitle}>Boundary Legend</h3>
-                  <BoundaryLegend
-                    shortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
-                    fullLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
-                    boundaryIds={claimBoundaries.map((b: any) => b.id)}
-                    onNavigate={navigateTo}
-                  />
-                </section>
+                <ReportSection title="ClaimAssessmentBoundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection}`}>
+                  {result?.coverageMatrix && claimVerdicts.length > 0 && (
+                    <CoverageMatrixDisplay
+                      matrix={result.coverageMatrix}
+                      claimLabels={claimVerdicts.map((v: any) => {
+                        const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
+                        const matched = atomicClaims.find((ac: any) => ac.id === v.claimId);
+                        const text = matched?.statement || v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
+                        return text;
+                      })}
+                      boundaryShortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}
+                      boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
+                      hideLegend
+                      onNavigate={navigateTo}
+                    />
+                  )}
+
+                  <div className={styles.boundaryDirectory}>
+                    {claimBoundaries.map((boundary: any) => (
+                      <details
+                        key={boundary.id}
+                        id={`nav-cb-${boundary.id}`}
+                        className={styles.boundaryAccordion}
+                      >
+                        <summary className={styles.boundarySummary}>
+                          <div className={styles.boundarySummaryMain}>
+                            <span className={styles.boundarySummaryId}>{boundary.id}</span>
+                            <span className={styles.boundarySummaryName}>
+                              {boundary.name || boundary.shortName || boundary.id}
+                            </span>
+                          </div>
+                          <div className={styles.boundarySummaryMeta}>
+                            {typeof boundary.evidenceCount === "number" && (
+                              <span className={styles.boundaryEvidenceCount}>
+                                {boundary.evidenceCount} evidence
+                              </span>
+                            )}
+                          </div>
+                        </summary>
+                        <div className={styles.boundaryBody}>
+                          {boundary.description && (
+                            <p className={styles.boundaryDescription}>{boundary.description}</p>
+                          )}
+                          <div className={styles.boundaryFacts}>
+                            {boundary.methodology && (
+                              <div className={styles.boundaryFact}>
+                                <span className={styles.boundaryFactLabel}>Methodology</span>
+                                <span className={styles.boundaryFactValue}>{boundary.methodology}</span>
+                              </div>
+                            )}
+                            {boundary.geographic && (
+                              <div className={styles.boundaryFact}>
+                                <span className={styles.boundaryFactLabel}>Geographic</span>
+                                <span className={styles.boundaryFactValue}>{boundary.geographic}</span>
+                              </div>
+                            )}
+                            {boundary.temporal && (
+                              <div className={styles.boundaryFact}>
+                                <span className={styles.boundaryFactLabel}>Temporal</span>
+                                <span className={styles.boundaryFactValue}>{boundary.temporal}</span>
+                              </div>
+                            )}
+                            {typeof boundary.internalCoherence === "number" && (
+                              <div className={styles.boundaryFact}>
+                                <span className={styles.boundaryFactLabel}>Internal Coherence</span>
+                                <span className={styles.boundaryFactValue}>
+                                  {boundary.internalCoherence.toFixed(boundary.internalCoherence === 1 ? 2 : 3)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          {boundaryFindingMap.get(boundary.id)?.length ? (
+                            <div className={styles.boundaryFindingCards}>
+                              {boundaryFindingMap.get(boundary.id)!.map((finding: any) => {
+                                const findingVerdict = percentageToClaimVerdict(finding.truthPercentage, finding.confidence);
+                                const displayFindingPct = isFalseBand(findingVerdict) ? 100 - finding.truthPercentage : finding.truthPercentage;
+                                return (
+                                  <div key={`${boundary.id}-${finding.claimId}`} className={styles.boundaryFindingCard}>
+                                    <div className={styles.boundaryFindingCardHeader}>
+                                      <span className={styles.boundaryFindingClaimId}>{finding.claimId}</span>
+                                      <span className={styles.boundaryFindingClaimText}>{finding.claimText || finding.claimId}</span>
+                                    </div>
+                                    <div className={styles.boundaryFindingCardGrid}>
+                                      <div className={styles.boundaryFindingMetric}>
+                                        <span className={styles.boundaryFindingMetricLabel}>Truth</span>
+                                        <span className={styles.boundaryFindingMetricValue}>{formatVerdictText(displayFindingPct, findingVerdict)}</span>
+                                      </div>
+                                      <div className={styles.boundaryFindingMetric}>
+                                        <span className={styles.boundaryFindingMetricLabel}>Confidence</span>
+                                        <span className={styles.boundaryFindingMetricValue}>{getConfidenceTierLabel(finding.confidence)}</span>
+                                      </div>
+                                      <div className={styles.boundaryFindingMetric}>
+                                        <span className={styles.boundaryFindingMetricLabel}>Direction</span>
+                                        <span className={styles.boundaryFindingMetricValue}>{finding.evidenceDirection}</span>
+                                      </div>
+                                      <div className={styles.boundaryFindingMetric}>
+                                        <span className={styles.boundaryFindingMetricLabel}>Evidence</span>
+                                        <span className={styles.boundaryFindingMetricValue}>{finding.evidenceCount} items</span>
+                                      </div>
+                                    </div>
+                                    <div className={styles.boundaryFindingBar}>
+                                      <div className={styles.boundaryFindingBarFill} style={{ width: `${displayFindingPct}%` }} />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                          {navigateTo && typeof boundary.evidenceCount === "number" && boundary.evidenceCount > 0 && (
+                            <button
+                              type="button"
+                              className={styles.boundaryJumpButton}
+                              onClick={() => navigateTo(`BF_${boundary.id}`)}
+                            >
+                              Open evidence for this boundary
+                            </button>
+                          )}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </ReportSection>
               )}
             </>
           )}
-        </div>
-      )}
 
-      {/* Sources Tab */}
-      {tab === "sources" && hasV22Data && (
-        <div className={styles.contentCard}>
-          <SourcesPanel
-            searchQueries={searchQueries}
-            sources={sources}
-            researchStats={researchStats}
-            searchProvider={result?.meta?.searchProvider}
-            searchProviders={result?.meta?.searchProviders}
-            onNavigate={navigateTo}
-          />
-          {/* NEW v2.6.29: Display evidence with counter-evidence marking */}
-          {evidenceItems.length > 0 && (
-            <EvidencePanel
-              evidenceItems={evidenceItems}
-              disableGrouping={pipelineVariant === "monolithic_dynamic"}
+          <ReportSection title="Sources" className={styles.reportSurfaceCard}>
+            <SourcesPanel
+              searchQueries={searchQueries}
+              sources={sources}
+              researchStats={researchStats}
+              searchProvider={result?.meta?.searchProvider}
+              searchProviders={result?.meta?.searchProviders}
               onNavigate={navigateTo}
-              sourceUrlToIndex={sourceUrlToIndex}
+              showHeader={false}
+              showStats={false}
+              showQueries={false}
             />
+          </ReportSection>
+          {searchQueries.length > 0 && (
+            <ReportSection title="Search Queries" className={styles.reportSurfaceCard}>
+              <SourcesPanel
+                searchQueries={searchQueries}
+                sources={sources}
+                researchStats={researchStats}
+                searchProvider={result?.meta?.searchProvider}
+                searchProviders={result?.meta?.searchProviders}
+                onNavigate={navigateTo}
+                showHeader={false}
+                showStats={false}
+                showSources={false}
+              />
+            </ReportSection>
           )}
+          {evidenceItems.length > 0 && (
+            <ReportSection title="Evidence Items" className={styles.reportSurfaceCard}>
+              <EvidencePanel
+                evidenceItems={evidenceItems}
+                disableGrouping={pipelineVariant === "monolithic_dynamic"}
+                onNavigate={navigateTo}
+                sourceUrlToIndex={sourceUrlToIndex}
+                showHeader={false}
+                showStats={false}
+              />
+            </ReportSection>
+          )}
+
         </div>
       )}
 
@@ -1216,7 +1600,7 @@ export default function JobPage() {
         )
       )}
 
-      {/* Events Tab */}
+      {/* Events Tab — shown during analysis or for admins */}
       {tab === "events" && (
         <div className={styles.contentCard}>
           <ul className={styles.eventsList}>
@@ -1226,28 +1610,17 @@ export default function JobPage() {
                 <b className={getEventLevelClass(e.level)}>{e.level}</b> — {e.message}
               </li>
             ))}
-            {events.length === 0 && <li style={{ color: "#666" }}>No events yet.</li>}
+            {events.length === 0 && <li style={{ color: "var(--text-muted, #666)" }}>No events yet.</li>}
           </ul>
-          {job && <PromptViewer jobId={job.jobId} />}
-          {job && <ConfigViewer jobId={job.jobId} />}
         </div>
       )}
 
       {/* Admin key login modal — shown when cancelling without a stored key */}
       {showLoginModal && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.5)", zIndex: 1000,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: 12, padding: 32, maxWidth: 400, width: "90%",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-          }}>
-            <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 600 }}>Admin Login Required</h2>
-            <p style={{ margin: "0 0 24px", color: "#666", fontSize: 14 }}>
-              Enter your admin key to cancel this job.
-            </p>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <h2 className={styles.modalTitle}>Admin Login Required</h2>
+            <p className={styles.modalSubtitle}>Enter your admin key to cancel this job.</p>
             <form onSubmit={handleLoginSubmit}>
               <input
                 type="password"
@@ -1256,41 +1629,29 @@ export default function JobPage() {
                 placeholder="Enter FH_ADMIN_KEY"
                 autoFocus
                 disabled={isVerifyingKey}
-                style={{
-                  width: "100%", padding: "10px 12px", border: "1px solid #ddd",
-                  borderRadius: 8, fontSize: 14, boxSizing: "border-box", marginBottom: 12,
-                }}
+                className={styles.modalInput}
               />
               {loginError && (
-                <p style={{ color: "#d32f2f", fontSize: 13, margin: "0 0 12px" }}>{loginError}</p>
+                <p className={styles.modalError}>{loginError}</p>
               )}
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className={styles.modalActions}>
                 <button
                   type="submit"
                   disabled={isVerifyingKey || !loginKeyInput.trim()}
-                  style={{
-                    flex: 1, padding: "10px 16px", backgroundColor: "#ff9800",
-                    color: "#fff", border: "none", borderRadius: 8, fontSize: 14,
-                    fontWeight: 600, cursor: isVerifyingKey ? "wait" : "pointer",
-                    opacity: (isVerifyingKey || !loginKeyInput.trim()) ? 0.6 : 1,
-                  }}
+                  className={styles.modalSubmitBtn}
                 >
                   {isVerifyingKey ? "Verifying..." : "Login & Cancel"}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowLoginModal(false); setLoginKeyInput(""); setLoginError(null); }}
-                  style={{
-                    padding: "10px 16px", backgroundColor: "#f5f5f5", color: "#333",
-                    border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
-                    fontWeight: 500, cursor: "pointer",
-                  }}
+                  className={styles.modalCancelBtn}
                 >
                   Cancel
                 </button>
               </div>
             </form>
-            <p style={{ margin: "16px 0 0", color: "#999", fontSize: 12 }}>
+            <p className={styles.modalHint}>
               Key is set via the <code>FH_ADMIN_KEY</code> environment variable.
             </p>
           </div>
@@ -1367,8 +1728,13 @@ function TIGERScorePanel({ tigerScore }: { tigerScore?: TIGERScore }) {
       </div>
 
       <div className={styles.tigerReasoning}>
-        <strong>Auditor's Reasoning:</strong><br />
-        {tigerScore.reasoning}
+        <strong>Auditor's Reasoning:</strong>
+        <ExpandableText
+          text={tigerScore.reasoning}
+          bare
+          className={styles.tigerReasoningText}
+          modalTitle="TIGERScore Reasoning"
+        />
       </div>
 
       {tigerScore.warnings?.length > 0 && (
@@ -1388,21 +1754,53 @@ function TIGERScorePanel({ tigerScore }: { tigerScore?: TIGERScore }) {
 // Sources Panel
 // ============================================================================
 
-function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, searchProviders, onNavigate }: { searchQueries: any[]; sources: any[]; researchStats: any; searchProvider?: string; searchProviders?: string; onNavigate?: (refId: string) => void }) {
+function SourcesPanel({
+  searchQueries,
+  sources,
+  researchStats,
+  searchProvider,
+  searchProviders,
+  onNavigate,
+  showHeader = true,
+  showStats = true,
+  showQueries = true,
+  showSources = true,
+}: {
+  searchQueries: any[];
+  sources: any[];
+  researchStats: any;
+  searchProvider?: string;
+  searchProviders?: string;
+  onNavigate?: (refId: string) => void;
+  showHeader?: boolean;
+  showStats?: boolean;
+  showQueries?: boolean;
+  showSources?: boolean;
+}) {
   // Build query text → index lookup for "Found via" navigation
   const queryToIndex = onNavigate ? new Map(searchQueries.map((sq: any, i: number) => [sq.query, i])) : null;
   return (
     <div>
-      <div className={styles.sourcesHeader}>
-        <h3 className={styles.sourcesTitle}>🔍 Research Summary</h3>
-        {(searchProviders || searchProvider) && (
+      {showHeader && (
+        <div className={styles.sourcesHeader}>
+          <h3 className={`${styles.sourcesTitle} ${styles.sectionHeader}`}>Sources</h3>
+          {(searchProviders || searchProvider) && (
+            <span className={styles.providerBadge}>
+              via {searchProviders || searchProvider}
+            </span>
+          )}
+        </div>
+      )}
+
+      {!showHeader && (searchProviders || searchProvider) && (
+        <div className={styles.sourcesHeaderMeta}>
           <span className={styles.providerBadge}>
             via {searchProviders || searchProvider}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
-      {researchStats && (
+      {showStats && researchStats && (
         <div className={styles.statsGrid}>
           <StatCard label="Web Searches" value={researchStats.totalSearches} icon="🔍" />
           <StatCard label="LLM Calls" value={researchStats.llmCalls || "N/A"} icon="🤖" />
@@ -1417,7 +1815,7 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
         </div>
       )}
 
-      {searchQueries.length > 0 ? (
+      {showQueries && (searchQueries.length > 0 ? (
         <details className={styles.details}>
           <summary className={styles.summary}>
             <span>Search Queries Performed ({searchQueries.length})</span>
@@ -1444,10 +1842,12 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
         <div className={styles.noDataWarning}>
           No search queries recorded.
         </div>
-      )}
+      ))}
 
-      <h4 className={styles.sectionTitle} style={{ marginTop: 24 }}>Sources Fetched</h4>
-      {sources.length > 0 ? (
+      {showSources && (
+        <>
+          <h4 className={styles.sectionTitle} style={{ marginTop: showQueries ? 24 : 0 }}>Sources</h4>
+          {sources.length > 0 ? (
         <div className={styles.sourcesList}>
           {sources.map((s: any, i: number) => (
             <div key={i} id={`nav-src_${i}`} className={`${styles.sourceItem} ${s.fetchSuccess ? styles.sourceItemSuccess : styles.sourceItemFailed}`}>
@@ -1485,6 +1885,8 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
           No sources were fetched.
         </div>
       )}
+        </>
+      )}
     </div>
   );
 }
@@ -1493,7 +1895,21 @@ function SourcesPanel({ searchQueries, sources, researchStats, searchProvider, s
 // Evidence Panel - NEW v2.6.29: Display extracted evidence with counter-evidence marking
 // ============================================================================
 
-function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sourceUrlToIndex }: { evidenceItems: any[]; disableGrouping?: boolean; onNavigate?: (refId: string) => void; sourceUrlToIndex?: Map<string, number> }) {
+function EvidencePanel({
+  evidenceItems,
+  disableGrouping = false,
+  onNavigate,
+  sourceUrlToIndex,
+  showHeader = true,
+  showStats = true,
+}: {
+  evidenceItems: any[];
+  disableGrouping?: boolean;
+  onNavigate?: (refId: string) => void;
+  sourceUrlToIndex?: Map<string, number>;
+  showHeader?: boolean;
+  showStats?: boolean;
+}) {
   if (!evidenceItems || evidenceItems.length === 0) return null;
 
   // Group evidence items by claim direction and source type
@@ -1569,23 +1985,25 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
 
   return (
     <div className={styles.evidencePanel}>
-      <h3 className={styles.evidencePanelTitle}>📊 Evidence Analysis</h3>
+      {showHeader && <h3 className={`${styles.evidencePanelTitle} ${styles.sectionHeader}`}>Evidence Items</h3>}
 
-      <div className={styles.evidenceStats}>
+      {showStats && (
+        <div className={styles.evidenceStats}>
         <span className={styles.evidenceStatSupporting}>✅ {supportingEvidence.length} supporting</span>
         <span className={styles.evidenceStatContradicting}>❌ {contradictingEvidence.length} contradicting</span>
         <span className={styles.evidenceStatOpposite}>🔄 {oppositeClaimEvidence.length} opposite claim</span>
         <span className={styles.evidenceStatContrarian}>🔍 {contrarianEvidence.length} contrarian</span>
         <span className={styles.evidenceStatNeutral}>➖ {neutralEvidence.length} neutral</span>
-      </div>
+        </div>
+      )}
 
       {/* NEW: Contrarian Evidence - triggered by pool imbalance */}
       {contrarianEvidence.length > 0 && (
-        <div className={styles.evidenceSection}>
-          <h4 className={styles.evidenceSectionTitle} style={{ color: '#ed8936' }}>
-            🔍 Contrarian Evidence ({contrarianEvidence.length})
+        <div className={`${styles.evidenceSection} ${styles.evidenceSectionContrarian}`}>
+          <h4 className={`${styles.evidenceSectionTitle} ${styles.evidenceSectionTitleContrarian}`}>
+            Contrarian Evidence ({contrarianEvidence.length})
           </h4>
-          <p style={{ fontSize: '12px', color: '#666', fontStyle: 'italic', marginBottom: '12px' }}>
+          <p className={styles.evidenceSectionNote}>
             These evidence items were gathered specifically to address a detected imbalance in the evidence pool.
           </p>
           <div className={styles.evidenceList}>
@@ -1596,9 +2014,9 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
 
       {/* NEW v2.6.29: Opposite Claim Evidence - displayed prominently */}
       {oppositeClaimEvidence.length > 0 && (
-        <div className={styles.evidenceSection}>
-          <h4 className={styles.evidenceSectionTitle} style={{ color: '#1565c0' }}>
-            🔄 Evidence for Opposite Claim ({oppositeClaimEvidence.length})
+        <div className={`${styles.evidenceSection} ${styles.evidenceSectionOpposite}`}>
+          <h4 className={`${styles.evidenceSectionTitle} ${styles.evidenceSectionTitleOpposite}`}>
+            Evidence for Opposite Claim ({oppositeClaimEvidence.length})
           </h4>
           <p className={styles.oppositeClaimNote}>
             These evidence items were found by searching for the opposite of the user's claim.
@@ -1613,9 +2031,9 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
       )}
 
       {contradictingEvidence.length > 0 && (
-        <div className={styles.evidenceSection}>
-          <h4 className={styles.evidenceSectionTitle} style={{ color: '#c62828' }}>
-            ⚠️ Counter-Evidence ({contradictingEvidence.length})
+        <div className={`${styles.evidenceSection} ${styles.evidenceSectionContradicting}`}>
+          <h4 className={`${styles.evidenceSectionTitle} ${styles.evidenceSectionTitleContradicting}`}>
+            Contradicting Evidence ({contradictingEvidence.length})
           </h4>
           <div className={styles.evidenceList}>
             {renderEvidenceList(contradictingEvidence, styles.evidenceItemContradicting)}
@@ -1624,9 +2042,9 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
       )}
 
       {supportingEvidence.length > 0 && (
-        <div className={styles.evidenceSection}>
-          <h4 className={styles.evidenceSectionTitle} style={{ color: '#2e7d32' }}>
-            ✓ Supporting Evidence ({supportingEvidence.length})
+        <div className={`${styles.evidenceSection} ${styles.evidenceSectionSupporting}`}>
+          <h4 className={`${styles.evidenceSectionTitle} ${styles.evidenceSectionTitleSupporting}`}>
+            Supporting Evidence ({supportingEvidence.length})
           </h4>
           <div className={styles.evidenceList}>
             {renderEvidenceList(supportingEvidence, styles.evidenceItemSupporting)}
@@ -1635,9 +2053,9 @@ function EvidencePanel({ evidenceItems, disableGrouping = false, onNavigate, sou
       )}
 
       {neutralEvidence.length > 0 && (
-        <details className={styles.details}>
+        <details className={`${styles.details} ${styles.evidenceSection} ${styles.evidenceSectionNeutral}`}>
           <summary className={styles.summary}>
-            <span style={{ color: '#757575' }}>Background evidence ({neutralEvidence.length})</span>
+            <span className={styles.evidenceSectionTitleNeutral}>Neutral / Context Evidence ({neutralEvidence.length})</span>
           </summary>
           <div className={styles.evidenceList}>
             {renderEvidenceList(neutralEvidence, styles.evidenceItemNeutral)}
@@ -1811,7 +2229,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
           <span className={styles.answerBadge} style={{ backgroundColor: overallColor.bg, color: overallColor.text }}>
             {overallColor.icon} {getVerdictLabel(overallVerdict)}
           </span>
-          <span className={styles.answerPercentage}>{formatVerdictText(displayOverallPct, overallVerdict)} <span style={{ fontSize: 12, color: "#999" }} title={`${overallConfidence}%`}>· {getConfidenceTierLabel(overallConfidence)}</span></span>
+          <span className={styles.answerPercentage}>{formatVerdictText(displayOverallPct, overallVerdict)} <span style={{ fontSize: 12, color: "var(--text-muted)" }} title={`${overallConfidence}%`}>· {getConfidenceTierLabel(overallConfidence)}</span></span>
         </div>
 
         {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
@@ -1837,13 +2255,13 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
 
         {verdictReason && (
           <div className={styles.contextSummary}>
-            <div className={styles.contextSummaryText}>{verdictReason}</div>
+            <ExpandableText text={verdictReason} threshold={400} modalTitle="Verdict Summary" bare className={styles.contextSummaryText} />
           </div>
         )}
 
         {/* v2.6.38: Explain unreliable average */}
         {isUnreliableAverage && (
-          <div className={styles.calibrationNote} style={{ background: '#fff4e6', borderLeft: '3px solid #ff9800' }}>
+          <div className={styles.calibrationNote} style={{ background: "var(--color-accent-amber-bg)", borderLeft: "3px solid var(--color-accent-amber-border)" }}>
             <span className={styles.calibrationText}>
               ℹ️ This average may not be meaningful because contexts answer different questions. Focus on individual context verdicts below.
             </span>
@@ -1854,7 +2272,7 @@ function MultiContextStatementBanner({ verdictSummary, contexts, articleThesis, 
         {(verdictSummary?.shortAnswer || verdictSummary?.summary) &&
          (verdictSummary?.shortAnswer || verdictSummary?.summary) !== verdictReason && (
           <div className={styles.shortAnswerBox} style={{ borderLeftColor: overallColor.border }}>
-            <div className={styles.shortAnswerText}>{verdictSummary.shortAnswer || verdictSummary.summary}</div>
+            <ExpandableText text={verdictSummary.shortAnswer || verdictSummary.summary} threshold={400} modalTitle="Assessment" bare className={styles.shortAnswerText} />
           </div>
         )}
 
@@ -1979,7 +2397,7 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
           <span className={styles.contextAnswerBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(contextVerdict)}
           </span>
-          <span className={styles.contextPercentage}>{formatVerdictText(displayContextPct, contextVerdict)} <span style={{ fontSize: 11, color: "#999" }} title={`${contextAnswer.confidence}%`}>· {getConfidenceTierLabel(contextAnswer.confidence)}</span></span>
+          <span className={styles.contextPercentage}>{formatVerdictText(displayContextPct, contextVerdict)} <span style={{ fontSize: 11, color: "var(--text-muted)" }} title={`${contextAnswer.confidence}%`}>· {getConfidenceTierLabel(contextAnswer.confidence)}</span></span>
         </div>
 
         <div className={`${styles.factorsSummary} ${contestedCount > 0 ? styles.factorsSummaryContested : styles.factorsSummaryNormal}`}>
@@ -1996,7 +2414,7 @@ function ContextCard({ contextAnswer, context }: { contextAnswer: any; context: 
         {contextAnswer.shortAnswer && (
           <div className={styles.contextShortAnswer}>
             <span className={styles.contextAssessmentLabel}>Assessment:</span>{" "}
-            {contextAnswer.shortAnswer}
+            <ExpandableText text={contextAnswer.shortAnswer} threshold={300} modalTitle="Assessment" bare />
           </div>
         )}
 
@@ -2049,7 +2467,7 @@ function KeyFactorRow({ factor, showContestation = true }: { factor: any; showCo
             <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>
           )}
         </div>
-        <div className={styles.keyFactorExplanation}>{factor.explanation}</div>
+        <ExpandableText text={factor.explanation || ""} threshold={300} modalTitle="Key Factor" bare className={styles.keyFactorExplanation} />
         {showContestation && factor.isContested && factor.contestedBy && (
           <div className={styles.keyFactorContestation}>
             {hasEvidenceBasedContestation ? "Contested by" : "Doubted by"}: {factor.contestedBy}
@@ -2075,12 +2493,17 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
   const articleConfidence = articleAnalysis?.confidence ?? articleAnalysis?.articleConfidence ?? verdictSummary?.confidence ?? fallbackConfidence ?? 0;
   const articleVerdictLabel = percentageToArticleVerdict(articleTruth, articleConfidence);
   const color = ARTICLE_VERDICT_COLORS[articleVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
+  const accentColor = getVerdictAccentColor(articleVerdictLabel, color);
 
   const isPseudo = pseudoscienceAnalysis?.isPseudoscience || articleAnalysis?.isPseudoscience;
   const pseudoCategories = pseudoscienceAnalysis?.categories || articleAnalysis?.pseudoscienceCategories || [];
 
   const articlePct = articleTruth;
   const displayArticlePct = isFalseBand(articleVerdictLabel) ? 100 - articlePct : articlePct;
+  const articleDisplayRange = getDisplayRange(
+    articleAnalysis?.truthPercentageRange ?? verdictSummary?.truthPercentageRange,
+    articleVerdictLabel,
+  );
 
   // Get the verdict reason - try multiple sources (include summary as fallback)
   const verdictReason = articleAnalysis?.articleVerdictReason || articleAnalysis?.verdictExplanation || verdictSummary?.nuancedAnswer || verdictSummary?.summary || "";
@@ -2096,7 +2519,7 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
     : (verdictSummary?.keyFactors || []);
 
   return (
-    <div className={styles.articleBanner} style={{ borderColor: color.border }}>
+    <div className={styles.articleBanner} style={{ borderColor: accentColor }}>
       <div className={styles.articleBannerContent}>
         {/* v2.6.25: Unified verdict label */}
         <div className={styles.articleVerdictHeader}>
@@ -2106,8 +2529,8 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
           <span className={styles.articleVerdictBadge} style={{ backgroundColor: color.bg, color: color.text }}>
             {color.icon} {getVerdictLabel(articleVerdictLabel)}
           </span>
-          <span className={styles.articlePercentage}>
-            {formatVerdictText(displayArticlePct, articleVerdictLabel)} <span style={{ fontSize: 12, color: "#999" }} title={`${articleConfidence}%`}>· {getConfidenceTierLabel(articleConfidence)}</span>
+          <span className={styles.verdictConfidenceTag}>
+            Confidence: {getConfidenceTierLabel(articleConfidence)}
           </span>
           {isPseudo && (
             <span className={styles.pseudoscienceBadge}>
@@ -2115,6 +2538,8 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
             </span>
           )}
         </div>
+
+        <VerdictMeter percentage={displayArticlePct} range={articleDisplayRange} fillColor={accentColor} />
 
         {articleAnalysis?.claimsAverageTruthPercentage !== undefined && (
           <div
@@ -2133,15 +2558,15 @@ function ArticleVerdictBanner({ articleAnalysis, verdictSummary, fallbackThesis,
 
         {/* Verdict Explanation */}
         {verdictReason && (
-          <div className={styles.verdictReasonBox} style={{ borderLeftColor: color.border }}>
-            {verdictReason}
+          <div className={styles.verdictReasonBox} style={{ borderLeftColor: accentColor }}>
+            <ExpandableText text={verdictReason} threshold={400} modalTitle="Verdict Explanation" bare />
           </div>
         )}
 
         {/* Short Answer / Assessment */}
         {shortAnswer && (
-          <div className={styles.shortAnswerBox} style={{ borderLeftColor: color.border }}>
-            <div className={styles.shortAnswerText}>{shortAnswer}</div>
+          <div className={styles.shortAnswerBox} style={{ borderLeftColor: accentColor }}>
+            <ExpandableText text={shortAnswer} threshold={400} modalTitle="Assessment" bare className={styles.shortAnswerText} />
           </div>
         )}
 
@@ -2186,7 +2611,7 @@ function ArticleSummaryBox({ articleSummary }: { articleSummary: any }) {
         <b>📄 Input Summary</b>
       </div>
       <div className={styles.articleSummaryContent}>
-        <div className={styles.articleSummaryValue}>{decodeHtmlEntities(articleSummary.mainArgument)}</div>
+        <ExpandableText text={decodeHtmlEntities(articleSummary.mainArgument)} threshold={400} modalTitle="Input Summary" bare className={styles.articleSummaryValue} />
       </div>
     </div>
   );

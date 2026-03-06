@@ -15,62 +15,64 @@ import { ExpandableText } from "./ExpandableText";
 interface Props {
   narrative: VerdictNarrative;
   hideHeadline?: boolean;
-  beforeLimitations?: ReactNode;
+  hideKeyFinding?: boolean;
+  qualityDetails?: ReactNode;
+  supplementalMeta?: ReactNode;
   onNavigate?: (refId: string) => void;
 }
 
-export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, beforeLimitations, onNavigate }: Props) {
-  const { headline, evidenceBaseSummary, keyFinding, boundaryDisagreements, limitations } = narrative;
+export function VerdictNarrativeDisplay({ narrative, hideHeadline = false, hideKeyFinding = false, qualityDetails, supplementalMeta, onNavigate }: Props) {
+  const { evidenceBaseSummary, boundaryDisagreements, limitations } = narrative;
 
   return (
     <section className={styles.narrative}>
-      {!hideHeadline && (
-        <div className={styles.headline}>
-          <span className={styles.headlineIcon}>📋</span>
-          <h3 className={styles.headlineText}>{headline}</h3>
+      {evidenceBaseSummary && (
+        <div className={styles.block}>
+          <div className={styles.blockLabel}>Evidence Base</div>
+          <ExpandableText text={evidenceBaseSummary} className={styles.blockText} modalTitle="Evidence Base" bare onNavigate={onNavigate} />
         </div>
       )}
-
-      <div className={styles.keyFinding}>
-        <ExpandableText text={keyFinding} className={styles.findingText} modalTitle="Key Finding" bare onNavigate={onNavigate} />
-      </div>
-
-      <h3 className={styles.qualityTitle}>Quality</h3>
 
       {limitations && (
-        <div className={styles.limitationsStandalone}>
-          <h4 className={styles.limitationsHeading}>Limitations</h4>
-          <ExpandableText text={limitations} className={styles.limitationsText} modalTitle="Limitations" bare onNavigate={onNavigate} />
+        <div className={styles.block}>
+          <div className={styles.blockLabel}>Limitations</div>
+          <ExpandableText text={limitations} className={styles.blockText} modalTitle="Limitations" bare onNavigate={onNavigate} />
         </div>
       )}
 
-      <details className={styles.qualityDetails}>
-        <summary className={styles.qualitySummary}>
-          <span>Quality Details</span>
-        </summary>
+      {supplementalMeta ? <div className={styles.metaRow}>{supplementalMeta}</div> : null}
 
-        <div className={styles.evidenceBase}>
-          <strong className={styles.label}>Evidence Base:</strong>
-          <ExpandableText text={evidenceBaseSummary} className={styles.value} modalTitle="Evidence Base" bare onNavigate={onNavigate} />
-        </div>
+      {boundaryDisagreements && boundaryDisagreements.length > 0 && (
+        <details className={styles.tensionDetails}>
+          <summary className={styles.tensionSummary}>
+            <span>Cross-Boundary Tensions ({boundaryDisagreements.length})</span>
+          </summary>
+          <div className={styles.tensionList}>
+            {boundaryDisagreements.map((disagreement, i) => (
+              <div key={i} className={styles.tensionItem}>
+                <ExpandableText
+                  text={disagreement}
+                  className={styles.blockText}
+                  modalTitle={`Cross-Boundary Tension ${i + 1}`}
+                  bare
+                  onNavigate={onNavigate}
+                />
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
 
-        {boundaryDisagreements && boundaryDisagreements.length > 0 && (
-          <details className={styles.details}>
-            <summary className={styles.summary}>
-              <span>Cross-Boundary Tensions ({boundaryDisagreements.length})</span>
-            </summary>
-            <ul className={styles.list}>
-              {boundaryDisagreements.map((disagreement, i) => (
-                <li key={i} className={styles.listItem}>
-                  {disagreement}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-
-        {beforeLimitations}
-      </details>
+      {qualityDetails && (
+        <details className={styles.qualityDetails}>
+          <summary className={styles.qualitySummary}>
+            <span>Quality Details</span>
+          </summary>
+          <div className={styles.qualityDetailsContent}>
+            {qualityDetails}
+          </div>
+        </details>
+      )}
     </section>
   );
 }

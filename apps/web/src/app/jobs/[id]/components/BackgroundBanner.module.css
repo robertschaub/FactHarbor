@@ -1,6 +1,6 @@
 .banner {
-  border-left: 3px solid #94a3b8;
-  background: #f8fafc;
+  border-left: 3px solid var(--border-subtle, #94a3b8);
+  background: var(--bg-surface, #f8fafc);
   padding: 10px 12px;
   border-radius: 6px;
   margin: 12px 0;
@@ -9,11 +9,11 @@
 .label {
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-secondary, #334155);
   margin-bottom: 4px;
 }
 
 .text {
   font-size: 14px;
-  color: #1f2937;
+  color: var(--text-primary, #1f2937);
 }
