@@ -3693,3 +3693,88 @@ ext phase).
 **Warnings:** This intentionally disables dark-mode styling for these two components to satisfy the request for bright surfaces.
 **For next agent:** If dark mode is reintroduced later, keep tooltips/cards readable and avoid dark blocks in jobs detail unless explicitly requested.
 **Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Review screen report visual redesign plan
+**Task:** Review `Docs/WIP/2026-03-06_Screen_Report_Visual_Redesign.md` against the current `jobs/[id]` implementation and the user's visual requirements.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Flagged that the plan repeats multiple behaviors already present in `page.tsx` and related components, especially tab visibility logic, direction-based evidence sections, and several existing `ExpandableText` usages.
+- Flagged that the plan understates implementation scope for verdict redesign because the screen report has multiple verdict render paths, not one isolated banner block.
+- Flagged that the proposed verdict theme token example hardcodes a green verdict surface, which conflicts with the stated requirement to preserve current verdict coloring across verdict states.
+**Open items:** Update the WIP plan before implementation so it focuses on genuine gaps rather than already-shipped behavior.
+**Warnings:** If implementation follows the current plan literally, it will likely spend time reworking already-correct behavior and may leave inconsistent verdict UIs across pipeline paths.
+**For next agent:** Re-baseline the plan against `apps/web/src/app/jobs/[id]/page.tsx`, `components/VerdictNarrative.tsx`, `components/ExpandableText.tsx`, and `utils/methodologyGrouping.ts` before coding.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Re-review revised screen report visual redesign plan
+**Task:** Re-review the revised `Docs/WIP/2026-03-06_Screen_Report_Visual_Redesign.md` and verify whether it addresses the prior five review findings.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the revised plan now explicitly removes already-implemented tab/admin visibility and evidence grouping work from scope.
+- Confirmed the revised plan now accounts for multiple verdict render paths and switches verdict styling to the existing per-verdict palette instead of a single shared verdict tint.
+- Confirmed the revised plan narrows remaining long-text work to the actual outstanding TIGERScore reasoning field.
+**Open items:** None blocking from the prior review set.
+**Warnings:** No separate companion implementation-plan file was found under `Docs/WIP`; only the revised redesign plan file was present during review.
+**For next agent:** Implement against the revised plan, but keep an eye on legacy dynamic/multi-context verdict styling during visual QA because those paths are intentionally scoped as CSS-only rather than structural rewrites.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Implement screen report visual redesign
+**Task:** Execute the revised screen-report visual redesign plan for `apps/web/src/app/jobs/[id]/`, preserving existing report logic while upgrading verdict presentation, section structure, dark-mode handling, and mobile actions.
+**Files touched:** `apps/web/src/app/globals.css`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/[id]/components/VerdictNarrative.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added shared theme variables for spacing/radius/amber accents in `globals.css` and converted verdict-narrative warning colors to use theme variables.
+- Redesigned the CB and legacy article verdict banners to use the same compact meter-bar pattern with existing verdict palettes; kept multi-context/dynamic paths as lighter-touch styling per plan.
+- Added responsive action controls: desktop flat toolbar plus mobile `<details>` action menu, while preserving existing tab/admin visibility rules.
+- Applied section-header styling to major report sections, upgraded claim/evidence cards, and made TIGERScore reasoning use `ExpandableText`.
+**Open items:** Visual QA in-browser is still needed for CB, legacy article, multi-context, and mobile layouts.
+**Warnings:** `npm -w apps/web run build` passed. `npm test` still fails on `test/unit/lib/drain-runner-pause.integration.test.ts` with a 5s timeout in the full-suite run, but the same test passes when run in isolation (`npm -w apps/web exec vitest run test/unit/lib/drain-runner-pause.integration.test.ts`), indicating an existing/flaky suite-level issue unrelated to the UI changes.
+**For next agent:** If you continue from here, start with browser QA on `/jobs/[id]` across light/dark and mobile widths, then decide whether the flaky full-suite timeout needs separate test-stability work.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Restructure screen report to match HTML report layout
+**Task:** Continue the screen-report redesign by replacing the remaining legacy screen-report structure with the HTML report grouping/order and flatter report styling.
+**Files touched:** `apps/web/src/app/globals.css`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/[id]/components/MethodologySubGroup.module.css`, `apps/web/src/app/jobs/[id]/components/CoverageMatrix.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Reworked the report tab section taxonomy to align with the HTML report: `Sources`, `Search Queries`, `Evidence Items`, and a combined `ClaimAssessmentBoundaries` section instead of the old standalone `Coverage Matrix` and `Boundary Legend` sections.
+- Added an inline boundary directory with per-boundary accordions and evidence jump buttons so the screen report exposes the same boundary-level structure as the HTML export rather than only showing a matrix/legend pair.
+- Moved the report surface to report-specific light/dark theme variables and flattened nested cards/lists so claims, evidence groups, sources, matrix rows, and methodology groups read as content inside one report system instead of stacked dashboard widgets.
+**Open items:** Browser visual QA is still needed on `/jobs/[id]`, especially for CB reports on desktop/mobile and for how the boundary section feels with real large datasets.
+**Warnings:** `npm -w apps/web run build` passed after the restructuring pass. I did not run the full `npm test` suite again because the last recorded full-suite result already had an unrelated flaky timeout in `test/unit/lib/drain-runner-pause.integration.test.ts`.
+**For next agent:** Start by visually checking a CB job in both light and dark system modes. If the matrix still feels too prominent, the next reduction step is to remove it entirely and keep only the boundary accordions plus per-claim boundary findings.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Tighten report grouping and export controls
+**Task:** Refine the screen report after visual review by grouping the verdict narrative more like the HTML report, collapsing export actions under one menu, and neutralizing limitations styling.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/[id]/components/VerdictNarrative.tsx`, `apps/web/src/app/jobs/[id]/components/VerdictNarrative.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Replaced the mixed desktop/mobile action layout with a single `Export` details menu for `Print`, `HTML`, `Markdown`, and `JSON`, while leaving admin `Delete` as its own button.
+- Flattened `VerdictNarrativeDisplay` into one continuous structured narrative block with headline, evidence base, key finding, cross-boundary tensions, optional injected notes, and limitations shown in sequence instead of under a separate quality accordion.
+- Changed limitations styling from amber warning treatment to the same neutral report-box language used by the surrounding narrative content.
+**Open items:** Browser QA is still needed to confirm the exact grouping feel against the reference screenshot, especially whether the CB narrative section title should stay `Analysis Notes` or be renamed later.
+**Warnings:** `npm -w apps/web run build` passed after these adjustments. I still have not rerun the known flaky full `npm test` suite.
+**For next agent:** Compare the current CB narrative block directly against the HTML report screenshot. If the grouping still feels off, the next likely change is at the section-title/order level, not the component internals.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Consolidate input/background and restore grouped quality section
+**Task:** Refine the screen report so `Background` lives under `Input`, the verdict banner uses the HTML-style short finding line, and narrative notes/gates/diagnostics are regrouped under one collapsible `Quality` section.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/[id]/components/VerdictNarrative.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Moved `BackgroundBanner` into the `Input` section and removed the separate top-level `Background` section from the report flow.
+- Changed the CB verdict banner to show the narrative `keyFinding` (fallback `headline`) directly under the `VERDICT` label and removed the duplicate narrative sentence below the meter.
+- Restored a single collapsible `Quality` section that defaults closed unless warnings/gates indicate an error state; it now owns analysis notes, fallback/warning notes, quality gates, and admin prompt/config diagnostics.
+**Open items:** Visual QA is still needed to confirm the new `Quality` collapse behavior and whether the nested order inside `Quality` matches the preferred screenshot exactly.
+**Warnings:** `npm -w apps/web run build` passed after the regrouping pass. The known flaky full-suite `npm test` timeout was still not rerun.
+**For next agent:** If another pass is needed, focus on exact ordering and wording inside `Quality`, not on adding more top-level sections.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Separate analysis notes from quality controls and enrich boundary accordions
+**Task:** Fix the regression where analysis-note content was mixed into the quality controls, and add missing HTML-style boundary metrics to the boundary accordions.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/[id]/components/VerdictNarrative.tsx`, `apps/web/src/app/jobs/[id]/components/VerdictNarrative.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Kept `Quality` as the outer collapsible section, but restored a distinct `Analysis Notes` content block inside it so the narrative fields (`headline`, `Evidence Base`, `Key Finding`, `Cross-Boundary Tensions`, `Limitations`) are readable again instead of being blended with gates/diagnostics.
+- Restored a dedicated `Quality Details` foldout inside the narrative component and moved fallback notes + quality gates into that foldout, leaving developer prompt/config diagnostics as their own separate detail block.
+- Added boundary-finding summary cards to each boundary accordion by aggregating `claimVerdicts[].boundaryFindings[]` per boundary. This surfaces the missing truth/confidence/direction/evidence metrics that the HTML report already showed.
+**Open items:** Browser QA is still needed for the exact verdict-banner wording and whether the `Quality Details` ordering should sit before or after `Limitations`.
+**Warnings:** `npm -w apps/web run build` passed after this recovery pass. The known flaky full-suite test timeout was not rerun.
+**For next agent:** If another visual pass is needed, focus first on the verdict banner copy hierarchy and second on whether the new boundary summary cards need stronger visual differentiation by direction.
+**Learnings:** no

@@ -33,6 +33,23 @@ Multi agent collaboration shall be possible all the time, so that another agent 
 
 ## Tasks Pending:
 ---
+As Senior Developer and Interaction Designer, 
+The HTML reports are much nicer than the screen reports. 
+Change the screen reports to be visually structured as the HTML reports."
+Specifics:
+Keep "FactHarbor Report" title and toolbars
+Support system default color mode (bright + dark)
+Use current UI verdict coloring
+At verdict box: no huge % font, no small graphic indicator
+Merge [Summary] and [Sources] into one [Report] tab (like HTML)
+Only show [Json] for admins
+For non-admins, hide [Events] when job successfully completed
+Hide [Report] when it's the only tab
+Long texts with [Show More] boxes
+Support cross-links and back button
+Keep "Background", "Analysis Notes", "Developer diagnostics"
+Make sure everything show nicely also on mobile phones
+---
 As Senior Developer; 
 When the user reads a specific report, support the user to navigate between the elements in the UI, so that all items that are logically linked can be navigated. Cross links between items in "Summary" and "Sources" tabs shall also be supported. Maybe to support this well some layout changes would be needed - propose if needed.
 Also support to navigate back and forth again.

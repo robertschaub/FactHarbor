@@ -65,7 +65,17 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### 3. Backlog Proposals (3 files)
+### 3. UI & Presentation (1 file)
+
+#### Screen Report Visual Redesign (2026-03-06)
+**Status:** Ready for Review
+- **Document:** [2026-03-06_Screen_Report_Visual_Redesign.md](2026-03-06_Screen_Report_Visual_Redesign.md)
+- **Scope:** Align screen report visual structure with HTML report quality. Verdict banner, spacing, dark mode audit, mobile responsiveness, tab visibility, ExpandableText.
+- **Next Step:** Team review. Approve then implement in 10 phases.
+
+---
+
+### 4. Backlog Proposals (3 files)
 
 #### API Cost Reduction Strategy (2026-02-13)
 **Status:** 🧭 Proposal — Key items: Batch API, NPO/OSS credits
