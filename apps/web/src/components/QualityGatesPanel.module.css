@@ -10,20 +10,22 @@
   --color-error-light: #fca5a5;
   --color-error-bg: rgba(239, 68, 68, 0.05);
 
-  border-radius: 8px;
+  border-radius: 0;
   margin-bottom: 16px;
-  overflow: hidden;
-  border: 1px solid var(--border-color, #e5e7eb);
+  overflow: visible;
+  border: 0;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
 .panelPassed {
   border-color: #86efac;
-  background: #dcfce7;
+  background: transparent;
 }
 
 .panelFailed {
   border-color: var(--color-error-light);
-  background: linear-gradient(to right, var(--color-error-bg), transparent);
+  background: transparent;
 }
 
 .header {
@@ -31,7 +33,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 8px 14px;
+  padding: 10px 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -42,11 +44,11 @@
 }
 
 .header:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: transparent;
 }
 
 .headerPassed:hover {
-  background: #dcfce7;
+  background: transparent;
 }
 
 .headerLeft {
@@ -94,7 +96,7 @@
 }
 
 .content {
-  padding: 0 16px 16px;
+  padding: 0 0 12px;
 }
 
 .summaryGrid {
@@ -114,9 +116,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px;
-  background: var(--bg-secondary, #f9fafb);
-  border-radius: 6px;
+  padding: 8px 6px;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
 .statValue {

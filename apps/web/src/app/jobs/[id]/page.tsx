@@ -1243,7 +1243,7 @@ export default function JobPage() {
 
       {job ? (
         job.status !== "SUCCEEDED" && (
-          <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard} ${styles.reportMetaCard}`}>
+          <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard}`}>
             {jobMetaContent}
             {/* Job Action Buttons */}
             {(job.status === "QUEUED" || job.status === "RUNNING") && (
@@ -1331,6 +1331,20 @@ export default function JobPage() {
                 const cbUiPalette = getVerdictUiPalette(cbVerdictLabel, cbColor);
                 const cbAccent = getVerdictAccentColor(cbVerdictLabel, cbColor);
                 const displayCbPct = isFalseBand(cbVerdictLabel) ? 100 - result.truthPercentage : result.truthPercentage;
+                const clampedDisplayCbPct = Math.max(0, Math.min(100, displayCbPct));
+                let roundedDisplayCbPct = Math.round(clampedDisplayCbPct);
+                // Preserve side-of-50 signal while avoiding decimal display.
+                if (clampedDisplayCbPct > 50 && roundedDisplayCbPct === 50) roundedDisplayCbPct = 51;
+                if (clampedDisplayCbPct < 50 && roundedDisplayCbPct === 50) roundedDisplayCbPct = 49;
+                const cbMixedSplitLabel = `${roundedDisplayCbPct}/${100 - roundedDisplayCbPct}`;
+                const cbTruthAssessmentValue = cbVerdictLabel === "MIXED"
+                  ? `${cbMixedSplitLabel} split`
+                  : formatVerdictText(displayCbPct, cbVerdictLabel);
+                const cbTruthAssessmentHelperText = cbVerdictLabel === "MIXED"
+                  ? `${roundedDisplayCbPct}% true`
+                  : isFalseBand(cbVerdictLabel)
+                    ? `${Math.round(result.truthPercentage)}% true`
+                    : undefined;
                 const cbDisplayRange = getDisplayRange(result.truthPercentageRange, cbVerdictLabel);
                 const verdictHeadline = result.verdictNarrative?.headline || "";
                 const verdictKeyFinding = result.verdictNarrative?.keyFinding || "";
@@ -1363,11 +1377,11 @@ export default function JobPage() {
                         <div className={styles.articleBannerMetrics}>
                           <VerdictMetricBlock
                             label="Truth Assessment"
-                            value={formatVerdictText(displayCbPct, cbVerdictLabel)}
+                            value={cbTruthAssessmentValue}
                             percentage={displayCbPct}
                             range={cbDisplayRange}
                             fillColor={cbAccent}
-                            helperText={isFalseBand(cbVerdictLabel) ? `${Math.round(result.truthPercentage)}% true` : undefined}
+                            helperText={cbTruthAssessmentHelperText}
                           />
                           <VerdictMetricBlock
                             label="Confidence"
@@ -2988,7 +3002,7 @@ function ClaimCard({
           )}
           {claim.contradictingEvidenceIds?.length > 0 && (
             <div className={styles.evidenceRefGroup}>
-              <span className={styles.evidenceRefLabel}>Contridicting Evidence:</span>
+              <span className={styles.evidenceRefLabel}>Contradicting Evidence:</span>
               <div className={styles.evidenceRefIds}>
                 {claim.contradictingEvidenceIds.map((id: string) => (
                   <button key={id} className={styles.navLink} style={{ fontSize: 12 }} onClick={() => onNavigate(id)}>{id}</button>

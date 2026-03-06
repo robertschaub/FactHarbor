@@ -3180,7 +3180,8 @@ ext phase).
 - Added named CORS policy allowlisting http://localhost:3000 + optional FH_CORS_ORIGIN origins; enabled before controller mapping.
 - Guarded Swagger/SwaggerUI to development environments only.
 - Added [RequestSizeLimit(65_536)] and per-IP rate-limiting (5 req/min) on /v1/analyze using ASP.NET rate limiter middleware/policy.
-- Upgraded retrieval size enforcement to streaming cumulative-byte checks for chunked/no-Content-Length responses (removed unsafe esponse.text()/arrayBuffer() direct buffering paths).
+- Upgraded retrieval size enforcement to streaming cumulative-byte checks for chunked/no-Content-Length responses (removed unsafe 
+esponse.text()/arrayBuffer() direct buffering paths).
 - Implemented SQLITE_BUSY-only retry loop in TryClaimInviteSlotAsync with 3 retries and 50/100/200ms backoff, plus contention exhaustion signaling mapped to HTTP 503 in analyze/retry flows.
 **Open items:**
 - Consolidated report items outside this requested set (e.g., invite code in URL query for /v1/analyze/status, public inputValue exposure policy, SSE connection caps) remain as separate decisions/work.
@@ -3777,4 +3778,16 @@ ext phase).
 **Open items:** Browser QA is still needed for the exact verdict-banner wording and whether the `Quality Details` ordering should sit before or after `Limitations`.
 **Warnings:** `npm -w apps/web run build` passed after this recovery pass. The known flaky full-suite test timeout was not rerun.
 **For next agent:** If another visual pass is needed, focus first on the verdict banner copy hierarchy and second on whether the new boundary summary cards need stronger visual differentiation by direction.
+**Learnings:** no
+---
+### 2026-03-06 | Senior Developer | Codex (GPT-5) | Flatten remaining boxed quality/tension blocks
+**Task:** Remove old boxed card styling still visible in `Cross-Boundary Tensions` and `Quality` subsections so these areas match the newer flat report style.
+**Files touched:** `apps/web/src/app/jobs/[id]/components/VerdictNarrative.module.css`, `apps/web/src/components/QualityGatesPanel.module.css`, `apps/web/src/components/FallbackReport.module.css`, `apps/web/src/app/jobs/[id]/page.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Flattened `VerdictNarrative` details blocks by removing inset backgrounds/rounded card shells and switching to top/bottom separators with simple row dividers.
+- Flattened `QualityGatesPanel` container/header from filled card to transparent section with separators, while preserving status coloring in text/icons.
+- Flattened `FallbackReport` notes/operational detail wrappers and `Developer diagnostics` wrapper so collapsed lines no longer look like nested boxed widgets.
+**Open items:** Visual QA in browser is still needed to confirm spacing balance on desktop and mobile after the separator-based styling.
+**Warnings:** Lint check (`ReadLints`) on modified files reported no issues.
+**For next agent:** If you need one more polish pass, tune only spacing (`padding`/`margin`) in these same CSS modules first; structure and behavior do not need further JSX changes.
 **Learnings:** no

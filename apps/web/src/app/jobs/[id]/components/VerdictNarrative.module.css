@@ -84,27 +84,34 @@
 .tensionList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 0;
+  margin-top: 6px;
 }
 
 .tensionItem {
-  padding: 14px 16px;
-  background: var(--bg-surface2, #f3f4f6);
-  border-left: 3px solid var(--border-subtle, #94a3b8);
-  border-radius: 6px;
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 0;
+}
+
+.tensionList .tensionItem:last-child {
+  border-bottom: 0;
 }
 
 .tensionDetails {
-  margin-bottom: 22px;
-  border: 1px solid var(--border-subtle, #e5e7eb);
-  border-radius: 6px;
-  overflow: hidden;
+  margin-bottom: 18px;
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 0;
+  overflow: visible;
 }
 
 .tensionSummary {
-  padding: 12px 16px;
-  background: var(--bg-surface, #f9fafb);
+  padding: 10px 0;
+  background: transparent;
   cursor: pointer;
   font-weight: 700;
   color: var(--link);
@@ -130,14 +137,16 @@ details[open] > .tensionSummary::before {
 
 .qualityDetails {
   margin-top: 16px;
-  border: 1px solid var(--border-subtle, #e5e7eb);
-  border-radius: 6px;
-  overflow: hidden;
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 0;
+  overflow: visible;
 }
 
 .qualitySummary {
-  padding: 12px 16px;
-  background: var(--bg-surface, #f9fafb);
+  padding: 10px 0;
+  background: transparent;
   cursor: pointer;
   font-weight: 600;
   color: var(--text-muted, #666);
@@ -164,12 +173,12 @@ details[open] > .tensionSummary::before {
 }
 
 .qualitySummary:hover {
-  background: var(--bg-surface2, #f3f4f6);
+  background: transparent;
 }
 
 details[open] > .qualitySummary {
-  border-bottom: 1px solid var(--border-subtle, #e5e7eb);
-  background: var(--bg-surface2, #f3f4f6);
+  border-bottom: 0;
+  background: transparent;
 }
 
 details[open] > .qualitySummary::before {
@@ -177,7 +186,7 @@ details[open] > .qualitySummary::before {
 }
 
 .qualityDetailsContent {
-  padding: 14px 0 0;
+  padding: 8px 0 0;
 }
 
 .evidenceBase {

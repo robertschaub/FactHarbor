@@ -212,15 +212,20 @@
 .boundaryDirectory {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 0;
+  margin-top: 10px;
 }
 
 .boundaryAccordion {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.boundaryDirectory .boundaryAccordion:first-child {
+  border-top: 1px solid var(--border-subtle);
 }
 
 .boundarySummary {
@@ -228,10 +233,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 10px 0;
   cursor: pointer;
   list-style: none;
-  background: var(--bg-surface);
+  background: transparent;
 }
 
 .boundarySummary::-webkit-details-marker {
@@ -273,12 +278,12 @@
 }
 
 .boundaryBody {
-  padding: 0 14px 14px;
-  border-top: 1px solid var(--border-subtle);
+  padding: 0 0 10px;
+  border-top: 0;
 }
 
 .boundaryDescription {
-  margin: 12px 0 0;
+  margin: 6px 0 0;
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.6;
@@ -288,7 +293,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 14px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .boundaryFact {
@@ -875,16 +880,17 @@ details[open] > .providerInfoSummary::before {
 }
 
 .devWarningPanel {
-  border: 1px solid var(--border);
-  border-left: 4px solid #64748b;
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  overflow: hidden;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
   font-size: 13px;
 }
 
 .devWarningSummary {
-  padding: 12px 14px;
+  padding: 10px 0;
   color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
@@ -918,14 +924,14 @@ details[open] > .devWarningSummary::before {
 
 .devWarningHint {
   margin: 0;
-  padding: 0 14px;
+  padding: 0;
   color: var(--text-secondary);
   font-size: 13px;
 }
 
 .devWarningList {
   margin: 0;
-  padding: 10px 14px 14px 30px;
+  padding: 8px 0 12px 18px;
 }
 
 .devWarningItem {
@@ -3618,6 +3624,32 @@ details[open] > .devWarningSummary::before {
   }
   .exportMenuList {
     box-shadow: 0 14px 28px rgba(0,0,0,0.35);
+  }
+
+  /* Tangential details */
+  .tangentialDetails {
+    background-color: var(--bg-surface2);
+    border-color: var(--border);
+  }
+  .tangentialSummary {
+    color: var(--text-muted);
+  }
+
+  /* TIGERScore title */
+  .tigerTitle {
+    color: var(--text-primary);
+  }
+
+  /* Verdict meter track */
+  .meterContainer {
+    background-color: var(--bg-surface2);
+    border-color: var(--border);
+  }
+  .meterValueLabel {
+    color: var(--text-primary);
+  }
+  .meterLabels {
+    color: var(--text-muted);
   }
 }
 

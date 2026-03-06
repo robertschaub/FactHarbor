@@ -144,16 +144,17 @@
 
 /* Notes-only: collapsed single-line <details> */
 .notesOnlyDetails {
-  border: 1px solid var(--border, #cbd5e1);
-  border-left: 4px solid #93c5fd;
-  border-radius: 8px;
-  background: var(--bg-surface, #f8fafc);
-  overflow: hidden;
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #dbe3f0);
+  border-bottom: 1px solid var(--border-subtle, #dbe3f0);
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
   font-size: 0.875rem;
 }
 
 .notesOnlySummary {
-  padding: 12px 14px;
+  padding: 10px 0;
   color: var(--text-secondary, #334155);
   cursor: pointer;
   user-select: none;
@@ -180,18 +181,19 @@
 }
 
 .fallbackNote {
-  margin: 0 14px 12px;
-  padding: 10px 12px;
-  background: var(--bg-card, #ffffff);
-  border: 1px solid var(--border-subtle, #dbe3f0);
-  border-radius: 6px;
+  margin: 0 0 12px;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle, #dbe3f0);
+  border-radius: 0;
   font-size: 0.875rem;
   color: var(--text-secondary, #475569);
 }
 
 .notesOnlyDetails .warningsSection {
   margin: 0;
-  padding: 0 14px 14px;
+  padding: 0 0 14px;
 }
 
 .notesOnlyDetails .warningItem {
@@ -322,10 +324,12 @@
 /* Operational notes — admin only, expandable <details> */
 .operationalDetails {
   margin-top: 0.75rem;
-  padding: 6px 10px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  background: #eff6ff;
+  padding: 6px 0;
+  border: 0;
+  border-top: 1px solid var(--border-subtle, #dbe3f0);
+  border-bottom: 1px solid var(--border-subtle, #dbe3f0);
+  border-radius: 0;
+  background: transparent;
   font-size: 0.75rem;
 }
 
