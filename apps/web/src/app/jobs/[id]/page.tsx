@@ -834,14 +834,17 @@ export default function JobPage() {
       {(isCBSchema && claimBoundaries.length > 2) || (!isCBSchema && hasMultipleContexts) ? (
         <div className={narrativeStyles.metaLine}>
           {isCBSchema && claimBoundaries.length > 2 && (
-            <Badge
-              bg="#fff3e0"
-              color="#e65100"
-              title="A Boundary is a distinct analytical frame that groups compatible evidence approaches for assessing the claim. Different boundaries can reach different findings."
-              modalTitle="ClaimAssessmentBoundaries"
-            >
-              🔀 BOUNDARIES: {claimBoundaries.length}
-            </Badge>
+            <>
+              <span className={narrativeStyles.metaLabel}>Claim Assessment Boundaries:</span>
+              <Badge
+                bg="#fff3e0"
+                color="#e65100"
+                title="A Boundary is a distinct analytical frame that groups compatible evidence approaches for assessing the claim. Different boundaries can reach different findings."
+                modalTitle="Claim Assessment Boundaries"
+              >
+                🔀 {claimBoundaries.length}
+              </Badge>
+            </>
           )}
           {!isCBSchema && hasMultipleContexts && (
             <Badge bg="#fff3e0" color="#e65100">🔀 {contexts.length} CONTEXTS</Badge>
@@ -870,6 +873,56 @@ export default function JobPage() {
       f.isContested &&
       (f.factualBasis === "established" || f.factualBasis === "disputed")
   );
+  const jobMetaContent = job ? (
+    <>
+      <div className={styles.metaInlineRow}>
+        <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.slice(0, 10)}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
+        <span className={styles.metaInlineItem}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></span>
+        {hasV22Data && (
+          <span className={styles.metaInlineItem}><b>Schema:</b> <code>{schemaVersion}</code></span>
+        )}
+        {pipelineVariant === "monolithic_dynamic" && (
+          <Badge bg="#fce4ec" color="#c2185b" title="Legacy dynamic pipeline">
+            ⚗️ Dynamic (legacy)
+          </Badge>
+        )}
+      </div>
+      {job.status !== "SUCCEEDED" && (
+        <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
+      )}
+      {hasV22Data && (
+        <div className={styles.badgesRow}>
+          {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code><CopyButton text={result.meta.analysisId} title="Copy Analysis ID" className={styles.metaCopyButton} /></span>}
+          {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
+          {result.meta.isPseudoscience && (
+            <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
+              🔬 PSEUDOSCIENCE
+            </Badge>
+          )}
+          {(() => {
+            const totalSearches =
+              researchStats?.totalSearches ??
+              result?.meta?.dynamicStats?.searches ??
+              null;
+            return typeof totalSearches === "number" && totalSearches > 0 ? (
+              <Badge bg="#e8f5e9" color="#2e7d32" title={result.meta.searchProvider || "Web Search"}>
+                🔍 {totalSearches} searches
+              </Badge>
+            ) : null;
+          })()}
+          {pipelineFallback && requestedPipelineVariant !== pipelineVariant && (
+            <Badge
+              bg="#fff3e0"
+              color="#e65100"
+              title={fallbackReason ? `Fallback reason: ${fallbackReason}` : "Pipeline fallback occurred"}
+            >
+              ↩️ Fallback
+            </Badge>
+          )}
+        </div>
+      )}
+    </>
+  ) : null;
 
   // Helper: Generate short name from title or input
   const getShortName = (): string => {
@@ -1113,12 +1166,27 @@ export default function JobPage() {
                   </button>
                 )}
                 {job?.status === "SUCCEEDED" && (
+                  <>
+                  {jobMetaContent && (
+                    <details className={styles.metaMenu}>
+                      <summary className={styles.metaMenuSummary} title="Report metadata" aria-label="Report metadata">
+                        <span className={styles.metaMenuSummaryText}>ID</span>
+                      </summary>
+                      <div className={styles.metaMenuList}>
+                        {jobMetaContent}
+                      </div>
+                    </details>
+                  )}
                   <details ref={exportMenuRef} className={styles.exportMenu}>
-                  <summary className={styles.exportMenuSummary}>Export</summary>
+                  <summary className={styles.exportMenuSummary} title="Export and print" aria-label="Export and print">
+                    <span className={styles.exportMenuIcon} aria-hidden="true">🖨</span>
+                    <span className={styles.exportMenuSummaryText}>Export</span>
+                  </summary>
                   <div className={styles.exportMenuList}>
                     {renderExportButtons(styles.exportMenuButton)}
                   </div>
                 </details>
+                </>
                 )}
               </div>
             )}
@@ -1140,54 +1208,7 @@ export default function JobPage() {
 
       {job ? (
         <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard} ${styles.reportMetaCard}`}>
-          <div className={styles.metaInlineRow}>
-            <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.slice(0, 10)}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
-            <span className={styles.metaInlineItem}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></span>
-            {hasV22Data && (
-              <span className={styles.metaInlineItem}><b>Schema:</b> <code>{schemaVersion}</code></span>
-            )}
-            {pipelineVariant === "monolithic_dynamic" && (
-              <Badge bg="#fce4ec" color="#c2185b" title="Legacy dynamic pipeline">
-                ⚗️ Dynamic (legacy)
-              </Badge>
-            )}
-          </div>
-          {job.status !== "SUCCEEDED" && (
-            <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
-          )}
-          {hasV22Data && (
-            <div className={styles.badgesRow}>
-              {result.meta.analysisId && <span>— <b>ID:</b> <code>{result.meta.analysisId}</code><CopyButton text={result.meta.analysisId} title="Copy Analysis ID" className={styles.metaCopyButton} /></span>}
-              {/* v2.6.31: Removed QUESTION badge - Input Neutrality: no separate paths for questions */}
-              {hasEvidenceBasedContestations && <Badge bg="#fce4ec" color="#c2185b">⚠️ CONTESTED</Badge>}
-              {result.meta.isPseudoscience && (
-                <Badge bg="#ffebee" color="#c62828" title={`Pseudoscience patterns: ${result.meta.pseudoscienceCategories?.join(", ") || "detected"}`}>
-                  🔬 PSEUDOSCIENCE
-                </Badge>
-              )}
-              {(() => {
-                const totalSearches =
-                  researchStats?.totalSearches ??
-                  result?.meta?.dynamicStats?.searches ??
-                  null;
-                return typeof totalSearches === "number" && totalSearches > 0 ? (
-                  <Badge bg="#e8f5e9" color="#2e7d32" title={result.meta.searchProvider || "Web Search"}>
-                    🔍 {totalSearches} searches
-                  </Badge>
-                ) : null;
-              })()}
-              {pipelineFallback && requestedPipelineVariant !== pipelineVariant && (
-                <Badge
-                  bg="#fff3e0"
-                  color="#e65100"
-                  title={fallbackReason ? `Fallback reason: ${fallbackReason}` : "Pipeline fallback occurred"}
-                >
-                  ↩️ Fallback
-                </Badge>
-              )}
-            </div>
-          )}
-
+          {jobMetaContent}
           {/* Job Action Buttons */}
           {(job.status === "QUEUED" || job.status === "RUNNING") && (
             <div style={{ marginTop: 16 }}>
@@ -1275,13 +1296,10 @@ export default function JobPage() {
                 const verdictKeyFinding = result.verdictNarrative?.keyFinding || "";
                 const confidencePct = Math.max(0, Math.min(100, Math.round(result.confidence ?? 0)));
                 return (
-                  <ReportSection title="Verdict" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
+                  <ReportSection title="OVERALL VERDICT" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
                     <div className={styles.articleBanner} style={{ borderColor: cbAccent }}>
                       <div className={styles.articleBannerContent}>
                         <div className={styles.articleBannerPrimary}>
-                          <div className={styles.articleVerdictHeader}>
-                            <span className={styles.articleVerdictLabel}>OVERALL VERDICT</span>
-                        </div>
                         <div
                           className={styles.articleVerdictHero}
                           style={{
@@ -1341,7 +1359,7 @@ export default function JobPage() {
 
               {/* Legacy pipelines: use ArticleVerdictBanner */}
               {!isCBSchema && (hasMultipleContexts && contextAnswers.length > 0 ? (
-                <ReportSection title="Verdict" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
+                <ReportSection title="OVERALL VERDICT" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
                   <MultiContextStatementBanner
                     verdictSummary={verdictSummary}
                     contexts={contexts}
@@ -1354,7 +1372,7 @@ export default function JobPage() {
               ) : (
                 /* Single-context OR multi-context with missing context answers: show ArticleVerdictBanner as fallback */
                 (articleAnalysis || verdictSummary) && (
-                  <ReportSection title="Verdict" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
+                  <ReportSection title="OVERALL VERDICT" className={`${styles.reportSurfaceCard} ${styles.verdictSection}`}>
                     <ArticleVerdictBanner
                       articleAnalysis={articleAnalysis}
                       verdictSummary={verdictSummary}
@@ -1401,10 +1419,9 @@ export default function JobPage() {
               )}
 
               {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
-                <ReportSection title="Atomic Claims Checked" className={`${styles.reportSurfaceCard} ${styles.claimsSection}`}>
+                <section className={styles.claimsSectionList}>
                   {/* CB pipeline: flat list with inline BoundaryFindings */}
                   {claimVerdicts.map((cv: any) => {
-                    // CB pipeline: inject claimText from understanding.atomicClaims
                     const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
                     const matched = atomicClaims.find((ac: any) => ac.id === cv.claimId);
                     const enrichedCv = matched
@@ -1434,11 +1451,11 @@ export default function JobPage() {
                       </ul>
                     </details>
                   )}
-                </ReportSection>
+                </section>
               )}
 
               {isCBSchema && claimBoundaries.length > 0 && (
-                <ReportSection title="ClaimAssessmentBoundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection}`}>
+                <ReportSection title="Claim Assessment Boundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection}`}>
                   {result?.coverageMatrix && claimVerdicts.length > 0 && (
                     <CoverageMatrixDisplay
                       matrix={result.coverageMatrix}
@@ -2699,7 +2716,7 @@ function TransformedInputBox({
   return (
     <div className={styles.transformedInputBox}>
       <div className={styles.transformedInputHeader}>
-        <b>🔄 Analyzed As</b>
+        <span className={styles.transformedInputTitle}>Analyzed As</span>
         <span className={styles.transformedInputHint}>
           (normalized for consistent analysis)
         </span>
@@ -2815,8 +2832,12 @@ function ClaimCard({
 
   return (
     <div id={claim.claimId ? `nav-claim-${claim.claimId}` : undefined} className={`${styles.claimCard} ${hasEvidenceBasedContestation ? styles.claimCardContested : ""} ${isTangential ? styles.claimCardTangential : ""}`} style={{ borderLeftColor: isTangential ? "#9e9e9e" : color.border }}>
+      <div className={styles.claimEyebrow}>
+        <span className={styles.claimEyebrowLabel}>Atomic Claim</span>
+        <span className={styles.claimEyebrowId}>{claim.claimId}</span>
+      </div>
       <div className={styles.claimText}>
-        <span className={styles.claimId}>{claim.claimId}</span> {claim.claimText}
+        {claim.claimText}
       </div>
       <div className={styles.claimCardHeader}>
         {claim.category && <Badge bg="#f3f4f6" color="#4b5563">{claim.category.toUpperCase()}</Badge>}

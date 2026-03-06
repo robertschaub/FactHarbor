@@ -1,19 +1,22 @@
 .banner {
-  border-left: 3px solid var(--border-subtle, #94a3b8);
-  background: var(--bg-surface, #f8fafc);
-  padding: 10px 12px;
-  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   margin: 12px 0;
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary, #334155);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  color: var(--link);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .text {
-  font-size: 14px;
-  color: var(--text-primary, #1f2937);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary, #374151);
 }

@@ -29,8 +29,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -43,7 +43,7 @@
 }
 
 .backToListIcon {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1;
   color: currentColor;
 }
@@ -514,6 +514,11 @@
   display: block;
 }
 
+.metaMenu {
+  display: none;
+}
+
+.metaMenuSummary,
 .exportMenuSummary {
   list-style: none;
   cursor: pointer;
@@ -523,10 +528,19 @@
   background: var(--bg-card);
   color: var(--text-primary);
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
+.metaMenuSummary::-webkit-details-marker,
 .exportMenuSummary::-webkit-details-marker {
   display: none;
+}
+
+.exportMenuIcon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .exportMenuList {
@@ -542,6 +556,12 @@
   background: var(--bg-card);
   box-shadow: 0 10px 24px rgba(0,0,0,0.14);
   z-index: 20;
+}
+
+.metaMenuList {
+  composes: exportMenuList;
+  right: calc(100% + 8px);
+  min-width: 260px;
 }
 
 .exportMenuButton {
@@ -1783,34 +1803,18 @@ details[open] > .devWarningSummary::before {
 
 /* Article Verdict Banner */
 .articleBanner {
-  border: 2px solid;
-  border-radius: var(--radius-card);
-  margin-bottom: 20px;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
-    var(--bg-card);
-  box-shadow: var(--shadow-card);
+  margin-bottom: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
 }
 
 .articleBannerContent {
-  padding: 18px;
+  padding: 0;
 }
 
 .articleBannerPrimary {
   min-width: 0;
-}
-
-.articleVerdictHeader {
-  margin-bottom: 8px;
-}
-
-.articleVerdictLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .articleVerdictHero {
@@ -2202,6 +2206,12 @@ details[open] > .devWarningSummary::before {
   margin-top: 24px;
 }
 
+.claimsSectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .claimsSectionTitle {
   margin: 0 0 12px;
 }
@@ -2229,17 +2239,33 @@ details[open] > .devWarningSummary::before {
   box-shadow: none;
 }
 
+.claimEyebrow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.claimEyebrowLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--link);
+}
+
+.claimEyebrowId {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--link);
+}
+
 .claimCardHeader {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
   flex-wrap: wrap;
-}
-
-.claimId {
-  font-weight: 600;
-  color: var(--text-muted);
 }
 
 .claimLabel {
@@ -2818,11 +2844,10 @@ details[open] > .devWarningSummary::before {
 
 .transformedInputBox {
   margin-top: 12px;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  border-left: 3px solid #6c757d;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }
 
 .transformedInputHeader {
@@ -2830,19 +2855,27 @@ details[open] > .devWarningSummary::before {
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.transformedInputTitle {
+  color: var(--link);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .transformedInputHint {
-  font-size: 0.75rem;
-  color: #6c757d;
+  font-size: 12px;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .transformedInputContent {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #495057;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
 }
 
 /* Collapsible Text Component */
@@ -3350,14 +3383,16 @@ details[open] > .devWarningSummary::before {
   align-items: center;
   gap: 4px 8px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
 }
 .evidenceRefLabel {
   font-weight: 500;
-  color: #374151;
+  color: var(--text-secondary);
 }
 .evidenceRefSeparator {
   color: #d1d5db;
@@ -3509,17 +3544,24 @@ details[open] > .devWarningSummary::before {
 /* ============================================================
    MOBILE RESPONSIVE — 480px breakpoint
    ============================================================ */
-@media (max-width: 480px) {
-  /* Page header: keep back button + title in one line, title shrinks */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 0 8px 20px;
+  }
+
   .pageHeader {
     gap: 8px;
+    align-items: flex-start;
   }
 
   .pageTitle {
     font-size: 20px;
+    flex-basis: 100%;
+    order: 2;
   }
 
   .backToList {
+    order: 1;
     width: 42px;
     height: 42px;
     font-size: 13px;
@@ -3529,6 +3571,79 @@ details[open] > .devWarningSummary::before {
     font-size: 20px;
   }
 
+  .contentCard {
+    padding: 12px 10px;
+  }
+
+  .reportSection {
+    border-radius: 10px;
+  }
+
+  .reportSectionHeader,
+  .reportSectionToggle {
+    padding: 10px 12px;
+  }
+
+  .reportSectionBody {
+    padding: 12px 10px 10px;
+  }
+
+  .jobInfoCard {
+    padding: 10px 8px;
+    border-radius: 10px;
+  }
+
+  .reportMetaCard {
+    padding: 10px 8px;
+  }
+
+  .metaInlineRow {
+    gap: 8px 12px;
+  }
+
+  .reportMetaCard {
+    display: none;
+  }
+
+  .metaMenu {
+    display: block;
+    position: relative;
+  }
+
+  .metaMenuSummary,
+  .exportMenuSummary {
+    width: 42px;
+    height: 42px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .metaMenuSummaryText,
+  .exportMenuSummaryText {
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .metaMenuSummary::before {
+    content: "ID";
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .exportMenuIcon {
+    font-size: 18px;
+  }
+
+  .metaMenuList {
+    right: calc(100% + 8px);
+    left: auto;
+    top: calc(100% + 8px);
+    min-width: min(320px, calc(100vw - 24px));
+  }
+}
+
+@media (max-width: 480px) {
   /* Verdict row: stack badge and meta vertically */
   .articleVerdictRow {
     flex-direction: column;
@@ -3551,13 +3666,6 @@ details[open] > .devWarningSummary::before {
     order: 3;
   }
 
-  /* Reduce card padding */
-  .contentCard {
-    padding: 12px 10px;
-  }
-  .reportSectionBody {
-    padding: 14px 12px 12px;
-  }
   .boundaryFacts {
     grid-template-columns: 1fr;
   }
@@ -3628,11 +3736,6 @@ details[open] > .devWarningSummary::before {
     margin-top: 4px;
     display: flex;
     gap: 8px;
-  }
-
-  /* Job info card */
-  .jobInfoCard {
-    padding: 10px;
   }
 
   /* Badges row wraps tightly */

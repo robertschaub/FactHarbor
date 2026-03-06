@@ -20,15 +20,8 @@ export function InputBanner({ inputType, inputValue }: InputBannerProps) {
 
   return (
     <div className={styles.banner} role="note" aria-label="Input">
-      <div className={styles.text}>
-        {showTypeLabel ? (
-          <>
-            <span className={styles.typeLabel}>{typeLabel}:</span>
-            <br />
-          </>
-        ) : null}
-        {text}
-      </div>
+      {showTypeLabel ? <div className={styles.sectionLabel}>{typeLabel}</div> : null}
+      <div className={styles.text}>{text}</div>
     </div>
   );
 }

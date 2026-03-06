@@ -1,9 +1,18 @@
 .banner {
-  border-left: 3px solid var(--border-subtle, #94a3b8);
-  background: var(--bg-surface, #f8fafc);
-  padding: 14px 16px;
-  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   margin: 12px 0;
+}
+
+.sectionLabel {
+  margin-bottom: 8px;
+  color: var(--link);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .text {
@@ -11,12 +20,4 @@
   font-weight: 600;
   color: var(--text-primary, #1f2937);
   line-height: 1.55;
-}
-
-.typeLabel {
-  color: var(--text-secondary, #334155);
-  font-weight: 600;
-  font-size: 15px;
-  display: inline-block;
-  margin-bottom: 4px;
 }
