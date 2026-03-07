@@ -31,9 +31,14 @@ export function EvidenceScopeTooltip({
     if (wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const tooltipMaxHeight = Math.min(320, viewportHeight * 0.7);
       const tooltipWidth = Math.min(400, Math.max(260, viewportWidth - 16));
       const left = Math.max(8, Math.min(rect.left, viewportWidth - tooltipWidth - 8));
-      const top = Math.max(8, rect.bottom + 4);
+      const top = Math.min(
+        Math.max(8, rect.bottom + 4),
+        viewportHeight - tooltipMaxHeight - 8
+      );
       setTooltipPos({ top, left });
     }
   };

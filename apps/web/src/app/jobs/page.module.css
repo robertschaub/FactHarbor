@@ -163,25 +163,67 @@
   border: 1px solid var(--border);
 }
 
-.hideButton {
+.cardMenuWrap {
+  position: relative;
+}
+
+.cardMenuBtn {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 18px;
-  padding: 4px;
-  border-radius: 4px;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1;
-  opacity: 0.7;
-  transition: opacity 0.15s;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
 }
 
-.hideButton:hover {
+.jobCard:hover .cardMenuBtn {
   opacity: 1;
 }
 
-.hideButton:disabled {
+.cardMenuBtn:hover {
+  background: var(--bg-surface2);
+  opacity: 1;
+}
+
+.cardMenuBtn:disabled {
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 0.3;
+}
+
+.cardMenuDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 160px;
+  max-height: min(300px, 60vh);
+  overflow-y: auto;
+}
+
+.cardMenuItem {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.cardMenuItem:hover {
+  background: var(--bg-surface);
 }
 
 .statusIndicator {

@@ -788,11 +788,15 @@ export default function JobPage() {
   const researchStats = result?.researchStats;
   const evidenceItems = result?.evidenceItems || [];
 
-  // Wrap navigateTo to resolve BF_ (boundary) refs to first evidence item on Sources tab
+  // Wrap navigateTo to resolve BF_ (boundary) refs to first evidence item for that boundary.
+  // Skips items not currently in the DOM (e.g. inside a collapsed MethodologySubGroup).
+  // scrollToAndHighlight will open any closed <details> ancestors automatically.
   const navigateTo = useCallback((refId: string) => {
     if (refId.startsWith("BF_")) {
       const bId = refId.slice(3);
-      const ev = evidenceItems.find((e: any) => e.claimBoundaryId === bId);
+      const ev = evidenceItems
+        .filter((e: any) => e.claimBoundaryId === bId && e.id)
+        .find((e: any) => document.getElementById(`nav-ev-${e.id}`));
       if (ev?.id) { rawNavigateTo(ev.id); return; }
     }
     rawNavigateTo(refId);

@@ -60,6 +60,15 @@ export default function JobsPage() {
   const [isVisible, setIsVisible] = useState(true);
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [togglingHide, setTogglingHide] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+  // Close card menu on any outside click
+  useEffect(() => {
+    if (!menuOpenId) return;
+    const close = () => setMenuOpenId(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [menuOpenId]);
 
   // Debounce search input — reset to page 1 after 400ms of no typing
   useEffect(() => {
@@ -397,15 +406,27 @@ export default function JobsPage() {
                 {/* Arrow + admin actions */}
                 <div className={styles.jobArrow}>
                   {adminKey ? (
-                    <button
-                      className={styles.hideButton}
-                      onClick={(e) => toggleHide(e, job)}
-                      disabled={togglingHide === job.jobId}
-                      title={job.isHidden ? "Unhide report" : "Hide report"}
-                      aria-label={job.isHidden ? "Unhide report" : "Hide report"}
-                    >
-                      {job.isHidden ? "👁" : "🙈"}
-                    </button>
+                    <div className={styles.cardMenuWrap}>
+                      <button
+                        className={styles.cardMenuBtn}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenId(menuOpenId === job.jobId ? null : job.jobId); }}
+                        disabled={togglingHide === job.jobId}
+                        aria-label="Card actions"
+                        title="Actions"
+                      >
+                        {togglingHide === job.jobId ? "⏳" : "⋮"}
+                      </button>
+                      {menuOpenId === job.jobId && (
+                        <div className={styles.cardMenuDropdown}>
+                          <button
+                            className={styles.cardMenuItem}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenId(null); toggleHide(e, job); }}
+                          >
+                            {job.isHidden ? "👁 Unhide report" : "🙈 Hide report"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <>→</>
                   )}

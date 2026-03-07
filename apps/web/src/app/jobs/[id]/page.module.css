@@ -521,7 +521,6 @@
 
 .metaMenu {
   display: block;
-  position: relative;
 }
 
 .metaMenuSummary,
@@ -573,6 +572,8 @@
   right: 0;
   top: calc(100% + 8px);
   min-width: 180px;
+  max-height: min(500px, 70vh);
+  overflow-y: auto;
   display: grid;
   gap: 6px;
   padding: 10px;
@@ -585,7 +586,7 @@
 
 .metaMenuList {
   composes: exportMenuList;
-  right: calc(100% + 8px);
+  right: 0;
   min-width: 260px;
 }
 
@@ -3728,11 +3729,6 @@ details[open] > .devWarningSummary::before {
     display: none;
   }
 
-  .metaMenu {
-    display: block;
-    position: relative;
-  }
-
   .metaMenuSummary,
   .exportMenuSummary {
     width: 42px;
@@ -3767,9 +3763,6 @@ details[open] > .devWarningSummary::before {
   }
 
   .metaMenuList {
-    right: calc(100% + 8px);
-    left: auto;
-    top: calc(100% + 8px);
     min-width: min(320px, calc(100vw - 24px));
   }
 }

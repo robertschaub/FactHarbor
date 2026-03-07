@@ -80,22 +80,43 @@ export function refIdToNavTarget(refId: string): NavTarget | null {
 
 /**
  * Scroll to an element and apply a highlight flash animation.
+ * Opens any closed <details> ancestors so the element is visible.
  */
 function scrollToAndHighlight(elementId: string): boolean {
   const el = document.getElementById(elementId);
   if (!el) return false;
 
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  // Open any closed <details> ancestors (e.g. neutral evidence section)
+  let openedDetails = false;
+  let node: Element | null = el.parentElement;
+  while (node && node !== document.body) {
+    if (node.tagName === "DETAILS" && !(node as HTMLDetailsElement).open) {
+      (node as HTMLDetailsElement).open = true;
+      openedDetails = true;
+    }
+    node = node.parentElement;
+  }
 
-  // Apply highlight animation
-  el.classList.add("nav-highlight");
-  const onEnd = () => {
-    el.classList.remove("nav-highlight");
-    el.removeEventListener("animationend", onEnd);
+  const doScroll = () => {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Apply highlight animation
+    el.classList.add("nav-highlight");
+    const onEnd = () => {
+      el.classList.remove("nav-highlight");
+      el.removeEventListener("animationend", onEnd);
+    };
+    el.addEventListener("animationend", onEnd);
+    // Fallback cleanup if animation doesn't fire
+    setTimeout(() => el.classList.remove("nav-highlight"), 2000);
   };
-  el.addEventListener("animationend", onEnd);
-  // Fallback cleanup if animation doesn't fire
-  setTimeout(() => el.classList.remove("nav-highlight"), 2000);
+
+  // If we opened any <details>, defer scroll by one rAF to let the browser reflow first
+  if (openedDetails) {
+    requestAnimationFrame(doScroll);
+  } else {
+    doScroll();
+  }
 
   return true;
 }
