@@ -594,10 +594,19 @@ export default function JobPage() {
         method: "POST",
         headers: { "X-Admin-Key": adminKey },
       });
+      const data = await res.json().catch(() => null) as null | {
+        error?: unknown;
+        isHidden?: unknown;
+      };
       if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(data.error || `HTTP ${res.status}`);
+        const message = typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+        throw new Error(message);
       }
+      const nextIsHidden =
+        typeof data?.isHidden === "boolean"
+          ? data.isHidden
+          : !isCurrentlyHidden;
+      setJob((prev) => (prev ? { ...prev, isHidden: nextIsHidden } : prev));
       toast.success(isCurrentlyHidden ? "Report is now visible" : "Report hidden from users");
     } catch (err: any) {
       toast.error(`Failed: ${err.message}`);
@@ -1188,9 +1197,6 @@ export default function JobPage() {
     <div className={styles.pageContainer}>
       <SystemHealthBanner />
       <div className={styles.pageHeader}>
-        <Link href="/jobs" className={styles.backToList} aria-label="Back to jobs" title="Back to jobs">
-          <span className={styles.backToListIcon} aria-hidden="true">←</span>
-        </Link>
         <h1 className={styles.pageTitle}>FactHarbor Report</h1>
       </div>
 
@@ -1203,6 +1209,9 @@ export default function JobPage() {
         const showTabBar = visibleTabCount > 1;
         return (
           <div className={styles.tabsContainer}>
+            <Link href="/jobs" className={styles.backToList} aria-label="Back to jobs" title="Back to jobs">
+              <span className={styles.backToListIcon} aria-hidden="true">←</span>
+            </Link>
             {showTabBar && showReportTab && (
               <button onClick={() => { setTab("report"); clearHistory(); }} className={`${styles.tab} ${tab === "report" ? styles.tabActive : ""}`}>📊 Report</button>
             )}

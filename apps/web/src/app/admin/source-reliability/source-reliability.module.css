@@ -65,7 +65,8 @@
 }
 
 .buttonSecondary:hover {
-  background: var(--bg-surface2);
+  background: var(--bg-surface2-hover);
+  border-color: var(--border-hover);
 }
 
 .backLink {
@@ -235,7 +236,8 @@
 }
 
 .pageButton:hover:not(:disabled) {
-  background: var(--bg-surface2);
+  background: var(--bg-surface2-hover);
+  border-color: var(--border-hover);
 }
 
 .pageButton:disabled {

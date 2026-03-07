@@ -4,7 +4,9 @@
   --bg-card: #ffffff;
   --bg-surface: #f8f9fa;
   --bg-surface2: #f3f4f6;
+  --bg-surface2-hover: #e2e8f0;
   --border: #ddd;
+  --border-hover: #9ca3af;
   --border-subtle: #e5e7eb;
   --text-primary: #1f2937;
   --text-secondary: #4b5563;
@@ -44,7 +46,9 @@
     --bg-card: #1f2937;
     --bg-surface: #374151;
     --bg-surface2: #2d3748;
+    --bg-surface2-hover: #374151;
     --border: #374151;
+    --border-hover: #4b5563;
     --border-subtle: #4b5563;
     --text-primary: #f9fafb;
     --text-secondary: #d1d5db;

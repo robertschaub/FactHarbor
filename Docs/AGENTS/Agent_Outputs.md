@@ -3815,3 +3815,27 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** `Docs/STATUS/Current_Status.md` is stale relative to the active pipeline defaults in `config.db` for verdict integrity policies.
 **For next agent:** If the Captain approves follow-up work, start with a UCM profile matrix: current, Google-only, Google-only plus stronger sufficiency, then current vs pre-March-5 prompt.
 **Learnings:** no
+---
+### 2026-03-07 | Unassigned | Codex (GPT-5) | Fix hide toggle + restore hover affordance
+**Task:** Fix job detail hide/unhide UI state not updating immediately, restore missing hover visual feedback on admin controls, and fix beta badge contrast in dark mode.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/globals.css`, `apps/web/src/app/admin/source-reliability/source-reliability.module.css`, `apps/web/src/app/admin/metrics/metrics.module.css`, `apps/web/src/app/admin/test-config/test-config.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Updated `handleToggleHide` to parse the API response and immediately `setJob` with the new `isHidden` value so the icon/action toggles without waiting for the next polling cycle.
+- Introduced explicit hover tokens (`--bg-surface2-hover`, `--border-hover`) in `globals.css` and used them in affected hover rules so hover states are visibly distinct in both light and dark mode.
+- Set `pipelineBadgeBeta` text color to a fixed dark color against its fixed yellow background for readable contrast in dark mode.
+**Open items:** None.
+**Warnings:** `npm -w apps/web run build` passed after these changes.
+**For next agent:** If more hover affordance regressions are found, prefer reusing the global hover tokens rather than reintroducing per-module hex colors.
+**Learnings:** no
+---
+### 2026-03-07 | Unassigned | Codex (GPT-5) | Harden hide toggle response parsing
+**Task:** Address code-review concern about potentially consuming `res.json()` multiple times in hide/unhide toggle handling.
+**Files touched:** `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Refactored `handleToggleHide` to parse the response payload once, then branch on `res.ok` using the same parsed object.
+- Kept optimistic local `setJob` update behavior and fallback flip logic if `isHidden` is absent from payload.
+- Tightened error extraction to use `data.error` only when it is a string, otherwise fallback to `HTTP <status>`.
+**Open items:** None.
+**Warnings:** `npm -w apps/web run build` succeeded. Postbuild emitted existing unrelated config warnings about `providers.brave.priority` validation in `search.default.json`.
+**For next agent:** If this handler is extended, keep the single-parse pattern (`const data = await res.json().catch(() => null)`) to avoid body-consumption regressions.
+**Learnings:** no
