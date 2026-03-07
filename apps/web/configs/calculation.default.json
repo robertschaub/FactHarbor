@@ -160,7 +160,7 @@
   "evidenceBalanceSkewThreshold": 0.8,
   "evidenceBalanceMinDirectional": 3,
   "evidenceSufficiencyMinItems": 3,
-  "evidenceSufficiencyMinSourceTypes": 1,
+  "evidenceSufficiencyMinSourceTypes": 2,
   "evidenceSufficiencyMinDistinctDomains": 3,
   "evidencePartitioningEnabled": true,
   "contrarianRetrievalEnabled": true,

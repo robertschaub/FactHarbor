@@ -3,7 +3,7 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-03-01
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Invite code access control live. Inverse Claim Asymmetry calibration (Phases 0–3) complete. 1113 tests passing (54 files), build clean. Cross-provider debate active (OpenAI challenger). Phase 1 integrity policies enabled.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Invite code access control live. Inverse Claim Asymmetry calibration (Phases 0–3) complete. 1113 tests passing (54 files), build clean. Cross-provider debate active (OpenAI challenger). Phase 1 integrity policies **disabled** (both `verdictGroundingPolicy` and `verdictDirectionPolicy` set to `disabled` in active UCM config as of 2026-03-05; `warn_and_cap` mode planned for Phase 2 — see `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`).
 
 ---
 
@@ -19,7 +19,8 @@
 
 **Inverse Claim Asymmetry — Phases 0–3 complete:**
 - ✅ Phase 1: integrity policies implemented (`safeDowngradeVerdict`, `retryOnceThenSafeDowngrade`)
-- ✅ Phase 1 policies **activated**: `verdictGroundingPolicy: safe_downgrade`, `verdictDirectionPolicy: retry_once_then_safe_downgrade` — commit `8e4a0d0`
+- ✅ Phase 1 policies implemented — commit `8e4a0d0`
+- ⚠️ Phase 1 policies **disabled** as of 2026-03-05 (both set to `disabled` in active UCM config due to false-positive concerns). `warn_and_cap` softer mode planned — see variability investigation `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`
 - ✅ Phase 2 (7 tasks): 4 strict inverse fixture pairs, CE gate (`strictInverseGatePassed`), `InverseConsistencyDiagnostic`, root-cause tags, HTML panel, `inverse_consistency_error` warning, paired-job audit tool
 - ✅ Phase 3: `inverse-minwage-employment-en` mandatory in smoke lane, CE threshold enforced — commit `3fc9c0b`
 - ✅ Canary baselines: minwage-en CE=12 pp, fluoride-en CE=16 pp, gmo-de CE runs completed (2026-02-28)
