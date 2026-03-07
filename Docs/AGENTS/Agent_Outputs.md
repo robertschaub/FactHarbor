@@ -3839,3 +3839,27 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** `npm -w apps/web run build` succeeded. Postbuild emitted existing unrelated config warnings about `providers.brave.priority` validation in `search.default.json`.
 **For next agent:** If this handler is extended, keep the single-parse pattern (`const data = await res.json().catch(() => null)`) to avoid body-consumption regressions.
 **Learnings:** no
+---
+### 2026-03-07 | Code Reviewer | Codex (GPT-5) | Serper 5xx fallback fix
+**Task:** Address the review finding that Serper 5xx responses were being treated as empty-result success instead of provider failures that allow fallback.
+**Files touched:** `apps/web/src/lib/search-serper.ts`, `apps/web/test/unit/lib/search-provider-error.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Changed `search-serper.ts` to throw `SearchProviderError` for HTTP 5xx responses, with `fatal: false`, so AUTO mode can fall through to the next provider without misclassifying transient outages as quota exhaustion.
+- Preserved existing fatal handling for rate-limit/quota-style failures (`429`, `403`, and quota/limit body matches).
+- Added targeted regression tests for Serper `500`, `503`, and quota-style error handling in the existing provider-error suite.
+**Open items:** Google CSE, SerpAPI, and Brave still treat normal 5xx responses as `[]`; that broader consistency change was not included in this narrow review fix.
+**Warnings:** `fatal: false` does not prevent `web-search.ts` from recording provider failure for circuit-breaker purposes; it only keeps the error classification distinct from fatal/quota conditions.
+**For next agent:** If you want provider behavior standardized, audit all primary search providers together and update the shared tests so 5xx fallback semantics are consistent across Serper, SerpAPI, Google CSE, and Brave.
+**Learnings:** no
+---
+### 2026-03-07 | Code Reviewer | Codex (GPT-5) | Serper placeholder key surfacing
+**Task:** Address the review finding that the Serper placeholder-key guard returned `[]` silently, making misconfiguration look like normal empty search results.
+**Files touched:** `apps/web/src/lib/search-serper.ts`, `apps/web/test/unit/lib/search-provider-error.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Changed the `SERPER_API_KEY` placeholder guard to throw `SearchProviderError` instead of returning `[]`, so misconfiguration is surfaced explicitly and can appear in provider-error handling.
+- Kept the missing-key path unchanged; the specific issue here was placeholder text passing the AUTO-mode credential presence check.
+- Added a regression test asserting the placeholder path throws before any network call is made.
+**Open items:** Brave, SerpAPI, and Google CSE still use silent placeholder guards; they were left unchanged to keep this review fix narrow.
+**Warnings:** The new placeholder error uses `status: undefined` to avoid fabricating an HTTP status for a local configuration problem.
+**For next agent:** If provider misconfiguration surfacing is standardized later, align the placeholder-key behavior across all primary providers and decide whether AUTO-mode credential checks should also exclude placeholder values.
+**Learnings:** no

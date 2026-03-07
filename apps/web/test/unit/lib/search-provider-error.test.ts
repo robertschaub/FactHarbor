@@ -254,6 +254,88 @@ describe("Google CSE error detection", () => {
   });
 });
 
+describe("Serper error detection", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+    process.env.SERPER_API_KEY = "test_api_key";
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("should throw SearchProviderError on HTTP 500 so fallback can continue", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: "Internal Server Error",
+      text: () => Promise.resolve("Server error"),
+    }));
+
+    const { searchSerper } = await import("@/lib/search-serper");
+
+    try {
+      await searchSerper({ query: "test", maxResults: 5 });
+      expect.unreachable("Should have thrown");
+    } catch (err) {
+      expectSearchProviderError(err, { provider: "Serper", status: 500, fatal: false, messageContains: "500" });
+    }
+  });
+
+  it("should throw SearchProviderError on HTTP 503", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      statusText: "Service Unavailable",
+      text: () => Promise.resolve("Upstream unavailable"),
+    }));
+
+    const { searchSerper } = await import("@/lib/search-serper");
+
+    try {
+      await searchSerper({ query: "test", maxResults: 5 });
+      expect.unreachable("Should have thrown");
+    } catch (err) {
+      expectSearchProviderError(err, { provider: "Serper", status: 503, fatal: false, messageContains: "503" });
+    }
+  });
+
+  it("should still throw fatal SearchProviderError on quota-style failures", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      statusText: "Too Many Requests",
+      text: () => Promise.resolve("Quota exceeded"),
+    }));
+
+    const { searchSerper } = await import("@/lib/search-serper");
+
+    try {
+      await searchSerper({ query: "test", maxResults: 5 });
+      expect.unreachable("Should have thrown");
+    } catch (err) {
+      expectSearchProviderError(err, { provider: "Serper", status: 429, fatal: true, messageContains: "Quota" });
+    }
+  });
+
+  it("should throw SearchProviderError when SERPER_API_KEY still contains placeholder text", async () => {
+    process.env.SERPER_API_KEY = "PASTE_REAL_KEY_HERE";
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const { searchSerper } = await import("@/lib/search-serper");
+
+    try {
+      await searchSerper({ query: "test", maxResults: 5 });
+      expect.unreachable("Should have thrown");
+    } catch (err) {
+      expectSearchProviderError(err, { provider: "Serper", fatal: true, messageContains: "placeholder text" });
+      expect(fetchSpy).not.toHaveBeenCalled();
+    }
+  });
+});
+
 describe("WebSearchResponse error propagation", () => {
   it("should include errors in WebSearchResponse type", () => {
     const response: WebSearchResponse = {

@@ -29,8 +29,9 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
     return [];
   }
   if (apiKey.includes("PASTE")) {
-    console.error("[Search] Serper: ❌ API key contains placeholder text - please configure real value");
-    return [];
+    const message = "Serper API key contains placeholder text; configure a real SERPER_API_KEY value";
+    console.error(`[Search] Serper: ❌ ${message}`);
+    throw new SearchProviderError("Serper", undefined, true, message);
   }
 
   console.log(`[Search] Serper: API key configured (length: ${apiKey.length})`);
@@ -84,7 +85,16 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
       } catch {
         // Ignore parse errors
       }
-      if (res.status === 429 || res.status === 403 || errorBody.includes("quota") || errorBody.includes("limit")) {
+      const lowerErrorBody = errorBody.toLowerCase();
+      if (res.status >= 500 && res.status < 600) {
+        throw new SearchProviderError(
+          "Serper",
+          res.status,
+          false,
+          `Serper HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
+        );
+      }
+      if (res.status === 429 || res.status === 403 || lowerErrorBody.includes("quota") || lowerErrorBody.includes("limit")) {
         throw new SearchProviderError(
           "Serper",
           res.status,
