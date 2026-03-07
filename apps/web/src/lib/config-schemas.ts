@@ -52,7 +52,7 @@ export interface ValidationResult {
 
 export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
-  provider: z.enum(["auto", "google-cse", "serpapi", "brave"]),
+  provider: z.enum(["auto", "google-cse", "serpapi", "brave", "serper"]),
   mode: z.enum(["standard", "grounded"]),
   searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),
@@ -90,6 +90,11 @@ export const SearchConfigSchema = z.object({
     }).optional(),
     brave: z.object({
       enabled: z.boolean().describe("Enable Brave Search API provider"),
+      priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
+      dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
+    }).optional(),
+    serper: z.object({
+      enabled: z.boolean().describe("Enable Serper API provider (queries Google index directly)"),
       priority: z.number().int().min(1).max(10).describe("Provider priority (1=highest)"),
       dailyQuotaLimit: z.number().int().min(0).describe("Daily quota limit (0=unlimited) — Declared for future enforcement, not currently tracked"),
     }).optional(),

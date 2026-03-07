@@ -36,13 +36,18 @@
       "dailyQuotaLimit": 8000
     },
     "serpapi": {
-      "enabled": true,
+      "enabled": false,
       "priority": 2,
       "dailyQuotaLimit": 0
     },
-    "brave": {
+    "serper": {
       "enabled": true,
       "priority": 2,
+      "dailyQuotaLimit": 50000
+    },
+    "brave": {
+      "enabled": true,
+      "priority": 10,
       "dailyQuotaLimit": 10000
     },
     "wikipedia": {

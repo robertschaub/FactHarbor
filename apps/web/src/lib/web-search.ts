@@ -64,6 +64,7 @@ const SEARCH_PROVIDER_NAMES = {
   serpapi: "SerpAPI",
   "google-cse": "Google-CSE",
   brave: "Brave",
+  serper: "Serper",
   wikipedia: "Wikipedia",
   "semantic-scholar": "Semantic-Scholar",
   "google-factcheck": "Google-FactCheck",
@@ -115,6 +116,15 @@ const SEARCH_PROVIDER_DEFINITIONS: Record<SearchProviderKey, SearchProviderDefin
       return searchBrave(options);
     },
   },
+  serper: {
+    key: "serper",
+    name: SEARCH_PROVIDER_NAMES.serper,
+    explicitLabel: "Serper",
+    execute: async (options) => {
+      const { searchSerper } = await import("./search-serper");
+      return searchSerper(options);
+    },
+  },
   wikipedia: {
     key: "wikipedia",
     name: SEARCH_PROVIDER_NAMES.wikipedia,
@@ -156,6 +166,12 @@ const AUTO_PROVIDER_CANDIDATES: AutoProviderCandidate[] = [
     isEnabled: (config) => config.providers?.serpapi?.enabled ?? true,
     getPriority: (config) => config.providers?.serpapi?.priority ?? 2,
     hasCredentials: () => !!process.env.SERPAPI_API_KEY,
+  },
+  {
+    providerKey: "serper",
+    isEnabled: (config) => config.providers?.serper?.enabled ?? false,
+    getPriority: (config) => config.providers?.serper?.priority ?? 2,
+    hasCredentials: () => !!process.env.SERPER_API_KEY,
   },
   {
     providerKey: "brave",
