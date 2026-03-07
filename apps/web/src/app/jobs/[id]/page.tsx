@@ -1647,12 +1647,12 @@ export default function JobPage() {
                                 return (
                                   <div key={`${boundary.id}-${finding.claimId}`} className={styles.boundaryFindingCard}>
                                     <div className={styles.boundaryFindingCardHeader}>
-                                      <span className={styles.boundaryFindingClaimId}>{finding.claimId}</span>
+                                      <span className={styles.boundaryFindingClaimId} title={`Atomic Claim ${finding.claimId}`}>Claim {finding.claimId}</span>
                                       <ExpandableText
                                         text={fullClaimText}
                                         threshold={100}
                                         className={styles.boundaryFindingClaimText}
-                                        modalTitle={`Boundary finding claim — ${finding.claimId || "Claim"}`}
+                                        modalTitle={`Claim ${finding.claimId}: ${fullClaimText.slice(0, 60)}${fullClaimText.length > 60 ? "…" : ""}`}
                                         bare
                                         onNavigate={navigateTo}
                                       />
@@ -2088,7 +2088,7 @@ function EvidencePanel({
         <div className={styles.evidenceText}>
           {(item.id || item.category || item.evidenceScope) && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              {item.id && <span style={{ fontSize: 10, color: "var(--color-text-muted, #888)", fontFamily: "monospace", userSelect: "all" }}>{item.id}</span>}
+              {item.id && <span style={{ fontSize: 10, color: "var(--color-text-muted, #888)", fontFamily: "monospace", userSelect: "all" }} title="Evidence reference ID">{item.id}</span>}
               {item.category && <span className={styles.evidenceCategory}>{item.category}</span>}
               {item.evidenceScope && <EvidenceScopeTooltip evidenceScope={item.evidenceScope} />}
             </div>
@@ -2104,13 +2104,14 @@ function EvidencePanel({
           )}
           {onNavigate && item.relevantClaimIds?.length > 0 && (
             <span className={styles.evidenceRefList} style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", marginRight: 4 }}>Claims:</span>
               {item.relevantClaimIds.map((id: string) => (
-                <button key={id} className={styles.navLink} style={{ fontSize: 11 }} onClick={() => onNavigate(id)}>{id}</button>
+                <button key={id} className={styles.navLink} style={{ fontSize: 11 }} onClick={() => onNavigate(id)} title={`Go to claim ${id}`}>{id}</button>
               ))}
             </span>
           )}
           {onNavigate && item.claimBoundaryId && (
-            <button className={styles.navLink} style={{ fontSize: 11 }} onClick={() => onNavigate(item.claimBoundaryId)}>{item.claimBoundaryId}</button>
+            <button className={styles.navLink} style={{ fontSize: 11 }} onClick={() => onNavigate(item.claimBoundaryId)} title={`Go to boundary ${item.claimBoundaryId}`}>Boundary: {item.claimBoundaryId}</button>
           )}
           {extraMeta}
         </div>
@@ -3002,7 +3003,7 @@ function ClaimCard({
               text={claim.misleadingnessReason}
               threshold={300}
               className={styles.misleadingnessText}
-              modalTitle={`Misleadingness — ${claim.claimId || "Claim"}`}
+              modalTitle={`Misleadingness — ${claim.claimText ? claim.claimText.slice(0, 60) + (claim.claimText.length > 60 ? "…" : "") : claim.claimId || "Claim"}`}
               bare
               onNavigate={onNavigate}
             />
@@ -3013,7 +3014,7 @@ function ClaimCard({
       <ExpandableText
         text={claim.reasoning || ""}
         className={styles.claimReasoning}
-        modalTitle={`Reasoning — ${claim.claimId || "Claim"}`}
+        modalTitle={`Reasoning — ${claim.claimText ? claim.claimText.slice(0, 60) + (claim.claimText.length > 60 ? "…" : "") : claim.claimId || "Claim"}`}
         bare
         onNavigate={onNavigate}
       />

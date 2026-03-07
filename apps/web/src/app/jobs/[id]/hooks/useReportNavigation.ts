@@ -111,9 +111,10 @@ function scrollToAndHighlight(elementId: string): boolean {
     setTimeout(() => el.classList.remove("nav-highlight"), 2000);
   };
 
-  // If we opened any <details>, defer scroll by one rAF to let the browser reflow first
+  // If we opened any <details>, defer scroll by double-rAF to let the browser
+  // fully reflow (nested <details> may need more than one layout pass)
   if (openedDetails) {
-    requestAnimationFrame(doScroll);
+    requestAnimationFrame(() => requestAnimationFrame(doScroll));
   } else {
     doScroll();
   }
