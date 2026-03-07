@@ -71,6 +71,7 @@ type Job = {
   resultJson: any | null;
   reportMarkdown: string | null;
   pipelineVariant?: string;
+  isHidden?: boolean;
 };
 
 type EventItem = { id: number; tsUtc: string; level: string; message: string };
@@ -429,6 +430,7 @@ export default function JobPage() {
   // Job action states
   const [isCancelling, setIsCancelling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingHide, setIsTogglingHide] = useState(false);
   const [hasAdminKey, setHasAdminKey] = useState(false);
 
   // Login-modal state (shown when cancel is attempted without an admin key)
@@ -576,6 +578,31 @@ export default function JobPage() {
       toast.error(`Delete failed: ${err.message}`);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Hide / unhide report handler (admin only)
+  const handleToggleHide = async () => {
+    const adminKey = sessionStorage.getItem("fh_admin_key");
+    if (!adminKey) return;
+    const isCurrentlyHidden = !!job?.isHidden;
+    const action = isCurrentlyHidden ? "unhide" : "hide";
+    if (!isCurrentlyHidden && !window.confirm("Hide this report? It will no longer be visible to regular users.")) return;
+    setIsTogglingHide(true);
+    try {
+      const res = await fetch(`/api/fh/jobs/${jobId}/${action}`, {
+        method: "POST",
+        headers: { "X-Admin-Key": adminKey },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      toast.success(isCurrentlyHidden ? "Report is now visible" : "Report hidden from users");
+    } catch (err: any) {
+      toast.error(`Failed: ${err.message}`);
+    } finally {
+      setIsTogglingHide(false);
     }
   };
 
@@ -1190,6 +1217,16 @@ export default function JobPage() {
             {(job?.status === "SUCCEEDED" || hasAdminKey) && (
               <div className={styles.exportButtons}>
                 {hasAdminKey && (
+                  <>
+                  <button
+                    onClick={handleToggleHide}
+                    disabled={isTogglingHide}
+                    className={`${styles.tab} ${styles.hideTab}`}
+                    title={job?.isHidden ? "Unhide report" : "Hide report"}
+                    aria-label={job?.isHidden ? "Unhide report" : "Hide report"}
+                  >
+                    {isTogglingHide ? "⏳" : job?.isHidden ? "👁" : "🙈"}
+                  </button>
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting}
@@ -1199,6 +1236,7 @@ export default function JobPage() {
                   >
                     {isDeleting ? "⏳" : "🗑"}
                   </button>
+                  </>
                 )}
                 {job?.status === "SUCCEEDED" && (
                   <>

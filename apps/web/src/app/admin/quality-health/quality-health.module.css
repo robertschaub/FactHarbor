@@ -25,9 +25,9 @@
 
 .select {
   padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 0.375rem;
-  background-color: white;
+  background-color: var(--bg-card);
   font-size: 0.875rem;
   cursor: pointer;
 }
@@ -66,7 +66,7 @@
 .empty {
   text-align: center;
   padding: 3rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .error {
@@ -88,10 +88,10 @@
 .sectionHeading {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   margin: 2rem 0 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
 }
 
 /* -- Summary cards --------------------------------------------------------- */
@@ -104,8 +104,8 @@
 }
 
 .summaryCard {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 1.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -113,19 +113,19 @@
 
 .cardLabel {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
 .cardValue {
   font-size: 1.875rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .cardHint {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin-top: 0.25rem;
 }
 
@@ -161,8 +161,8 @@
 }
 
 .metricCard {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 1.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -178,19 +178,19 @@
 .metricTitle {
   font-size: 1rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .metricDescription {
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .progressBar {
   width: 100%;
   height: 8px;
-  background-color: #e5e7eb;
+  background-color: var(--bg-surface2);
   border-radius: 9999px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -218,16 +218,16 @@
 }
 
 .chartSection {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 1.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .chartSectionFull {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 1.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -240,12 +240,12 @@
   font-weight: 600;
   margin-top: 0;
   margin-bottom: 1rem;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .chartDescription {
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-bottom: 1rem;
 }
 
@@ -263,7 +263,7 @@
   flex-direction: column;
   gap: 0.25rem;
   padding: 1rem;
-  background-color: #f9fafb;
+  background-color: var(--bg-surface);
   border-radius: 0.375rem;
   flex: 1;
   min-width: 150px;
@@ -271,13 +271,13 @@
 
 .failureStatLabel {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .failureStatValue {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .breakdownGrid {
@@ -287,16 +287,16 @@
 }
 
 .breakdownBlock {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 0.375rem;
   padding: 0.75rem;
-  background-color: #fafafa;
+  background-color: var(--bg-surface);
 }
 
 .breakdownBlock h3 {
   margin: 0 0 0.5rem 0;
   font-size: 0.95rem;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .breakdownTable {
@@ -307,13 +307,13 @@
 
 .breakdownTable th,
 .breakdownTable td {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
   padding: 0.35rem 0.4rem;
   text-align: left;
 }
 
 .breakdownTable th {
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -322,8 +322,8 @@
 .footer {
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   text-align: center;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }

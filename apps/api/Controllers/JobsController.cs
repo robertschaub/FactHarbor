@@ -29,7 +29,9 @@ public sealed class JobsController : ControllerBase
     [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> List(int? page = null, int? pageSize = null, string? q = null)
     {
-        // Default to page 1, pageSize 50 if not provided
+        // Admins always see hidden reports (visually marked); non-admins never do.
+        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+
         var actualPage = page ?? 1;
         var actualPageSize = pageSize ?? 50;
 
@@ -38,12 +40,12 @@ public sealed class JobsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(q))
         {
-            (items, totalCount) = await _jobs.SearchJobsAsync(q, (actualPage - 1) * actualPageSize, actualPageSize);
+            (items, totalCount) = await _jobs.SearchJobsAsync(q, (actualPage - 1) * actualPageSize, actualPageSize, includeHidden: isAdmin);
         }
         else
         {
-            totalCount = await _db.Jobs.CountAsync();
-            items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize);
+            totalCount = await _jobs.CountJobsAsync(includeHidden: isAdmin);
+            items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize, includeHidden: isAdmin);
         }
 
         return Ok(new
@@ -60,7 +62,8 @@ public sealed class JobsController : ControllerBase
                 pipelineVariant = j.PipelineVariant,
                 verdictLabel = j.VerdictLabel,
                 truthPercentage = j.TruthPercentage,
-                confidence = j.Confidence
+                confidence = j.Confidence,
+                isHidden = j.IsHidden
             }),
             pagination = new
             {
@@ -99,9 +102,32 @@ public sealed class JobsController : ControllerBase
             verdictLabel = j.VerdictLabel,
             truthPercentage = j.TruthPercentage,
             confidence = j.Confidence,
+            isHidden = j.IsHidden,
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });
+    }
+
+    [HttpPost("{jobId}/hide")]
+    public async Task<IActionResult> HideJob(string jobId)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        var job = await _jobs.SetHiddenAsync(jobId, true);
+        if (job is null) return NotFound();
+        return Ok(new { ok = true, isHidden = job.IsHidden });
+    }
+
+    [HttpPost("{jobId}/unhide")]
+    public async Task<IActionResult> UnhideJob(string jobId)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        var job = await _jobs.SetHiddenAsync(jobId, false);
+        if (job is null) return NotFound();
+        return Ok(new { ok = true, isHidden = job.IsHidden });
     }
 
     [HttpPost("{jobId}/cancel")]

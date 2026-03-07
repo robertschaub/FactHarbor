@@ -74,6 +74,12 @@ public sealed class JobEntity
     /// Calculated confidence percentage (0-100) extracted from ResultJson.
     /// </summary>
     public int? Confidence { get; set; }
+
+    /// <summary>
+    /// When true, this job is hidden from the default jobs list.
+    /// Only admins can see and toggle hidden jobs.
+    /// </summary>
+    public bool IsHidden { get; set; } = false;
 }
 
 public sealed class JobEventEntity

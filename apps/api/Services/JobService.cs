@@ -42,8 +42,36 @@ public sealed class JobService
     public async Task<JobEntity?> GetJobAsync(string jobId)
         => await _db.Jobs.FirstOrDefaultAsync(x => x.JobId == jobId);
 
-    public async Task<List<JobEntity>> ListJobsAsync(int skip = 0, int take = 1000)
-        => await _db.Jobs.OrderByDescending(x => x.CreatedUtc).Skip(skip).Take(take).ToListAsync();
+    public async Task<List<JobEntity>> ListJobsAsync(int skip = 0, int take = 1000, bool includeHidden = false)
+    {
+        var q = _db.Jobs.AsQueryable();
+        if (!includeHidden) q = q.Where(x => !x.IsHidden);
+        return await q.OrderByDescending(x => x.CreatedUtc).Skip(skip).Take(take).ToListAsync();
+    }
+
+    public async Task<int> CountJobsAsync(bool includeHidden = false)
+    {
+        var q = _db.Jobs.AsQueryable();
+        if (!includeHidden) q = q.Where(x => !x.IsHidden);
+        return await q.CountAsync();
+    }
+
+    public async Task<JobEntity?> SetHiddenAsync(string jobId, bool hidden)
+    {
+        var job = await _db.Jobs.FindAsync(jobId);
+        if (job is null) return null;
+        job.IsHidden = hidden;
+        job.UpdatedUtc = DateTime.UtcNow;
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = jobId,
+            Level = "info",
+            Message = hidden ? "Report hidden by admin" : "Report unhidden by admin",
+            TsUtc = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync();
+        return job;
+    }
 
     public async Task AddEventAsync(string jobId, string level, string message)
     {
@@ -283,12 +311,14 @@ public sealed class JobService
     /// Acceptable at POC scale (~10k jobs); revisit with FTS5 at larger scale.
     /// </summary>
     public async Task<(List<JobEntity> items, int totalCount)> SearchJobsAsync(
-        string query, int skip = 0, int take = 50)
+        string query, int skip = 0, int take = 50, bool includeHidden = false)
     {
         var q = $"%{query.Trim()}%";
         var baseQuery = _db.Jobs.Where(j =>
             EF.Functions.Like(j.InputValue, q) ||
             EF.Functions.Like(j.InputPreview ?? "", q));
+
+        if (!includeHidden) baseQuery = baseQuery.Where(j => !j.IsHidden);
 
         var total = await baseQuery.CountAsync();
         var items = await baseQuery

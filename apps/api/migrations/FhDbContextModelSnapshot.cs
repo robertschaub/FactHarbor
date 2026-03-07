@@ -81,6 +81,9 @@ namespace FactHarbor.Api.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("InputPreview")
                         .HasColumnType("TEXT");
 

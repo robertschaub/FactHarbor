@@ -5,13 +5,13 @@
  * Proxies to the backend API at FH_API_BASE_URL
  */
 
-import { NextResponse } from "next/server";
-import { getClientIp } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { checkAdminKey, getClientIp } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const base = process.env.FH_API_BASE_URL;
   if (!base) {
     return NextResponse.json({ ok: false, error: "FH_API_BASE_URL not set" }, { status: 503 });
@@ -31,6 +31,11 @@ export async function GET(request: Request) {
     upstreamHeaders["x-forwarded-for"] = getClientIp(request);
     const forwardedProto = request.headers.get("x-forwarded-proto");
     if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
+    // Forward admin key so the API can include hidden jobs for admins
+    if (checkAdminKey(request)) {
+      const adminKey = request.headers.get("x-admin-key");
+      if (adminKey) upstreamHeaders["X-Admin-Key"] = adminKey;
+    }
 
     const res = await fetch(upstreamUrl, {
       method: "GET",

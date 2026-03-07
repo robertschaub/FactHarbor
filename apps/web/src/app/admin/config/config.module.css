@@ -17,7 +17,7 @@
 }
 
 .subtitle {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
@@ -37,15 +37,15 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-muted);
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   transition: all 0.2s;
 }
 
 .tab:hover {
-  color: #374151;
-  background: #f9fafb;
+  color: var(--text-primary);
+  background: var(--bg-surface);
 }
 
 .tab.active {
@@ -67,7 +67,7 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: white;
+  background: var(--bg-card);
 }
 
 .typeCard:hover {
@@ -88,7 +88,7 @@
 
 .typeCardDesc {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 /* Profile selector */
@@ -98,7 +98,7 @@
 
 .profileSelect {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 14px;
   min-width: 200px;
@@ -106,7 +106,7 @@
 
 /* Config viewer */
 .configViewer {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -116,7 +116,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f9fafb;
+  background: var(--bg-surface);
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -129,7 +129,7 @@
 .configHash {
   font-family: monospace;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .configLabel {
@@ -177,13 +177,13 @@
 }
 
 .buttonSecondary {
-  background: white;
-  color: #374151;
+  background: var(--bg-card);
+  color: var(--text-primary);
   border-color: #d1d5db;
 }
 
 .buttonSecondary:hover {
-  background: #f9fafb;
+  background: var(--bg-surface);
   border-color: #9ca3af;
 }
 
@@ -205,7 +205,7 @@
 
 .statusInactive {
   background: #f3f4f6;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 /* History list */
@@ -220,13 +220,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--bg-card);
 }
 
 .historyItem:hover {
-  background: #f9fafb;
+  background: var(--bg-surface);
 }
 
 .historyMeta {
@@ -238,7 +238,7 @@
 .historyHash {
   font-family: monospace;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .historyLabel {
@@ -248,7 +248,7 @@
 
 .historyDate {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .historyActions {
@@ -263,7 +263,7 @@
   justify-content: center;
   align-items: center;
   padding: 48px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 /* Error state */
@@ -279,7 +279,7 @@
 .empty {
   padding: 48px;
   text-align: center;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .emptyIcon {
@@ -294,7 +294,7 @@
 
 .emptyHint {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 /* Form editor styles (for Phase 2) */
@@ -306,7 +306,7 @@
   font-weight: 600;
   font-size: 16px;
   margin-bottom: 12px;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .formGroup {
@@ -317,14 +317,14 @@
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
   margin-bottom: 6px;
 }
 
 .formInput {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 14px;
 }
@@ -337,7 +337,7 @@
 
 .formHelp {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 

@@ -618,6 +618,16 @@
   }
 }
 
+.hideTab {
+  color: var(--text-muted);
+  border-color: var(--border);
+  background-color: var(--bg-card);
+}
+
+.hideTab:hover:not(:disabled) {
+  background-color: var(--bg-surface);
+}
+
 .deleteTab {
   color: #c62828;
   border-color: #ef9a9a;
@@ -3616,6 +3626,9 @@ details[open] > .devWarningSummary::before {
   .articleBannerContent {
     color: var(--text-primary);
   }
+  .hideTab {
+    background-color: var(--bg-surface2);
+  }
   .deleteTab {
     background-color: #3a1111;
   }
@@ -3898,9 +3911,9 @@ details[open] > .devWarningSummary::before {
     overflow-x: auto;
   }
 
-  /* Nav back button: smaller on mobile */
+  /* Nav back button: smaller on mobile, raised above browser chrome (~50px toolbar) */
   .navBackButton {
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
     right: 16px;
     padding: 8px 14px;
     font-size: 13px;

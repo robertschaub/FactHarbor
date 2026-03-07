@@ -3791,3 +3791,27 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Lint check (`ReadLints`) on modified files reported no issues.
 **For next agent:** If you need one more polish pass, tune only spacing (`padding`/`margin`) in these same CSS modules first; structure and behavior do not need further JSX changes.
 **Learnings:** no
+---
+### 2026-03-07 | Unassigned | Codex (GPT-5) | UCM default change history inventory
+**Task:** Inventory git-tracked UCM default-value changes since the first seeded config deploy, with extra focus on temporal, regional, and language-related settings.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-07_Unassigned_UCM_Default_Change_History.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Used commit `9403932f` as baseline because it is the first commit containing the file-backed UCM default JSONs under `apps/web/configs/`.
+- Scoped the investigation to git-tracked default seeds, not runtime `config.db` history.
+- Broke out schema-only geo/language override fields separately so they are not misreported as deployed default-value changes.
+**Open items:** Runtime/admin-applied UCM changes in actual databases remain uninvestigated.
+**Warnings:** The detailed inventory lives in `Docs/AGENTS/Handoffs/2026-03-07_Unassigned_UCM_Default_Change_History.md`.
+**For next agent:** If a CSV/JSON export is requested, reuse this baseline and emit commit-by-commit transitions per key.
+**Learnings:** no
+---
+### 2026-03-07 | Senior Developer + LLM Expert | Codex (GPT-5) | Bolsonaro report variability investigation
+**Task:** Investigate why repeated Bolsonaro legal-case analyses vary strongly, identify likely recent causes with probabilities, and prepare a review-ready plan document.
+**Files touched:** `Docs/WIP/Bolsonaro_Report_Variability_Investigation_2026-03-07.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Used git history, `apps/web/config.db`, and `apps/api/factharbor.db` as the evidence base instead of running fresh paid LLM analyses.
+- Treated the March 5 rollout as the main recent change window, but explicitly distinguished pre-existing variance from new amplifiers.
+- Framed probabilities as non-exclusive contribution estimates because the issue is clearly multi-causal.
+**Open items:** A repeated-run validation matrix is still needed to distinguish prompt-driven drift from search-provider drift conclusively.
+**Warnings:** `Docs/STATUS/Current_Status.md` is stale relative to the active pipeline defaults in `config.db` for verdict integrity policies.
+**For next agent:** If the Captain approves follow-up work, start with a UCM profile matrix: current, Google-only, Google-only plus stronger sufficiency, then current vs pre-March-5 prompt.
+**Learnings:** no

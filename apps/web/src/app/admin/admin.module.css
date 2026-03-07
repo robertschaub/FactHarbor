@@ -4,12 +4,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: var(--bg-surface);
   padding: 24px;
 }
 
 .loginBox {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   padding: 40px;
@@ -22,12 +22,12 @@
   margin: 0 0 8px 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .loginSubtitle {
   margin: 0 0 24px 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -40,7 +40,7 @@
 .loginInput {
   padding: 12px 16px;
   font-size: 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 8px;
   width: 100%;
   box-sizing: border-box;
@@ -86,18 +86,18 @@
 .loginHint {
   margin-top: 24px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .loginHint code {
-  background: #f1f5f9;
+  background: var(--bg-surface2);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
 }
 
 .loading {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -130,7 +130,7 @@
 .logoutButton {
   padding: 6px 12px;
   background: transparent;
-  color: #94a3b8;
+  color: var(--text-muted);
   border: 1px solid #475569;
   border-radius: 4px;
   font-size: 13px;

@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
 import styles from "./page.module.css";
 
@@ -25,6 +26,7 @@ type JobSummary = {
   verdictLabel?: string;
   truthPercentage?: number;
   confidence?: number;
+  isHidden?: boolean;
 };
 
 type PaginationInfo = {
@@ -56,6 +58,8 @@ export default function JobsPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
   const [isVisible, setIsVisible] = useState(true);
+  const [adminKey, setAdminKey] = useState<string | null>(null);
+  const [togglingHide, setTogglingHide] = useState<string | null>(null);
 
   // Debounce search input — reset to page 1 after 400ms of no typing
   useEffect(() => {
@@ -77,6 +81,13 @@ export default function JobsPage() {
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
+  // Detect admin key from sessionStorage (same pattern as jobs/[id]/page.tsx)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setAdminKey(sessionStorage.getItem("fh_admin_key"));
+    }
+  }, []);
+
   useEffect(() => {
     const loadJobs = async () => {
       try {
@@ -85,7 +96,10 @@ export default function JobsPage() {
           pageSize: pageSize.toString()
         });
         if (debouncedQuery) params.set("q", debouncedQuery);
-        const res = await fetch(`/api/fh/jobs?${params}`, { cache: "no-store" });
+        const fetchHeaders: Record<string, string> = {};
+        const key = typeof window !== "undefined" ? sessionStorage.getItem("fh_admin_key") : null;
+        if (key) fetchHeaders["X-Admin-Key"] = key;
+        const res = await fetch(`/api/fh/jobs?${params}`, { cache: "no-store", headers: fetchHeaders });
         if (!res.ok) {
           if (res.status === 429) {
             let message = `Rate limit reached. Retrying automatically in ${Math.round(RATE_LIMIT_BACKOFF_MS / 1000)} seconds.`;
@@ -203,6 +217,35 @@ export default function JobsPage() {
     }
   };
 
+  const toggleHide = async (e: React.MouseEvent, job: JobSummary) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const key = sessionStorage.getItem("fh_admin_key");
+    if (!key) return;
+    if (!job.isHidden && !window.confirm("Hide this report? It will no longer be visible to regular users.")) return;
+    const action = job.isHidden ? "unhide" : "hide";
+    // Optimistic update
+    setJobs((prev) => prev.map((j) => j.jobId === job.jobId ? { ...j, isHidden: !j.isHidden } : j));
+    setTogglingHide(job.jobId);
+    try {
+      const res = await fetch(`/api/fh/jobs/${job.jobId}/${action}`, {
+        method: "POST",
+        headers: { "X-Admin-Key": key },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      toast.success(job.isHidden ? "Report is now visible" : "Report hidden from users");
+    } catch (err: any) {
+      // Rollback optimistic update
+      setJobs((prev) => prev.map((j) => j.jobId === job.jobId ? { ...j, isHidden: job.isHidden } : j));
+      toast.error(`Failed: ${err.message}`);
+    } finally {
+      setTogglingHide(null);
+    }
+  };
+
   const getPipelineBadge = (variant?: string): { icon: string; label: string; className: string } => {
     return { icon: "🎯", label: "ClaimBoundary", className: styles.pipelineBadgeDefault };
   };
@@ -285,7 +328,7 @@ export default function JobsPage() {
               href={`/jobs/${job.jobId}`}
               className={styles.jobLink}
             >
-              <div className={styles.jobCard}>
+              <div className={`${styles.jobCard} ${job.isHidden ? styles.jobCardHidden : ""}`}>
                 {/* Status indicator */}
                 <div className={`${styles.statusIndicator} ${getStatusClass(job.status)}`}>
                   {job.status === "SUCCEEDED" && <span className={`${styles.statusIcon} ${styles.statusIconSuccess}`}>✅</span>}
@@ -298,13 +341,16 @@ export default function JobsPage() {
 
                 {/* Job info */}
                 <div className={styles.jobInfo}>
-                  {job.status !== "SUCCEEDED" && (
-                    <div className={styles.jobMeta}>
+                  <div className={styles.jobMeta}>
+                    {job.status !== "SUCCEEDED" && (
                       <span className={`${styles.statusBadge} ${getStatusBadgeClass(job.status)}`}>
                         {job.status}
                       </span>
-                    </div>
-                  )}
+                    )}
+                    {job.isHidden && (
+                      <span className={styles.hiddenBadge}>Hidden</span>
+                    )}
+                  </div>
                   <div className={styles.jobPreview}>
                     {job.inputPreview || "No preview available"}
                   </div>
@@ -348,8 +394,22 @@ export default function JobsPage() {
                   )}
                 </div>
 
-                {/* Arrow */}
-                <div className={styles.jobArrow}>→</div>
+                {/* Arrow + admin actions */}
+                <div className={styles.jobArrow}>
+                  {adminKey ? (
+                    <button
+                      className={styles.hideButton}
+                      onClick={(e) => toggleHide(e, job)}
+                      disabled={togglingHide === job.jobId}
+                      title={job.isHidden ? "Unhide report" : "Hide report"}
+                      aria-label={job.isHidden ? "Unhide report" : "Hide report"}
+                    >
+                      {job.isHidden ? "👁" : "🙈"}
+                    </button>
+                  ) : (
+                    <>→</>
+                  )}
+                </div>
               </div>
             </Link>
           ))}

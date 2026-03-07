@@ -21,7 +21,7 @@
   width: 100%;
   padding: 8px 12px;
   font-size: 14px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 6px;
   box-sizing: border-box;
 }
@@ -73,15 +73,15 @@
 .loading {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .emptyState {
   text-align: center;
   padding: 60px;
-  background-color: #f8f9fa;
+  background-color: var(--bg-surface);
   border-radius: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
 }
 
 .emptyIcon {
@@ -91,11 +91,11 @@
 
 .emptyTitle {
   margin: 0 0 8px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .emptyText {
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 20px;
 }
 
@@ -126,9 +126,9 @@
 
 .jobCard {
   padding: 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background-color: #fff;
+  background-color: var(--bg-card);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -139,6 +139,49 @@
 .jobCard:hover {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-color: #007bff;
+}
+
+.jobCardHidden {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.jobCardHidden:hover {
+  opacity: 0.85;
+}
+
+.hiddenBadge {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background-color: var(--bg-surface2);
+  color: var(--text-muted);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.hideButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.hideButton:hover {
+  opacity: 1;
+}
+
+.hideButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .statusIndicator {
@@ -197,7 +240,7 @@
 
 .jobIdCode {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .statusBadge {
@@ -321,7 +364,7 @@
 }
 
 .verdictDefault {
-  background-color: #f8f9fa;
+  background-color: var(--bg-surface);
   color: #6c757d;
   border: 1px solid #dee2e6;
 }
@@ -335,7 +378,7 @@
 
 .jobPreview {
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -344,7 +387,7 @@
 
 .jobTimestamp {
   font-size: 11px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .jobProgress {
@@ -388,7 +431,7 @@
 .progressBar {
   width: 80px;
   height: 6px;
-  background-color: #e9ecef;
+  background-color: var(--bg-surface2);
   border-radius: 3px;
   margin-top: 4px;
   overflow: hidden;
@@ -401,17 +444,17 @@
 }
 
 .jobArrow {
-  color: #ccc;
+  color: var(--border);
   font-size: 20px;
 }
 
 .footer {
   margin-top: 30px;
   padding: 16px;
-  background-color: #f8f9fa;
+  background-color: var(--bg-surface);
   border-radius: 8px;
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .footerRow {
@@ -430,10 +473,10 @@
 
 .pageButton {
   padding: 6px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background-color: #fff;
-  color: #333;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
   font-size: 12px;
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
@@ -452,7 +495,7 @@
 
 .pageInfo {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   min-width: 80px;
   text-align: center;
 }
@@ -465,23 +508,23 @@
 
 .pageSizeControl label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .footerNote {
   margin-top: 10px;
   text-align: center;
   font-size: 11px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .limitSelect {
   padding: 4px 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 12px;
-  background-color: #fff;
-  color: #333;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
