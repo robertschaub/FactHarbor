@@ -2508,7 +2508,7 @@ export function allClaimsSufficient(
 ): boolean {
   return claims.every((claim) => {
     const count = evidenceItems.filter(
-      (e) => e.relevantClaimIds?.includes(claim.id),
+      (e) => e.relevantClaimIds?.includes(claim.id) && e.evidenceScope,
     ).length;
     return count >= threshold;
   });
@@ -2595,6 +2595,7 @@ export async function runResearchIteration(
     state.evidenceItems,
     pipelineConfig,
     currentDate,
+    state.understanding?.distinctEvents ?? [],
     remainingBudget,
     {
       language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
@@ -2763,6 +2764,7 @@ export async function generateResearchQueries(
   existingEvidence: EvidenceItem[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  distinctEvents: CBClaimUnderstanding["distinctEvents"] = [],
   remainingQueryBudget?: number,
   searchGeo?: { language?: string; geography?: string | null },
 ): Promise<Array<{ query: string; rationale: string }>> {
@@ -2776,6 +2778,7 @@ export async function generateResearchQueries(
     currentDate,
     claim: claim.statement,
     expectedEvidenceProfile: JSON.stringify(claim.expectedEvidenceProfile ?? {}),
+    distinctEvents: JSON.stringify(distinctEvents),
     iterationType,
     queryStrategyMode,
     detectedLanguage: searchGeo?.language ?? "en",

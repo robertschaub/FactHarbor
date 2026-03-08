@@ -110,7 +110,6 @@ export default function SourceReliabilityPage() {
   }> | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<CachedScore | null>(null);
   const [pageSize, setPageSize] = useState(25);
-  const [pageSizeInput, setPageSizeInput] = useState("25");
   const PAGE_SIZE_OPTIONS = [25, 50, 100];
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -190,33 +189,9 @@ export default function SourceReliabilityPage() {
     fetchData();
   }, [fetchData]);
 
-  // Reset to page 1 when page size changes
-  const handlePageSizeChange = (newSize: number) => {
-    setPageSize(newSize);
-    setPageSizeInput(String(newSize));
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
     setPage(0);
-  };
-
-  const handlePageSizeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPageSizeInput(value);
-    
-    const num = parseInt(value, 10);
-    if (!isNaN(num) && num > 0 && num <= 500) {
-      setPageSize(num);
-      setPage(0);
-    }
-  };
-
-  const handlePageSizeInputBlur = () => {
-    const num = parseInt(pageSizeInput, 10);
-    if (isNaN(num) || num < 1) {
-      setPageSizeInput(String(pageSize));
-    } else if (num > 500) {
-      setPageSize(500);
-      setPageSizeInput("500");
-      setPage(0);
-    }
   };
 
   // Search handlers
@@ -1255,16 +1230,16 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
             </button>
             <div className={styles.pageSizeControl}>
               <label htmlFor="pageSize">Per page:</label>
-              <input
-                type="number"
+              <select
                 id="pageSize"
-                className={styles.pageSizeInput}
-                value={pageSizeInput}
-                onChange={handlePageSizeInputChange}
-                onBlur={handlePageSizeInputBlur}
-                min="1"
-                max="500"
-              />
+                className={styles.pageSizeSelect}
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {PAGE_SIZE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
           </div>
         </>

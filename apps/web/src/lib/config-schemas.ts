@@ -187,6 +187,11 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       priority: 2,
       dailyQuotaLimit: 10000, // Adjust based on plan
     },
+    serper: {
+      enabled: false,
+      priority: 2,
+      dailyQuotaLimit: 0, // Paid per search
+    },
     wikipedia: {
       enabled: false,
       priority: 3,

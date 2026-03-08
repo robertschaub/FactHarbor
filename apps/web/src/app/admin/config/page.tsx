@@ -103,7 +103,7 @@ interface CacheStatusResponse {
 // Search config type
 interface SearchConfig {
   enabled: boolean;
-  provider: "auto" | "google-cse" | "serpapi" | "brave";
+  provider: "auto" | "google-cse" | "serpapi" | "brave" | "serper";
   mode: "standard" | "grounded";
   maxResults: number;
   maxSourcesPerIteration: number;
@@ -214,6 +214,7 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     googleCse: { enabled: true, priority: 1 },
     serpapi: { enabled: false, priority: 2 },
     brave: { enabled: false, priority: 2 },
+    serper: { enabled: false, priority: 2 },
     wikipedia: { enabled: false, priority: 3, language: "en" },
     semanticScholar: { enabled: false, priority: 3 },
     googleFactCheck: { enabled: false, priority: 4 },
@@ -384,7 +385,7 @@ function SearchConfigForm({
     });
   };
 
-  const primaryProviders = ["googleCse", "serpapi", "brave"];
+  const primaryProviders = ["googleCse", "serpapi", "brave", "serper"];
   const supplementaryProviders = ["wikipedia", "semanticScholar", "googleFactCheck"];
 
   return (
@@ -418,6 +419,7 @@ function SearchConfigForm({
           <option value="google-cse">Google CSE</option>
           <option value="serpapi">SerpAPI</option>
           <option value="brave">Brave</option>
+          <option value="serper">Serper</option>
         </select>
         <div className={styles.formHelp}>Main search engine. Supplementary providers (below) run alongside the primary provider.</div>
       </div>
@@ -3162,7 +3164,7 @@ export default function ConfigAdminPage() {
 
       {/* Active Config Dashboard */}
       <div style={{ marginBottom: 32, maxWidth: 1200 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: "#374151" }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: "var(--text-primary)" }}>
           📊 Active Configurations Overview
         </h2>
         {dashboardLoading ? (
@@ -3185,7 +3187,7 @@ export default function ConfigAdminPage() {
                     border: `2px solid ${typeInfo.color}`,
                     borderRadius: 8,
                     padding: 16,
-                    background: "#fff",
+                    background: "var(--bg-card)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -3193,7 +3195,7 @@ export default function ConfigAdminPage() {
                     <strong style={{ fontSize: 14, color: typeInfo.color }}>{typeInfo.label}</strong>
                   </div>
                   {configs.length === 0 ? (
-                    <div style={{ fontSize: 13, color: "#9ca3af" }}>No active configs</div>
+                    <div style={{ fontSize: 13, color: "var(--text-muted)" }}>No active configs</div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {configs.map((config) => (
@@ -3201,18 +3203,18 @@ export default function ConfigAdminPage() {
                           key={config.profileKey}
                           style={{
                             padding: 10,
-                            background: "#f9fafb",
+                            background: "var(--bg-surface)",
                             borderRadius: 6,
                             fontSize: 12,
                           }}
                         >
-                          <div style={{ fontWeight: 600, marginBottom: 4, color: "#1f2937" }}>
+                          <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
                             {config.profileKey}
                           </div>
-                          <div style={{ color: "#6b7280", marginBottom: 2 }}>
+                          <div style={{ color: "var(--text-secondary)", marginBottom: 2 }}>
                             v{config.versionLabel}
                           </div>
-                          <div style={{ color: "#9ca3af", fontSize: 11 }}>
+                          <div style={{ color: "var(--text-muted)", fontSize: 11 }}>
                             {new Date(config.activatedUtc).toLocaleDateString()} {new Date(config.activatedUtc).toLocaleTimeString()}
                           </div>
                         </div>
@@ -3233,7 +3235,7 @@ export default function ConfigAdminPage() {
       {/* Config Cache Diagnostics */}
       <div style={{ marginBottom: 32, maxWidth: 1200 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#374151" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)" }}>
             🧠 Config Cache Diagnostics
           </h2>
           <button
@@ -3243,9 +3245,9 @@ export default function ConfigAdminPage() {
             style={{
               padding: "6px 12px",
               borderRadius: 6,
-              border: "1px solid #d1d5db",
-              background: cacheLoading ? "#f3f4f6" : "#fff",
-              color: "#374151",
+              border: "1px solid var(--border)",
+              background: "var(--bg-surface2)",
+              color: "var(--text-primary)",
               fontSize: 12,
               cursor: cacheLoading ? "not-allowed" : "pointer",
             }}
@@ -3259,37 +3261,37 @@ export default function ConfigAdminPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
             <div
               style={{
-                border: "1px solid #e5e7eb",
+                border: "1px solid var(--border)",
                 borderRadius: 8,
                 padding: 14,
-                background: "#fff",
+                background: "var(--bg-card)",
               }}
             >
-              <div style={{ fontWeight: 600, marginBottom: 8, color: "#111827" }}>Loader Cache</div>
-              <div style={{ fontSize: 12, color: "#374151" }}>Entries: {cacheStatus.size}</div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--text-primary)" }}>Loader Cache</div>
+              <div style={{ fontSize: 12, color: "var(--text-primary)" }}>Entries: {cacheStatus.size}</div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 6 }}>
                 Keys: {cacheStatus.entries.length ? cacheStatus.entries.map((entry) => entry.key).join(", ") : "none"}
               </div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
                 Last poll: {new Date(cacheStatus.lastPoll).toLocaleTimeString()}
               </div>
             </div>
             <div
               style={{
-                border: "1px solid #e5e7eb",
+                border: "1px solid var(--border)",
                 borderRadius: 8,
                 padding: 14,
-                background: "#fff",
+                background: "var(--bg-card)",
               }}
             >
-              <div style={{ fontWeight: 600, marginBottom: 8, color: "#111827" }}>Storage Cache</div>
-              <div style={{ fontSize: 12, color: "#374151" }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--text-primary)" }}>Storage Cache</div>
+              <div style={{ fontSize: 12, color: "var(--text-primary)" }}>
                 Entries: {cacheStatus.storageCache?.entries ?? 0}
               </div>
-              <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 6 }}>
                 TTL: {cacheStatus.storageCache?.ttlMs ?? "N/A"} ms
               </div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
                 Keys: {cacheStatus.storageCache?.keys?.length ? cacheStatus.storageCache.keys.join(", ") : "none"}
               </div>
             </div>
@@ -3963,9 +3965,10 @@ export default function ConfigAdminPage() {
                 title="Generate timestamp-based version label"
                 style={{
                   padding: "6px 10px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid var(--border)",
                   borderRadius: 4,
-                  background: "#f9fafb",
+                  background: "var(--bg-surface2)",
+                  color: "var(--text-primary)",
                   cursor: "pointer",
                   fontSize: 14,
                 }}
@@ -4110,21 +4113,21 @@ export default function ConfigAdminPage() {
             <div style={{
               marginBottom: 16,
               padding: "12px 16px",
-              background: validation.valid ? "#d1fae5" : "#fee2e2",
-              border: `1px solid ${validation.valid ? "#10b981" : "#ef4444"}`,
+              background: validation.valid ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+              border: `1px solid ${validation.valid ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
               borderRadius: 8,
             }}>
               {validation.valid ? (
-                <div style={{ color: "#065f46" }}>Valid prompt</div>
+                <div style={{ color: "#10b981" }}>Valid prompt</div>
               ) : (
                 <div>
                   {(validation.errors || []).map((e, i) => (
-                    <div key={i} style={{ color: "#b91c1c" }}>Error: {e}</div>
+                    <div key={i} style={{ color: "#dc2626" }}>Error: {e}</div>
                   ))}
                 </div>
               )}
               {(validation.warnings || []).map((w, i) => (
-                <div key={i} style={{ color: "#92400e" }}>Warning: {w}</div>
+                <div key={i} style={{ color: "#d97706" }}>Warning: {w}</div>
               ))}
             </div>
           )}
@@ -4132,16 +4135,16 @@ export default function ConfigAdminPage() {
           {/* Markdown editor */}
           <div style={{ display: "flex", gap: 16, height: 600 }}>
             {/* Line numbers + editor */}
-            <div style={{ flex: 1, display: "flex", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ flex: 1, display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
               <div style={{
                 width: 50,
-                background: "#f3f4f6",
-                borderRight: "1px solid #d1d5db",
+                background: "var(--bg-surface2)",
+                borderRight: "1px solid var(--border)",
                 padding: "8px 0",
                 fontFamily: "monospace",
                 fontSize: 13,
                 lineHeight: "1.5em",
-                color: "#9ca3af",
+                color: "var(--text-muted)",
                 textAlign: "right",
                 overflow: "hidden",
                 userSelect: "none",
@@ -4165,6 +4168,8 @@ export default function ConfigAdminPage() {
                   fontSize: 13,
                   lineHeight: "1.5em",
                   outline: "none",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
                 }}
                 spellCheck={false}
                 placeholder="Load a prompt to edit, or paste content here..."
@@ -4174,13 +4179,13 @@ export default function ConfigAdminPage() {
             {/* Section navigator */}
             <div style={{
               width: 200,
-              background: "#f9fafb",
-              border: "1px solid #d1d5db",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
               borderRadius: 8,
               padding: 12,
               overflow: "auto",
             }}>
-              <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13 }}>Sections</div>
+              <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: "var(--text-primary)" }}>Sections</div>
               {promptContent.split("\n").map((line, i) => {
                 const match = line.match(/^## ([A-Z][A-Z0-9_]+)\s*$/);
                 if (match) {
@@ -4213,7 +4218,7 @@ export default function ConfigAdminPage() {
                           textarea.scrollTop = Math.max(0, (i - Math.floor(visibleLines / 4)) * lineHeight);
                         }
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e7eb")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface2)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       {match[1]}
@@ -4256,9 +4261,10 @@ export default function ConfigAdminPage() {
                 title="Generate timestamp-based version label"
                 style={{
                   padding: "6px 10px",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid var(--border)",
                   borderRadius: 4,
-                  background: "#f9fafb",
+                  background: "var(--bg-surface2)",
+                  color: "var(--text-primary)",
                   cursor: "pointer",
                   fontSize: 14,
                 }}

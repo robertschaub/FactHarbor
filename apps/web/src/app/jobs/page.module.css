@@ -515,23 +515,24 @@
 
 .pageButton {
   padding: 6px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hover);
   border-radius: 4px;
   background-color: var(--bg-card);
   color: var(--text-primary);
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .pageButton:hover:not(:disabled) {
-  background-color: #007bff;
-  border-color: #007bff;
+  background-color: #2563eb;
+  border-color: #2563eb;
   color: #fff;
 }
 
 .pageButton:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -562,7 +563,7 @@
 
 .limitSelect {
   padding: 4px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hover);
   border-radius: 4px;
   font-size: 12px;
   background-color: var(--bg-card);

@@ -254,6 +254,7 @@ function getAnswerLabel(answer: string): string {
 function getStatusClass(status: string): string {
   if (status === "SUCCEEDED") return styles.statusSuccess;
   if (status === "FAILED") return styles.statusFailed;
+  if (status === "INTERRUPTED") return styles.statusFailed;
   return styles.statusWarning;
 }
 
@@ -420,7 +421,7 @@ export default function JobPage() {
   const [showTechnicalNotes, setShowTechnicalNotes] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [maintenance, setMaintenance] = useState(false);
-  const [pollIntervalMs, setPollIntervalMs] = useState(DETAIL_POLL_INTERVAL_MS);
+  const [pollIntervalMs, setPollIntervalMs] = useState<number | null>(DETAIL_POLL_INTERVAL_MS);
   const [isVisible, setIsVisible] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
   const exportMenuRef = useRef<HTMLDetailsElement>(null);
@@ -653,7 +654,8 @@ export default function JobPage() {
         setJob(data);
         setMaintenance(false);
         setErr(null);
-        setPollIntervalMs(DETAIL_POLL_INTERVAL_MS);
+        const isTerminal = ["SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"].includes(data.status);
+        setPollIntervalMs(isTerminal ? null : DETAIL_POLL_INTERVAL_MS);
       }
     };
 
@@ -664,6 +666,7 @@ export default function JobPage() {
       });
     }
 
+    if (pollIntervalMs === null) return () => { alive = false; };
     const id = setInterval(() => {
       if (document.hidden) return;
       load().catch((e: any) => {

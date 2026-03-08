@@ -143,6 +143,28 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<FhDbContext>();
     db.Database.Migrate();
 
+    // Mark any jobs left in RUNNING or QUEUED as INTERRUPTED (orphaned by a restart)
+    var orphanedJobs = db.Jobs
+        .Where(j => j.Status == "RUNNING" || j.Status == "QUEUED")
+        .ToList();
+    if (orphanedJobs.Count > 0)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var orphan in orphanedJobs)
+        {
+            orphan.Status = "INTERRUPTED";
+            orphan.UpdatedUtc = now;
+            db.JobEvents.Add(new FactHarbor.Api.Data.JobEventEntity
+            {
+                JobId = orphan.JobId,
+                Level = "warn",
+                Message = "Job interrupted by server restart.",
+                TsUtc = now
+            });
+        }
+        db.SaveChanges();
+    }
+
     // Seed default invite code if none exist
     if (!db.InviteCodes.Any())
     {

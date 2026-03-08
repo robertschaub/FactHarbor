@@ -315,11 +315,18 @@ ${claim}
 ${expectedEvidenceProfile}
 ```
 
+**Distinct Events:**
+```
+${distinctEvents}
+```
+
 **Iteration Type:**
 ```
 ${iterationType}
 ```
 (One of: "main", "contradiction", "contrarian")
+
+When `distinctEvents` contains multiple events, proceedings, or time-bounded episodes related to the same claim, distribute query coverage across those events instead of collapsing onto only the most prominent one. Use the event metadata to vary temporal focus and proceeding focus while staying faithful to the claim and `expectedEvidenceProfile`.
 
 When `iterationType` is `"contrarian"`, the evidence pool has been found to be directionally imbalanced. Generate queries that specifically seek evidence in the **opposite direction** to the current majority. If existing evidence mostly supports the claim, search for credible refutations, contradicting data, or dissenting expert views. If existing evidence mostly contradicts, search for supporting evidence, corroborating data, or confirmatory studies. Focus on high-quality, authoritative sources that could genuinely challenge the current evidence consensus.
 

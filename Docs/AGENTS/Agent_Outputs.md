@@ -3863,3 +3863,100 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** The new placeholder error uses `status: undefined` to avoid fabricating an HTTP status for a local configuration problem.
 **For next agent:** If provider misconfiguration surfacing is standardized later, align the placeholder-key behavior across all primary providers and decide whether AUTO-mode credential checks should also exclude placeholder values.
 **Learnings:** no
+---
+### 2026-03-07 | Unassigned | Codex (GPT-5) | Bolsonaro multi-trial narrowing investigation
+**Task:** Investigate why the Bolsonaro question about "various trials" narrowed to STF-focused evidence and boundaries.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Used the stored March 7 Bolsonaro run in `apps/api/factharbor.db` plus the active pipeline code to trace how multi-trial input becomes Stage 1 claims, Stage 2 queries, and Stage 3 boundaries.
+- Treated the problem as a pipeline-behavior issue rather than a search-provider issue because the narrowing already occurs before most Stage 2 research decisions.
+- Ranked causes by directness: lost claim dimension in Gate 1, unused `distinctEvents`, STF-skewed `expectedEvidenceProfile`, main-loop skip after preliminary sufficiency, and scope-less preliminary evidence falling into the first boundary.
+**Open items:** No code change was made in this pass; if implementation is approved, the highest-value fix is to stop using scope-less preliminary evidence to satisfy sufficiency and to stop assigning it blindly to the first boundary.
+**Warnings:** `distinctEvents` is currently dead data in the ClaimBoundary pipeline: it is stored in understanding output but not consumed anywhere downstream.
+**For next agent:** If implementing, validate on the Bolsonaro multi-trial prompt with repeated runs and inspect whether TSE/STF proceedings remain separately represented in search queries, fetched sources, and boundary assignment.
+**Learnings:** no
+
+---
+### 2026-03-07 | Senior Developer | Claude Code (Sonnet 4.6) | Admin UI Dark Mode + Serper Integration
+**Task:** Multi-part session: (1) add Serper to test-config dashboard and UCM, (2) fix dark mode across admin pages (source-reliability buttons, invites, admin overview, config, UCM prompt editor), (3) pagination UX improvements.
+**Files touched:**
+- `apps/web/src/app/api/admin/test-config/route.ts` — added `testSerper()` function and wired into GET handler
+- `apps/web/src/app/admin/test-config/page.tsx` — added `SERPER_API_KEY` to env var reference list
+- `apps/web/src/app/admin/config/page.tsx` — Serper in type union, defaults, dropdown, primaryProviders; fixed dark mode for Active Configs, Cache Diagnostics, prompt editor (textarea, line gutter, Sections panel, timestamp button, validation boxes, section hover)
+- `apps/web/src/lib/config-schemas.ts` — added serper to `DEFAULT_SEARCH_CONFIG.providers`
+- `apps/web/src/app/admin/config/config.module.css` — dark mode: tabs, typeCard, typeCard.selected, statusActive, error → CSS vars and rgba tints
+- `apps/web/src/app/admin/source-reliability/source-reliability.module.css` — viewButton/deleteButton: transparent → rgba tints; pageButton: improved contrast + hover blue; pageSizeInput → pageSizeSelect styles
+- `apps/web/src/app/admin/source-reliability/page.tsx` — per-page number input → select dropdown
+- `apps/web/src/app/admin/invites/invites.module.css` — NEW: full CSS module replacing inline styles (CSS vars throughout, dark badge overrides)
+- `apps/web/src/app/admin/invites/page.tsx` — migrated all inline styles to CSS module
+- `apps/web/src/app/admin/page.tsx` — System Health, provider cards, state badges, pause reason → CSS vars and rgba tints; all hardcoded text colors replaced
+- `apps/web/src/app/jobs/page.tsx` — default page size 50 → 25
+- `apps/web/src/app/jobs/page.module.css` — pageButton contrast + hover; limitSelect border
+**Key decisions:**
+- rgba() tints (not hardcoded pastels) for semantic green/red/blue — works in both light and dark without media queries
+- Serper registered in all 5 required locations (test route, env var list, type union, page defaults, schema defaults, dropdown, primaryProviders)
+- SR per-page uses select dropdown (not number input) for consistency
+**Open items:** None.
+**Warnings:** Serper test in test-config skips live call if circuit breaker has it paused — expected behavior.
+**For next agent:** Dark mode is now CSS-var-consistent across all admin pages. If new admin pages are added, follow the rgba() pattern for semantic colors and CSS vars for structural colors.
+**Learnings:** no
+---
+### 2026-03-07 | Unassigned | Codex (GPT-5) | Add multi-trial narrowing supplement to variability plan
+**Task:** Fold the Bolsonaro "various trials" narrowing investigation into the consolidated variability WIP document and make the plan review-ready.
+**Files touched:** `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Extended the existing consolidated WIP instead of creating a separate note, because the narrowing defect is related to variability but has a distinct implementation sequence.
+- Ranked the narrowing causes in implementation order: sufficiency shortcut first, boundary fallback assignment second, `distinctEvents` query coverage third, Gate 1 retention fourth.
+- Kept the plan generic-by-design: no Bolsonaro-specific code proposals, only pipeline-behavior fixes and validation criteria.
+**Open items:** No implementation yet. Review/approval is still needed before code changes.
+**Warnings:** The exact ID supplied by the user was not present in the local DB; the analysis used the matching stored March 7 run `867745503e5d478f8e5d3fd12bad2ecb`, which showed the same narrowing pattern.
+**For next agent:** Start with MT-1 and MT-2 from Section 10 of the WIP doc; do not begin with `distinctEvents` query expansion alone.
+**Learnings:** no
+---
+### 2026-03-08 | Unassigned | Codex (GPT-5) | Incorporate first external review into variability WIP
+**Task:** Apply the first external review findings to the consolidated variability plan and keep the document review-ready.
+**Files touched:** `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a Phase 1 preflight checklist and MT-0 preflight section so reviewers see the required UCM snapshot, baseline prompts, and downstream compatibility checks before implementation.
+- Reconciled all search-provider guidance to the same approved state: disable SerpAPI, keep Brave enabled as emergency fallback with priority 10.
+- Expanded validation beyond Bolsonaro to include non-political and multilingual multi-event probes, and added explicit guardrails for `UNVERIFIED` regression and unscoped-boundary consumer compatibility.
+**Open items:** A second reviewer can now focus on technical substance rather than document consistency; no code implementation has started.
+**Warnings:** Phase MT-2 still requires careful downstream audit because some UI/report consumers may implicitly assume every evidence item has a boundary assignment.
+**For next agent:** Re-review Section 5, Section 6, Section 10, and Appendix C together; they now contain the preflight, sequencing, and rollback logic that must stay aligned.
+**Learnings:** no
+---
+### 2026-03-08 | Unassigned | Codex (GPT-5) | Incorporate second external review into variability WIP
+**Task:** Apply the second external review findings to the consolidated variability plan, especially around MT sequencing and prompt-freeze implications.
+**Files touched:** `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Updated the multi-trial supplement to treat both theories as correct: MT-1 is the gating fix, but MT-3 must ship in the same first implementation slice so main-loop expansion does not stay STF-skewed.
+- Added explicit cost/risk notes for MT-1 and flagged that MT-3 requires a Captain-approved prompt-freeze exception because it changes the query-generation prompt section.
+- Changed the review recommendation to `MT-1 + MT-3` first, `MT-2` next, `MT-4` deferred.
+**Open items:** Another review can now focus on code-level feasibility and implementation detail rather than sequencing disagreement.
+**Warnings:** MT-3 remains prompt-touching work under the active freeze policy and must not proceed without the documented Captain exception.
+**For next agent:** Review Section 10.4 through 10.7 together; those sections now contain the final sequencing logic and should be treated as the current lead recommendation.
+**Learnings:** no
+---
+### 2026-03-08 | Unassigned | Codex (GPT-5) | Resolve final review blocker in variability WIP
+**Task:** Apply the final reviewer blocker fix so first-slice acceptance criteria no longer depend on MT-2 outcomes.
+**Files touched:** `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Separated MT-1 + MT-3 acceptance criteria from MT-2-owned boundary-assignment outcomes in Section 10.6.
+- Made the Captain-approved prompt-freeze exception a hard precondition for starting MT-3, not just an implementation note.
+- Cleaned up validation numbering in Section 6 to reduce operational ambiguity.
+**Open items:** The plan should now be rechecked only for final go/no-go, not for sequencing consistency.
+**Warnings:** MT-3 still cannot start without the explicit Captain exception for the query-generation prompt section.
+**For next agent:** Re-read Section 10.5 through 10.7 only; that is where the blocker was fixed.
+**Learnings:** no
+---
+### 2026-03-08 | Unassigned | Codex (GPT-5) | Implement MT-1 + MT-3 Stage 2 research fixes
+**Task:** Implement the approved first slice from the variability plan by preventing seeded preliminary evidence from satisfying Stage 2 sufficiency and by passing `distinctEvents` into query generation.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Tightened `allClaimsSufficient()` so only claim-linked evidence items with an `evidenceScope` count toward Stage 2 sufficiency, which prevents unscoped preliminary seed evidence from skipping the main research loop.
+- Threaded `state.understanding.distinctEvents` into `generateResearchQueries()` and into the `GENERATE_QUERIES` prompt variables so multi-event inputs can distribute research across proceedings instead of collapsing onto the most prominent event.
+- Added targeted regression coverage for both behaviors: unscoped seed evidence no longer passes sufficiency on its own, and query-generation prompt rendering now receives serialized `distinctEvents`.
+**Open items:** MT-2 is still pending; unscoped evidence can still be assigned to the first boundary later in Stage 3/reporting until that follow-up slice lands.
+**Warnings:** This slice changes Stage 2 query/extraction volume expectations because main research now runs in cases that previously short-circuited on seeded evidence. Watch job cost and runtime on sparse-evidence topics.
+**For next agent:** Start with MT-2 if continuing this plan. Verify whether any report/UI consumer still implicitly assumes every unscoped evidence item belongs to a real boundary before changing Stage 3 assignment behavior.
+**Learnings:** no

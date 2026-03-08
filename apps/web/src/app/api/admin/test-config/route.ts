@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
   results.push(await testSerpApi(searchEnabled && (searchProvider === "serpapi" || searchProvider === "auto")));
   results.push(await testGoogleCse(searchEnabled && (searchProvider === "google-cse" || searchProvider === "auto")));
   results.push(await testBrave(searchEnabled && (searchProvider === "brave" || searchProvider === "auto")));
+  results.push(await testSerper(searchEnabled && (searchProvider === "serper" || searchProvider === "auto")));
 
   // Test Search Cache & Circuit Breaker
   results.push(await testSearchCache(searchEnabled));
@@ -662,6 +663,90 @@ async function testBrave(shouldTest: boolean): Promise<TestResult> {
       message: `Brave error: ${error.message}`,
       details: error.stack,
       configUrl: "https://api-dashboard.search.brave.com",
+    };
+  }
+}
+
+async function testSerper(shouldTest: boolean): Promise<TestResult> {
+  const apiKey = process.env.SERPER_API_KEY;
+
+  if (!shouldTest) {
+    return {
+      service: "Serper",
+      status: "skipped",
+      message: "Search disabled or different provider selected",
+      configUrl: "https://serper.dev/api-key",
+    };
+  }
+
+  if (!apiKey) {
+    return {
+      service: "Serper",
+      status: "not_configured",
+      message: "SERPER_API_KEY is not set",
+      configUrl: "https://serper.dev/api-key",
+    };
+  }
+
+  if (apiKey.includes("PASTE")) {
+    return {
+      service: "Serper",
+      status: "error",
+      message: "SERPER_API_KEY contains placeholder text",
+      configUrl: "https://serper.dev/api-key",
+    };
+  }
+
+  // Skip live call if circuit breaker is OPEN — saves search credits
+  const serperCircuit = getProviderStats("serper");
+  if (serperCircuit && serperCircuit.state === "open") {
+    return {
+      service: "Serper",
+      status: "error",
+      message: "Serper circuit breaker is OPEN (skipped live test to save credits)",
+      details: `${serperCircuit.consecutiveFailures} consecutive failures. Key is configured.`,
+      configUrl: "https://serper.dev/api-key",
+    };
+  }
+
+  try {
+    const response = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ q: "test", num: 1 }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        service: "Serper",
+        status: "error",
+        message: `Serper returned status ${response.status}`,
+        details: errorText.substring(0, 200),
+        configUrl: "https://serper.dev/api-key",
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      service: "Serper",
+      status: "success",
+      message: "Serper API key is valid",
+      details: `Test search returned ${data.organic?.length || 0} results`,
+      configUrl: "https://serper.dev/api-key",
+    };
+  } catch (error: any) {
+    return {
+      service: "Serper",
+      status: "error",
+      message: `Serper error: ${error.message}`,
+      details: error.stack,
+      configUrl: "https://serper.dev/api-key",
     };
   }
 }

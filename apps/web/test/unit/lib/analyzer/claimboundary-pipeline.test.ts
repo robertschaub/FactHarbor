@@ -1339,21 +1339,32 @@ describe("findLeastContradictedClaim", () => {
 });
 
 describe("allClaimsSufficient", () => {
-  it("should return true when all claims have enough evidence", () => {
+  it("should return true when all claims have enough scoped evidence", () => {
     const claims = [
       createAtomicClaim({ id: "AC_01" }),
       createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
     ];
     const evidence = [
-      { relevantClaimIds: ["AC_01"] },
-      { relevantClaimIds: ["AC_01"] },
-      { relevantClaimIds: ["AC_01"] },
-      { relevantClaimIds: ["AC_02"] },
-      { relevantClaimIds: ["AC_02"] },
-      { relevantClaimIds: ["AC_02"] },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
     ] as any[];
 
     expect(allClaimsSufficient(claims, evidence, 3)).toBe(true);
+  });
+
+  it("should ignore unscoped preliminary evidence when checking sufficiency", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], scopeQuality: "partial" },
+      { relevantClaimIds: ["AC_01"], scopeQuality: "partial" },
+      { relevantClaimIds: ["AC_01"], scopeQuality: "partial" },
+    ] as any[];
+
+    expect(allClaimsSufficient(claims, evidence, 3)).toBe(false);
   });
 
   it("should return false when any claim is below threshold", () => {
@@ -1362,10 +1373,10 @@ describe("allClaimsSufficient", () => {
       createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
     ];
     const evidence = [
-      { relevantClaimIds: ["AC_01"] },
-      { relevantClaimIds: ["AC_01"] },
-      { relevantClaimIds: ["AC_01"] },
-      { relevantClaimIds: ["AC_02"] },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
     ] as any[];
 
     expect(allClaimsSufficient(claims, evidence, 3)).toBe(false);
@@ -1473,6 +1484,37 @@ describe("Stage 2: generateResearchQueries", () => {
       { query: "entity A 50% increase study", rationale: "verification" },
     ]);
     expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "GENERATE_QUERIES", expect.any(Object));
+  });
+
+  it("passes distinct events into the query-generation prompt variables", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+    const distinctEvents = [
+      { name: "Event 1", date: "2024-01-01", description: "First proceeding" },
+      { name: "Event 2", date: "2025-02-02", description: "Second proceeding" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [{ query: "entity A event coverage", rationale: "coverage" }],
+    });
+
+    await generateResearchQueries(
+      claim,
+      "main",
+      [],
+      mockPipelineConfig,
+      "2026-02-17",
+      distinctEvents,
+    );
+
+    expect(mockLoadSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "GENERATE_QUERIES",
+      expect.objectContaining({
+        distinctEvents: JSON.stringify(distinctEvents),
+      }),
+    );
   });
 
   it("generates supporting + refuting variants in pro_con mode", async () => {
@@ -2097,6 +2139,127 @@ describe("Stage 2: researchEvidence", () => {
     expect(budgetWarnings).toHaveLength(1);
     expect(budgetWarnings[0].severity).toBe("warning");
     expect(budgetWarnings[0].details?.stage).toBe("research_budget");
+  });
+
+  it("does not let preliminary evidence satisfy sufficiency before main research runs", async () => {
+    const { researchEvidence } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        maxTotalIterations: 3,
+        contradictionReservedIterations: 1,
+        claimSufficiencyThreshold: 3,
+        perClaimQueryBudget: 4,
+      } as any,
+      contentHash: "__TEST__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: { maxSourcesPerIteration: 5 } as any,
+      contentHash: "__TEST__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockSearch.mockResolvedValue({
+      results: [
+        { url: "https://example.com/research", title: "Research result", snippet: "snippet" },
+      ],
+      providersUsed: ["Google-CSE"],
+      errors: [],
+    } as any);
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(400),
+      title: "Fetched source",
+      contentType: "text/html",
+    } as any);
+
+    let llmStage = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmStage++;
+      switch (llmStage) {
+        case 1:
+          return {
+            queries: [{ query: "entity A proceeding one", rationale: "main coverage" }],
+          };
+        case 2:
+          return {
+            relevantSources: [
+              { url: "https://example.com/research", relevanceScore: 0.91, reasoning: "direct" },
+            ],
+          };
+        case 3:
+          return {
+            evidenceItems: [
+              {
+                statement: "Scoped research evidence",
+                category: "evidence",
+                claimDirection: "supports",
+                evidenceScope: {
+                  name: "Proceeding",
+                  methodology: "Court record review",
+                  temporal: "2024-2025",
+                },
+                probativeValue: "high",
+                sourceType: "news_primary",
+                relevantClaimIds: ["AC_01"],
+              },
+            ],
+          };
+        default:
+          return { queries: [] };
+      }
+    });
+
+    const state = {
+      originalInput: "Were multiple proceedings lawful?",
+      originalText: "Were multiple proceedings lawful?",
+      inputType: "text",
+      understanding: {
+        atomicClaims: [createAtomicClaim({ id: "AC_01", statement: "Proceedings complied with law" })],
+        distinctEvents: [
+          { name: "Event 1", date: "2024-01-01", description: "First proceeding" },
+          { name: "Event 2", date: "2025-02-02", description: "Second proceeding" },
+        ],
+        preliminaryEvidence: [
+          { sourceUrl: "https://example.com/p1", snippet: "seed 1", claimId: "AC_01" },
+          { sourceUrl: "https://example.com/p2", snippet: "seed 2", claimId: "AC_01" },
+          { sourceUrl: "https://example.com/p3", snippet: "seed 3", claimId: "AC_01" },
+        ],
+      },
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    } as any;
+
+    await researchEvidence(state);
+
+    expect(state.mainIterationsUsed).toBeGreaterThan(0);
+    expect(state.searchQueries).toHaveLength(1);
+    expect(
+      state.evidenceItems.some((item: any) => item.statement === "Scoped research evidence" && item.evidenceScope),
+    ).toBe(true);
+    expect(mockLoadSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "GENERATE_QUERIES",
+      expect.objectContaining({
+        distinctEvents: JSON.stringify(state.understanding.distinctEvents),
+      }),
+    );
   });
 });
 

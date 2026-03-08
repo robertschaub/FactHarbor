@@ -21,6 +21,8 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 
 **The single most important diagnostic action is:** run a controlled A/B comparing current prompts against pre-March-3 prompts with provider mix held constant.
 
+**Related but distinct issue:** the multi-trial Bolsonaro prompt (`"Were the various Bolsonaro trials conducted in accordance with Brazilian law, and were the verdicts fair?"`) is being narrowed too early into an STF-heavy research path. This is not just a search-query problem. The evidence shows a structural pipeline shortcut: seeded preliminary evidence can satisfy sufficiency before main research runs, and unscoped preliminary evidence is then assigned to the first boundary, which visually amplifies the STF bucket.
+
 ---
 
 ## 2. Source Investigations
@@ -30,6 +32,7 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 | 1 | [Bolsonaro_Report_Variability_Investigation_2026-03-07.md](../WIP/Bolsonaro_Report_Variability_Investigation_2026-03-07.md) | Sr. Developer + LLM Expert (Codex GPT-5) | Ranked 7 candidate causes with probabilities; identified exact-duplicate March 1 variance; confirmed evidence-pool instability in March 6-7 runs; proposed phased A/B plan |
 | 2 | [UCM_Config_Drift_Review_2026-03-05.md](../WIP/UCM_Config_Drift_Review_2026-03-05.md) + [Handoff](../AGENTS/Handoffs/2026-03-05_Senior_Developer_UCM_Config_Drift_Investigation.md) | Sr. Developer (Claude Opus) | Discovered JSON-TS config drift; SR model mismatch; Captain-approved quality tuning decisions; phased fix plan |
 | 3 | [UCM_Default_Change_History](../AGENTS/Handoffs/2026-03-07_Unassigned_UCM_Default_Change_History.md) | Codex GPT-5 | Complete commit-by-commit UCM change inventory; identified multi-flip parameters (mixedConfidenceThreshold, verdictGroundingPolicy, selfConsistencyMode) |
+| 4 | Local DB trace of matching March 7 Bolsonaro multi-trial run (`867745503e5d478f8e5d3fd12bad2ecb`) + pipeline code review | Codex GPT-5 | Isolated the multi-trial narrowing defect: Gate 1 claim loss, dead `distinctEvents`, sufficiency shortcut, and first-boundary fallback assignment |
 
 **Supporting:** [Ambiguous_Claim_Decomposition_Quality.md](../WIP/Ambiguous_Claim_Decomposition_Quality.md) — documents the dimension-label prompt fixes (A, B, C) that landed March 5, directly affecting Stage 1 decomposition behavior.
 
@@ -71,7 +74,7 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 
 | # | Decision | Rationale | Reversible? |
 |---|----------|-----------|-------------|
-| D1 | **Override Captain's March 5 block on `evidenceSufficiencyMinSourceTypes` — restore to 2** | New data (March 6-7 jobs) shows single-genre evidence pools are producing misleading directional verdicts. The original block assumed "domain-diversity fallback stability" was needed first, but the current situation (27 pp swings) is worse than the UNVERIFIED false-positive risk. | Yes — UCM change, instant rollback. |
+| D1 | **Ratify updated sufficiency decision — restore `evidenceSufficiencyMinSourceTypes` to 2** | New data (March 6-7 jobs) shows single-genre evidence pools are producing misleading directional verdicts. The original March 5 block assumed "domain-diversity fallback stability" was needed first, but the current situation (27 pp swings) is worse than the UNVERIFIED false-positive risk. | Yes — UCM change, instant rollback. |
 | D2 | **Narrow AUTO search to google-cse primary; brave as emergency fallback (priority=10); disable serpapi** | Evidence-pool instability is the #2 ranked cause. Captain modification M1: fully disabling both providers leaves zero primary search on google-cse circuit-open. Brave at priority=10 only fires as last resort. | Yes — UCM change. |
 | D3 | **Freeze ALL pipeline-stage prompts in `apps/web/prompts/` until 5x repeated-run stability passes** | 6+ prompt commits in 3 days. Captain decision Q5: freeze applies to all prompts, not just claimboundary. No exceptions without 5x stability confirmation. | Process change, no code. |
 | D4 | **Freeze `mixedConfidenceThreshold` at 45** | Three value changes (40→50→45) in the same week. Each change shifts the MIXED/directional boundary and makes cross-run comparisons unreliable. | UCM freeze — communicate to team. |
@@ -92,7 +95,7 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 
 | # | Original | Modified To | Rationale |
 |---|----------|-------------|-----------|
-| M1 | Step 1.2: fully disable serpapi + brave | **Set `brave.priority=10` (emergency fallback), disable serpapi only** | Zero primary search on google-cse circuit-open is unacceptable. Priority=99 means brave only fires as last resort — lower variance than full-enable, covers the outage case. |
+| M1 | Step 1.2: fully disable serpapi + brave | **Set `brave.priority=10` (emergency fallback), disable serpapi only** | Zero primary search on google-cse circuit-open is unacceptable. Priority=10 means brave only fires as last resort relative to google-cse, reducing variance while preserving outage coverage. |
 | M2 | D5 alongside Phase 1 | **D5 first, before Phase 1 config changes** | Stale docs during active investigation mislead other agents. |
 | M3 | No mention of affected jobs | **Flag March 5-7 jobs in admin dashboard** | Jobs that ran during high-variance window may have unreliable verdicts. Users should be aware. |
 
@@ -104,6 +107,16 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 
 **Goal:** Stop the worst variance from reaching users. No prompt changes.
 
+**Preflight before any Phase 1 config change:**
+
+1. Read the active UCM values from `apps/web/config.db` rather than assuming the document still matches runtime.
+2. Snapshot the active pipeline/search/calculation blobs or export screenshots from Admin so rollback is exact.
+3. Record a baseline on at least 3 repeated-run prompts before changing UCM:
+   - 1 Bolsonaro legal prompt
+   - 1 non-political multi-event prompt
+   - 1 multilingual multi-event prompt
+4. Confirm current report/UI consumers tolerate future unscoped-boundary handling before MT-2 implementation.
+
 | Step | Action | Config Type | Current | Target | Risk |
 |------|--------|-------------|---------|--------|------|
 | 1.1 | Restore evidence sufficiency gate | Calculation UCM | `evidenceSufficiencyMinSourceTypes: 1` | `2` | LOW — some claims may become UNVERIFIED. Mitigated by OR logic: claims pass if they have 2+ source types OR 3+ distinct domains (see Appendix C). Claims with diverse domains but a single source type still pass. |
@@ -112,8 +125,14 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 | 1.4 | Freeze ALL pipeline-stage prompts (process) | Communication | — | No edits to any prompt in `apps/web/prompts/` without 5x stability check | NONE |
 
 **Validation after Phase 1:**
-- Run the standard Bolsonaro input 5x
-- Success criteria: truth% spread <= 12 pp, no verdict-direction flip, claim extraction stable across all 5 runs
+- Run the Phase 1 repeated-run set from Section 6, not only the standard Bolsonaro input
+- Success criteria: truth% spread <= threshold per row, no verdict-direction flip on the legal/political probes, claim extraction stable across repeated runs
+
+**Prompt freeze exception protocol:**
+
+- Owner: Captain only
+- Trigger: blocking production issue or safety-critical bug
+- Required proof before merge: 5x repeated-run output on the affected prompt family, with documented before/after spread and no new verdict-direction regression
 
 ### Phase 2: Structural Fixes (1-2 weeks, medium risk)
 
@@ -146,24 +165,28 @@ Repeated-input verdict variability on Bolsonaro legal-case inputs is **real, pre
 
 | Test | Input | Metric | Pass Criteria | Run Count |
 |------|-------|--------|---------------|-----------|
-| V1 | "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?" | Truth% spread | <= 12 pp | 5x |
-| V1 | Same | Verdict direction | No flip (all same direction) | 5x |
-| V1 | Same | Claim count | Stable (same count all 5 runs) | 5x |
+| V1a | "Was the Bolsonaro judgment (trial) fair and based on Brazil's law?" | Truth% spread | <= 12 pp | 5x |
+| V1b | Same | Verdict direction | No flip (all same direction) | 5x |
+| V1c | Same | Claim count | Stable (same count all 5 runs) | 5x |
 | V2 | "Were the Bolsonaro trials conducted in accordance with Brazilian law, and were the verdicts fair?" | Truth% spread | <= 12 pp | 5x |
 | V3 | "Os julgamentos de Bolsonaro foram justos e baseados na legislacao brasileira?" | Truth% spread | <= 15 pp (multilingual tolerance) | 3x |
-| V4 | Non-controversial control (e.g., "Is the Earth round?") | Truth% spread | <= 5 pp | 3x |
+| V4 | Non-political multi-event prompt (example: "Were the Boeing 737 MAX investigations and recertification decisions conducted according to aviation safety rules, and were the outcomes fair?") | Truth% spread | <= 12 pp | 3x |
+| V5 | Multilingual multi-event prompt (example in German or French covering multiple proceedings/events) | Truth% spread | <= 15 pp | 3x |
+| V6 | Non-controversial control (e.g., "Is the Earth round?") | Truth% spread | <= 5 pp | 3x |
 
-**Total estimated cost:** ~$15-20 (16 runs x ~$1/run)
+**Cross-topic guardrail:** Track `UNVERIFIED` rate by topic class (legal/political, multilingual, multi-event non-political, control). Trigger review if any class rises above 30% after Phase 1 changes.
+
+**Total estimated cost:** ~$20-30 depending on provider mix, telemetry capture, and reruns needed for failed probes.
 
 ### Phase 2 Validation (required before production rollout)
 
 | Test | What | Pass Criteria |
 |------|------|---------------|
-| V5 | Integrity `warn_and_cap` mode on jobs with grounding issues | Warning appears in report; truth% NOT forced to 50; confidence capped at 55 |
-| V6 | Stability telemetry populated | All new metadata fields present in job results |
-| V7 | Stability test suite green | All 5 canonical inputs pass spread criteria |
-| V8 | `npm test` | All existing tests pass |
-| V9 | `npm -w apps/web run build` | Clean build |
+| V10 | Integrity `warn_and_cap` mode on jobs with grounding issues | Warning appears in report; truth% NOT forced to 50; confidence capped at 55 |
+| V11 | Stability telemetry populated | All new metadata fields present in job results |
+| V12 | Stability test suite green | All 5 canonical inputs pass spread criteria |
+| V13 | `npm test` | All existing tests pass |
+| V14 | `npm -w apps/web run build` | Clean build |
 
 ---
 
@@ -176,7 +199,7 @@ All Phase 1 changes are UCM config changes — instantly reversible via Admin UI
 | Change | Rollback Action | Time |
 |--------|----------------|------|
 | `evidenceSufficiencyMinSourceTypes: 2` | Set back to 1 via Admin UI | < 1 minute |
-| serpapi/brave disabled | Re-enable via Admin UI | < 1 minute |
+| serpapi disabled + brave emergency-only | Restore previous provider enablement/priority via Admin UI | < 1 minute |
 | Prompt freeze | Resume normal development | Immediate |
 
 **Trigger for rollback:** If Phase 1 causes a significant increase in UNVERIFIED verdicts (> 30% of runs on the stability test suite), roll back `evidenceSufficiencyMinSourceTypes` to 1 and investigate domain-diversity fallback alternatives.
@@ -222,9 +245,224 @@ The UCM Config Drift Review (March 5) had Captain-approved decisions. This plan'
 | 2b selfConsistencyTemp (blocked) | Still blocked | Agree — defer to Phase 3 |
 | 2c gate4QualityHigh = 0.75 | Implemented | No change needed |
 | 2d mixedConfidence = 50 | **Overridden to 45** (commit `4edee1b4`) | Flag for Captain (Q6) |
-| 2e sufficiencyMinSourceTypes (blocked at 1) | Still blocked | **Override recommended** — new evidence (D1) |
+| 2e sufficiencyMinSourceTypes (blocked at 1) | Captain ratified updated decision on 2026-03-07 | Restore to 2 in Phase 1 |
 | 2f defaultScore = 0.45 | Implemented | No change needed |
 | Phase 3 (CI drift test) | Not yet implemented | Include in Phase 3 (step 3.4) |
+
+---
+
+## 10. Supplement — Multi-Trial Narrowing Defect
+
+### 10.1 Problem Statement
+
+For the input:
+
+`Were the various Bolsonaro trials conducted in accordance with Brazilian law, and were the verdicts fair?`
+
+the report behaves as if it mainly researched the STF proceeding, even though the Stage 1 understanding recognized multiple proceedings/events.
+
+This is a **related but distinct** issue from general verdict variability:
+
+- variability asks why repeated runs diverge
+- this defect asks why a multi-proceeding input collapses into an STF-dominant evidence pool even within a single run
+
+### 10.2 Verified Evidence
+
+Using the local March 7 stored job `867745503e5d478f8e5d3fd12bad2ecb` in `apps/api/factharbor.db`:
+
+- `gate1Stats = { totalClaims: 2, filteredCount: 1 }`
+- only one atomic claim survived:
+  - `The various Bolsonaro trials were conducted in accordance with Brazilian law in terms of procedural compliance`
+- `distinctEvents` captured multiple proceedings/events, but no downstream stage consumes them
+- `mainIterationsUsed = 0`
+- the run jumped directly to contradiction search
+- many preliminary evidence items had no `evidenceScope`, yet were assigned to `CB_01` by fallback
+
+This means the narrowing happened **before** normal Stage 2 main research had a chance to widen coverage.
+
+### 10.3 Root Cause Chain (Ranked)
+
+| Rank | Cause | Confidence | Evidence |
+|------|-------|------------|----------|
+| 1 | **Seeded preliminary evidence can satisfy sufficiency before main research runs** | HIGH | Stage 2 seeds preliminary evidence first (`claimboundary-pipeline.ts:2133`), then exits main loop as soon as sufficiency is met (`claimboundary-pipeline.ts:2168`). In the stored run, `mainIterationsUsed = 0`. |
+| 2 | **Unscoped preliminary evidence is assigned to the first boundary** | HIGH | Seeded preliminary evidence is stored with `scopeQuality: "partial"` and usually no `evidenceScope` (`claimboundary-pipeline.ts:2441`). Stage 3 then assigns items without a matching scope to the first boundary (`claimboundary-pipeline.ts:4044`). This inflates the STF bucket visually and numerically. |
+| 3 | **Gate 1 removed one of two extracted claims** | HIGH | The stored run shows `totalClaims: 2, filteredCount: 1`. The fairness dimension or other multi-proceeding nuance did not survive into Stage 2. |
+| 4 | **`distinctEvents` is dead data** | HIGH | Stage 1 stores it (`claimboundary-pipeline.ts:860`), but no Stage 2 or Stage 3 path uses it. Multi-proceeding structure is recognized, then discarded. |
+| 5 | **Query generation uses an STF-skewed surviving claim profile** | MEDIUM | `generateResearchQueries()` only receives `claim.statement` and `expectedEvidenceProfile` (`claimboundary-pipeline.ts:2777-2778`). In the stored run, that profile already referenced Supreme Court procedural rules/documentation. |
+
+### 10.4 Consolidated Judgment on Prior Agent Recommendations
+
+Two valid proposals emerged:
+
+1. **Use `distinctEvents` in query generation**
+2. **Fix sufficiency and boundary fallback assignment first**
+
+The revised implementation order is:
+
+1. **Bundle MT-1 and MT-3 together**
+2. **Implement MT-2 independently in the same window or immediately after**
+3. **Then revisit Gate 1 / decomposition if still needed**
+
+Reason:
+
+- Theory B is the gating fix: if sufficiency short-circuits before main research, the pipeline never gets a chance to widen coverage.
+- Theory A is still required in the first implementation slice: once MT-1 forces the main loop to run, the existing query-generation inputs are still broad enough to keep producing STF-skewed queries.
+- MT-2 is analytically important, but it is a reporting/assignment correction rather than the mechanism that widens the research pool. It can land independently after the MT-1 + MT-3 bundle if needed.
+
+### 10.5 Recommended Remediation Plan
+
+#### Phase MT-0 — Preflight and compatibility checks
+
+**Goal:** avoid implementing a structurally correct fix that breaks reporting, telemetry, or validation discipline.
+
+Actions:
+
+1. Snapshot active UCM before any structural change.
+2. Capture baseline runs for at least:
+   - the Bolsonaro multi-trial prompt
+   - one non-political multi-event prompt
+   - one multilingual multi-event prompt
+3. Identify downstream consumers that assume every evidence item has `claimBoundaryId` set.
+4. Capture minimal telemetry before behavior changes:
+   - `mainIterationsUsed`
+   - evidence counts by scoped vs unscoped
+   - largest-boundary share
+   - source-domain histogram
+
+Expected effect:
+
+- reviewers can verify generic impact instead of one-topic improvement
+- MT-2 does not surprise UI/report consumers
+- regression debugging remains possible even before full Phase 2 telemetry lands
+
+#### Phase MT-1 — Stop the premature collapse (highest priority)
+
+**Goal:** ensure Stage 2 main research actually runs before sufficiency is declared.
+
+Actions:
+
+1. Adjust sufficiency evaluation so **seeded preliminary evidence alone cannot satisfy claim sufficiency**.
+2. Require at least one of:
+   - a minimum count of Stage 2 extracted evidence items with full `evidenceScope`
+   - a minimum count of Stage 2 distinct domains/source types
+3. Keep this generic. Do not special-case Bolsonaro or legal topics.
+4. Preserve the current OR logic between source-type diversity and domain diversity; the new rule must refine what counts as qualifying evidence, not accidentally replace the existing diversity logic with a stricter double-gate.
+
+Expected effect:
+
+- `mainIterationsUsed` should become `>= 1` for this class of inputs
+- the run gets a genuine evidence-expansion phase before verdict formation
+
+Cost / risk note:
+
+- MT-1 will likely increase per-job cost because more runs will execute actual Stage 2 research iterations instead of exiting after seeded preliminary evidence.
+- Validation must track average query count, fetched sources, and Stage 2 LLM-call count before and after the change.
+
+#### Phase MT-2 — Remove artificial STF inflation
+
+**Goal:** stop unscoped evidence from being silently absorbed into the first boundary.
+
+Actions:
+
+1. Replace the current first-boundary fallback in `assignEvidenceToBoundaries()` with explicit unscoped handling:
+   - `CB_GENERAL_UNSCOPED`, or
+   - keep `claimBoundaryId` unset until a proper boundary can be assigned
+2. Ensure report counts distinguish:
+   - scoped boundary evidence
+   - unscoped/general evidence
+3. Run downstream compatibility checks for UI/report code paths that currently expect every evidence item to have a boundary assignment.
+
+Expected effect:
+
+- boundary counts become analytically honest
+- `CB_01` no longer looks dominant just because it happens to be first
+
+#### Phase MT-3 — Use `distinctEvents` to widen coverage
+
+**Goal:** make Stage 2 research honor multi-proceeding inputs when the input itself already names multiplicity.
+
+Actions:
+
+1. Pass `distinctEvents` into `generateResearchQueries()`
+2. Update the query-generation prompt so event metadata can produce targeted queries when multiple proceedings/events are already present in the Stage 1 understanding
+3. Add a coverage rule:
+   - before declaring sufficiency on a multi-event input, ensure at least minimal evidence coverage exists for more than one event cluster when such clusters were extracted
+
+Expected effect:
+
+- TSE/STF/other proceedings are more likely to receive explicit targeted research
+- coverage improves without hardcoding any domain-specific entities
+
+Implementation note:
+
+- MT-3 should ship in the same implementation slice as MT-1. MT-1 alone risks producing more Stage 2 activity that is still STF-narrow because `generateResearchQueries()` currently sees only the merged claim statement and its STF-skewed evidence profile.
+- If the coverage rule classifies evidence into event clusters semantically, that classification must use LLM intelligence. A simple structural count check over already-labeled event clusters is acceptable.
+- MT-3 touches the query-generation prompt section in `apps/web/prompts/claimboundary.prompt.md`, so it requires a Captain-approved prompt-freeze exception under the protocol in Section 5.
+- **Hard precondition:** MT-3 must not begin until that Captain exception is explicitly granted and recorded.
+
+#### Phase MT-4 — Revisit claim retention only if needed
+
+**Goal:** preserve multiple verifiable dimensions when the input explicitly combines them.
+
+Actions:
+
+1. Review Gate 1 behavior for coordinated prompts like:
+   - legal/procedural compliance
+   - fairness/impartiality
+2. If needed, tune Pass 2 / Gate 1 so both dimensions survive when both are verifiable and central
+
+Risk:
+
+- medium, because this touches Stage 1 decomposition stability
+- should follow MT-1 through MT-3, not precede them
+
+### 10.6 Validation Matrix for This Defect
+
+Use the exact input:
+
+`Were the various Bolsonaro trials conducted in accordance with Brazilian law, and were the verdicts fair?`
+
+Required checks after the MT-1 + MT-3 bundle on the Bolsonaro prompt:
+
+| Check | Current Failure Pattern | Target |
+|------|--------------------------|--------|
+| `mainIterationsUsed` | `0` | `>= 1` |
+| Query set remains STF-skewed after main loop runs | Yes | No |
+| At least two event clusters receive non-trivial evidence when available | Weak | Yes |
+| Evidence coverage outside dominant STF bucket becomes materially visible in fetched sources/evidence pool | Weak / visually obscured | Yes |
+
+Required generic checks after the MT-1 + MT-3 bundle on non-Bolsonaro probes:
+
+| Check | Target |
+|------|--------|
+| Multi-event non-political prompt still produces stable coverage across more than one event cluster when evidence exists | Yes |
+| Multilingual multi-event prompt remains analyzable without English-specific collapse | Yes |
+| `UNVERIFIED` rate does not spike disproportionately for sparse-evidence topic classes | Within Phase 1 guardrail |
+
+Additional checks after MT-2:
+
+| Check | Target |
+|------|--------|
+| Unscoped evidence assigned to first named boundary | No |
+| Largest boundary dominance caused by fallback assignment | Eliminated |
+| Boundary names/counts reflect real methodological grouping, not fallback spillover | Yes |
+| Unscoped evidence is visible as unscoped/general instead of being absorbed into first named boundary | Yes |
+
+### 10.7 Review Recommendation
+
+Approve **MT-1 + MT-3** as the first implementation slice.
+
+Precondition for go on that slice: Captain-approved prompt-freeze exception for the query-generation prompt section.
+
+Approve **MT-2** as the next slice, independently or immediately after the first slice.
+
+Defer MT-4 unless the narrowing problem persists after structural fixes.
+
+This ordering treats both theories as correct:
+
+- MT-1 fixes the structural gate that prevents real research from running
+- MT-3 ensures the newly-unblocked research does not remain STF-narrow
+- MT-2 then corrects residual reporting distortion from fallback boundary assignment
 
 ---
 
@@ -313,9 +551,9 @@ Provider selection flow:
 - Supplementary providers (wikipedia, semantic-scholar) only provide background context, not primary search
 - Circuit breaker cooldown = 300 seconds with no primary search capability
 
-**Mitigation alternative:** Instead of fully disabling brave, set `brave.enabled=true` with `brave.priority=10` — this keeps it as an emergency-only fallback that never fires unless google-cse is circuit-open. However, this approach is untested and the clean disable is simpler for Phase 1.
+**Approved Phase 1 setting:** `providers.serpapi.enabled=false` and `providers.brave.enabled=true` with `providers.brave.priority=10`. This keeps Brave as an emergency-only fallback that should only fire when google-cse is unavailable or insufficient.
 
-**No code changes needed.** Setting `providers.serpapi.enabled=false` and `providers.brave.enabled=false` in Admin UI / UCM takes effect on next job run.
+**No code changes needed.** Setting `providers.serpapi.enabled=false`, keeping `providers.brave.enabled=true`, and raising `providers.brave.priority` to `10` in Admin UI / UCM takes effect on next job run.
 
 ---
 

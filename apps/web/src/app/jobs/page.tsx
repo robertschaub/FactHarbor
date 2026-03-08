@@ -50,7 +50,7 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [maintenance, setMaintenance] = useState(false);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -181,6 +181,7 @@ export default function JobsPage() {
       case "QUEUED": return styles.statusPending;
       case "PAUSED": return styles.statusPaused;
       case "CANCELLED": return styles.statusCancelled;
+      case "INTERRUPTED": return styles.statusCancelled;
       default: return "";
     }
   };
@@ -193,6 +194,7 @@ export default function JobsPage() {
       case "QUEUED": return styles.statusBadgePending;
       case "PAUSED": return styles.statusBadgePaused;
       case "CANCELLED": return styles.statusBadgeCancelled;
+      case "INTERRUPTED": return styles.statusBadgeCancelled;
       default: return "";
     }
   };
@@ -205,12 +207,13 @@ export default function JobsPage() {
       case "QUEUED": return styles.progressPercentPending;
       case "PAUSED": return styles.progressPercentPaused;
       case "CANCELLED": return styles.progressPercentCancelled;
+      case "INTERRUPTED": return styles.progressPercentCancelled;
       default: return styles.progressPercentDefault;
     }
   };
 
   const isCompleteStatus = (status: string): boolean => {
-    return status === "SUCCEEDED" || status === "FAILED" || status === "CANCELLED";
+    return status === "SUCCEEDED" || status === "FAILED" || status === "CANCELLED" || status === "INTERRUPTED";
   };
 
   const shouldHideProgressPercent = (job: JobSummary): boolean => {
@@ -346,6 +349,7 @@ export default function JobsPage() {
                   {job.status === "QUEUED" && <span className={styles.statusIcon}>🕐</span>}
                   {job.status === "PAUSED" && <span className={styles.statusIcon}>⏸️</span>}
                   {job.status === "CANCELLED" && <span className={styles.statusIcon}>🚫</span>}
+                  {job.status === "INTERRUPTED" && <span className={styles.statusIcon}>⚠️</span>}
                 </div>
 
                 {/* Job info */}

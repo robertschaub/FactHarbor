@@ -161,13 +161,13 @@ export default function AdminPage() {
       <div style={{ marginBottom: 24, maxWidth: 800, width: "100%" }}>
         <h2 style={{ margin: "10px 0" }}>System Health</h2>
         {healthLoading ? (
-          <p style={{ color: "#666", fontSize: 14 }}>Loading health state...</p>
+          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading health state...</p>
         ) : health ? (
           <div style={{
-            border: health.systemPaused ? "2px solid #dc3545" : "1px solid #ddd",
+            border: health.systemPaused ? "2px solid #dc3545" : "1px solid var(--border)",
             borderRadius: 8,
             padding: 16,
-            background: health.systemPaused ? "#fff5f5" : "#f8f9fa",
+            background: health.systemPaused ? "rgba(239,68,68,0.08)" : "var(--bg-surface)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 20 }}>{health.systemPaused ? "🔴" : "🟢"}</span>
@@ -179,10 +179,10 @@ export default function AdminPage() {
             {health.systemPaused && health.pauseReason && (
               <div style={{
                 padding: "8px 12px",
-                background: "#f8d7da",
+                background: "rgba(239,68,68,0.12)",
                 borderRadius: 6,
                 fontSize: 13,
-                color: "#721c24",
+                color: "#dc3545",
                 marginBottom: 12,
               }}>
                 <strong>Reason:</strong> {health.pauseReason}
@@ -198,9 +198,9 @@ export default function AdminPage() {
               {Object.entries(health.providers).map(([name, p]) => (
                 <div key={name} style={{
                   padding: "10px 12px",
-                  border: `1px solid ${p.state === "closed" ? "#d4edda" : "#f5c6cb"}`,
+                  border: `1px solid ${p.state === "closed" ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
                   borderRadius: 6,
-                  background: p.state === "closed" ? "#f3fff6" : "#fff5f5",
+                  background: p.state === "closed" ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <strong style={{ fontSize: 13, textTransform: "uppercase" }}>{name}</strong>
@@ -209,16 +209,16 @@ export default function AdminPage() {
                       padding: "1px 6px",
                       borderRadius: 3,
                       fontWeight: 600,
-                      background: p.state === "closed" ? "#d4edda" : p.state === "open" ? "#f8d7da" : "#fff3cd",
-                      color: p.state === "closed" ? "#28a745" : p.state === "open" ? "#dc3545" : "#856404",
+                      background: p.state === "closed" ? "rgba(16,185,129,0.2)" : p.state === "open" ? "rgba(239,68,68,0.2)" : "rgba(234,179,8,0.2)",
+                      color: p.state === "closed" ? "#10b981" : p.state === "open" ? "#dc3545" : "#d97706",
                     }}>
                       {p.state.toUpperCase()}
                     </span>
                   </div>
-                  <div style={{ fontSize: 12, color: "#666" }}>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                     Failures: {p.consecutiveFailures}
                     {p.lastFailureMessage && (
-                      <div style={{ marginTop: 4, fontSize: 11, color: "#999", wordBreak: "break-all" }}>
+                      <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)", wordBreak: "break-all" }}>
                         Last: {p.lastFailureMessage.substring(0, 100)}
                         {p.lastFailureMessage.length > 100 ? "..." : ""}
                       </div>
@@ -253,21 +253,21 @@ export default function AdminPage() {
             </div>
           </div>
         ) : (
-          <p style={{ color: "#999", fontSize: 14 }}>Unable to load system health</p>
+          <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Unable to load system health</p>
         )}
       </div>
 
 
       {/* Access Control Section */}
       <div style={{ marginBottom: 32, maxWidth: "600px" }}>
-        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "var(--text-primary)" }}>
           Access Control & Invites
         </h2>
         <div style={{ display: "grid", gap: "16px" }}>
           <Link href="/admin/invites" className={styles.btnPrimary} style={{ background: "#f59e0b" }}>
             🎫 Invite Code Management
           </Link>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             Create, manage, and monitor alpha-preview invite codes and usage quotas.
           </p>
         </div>
@@ -275,28 +275,28 @@ export default function AdminPage() {
 
       {/* FactHarbor Quality Section */}
       <div style={{ marginBottom: 32, maxWidth: "600px" }}>
-        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "var(--text-primary)" }}>
           FactHarbor Quality Administration
         </h2>
         <div style={{ display: "grid", gap: "16px" }}>
           <Link href="/admin/config" className={styles.btnPrimary} style={{ background: "#10b981" }}>
             ⚙️ Unified Configuration Management
           </Link>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             <strong>Recommended:</strong> Manage pipeline, search, calculation, and prompt configurations with version history
           </p>
 
           <Link href="/admin/test-config" className={styles.btnPrimary}>
             🔧 Configuration Test Dashboard
           </Link>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             Test and validate API keys and service configurations
           </p>
 
           <Link href="/admin/quality-health" className={styles.btnPrimary} style={{ background: "#8b5cf6" }}>
             Analysis Monitoring
           </Link>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             Unified dashboard: quality gates, quality health (F4/F5/F6), failure modes, performance &amp; cost
           </p>
 
@@ -308,7 +308,7 @@ export default function AdminPage() {
           >
             {exporting ? "⏳ Exporting..." : "📥 Export All Configurations"}
           </button>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             Download complete backup of all active configurations (disaster recovery)
           </p>
         </div>
@@ -316,14 +316,14 @@ export default function AdminPage() {
 
       {/* Source Reliability Section */}
       <div style={{ marginBottom: 32, maxWidth: "600px" }}>
-        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "var(--text-primary)" }}>
           Source Reliability (SR) Administration
         </h2>
         <div style={{ display: "grid", gap: "16px" }}>
           <Link href="/source-reliability" className={styles.btnPrimary}>
             📊 Source Reliability Cache
           </Link>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             View and manage cached source reliability scores
           </p>
         </div>
@@ -331,7 +331,7 @@ export default function AdminPage() {
 
       {/* Job Audit Section */}
       <div style={{ marginBottom: 32, maxWidth: "600px" }}>
-        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "#374151" }}>
+        <h2 style={{ marginBottom: 16, fontSize: 20, fontWeight: 600, color: "var(--text-primary)" }}>
           Job Audit & Debugging
         </h2>
         <div style={{ display: "grid", gap: "12px" }}>
@@ -364,10 +364,10 @@ export default function AdminPage() {
               🔍 Open
             </button>
           </form>
-          <p style={{ fontSize: "14px", color: "#666", marginTop: "-8px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
             View complete config snapshot for any job: <code>/admin/quality/job/[jobId]</code>
             <br />
-            <span style={{ fontSize: 12, color: "#999" }}>Enter a job ID above or navigate directly via URL</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Enter a job ID above or navigate directly via URL</span>
           </p>
         </div>
       </div>

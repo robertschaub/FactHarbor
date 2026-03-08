@@ -207,7 +207,7 @@ export default function AnalyzePage() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={"Examples:\n• Was the Bolsonaro judgment fair and based on Brazil's law?\n• Climate change is primarily caused by human activities\n• https://example.com/article-to-analyze"}
+            placeholder={"Examples:\n• Climate change is primarily caused by human activities\n• https://example.com/article-to-analyze"}
             className={styles.textarea}
           />
         </div>
@@ -223,33 +223,6 @@ export default function AnalyzePage() {
             </span>
           </div>
         )}
-
-        {/* Methodology note */}
-        <p
-          style={{
-            fontSize: 12,
-            color: "#6b7280",
-            lineHeight: 1.6,
-            maxWidth: 640,
-            margin: "8px 0 16px",
-          }}
-        >
-          When you submit a claim, question, or article, FactHarbor extracts the
-          core verifiable assertions, researches them using live web sources, and
-          subjects the evidence to a multi-step debate between an advocate, a
-          challenger, and a reconciler before producing a verdict. Each conclusion
-          is scored on a 7-point scale from TRUE to FALSE with an associated
-          confidence level. Analysis can take 5 minutes or more depending on
-          complexity and system load.{" "}
-          <a
-            href="https://factharbor.ch"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#6b7280", textDecoration: "underline" }}
-          >
-            Learn more at FactHarbor.ch
-          </a>
-        </p>
 
 
 
@@ -359,6 +332,32 @@ export default function AnalyzePage() {
             Clear
           </button>
         </div>
+
+        {/* Methodology note */}
+        <p
+          style={{
+            fontSize: 12,
+            color: "#6b7280",
+            lineHeight: 1.6,
+            margin: "16px 0 0",
+          }}
+        >
+          When you submit a claim, question, or article, FactHarbor extracts the
+          core verifiable assertions, researches them using live web sources, and
+          subjects the evidence to a multi-step debate between an advocate, a
+          challenger, and a reconciler before producing a verdict. Each conclusion
+          is scored on a 7-point scale from TRUE to FALSE with an associated
+          confidence level. Analysis can take 5 minutes or more depending on
+          complexity and system load.{" "}
+          <a
+            href="https://factharbor.ch"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#6b7280", textDecoration: "underline" }}
+          >
+            Learn more at FactHarbor.ch
+          </a>
+        </p>
       </form>
 
     </div>

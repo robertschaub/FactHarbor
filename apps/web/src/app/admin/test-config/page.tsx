@@ -226,7 +226,9 @@ export default function TestConfigPage() {
                   <strong>Search Providers:</strong>
                   <code className={styles.code}>SERPAPI_API_KEY</code>,
                   <code className={styles.code}>GOOGLE_CSE_API_KEY</code>,
-                  <code className={styles.code}>GOOGLE_CSE_ID</code>
+                  <code className={styles.code}>GOOGLE_CSE_ID</code>,
+                  <code className={styles.code}>BRAVE_API_KEY</code>,
+                  <code className={styles.code}>SERPER_API_KEY</code>
                 </div>
                 <div className={styles.envVarCategory}>
                   <strong>FactHarbor API:</strong>

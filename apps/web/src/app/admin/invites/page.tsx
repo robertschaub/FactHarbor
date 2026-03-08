@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import styles from "../../../styles/common.module.css";
+import pageStyles from "./invites.module.css";
 import toast from "react-hot-toast";
 import { useAdminAuth } from "../admin-auth-context";
 
@@ -41,9 +42,6 @@ type EditForm = {
   isActive: boolean;
 };
 
-const inputStyle = { width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" } as const;
-const labelStyle = { display: "block", fontSize: 13, marginBottom: 4 } as const;
-const actionBtnBase = { padding: "4px 8px", background: "#fff", borderRadius: 4, cursor: "pointer", fontSize: 12 } as const;
 
 export default function InviteManagementPage() {
   const { adminKey } = useAdminAuth();
@@ -276,77 +274,77 @@ export default function InviteManagementPage() {
     return (
       <tr key={`edit-${invite.code}`}>
         <td colSpan={7} style={{ padding: 0 }}>
-          <div style={{ background: "#fff8e1", padding: 16, borderTop: "2px solid #ffc107" }}>
+          <div className={pageStyles.editRow}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <strong>Editing: {invite.code}</strong>
-              <button onClick={() => { setEditingCode(null); setEditForm(null); }} style={{ ...actionBtnBase, border: "1px solid #999", color: "#666" }}>Cancel</button>
+              <button onClick={() => { setEditingCode(null); setEditForm(null); }} className={`${pageStyles.actionBtn} ${pageStyles.actionBtnCancel}`}>Cancel</button>
             </div>
             <form onSubmit={handleUpdate} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div style={{ gridColumn: "span 2" }}>
-                <label style={labelStyle}>Description</label>
+                <label className={pageStyles.label}>Description</label>
                 <input
                   type="text"
                   value={editForm.description}
                   onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                   placeholder="Description"
-                  style={inputStyle}
+                  className={pageStyles.input}
                   maxLength={256}
                 />
               </div>
               <div>
-                <label style={labelStyle}>Status</label>
+                <label className={pageStyles.label}>Status</label>
                 <select
                   value={editForm.isActive ? "active" : "inactive"}
                   onChange={e => setEditForm({ ...editForm, isActive: e.target.value === "active" })}
-                  style={inputStyle}
+                  className={pageStyles.input}
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Lifetime Limit (Max Jobs)</label>
+                <label className={pageStyles.label}>Lifetime Limit (Max Jobs)</label>
                 <input
                   type="number"
                   value={editForm.maxJobs}
                   onChange={e => setEditForm({ ...editForm, maxJobs: e.target.value })}
-                  style={inputStyle}
+                  className={pageStyles.input}
                   min={1}
                   step={1}
                   required
                 />
               </div>
               <div>
-                <label style={labelStyle}>Hourly Limit</label>
+                <label className={pageStyles.label}>Hourly Limit</label>
                 <input
                   type="number"
                   value={editForm.hourlyLimit}
                   onChange={e => setEditForm({ ...editForm, hourlyLimit: e.target.value })}
-                  style={inputStyle}
+                  className={pageStyles.input}
                   min={0}
                   step={1}
                   required
                 />
               </div>
               <div>
-                <label style={labelStyle}>Daily Limit</label>
+                <label className={pageStyles.label}>Daily Limit</label>
                 <input
                   type="number"
                   value={editForm.dailyLimit}
                   onChange={e => setEditForm({ ...editForm, dailyLimit: e.target.value })}
-                  style={inputStyle}
+                  className={pageStyles.input}
                   min={0}
                   step={1}
                   required
                 />
               </div>
               <div>
-                <label style={labelStyle}>Expiration</label>
+                <label className={pageStyles.label}>Expiration</label>
                 <input
                   type="datetime-local"
                   value={editForm.expiresUtc}
                   onChange={e => setEditForm({ ...editForm, expiresUtc: e.target.value })}
-                  style={inputStyle}
+                  className={pageStyles.input}
                 />
               </div>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
@@ -362,9 +360,9 @@ export default function InviteManagementPage() {
   const renderUsageRow = (code: string) => (
     <tr key={`usage-${code}`}>
       <td colSpan={7} style={{ padding: 0 }}>
-        <div style={{ background: "#f0f4ff", padding: 16, borderTop: "2px solid #2196f3" }}>
+        <div className={pageStyles.usageRow}>
           {usageLoading ? (
-            <span style={{ color: "#666" }}>Loading usage data...</span>
+            <span className={pageStyles.usageText}>Loading usage data...</span>
           ) : usageData ? (
             <>
               <div style={{ display: "flex", gap: 24, marginBottom: 12, fontSize: 13 }}>
@@ -373,24 +371,24 @@ export default function InviteManagementPage() {
                 <span><strong>This hour:</strong> {usageData.hourly.used}{usageData.hourly.limit > 0 ? ` / ${usageData.hourly.limit}` : ""}</span>
               </div>
               {usageData.history.length > 0 ? (
-                <table style={{ width: "auto", borderCollapse: "collapse", fontSize: 12 }}>
+                <table className={pageStyles.usageTable}>
                   <thead>
-                    <tr style={{ borderBottom: "1px solid #ccc" }}>
-                      <th style={{ padding: "4px 16px 4px 0", textAlign: "left" }}>Date</th>
-                      <th style={{ padding: "4px 0", textAlign: "right" }}>Jobs</th>
+                    <tr>
+                      <th>Date</th>
+                      <th style={{ textAlign: "right" }}>Jobs</th>
                     </tr>
                   </thead>
                   <tbody>
                     {usageData.history.map(h => (
-                      <tr key={h.date} style={{ borderBottom: "1px solid #eee" }}>
-                        <td style={{ padding: "3px 16px 3px 0", color: "#555" }}>{new Date(h.date).toLocaleDateString()}</td>
-                        <td style={{ padding: "3px 0", textAlign: "right", fontWeight: 500 }}>{h.count}</td>
+                      <tr key={h.date}>
+                        <td>{new Date(h.date).toLocaleDateString()}</td>
+                        <td>{h.count}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <span style={{ color: "#999", fontSize: 12 }}>No usage history recorded yet.</span>
+                <span className={pageStyles.usageText} style={{ fontSize: 12 }}>No usage history recorded yet.</span>
               )}
             </>
           ) : null}
@@ -413,75 +411,75 @@ export default function InviteManagementPage() {
       </div>
 
       {showCreateForm && (
-        <div style={{ background: "#f8f9fa", padding: 20, borderRadius: 8, border: "1px solid #ddd", marginBottom: 24 }}>
+        <div className={pageStyles.createForm}>
           <h3>Create New Invite Code</h3>
           <form onSubmit={handleCreate} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
-              <label style={labelStyle}>Code Name</label>
+              <label className={pageStyles.label}>Code Name</label>
               <input
                 type="text"
                 value={newCode.code}
                 onChange={e => setNewCode({...newCode, code: e.target.value})}
                 placeholder="ALPHA-2026-XYZ"
-                style={inputStyle}
+                className={pageStyles.input}
                 maxLength={64}
                 required
               />
             </div>
             <div>
-              <label style={labelStyle}>Description (Optional)</label>
+              <label className={pageStyles.label}>Description (Optional)</label>
               <input
                 type="text"
                 value={newCode.description}
                 onChange={e => setNewCode({...newCode, description: e.target.value})}
                 placeholder="For marketing partner X"
-                style={inputStyle}
+                className={pageStyles.input}
                 maxLength={256}
               />
             </div>
             <div>
-              <label style={labelStyle}>Lifetime Limit (Max Jobs)</label>
+              <label className={pageStyles.label}>Lifetime Limit (Max Jobs)</label>
               <input
                 type="number"
                 value={newCode.maxJobs}
                 onChange={e => setNewCode({...newCode, maxJobs: e.target.value})}
-                style={inputStyle}
+                className={pageStyles.input}
                 min={1}
                 step={1}
                 required
               />
             </div>
             <div>
-              <label style={labelStyle}>Hourly Limit (per 60 min)</label>
+              <label className={pageStyles.label}>Hourly Limit (per 60 min)</label>
               <input
                 type="number"
                 value={newCode.hourlyLimit}
                 onChange={e => setNewCode({...newCode, hourlyLimit: e.target.value})}
-                style={inputStyle}
+                className={pageStyles.input}
                 min={0}
                 step={1}
                 required
               />
             </div>
             <div>
-              <label style={labelStyle}>Daily Limit (24h Quota)</label>
+              <label className={pageStyles.label}>Daily Limit (24h Quota)</label>
               <input
                 type="number"
                 value={newCode.dailyLimit}
                 onChange={e => setNewCode({...newCode, dailyLimit: e.target.value})}
-                style={inputStyle}
+                className={pageStyles.input}
                 min={0}
                 step={1}
                 required
               />
             </div>
             <div>
-              <label style={labelStyle}>Expiration (Optional)</label>
+              <label className={pageStyles.label}>Expiration (Optional)</label>
               <input
                 type="datetime-local"
                 value={newCode.expiresUtc}
                 onChange={e => setNewCode({...newCode, expiresUtc: e.target.value})}
-                style={inputStyle}
+                className={pageStyles.input}
               />
             </div>
             <div style={{ gridColumn: "span 2" }}>
@@ -494,16 +492,16 @@ export default function InviteManagementPage() {
       {loading ? (
         <p>Loading invite codes...</p>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-          <thead style={{ background: "#f1f5f9", textAlign: "left" }}>
+        <table className={pageStyles.table}>
+          <thead>
             <tr>
-              <th style={{ padding: 12 }}>Code</th>
-              <th style={{ padding: 12 }}>Usage</th>
-              <th style={{ padding: 12 }}>Hourly</th>
-              <th style={{ padding: 12 }}>Daily</th>
-              <th style={{ padding: 12 }}>Status</th>
-              <th style={{ padding: 12 }}>Created</th>
-              <th style={{ padding: 12 }}>Actions</th>
+              <th>Code</th>
+              <th>Usage</th>
+              <th>Hourly</th>
+              <th>Daily</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -511,12 +509,12 @@ export default function InviteManagementPage() {
               const isEditing = editingCode === invite.code;
               const isUsageOpen = usageCode === invite.code;
               return [
-                <tr key={invite.code} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: 12 }}>
+                <tr key={invite.code}>
+                  <td>
                     <code style={{ fontWeight: "bold" }}>{invite.code}</code>
-                    {invite.description && <div style={{ fontSize: 11, color: "#666" }}>{invite.description}</div>}
+                    {invite.description && <div className={pageStyles.descriptionText}>{invite.description}</div>}
                   </td>
-                  <td style={{ padding: 12 }}>
+                  <td>
                     <button
                       onClick={() => toggleUsage(invite.code)}
                       style={{
@@ -529,42 +527,35 @@ export default function InviteManagementPage() {
                       {invite.usedJobs} / {invite.maxJobs}
                     </button>
                   </td>
-                  <td style={{ padding: 12 }}>{invite.hourlyLimit > 0 ? `${invite.hourlyLimit} / hr` : "unlimited"}</td>
-                  <td style={{ padding: 12 }}>{invite.dailyLimit > 0 ? `${invite.dailyLimit} / day` : "unlimited"}</td>
-                  <td style={{ padding: 12 }}>
-                    <span style={{
-                      padding: "2px 8px",
-                      borderRadius: 12,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      background: invite.isActive ? "#d4edda" : "#f8d7da",
-                      color: invite.isActive ? "#28a745" : "#dc3545"
-                    }}>
+                  <td>{invite.hourlyLimit > 0 ? `${invite.hourlyLimit} / hr` : "unlimited"}</td>
+                  <td>{invite.dailyLimit > 0 ? `${invite.dailyLimit} / day` : "unlimited"}</td>
+                  <td>
+                    <span className={invite.isActive ? pageStyles.badgeActive : pageStyles.badgeInactive}>
                       {invite.isActive ? "ACTIVE" : "INACTIVE"}
                     </span>
                   </td>
-                  <td style={{ padding: 12, fontSize: 12, color: "#666" }}>
+                  <td className={pageStyles.dateText}>
                     {new Date(invite.createdUtc).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: 12 }}>
+                  <td>
                     <div style={{ display: "flex", gap: 4 }}>
                       <button
                         onClick={() => isEditing ? (setEditingCode(null), setEditForm(null)) : startEdit(invite)}
-                        style={{ ...actionBtnBase, border: "1px solid #1565c0", color: "#1565c0" }}
+                        className={`${pageStyles.actionBtn} ${pageStyles.actionBtnEdit}`}
                       >
                         {isEditing ? "Cancel" : "Edit"}
                       </button>
                       {invite.isActive && (
                         <button
                           onClick={() => handleDeactivate(invite.code)}
-                          style={{ ...actionBtnBase, border: "1px solid #f57c00", color: "#f57c00" }}
+                          className={`${pageStyles.actionBtn} ${pageStyles.actionBtnDeactivate}`}
                         >
                           Deactivate
                         </button>
                       )}
                       <button
                         onClick={() => handleHardDelete(invite.code)}
-                        style={{ ...actionBtnBase, border: "1px solid #dc3545", color: "#dc3545" }}
+                        className={`${pageStyles.actionBtn} ${pageStyles.actionBtnDelete}`}
                       >
                         Delete
                       </button>
