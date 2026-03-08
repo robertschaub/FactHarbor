@@ -664,3 +664,85 @@ Once evaluation data is available, the migration follows this pattern:
 3. Compare live results: if quality parity confirmed, promote to priority 1
 4. Demote google-cse to fallback (priority 9-10)
 5. Monitor for 2 weeks before removing CSE dependency
+
+---
+
+## Appendix E: Iran Nuclear Case Study — Claim Decomposition Variability (2026-03-08)
+
+**Input:** "Was Iran actually making nukes?"
+**Jobs:** `d466c3519a9f4a848b67cbc38949da2c` (Run 1, 14:58 UTC) and `fd4a10f4814e4506aca527ca011785e1` (Run 2, 16:54 UTC)
+**Pipeline:** claimboundary, identical UCM config, same day
+
+### E.1 Side-by-Side Comparison
+
+| Metric | Run 1 | Run 2 | Delta |
+|--------|-------|-------|-------|
+| **Verdict** | TRUE | TRUE | Same direction |
+| **Truth %** | 90.4 | 92.0 | +1.6 pp (within tolerance) |
+| **Confidence** | 86.1 | 87.0 | +0.9 |
+| **AtomicClaims** | **3** | **1** | **-2 (primary divergence)** |
+| **ClaimVerdicts** | 3 (85%, 92%, 94%) | 1 (92%) | Different analytical depth |
+| **EvidenceItems** | 136 | 75 | -45% |
+| **Sources** | 31 | 9 | -71% |
+| **SearchQueries** | 18 | 14 | -22% |
+| **DistinctEvents** | 7 | 6 | -1 |
+| **LLM calls** | 38 | 26 | -32% |
+| **Warnings** | 22 (all info) | 14 (incl. 1 error) | Run 2 has structural_consistency error |
+
+### E.2 Claim Decomposition Detail
+
+**Run 1 — 3 claims (richer analysis):**
+1. AC_01: "Iran engaged in nuclear weapons research and development activities" → MOSTLY-TRUE 85%, conf 80
+2. AC_02: "Iran possessed the technical capability and infrastructure to produce nuclear weapons" → TRUE 92%, conf 88
+3. AC_03: "Iran violated its international nuclear nonproliferation commitments" → TRUE 94%, conf 90
+
+**Run 2 — 1 claim (collapsed):**
+1. AC_01: "Iran conducted nuclear weapons research and development activities in terms of historical weapons programs" → TRUE 92%, conf 87
+
+Run 1's decomposition correctly separates R&D activities (partly contested — AMAD Project suspended in 2003), technical capability (well-documented), and legal violations (independently verified by IAEA). Run 2 collapses all three facets into one compound claim, losing the nuance that the R&D facet is only MOSTLY-TRUE.
+
+### E.3 Evidence & Boundary Differences
+
+**Run 1 boundaries:**
+- U.S. intelligence + IAEA + Nuclear Archive (mega-merged): 92 items
+- General Evidence (catch-all): 36 items
+- IAEA Board of Governors compliance (2005): 4 items
+- IAEA DG statements (absence of weaponization proof): 2 items
+- Technical standards for uranium enrichment: 1 item
+- Iranian government statements: 1 item
+
+**Run 2 boundaries:**
+- IAEA Investigation and Monitoring: 44 items
+- Iranian Nuclear Archive + U.S. Intel Assessment: 27 items
+- Congressional Research Service Historical Documentation: 1 item
+- Quantitative Enrichment Assessment: 1 item
+- Israeli Government Assessment: 1 item
+- Independent Expert Technical Assessment: 1 item
+
+Run 1's mega-merged boundary (92 items, 92 scopes) indicates over-grouping. Run 2's boundaries are better structured but have less evidence overall.
+
+### E.4 Data Integrity Issues in Run 2
+
+1. **Broken evidence citation:** Verdict references evidence ID `EV_1772991202182` which does not exist in the evidence pool (`structural_consistency` error severity).
+2. **Directional tension:** Two cited supporting evidence items explicitly state Iran suspended its weapons program in 2003, creating tension with the 92% TRUE score. Run 1 handles this correctly by scoring the R&D claim at MOSTLY-TRUE (85%).
+3. **Evidence imbalance:** Run 2 has 30 supporting, 0 contradicting, 45 neutral (100% directional skew). Run 1 has 95 supporting, 1 contradicting, 40 neutral (99% skew) — both highly skewed, but Run 1 at least found 1 contradicting item.
+
+### E.5 Root Cause Confirmation
+
+This case study **confirms Root Cause #1** (Stage 1 claim-decomposition instability) from Section 3 with a new input type (geopolitical/nuclear vs legal/political). Key findings:
+
+1. **The problem is not input-specific.** Previously documented on Bolsonaro legal inputs; now reproduced on Iran nuclear inputs. This is a systemic LLM decomposition issue, not a topic-specific prompt sensitivity.
+2. **Claim count drives everything downstream.** The 3→1 claim reduction cascades into: -45% evidence, -71% sources, -22% queries, -32% LLM calls, and loss of analytical nuance.
+3. **UCM `claimDecomposition` config is dead code.** `minCoreClaimsPerContext: 2` and `minTotalClaimsWithSingleCore: 3` are defined in the calculation config schema (`config-schemas.ts:1500-1506`) but **zero references exist in the pipeline code**. The guard was designed but never wired up.
+4. **Gate 1 filtered 2 of 3 initial claims in Run 2** (quality gate data shows 3 total → 1 passed). This means Haiku 4.5 actually produced 3 claims in Run 2 as well, but Gate 1 rejected 2 of them. The variance is in Gate 1 filtering, not just in initial decomposition.
+
+### E.6 Recommended Actions
+
+These are additive to the existing Phase 2/3 plan:
+
+| Priority | Action | Phase | Effort |
+|----------|--------|-------|--------|
+| **HIGH** | Wire up `claimDecomposition` config in pipeline — enforce `minCoreClaimsPerContext` by reprompting when below minimum (up to `supplementalRepromptMaxAttempts` retries) | 2 | ~2-4 hours |
+| **HIGH** | Investigate Gate 1 filtering behavior — Run 2 started with 3 claims but filtered to 1. Understand why 2 claims failed the gate and whether the threshold is too aggressive. | 2 | ~1-2 hours investigation |
+| **MEDIUM** | Add claim-count to stability telemetry (Step 2.2) — track atomic claim count, Gate 1 pass/fail counts, and filtered-claim reasons per job | 2 | Already planned, ensure these specific fields are included |
+| **LOW** | Add "Iran nuclear" to validation matrix (Section 6) as a geopolitical probe alongside the existing legal/political Bolsonaro probes | 1 | Trivial — add row to table |
