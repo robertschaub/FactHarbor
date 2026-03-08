@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 type TestResult = {
   service: string;
-  status: "success" | "error" | "not_configured" | "skipped";
+  status: "success" | "warning" | "error" | "not_configured" | "skipped";
   message: string;
   configUrl?: string;
   details?: string;
@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
   const summary = {
     total: results.length,
     success: results.filter(r => r.status === "success").length,
+    warning: results.filter(r => r.status === "warning").length,
     error: results.filter(r => r.status === "error").length,
     not_configured: results.filter(r => r.status === "not_configured").length,
     skipped: results.filter(r => r.status === "skipped").length,
@@ -522,8 +523,8 @@ async function testGoogleCse(shouldTest: boolean): Promise<TestResult> {
   if (gcseCircuit && gcseCircuit.state === "open") {
     return {
       service: "Google Custom Search",
-      status: "error",
-      message: "Google CSE circuit breaker is OPEN (skipped live test to save quota)",
+      status: "warning",
+      message: "Google CSE circuit breaker is OPEN (skipped live test to save quota). Fallback providers active.",
       details: `${gcseCircuit.consecutiveFailures} consecutive failures. Credentials are configured.`,
       configUrl: "https://developers.google.com/custom-search/v1/introduction",
     };
@@ -534,6 +535,16 @@ async function testGoogleCse(shouldTest: boolean): Promise<TestResult> {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(5000),
     });
+
+    if (response.status === 429) {
+      return {
+        service: "Google Custom Search",
+        status: "warning",
+        message: "Google CSE daily quota exceeded. Credentials valid — fallback providers will handle searches.",
+        details: "Quota resets at midnight Pacific time. This is normal under heavy usage.",
+        configUrl: "https://developers.google.com/custom-search/v1/introduction",
+      };
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -601,8 +612,8 @@ async function testBrave(shouldTest: boolean): Promise<TestResult> {
   if (braveCircuit && braveCircuit.state === "open") {
     return {
       service: "Brave Search API",
-      status: "error",
-      message: "Brave circuit breaker is OPEN (skipped live test to save credits)",
+      status: "warning",
+      message: "Brave circuit breaker is OPEN (skipped live test to save credits). Fallback providers active.",
       details: `${braveCircuit.consecutiveFailures} consecutive failures. Key is configured.`,
       configUrl: "https://api-dashboard.search.brave.com",
     };
@@ -629,8 +640,8 @@ async function testBrave(shouldTest: boolean): Promise<TestResult> {
       } catch { /* ignore parse error */ }
       return {
         service: "Brave Search API",
-        status: "error",
-        message: `Brave quota exhausted (402)`,
+        status: "warning",
+        message: "Brave quota exhausted. Credentials valid — other fallback providers will handle searches.",
         details: quotaDetails,
         configUrl: "https://api-dashboard.search.brave.com",
       };
@@ -702,8 +713,8 @@ async function testSerper(shouldTest: boolean): Promise<TestResult> {
   if (serperCircuit && serperCircuit.state === "open") {
     return {
       service: "Serper",
-      status: "error",
-      message: "Serper circuit breaker is OPEN (skipped live test to save credits)",
+      status: "warning",
+      message: "Serper circuit breaker is OPEN (skipped live test to save credits). Fallback providers active.",
       details: `${serperCircuit.consecutiveFailures} consecutive failures. Key is configured.`,
       configUrl: "https://serper.dev/api-key",
     };
@@ -801,12 +812,16 @@ async function testSearchCircuitBreaker(shouldTest: boolean): Promise<TestResult
 
     const openCircuits = providerStats.filter((p) => p.state === "open");
     const halfOpenCircuits = providerStats.filter((p) => p.state === "half_open");
+    const healthyCircuits = providerStats.filter((p) => p.state === "closed");
 
     if (openCircuits.length > 0) {
+      const allOpen = healthyCircuits.length === 0;
       return {
         service: "Search Circuit Breaker",
-        status: "error",
-        message: `${openCircuits.length} provider(s) circuit OPEN`,
+        status: allOpen ? "error" : "warning",
+        message: allOpen
+          ? `All ${openCircuits.length} provider(s) circuit OPEN — no healthy fallbacks`
+          : `${openCircuits.length} provider(s) circuit OPEN — ${healthyCircuits.length} healthy provider(s) available`,
         details: openCircuits.map((p) => `${p.provider}: ${p.consecutiveFailures} failures`).join(", "),
       };
     }

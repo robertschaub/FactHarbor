@@ -115,6 +115,10 @@
 }
 
 .summaryCardWarning {
+  border-left: 4px solid #f59e0b;
+}
+
+.summaryCardNotConfigured {
   border-left: 4px solid #ffc107;
 }
 
@@ -175,6 +179,10 @@
 }
 
 .statusWarning {
+  border-left: 4px solid #f59e0b;
+}
+
+.statusNotConfigured {
   border-left: 4px solid #ffc107;
 }
 

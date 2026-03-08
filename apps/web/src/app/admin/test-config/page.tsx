@@ -11,7 +11,7 @@ import styles from "./test-config.module.css";
 
 type TestResult = {
   service: string;
-  status: "success" | "error" | "not_configured" | "skipped";
+  status: "success" | "warning" | "error" | "not_configured" | "skipped";
   message: string;
   configUrl?: string;
   details?: string;
@@ -21,6 +21,7 @@ type TestResponse = {
   summary: {
     total: number;
     success: number;
+    warning: number;
     error: number;
     not_configured: number;
     skipped: number;
@@ -64,10 +65,12 @@ export default function TestConfigPage() {
     switch (status) {
       case "success":
         return "✅";
+      case "warning":
+        return "⚠️";
       case "error":
         return "❌";
       case "not_configured":
-        return "⚠️";
+        return "🔧";
       case "skipped":
         return "⏭️";
       default:
@@ -79,10 +82,12 @@ export default function TestConfigPage() {
     switch (status) {
       case "success":
         return styles.statusSuccess;
+      case "warning":
+        return styles.statusWarning;
       case "error":
         return styles.statusError;
       case "not_configured":
-        return styles.statusWarning;
+        return styles.statusNotConfigured;
       case "skipped":
         return styles.statusSkipped;
       default:
@@ -132,7 +137,13 @@ export default function TestConfigPage() {
                 <div className={styles.summaryNumber}>{testResults.summary.error}</div>
                 <div className={styles.summaryLabel}>Failed</div>
               </div>
-              <div className={`${styles.summaryCard} ${styles.summaryCardWarning}`}>
+              {testResults.summary.warning > 0 && (
+                <div className={`${styles.summaryCard} ${styles.summaryCardWarning}`}>
+                  <div className={styles.summaryNumber}>{testResults.summary.warning}</div>
+                  <div className={styles.summaryLabel}>Warnings</div>
+                </div>
+              )}
+              <div className={`${styles.summaryCard} ${styles.summaryCardNotConfigured}`}>
                 <div className={styles.summaryNumber}>{testResults.summary.not_configured}</div>
                 <div className={styles.summaryLabel}>Not Configured</div>
               </div>
