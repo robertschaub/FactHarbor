@@ -3672,20 +3672,10 @@ details[open] > .devWarningSummary::before {
   }
 
   .pageHeader {
-    gap: 8px;
-    align-items: flex-start;
-  }
-
-  .pageTitle {
-    font-size: 20px;
-    flex-basis: auto;
-    order: 0;
-    flex: 1;
-    min-width: 0;
+    display: none;
   }
 
   .backToList {
-    order: 1;
     width: 42px;
     height: 42px;
     font-size: 13px;
@@ -3861,12 +3851,10 @@ details[open] > .devWarningSummary::before {
     font-size: 12px;
   }
 
-  /* Export buttons wrap to new line */
+  /* Keep export buttons inline, don't force new line */
   .exportButtons {
-    margin-left: 0;
-    width: 100%;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    margin-left: auto;
+    flex-wrap: nowrap;
   }
 
   /* Evidence items: stack text/meta */
