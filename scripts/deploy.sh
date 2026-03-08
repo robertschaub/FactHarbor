@@ -86,13 +86,18 @@ cd "$DEPLOY_DIR"
 npm ci --silent
 
 log "Building Next.js..."
-# Source production env so postbuild reseed writes to the correct config.db
-set -a
-source "$DEPLOY_DIR/deploy/.env.production"
-set +a
 npm -w apps/web run build
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 ok "Web build complete."
+
+# Reseed prompts/configs into the PRODUCTION config.db (owned by factharbor)
+# The postbuild reseed ran during build but wrote to a local ./config.db
+# because FH_CONFIG_DB_PATH wasn't set. This step targets the real DB.
+log "Reseeding configs into production database..."
+cd "$DEPLOY_DIR/apps/web"
+sudo -u factharbor FH_CONFIG_DB_PATH=/opt/factharbor/data/config.db npx tsx scripts/reseed-all-prompts.ts --quiet
+cd "$DEPLOY_DIR"
+ok "Config reseed complete."
 
 # --- Step 6: Start production services ---
 log "Starting production services..."
