@@ -86,6 +86,10 @@ cd "$DEPLOY_DIR"
 npm ci --silent
 
 log "Building Next.js..."
+# Source production env so postbuild reseed writes to the correct config.db
+set -a
+source "$DEPLOY_DIR/deploy/.env.production"
+set +a
 npm -w apps/web run build
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 ok "Web build complete."
