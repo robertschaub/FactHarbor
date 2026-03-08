@@ -899,28 +899,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
         </div>
       </header>
 
-      {/* Stats Cards */}
-      {data?.stats && (
-        <div className={styles.stats}>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{data.stats.totalEntries}</div>
-            <div className={styles.statLabel}>Cached Sources</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{formatScore(data.stats.avgScore)}</div>
-            <div className={styles.statLabel}>Avg Score</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{formatScore(data.stats.avgConfidence)}</div>
-            <div className={styles.statLabel}>Avg Confidence</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{data.stats.expiredEntries}</div>
-            <div className={styles.statLabel}>Expired</div>
-          </div>
-        </div>
-      )}
-
       {/* Search Section */}
       <div className={styles.searchSection}>
         <div className={styles.searchBox}>
@@ -1495,6 +1473,28 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      {data?.stats && (
+        <div className={styles.stats}>
+          <div className={styles.statCard}>
+            <div className={styles.statValue}>{data.stats.totalEntries}</div>
+            <div className={styles.statLabel}>Cached Sources</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statValue}>{formatScore(data.stats.avgScore)}</div>
+            <div className={styles.statLabel}>Avg Score</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statValue}>{formatScore(data.stats.avgConfidence)}</div>
+            <div className={styles.statLabel}>Avg Confidence</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statValue}>{data.stats.expiredEntries}</div>
+            <div className={styles.statLabel}>Expired</div>
           </div>
         </div>
       )}

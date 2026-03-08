@@ -27,10 +27,36 @@
   padding: 10px 12px;
   border: 1px solid transparent;
   border-radius: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .textCompact {
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.textClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.expandToggle {
+  background: none;
+  border: none;
+  color: var(--link, #1565c0);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 12px;
+  margin-top: 2px;
+}
+
+.expandToggle:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {

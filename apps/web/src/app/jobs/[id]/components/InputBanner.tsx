@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styles from "./InputBanner.module.css";
 
 type InputBannerProps = {
@@ -10,6 +11,7 @@ type InputBannerProps = {
 
 export function InputBanner({ inputType, inputValue, textColor, textBackgroundColor, textBorderColor }: InputBannerProps) {
   const text = (inputValue || "").trim();
+  const [expanded, setExpanded] = useState(false);
   if (!text) return null;
   const isLongInput = text.length > 200;
 
@@ -26,7 +28,7 @@ export function InputBanner({ inputType, inputValue, textColor, textBackgroundCo
     <div className={styles.banner} role="note" aria-label="Input">
       {showTypeLabel ? <div className={styles.sectionLabel}>Type: {typeLabel}</div> : null}
       <div
-        className={`${styles.text} ${isLongInput ? styles.textCompact : ""}`}
+        className={`${styles.text} ${isLongInput ? styles.textCompact : ""} ${isLongInput && !expanded ? styles.textClamped : ""}`}
         style={{
           ...(textColor ? { color: textColor } : {}),
           ...(textBackgroundColor ? { backgroundColor: textBackgroundColor } : {}),
@@ -35,6 +37,11 @@ export function InputBanner({ inputType, inputValue, textColor, textBackgroundCo
       >
         {text}
       </div>
+      {isLongInput && (
+        <button className={styles.expandToggle} onClick={() => setExpanded(v => !v)}>
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
     </div>
   );
 }
