@@ -4243,3 +4243,16 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Commit 2 changes are currently uncommitted — agent must run git commit --trailer "Made-with: Cursor" before starting Commit 1b.
 **For next agent:** Commit Commit 2 changes first. Then implement Commit 1b: schema change (`ALTER TABLE ... ADD COLUMN source_type TEXT`), store sourceType at `setCachedScore` time, add `srCacheTtlBySourceType` to `SourceReliabilityConfigSchema` with approved values (government=21d, state_controlled_media=21d, unknown=21d, state_media=30d, advocacy=30d, platform_ugc=45d, aggregator=45d, editorial_publisher=60d, wire_service=90d, propaganda_outlet=90d, known_disinformation=90d). TTL lookup: sourceType → category → flat.
 **Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.4 Complete — SR Cache TTL + Web-Search Augmentation
+**Task:** Final sign-off on Phase 2.4.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- All 3 commits verified on origin: `1e5db3de` (per-category TTL), `e3f1228e` (web-search augmented SR), `3b28bba1` (per-sourceType TTL, regime-change fix).
+- Phase 2.4 fully delivers: (1) TTL differentiation so volatile sources expire sooner, (2) web-search augmented re-evaluation so re-checks use current credibility data not stale training knowledge, (3) per-sourceType TTL so government sources expire in 21 days (not 60) — the core Biden→Trump regime-change fix.
+- All 3 UCM tiers configurable: `cacheTtlBySourceType` → `cacheTtlByCategory` → `cacheTtlDays`.
+**Open items:** Phase 2.5 (Scope Normalization) is next.
+**Warnings:** None.
+**For next agent:** Phase 2.5 spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Scope equivalence detection MUST use LLM intelligence (AGENTS.md mandate — no string similarity heuristics). Propose implementation approach for Captain review before writing any code.
+**Learnings:** no
