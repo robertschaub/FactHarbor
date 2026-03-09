@@ -692,6 +692,16 @@ const Pass2OutputSchema = z.object({
   backgroundDetails: z.string().catch(""),
   articleThesis: z.string().catch(""),
   atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
+  // LLM-classified input type: replaces the char-count heuristic in detectInputType().
+  // "claim" = short assertion, "question" = interrogative, "article" = long-form text.
+  // Falls back to "claim" if LLM omits (backward-compat with pre-2.2 prompts).
+  inputClassification: z.enum([
+    "single_atomic_claim",
+    "ambiguous_single_claim",
+    "multi_assertion_input",
+    "question",
+    "article",
+  ]).catch("single_atomic_claim"),
   // Metadata/structural fields — calling code already nullchecks with ?? fallbacks.
   distinctEvents: z.array(z.object({
     name: z.string(),
@@ -849,10 +859,13 @@ export async function extractClaims(
   // Tagged claims are exempt from Gate 1 fidelity filtering — they represent
   // inherent interpretations of the input's semantic range, not evidence imports.
   // ------------------------------------------------------------------
-  const allHighCentralSupports = filteredClaims.length > 1 && filteredClaims.every(
-    (c) => c.centrality === "high" && c.claimDirection === "supports_thesis",
-  );
-  if (allHighCentralSupports) {
+  // Use LLM's explicit inputClassification when available (Phase 2.2);
+  // fall back to structural heuristic for backward compat with pre-2.2 prompts.
+  const isDimensionInput = pass2.inputClassification === "ambiguous_single_claim"
+    || (pass2.inputClassification === "single_atomic_claim"  // pre-2.2 fallback
+        && filteredClaims.length > 1
+        && filteredClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+  if (isDimensionInput) {
     for (const c of filteredClaims) {
       (c as AtomicClaim).isDimensionDecomposition = true;
     }
@@ -918,11 +931,12 @@ export async function extractClaims(
           effectiveMax,
         );
 
-        // Dimension decomposition tagging
-        const retryAllHigh = retryClaims.length > 1 && retryClaims.every(
-          (c) => c.centrality === "high" && c.claimDirection === "supports_thesis",
-        );
-        if (retryAllHigh) {
+        // Dimension decomposition tagging (same logic as initial pass)
+        const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim"
+          || (retryPass2.inputClassification === "single_atomic_claim"
+              && retryClaims.length > 1
+              && retryClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+        if (retryIsDimension) {
           for (const c of retryClaims) {
             (c as AtomicClaim).isDimensionDecomposition = true;
           }
@@ -986,7 +1000,12 @@ export async function extractClaims(
   // Assemble CBClaimUnderstanding
   // ------------------------------------------------------------------
   return {
-    detectedInputType: detectInputType(state.originalInput),
+    // Use LLM's inputClassification when available (Phase 2.2); fall back to char-count heuristic.
+    // The LLM sees semantic content (question marks, article structure) that the heuristic misses.
+    detectedInputType: (bestPass2.inputClassification !== "single_atomic_claim" &&
+                        bestPass2.inputClassification !== "ambiguous_single_claim")
+      ? bestPass2.inputClassification as InputType
+      : detectInputType(state.originalInput),
     impliedClaim: bestPass2.impliedClaim,
     backgroundDetails: bestPass2.backgroundDetails,
     articleThesis: bestPass2.articleThesis,

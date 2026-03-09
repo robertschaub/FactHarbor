@@ -49,7 +49,7 @@ export function assertValidTruthPercentage(
 // INPUT TYPES
 // ============================================================================
 
-export type InputType = "claim" | "article";
+export type InputType = "claim" | "question" | "article";
 export type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
 
 /**
