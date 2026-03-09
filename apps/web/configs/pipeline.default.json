@@ -113,6 +113,8 @@
   "maxClaimBoundaries": 6,
   "boundaryCoherenceMinimum": 0.3,
   "boundaryClusteringTemperature": 0.05,
+  "scopeNormalizationEnabled": true,
+  "scopeNormalizationMinScopes": 5,
   "selfConsistencyMode": "full",
   "selfConsistencyTemperature": 0.4,
   "challengerTemperature": 0.3,

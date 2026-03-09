@@ -491,6 +491,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum internalCoherence; below this, boundary is flagged (default: 0.3)"),
   boundaryClusteringTemperature: z.number().min(0).max(1).optional()
     .describe("Temperature for Stage 3 boundary clustering (default: 0.05). Lower values reduce structural variance."),
+  scopeNormalizationEnabled: z.boolean().optional()
+    .describe("Enable LLM-based scope equivalence detection before boundary clustering (default: true). Merges semantically identical EvidenceScopes that differ only in wording."),
+  scopeNormalizationMinScopes: z.number().int().min(2).optional()
+    .describe("Minimum number of unique scopes to trigger LLM normalization (default: 5). Below this, skip the LLM call."),
 
   // Stage 4: Verdict
   selfConsistencyMode: z.enum(["full", "disabled"]).optional()
@@ -754,6 +758,12 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.boundaryClusteringTemperature === undefined) {
     data.boundaryClusteringTemperature = 0.05;
+  }
+  if (data.scopeNormalizationEnabled === undefined) {
+    data.scopeNormalizationEnabled = true;
+  }
+  if (data.scopeNormalizationMinScopes === undefined) {
+    data.scopeNormalizationMinScopes = 5;
   }
 
   // ClaimBoundary Stage 4 defaults

@@ -308,16 +308,17 @@ export function getConfidenceTierLabel(confidence: number): string {
  */
 export function formatVerdictText(displayPct: number, verdict: string): string {
   const v = (verdict || "").toUpperCase();
+  const pct = Math.round(displayPct);
   if (v === "MIXED") {
-    return `${displayPct}/${100 - displayPct} split`;
+    return `${pct}/${100 - pct} split`;
   }
   if (v === "UNVERIFIED") {
     return "Insufficient evidence";
   }
   if (isFalseBand(v)) {
-    return `${displayPct}% false`;
+    return `${pct}% false`;
   }
-  return `${displayPct}% true`;
+  return `${pct}% true`;
 }
 
 /**

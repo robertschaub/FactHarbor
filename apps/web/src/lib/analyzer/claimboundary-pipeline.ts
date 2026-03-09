@@ -70,6 +70,7 @@ import {
   type ModelTask,
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
+import { normalizeScopeEquivalence, repointEvidenceScopes } from "./scope-normalization";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
@@ -3913,12 +3914,35 @@ export async function clusterBoundaries(
   }
 
   // ------------------------------------------------------------------
+  // Step 1b: LLM-based scope normalization (Haiku tier, Phase 2.5)
+  // Detects semantically equivalent scopes that differ only in wording.
+  // ------------------------------------------------------------------
+  const scopeNormEnabled = pipelineConfig.scopeNormalizationEnabled ?? true;
+  const scopeNormMinScopes = pipelineConfig.scopeNormalizationMinScopes ?? 5;
+  let effectiveScopes = uniqueScopes;
+
+  if (scopeNormEnabled && uniqueScopes.length >= scopeNormMinScopes) {
+    try {
+      const normResult = await normalizeScopeEquivalence(uniqueScopes, pipelineConfig);
+      if (normResult.mergedCount > 0) {
+        // Step 1c: Re-point evidence items to canonical scopes
+        repointEvidenceScopes(state.evidenceItems, normResult);
+        effectiveScopes = normResult.normalizedScopes;
+        state.llmCalls++;
+      }
+    } catch (err) {
+      // Normalization failure is non-fatal — proceed with original scopes
+      console.info("[Stage3] Scope normalization failed (non-fatal), proceeding with original scopes:", err);
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Step 2: LLM clustering (Sonnet tier)
   // ------------------------------------------------------------------
   let boundaries: ClaimAssessmentBoundary[];
   try {
     boundaries = await runLLMClustering(
-      uniqueScopes,
+      effectiveScopes,
       state.evidenceItems,
       state.understanding?.atomicClaims ?? [],
       pipelineConfig,

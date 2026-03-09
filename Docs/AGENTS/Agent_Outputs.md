@@ -1,5 +1,35 @@
 # Agent Outputs Log
 
+---
+### 2026-03-09 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2 — Documentation Conclusion
+**Task:** Conclude Phase 2 documentation — update status in Coding Agent Prompts, WIP plan, and Agent_Outputs.
+**Files touched:** `Docs/DEVELOPMENT/Coding Agent Prompts.md`, `Docs/WIP/Report_Quality_Analysis_2026-03-08.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Phase 2 track closed: 2.1 (Gate 1 + reprompt loop), 2.2 (inputClassification), 2.3 (maxTokens fix), 2.4 (SR TTL + web-search), 2.5 (scope normalization) — all implemented and verified.
+- Coding Agent Prompts simplified to "Phase 2 complete" summary; implementation specs archived (full plan remains in Report_Quality_Analysis).
+- Backlog items (D2 classification instability, D4 Gate 1 specificity, maxTokens UCM) documented for future phases.
+**Open items:** None for Phase 2.
+**For next agent:** Phase 2 complete. See Report_Quality_Analysis for Phase 3 roadmap if continuing variability work.
+**Learnings:** no
+
+---
+### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.5: Scope Normalization Module
+**Task:** Create LLM-based scope normalization module that deduplicates semantically equivalent EvidenceScopes before boundary clustering (Stage 3).
+**Files touched:**
+- `apps/web/src/lib/analyzer/scope-normalization.ts` (new) — Core module: `normalizeScopeEquivalence()`, `repointEvidenceScopes()`, `validateNormalizationOutput()`, Zod schema for LLM output
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Wired normalization into `clusterBoundaries()` as Step 1b between scope collection and LLM clustering
+- `apps/web/test/unit/lib/scope-normalization.test.ts` (new) — Unit tests for validation, mergeMap correctness, evidence re-pointing
+**Key decisions:**
+- Uses Haiku-tier LLM call (cheap) to detect semantically equivalent scopes before Sonnet-tier clustering
+- UCM-configurable: `scopeNormalizationEnabled` (default true), `scopeNormalizationMinScopes` (default 5) — skips when few scopes
+- Safe fallback: any LLM/parse/validation failure returns identity result (no merges), non-fatal
+- Zod schema validates completeness (all scopes assigned), no duplicates, canonical index membership
+- Evidence items re-pointed to canonical scope objects after normalization so `scopeFingerprint()` matches downstream
+- Uses `loadAndRenderSection("claimboundary", "SCOPE_NORMALIZATION", ...)` — requires prompt section in claimboundary.prompt.md
+**Open items:** SCOPE_NORMALIZATION prompt section needs to be added to `apps/web/prompts/claimboundary.prompt.md` for the normalization to activate in production. Without it, the module gracefully skips (returns identity).
+**Warnings:** Three build issues fixed during implementation: (1) Zod `.nonneg()` not available in project version → replaced with `.min(0)`, (2) `getStructuredOutputProviderOptions` takes 1 arg not 2, (3) `extractStructuredOutput` returns `{}` type — added Zod `.parse()` for type-safe assignment.
+**For next agent:** The normalization is wired but needs the SCOPE_NORMALIZATION prompt section in claimboundary.prompt.md to activate. Config fields (`scopeNormalizationEnabled`, `scopeNormalizationMinScopes`) should already be in config-schemas.ts and pipeline.default.json from prior work.
+**Learnings:** no
 
 ---
 ### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.4 Commit 1: Per-category SR cache TTL
@@ -4255,4 +4285,18 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** Phase 2.5 (Scope Normalization) is next.
 **Warnings:** None.
 **For next agent:** Phase 2.5 spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Scope equivalence detection MUST use LLM intelligence (AGENTS.md mandate — no string similarity heuristics). Propose implementation approach for Captain review before writing any code.
+**Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.5 Pre-implementation Review — Approved
+**Task:** Review Zod schema and SCOPE_NORMALIZATION prompt draft before Phase 2.5 implementation.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Schema approved: `ScopeNormalizationOutputSchema` + `validateNormalizationOutput()` covers all 4 correctness properties (canonical membership, bounds, no duplicates, completeness). `mergeMap` semantics clear. Fallback path unambiguous.
+- Prompt approved with 2 minor fixes required before commit: (1) line 25 methodology example ("full lifecycle analysis" vs "cradle-to-grave assessment") is real LCA terminology — replace with abstract phrasing; (2) `scopes` variable must be in prompt frontmatter when integrated into `claimboundary.prompt.md`.
+- No re-review needed for those two fixes — they are trivial textual changes. Implementation unblocked.
+- Approach: Option C (Haiku-tier LLM normalization between `collectUniqueScopes()` and `runLLMClustering()`). UCM defaults: `scopeNormalizationEnabled: true`, `scopeNormalizationMinScopes: 5`.
+**Open items:** Implementation. Run npm test after.
+**Warnings:** Evidence re-pointing (in-place mutation before clustering) must cover all evidence items referencing non-canonical scope objects — verify no orphaned references after merge.
+**For next agent:** Implement normalization step in `claimboundary-pipeline.ts`. Fix the two prompt issues noted above before committing. Add `scopes` to frontmatter variables. Unit test: mergeMap correctness, fallback on invalid LLM output, skip when scope count < threshold.
 **Learnings:** no
