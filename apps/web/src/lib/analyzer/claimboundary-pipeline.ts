@@ -770,13 +770,15 @@ export interface PreliminaryEvidenceItem {
 export async function extractClaims(
   state: CBResearchState
 ): Promise<CBClaimUnderstanding> {
-  // Load pipeline + search configs from UCM
-  const [pipelineResult, searchResult] = await Promise.all([
+  // Load pipeline + search + calc configs from UCM
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default"),
     loadSearchConfig("default"),
+    loadCalcConfig("default"),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+  const calcConfig = calcResult.config;
 
   // Log config load status for extract stage
   if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
@@ -860,25 +862,137 @@ export async function extractClaims(
   // Gate 1: Claim validation (Haiku, batched) — actively filters claims
   // ------------------------------------------------------------------
   state.onEvent?.("Extracting claims: Gate 1 validation...", 26);
-  const gate1Result = await runGate1Validation(
+  let gate1Result = await runGate1Validation(
     filteredClaims,
     pipelineConfig,
     currentDate,
     state.originalInput,
   );
   state.llmCalls++;
+  let bestPass2 = pass2;
+
+  // ------------------------------------------------------------------
+  // D1 Commit 2: Reprompt loop — retry Pass 2 if post-Gate-1 claim count
+  // is below the UCM-configured minimum. Uses fresh LLM calls with a brief
+  // guidance note (no prior claim list — avoids anchoring the LLM).
+  // ------------------------------------------------------------------
+  const minCoreClaims = calcConfig.claimDecomposition?.minCoreClaimsPerContext ?? 2;
+  const maxRepromptAttempts = calcConfig.claimDecomposition?.supplementalRepromptMaxAttempts ?? 2;
+
+  if (gate1Result.filteredClaims.length < minCoreClaims && maxRepromptAttempts > 0) {
+    console.info(
+      `[Stage1] Post-Gate-1 claim count (${gate1Result.filteredClaims.length}) < minimum (${minCoreClaims}). ` +
+      `Starting reprompt loop (max ${maxRepromptAttempts} attempts).`
+    );
+
+    // Track best result across attempts (initial + retries)
+    let bestPostGate1Count = gate1Result.filteredClaims.length;
+    let bestGate1Result = gate1Result;
+    let bestAttemptPass2 = pass2;
+
+    for (let attempt = 1; attempt <= maxRepromptAttempts; attempt++) {
+      state.onEvent?.(`Extracting claims: reprompt attempt ${attempt}/${maxRepromptAttempts}...`, 24);
+
+      const guidance =
+        `DECOMPOSITION GUIDANCE: Prior extraction produced ${bestPostGate1Count} claim(s), ` +
+        `but the input likely contains multiple distinct verifiable dimensions. ` +
+        `Attempt deeper dimension analysis — identify at least ${minCoreClaims} independent, ` +
+        `verifiable aspects of the input that could be assessed separately.`;
+
+      try {
+        // Fresh Pass 2 with guidance (no prior claim list)
+        const retryPass2 = await runPass2(
+          state.originalInput,
+          preliminaryEvidence,
+          pipelineConfig,
+          currentDate,
+          state,
+          guidance,
+        );
+        state.llmCalls++;
+
+        // Centrality filter
+        const retryClaims = filterByCentrality(
+          retryPass2.atomicClaims as unknown as AtomicClaim[],
+          centralityThreshold,
+          effectiveMax,
+        );
+
+        // Dimension decomposition tagging
+        const retryAllHigh = retryClaims.length > 1 && retryClaims.every(
+          (c) => c.centrality === "high" && c.claimDirection === "supports_thesis",
+        );
+        if (retryAllHigh) {
+          for (const c of retryClaims) {
+            (c as AtomicClaim).isDimensionDecomposition = true;
+          }
+        }
+
+        // Gate 1 validation
+        const retryGate1 = await runGate1Validation(
+          retryClaims,
+          pipelineConfig,
+          currentDate,
+          state.originalInput,
+        );
+        state.llmCalls++;
+
+        const retryCount = retryGate1.filteredClaims.length;
+        console.info(
+          `[Stage1] Reprompt attempt ${attempt}: ${retryCount} claims post-Gate-1 ` +
+          `(best so far: ${bestPostGate1Count}).`
+        );
+
+        // Selection: highest post-Gate-1 count; ties → later attempt
+        if (retryCount >= bestPostGate1Count) {
+          bestPostGate1Count = retryCount;
+          bestGate1Result = retryGate1;
+          bestAttemptPass2 = retryPass2;
+        }
+
+        // Stop early if minimum reached
+        if (bestPostGate1Count >= minCoreClaims) {
+          console.info(`[Stage1] Reprompt recovered: ${bestPostGate1Count} claims >= minimum ${minCoreClaims}.`);
+          break;
+        }
+      } catch (repromptErr) {
+        // Reprompt failures are non-fatal — keep best result so far
+        console.warn(`[Stage1] Reprompt attempt ${attempt} failed (non-fatal):`, repromptErr);
+      }
+    }
+
+    // Use best result
+    gate1Result = bestGate1Result;
+    bestPass2 = bestAttemptPass2;
+
+    // Add warning if minimum still not met after all retries
+    if (bestPostGate1Count < minCoreClaims) {
+      state.warnings.push({
+        type: "low_claim_count",
+        severity: "info",
+        message: `Claim decomposition produced ${bestPostGate1Count} claim(s) after ${maxRepromptAttempts} reprompt attempt(s) ` +
+          `(minimum: ${minCoreClaims}). Proceeding with best available decomposition.`,
+        details: {
+          stage: "stage1_reprompt",
+          postGate1Count: bestPostGate1Count,
+          minRequired: minCoreClaims,
+          attemptsUsed: maxRepromptAttempts,
+        },
+      });
+    }
+  }
 
   // ------------------------------------------------------------------
   // Assemble CBClaimUnderstanding
   // ------------------------------------------------------------------
   return {
     detectedInputType: detectInputType(state.originalInput),
-    impliedClaim: pass2.impliedClaim,
-    backgroundDetails: pass2.backgroundDetails,
-    articleThesis: pass2.articleThesis,
+    impliedClaim: bestPass2.impliedClaim,
+    backgroundDetails: bestPass2.backgroundDetails,
+    articleThesis: bestPass2.articleThesis,
     atomicClaims: gate1Result.filteredClaims,
-    distinctEvents: pass2.distinctEvents ?? [],
-    riskTier: pass2.riskTier ?? "B",
+    distinctEvents: bestPass2.distinctEvents ?? [],
+    riskTier: bestPass2.riskTier ?? "B",
     detectedLanguage: pass1.detectedLanguage,
     inferredGeography: pass1.inferredGeography,
     preliminaryEvidence: preliminaryEvidence.map((pe) => ({
@@ -1441,6 +1555,7 @@ export async function runPass2(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   state?: Pick<CBResearchState, "warnings" | "onEvent">,
+  repromptGuidance?: string,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
   const buildPreliminaryEvidencePayload = (items: PreliminaryEvidenceItem[]): string =>
     JSON.stringify(
@@ -1523,9 +1638,15 @@ export async function runPass2(
       // Always anchor with fact-checking context; on retry also append schema/quality guidance.
       // Structured as [user input] + [context] + [retry guidance if any] to keep the
       // user's text visually first while ensuring framing precedes the model's compliance decision.
-      const userContent = (attempt > 0 && retryGuidance)
-        ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}`
-        : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}`;
+      // Build user message: input text + fact-check framing + optional reprompt/retry guidance
+      const guidanceParts: string[] = [inputText, "---", FACT_CHECK_CONTEXT];
+      if (repromptGuidance && attempt === 0) {
+        guidanceParts.push(repromptGuidance);
+      }
+      if (attempt > 0 && retryGuidance) {
+        guidanceParts.push(retryGuidance);
+      }
+      const userContent = guidanceParts.join("\n\n");
       const activeSystemPrompt = retryWithoutPreliminaryEvidence
         ? renderedWithoutEvidence.content
         : renderedWithEvidence.content;
