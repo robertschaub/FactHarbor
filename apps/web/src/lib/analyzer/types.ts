@@ -459,6 +459,8 @@ export interface EvidenceItem {
   derivativeClaimUnverified?: boolean;
   // CB pipeline §8.2 step 8: EvidenceScope quality assessment
   scopeQuality?: "complete" | "partial" | "incomplete";
+  // True if this evidence was seeded from preliminary search
+  isSeeded?: boolean;
 }
 
 export interface FetchedSource {
@@ -982,6 +984,14 @@ export interface CBClaimUnderstanding {
     snippet: string;
     claimId: string;
     probativeValue?: "high" | "medium" | "low";
+    claimDirection?: "supports" | "contradicts" | "contextual";
+    sourceType?: string;
+    evidenceScope?: {
+      methodology?: string;
+      temporal?: string;
+      geographic?: string;
+      boundaries?: string;
+    };
   }>;
   gate1Stats: {
     totalClaims: number;

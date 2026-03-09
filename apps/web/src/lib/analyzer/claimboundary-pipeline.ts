@@ -752,6 +752,8 @@ export interface PreliminaryEvidenceItem {
     boundaries?: string;
   };
   probativeValue?: "high" | "medium" | "low";
+  claimDirection?: "supports" | "contradicts" | "contextual";
+  sourceType?: string;
   relevantClaimIds?: string[];
 }
 
@@ -866,6 +868,9 @@ export async function extractClaims(
       snippet: pe.statement,
       claimId: pe.relevantClaimIds?.[0] ?? "",
       probativeValue: pe.probativeValue,
+      claimDirection: pe.claimDirection,
+      sourceType: pe.sourceType,
+      evidenceScope: pe.evidenceScope,
     })),
     gate1Stats: gate1Result.stats,
   };
@@ -1314,6 +1319,8 @@ async function extractPreliminaryEvidence(
           boundaries: ei.evidenceScope.boundaries,
         } : undefined,
         probativeValue: ei.probativeValue,
+        claimDirection: ei.claimDirection,
+        sourceType: ei.sourceType,
         relevantClaimIds: ei.relevantClaimIds,
       };
     });
@@ -2439,6 +2446,24 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       relevantClaimIds: claimIds,
       probativeValue: pe.probativeValue ?? "medium", // Preserve LLM assessment; default "medium" if unavailable
       scopeQuality: "partial", // Preliminary evidence has limited scope data
+      // Fix 1.1: Enrich seeded items with metadata from Pass 1 extraction (Option 1A)
+      // Without these fields, seeded items (28-70% of all evidence) are invisible to
+      // clustering, balance checks, and source-type routing.
+      claimDirection: pe.claimDirection === "supports" ? "supports" : pe.claimDirection === "contradicts" ? "contradicts" : "neutral",
+      sourceType: (pe.sourceType as import("./types").SourceType) ?? "other",
+      evidenceScope: pe.evidenceScope ? {
+        name: pe.evidenceScope.methodology ?? "Preliminary search result",
+        methodology: pe.evidenceScope.methodology,
+        temporal: pe.evidenceScope.temporal,
+        geographic: pe.evidenceScope.geographic,
+        boundaries: pe.evidenceScope.boundaries,
+      } : {
+        name: "Preliminary search result",
+        methodology: "Preliminary search result",
+        temporal: "",
+        geographic: "",
+      },
+      isSeeded: true,
     });
   }
 
@@ -2508,7 +2533,10 @@ export function allClaimsSufficient(
 ): boolean {
   return claims.every((claim) => {
     const count = evidenceItems.filter(
-      (e) => e.relevantClaimIds?.includes(claim.id) && e.evidenceScope,
+      // Count only fully-extracted evidence (not seeded/preliminary items).
+      // Seeded items have isSeeded=true — they provide coverage baseline
+      // but should not satisfy sufficiency to prevent skipping main research.
+      (e) => e.relevantClaimIds?.includes(claim.id) && e.evidenceScope && !e.isSeeded,
     ).length;
     return count >= threshold;
   });
@@ -3931,7 +3959,7 @@ export async function runLLMClustering(
           content: `Cluster ${uniqueScopes.length} unique EvidenceScopes into ClaimBoundaries based on methodological congruence.`,
         },
       ],
-      temperature: 0.15,
+      temperature: pipelineConfig.boundaryClusteringTemperature ?? 0.05,
       output: Output.object({ schema: BoundaryClusteringOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -4034,7 +4062,8 @@ export function assignEvidenceToBoundaries(
     }
   }
 
-  // Assign each evidence item
+  // Pass 1: Assign scoped items to matching boundaries
+  const unassigned: EvidenceItem[] = [];
   for (const item of evidenceItems) {
     if (item.evidenceScope) {
       const fp = scopeFingerprint(item.evidenceScope);
@@ -4044,10 +4073,32 @@ export function assignEvidenceToBoundaries(
         continue;
       }
     }
-    // Fallback: assign to first boundary (General if exists, otherwise first)
-    const fallback = boundaries.find((b) => b.id === "CB_GENERAL") ?? boundaries[0];
-    if (fallback) {
-      item.claimBoundaryId = fallback.id;
+    unassigned.push(item);
+  }
+
+  // Pass 2: Assign unmatched items to the largest boundary (Fix 1.2).
+  // Computed AFTER all scoped items are assigned, so counts are complete.
+  if (unassigned.length > 0) {
+    const boundaryCounts = new Map<string, number>();
+    for (const ei of evidenceItems) {
+      if (ei.claimBoundaryId) boundaryCounts.set(ei.claimBoundaryId, (boundaryCounts.get(ei.claimBoundaryId) ?? 0) + 1);
+    }
+    // Pick boundary with most assigned items. On tie (including all-zero),
+    // prefer the boundary with more constituent scopes (richer analytical frame).
+    let fallback = boundaries[0];
+    let maxCount = -1;
+    let maxScopes = -1;
+    for (const b of boundaries) {
+      const count = boundaryCounts.get(b.id) ?? 0;
+      const scopes = b.constituentScopes?.length ?? 0;
+      if (count > maxCount || (count === maxCount && scopes > maxScopes)) {
+        maxCount = count;
+        maxScopes = scopes;
+        fallback = b;
+      }
+    }
+    for (const item of unassigned) {
+      if (fallback) item.claimBoundaryId = fallback.id;
     }
   }
 }

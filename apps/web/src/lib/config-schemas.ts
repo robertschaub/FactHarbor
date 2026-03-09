@@ -489,6 +489,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Safety cap on boundary count (post-validation merge trigger, not prompt target) (default: 6)"),
   boundaryCoherenceMinimum: z.number().min(0).max(1).optional()
     .describe("Minimum internalCoherence; below this, boundary is flagged (default: 0.3)"),
+  boundaryClusteringTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for Stage 3 boundary clustering (default: 0.05). Lower values reduce structural variance."),
 
   // Stage 4: Verdict
   selfConsistencyMode: z.enum(["full", "disabled"]).optional()
@@ -750,6 +752,9 @@ export const PipelineConfigSchema = z.object({
   if (data.boundaryCoherenceMinimum === undefined) {
     data.boundaryCoherenceMinimum = 0.3;
   }
+  if (data.boundaryClusteringTemperature === undefined) {
+    data.boundaryClusteringTemperature = 0.05;
+  }
 
   // ClaimBoundary Stage 4 defaults
   if (data.selfConsistencyMode === undefined) {
@@ -885,6 +890,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   verdictDirectionPolicy: "disabled",
   queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,
+  boundaryClusteringTemperature: 0.05,
 
   // Gap-driven research (Pipeline Phase 1)
   gapResearchEnabled: true,

@@ -1245,6 +1245,44 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(state.evidenceItems[0].probativeValue).toBe("medium");
   });
 
+  it("should preserve preliminary metadata needed downstream", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/1",
+            snippet: "Evidence A",
+            claimId: "AC_01",
+            probativeValue: "high",
+            claimDirection: "contradicts",
+            sourceType: "legal_document",
+            evidenceScope: {
+              methodology: "Court judgment",
+              temporal: "2024",
+              geographic: "BR",
+              boundaries: "criminal proceeding",
+            },
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].claimDirection).toBe("contradicts");
+    expect(state.evidenceItems[0].sourceType).toBe("legal_document");
+    expect(state.evidenceItems[0].evidenceScope).toMatchObject({
+      name: "Court judgment",
+      methodology: "Court judgment",
+      temporal: "2024",
+      geographic: "BR",
+      boundaries: "criminal proceeding",
+    });
+  });
+
   it("should remap wrong-format LLM claim IDs in preliminary evidence to known atomic claim", () => {
     const state = {
       understanding: {
@@ -1362,6 +1400,29 @@ describe("allClaimsSufficient", () => {
       { relevantClaimIds: ["AC_01"], scopeQuality: "partial" },
       { relevantClaimIds: ["AC_01"], scopeQuality: "partial" },
       { relevantClaimIds: ["AC_01"], scopeQuality: "partial" },
+    ] as any[];
+
+    expect(allClaimsSufficient(claims, evidence, 3)).toBe(false);
+  });
+
+  it("should ignore seeded preliminary evidence when checking sufficiency", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      {
+        relevantClaimIds: ["AC_01"],
+        isSeeded: true,
+        evidenceScope: { methodology: "Preliminary search result", temporal: "" },
+      },
+      {
+        relevantClaimIds: ["AC_01"],
+        isSeeded: true,
+        evidenceScope: { methodology: "Preliminary search result", temporal: "" },
+      },
+      {
+        relevantClaimIds: ["AC_01"],
+        isSeeded: true,
+        evidenceScope: { methodology: "Preliminary search result", temporal: "" },
+      },
     ] as any[];
 
     expect(allClaimsSufficient(claims, evidence, 3)).toBe(false);
@@ -2369,9 +2430,20 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
     const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
     const scopeUnmatched: EvidenceScope = { name: "Other", methodology: "Custom", temporal: "2022" };
 
-    const items: EvidenceItem[] = [
-      createEvidenceItem({ id: "EV_01", evidenceScope: scopeUnmatched }),
-    ];
+    const items: EvidenceItem[] = [{
+      id: "EV_01",
+      statement: "Unmatched evidence",
+      category: "direct_evidence",
+      specificity: "high",
+      sourceId: "S1",
+      sourceUrl: "https://example.com/unmatched",
+      sourceTitle: "Unmatched Source",
+      sourceExcerpt: "Unmatched excerpt",
+      claimDirection: "supports",
+      probativeValue: "high",
+      evidenceScope: scopeUnmatched,
+      relevantClaimIds: ["AC_01"],
+    }];
 
     const boundaries: ClaimAssessmentBoundary[] = [
       { id: "CB_GENERAL", name: "General", shortName: "Gen", description: "Fallback", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
@@ -2381,6 +2453,40 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
 
     // Should fall back to CB_GENERAL since no fingerprint match
     expect(items[0].claimBoundaryId).toBe("CB_GENERAL");
+  });
+
+  it("should assign unmatched items to the largest already-assigned boundary", () => {
+    const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "B", methodology: "Method B", temporal: "2021" };
+    const scopeUnmatched: EvidenceScope = { name: "Other", methodology: "Custom", temporal: "2022" };
+
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_00", evidenceScope: scopeB }),
+      {
+        id: "EV_01",
+        statement: "Unmatched evidence",
+        category: "direct_evidence",
+        specificity: "high",
+        sourceId: "S1",
+        sourceUrl: "https://example.com/unmatched",
+        sourceTitle: "Unmatched Source",
+        sourceExcerpt: "Unmatched excerpt",
+        claimDirection: "supports",
+        probativeValue: "high",
+        evidenceScope: scopeUnmatched,
+        relevantClaimIds: ["AC_01"],
+      },
+    ];
+
+    const boundaries: ClaimAssessmentBoundary[] = [
+      { id: "CB_01", name: "One Scope", shortName: "One", description: "", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
+      { id: "CB_02", name: "Largest", shortName: "Large", description: "", constituentScopes: [scopeB], internalCoherence: 0.8, evidenceCount: 0 },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, []);
+
+    expect(items[0].claimBoundaryId).toBe("CB_02");
+    expect(items[1].claimBoundaryId).toBe("CB_02");
   });
 });
 
@@ -2564,6 +2670,34 @@ describe("Stage 3: runLLMClustering", () => {
 
     const result = await runLLMClustering(uniqueScopes, [createEvidenceItem()], [], mockPipelineConfig, "2026-02-17");
     expect(result[0].internalCoherence).toBe(1);
+  });
+
+  it("should use boundaryClusteringTemperature from pipeline config", async () => {
+    const scopeA: EvidenceScope = { name: "WTW", methodology: "ISO 14040", temporal: "2020" };
+    const uniqueScopes = [{ index: 0, scope: scopeA, originalIndices: [0] }];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: [{
+        id: "CB_01", name: "Test", shortName: "T", description: "Test",
+        constituentScopeIndices: [0], internalCoherence: 0.8,
+      }],
+      scopeToBoundaryMapping: [{ scopeIndex: 0, boundaryId: "CB_01", rationale: "test" }],
+      congruenceDecisions: [],
+    });
+
+    await runLLMClustering(
+      uniqueScopes,
+      [createEvidenceItem()],
+      [],
+      { boundaryClusteringTemperature: 0.23 } as any,
+      "2026-02-17",
+    );
+
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({ temperature: 0.23 }),
+    );
   });
 });
 
