@@ -299,7 +299,10 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
           results.push(...providerResults);
           // 0 results is a valid response (not a failure); reset consecutive failures
           recordSuccess(providerInfo.provider.name, cbConfig);
-          if (results.length >= options.maxResults) break;
+          // Fix 1.4: Stop after first provider that returns ANY results.
+          // Previously continued to fill remaining slots from fallback providers,
+          // creating inconsistent evidence pools (provider-mix variance).
+          if (providerResults.length > 0) break;
         } catch (err) {
           if (err instanceof SearchProviderError) {
             recordFailure(providerInfo.provider.name, err.message, cbConfig);
@@ -309,33 +312,37 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       }
     }
 
-    // 3. Execute Supplementary Providers (Always run if enabled, regardless of primary results)
+    const shouldRunSupplementaryProviders = primaryProviderKey !== "auto" || results.length === 0;
+
+    // 3. Execute Supplementary Providers.
+    // In AUTO mode, only use supplementary providers when no primary provider produced results.
     const supplementaryKeys: SearchProviderKey[] = ["wikipedia", "semantic-scholar", "google-factcheck"];
     for (const suppKey of supplementaryKeys) {
       const def = SEARCH_PROVIDER_DEFINITIONS[suppKey];
       const cand = AUTO_PROVIDER_CANDIDATES.find(c => c.providerKey === suppKey);
-      
-      if (cand && cand.isEnabled(config) && cand.hasCredentials()) {
-        if (!isProviderAvailable(def.name, cbConfig)) {
-          providersUsed.push(`${def.name} (circuit-open)`);
-          continue;
-        }
 
-        console.log(`[Search] Executing supplementary provider: ${def.explicitLabel}`);
-        providersUsed.push(def.name);
-        try {
-          // Supplementary providers get a smaller, fixed quota to avoid overwhelming the result set
-          // but ensure they always contribute if enabled.
-          const suppResults = await def.execute({ ...options, maxResults: 3 }); 
-          results.push(...suppResults);
-          recordSuccess(def.name, cbConfig);
-        } catch (err) {
-          if (err instanceof SearchProviderError) {
-            recordFailure(def.name, err.message, cbConfig);
-            errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
-          } else {
-            console.error(`[Search] Supplementary provider ${def.name} failed:`, err);
-          }
+      if (!shouldRunSupplementaryProviders || !cand || !cand.isEnabled(config) || !cand.hasCredentials()) {
+        continue;
+      }
+      if (!isProviderAvailable(def.name, cbConfig)) {
+        providersUsed.push(`${def.name} (circuit-open)`);
+        continue;
+      }
+
+      console.log(`[Search] Executing supplementary provider: ${def.explicitLabel}`);
+      providersUsed.push(def.name);
+      try {
+        // Supplementary providers get a smaller, fixed quota to avoid overwhelming the result set
+        // but ensure they can still act as a fallback when no primary results were found.
+        const suppResults = await def.execute({ ...options, maxResults: 3 });
+        results.push(...suppResults);
+        recordSuccess(def.name, cbConfig);
+      } catch (err) {
+        if (err instanceof SearchProviderError) {
+          recordFailure(def.name, err.message, cbConfig);
+          errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
+        } else {
+          console.error(`[Search] Supplementary provider ${def.name} failed:`, err);
         }
       }
     }
