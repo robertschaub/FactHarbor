@@ -2450,7 +2450,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       // Without these fields, seeded items (28-70% of all evidence) are invisible to
       // clustering, balance checks, and source-type routing.
       claimDirection: pe.claimDirection === "supports" ? "supports" : pe.claimDirection === "contradicts" ? "contradicts" : "neutral",
-      sourceType: (pe.sourceType as import("./types").SourceType) ?? "other",
+      sourceType: mapSourceType(pe.sourceType) ?? "other",
       evidenceScope: pe.evidenceScope ? {
         name: pe.evidenceScope.methodology ?? "Preliminary search result",
         methodology: pe.evidenceScope.methodology,

@@ -1335,6 +1335,36 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     seedEvidenceFromPreliminarySearch(state);
     expect(state.evidenceItems[2].id).toBe("EV_003");
   });
+
+  it("should produce stub evidenceScope when pe.evidenceScope is undefined", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/no-scope",
+            snippet: "Evidence without scope",
+            claimId: "AC_01",
+            probativeValue: "medium",
+            claimDirection: "supports",
+            // evidenceScope intentionally omitted
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    const item = state.evidenceItems[0];
+    // Must have a stub scope so clustering doesn't skip the item
+    expect(item.evidenceScope).toBeDefined();
+    expect(item.evidenceScope.name).toBe("Preliminary search result");
+    expect(item.evidenceScope.methodology).toBe("Preliminary search result");
+    expect(item.evidenceScope.temporal).toBe("");
+    expect(item.evidenceScope.geographic).toBe("");
+  });
 });
 
 describe("findLeastResearchedClaim", () => {
@@ -2487,6 +2517,48 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
 
     expect(items[0].claimBoundaryId).toBe("CB_02");
     expect(items[1].claimBoundaryId).toBe("CB_02");
+  });
+
+  it("should use constituentScopes count as tie-breaker when assigned counts are equal", () => {
+    const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
+    const scopeB1: EvidenceScope = { name: "B1", methodology: "Method B1", temporal: "2021" };
+    const scopeB2: EvidenceScope = { name: "B2", methodology: "Method B2", temporal: "2022" };
+    const scopeUnmatched: EvidenceScope = { name: "X", methodology: "Custom", temporal: "2023" };
+
+    // Both items match their respective boundaries, giving each boundary 1 assigned item
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeA }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: scopeB1 }),
+      {
+        id: "EV_03",
+        statement: "Unmatched evidence",
+        category: "direct_evidence",
+        specificity: "high",
+        sourceId: "S1",
+        sourceUrl: "https://example.com/unmatched",
+        sourceTitle: "Unmatched Source",
+        sourceExcerpt: "Unmatched excerpt",
+        claimDirection: "supports",
+        probativeValue: "high",
+        evidenceScope: scopeUnmatched,
+        relevantClaimIds: ["AC_01"],
+      },
+    ];
+
+    const boundaries: ClaimAssessmentBoundary[] = [
+      // CB_01 has 1 constituentScope
+      { id: "CB_01", name: "Narrow", shortName: "N", description: "", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
+      // CB_02 has 2 constituentScopes — should win the tie-break
+      { id: "CB_02", name: "Wider", shortName: "W", description: "", constituentScopes: [scopeB1, scopeB2], internalCoherence: 0.8, evidenceCount: 0 },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, []);
+
+    // EV_01 → CB_01 (fingerprint match), EV_02 → CB_02 (fingerprint match)
+    // Both have 1 assigned → tie → CB_02 has more constituentScopes → EV_03 → CB_02
+    expect(items[0].claimBoundaryId).toBe("CB_01");
+    expect(items[1].claimBoundaryId).toBe("CB_02");
+    expect(items[2].claimBoundaryId).toBe("CB_02");
   });
 });
 

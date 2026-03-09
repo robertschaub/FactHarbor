@@ -3960,3 +3960,48 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** This slice changes Stage 2 query/extraction volume expectations because main research now runs in cases that previously short-circuited on seeded evidence. Watch job cost and runtime on sparse-evidence topics.
 **For next agent:** Start with MT-2 if continuing this plan. Verify whether any report/UI consumer still implicitly assumes every unscoped evidence item belongs to a real boundary before changing Stage 3 assignment behavior.
 **Learnings:** no
+---
+### 2026-03-08 | Lead Developer | Codex (GPT-5) | Review — Report_Quality_Analysis_2026-03-08
+**Task:** Review the consolidated plan in `Docs/WIP/Report_Quality_Analysis_2026-03-08.md` against the current codebase and assess implementation feasibility.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Cross-checked the report’s claimed root causes and approved Phase 1 fixes directly in code before assessing the plan. The review outcome is that Phase 1 should not be treated as implementation-ready as written.
+**Open items:** Rework Fix 1A so the pipeline actually preserves the preliminary metadata it wants to reuse; redefine Fix 2C with a fallback metric that exists before assignment; decide whether AUTO should suppress supplementary providers too; move any new clustering-temperature knob into UCM if it remains part of the plan.
+**Warnings:** The report over-attributes `sourceAuthority` fallout to seeded evidence even though the broader ClaimAssessmentBoundary extraction path does not currently populate `sourceAuthority` either.
+**For next agent:** Start from the review findings, not from the report’s approval state. The highest-risk defect is that `understanding.preliminaryEvidence` currently strips the metadata that Fix 1A depends on.
+**Learnings:** no
+---
+### 2026-03-08 | Lead Developer | Codex (GPT-5) | Implement Review Fixes — AUTO Search, Clustering UCM, Regression Tests
+**Task:** Fix the remaining review findings by completing AUTO-mode provider stopping, moving boundary clustering temperature into UCM, and adding regression tests for the affected logic.
+**Files touched:** `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/web-search.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** In AUTO mode, supplementary providers now run only when no primary provider produced results; Stage 3 clustering temperature is now a pipeline-config field with a seeded default of `0.05`; regression coverage was added for seeded metadata preservation, scoped-partial sufficiency exclusion, fallback-to-largest-boundary behavior, AUTO supplementary suppression, AUTO supplementary fallback, and configurable clustering temperature threading.
+**Open items:** No follow-up code issue found in the touched paths; broader end-to-end validation can still be done separately if needed.
+**Warnings:** The targeted tests pass, but full project validation was not run in this step.
+**For next agent:** If further variability work continues, use `boundaryClusteringTemperature` via UCM/config rather than reintroducing hardcoded temperature edits.
+**Learnings:** no
+---
+### 2026-03-08 | Lead Developer | Codex (GPT-5) | Implement Review Fixes — Fix allClaimsSufficient
+**Task:** Fix `allClaimsSufficient()` so it excludes only seeded preliminary evidence rather than all evidence with `scopeQuality === "partial"`.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added an `isSeeded` flag to `EvidenceItem` and set it in `seedEvidenceFromPreliminarySearch()`. Updated `allClaimsSufficient()` to ignore only `isSeeded` evidence, preserving legitimately extracted Stage 2 evidence even when its `scopeQuality` is `partial`. Updated the regression test to assert seeded evidence exclusion explicitly.
+**Open items:** Full repo test suite still has an unrelated `drain-runner-pause.integration.test.ts` failure/environment issue (`FH_API_BASE_URL` / ECONNREFUSED on port 3001); no new follow-up issue found in the sufficiency fix itself.
+**Warnings:** `npm test` still fails due the pre-existing drain-runner pause integration problem, but the targeted `claimboundary-pipeline` suite passes and the web app build succeeded earlier in this slice.
+**For next agent:** Treat the remaining full-suite failure as unrelated to the seeded-evidence fix unless new evidence shows otherwise.
+**Learnings:** no
+---
+### 2026-03-08 | Lead Developer | Codex (GPT-5) | Fix drain-runner pause integration test isolation
+**Task:** Make `test/unit/lib/drain-runner-pause.integration.test.ts` self-contained so the safe Vitest suite no longer fails on late `FH_API_BASE_URL` / `ECONNREFUSED` queue activity.
+**Files touched:** `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced the stale analyzer mock with a mock for `@/lib/analyzer/claimboundary-pipeline`, which is the module `internal-runner-queue.ts` actually imports. Mocked `@/lib/auth` so `getEnv("FH_API_BASE_URL")` stays stable for late background drains, and added microtask flushing plus fake-timer cleanup so fire-and-forget queue work settles before teardown restores mocks and env.
+**Open items:** None in this test path. The previously failing safe-suite issue is resolved.
+**Warnings:** This test still exercises module bootstrap behavior (`ensureQueueWatchdogStarted()` plus delayed drain), so future queue-module changes can reintroduce flakiness if they add new async paths without corresponding test cleanup.
+**For next agent:** If `internal-runner-queue.ts` import paths change again, update this test’s mocks to match the runner’s direct imports rather than higher-level barrel modules.
+**Learnings:** no
+---
+### 2026-03-09 | Code Reviewer | Cursor (claude-4.6-sonnet) | Review -- Phase 1 Pipeline Fixes (27c4ef44 + 8bef6a91)
+**Task:** Code review of two Phase 1 commits against AGENTS.md compliance, correctness, and type safety checklist from `Docs/DEVELOPMENT/Coding Agent Prompts.md`.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only - review-only mode)
+**Key decisions:** Both commits approved with follow-up items. 27c4ef44 (B1+B2+B5): one MEDIUM finding (unsafe sourceType cast via 'as SourceType'), two LOW test gaps (stub evidenceScope path and tie-breaker path untested). All functional logic correct. 8bef6a91 (B3+B4): one MEDIUM finding - B3 prompt second bullet's parenthetical 'a foreign government's diplomatic reaction to another jurisdiction's legal proceedings' is a structural description of the Bolsonaro test case, violating AGENTS.md Analysis Prompt Rules (no test-case patterns). B4 is clean.
+**Open items:** (1) Replace pe.sourceType cast in seedEvidenceFromPreliminarySearch with a validated mapping against the SourceType enum. (2) Replace the B3 prompt parenthetical with a fully abstract example before Phase 2 prompt work builds on this text. (3) Add test for stub evidenceScope fallback (null pe.evidenceScope). (4) Add test for constituentScopes tie-breaker in assignEvidenceToBoundaries.
+**Warnings:** Item 2 (prompt example) does not cause functional regression today but must be fixed before Phase 2 prompt iteration -- downstream prompts inheriting this pattern would teach-to-the-test. Item 1 (sourceType cast) is a silent runtime risk if the LLM returns unrecognised SourceType values.
+**For next agent:** B3 prompt fix is a 1-line change to the parenthetical only -- the core analytical instruction is sound and must be preserved. Valid SourceType values are in `apps/web/src/lib/analyzer/types.ts`.
+**Learnings:** no
