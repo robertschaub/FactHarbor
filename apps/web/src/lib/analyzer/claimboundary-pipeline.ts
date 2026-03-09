@@ -4743,6 +4743,7 @@ export function createProductionLLMCall(
           },
         ],
         temperature: options?.temperature ?? 0.0,
+        maxTokens: 16384, // Phase 2.3: prevent output truncation on high-evidence verdicts (3 claims × 6 boundaries)
         providerOptions: getStructuredOutputProviderOptions(activeModel.provider),
       });
     };

@@ -17,9 +17,29 @@ import {
   recordProviderFailure,
 } from "@/lib/provider-health";
 
-vi.mock("@/lib/analyzer", () => ({
-  runFactHarborAnalysis: vi.fn(async () => ({ resultJson: { meta: {} } })),
+vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
+  runClaimBoundaryAnalysis: vi.fn(async () => ({ resultJson: { meta: {} } })),
 }));
+
+vi.mock("@/lib/auth", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/auth")>("@/lib/auth");
+  return {
+    ...actual,
+    getEnv: vi.fn((name: string) => {
+      if (name === "FH_API_BASE_URL") {
+        return "http://localhost:3001";
+      }
+      const value = process.env[name];
+      return value && value.trim() ? value : "";
+    }),
+  };
+});
+
+async function flushMicrotasks(iterations = 8): Promise<void> {
+  for (let i = 0; i < iterations; i++) {
+    await Promise.resolve();
+  }
+}
 
 // Reset globalThis state between tests
 beforeEach(() => {
@@ -100,17 +120,21 @@ describe("drainRunnerQueue pause integration", () => {
 
     beforeEach(() => {
       originalEnv = { ...process.env };
+      vi.useFakeTimers();
       // Set up required env vars for drainRunnerQueue
       process.env.FH_API_BASE_URL = "http://localhost:3001";
       vi.resetModules();
     });
 
     afterEach(async () => {
-      // Allow background fire-and-forget promises from runJobBackground to settle.
-      // drainRunnerQueue spawns `void runJobBackground(...)` which eventually
-      // calls drainRunnerQueue again in its finally block. Give it time to fail
-      // gracefully before we tear down env vars.
-      await new Promise((r) => setTimeout(r, 100));
+      await flushMicrotasks();
+      const qs = (globalThis as any).__fhRunnerQueueState;
+      if (qs?.watchdogTimer) {
+        clearInterval(qs.watchdogTimer);
+        qs.watchdogTimer = null;
+      }
+      vi.clearAllTimers();
+      vi.useRealTimers();
       process.env = originalEnv;
       vi.restoreAllMocks();
     });
@@ -177,6 +201,7 @@ describe("drainRunnerQueue pause integration", () => {
 
       const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       await drainRunnerQueue();
+      await flushMicrotasks();
 
       // Should have made API calls (job processing started — past the pause check)
       expect(globalThis.fetch).toHaveBeenCalled();
@@ -207,6 +232,7 @@ describe("drainRunnerQueue pause integration", () => {
 
       const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       await drainRunnerQueue();
+      await flushMicrotasks();
 
       // Should process jobs (not paused anymore)
       expect(globalThis.fetch).toHaveBeenCalled();
