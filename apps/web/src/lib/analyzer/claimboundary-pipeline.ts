@@ -1002,9 +1002,8 @@ export async function extractClaims(
   return {
     // Use LLM's inputClassification when available (Phase 2.2); fall back to char-count heuristic.
     // The LLM sees semantic content (question marks, article structure) that the heuristic misses.
-    detectedInputType: (bestPass2.inputClassification !== "single_atomic_claim" &&
-                        bestPass2.inputClassification !== "ambiguous_single_claim")
-      ? bestPass2.inputClassification as InputType
+    detectedInputType: (bestPass2.inputClassification === "question" || bestPass2.inputClassification === "article")
+      ? bestPass2.inputClassification
       : detectInputType(state.originalInput),
     impliedClaim: bestPass2.impliedClaim,
     backgroundDetails: bestPass2.backgroundDetails,
@@ -4743,7 +4742,7 @@ export function createProductionLLMCall(
           },
         ],
         temperature: options?.temperature ?? 0.0,
-        maxTokens: 16384, // Phase 2.3: prevent output truncation on high-evidence verdicts (3 claims × 6 boundaries)
+        maxOutputTokens: 16384, // Phase 2.3: prevent output truncation on high-evidence verdicts (3 claims × 6 boundaries)
         providerOptions: getStructuredOutputProviderOptions(activeModel.provider),
       });
     };
