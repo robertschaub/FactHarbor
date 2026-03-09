@@ -216,6 +216,7 @@ Return a JSON object:
     }
   ],
   "riskTier": "A | B | C",
+  "inputClassification": "string — classify the original input as one of: single_atomic_claim | ambiguous_single_claim | multi_assertion_input | question | article. Use the same classification you applied in the Rules section above.",
   "retainedEvidence": ["EV_xxx"]
 }
 ```
