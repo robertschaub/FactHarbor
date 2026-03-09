@@ -6,6 +6,28 @@
   "confidenceThreshold": 0.8,
   "consensusThreshold": 0.2,
   "cacheTtlDays": 90,
+  "cacheTtlByCategory": {
+    "highly_reliable": 60,
+    "reliable": 60,
+    "leaning_reliable": 45,
+    "mixed": 21,
+    "leaning_unreliable": 14,
+    "unreliable": 7,
+    "highly_unreliable": 7
+  },
+  "cacheTtlBySourceType": {
+    "government": 21,
+    "state_controlled_media": 21,
+    "unknown": 21,
+    "state_media": 30,
+    "advocacy": 30,
+    "platform_ugc": 45,
+    "aggregator": 45,
+    "editorial_publisher": 60,
+    "wire_service": 90,
+    "propaganda_outlet": 90,
+    "known_disinformation": 90
+  },
   "filterEnabled": true,
   "skipPlatforms": [
     "blogspot.",

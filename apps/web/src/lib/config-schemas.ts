@@ -924,6 +924,9 @@ export const SourceReliabilityConfigSchema = z.object({
   cacheTtlByCategory: z.record(z.string(), z.number().int().min(1).max(365))
     .optional()
     .describe("Per-reliability-category cache TTL in days. Keys: highly_reliable, leaning_reliable, mixed, leaning_unreliable, unreliable, etc. Falls back to cacheTtlDays for missing keys."),
+  cacheTtlBySourceType: z.record(z.string(), z.number().int().min(1).max(365))
+    .optional()
+    .describe("Per-sourceType cache TTL in days. Keys: government, wire_service, etc. Highest priority in TTL lookup: sourceType → category → flat cacheTtlDays."),
 
   // === Filtering ===
   filterEnabled: z.boolean().describe("Skip evaluation for low-value domains"),
@@ -991,6 +994,19 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
     leaning_unreliable: 14,
     unreliable: 7,
     highly_unreliable: 7,
+  },
+  cacheTtlBySourceType: {
+    government: 21,
+    state_controlled_media: 21,
+    unknown: 21,
+    state_media: 30,
+    advocacy: 30,
+    platform_ugc: 45,
+    aggregator: 45,
+    editorial_publisher: 60,
+    wire_service: 90,
+    propaganda_outlet: 90,
+    known_disinformation: 90,
   },
 
   // Filtering

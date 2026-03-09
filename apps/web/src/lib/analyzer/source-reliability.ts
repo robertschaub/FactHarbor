@@ -13,7 +13,7 @@ import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, EvidenceItem, FetchedSource } from "./types";
 import { assertValidTruthPercentage } from "./types";
-import { batchGetCachedData, setCachedScore, setCacheTtlDays, setCacheTtlByCategory, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
+import { batchGetCachedData, setCachedScore, setCacheTtlDays, setCacheTtlByCategory, setCacheTtlBySourceType, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
 
@@ -67,6 +67,7 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.unknownSourceConfidence = next.unknownSourceConfidence ?? 0.5;
   setCacheTtlDays(next.cacheTtlDays);
   setCacheTtlByCategory(next.cacheTtlByCategory);
+  setCacheTtlBySourceType(next.cacheTtlBySourceType);
 }
 
 // ============================================================================
@@ -287,7 +288,7 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
           consensusAchieved: evalResult.consensusAchieved,
         });
         result.evaluated++;
-        // Cache the result
+        // Cache the result (sourceType used for per-sourceType TTL)
         await setCachedScore(
           domain,
           evalResult.score,
@@ -302,7 +303,8 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
           evalResult.evidencePack,
           undefined, // fallbackUsed
           undefined, // fallbackReason
-          evalResult.identifiedEntity
+          evalResult.identifiedEntity,
+          evalResult.sourceType
         );
         const scoreStr = evalResult.score !== null ? evalResult.score.toFixed(2) : "null";
         console.log(
@@ -417,6 +419,7 @@ interface EvaluationResult {
   evidenceCited?: SourceReliabilityEvidenceItem[];
   caveats?: string[];
   identifiedEntity?: string | null;
+  sourceType?: string | null;
 }
 
 /**

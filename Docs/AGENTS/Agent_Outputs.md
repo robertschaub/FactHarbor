@@ -4217,6 +4217,21 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Learnings:** no
 
 ---
+### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.4 Commit 1b: Per-sourceType SR cache TTL
+**Task:** Extend per-category TTL to a 3-tier lookup: sourceType → category → flat cacheTtlDays. Add `source_type` column to SR cache, wire through config and evaluation.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/source-reliability-cache.ts`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/configs/sr.default.json`, `apps/web/test/unit/lib/source-reliability-cache-ttl.test.ts`
+**Key decisions:**
+- Added `cacheTtlBySourceType` to `SourceReliabilityConfigSchema` with per-type defaults (government/unknown=21d, state_media/advocacy=30d, platform_ugc/aggregator=45d, editorial_publisher=60d, wire_service/propaganda/known_disinfo=90d).
+- Extended `resolveCacheTtlDays(category?, sourceType?)` with 3-tier lookup: sourceType map → category map → flat cacheTtlDays fallback.
+- Added `source_type TEXT` column migration in `getDb()`. Extended `setCachedScore()` with `sourceType` parameter.
+- Wired `sourceType` from SR evaluation result through to cache write in `prefetchSourceReliability()`.
+- Updated `sr.default.json` with both `cacheTtlByCategory` and `cacheTtlBySourceType` maps.
+- Expanded TTL test suite to cover all 3 tiers, cascade behavior, null/undefined fallbacks.
+**Open items:** None — commit 1b complete. All 1185 tests pass, build clean.
+**For next agent:** Per-sourceType TTL is live. 3-tier lookup falls back gracefully: unknown sourceTypes → category TTL → flat TTL.
+**Learnings:** no
+
+---
 ### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.4 Commit 2 Review — Web-Search Augmented SR
 **Task:** Review Phase 2.4 Commit 2 (web-search augmented SR evaluation) implementation.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`

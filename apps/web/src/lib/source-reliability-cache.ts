@@ -20,6 +20,7 @@ const SR_CACHE_CONFIG = {
   dbPath: process.env.FH_SR_CACHE_PATH || "./source-reliability.db",
   cacheTtlDays: DEFAULT_SR_CONFIG.cacheTtlDays,
   cacheTtlByCategory: DEFAULT_SR_CONFIG.cacheTtlByCategory as Record<string, number> | undefined,
+  cacheTtlBySourceType: DEFAULT_SR_CONFIG.cacheTtlBySourceType as Record<string, number> | undefined,
 };
 
 export function setCacheTtlDays(days: number): void {
@@ -32,17 +33,32 @@ export function setCacheTtlByCategory(map: Record<string, number> | undefined): 
   SR_CACHE_CONFIG.cacheTtlByCategory = map;
 }
 
+export function setCacheTtlBySourceType(map: Record<string, number> | undefined): void {
+  SR_CACHE_CONFIG.cacheTtlBySourceType = map;
+}
+
 /**
- * Resolve cache TTL in days for a given reliability category.
- * Looks up per-category map first, falls back to flat cacheTtlDays.
+ * Resolve cache TTL in days using 3-tier lookup (first match wins):
+ * 1. Per-sourceType TTL (if sourceType is known and in the map)
+ * 2. Per-category TTL (if category is known and in the map)
+ * 3. Flat cacheTtlDays fallback
  */
-export function resolveCacheTtlDays(category?: string | null): number {
+export function resolveCacheTtlDays(category?: string | null, sourceType?: string | null): number {
+  // Tier 1: per-sourceType
+  if (sourceType && SR_CACHE_CONFIG.cacheTtlBySourceType) {
+    const sourceTypeTtl = SR_CACHE_CONFIG.cacheTtlBySourceType[sourceType];
+    if (typeof sourceTypeTtl === "number" && sourceTypeTtl > 0) {
+      return sourceTypeTtl;
+    }
+  }
+  // Tier 2: per-category
   if (category && SR_CACHE_CONFIG.cacheTtlByCategory) {
     const categoryTtl = SR_CACHE_CONFIG.cacheTtlByCategory[category];
     if (typeof categoryTtl === "number" && categoryTtl > 0) {
       return categoryTtl;
     }
   }
+  // Tier 3: flat fallback
   return SR_CACHE_CONFIG.cacheTtlDays;
 }
 
@@ -67,6 +83,7 @@ export interface CachedScore {
   fallbackUsed?: boolean; // When consensus failed but primary (Claude) was used anyway
   fallbackReason?: string | null;
   identifiedEntity?: string | null; // The organization evaluated
+  sourceType?: string | null; // Source type classification from LLM evaluation
 }
 
 interface ScoreRow {
@@ -86,6 +103,7 @@ interface ScoreRow {
   fallback_used: number;
   fallback_reason: string | null;
   identified_entity: string | null;
+  source_type: string | null;
 }
 
 // ============================================================================
@@ -181,6 +199,17 @@ async function getDb(): Promise<Database> {
     if (!hasIdentifiedEntity) {
       console.log("[SR-Cache] Adding identified_entity column");
       await db.exec("ALTER TABLE source_reliability ADD COLUMN identified_entity TEXT");
+    }
+
+    // Check for source_type column (Phase 2.4 — per-sourceType TTL)
+    // Re-read tableInfo since columns may have been added above
+    const updatedInfo = await db.all<Array<{ name: string; notnull: number }>>(
+      "PRAGMA table_info(source_reliability)"
+    );
+    const hasSourceType = updatedInfo.some((col) => col.name === "source_type");
+    if (!hasSourceType) {
+      console.log("[SR-Cache] Adding source_type column");
+      await db.exec("ALTER TABLE source_reliability ADD COLUMN source_type TEXT");
     }
 
     // STEP 2: Now check if score column has NOT NULL constraint (notnull=1)
@@ -372,11 +401,13 @@ export async function setCachedScore(
   evidencePack?: unknown | null,
   fallbackUsed?: boolean,
   fallbackReason?: string | null,
-  identifiedEntity?: string | null
+  identifiedEntity?: string | null,
+  sourceType?: string | null
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
-  const ttlDays = resolveCacheTtlDays(category);
+  // 3-tier TTL: sourceType → category → flat cacheTtlDays
+  const ttlDays = resolveCacheTtlDays(category, sourceType);
   const expiresAt = new Date(
     now.getTime() + ttlDays * 24 * 60 * 60 * 1000
   );
@@ -390,8 +421,8 @@ export async function setCachedScore(
 
   await database.run(
     `INSERT OR REPLACE INTO source_reliability
-     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack, fallback_used, fallback_reason, identified_entity)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (domain, score, confidence, evaluated_at, expires_at, model_primary, model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack, fallback_used, fallback_reason, identified_entity, source_type)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       domain,
       score,
@@ -409,6 +440,7 @@ export async function setCachedScore(
       fallbackUsed ? 1 : 0,
       fallbackReason ?? null,
       identifiedEntity ?? null,
+      sourceType ?? null,
     ]
   );
 }
