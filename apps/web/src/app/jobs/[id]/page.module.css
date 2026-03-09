@@ -3345,6 +3345,7 @@ details[open] > .devWarningSummary::before {
   position: fixed;
   bottom: 24px;
   right: 24px;
+  right: calc(24px + env(safe-area-inset-right, 0px));
   bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   z-index: 1000;
   padding: 10px 18px;
@@ -3891,7 +3892,9 @@ details[open] > .devWarningSummary::before {
   /* Nav back button: smaller on mobile, raised above browser chrome (~50px toolbar) */
   .navBackButton {
     bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-    right: 16px;
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    left: auto;
+    max-width: calc(100vw - 32px);
     padding: 8px 14px;
     font-size: 13px;
   }

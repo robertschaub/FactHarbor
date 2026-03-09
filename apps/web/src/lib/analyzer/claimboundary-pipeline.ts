@@ -839,7 +839,9 @@ export async function extractClaims(
   );
 
   // ------------------------------------------------------------------
-  // Dimension decomposition tagging (code-side, deterministic)
+  // Dimension decomposition tagging (structural routing on LLM outputs)
+  // This checks LLM-assigned fields (centrality, claimDirection) to route claims —
+  // it does NOT interpret text meaning, so it's deterministic plumbing, not analysis.
   // When multiple claims all have high centrality and supports_thesis direction,
   // they are dimension decompositions from an ambiguous_single_claim input.
   // Tagged claims are exempt from Gate 1 fidelity filtering — they represent
@@ -2480,7 +2482,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       // Without these fields, seeded items (28-70% of all evidence) are invisible to
       // clustering, balance checks, and source-type routing.
       claimDirection: pe.claimDirection === "supports" ? "supports" : pe.claimDirection === "contradicts" ? "contradicts" : "neutral",
-      sourceType: mapSourceType(pe.sourceType) ?? "other",
+      sourceType: mapSourceType(pe.sourceType),
       evidenceScope: pe.evidenceScope ? {
         name: pe.evidenceScope.methodology ?? "Preliminary search result",
         methodology: pe.evidenceScope.methodology,
@@ -3488,8 +3490,8 @@ export function extractDomain(sourceUrl?: string): string | null {
 /**
  * Map LLM sourceType strings to SourceType enum values.
  */
-function mapSourceType(sourceType?: string): SourceType | undefined {
-  if (!sourceType) return undefined;
+function mapSourceType(sourceType?: string): SourceType {
+  if (!sourceType) return "other";
   const normalized = sourceType.toLowerCase().replace(/[_\s-]+/g, "_");
   const validTypes: Record<string, SourceType> = {
     peer_reviewed_study: "peer_reviewed_study",
