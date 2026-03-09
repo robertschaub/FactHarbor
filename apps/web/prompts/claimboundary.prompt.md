@@ -612,7 +612,7 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 | Scope A | Scope B | Congruent? | Rationale |
 |---------|---------|------------|-----------|
 | "Method family X, standard A, dataset region 1" | "Method family X, model B, dataset region 2" | **Yes** | Same methodology family, same system boundary, different datasets |
-| "Method family X, full lifecycle analysis" | "Method family Y, partial boundary test" | **No** | Different system boundaries — one includes upstream, one excludes it |
+| "Method family X, comprehensive scope assessment" | "Method family Y, partial boundary test" | **No** | Different system boundaries — one includes upstream, one excludes it |
 | "RCT, double-blind, 12-month follow-up" | "RCT, single-blind, 6-month follow-up" | **Yes** | Same methodology (RCT), compatible design |
 | "RCT, double-blind, 12-month" | "Observational cohort study, 5-year" | **No** | Fundamentally different methodology |
 | "Legal framework A, Article X" | "Legal framework A, Resolution Y" | **Yes** | Same legal framework and jurisdiction |

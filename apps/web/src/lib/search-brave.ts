@@ -57,11 +57,6 @@ export async function searchBrave(options: WebSearchOptions): Promise<WebSearchR
     }
   }
 
-  // Geolocation: anchor results to claim's geography, not server IP
-  if (options.geography) {
-    params.set("country", options.geography.toUpperCase());
-    console.log(`[Search] Brave: Country bias: country=${options.geography.toUpperCase()}`);
-  }
 
   const urlForLog = `${BRAVE_API_BASE}?q=${encodeURIComponent(options.query)}&count=${Math.min(options.maxResults, 20)}`;
   console.log(`[Search] Brave: Fetching URL: ${urlForLog}`);

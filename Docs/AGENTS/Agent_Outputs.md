@@ -4300,3 +4300,16 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Evidence re-pointing (in-place mutation before clustering) must cover all evidence items referencing non-canonical scope objects — verify no orphaned references after merge.
 **For next agent:** Implement normalization step in `claimboundary-pipeline.ts`. Fix the two prompt issues noted above before committing. Add `scopes` to frontmatter variables. Unit test: mergeMap correctness, fallback on invalid LLM output, skip when scope count < threshold.
 **Learnings:** no
+
+---
+### 2026-03-09 | Code Reviewer / Senior Developer | — | Code Review Fixes — SR migration, prompt, dead geo
+**Task:** Fix 3 code review findings: SR cache migration bug, domain-specific prompt text, dead geo code in search providers.
+**Files touched:** `source-reliability-cache.ts`, `claimboundary.prompt.md`, `search-google-cse.ts`, `search-serpapi.ts`, `search-serper.ts`, `search-brave.ts`, `web-search.ts`, 2 test files
+**Key decisions:**
+- SR cache migration: Added `fallback_used`, `fallback_reason`, `identified_entity`, `source_type` to CREATE TABLE and INSERT SELECT — migration no longer drops columns.
+- SCOPE_NORMALIZATION prompt: Replaced domain-specific `full lifecycle analysis` with `comprehensive scope assessment` (AGENTS.md Analysis Prompt Rules).
+- Dead geo cleanup: Removed geography/language parameter handling from 4 search providers and `WebSearchOptions` — unused code removed.
+**Verification:** 1188 tests pass (64 files), build compiles.
+**Open items:** None.
+**For next agent:** None.
+**Learnings:** no

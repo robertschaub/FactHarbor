@@ -1,7 +1,7 @@
 /**
  * Tests for SerpAPI search integration.
  *
- * Validates geo-aware parameter threading and BCP-47 language code handling.
+ * Validates response parsing and error handling.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -16,58 +16,7 @@ describe("SerpAPI Search", () => {
     vi.unstubAllGlobals();
   });
 
-  it("should pass gl and hl params when geography and language are provided", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ organic_results: [] }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const { searchSerpApi } = await import("@/lib/search-serpapi");
-
-    await searchSerpApi({ query: "test", maxResults: 5, language: "de", geography: "CH" });
-
-    const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("gl=ch");
-    expect(calledUrl).toContain("hl=de");
-  });
-
-  it("should strip BCP-47 region subtag from language for hl param", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ organic_results: [] }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const { searchSerpApi } = await import("@/lib/search-serpapi");
-
-    await searchSerpApi({ query: "test", maxResults: 5, language: "de-CH" });
-
-    const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("hl=de");
-    expect(calledUrl).not.toContain("hl=de-ch");
-  });
-
-  it("should strip BCP-47 region subtag for zh-TW", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ organic_results: [] }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const { searchSerpApi } = await import("@/lib/search-serpapi");
-
-    await searchSerpApi({ query: "test", maxResults: 5, language: "zh-TW", geography: "TW" });
-
-    const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("hl=zh");
-    expect(calledUrl).toContain("gl=tw");
-  });
-
-  it("should NOT set gl/hl params when geography and language are undefined", async () => {
+  it("should NOT set gl/hl params (geo/language never sent to providers)", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,

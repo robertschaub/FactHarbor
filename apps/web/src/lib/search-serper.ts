@@ -48,16 +48,6 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
     console.log(`[Search] Serper: Applying date restriction: ${options.dateRestrict} (tbs=${tbsMap[options.dateRestrict]})`);
   }
 
-  // Geolocation: anchor results to claim's geography/language
-  if (options.geography) {
-    body.gl = options.geography.toLowerCase();
-    console.log(`[Search] Serper: Geography bias: gl=${options.geography.toLowerCase()}`);
-  }
-  if (options.language) {
-    const baseLang = options.language.split("-")[0].toLowerCase();
-    body.hl = baseLang;
-    console.log(`[Search] Serper: Interface language: hl=${baseLang}`);
-  }
 
   console.log(`[Search] Serper: POST ${SERPER_BASE} with q="${options.query.substring(0, 50)}..."`);
 

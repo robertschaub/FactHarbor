@@ -1,7 +1,7 @@
 /**
  * Tests for Google CSE search integration.
  *
- * Validates geo-aware parameter threading and BCP-47 language code handling.
+ * Validates response parsing and error handling.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -17,58 +17,7 @@ describe("Google CSE Search", () => {
     vi.unstubAllGlobals();
   });
 
-  it("should pass gl and lr params when geography and language are provided", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ items: [] }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const { searchGoogleCse } = await import("@/lib/search-google-cse");
-
-    await searchGoogleCse({ query: "test", maxResults: 5, language: "de", geography: "CH" });
-
-    const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("gl=ch");
-    expect(calledUrl).toContain("lr=lang_de");
-  });
-
-  it("should strip BCP-47 region subtag from language for lr param", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ items: [] }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const { searchGoogleCse } = await import("@/lib/search-google-cse");
-
-    await searchGoogleCse({ query: "test", maxResults: 5, language: "de-CH" });
-
-    const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("lr=lang_de");
-    expect(calledUrl).not.toContain("lang_de-ch");
-  });
-
-  it("should strip BCP-47 region subtag for pt-BR", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ items: [] }),
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const { searchGoogleCse } = await import("@/lib/search-google-cse");
-
-    await searchGoogleCse({ query: "test", maxResults: 5, language: "pt-BR", geography: "BR" });
-
-    const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain("lr=lang_pt");
-    expect(calledUrl).toContain("gl=br");
-  });
-
-  it("should NOT set gl/lr params when geography and language are undefined", async () => {
+  it("should NOT set gl/lr params (geo/language never sent to providers)", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,

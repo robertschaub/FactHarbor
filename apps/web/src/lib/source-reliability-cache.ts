@@ -236,13 +236,19 @@ async function getDb(): Promise<Database> {
           category TEXT,
           bias_indicator TEXT,
           evidence_cited TEXT,
-          evidence_pack TEXT
+          evidence_pack TEXT,
+          fallback_used INTEGER NOT NULL DEFAULT 0,
+          fallback_reason TEXT,
+          identified_entity TEXT,
+          source_type TEXT
         );
 
-        -- Copy existing data (all columns now exist)
+        -- Copy existing data (all columns now exist after STEP 1 ALTER TABLEs)
         INSERT INTO source_reliability_new
         SELECT domain, score, confidence, evaluated_at, expires_at, model_primary,
-               model_secondary, consensus_achieved, reasoning, category, bias_indicator, evidence_cited, evidence_pack
+               model_secondary, consensus_achieved, reasoning, category, bias_indicator,
+               evidence_cited, evidence_pack, fallback_used, fallback_reason,
+               identified_entity, source_type
         FROM source_reliability;
 
         -- Drop old table and rename

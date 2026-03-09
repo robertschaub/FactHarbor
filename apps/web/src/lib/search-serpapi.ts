@@ -43,16 +43,6 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     console.log(`[Search] SerpAPI: Applying date restriction: ${options.dateRestrict} (tbs=${tbsMap[options.dateRestrict]})`);
   }
 
-  // Geolocation: anchor results to claim's geography/language, not server IP
-  if (options.geography) {
-    params.set("gl", options.geography.toLowerCase());
-    console.log(`[Search] SerpAPI: Geography bias: gl=${options.geography.toLowerCase()}`);
-  }
-  if (options.language) {
-    const baseLang = options.language.split("-")[0].toLowerCase();
-    params.set("hl", baseLang);
-    console.log(`[Search] SerpAPI: Interface language: hl=${baseLang}`);
-  }
 
   const url = `${SERPAPI_BASE}?${params.toString().replace(apiKey, "***")}`;
   console.log(`[Search] SerpAPI: Fetching URL: ${url}`);
