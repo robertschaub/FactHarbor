@@ -2,6 +2,21 @@
 
 
 ---
+### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.3 Sign-off: Close verdict stage maxTokens fix
+**Task:** Close Phase 2.3 — update WIP doc status, Coding Agent Prompts, and Agent_Outputs after Captain sign-off on the `maxTokens: 16384` verdict stage fix.
+**Files touched:** `Docs/WIP/Report_Quality_Analysis_2026-03-08.md`, `Docs/DEVELOPMENT/Coding Agent Prompts.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Phase 2.3 root cause confirmed: `VERDICT_ADVOCATE` JSON parse failure due to output token overflow. 1-line fix (`maxTokens: 16384` in verdict-stage.ts) resolved it completely (commit `5120b864`).
+- Validation baseline updated: Iran truth% now 60–87% across 3 runs (wider than prior 68–82% — reflects honest variance from 2-claim vs 3-claim decomposition, not a regression). Confidence 70–85%.
+- Run 1's 60% truth explained: 2-claim run hitting `minCoreClaimsPerContext = 2` means the reprompt loop correctly didn't fire (triggers on < 2, not ≤ 2). Fewer dimension claims = different evidence weighting = lower truth%. Expected behavior.
+- D2 (classification instability: `question` vs `ambiguous_single_claim`) remains open but deprioritized — all 3 validation runs used the claim input type, so the ambiguous dimension path wasn't exercised. Reassess at Phase 2.5+.
+- `maxTokens: 16384` is hardcoded (not UCM). Per AGENTS.md this is borderline — more of a capacity ceiling than an analytical knob. Noted for future tidy-up, not a blocker.
+**Open items:** Phase 2.4 (SR Cache TTL) is next. D2 classification instability deferred to Phase 2.5+.
+**Warnings:** None.
+**For next agent:** Phase 2.4 prompt is ready in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Start by reading `source-reliability.ts` for current SR cache TTL setup, then check `config-schemas.ts` for existing TTL config in UCM. Propose TTL values (especially whether to differentiate by source type) for Captain approval before implementing.
+**Learnings:** no
+
+---
 ### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.1 Commit 2: Reprompt loop for low claim decomposition
 **Task:** Implement Stage 1 reprompt loop that retries Pass 2 → centrality filter → dimension tagging → Gate 1 when post-Gate-1 claim count falls below UCM minimum.
 **Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/warning-display.ts`
@@ -4110,4 +4125,18 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** Implement Option A (quick check), then Option B if needed. Validate with 3× Iran runs. Add unit test for truncation logic if Option B implemented.
 **Warnings:** The `max_tokens` check is critical first step — if it's artificially low, that's a 1-line fix. Don't skip straight to Option B without checking.
 **For next agent:** Phase 2.3 spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Start by reading `verdict-stage.ts` to find the current `max_tokens` value for VERDICT_ADVOCATE calls.
+**Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.3 Complete — maxTokens Fix Validated
+**Task:** Sign off Phase 2.3 validation (3× Iran post-fix) and advance to Phase 2.4.
+**Files touched:** `Docs/DEVELOPMENT/Coding Agent Prompts.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Fix confirmed: `maxTokens: 16384` in `createProductionLLMCall`/`generateText` eliminates VERDICT_ADVOCATE truncation. Root cause was SDK/provider default ~4096 tokens — insufficient for high-evidence-volume verdict output.
+- Validation: 3/3 runs succeeded (conf=71,84,75 — all > 0). truth% band 60–87%. Run 1 at 60% (2 claims) is expected variance, not a regression — reprompt loop correctly didn't fire (hit minimum threshold of 2 exactly).
+- D2 (classification instability) deferred further — all 3 validation runs used `claim` input type, `ambiguous_single_claim` path not exercised. Keep on radar.
+- [LOW] `maxTokens: 16384` is hardcoded — borderline UCM candidate for future tidy-up. Not a blocker.
+**Open items:** D2, D4, maxTokens UCM — all LOW priority, deferred.
+**Warnings:** The 60–87% validation band is wider than the prior 68–82% baseline. This is correct — it reflects honest run-to-run variance from claim count (2 vs 3 claims) and evidence stochasticity, not a quality regression.
+**For next agent:** Phase 2.4 (SR cache TTL) spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Start by reading `source-reliability.ts` and checking UCM schema for existing SR TTL config.
 **Learnings:** no
