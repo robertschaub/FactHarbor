@@ -4140,3 +4140,33 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** The 60–87% validation band is wider than the prior 68–82% baseline. This is correct — it reflects honest run-to-run variance from claim count (2 vs 3 claims) and evidence stochasticity, not a quality regression.
 **For next agent:** Phase 2.4 (SR cache TTL) spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Start by reading `source-reliability.ts` and checking UCM schema for existing SR TTL config.
 **Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.4 SR Cache TTL — Decision
+**Task:** Review Phase 2.4 SR cache TTL proposal and approve implementation approach.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Option B approved (per-reliability-category TTL, no schema change). Option A (per-source-type) deferred — source type availability at `setCachedScore` write-time not confirmed for all paths.
+- Approved TTL values: highly_reliable=60d, leaning_reliable=45d, mixed/unknown=21d, leaning_unreliable=14d, unreliable=7d. Note: highly_reliable reduced from proposed 90d to 60d — recently-discredited high-quality sources must not carry stale scores for 3 months.
+- Existing flat `cacheTtlDays` stays as fallback for unconfigured categories (backward compat).
+- New UCM field: `srCacheTtlByCategory` (object, keyed by category string).
+- Option A remains a backlog candidate — confirm source type availability at all SR write paths first.
+**Open items:** Implement + unit test. Validate Option A feasibility as separate backlog item.
+**Warnings:** If the map lookup is added without a fallback guard, any new/unknown category value would get no TTL. The flat `cacheTtlDays` fallback is mandatory.
+**For next agent:** Implement in `source-reliability.ts` + `config-schemas.ts` + `pipeline.default.json`. One unit test: correct TTL per category + fallback to flat value. Run `npm test`.
+**Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.4 Scope Expanded — Web-Search Augmented SR
+**Task:** Extend Phase 2.4 with web-search augmented SR evaluation (Option 1) following Captain decision.
+**Files touched:** `Docs/DEVELOPMENT/Coding Agent Prompts.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Per-category TTL alone doesn't solve the regime-change/recently-discredited-source problem. Re-evaluating with the same LLM training data produces the same stale answer.
+- Option 1 approved: at SR cache-miss time, run a targeted web search for current credibility signals before the LLM evaluation. Inject up to 5 snippets as context. LLM now has recency it lacks from training data alone.
+- Search query template UCM-configurable (`srCredibilitySearchQueryTemplate`, default: `"{domain} credibility reliability bias fact-check"`). Required by AGENTS.md — all search strings must be UCM-managed.
+- Graceful fallback mandatory: search failure must never crash SR evaluation.
+- SR prompt change requires Captain approval — draft and present before committing.
+**Open items:** Commit 1 (TTL) can proceed immediately. Commit 2 (search augmentation) blocked on prompt draft + Captain approval.
+**Warnings:** The web search adds one query per domain per TTL window — cheap but not zero. Monitor SR cache hit rate to ensure the TTL reduction (from 90d flat to 60d/45d/21d/14d/7d) doesn't cause excessive re-evaluation churn.
+**For next agent:** Full spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Do Commit 1 (TTL) first. For Commit 2, draft the SR prompt change and post for Captain review before implementing.
+**Learnings:** no
