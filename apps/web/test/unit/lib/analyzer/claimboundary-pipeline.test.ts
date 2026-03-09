@@ -4597,6 +4597,272 @@ describe("B-8: explanation quality check", () => {
 });
 
 // ============================================================================
+// Stage 1: Reprompt Loop — Unit Tests (D1 Commit 2)
+// ============================================================================
+
+describe("Stage 1: extractClaims reprompt loop", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Helper: build a minimal Pass 1 output fixture
+  const pass1Fixture = {
+    impliedClaim: "Entity A achieved metric X",
+    backgroundDetails: "Background",
+    roughClaims: [{ statement: "Rough claim 1", searchHint: "hint1" }],
+    detectedLanguage: "en",
+    inferredGeography: null,
+  };
+
+  // Helper: build a Pass 2 output fixture with N claims
+  function makePass2(count: number) {
+    return {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background",
+      articleThesis: "Thesis",
+      atomicClaims: Array.from({ length: count }, (_, i) => ({
+        id: `AC_${String(i + 1).padStart(2, "0")}`,
+        statement: `Claim ${i + 1}`,
+        category: "factual",
+        centrality: "high",
+        harmPotential: "medium",
+        isCentral: true,
+        claimDirection: "supports_thesis",
+        keyEntities: [],
+        checkWorthiness: "high",
+        specificityScore: 0.8,
+        groundingQuality: "strong",
+        expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+      })),
+    };
+  }
+
+  // Helper: build a Gate 1 output that passes all claims
+  function makeGate1Pass(count: number) {
+    return {
+      validatedClaims: Array.from({ length: count }, (_, i) => ({
+        claimId: `AC_${String(i + 1).padStart(2, "0")}`,
+        passedOpinion: true,
+        passedSpecificity: true,
+        passedFidelity: true,
+        reasoning: "ok",
+      })),
+    };
+  }
+
+  it("should NOT trigger reprompt when post-Gate-1 count >= minCoreClaimsPerContext", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    // Prompt loader always returns a prompt
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+
+    // Search returns no results (short-circuit preliminary search)
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    // Sequence LLM calls: Pass1, Pass2, Gate1
+    // Pass2 returns 3 claims → Gate1 passes all 3 → 3 >= 2, no reprompt
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1: return pass1Fixture;        // Pass 1
+        case 2: return makePass2(3);         // Pass 2 → 3 claims
+        case 3: return makeGate1Pass(3);     // Gate 1 → all pass
+        default: throw new Error(`Unexpected LLM call #${llmCallIndex} — reprompt should NOT have been triggered`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Test input text for reprompt no-trigger",
+      originalText: "",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    // Should have 3 claims (no reprompt needed)
+    expect(result.atomicClaims.length).toBeGreaterThanOrEqual(2);
+    // Exactly 3 LLM extractStructuredOutput calls (Pass1 + Pass2 + Gate1)
+    expect(llmCallIndex).toBe(3);
+    // No low_claim_count warning
+    expect(state.warnings.filter((w: any) => w.type === "low_claim_count")).toHaveLength(0);
+  });
+
+  it("should recover via reprompt when initial post-Gate-1 count is below minimum", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    // Sequence: Pass1, Pass2(1 claim), Gate1(1 pass) → triggers reprompt →
+    //           Pass2(3 claims), Gate1(3 pass) → recovered, stops early
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1: return pass1Fixture;        // Pass 1
+        case 2: return makePass2(1);         // Initial Pass 2 → 1 claim
+        case 3: return makeGate1Pass(1);     // Initial Gate 1 → 1 pass (< 2)
+        case 4: return makePass2(3);         // Reprompt attempt 1: Pass 2 → 3 claims
+        case 5: return makeGate1Pass(3);     // Reprompt attempt 1: Gate 1 → 3 pass (≥ 2, stops)
+        default: throw new Error(`Unexpected LLM call #${llmCallIndex} — reprompt should have stopped after recovery`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Test input for reprompt recovery",
+      originalText: "",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    // Should have recovered: 3 claims from the reprompt attempt
+    expect(result.atomicClaims.length).toBeGreaterThanOrEqual(2);
+    // 5 LLM calls: Pass1 + Pass2 + Gate1 + reprompt(Pass2 + Gate1)
+    expect(llmCallIndex).toBe(5);
+    // No low_claim_count warning (recovered successfully)
+    expect(state.warnings.filter((w: any) => w.type === "low_claim_count")).toHaveLength(0);
+  });
+
+  it("should emit low_claim_count info warning and use best result when all reprompt attempts fail to reach minimum", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 3, supplementalRepromptMaxAttempts: 2 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    // Sequence: Pass1, Pass2(1), Gate1(1) → triggers reprompt →
+    //           attempt 1: Pass2(1), Gate1(1) → still < 3 →
+    //           attempt 2: Pass2(1), Gate1(1) → still < 3 → fallback with warning
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1: return pass1Fixture;        // Pass 1
+        case 2: return makePass2(1);         // Initial Pass 2 → 1 claim
+        case 3: return makeGate1Pass(1);     // Initial Gate 1 → 1 pass (< 3)
+        case 4: return makePass2(1);         // Reprompt attempt 1: Pass 2 → 1 claim
+        case 5: return makeGate1Pass(1);     // Reprompt attempt 1: Gate 1 → 1 pass
+        case 6: return makePass2(1);         // Reprompt attempt 2: Pass 2 → 1 claim
+        case 7: return makeGate1Pass(1);     // Reprompt attempt 2: Gate 1 → 1 pass
+        default: return makePass2(1);        // Should not reach here
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Test input for reprompt fallback",
+      originalText: "",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    // Should NOT throw
+    const result = await extractClaims(state);
+
+    // Should still have claims (best result used, even if < minimum)
+    expect(result.atomicClaims.length).toBeGreaterThanOrEqual(1);
+    // 7 LLM calls: Pass1 + Pass2 + Gate1 + 2×(Pass2 + Gate1)
+    expect(llmCallIndex).toBe(7);
+    // low_claim_count info warning emitted
+    const lowClaimWarnings = state.warnings.filter((w: any) => w.type === "low_claim_count");
+    expect(lowClaimWarnings).toHaveLength(1);
+    expect(lowClaimWarnings[0].severity).toBe("info");
+    expect(lowClaimWarnings[0].message).toContain("1 claim(s)");
+    expect(lowClaimWarnings[0].message).toContain("minimum: 3");
+    expect(lowClaimWarnings[0].details.attemptsUsed).toBe(2);
+  });
+});
+
+// ============================================================================
 // M1: claimAnnotationMode strips verifiability when "off"
 // ============================================================================
 describe("M1: claimAnnotationMode verifiability stripping", () => {
