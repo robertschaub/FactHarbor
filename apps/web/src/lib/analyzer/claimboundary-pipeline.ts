@@ -839,6 +839,22 @@ export async function extractClaims(
   );
 
   // ------------------------------------------------------------------
+  // Dimension decomposition tagging (code-side, deterministic)
+  // When multiple claims all have high centrality and supports_thesis direction,
+  // they are dimension decompositions from an ambiguous_single_claim input.
+  // Tagged claims are exempt from Gate 1 fidelity filtering — they represent
+  // inherent interpretations of the input's semantic range, not evidence imports.
+  // ------------------------------------------------------------------
+  const allHighCentralSupports = filteredClaims.length > 1 && filteredClaims.every(
+    (c) => c.centrality === "high" && c.claimDirection === "supports_thesis",
+  );
+  if (allHighCentralSupports) {
+    for (const c of filteredClaims) {
+      (c as AtomicClaim).isDimensionDecomposition = true;
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Gate 1: Claim validation (Haiku, batched) — actively filters claims
   // ------------------------------------------------------------------
   state.onEvent?.("Extracting claims: Gate 1 validation...", 26);
@@ -873,6 +889,9 @@ export async function extractClaims(
       evidenceScope: pe.evidenceScope,
     })),
     gate1Stats: gate1Result.stats,
+    // D2: Audit data — pre-filter claims and Gate 1 reasoning for diagnostics
+    preFilterAtomicClaims: (gate1Result as any).preFilterClaims,
+    gate1Reasoning: (gate1Result as any).gate1Reasoning,
   };
 }
 
@@ -1788,7 +1807,7 @@ export async function runGate1Validation(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   analysisInput = "",
-): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[] }> {
+): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[]; preFilterClaims?: AtomicClaim[]; gate1Reasoning?: Array<{ claimId: string; passedOpinion: boolean; passedSpecificity: boolean; passedFidelity: boolean; reasoning: string }> }> {
   if (claims.length === 0) {
     return {
       stats: {
@@ -1914,7 +1933,9 @@ export async function runGate1Validation(
     let specificityFiltered = 0;
     const keptClaims = claims.filter((claim) => {
       // Remove if claim is not faithful to original input meaning
-      if (failedFidelityIds.has(claim.id)) {
+      // BUT exempt dimension-decomposed claims — they are inherent interpretations
+      // of the input's semantic range, not evidence imports (D1 Option B)
+      if (failedFidelityIds.has(claim.id) && !claim.isDimensionDecomposition) {
         fidelityFiltered++;
         return false;
       }
@@ -2021,6 +2042,15 @@ export async function runGate1Validation(
         overallPass: keptClaims.length > 0,
       },
       filteredClaims: keptClaims,
+      // D2: Store pre-filter claims and Gate 1 reasoning for auditability
+      preFilterClaims: [...claims],
+      gate1Reasoning: validated.validatedClaims.map((v) => ({
+        claimId: v.claimId,
+        passedOpinion: v.passedOpinion,
+        passedSpecificity: v.passedSpecificity,
+        passedFidelity: v.passedFidelity,
+        reasoning: v.reasoning,
+      })),
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);

@@ -752,6 +752,10 @@ export interface AtomicClaim {
   checkWorthiness: "high" | "medium";
   specificityScore: number;      // 0-1, LLM-assessed. ≥0.6 required by Gate 1.
   groundingQuality: "strong" | "moderate" | "weak" | "none";
+  /** True when this claim is one dimension of an ambiguous_single_claim decomposition.
+   *  Dimension claims are exempt from Gate 1 fidelity filtering because they represent
+   *  inherent interpretations of the input's semantic range, not evidence imports. */
+  isDimensionDecomposition?: boolean;
   expectedEvidenceProfile: {     // What evidence would verify/refute this claim
     methodologies: string[];     // e.g., ["WTW analysis", "vehicle dynamometer testing"]
     expectedMetrics: string[];   // e.g., ["efficiency %", "energy loss kWh/km"]
@@ -1001,6 +1005,16 @@ export interface CBClaimUnderstanding {
     filteredCount: number;
     overallPass: boolean;
   };
+  /** Pre-filter atomic claims (before Gate 1 filtering). Stored for auditability. */
+  preFilterAtomicClaims?: AtomicClaim[];
+  /** Gate 1 LLM validation reasoning per claim. Stored for auditability. */
+  gate1Reasoning?: Array<{
+    claimId: string;
+    passedOpinion: boolean;
+    passedSpecificity: boolean;
+    passedFidelity: boolean;
+    reasoning: string;
+  }>;
 }
 
 /**
