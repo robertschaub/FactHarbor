@@ -13,7 +13,7 @@ import { CONFIG } from "./config";
 import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
 import type { ClaimVerdict, EvidenceItem, FetchedSource } from "./types";
 import { assertValidTruthPercentage } from "./types";
-import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
+import { batchGetCachedData, setCachedScore, setCacheTtlDays, setCacheTtlByCategory, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
 
@@ -66,6 +66,7 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.defaultConfidence = next.defaultConfidence ?? 0.8;
   SR_CONFIG.unknownSourceConfidence = next.unknownSourceConfidence ?? 0.5;
   setCacheTtlDays(next.cacheTtlDays);
+  setCacheTtlByCategory(next.cacheTtlByCategory);
 }
 
 // ============================================================================

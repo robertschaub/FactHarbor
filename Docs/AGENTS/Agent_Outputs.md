@@ -2,6 +2,21 @@
 
 
 ---
+### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.4 Commit 1: Per-category SR cache TTL
+**Task:** Implement per-category SR cache TTL so reliable sources cache longer and unreliable sources re-evaluate sooner.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/source-reliability-cache.ts`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/test/unit/lib/source-reliability-cache-ttl.test.ts` (new)
+**Key decisions:**
+- Added `cacheTtlByCategory` to `SourceReliabilityConfigSchema` with per-band defaults: highly_reliable/reliable=60d, leaning_reliable=45d, mixed=21d, leaning_unreliable=14d, unreliable/highly_unreliable=7d.
+- Added `resolveCacheTtlDays(category?)` function in `source-reliability-cache.ts` — resolves per-category TTL with fallback to flat `cacheTtlDays` for unknown/null categories.
+- Added `setCacheTtlByCategory()` setter exported from cache module, wired through `setSourceReliabilityConfig()` in `source-reliability.ts`.
+- Updated `setCachedScore()` to use `resolveCacheTtlDays(category)` instead of flat TTL — existing `category` parameter was already passed through, so the cache write path needed only the resolver call change.
+- All UCM-configurable: admins can tune per-category TTLs without code changes.
+**Open items:** Phase 2.4 Commit 2 (SR prompt improvements) requires Captain approval before implementation. Pre-existing build error in `claimboundary-pipeline.ts:1007` (`InputType` not found) — unrelated to this change.
+**Warnings:** None.
+**For next agent:** Per-category TTL is live. To adjust defaults, edit `DEFAULT_SR_CONFIG.cacheTtlByCategory` in `config-schemas.ts` or configure via UCM admin. The `resolveCacheTtlDays` function falls back gracefully — unknown categories use the flat `cacheTtlDays` (default 90d).
+**Learnings:** no
+
+---
 ### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.3 Sign-off: Close verdict stage maxTokens fix
 **Task:** Close Phase 2.3 — update WIP doc status, Coding Agent Prompts, and Agent_Outputs after Captain sign-off on the `maxTokens: 16384` verdict stage fix.
 **Files touched:** `Docs/WIP/Report_Quality_Analysis_2026-03-08.md`, `Docs/DEVELOPMENT/Coding Agent Prompts.md`, `Docs/AGENTS/Agent_Outputs.md`

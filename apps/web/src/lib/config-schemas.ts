@@ -920,7 +920,10 @@ export const SourceReliabilityConfigSchema = z.object({
   consensusThreshold: z.number().min(0).max(1).describe("Max score difference between models for consensus"),
 
   // === Cache Settings ===
-  cacheTtlDays: z.number().int().min(1).max(365).describe("Cache TTL in days"),
+  cacheTtlDays: z.number().int().min(1).max(365).describe("Cache TTL in days (fallback for unrecognised categories)"),
+  cacheTtlByCategory: z.record(z.string(), z.number().int().min(1).max(365))
+    .optional()
+    .describe("Per-reliability-category cache TTL in days. Keys: highly_reliable, leaning_reliable, mixed, leaning_unreliable, unreliable, etc. Falls back to cacheTtlDays for missing keys."),
 
   // === Filtering ===
   filterEnabled: z.boolean().describe("Skip evaluation for low-value domains"),
@@ -974,6 +977,15 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
 
   // Cache
   cacheTtlDays: 90,
+  cacheTtlByCategory: {
+    highly_reliable: 60,
+    reliable: 60,
+    leaning_reliable: 45,
+    mixed: 21,
+    leaning_unreliable: 14,
+    unreliable: 7,
+    highly_unreliable: 7,
+  },
 
   // Filtering
   filterEnabled: true,

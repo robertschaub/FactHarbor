@@ -19,12 +19,31 @@ import { DEFAULT_SR_CONFIG } from "./config-schemas";
 const SR_CACHE_CONFIG = {
   dbPath: process.env.FH_SR_CACHE_PATH || "./source-reliability.db",
   cacheTtlDays: DEFAULT_SR_CONFIG.cacheTtlDays,
+  cacheTtlByCategory: DEFAULT_SR_CONFIG.cacheTtlByCategory as Record<string, number> | undefined,
 };
 
 export function setCacheTtlDays(days: number): void {
   if (Number.isFinite(days) && days > 0) {
     SR_CACHE_CONFIG.cacheTtlDays = Math.floor(days);
   }
+}
+
+export function setCacheTtlByCategory(map: Record<string, number> | undefined): void {
+  SR_CACHE_CONFIG.cacheTtlByCategory = map;
+}
+
+/**
+ * Resolve cache TTL in days for a given reliability category.
+ * Looks up per-category map first, falls back to flat cacheTtlDays.
+ */
+export function resolveCacheTtlDays(category?: string | null): number {
+  if (category && SR_CACHE_CONFIG.cacheTtlByCategory) {
+    const categoryTtl = SR_CACHE_CONFIG.cacheTtlByCategory[category];
+    if (typeof categoryTtl === "number" && categoryTtl > 0) {
+      return categoryTtl;
+    }
+  }
+  return SR_CACHE_CONFIG.cacheTtlDays;
 }
 
 // ============================================================================
@@ -357,8 +376,9 @@ export async function setCachedScore(
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
+  const ttlDays = resolveCacheTtlDays(category);
   const expiresAt = new Date(
-    now.getTime() + SR_CACHE_CONFIG.cacheTtlDays * 24 * 60 * 60 * 1000
+    now.getTime() + ttlDays * 24 * 60 * 60 * 1000
   );
 
   // Convert evidenceCited array to JSON string for storage
