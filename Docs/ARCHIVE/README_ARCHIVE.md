@@ -2,7 +2,17 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-03-02 (WIP consolidation #4 — 4 files archived, pre-release readiness + dynamic removal + UI texts + calibration cost)
+**Last Updated**: 2026-03-09 (Phase 2.5 review artifacts archived)
+
+---
+
+### Phase 2.5 Scope Normalization — Captain review drafts (2026-03-09)
+
+**Description**: Pre-implementation review artifacts for Phase 2.5 scope normalization. Content was Captain-approved and implemented in `scope-normalization.ts` and `claimboundary.prompt.md`. These drafts are superseded by production code.
+
+**Archived files** (2):
+1. `Phase2.5_scope-normalization-prompt.md` — SCOPE_NORMALIZATION prompt draft (abstract-only examples, conservative bias)
+2. `Phase2.5_scope-normalization-schema.ts` — Zod schema and `validateNormalizationOutput()` for LLM output
 
 ---
 
