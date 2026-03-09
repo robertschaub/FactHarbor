@@ -4045,6 +4045,21 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **For next agent:** If `internal-runner-queue.ts` import paths change again, update this test’s mocks to match the runner’s direct imports rather than higher-level barrel modules.
 **Learnings:** no
 ---
+### 2026-03-09 | Senior Developer | Cline (claude-4.6-sonnet) | Phase 2.4 Commit 2: Web-search augmented SR evaluation (UCM template)
+**Task:** Add UCM-configurable `srCredibilitySearchQueryTemplate` for SR evaluation web search queries, wire into evaluate-source route, add unit tests.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/sr-credibility-search.ts` (new), `apps/web/src/app/api/internal/evaluate-source/route.ts`, `apps/web/test/unit/lib/sr-credibility-search.test.ts` (new)
+**Key decisions:**
+- Added `srCredibilitySearchQueryTemplate` to `SourceReliabilityConfigSchema` (string, optional, max 500 chars). Default: `"{domain} credibility reliability bias fact-check"`.
+- Created `sr-credibility-search.ts` utility module exporting `buildCredibilitySearchQuery()` — substitutes `{domain}` placeholder (case-insensitive), falls back to default query on empty/whitespace template.
+- Template-based query is injected as the first item in `standardQueries` inside `buildEvidencePack()`, running before the existing hardcoded reliability/bias queries. This means the UCM-configurable query gets highest priority in the standard query phase.
+- Config value read from UCM in the POST handler alongside other SR config values.
+- The existing `buildEvidencePack()` already has extensive web search with graceful fallback (search failures are caught per-query, logged, and don't crash evaluation). No additional fallback logic needed — the spec's "SR evaluation must never crash due to a search failure" requirement was already satisfied.
+**Open items:** None — Phase 2.4 Commit 2 is complete.
+**Warnings:** The evaluate-source route already had comprehensive web search augmentation via `buildEvidencePack()` with 7+ query phases. This commit adds UCM configurability for the initial credibility query template, not a new search capability.
+**For next agent:** `srCredibilitySearchQueryTemplate` is tunable via Admin → Config → SR profile. Use `{domain}` as placeholder. The template is used as the first standard query in evidence pack building. All 1175 tests pass.
+**Learnings:** no
+
+---
 ### 2026-03-09 | Code Reviewer | Cursor (claude-4.6-sonnet) | Review -- Phase 1 Pipeline Fixes (27c4ef44 + 8bef6a91)
 **Task:** Code review of two Phase 1 commits against AGENTS.md compliance, correctness, and type safety checklist from `Docs/DEVELOPMENT/Coding Agent Prompts.md`.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only - review-only mode)
@@ -4184,4 +4199,32 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** Commit 1 (TTL) can proceed immediately. Commit 2 (search augmentation) blocked on prompt draft + Captain approval.
 **Warnings:** The web search adds one query per domain per TTL window — cheap but not zero. Monitor SR cache hit rate to ensure the TTL reduction (from 90d flat to 60d/45d/21d/14d/7d) doesn't cause excessive re-evaluation churn.
 **For next agent:** Full spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. Do Commit 1 (TTL) first. For Commit 2, draft the SR prompt change and post for Captain review before implementing.
+**Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.4 Commit 1b — Per-sourceType TTL approved
+**Task:** Extend Phase 2.4 with per-sourceType SR cache TTL (Option A schema change) after Captain approval.
+**Files touched:** `Docs/DEVELOPMENT/Coding Agent Prompts.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Per-category TTL (Commit 1) alone doesn't solve the Biden→Trump regime-change scenario: `whitehouse.gov` cached as `highly_reliable` for 60 days regardless of category. The fix requires per-sourceType TTL with `government: 21 days`.
+- Schema change approved: add `source_type TEXT` column to SR cache. `sourceType` is available at `setCachedScore` time (it's in the SR LLM output JSON).
+- Approved TTL values: government=21d, state_controlled_media=21d, unknown=21d, state_media=30d, advocacy=30d, platform_ugc=45d, aggregator=45d, editorial_publisher=60d, wire_service=90d, propaganda_outlet=90d, known_disinformation=90d.
+- TTL lookup order: sourceType map → category map → flat `cacheTtlDays`. All three tiers UCM-configurable.
+- `propaganda_outlet` and `known_disinformation` intentionally have 90d TTL — stable bad actors, re-evaluating weekly is wasteful.
+**Open items:** Implement Commit 1b before Commit 2. Run npm test after.
+**Warnings:** SQLite `ALTER TABLE ... ADD COLUMN` is safe with no data loss. Existing cache rows will have `source_type = NULL` — TTL lookup will fall through to per-category correctly.
+**For next agent:** Commit 1b spec in `Docs/DEVELOPMENT/Coding Agent Prompts.md`. After Commit 1b: proceed to Commit 2 (web-search augmented SR evaluation — already unblocked, no prompt approval needed).
+**Learnings:** no
+
+---
+### 2026-03-08 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2.4 Commit 2 Review — Web-Search Augmented SR
+**Task:** Review Phase 2.4 Commit 2 (web-search augmented SR evaluation) implementation.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Implementation approved. Credibility query correctly injected as first standard query in `buildEvidencePack()` — results become E1/E2/E3 in evidence pack, processed by existing LLM evidence rules. UCM wiring correct. `buildCredibilitySearchQuery()` is clean pure utility with empty-template fallback.
+- [MEDIUM] Commit 1b (per-sourceType TTL: `srCacheTtlBySourceType` + `source_type` column in SR cache) was skipped by the agent. `government: 21 days` regime-change fix is NOT yet implemented.
+- Commit 2 approved to commit as-is. Commit 1b must follow before Phase 2.4 is closed.
+**Open items:** Commit 1b — `source_type TEXT` column in SR cache, `srCacheTtlBySourceType` UCM map, 3-tier TTL lookup (sourceType → category → flat).
+**Warnings:** Commit 2 changes are currently uncommitted — agent must run git commit --trailer "Made-with: Cursor" before starting Commit 1b.
+**For next agent:** Commit Commit 2 changes first. Then implement Commit 1b: schema change (`ALTER TABLE ... ADD COLUMN source_type TEXT`), store sourceType at `setCachedScore` time, add `srCacheTtlBySourceType` to `SourceReliabilityConfigSchema` with approved values (government=21d, state_controlled_media=21d, unknown=21d, state_media=30d, advocacy=30d, platform_ugc=45d, aggregator=45d, editorial_publisher=60d, wire_service=90d, propaganda_outlet=90d, known_disinformation=90d). TTL lookup: sourceType → category → flat.
 **Learnings:** no

@@ -39,44 +39,65 @@ TTL decision already made. Implement directly.
 
 ---
 
-### Phase 2.4 Commit 2 — Web-search augmented SR evaluation (prompt change requires Captain approval)
+### Phase 2.4 Commit 1b — Per-sourceType SR cache TTL (schema change — do before Commit 2)
 
-**Why this matters:** Reducing TTL to 60 days and re-evaluating via LLM doesn't solve the regime-change problem. If an LLM's training data shows a government domain as "highly reliable", every re-evaluation produces the same stale answer — the LLM simply doesn't know about recent credibility changes. The fix is to give the LLM *current* information at SR evaluation time via web search.
+**This extends Commit 1.** Add `source_type` to the SR cache and a per-sourceType TTL map to UCM. This is the actual fix for the regime-change (reliable → unreliable) scenario — `government` sources now expire in 21 days instead of 60.
 
-**Design:**
+**Schema change:** Add `source_type TEXT` column to the SR cache table in `source-reliability-cache.ts`. Requires a migration (add column with `ALTER TABLE ... ADD COLUMN source_type TEXT` — SQLite supports this safely with no data loss).
 
-At the SR cache-miss path in `source-reliability.ts`, before calling the LLM to score a domain:
-1. Run a targeted web search for recent credibility signals about the domain
-2. Inject search results as context into the SR LLM call
-3. The LLM now has current information (fact-checker ratings, recent criticism, editorial-standards coverage) when making its judgment
+**Store sourceType at write-time:** In `setCachedScore`, accept `sourceType` as a parameter and write it to the new column. The SR LLM output already returns `sourceType` in its JSON — it is available at write-time.
 
-**Search query:** UCM-configurable template with `{domain}` placeholder. Default:
-```
-"{domain} credibility reliability bias fact-check"
-```
-Store as `srCredibilitySearchQueryTemplate` in `SourceReliabilityConfigSchema`. The `{domain}` token is replaced at runtime.
+**UCM addition — `srCacheTtlBySourceType`:** Object keyed by sourceType string. Add to `SourceReliabilityConfigSchema` in `config-schemas.ts` with these approved defaults in `pipeline.default.json`:
 
-**Constraints:**
-- Only fire the search on a **cache miss that proceeds to LLM evaluation** — not on every SR lookup
-- Pass up to **5 search result snippets** (title + excerpt) to the LLM as context
-- If web search fails or returns zero results: log at `info` level, proceed with LLM-only assessment (existing behaviour). This must be graceful — SR evaluation must never crash due to a search failure
-- Uses existing web search infrastructure (`web-search.ts`) — no new dependencies
+| Source Type | TTL (days) |
+|-------------|-----------|
+| `government` | 21 |
+| `state_controlled_media` | 21 |
+| `unknown` | 21 |
+| `state_media` | 30 |
+| `advocacy` | 30 |
+| `platform_ugc` | 45 |
+| `aggregator` | 45 |
+| `editorial_publisher` | 60 |
+| `wire_service` | 90 |
+| `propaganda_outlet` | 90 |
+| `known_disinformation` | 90 |
 
-**Prompt change (Captain approval required before committing):**
+**TTL lookup order at write-time** (first match wins):
+1. `srCacheTtlBySourceType[sourceType]` — if sourceType is known and in the map
+2. `srCacheTtlByCategory[category]` — per-category fallback (Commit 1)
+3. `cacheTtlDays` — flat fallback
 
-The SR evaluation prompt needs a new section to accept web search context. Draft and post the exact prompt diff here before committing. The change should:
-- Add a conditional section: "Recent web search results about this source (if available): [snippets]"
-- Instruct the LLM to weight recent credibility signals over training-data assumptions when they conflict
-- Keep the change minimal — one new section, no restructuring of the existing prompt
+All three tiers are UCM-configurable. No hardcoded TTL values anywhere.
+
+**Unit tests:** Per-sourceType TTL correctly applied; unknown sourceType falls back to per-category; missing category falls back to flat value.
+
+Run `npm test`.
+
+---
+
+### Phase 2.4 Commit 2 — Web-search augmented SR evaluation (no prompt change needed — unblocked)
+
+**Why this matters:** Reducing TTL to 60 days and re-evaluating via LLM doesn't solve the regime-change problem. If an LLM's training data shows a government domain as "highly reliable", every re-evaluation produces the same stale answer. The fix is to give the LLM *current* information at SR evaluation time via web search.
+
+**No prompt change required.** The SR prompt already uses an `${evidenceSection}` variable and Rule 1 already instructs the LLM to use *only* evidence items and ignore pretrained knowledge. Web search results slot directly into the existing evidence pack mechanism — formatted as `[E1] title: snippet` items, they go through the same evidence quality hierarchy, recency weighting, and Tier 1/2/3 assessor classification the prompt already defines.
+
+**Implementation:**
+
+In the SR cache-miss path in `source-reliability.ts`, before the LLM call:
+1. Run a web search using `srCredibilitySearchQueryTemplate` from UCM (default: `"{domain} credibility reliability bias fact-check"`, with `{domain}` substituted at runtime)
+2. Format each result as `[E{n}] {title}: {snippet} ({source}, {date if known})` — up to 5 items
+3. Pass formatted results as the `evidenceSection` variable to the SR prompt
+4. If search fails or returns zero results: pass empty `evidenceSection` — log at `info` level, proceed with LLM-only assessment. **SR evaluation must never crash due to a search failure.**
+5. Only fire the search on a **cache miss that proceeds to LLM evaluation** — not on every SR lookup
 
 **UCM additions:**
-- `srCredibilitySearchQueryTemplate` — string, default as above
-- Both new fields go in `SourceReliabilityConfigSchema`
+- `srCredibilitySearchQueryTemplate` — string, default `"{domain} credibility reliability bias fact-check"`. Add to `SourceReliabilityConfigSchema` in `config-schemas.ts`
 
 **Unit tests:**
 - Graceful fallback: when search returns no results, SR evaluation still completes
 - Graceful fallback: when search throws, SR evaluation still completes
-- Search query is constructed correctly from the template (domain substitution works)
+- Search query is constructed correctly from the template (`{domain}` substitution works)
 
 Run `npm test` after both commits.
 

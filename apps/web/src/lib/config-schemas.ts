@@ -955,6 +955,12 @@ export const SourceReliabilityConfigSchema = z.object({
     .nullable()
     .optional()
     .describe("Date restrict for SR evaluation searches (y|m|w). Null uses search config."),
+  srCredibilitySearchQueryTemplate: z
+    .string()
+    .min(1)
+    .max(500)
+    .optional()
+    .describe("Template for the initial credibility search query. Use {domain} as placeholder for the source domain. Default: \"{domain} credibility reliability bias fact-check\""),
 
   // === Performance & Reliability ===
   evalConcurrency: z.number().int().min(1).max(10).optional().describe("Max concurrent SR evaluations (default: 3)"),
@@ -1001,6 +1007,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   evalSearchMaxResultsPerQuery: 3,
   evalMaxEvidenceItems: 12,
   evalSearchDateRestrict: null,
+  srCredibilitySearchQueryTemplate: "{domain} credibility reliability bias fact-check",
   evalConcurrency: 5,
   evalTimeoutMs: 90000,
   defaultConfidence: 0.8,
