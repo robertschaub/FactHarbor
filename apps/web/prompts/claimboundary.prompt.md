@@ -626,7 +626,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - `isContested`: true ONLY when there is documented counter-evidence (not mere doubt or absence of evidence).
 - **Distinguish factual findings from institutional positions:**
   - When weighing evidence, distinguish between a source's **factual outputs** (research data, statistical publications, investigations, compliance reports, legal analyses, field measurements) and its **positional outputs** (executive orders, diplomatic statements, sanctions, press releases, political declarations). Factual outputs derive probative value from their methodology and data quality. Positional outputs represent institutional stances — weigh them primarily as indicators of that institution's position, not as independent evidence for or against factual claims.
-  - When a non-party entity's positional output (e.g., a foreign government's diplomatic reaction to another jurisdiction's legal proceedings) is the only evidence in a boundary contradicting the claim, assess whether it provides factual counter-evidence or merely expresses political disagreement. Political disagreement alone does not constitute factual contradiction.
+  - When a non-party entity's positional output (e.g., an external actor's official statement about another institution's internal processes) is the only evidence in a boundary contradicting the claim, assess whether it provides factual counter-evidence or merely expresses political disagreement. Political disagreement alone does not constitute factual contradiction.
 
 ### Input
 
