@@ -151,7 +151,7 @@ flowchart LR
 **License:** AGPL-3.0 (commercial licensing available)
 **Language:** Python 3.10, LlamaIndex-based
 **Version:** 0.1.0 | **Stars:** 11 | **Contributors:** 3
-**Last commit:** 2025-05-03 | **Activity:** Low (no commits in 9+ months)
+**Last commit on main:** 2025-05-03 | **Activity:** Active on branches (see §3.9 Update)
 
 ### 3.1. Repository Structure
 
@@ -288,6 +288,32 @@ Despite the implementation gaps, several code patterns are worth studying:
 3. **Similarity cutoff filtering**: The `SimilarityPostprocessor` with configurable `min_score` is a simple quality gate that could complement FactHarbor's `probativeValue` assessment — though FactHarbor's LLM-based assessment is more sophisticated.
 
 4. **ColBERT retrieval option**: The codebase includes both dense vector and ColBERT-based retrieval, suggesting the team found dense embeddings insufficient for some retrieval tasks. Worth noting if FactHarbor ever adds RAG capabilities.
+
+### 3.9. Activity Update (2026-03-10)
+
+**Previous assessment (2025-05): "Low activity, no commits in 9+ months" — REVISED.**
+
+The repository has active development on branches since Feb 2025, with ~20+ commits not yet merged to `main`. Key developments:
+
+| Date | Development | Significance |
+|------|-------------|-------------|
+| **Mar 2026** | **PR #108 "Spectrum experiment"** | Systematic ablation study: evidence classification, chunk labeling (supports/refutes/NIN), mediator modes (LLM vs formula), 6-run comparison. **They are actively experimenting with debate topology — converging with FactHarbor's questions.** |
+| Feb 2026 | Issue #100: Ollama batch embeddings | Moving toward local model support |
+| Feb 2026 | PR #99: Sources downloader improvements | Better data pipeline infrastructure |
+| Feb 2026 | Dependency modernization | Gradio 5.12→6.7, LangChain-core 0.1→1.2 — significant upgrades |
+| Feb 2025 | Semantic Scholar integration | Added Knowledge Graph API key support |
+| Mar-Apr 2025 | SourcesDownloader class | New infrastructure for downloading WMO reports, Climate Feedback references from CSV |
+| Apr 2025 | Documentation overhaul | Improved README, getting started guide |
+
+**Paper-vs-code gap status:** `debate.py` is still empty on `main`. The Spectrum experiment PR (#108) suggests they are actively working on closing this gap — testing different advocate-mediator configurations including evidence classification approaches.
+
+**Related ecosystem activity:**
+- **SERI grant NATURE-3B** (Jan 2025, 748K CHF to Leippold): NLP tools for biodiversity/TNFD scoring — adjacent project, same group
+- **UNECE presentation** (May 2025): Leippold & Vaghefi on agentic RAG for climate finance
+- **ClimateCheck 2026 shared task** (May 2026, LREC/NSLP): Retrieve + classify climate claims — same research space
+- **Climate+Tech roadmap**: Q4 2025 targeted knowledge graph integration; 2026 targets production deployment
+
+**Implication for FactHarbor:** The project is alive and the Spectrum experiment shows independent convergence on the same questions we're exploring (which debate topology works best, how to classify evidence). This validates the collaboration opportunity — especially with Tobias, who bridges the Climinator group (Leippold) and the Ash group.
 
 ---
 

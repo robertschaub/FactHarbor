@@ -14,10 +14,12 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 | **Global landscape, top systems, cooperation targets** | [**Global Fact-Checking Landscape 2026**](Global_FactChecking_Landscape_2026.md) | Full Fact AI (#1 deployed), ED2D/Tool-MAD (#1 research debate), 3 concepts to learn from. FactHarbor has the only working MAD implementation; evidence retrieval is the #1 gap. |
 | **Full Fact AI**: architecture, PASTEL, 7 lessons, cooperation path | [**Full Fact AI Analysis**](FullFact_AI_Lessons_for_FactHarbor.md) | Funnel architecture (333K sentences → 100K claims → human review), PASTEL checkworthiness via LLM yes/no questions + linear regression, deliberate no-verdict stance. Natural complement: their monitoring + our verdicts. |
 | **Factiverse**: architecture, 8 lessons, multi-source evidence | [**Factiverse Analysis**](Factiverse_Lessons_for_FactHarbor.md) | 6-stage LiveFC pipeline, fine-tuned XLM-RoBERTa beats GPT-4, 6 evidence sources including Semantic Scholar + FactiSearch (330K fact-checks). Proves multi-source retrieval is achievable — validates our #1 evidence gap. |
-| Climinator paper vs code, 11 lessons | [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | Paper-vs-code gap is significant. FactHarbor's debate is already more sophisticated than Climinator's actual code. |
+| Climinator paper vs code, 11 lessons | [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | Paper-vs-code gap is significant but actively closing (Spectrum experiment PR #108, Mar 2026). FactHarbor's debate is already more sophisticated than Climinator's actual code. |
 | Research network, people, projects, debate landscape | [Research Ecosystem](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md) | 10+ papers, 13 debate frameworks, 10 additional learnings. Search strategy matters more than debate architecture. |
 | Faithful LLM specialists, source attribution, data quality | [**Faithful LLM Specialists (ACL 2024)**](Schimanski_Faithful_LLM_Specialists_ACL2024.md) | Source quality + attributability metrics. Data quality > quantity. 669 filtered samples beat thousands unfiltered. NLI-based grounding. Strongest Schimanski/Ash connection point. |
-| Meeting prep for Elliott Ash | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | EMNLP 2024 paper, Ash portfolio, FactHarbor SWOA, calibration status, meeting questions. |
+| Document relevance scoring, RAG calibration, distillation | [**DIRAS (NAACL 2025)**](Schimanski_DIRAS_NAACL2025.md) | 8B model matches GPT-4 on relevance scoring. Explicit relevance definitions per query. Selection bias correction. CoT hurts annotation. Adaptive thresholds > fixed top-k. |
+| **Meeting prep for Tobias Schimanski (2026-03-18)** | [**Meeting Prep: Schimanski**](Meeting_Prep_Schimanski_2026-03-18.md) | Agenda, 5 topics, questions to ask, signals to watch, funding structure. |
+| Meeting prep for Elliott Ash (historical) | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | EMNLP 2024 paper, Ash portfolio, FactHarbor SWOA, calibration status, meeting questions. |
 | Why evidence-following appears politically biased | [Epistemic Asymmetry](Truth_Seeking.md) | The information environment is not politically symmetric. This is a property of reality, not a pipeline bug. |
 | **Multi-source evidence retrieval spec** | [**Multi-Source Evidence Retrieval**](../Specification/Multi_Source_Evidence_Retrieval.md) | Wikipedia + Semantic Scholar + Google Fact Check Tools API. All free, ~8 hours implementation. Addresses #1 gap (C13 evidence asymmetry). |
 
@@ -134,7 +136,7 @@ Items marked * are validated in Climinator code; items marked † are paper-only
 | **1** | **Full Fact AI team** | Full Fact, UK | Not yet contacted | Monitoring (350K/day) + FactHarbor as verdict engine |
 | **2** | **AVeriTeC organizers** | Multi-university | Not yet contacted | Benchmark evaluation (4,568 claims, 50 orgs) |
 | **3** | **ED2D / Tool-MAD authors** | Academic | Not yet contacted | Evidence retrieval during debate; working pipeline as testbed |
-| **4** | **Elliott Ash + Tobias Schimanski** | ETH Zurich / UZH | Response sent (2026-03-09), awaiting meeting | Faithfulness metrics, source attribution, calibration, Innosuisse/BRIDGE partnership |
+| **4** | **Elliott Ash + Tobias Schimanski** | ETH Zurich / UZH | Meeting confirmed: 2026-03-18 16:00, UZH | Faithfulness metrics, source attribution, relevance scoring, Innosuisse/BRIDGE partnership |
 | **5** | **Dominik Stammbach** | Princeton CITP | Email drafted, not sent | Data-centric fact-checking, KB selection theory |
 | — | **Markus Leippold** | UZH | Not yet contacted | Climate+Tech, evaluation benchmarks, agentic RAG |
 
