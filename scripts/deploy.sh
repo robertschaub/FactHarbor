@@ -5,8 +5,10 @@
 # Run deploy-test.sh separately to bring test services back up.
 #
 # Usage:
-#   /opt/factharbor/scripts/deploy.sh          # Deploy latest main
-#   /opt/factharbor/scripts/deploy.sh v1.0.0   # Deploy a specific tag
+#   /opt/factharbor/scripts/deploy.sh                              # Deploy latest main
+#   /opt/factharbor/scripts/deploy.sh v1.0.0                       # Deploy a specific tag
+#   /opt/factharbor/scripts/deploy.sh "" --force-configs           # Deploy + force UCM config defaults
+#   /opt/factharbor/scripts/deploy.sh v1.0.0 --force-configs       # Tag + force UCM config defaults
 #
 # Prerequisites: SSH into the VPS first (see scripts/.deploy.env for connection details)
 
@@ -30,6 +32,7 @@ err()  { echo -e "${RED}[deploy]${NC} $*" >&2; }
 ok()   { echo -e "${GREEN}[deploy]${NC} $*"; }
 
 TAG="${1:-}"
+FORCE_CONFIGS="${2:-}"   # Pass "--force-configs" to force-reseed UCM config defaults
 
 echo ""
 echo -e "${CYAN}========================================${NC}"
@@ -95,7 +98,13 @@ ok "Web build complete."
 # because FH_CONFIG_DB_PATH wasn't set. This step targets the real DB.
 log "Reseeding configs into production database..."
 cd "$DEPLOY_DIR/apps/web"
-sudo -u factharbor FH_CONFIG_DB_PATH=/opt/factharbor/data/config.db npx tsx scripts/reseed-all-prompts.ts --quiet
+if [ "$FORCE_CONFIGS" = "--force-configs" ]; then
+    warn "Force-reseeding UCM configs (overwrites user-customized values with file defaults)..."
+    sudo -u factharbor FH_CONFIG_DB_PATH=/opt/factharbor/data/config.db npx tsx scripts/reseed-all-prompts.ts --force --configs
+    sudo -u factharbor FH_CONFIG_DB_PATH=/opt/factharbor/data/config.db npx tsx scripts/reseed-all-prompts.ts --quiet --prompts
+else
+    sudo -u factharbor FH_CONFIG_DB_PATH=/opt/factharbor/data/config.db npx tsx scripts/reseed-all-prompts.ts --quiet
+fi
 cd "$DEPLOY_DIR"
 ok "Config reseed complete."
 
