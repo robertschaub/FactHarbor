@@ -299,7 +299,7 @@ const DEFAULT_SR_CONFIG: SRConfig = {
   skipTlds: ["xyz", "top", "club", "icu", "buzz", "tk", "ml", "ga", "cf", "gq"],
   rateLimitPerIp: 10,
   domainCooldownSec: 60,
-  evalUseSearch: true,
+  evalUseSearch: false,
   evalSearchMaxResultsPerQuery: 3,
   evalMaxEvidenceItems: 12,
   evalSearchDateRestrict: null,
@@ -2146,7 +2146,7 @@ function SRConfigForm({
         <label className={styles.formLabel}>
           <input
             type="checkbox"
-            checked={config.evalUseSearch ?? true}
+            checked={config.evalUseSearch ?? false}
             onChange={(e) => updateField("evalUseSearch", e.target.checked)}
             style={{ marginRight: 8 }}
           />
