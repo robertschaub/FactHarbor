@@ -165,6 +165,32 @@ export async function POST(req: Request) {
         });
 
         if (!evalResponse.ok) {
+          // On domain cooldown (429), return cached result if available — not a real error
+          if (evalResponse.status === 429) {
+            const cachedFallback = await batchGetCachedData([domain]).then(m => m.get(domain));
+            if (cachedFallback) {
+              results.push({
+                domain,
+                success: true,
+                cached: true,
+                score: cachedFallback.score,
+                confidence: cachedFallback.confidence,
+                consensus: cachedFallback.consensusAchieved,
+                fallbackUsed: cachedFallback.fallbackUsed || false,
+                fallbackReason: cachedFallback.fallbackReason || null,
+                identifiedEntity: cachedFallback.identifiedEntity || null,
+                models: "(cached - cooldown active)",
+              });
+            } else {
+              results.push({
+                domain,
+                success: true,
+                cached: true,
+                models: "(cooldown active — no cached result yet)",
+              });
+            }
+            continue;
+          }
           const errData = await evalResponse.json().catch(() => ({}));
           results.push({
             domain,
