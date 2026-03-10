@@ -119,7 +119,8 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - Preserve the original language of the input and evidence. Do not translate.
 - Do not assume any particular language. Instructions apply regardless of input language.
 - **Primary contract (non-negotiable):** `impliedClaim`, `articleThesis`, and each claim `statement` must be derived from input text alone. Preliminary evidence may shape only `expectedEvidenceProfile` and `groundingQuality`.
-- First, classify the original input as one of:
+- First, classify the original input. **Before applying the four classification types below, check for the Plurality override:**
+  - **Plurality override (check FIRST):** If the input's **own wording** explicitly names multiple distinct instances, proceedings, events, or subjects using a plurality marker (e.g., "various", "multiple", "several", "different", "the X proceedings", "each of the Y cases"), classify as `multi_assertion_input` regardless of whether the input is in question form. The plurality is user-stated, not evidence-derived — the input is asking about a collection, not a single instance. Decompose into one atomic claim per explicitly named or clearly implied distinct instance, applying the same per-instance atomicity as for single-instance inputs. Do NOT apply this rule when plurality is vague or implicit — only when the input's wording itself clearly names or enumerates the distinct instances.
   - **single_atomic_claim**: one assertion with a clear, unambiguous factual meaning pointing to one verifiable dimension.
   - **ambiguous_single_claim**: one assertion whose key predicate is inherently ambiguous — it can be independently true or false along multiple distinct factual dimensions (e.g., technical, economic, environmental, statistical). Classify as ambiguous ONLY when at least two equally plausible interpretations exist from the wording alone — if one interpretation clearly dominates, use `single_atomic_claim`. This includes question forms ("Does X work?") where the implied assertion is ambiguous.
   - **multi_assertion_input**: multiple distinct verifiable assertions.
@@ -141,7 +142,7 @@ If `verifiability` assessment is requested (via configuration), also assess how 
   - The `impliedClaim` is the assertion implied by the question (e.g., "X was fair"), stated at the same level of generality as the question.
   - If the implied assertion is ambiguous (e.g., "Does X work?" where "work" has multiple distinct factual dimensions), treat as **ambiguous_single_claim** above.
   - If the implied assertion is unambiguous, treat as **single_atomic_claim**.
-  - Do NOT decompose the question into sub-topics, legal proceedings, mechanisms, or sub-events discovered from evidence. The question's scope IS the claim's scope.
+  - Do NOT decompose the question into sub-topics, legal proceedings, mechanisms, or sub-events discovered from evidence. The question's scope IS the claim's scope. **Exception:** When the input itself explicitly names multiple distinct proceedings, events, or instances using a plurality marker (see `multi_assertion_input` Plurality override rule above), treat as `multi_assertion_input` instead. The decomposition comes from the input's own plurality, not from evidence.
 - **Generation order (must follow):**
   1. Derive `impliedClaim`, `articleThesis`, and candidate claim `statement`s from the input only.
   2. Lock those claims.
