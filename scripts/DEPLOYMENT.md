@@ -195,9 +195,10 @@ sudo journalctl -u factharbor-api --no-pager -n 30
 sudo journalctl -u factharbor-web --no-pager -n 30
 ```
 
-### 8. Post-deploy checklist (one-time actions after next deploy)
+### 8. Post-deploy checklist ⚠️ ONE-TIME — next deploy only, then delete this section
 
-These steps must be performed manually after the next production deploy. They are one-time only.
+> **IMPORTANT:** Steps 8a and 8b are one-time only. After performing them, delete this section
+> from the guide (or strike through with "✅ Done YYYY-MM-DD") so future deploys do not repeat them.
 
 #### 8a. Apply Phase 1 UCM config (variability containment — Plan §5, D1+D2)
 
@@ -208,17 +209,24 @@ Open Admin → Config → Search Config and set:
 Open Admin → Config → Calculation Config and set:
 - `evidenceSufficiencyMinSourceTypes` → **2**
 
-#### 8b. Expire stale SR cache entries
+#### 8b. Expire stale SR cache entries — ONE-TIME ONLY
 
-Run on VPS after services are up:
+Run **once** on VPS after services are up. Do NOT run on subsequent deploys.
 
 ```bash
-# Expire pre-web-search SR entries (no evidence_pack) and all insufficient_data entries
+# ONE-TIME: Expire pre-web-search SR entries (no evidence_pack) and all insufficient_data entries
+# These are low-quality entries that predate web-search augmentation (Phase 2.4, 2026-03-09).
+# Safe: entries with good scores + evidence_pack are untouched. They will re-evaluate on next use.
 sudo sqlite3 /opt/factharbor/data/source-reliability.db \
   "UPDATE source_reliability SET expires_at = datetime('now') WHERE evidence_pack IS NULL OR score IS NULL;"
 ```
 
-This forces ~1,035 low-quality entries to re-evaluate on next use. Entries with good scores and evidence_pack are untouched.
+After running, verify row count:
+```bash
+sudo sqlite3 /opt/factharbor/data/source-reliability.db \
+  "SELECT COUNT(*) as expired FROM source_reliability WHERE expires_at <= datetime('now');"
+```
+Expected: ~1,035 rows expired. Then mark this step done and do not repeat.
 
 ---
 
