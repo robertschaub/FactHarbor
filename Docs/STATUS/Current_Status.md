@@ -1,9 +1,23 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-01
+**Last Updated**: 2026-03-10
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Invite code access control live. Inverse Claim Asymmetry calibration (Phases 0–3) complete. 1113 tests passing (54 files), build clean. Cross-provider debate active (OpenAI challenger). Phase 1 integrity policies **disabled** (both `verdictGroundingPolicy` and `verdictDirectionPolicy` set to `disabled` in active UCM config as of 2026-03-05; `warn_and_cap` mode planned for Phase 2 — see `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`).
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Phase 2 validation complete (production-ready). MT-1/MT-2/MT-3 structural pipeline fixes implemented. 1199 tests passing (build clean). Cross-provider debate active (OpenAI challenger). Phase 1 integrity policies **disabled** (both `verdictGroundingPolicy` and `verdictDirectionPolicy` set to `disabled` in active UCM config as of 2026-03-05; `warn_and_cap` mode planned for Phase 2 — see `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`). Phase 1 UCM config containment changes (sufficiency gate, search provider narrowing) **pending** — apply via Admin UI before next production run.
+
+---
+
+## Recent Changes (2026-03-10)
+
+**Phase 2 complete + Report Variability structural fixes:**
+- ✅ Phase 2 validation: 7/7 runs SUCCEEDED across question/statement/claim/article types — pipeline declared production-ready
+- ✅ **MT-1**: Sufficiency guard — `allClaimsSufficient()` requires ≥1 completed main iteration before early-exit fires. New UCM field `sufficiencyMinMainIterations` (default 1). `mainIterationsUsed=0` shortcut eliminated.
+- ✅ **MT-3**: `distinctEvents` multi-event coverage — when `distinctEvents.length > 1`, effective min iterations scales to `max(minMainIterations, distinctEventCount - 1)`. `GENERATE_QUERIES` prompt section strengthened with abstract multi-event cross-cluster rule.
+- ✅ **MT-2**: Explicit `CB_GENERAL_UNSCOPED` boundary — unscoped evidence no longer absorbed into largest named boundary. Three-way branch: 1 boundary → direct assignment; `CB_GENERAL` exists → route to it; 2+ named boundaries → create `CB_GENERAL_UNSCOPED` synthetic boundary.
+- ✅ **TypeScript build fixes**: `InputType` cast (inclusion over exclusion), `maxTokens` → `maxOutputTokens` (AI SDK v6)
+- ✅ **SR Phase 2.4**: Per-category cache TTL (`cacheTtlByCategory`) — highly_reliable=60d, unreliable=7d, UCM-configurable
+- ⏳ **Phase 1 UCM config** (D1+D2): `evidenceSufficiencyMinSourceTypes` restore to 2, serpapi disabled, brave priority=10 — pending Admin UI apply
+- ⏳ **M3**: Flag March 5-7 jobs in admin dashboard as potentially unreliable — pending implementation
 
 ---
 
