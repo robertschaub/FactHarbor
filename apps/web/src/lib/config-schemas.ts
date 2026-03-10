@@ -473,6 +473,8 @@ export const PipelineConfigSchema = z.object({
   // Stage 2: Research
   claimSufficiencyThreshold: z.number().int().min(1).max(10).optional()
     .describe("Min evidence items per claim before considering it sufficient (default: 3)"),
+  sufficiencyMinMainIterations: z.number().int().min(0).max(10).optional()
+    .describe("Min main loop iterations that must complete before sufficiency check can fire (default: 1). Prevents seeded preliminary evidence from short-circuiting real Stage 2 research."),
   contradictionReservedIterations: z.number().int().min(0).max(5).optional()
     .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
   researchTimeBudgetMs: z.number().int().min(60000).max(3600000).optional()
@@ -717,6 +719,9 @@ export const PipelineConfigSchema = z.object({
   // ClaimBoundary Stage 2 defaults
   if (data.claimSufficiencyThreshold === undefined) {
     data.claimSufficiencyThreshold = 3;
+  }
+  if (data.sufficiencyMinMainIterations === undefined) {
+    data.sufficiencyMinMainIterations = 1;
   }
   if (data.contradictionReservedIterations === undefined) {
     data.contradictionReservedIterations = 1;

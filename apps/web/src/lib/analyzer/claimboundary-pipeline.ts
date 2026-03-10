@@ -2318,9 +2318,13 @@ export async function researchEvidence(
   const reservedContradiction = pipelineConfig.contradictionReservedIterations ?? 2;
   const maxMainIterations = maxIterations - reservedContradiction;
   const sufficiencyThreshold = pipelineConfig.claimSufficiencyThreshold ?? 3;
+  // MT-1: minimum main iterations before sufficiency check can fire (default: 1)
+  const sufficiencyMinMainIterations = pipelineConfig.sufficiencyMinMainIterations ?? 1;
   const maxSourcesPerIteration = searchConfig.maxSourcesPerIteration ?? 8;
   const timeBudgetMs = pipelineConfig.researchTimeBudgetMs ?? 10 * 60 * 1000;
   const zeroYieldBreakThreshold = pipelineConfig.researchZeroYieldBreakThreshold ?? 2;
+  // MT-3: distinct event count for coverage guard
+  const distinctEventCount = state.understanding?.distinctEvents?.length ?? 0;
 
   const researchStartMs = Date.now();
   let consecutiveZeroYield = 0;
@@ -2343,8 +2347,9 @@ export async function researchEvidence(
       break;
     }
 
-    // Check if all claims are sufficient
-    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold)) break;
+    // MT-1 + MT-3: Pass iteration count and distinct event count so sufficiency
+    // cannot fire before the minimum required iterations have completed.
+    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount)) break;
 
     // Find claim with fewest evidence items that still has budget remaining.
     const budgetEligibleClaims = claims.filter(
@@ -2702,7 +2707,24 @@ export function allClaimsSufficient(
   claims: AtomicClaim[],
   evidenceItems: EvidenceItem[],
   threshold: number,
+  mainIterationsCompleted: number = 0,
+  minMainIterations: number = 1,
+  distinctEventCount: number = 0,
 ): boolean {
+  // Empty claims: vacuously sufficient (no research loop runs anyway)
+  if (claims.length === 0) return true;
+
+  // MT-1: Require at least one complete main loop iteration before sufficiency
+  // can fire. Prevents seeded preliminary evidence from short-circuiting real
+  // Stage 2 research (e.g., stored run showing mainIterationsUsed: 0).
+  // MT-3 coverage: When multiple distinct events were identified in Stage 1,
+  // require proportionally more iterations so each event cluster has research
+  // coverage opportunity before we declare the claim sufficient.
+  const effectiveMinIterations = distinctEventCount > 1
+    ? Math.max(minMainIterations, distinctEventCount - 1)
+    : minMainIterations;
+  if (mainIterationsCompleted < effectiveMinIterations) return false;
+
   return claims.every((claim) => {
     const count = evidenceItems.filter(
       // Count only fully-extracted evidence (not seeded/preliminary items).

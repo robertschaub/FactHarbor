@@ -2,6 +2,24 @@
 
 
 ---
+### 2026-03-10 | Senior Developer | Claude Code (claude-sonnet-4-6) | MT-1 + MT-3 — Sufficiency Guard + Multi-Event Coverage
+**Task:** Implement MT-1 (stop premature sufficiency collapse) and MT-3 (wire distinctEvents into query generation coverage) from the Report Variability Consolidated Plan §10.4–10.5.
+**Files touched:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — MT-1 iteration guard in `allClaimsSufficient()`, pass `mainIterationsUsed` + `distinctEventCount` at call site
+- `apps/web/src/lib/config-schemas.ts` — new UCM field `sufficiencyMinMainIterations` (default 1)
+- `apps/web/prompts/claimboundary.prompt.md` — GENERATE_QUERIES section: strengthened multi-event coverage rule with abstract example
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 8 new tests (MT-1 guard: 4 tests; MT-3 coverage: 3 tests; MT-3 wiring: 1 test)
+**Key decisions:**
+- MT-3 parameter wiring was already fully implemented (distinctEvents passed to prompt via `runResearchIteration → generateResearchQueries` at line 2798). MT-3 work focused on (a) prompt strengthening and (b) multi-event iteration count in the sufficiency guard.
+- MT-3 coverage check: structural (no LLM call) — when `distinctEvents.length > 1`, `effectiveMinIterations = max(minMainIterations, distinctEventCount - 1)`. Avoids LLM call in hot loop.
+- MT-1 guard: `allClaimsSufficient()` now accepts `mainIterationsCompleted`, `minMainIterations` (UCM), `distinctEventCount`; empty claims short-circuit before guard.
+- Existing tests updated to pass `mainIterationsCompleted=1` where they test evidence-count logic independent of the guard.
+**Open items:** MT-2 (boundary fallback — unscoped evidence assigned to first boundary) is the next slice, not implemented here per task scope.
+**Warnings:** `sufficiencyMinMainIterations` defaults to 1 — this will force at least one main research iteration on every run. Monitor for cost increase on jobs that previously exited early (e.g., single-claim high-coverage topics). Plan §10.5 cost note applies.
+**For next agent:** MT-2 is the next piece. See plan §10.5 Phase MT-2. The `assignEvidenceToBoundaries()` function and the `claimBoundaryId` fallback assignment are the target. Check `Report_Quality_Analysis_2026-03-08.md` for B2 context (already partially fixed in 27c4ef44 with largest-boundary heuristic, but unscoped general evidence handling is still open).
+**Learnings:** No.
+
+---
 ### 2026-03-10 | Captain Deputy | Claude Code (claude-sonnet-4-6) | Phase 2 Validation — Completion Handoff
 **Task:** Record Phase 2 validation completion handoff. Mark docs as complete.
 **Files touched:** `Docs/WIP/Phase2_Validation_Plan_2026-03.md` (status → ✅ Complete), `Docs/DEVELOPMENT/Phase2_Validation_Checklist.md` (footer + checkbox updated).

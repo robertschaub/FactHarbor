@@ -1421,7 +1421,8 @@ describe("allClaimsSufficient", () => {
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
     ] as any[];
 
-    expect(allClaimsSufficient(claims, evidence, 3)).toBe(true);
+    // Pass mainIterationsCompleted=1 to satisfy the MT-1 iteration guard
+    expect(allClaimsSufficient(claims, evidence, 3, 1)).toBe(true);
   });
 
   it("should ignore unscoped preliminary evidence when checking sufficiency", () => {
@@ -1475,6 +1476,99 @@ describe("allClaimsSufficient", () => {
 
   it("should return true for empty claims", () => {
     expect(allClaimsSufficient([], [], 3)).toBe(true);
+  });
+
+  // MT-1: iteration guard tests
+  it("MT-1: returns false when no main iterations have completed, even with sufficient non-seeded evidence", () => {
+    // Simulates the pre-fix scenario: state.mainIterationsUsed=0 but evidence pool
+    // already contains non-seeded items (from some other source). The guard must
+    // prevent sufficiency from firing before the loop has run at all.
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
+    ] as any[];
+
+    // mainIterationsCompleted=0, minMainIterations=1 → guard blocks
+    expect(allClaimsSufficient(claims, evidence, 3, 0, 1)).toBe(false);
+  });
+
+  it("MT-1: returns true when minimum iterations completed and evidence threshold met", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
+    ] as any[];
+
+    // mainIterationsCompleted=1 >= minMainIterations=1 → guard passes, evidence passes
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1)).toBe(true);
+  });
+
+  it("MT-1: guard is configurable — minMainIterations=0 disables the guard", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
+    ] as any[];
+
+    // minMainIterations=0 → guard disabled, pure evidence-count check
+    expect(allClaimsSufficient(claims, evidence, 3, 0, 0)).toBe(true);
+  });
+
+  it("MT-1: seeded-only evidence with zero iterations still returns false (both guards active)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], isSeeded: true, evidenceScope: { methodology: "Preliminary search result" } },
+      { relevantClaimIds: ["AC_01"], isSeeded: true, evidenceScope: { methodology: "Preliminary search result" } },
+      { relevantClaimIds: ["AC_01"], isSeeded: true, evidenceScope: { methodology: "Preliminary search result" } },
+    ] as any[];
+
+    // Both seeded-filter and iteration-guard would independently prevent sufficiency
+    expect(allClaimsSufficient(claims, evidence, 3, 0, 1)).toBe(false);
+  });
+
+  // MT-3: multi-event coverage iteration tests
+  it("MT-3: requires additional iterations proportional to distinct event count", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
+    ] as any[];
+
+    // 3 distinct events → effectiveMinIterations = max(1, 3-1) = 2
+    // With mainIterationsCompleted=1 and distinctEventCount=3 → still blocked
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 3)).toBe(false);
+    // With mainIterationsCompleted=2 → guard passes
+    expect(allClaimsSufficient(claims, evidence, 3, 2, 1, 3)).toBe(true);
+  });
+
+  it("MT-3: single distinct event uses normal minMainIterations (no extra requirement)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
+    ] as any[];
+
+    // 1 distinct event → effectiveMinIterations = max(1, 1-1) = max(1, 0) = 1
+    // mainIterationsCompleted=1 → passes
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 1)).toBe(true);
+  });
+
+  it("MT-3: zero distinct events uses normal minMainIterations", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
+    ] as any[];
+
+    // 0 distinct events → effectiveMinIterations = 1 (normal)
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0)).toBe(true);
   });
 });
 
@@ -1604,6 +1698,29 @@ describe("Stage 2: generateResearchQueries", () => {
       "GENERATE_QUERIES",
       expect.objectContaining({
         distinctEvents: JSON.stringify(distinctEvents),
+      }),
+    );
+  });
+
+  it("MT-3: passes all distinct events including multi-event inputs with empty default", async () => {
+    // Verifies the complete MT-3 wiring: when no distinctEvents are provided
+    // (default []), the prompt still receives an empty JSON array, not undefined.
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [{ query: "entity A evidence", rationale: "coverage" }],
+    });
+
+    // No distinctEvents passed → defaults to []
+    await generateResearchQueries(claim, "main", [], mockPipelineConfig, "2026-02-17");
+
+    expect(mockLoadSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "GENERATE_QUERIES",
+      expect.objectContaining({
+        distinctEvents: JSON.stringify([]),
       }),
     );
   });

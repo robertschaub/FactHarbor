@@ -329,7 +329,15 @@ ${iterationType}
 ```
 (One of: "main", "contradiction", "contrarian")
 
-When `distinctEvents` contains multiple events, proceedings, or time-bounded episodes related to the same claim, distribute query coverage across those events instead of collapsing onto only the most prominent one. Use the event metadata to vary temporal focus and proceeding focus while staying faithful to the claim and `expectedEvidenceProfile`.
+**Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events, proceedings, or time-bounded episodes related to the same claim, you MUST distribute query coverage across those events rather than collapsing onto only the most prominent one. For each iteration:
+- Generate at least one query that explicitly targets a **different** event cluster than the most prominent one in the current evidence pool.
+- Use event names, dates, and descriptions from `distinctEvents` metadata to vary temporal focus and proceeding focus.
+- Do NOT rely solely on the merged claim statement or `expectedEvidenceProfile`, which may already reflect a skewed single-event evidence pool.
+- Staying generic: use only terminology from the claim and `distinctEvents` metadata — do NOT introduce external domain knowledge or hardcoded entity names.
+
+Example pattern (abstract): if `distinctEvents` contains "Entity A proceeding 1 (2022)" and "Entity A proceeding 2 (2024)", generate one query targeting proceeding 1 and one targeting proceeding 2, not just a general query about Entity A.
+
+When `distinctEvents` is empty or contains only one event, default to the normal query strategy from `expectedEvidenceProfile`.
 
 When `iterationType` is `"contrarian"`, the evidence pool has been found to be directionally imbalanced. Generate queries that specifically seek evidence in the **opposite direction** to the current majority. If existing evidence mostly supports the claim, search for credible refutations, contradicting data, or dissenting expert views. If existing evidence mostly contradicts, search for supporting evidence, corroborating data, or confirmatory studies. Focus on high-quality, authoritative sources that could genuinely challenge the current evidence consensus.
 
