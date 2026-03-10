@@ -195,6 +195,31 @@ sudo journalctl -u factharbor-api --no-pager -n 30
 sudo journalctl -u factharbor-web --no-pager -n 30
 ```
 
+### 8. Post-deploy checklist (one-time actions after next deploy)
+
+These steps must be performed manually after the next production deploy. They are one-time only.
+
+#### 8a. Apply Phase 1 UCM config (variability containment — Plan §5, D1+D2)
+
+Open Admin → Config → Search Config and set:
+- `serpapi.enabled` → **false**
+- `brave.priority` → **10** (keep enabled — emergency fallback only)
+
+Open Admin → Config → Calculation Config and set:
+- `evidenceSufficiencyMinSourceTypes` → **2**
+
+#### 8b. Expire stale SR cache entries
+
+Run on VPS after services are up:
+
+```bash
+# Expire pre-web-search SR entries (no evidence_pack) and all insufficient_data entries
+sudo sqlite3 /opt/factharbor/data/source-reliability.db \
+  "UPDATE source_reliability SET expires_at = datetime('now') WHERE evidence_pack IS NULL OR score IS NULL;"
+```
+
+This forces ~1,035 low-quality entries to re-evaluate on next use. Entries with good scores and evidence_pack are untouched.
+
 ---
 
 ## Rollback Procedure
