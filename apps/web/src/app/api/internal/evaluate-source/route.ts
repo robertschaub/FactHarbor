@@ -46,7 +46,7 @@ import {
 } from "@/lib/source-reliability-config";
 import { getEnv, checkRunnerKey } from "@/lib/auth";
 import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
-import { buildCredibilitySearchQuery } from "@/lib/sr-credibility-search";
+
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
@@ -68,8 +68,6 @@ let SR_EVAL_MAX_RESULTS_PER_QUERY = DEFAULT_SR_CONFIG.evalSearchMaxResultsPerQue
 let SR_EVAL_MAX_EVIDENCE_ITEMS = DEFAULT_SR_CONFIG.evalMaxEvidenceItems ?? 12;
 let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null =
   DEFAULT_SR_CONFIG.evalSearchDateRestrict ?? null;
-let SR_CREDIBILITY_SEARCH_QUERY_TEMPLATE: string =
-  DEFAULT_SR_CONFIG.srCredibilitySearchQueryTemplate ?? "{domain} credibility reliability bias fact-check";
 
 debugLog(`[SR-Eval] Configuration check`, {
   anthropicKey: hasAnthropicKey ? "configured" : "MISSING",
@@ -989,14 +987,9 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   // Build assessment terms with dynamic translations (no hardcoded non-English terms)
   const assessmentTerms = getReliabilityAssessmentTerms(translatedTerms);
 
-  // Phase 0: UCM-configurable credibility search query (first query, highest priority)
-  // Built from srCredibilitySearchQueryTemplate — allows admin tuning without code changes
-  const credibilityQuery = buildCredibilitySearchQuery(SR_CREDIBILITY_SEARCH_QUERY_TEMPLATE, domain);
-
   // Phase 1: Reliability assessment queries - focused on ABOUT the source
   // Use "rating" and "assessment" to find fact-checker evaluations, not articles FROM the source
   const standardQueries = [
-    credibilityQuery,
     `${domainToken} reliability rating assessment`,
     `${domainToken} media bias rating fact checker`,
     `"${brand}" credibility assessment fact check`,
@@ -2632,8 +2625,6 @@ export async function POST(req: Request) {
     srConfig.evalSearchMaxResultsPerQuery ?? SR_EVAL_MAX_RESULTS_PER_QUERY;
   SR_EVAL_MAX_EVIDENCE_ITEMS = srConfig.evalMaxEvidenceItems ?? SR_EVAL_MAX_EVIDENCE_ITEMS;
   SR_EVAL_DATE_RESTRICT = srConfig.evalSearchDateRestrict ?? SR_EVAL_DATE_RESTRICT;
-  SR_CREDIBILITY_SEARCH_QUERY_TEMPLATE =
-    srConfig.srCredibilitySearchQueryTemplate ?? SR_CREDIBILITY_SEARCH_QUERY_TEMPLATE;
 
   const effectiveMultiModel = raw.multiModel !== undefined ? body.multiModel : srConfig.multiModel;
   const effectiveConfidenceThreshold =
