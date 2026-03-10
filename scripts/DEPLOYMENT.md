@@ -195,38 +195,9 @@ sudo journalctl -u factharbor-api --no-pager -n 30
 sudo journalctl -u factharbor-web --no-pager -n 30
 ```
 
-### 8. Post-deploy checklist ⚠️ ONE-TIME — next deploy only, then delete this section
+### ~~8. Post-deploy checklist~~ ✅ Done 2026-03-10
 
-> **IMPORTANT:** Steps 8a and 8b are one-time only. After performing them, delete this section
-> from the guide (or strike through with "✅ Done YYYY-MM-DD") so future deploys do not repeat them.
-
-#### 8a. Apply Phase 1 UCM config (variability containment — Plan §5, D1+D2)
-
-Open Admin → Config → Search Config and set:
-- `serpapi.enabled` → **false**
-- `brave.priority` → **10** (keep enabled — emergency fallback only)
-
-Open Admin → Config → Calculation Config and set:
-- `evidenceSufficiencyMinSourceTypes` → **2**
-
-#### 8b. Expire stale SR cache entries — ONE-TIME ONLY
-
-Run **once** on VPS after services are up. Do NOT run on subsequent deploys.
-
-```bash
-# ONE-TIME: Expire pre-web-search SR entries (no evidence_pack) and all insufficient_data entries
-# These are low-quality entries that predate web-search augmentation (Phase 2.4, 2026-03-09).
-# Safe: entries with good scores + evidence_pack are untouched. They will re-evaluate on next use.
-sudo sqlite3 /opt/factharbor/data/source-reliability.db \
-  "UPDATE source_reliability SET expires_at = datetime('now') WHERE evidence_pack IS NULL OR score IS NULL;"
-```
-
-After running, verify row count:
-```bash
-sudo sqlite3 /opt/factharbor/data/source-reliability.db \
-  "SELECT COUNT(*) as expired FROM source_reliability WHERE expires_at <= datetime('now');"
-```
-Expected: ~1,035 rows expired. Then mark this step done and do not repeat.
+~~Steps 8a (UCM config: serpapi disabled, brave priority=10, evidenceSufficiencyMinSourceTypes=2) and 8b (SR cache stale-entry expiry) completed on 2026-03-10. Do not repeat.~~
 
 ---
 
