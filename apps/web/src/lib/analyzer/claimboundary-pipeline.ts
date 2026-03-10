@@ -998,6 +998,82 @@ export async function extractClaims(
   }
 
   // ------------------------------------------------------------------
+  // MT-5(C): Multi-event collapse guard — if Stage 1 detected multiple
+  // distinct events but we still have only 1 claim after Gate 1 (and any
+  // prior reprompts), trigger one targeted reprompt. This is structural
+  // plumbing (count check + conditional retry), not text interpretation.
+  // ------------------------------------------------------------------
+  const distinctEventCount = (bestPass2.distinctEvents ?? []).length;
+  if (
+    distinctEventCount >= 2 &&
+    gate1Result.filteredClaims.length === 1 &&
+    maxRepromptAttempts > 0
+  ) {
+    console.info(
+      `[Stage1] MT-5(C): ${distinctEventCount} distinct events detected but only 1 claim post-Gate-1. ` +
+      `Triggering multi-event reprompt.`
+    );
+    state.onEvent?.("Extracting claims: multi-event reprompt...", 25);
+
+    const multiEventGuidance =
+      `DECOMPOSITION GUIDANCE: The input references ${distinctEventCount} distinct events or proceedings. ` +
+      `Prior extraction collapsed these into a single claim. ` +
+      `Extract one atomic claim per distinct event or proceeding mentioned in the input. ` +
+      `Each claim should be independently verifiable with distinct evidence.`;
+
+    try {
+      const retryPass2 = await runPass2(
+        state.originalInput,
+        preliminaryEvidence,
+        pipelineConfig,
+        currentDate,
+        state,
+        multiEventGuidance,
+      );
+      state.llmCalls++;
+
+      const retryClaims = filterByCentrality(
+        retryPass2.atomicClaims as unknown as AtomicClaim[],
+        centralityThreshold,
+        effectiveMax,
+      );
+
+      // Dimension decomposition tagging (same logic as initial pass)
+      const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim"
+        || (retryPass2.inputClassification === "single_atomic_claim"
+            && retryClaims.length > 1
+            && retryClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+      if (retryIsDimension) {
+        for (const c of retryClaims) {
+          (c as AtomicClaim).isDimensionDecomposition = true;
+        }
+      }
+
+      const retryGate1 = await runGate1Validation(
+        retryClaims,
+        pipelineConfig,
+        currentDate,
+        state.originalInput,
+      );
+      state.llmCalls++;
+
+      const retryCount = retryGate1.filteredClaims.length;
+      console.info(
+        `[Stage1] MT-5(C) reprompt: ${retryCount} claims post-Gate-1 (was 1).`
+      );
+
+      // Accept if we got more claims than before
+      if (retryCount > gate1Result.filteredClaims.length) {
+        gate1Result = retryGate1;
+        bestPass2 = retryPass2;
+        console.info(`[Stage1] MT-5(C) recovered: ${retryCount} claims.`);
+      }
+    } catch (repromptErr) {
+      console.warn("[Stage1] MT-5(C) reprompt failed (non-fatal):", repromptErr);
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Assemble CBClaimUnderstanding
   // ------------------------------------------------------------------
   return {

@@ -5033,6 +5033,217 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(lowClaimWarnings[0].message).toContain("minimum: 3");
     expect(lowClaimWarnings[0].details.attemptsUsed).toBe(2);
   });
+
+  // --------------------------------------------------------------------------
+  // MT-5(C): Multi-event collapse guard
+  // --------------------------------------------------------------------------
+
+  // Helper: Pass 2 output with distinctEvents
+  function makePass2WithEvents(claimCount: number, eventCount: number) {
+    const base = makePass2(claimCount);
+    return {
+      ...base,
+      distinctEvents: Array.from({ length: eventCount }, (_, i) => ({
+        name: `Event ${i + 1}`,
+        date: `2025-0${i + 1}-01`,
+        description: `Description of event ${i + 1}`,
+      })),
+    };
+  }
+
+  it("MT-5(C): should trigger multi-event reprompt when distinctEvents >= 2 and claims === 1", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    // Sequence: Pass1, Pass2(1 claim, 2 events), Gate1(1 pass)
+    //   → existing reprompt fires (1 < 2): Pass2(1 claim, 2 events), Gate1(1 pass) → still 1
+    //   → attempt 2: Pass2(1 claim, 2 events), Gate1(1 pass) → still 1, gives up
+    //   → MT-5(C) fires: Pass2(3 claims, 2 events), Gate1(3 pass) → recovered!
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1: return pass1Fixture;                      // Pass 1
+        case 2: return makePass2WithEvents(1, 2);         // Initial Pass 2: 1 claim, 2 events
+        case 3: return makeGate1Pass(1);                  // Initial Gate 1: 1 pass
+        case 4: return makePass2WithEvents(1, 2);         // D1 reprompt 1: still 1 claim
+        case 5: return makeGate1Pass(1);                  // D1 reprompt 1: still 1 pass
+        case 6: return makePass2WithEvents(1, 2);         // D1 reprompt 2: still 1 claim
+        case 7: return makeGate1Pass(1);                  // D1 reprompt 2: still 1 pass
+        case 8: return makePass2WithEvents(3, 2);         // MT-5(C) reprompt: 3 claims!
+        case 9: return makeGate1Pass(3);                  // MT-5(C) Gate 1: 3 pass
+        default: throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Test input for MT-5(C) multi-event reprompt",
+      originalText: "",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    // MT-5(C) should have recovered to 3 claims
+    expect(result.atomicClaims.length).toBe(3);
+    // 9 LLM calls: Pass1 + Pass2 + Gate1 + 2×(Pass2+Gate1) + MT-5(C)(Pass2+Gate1)
+    expect(llmCallIndex).toBe(9);
+  });
+
+  it("MT-5(C): should NOT trigger when distinctEvents >= 2 and claims >= 2", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    // Pass2 returns 3 claims with 2 events → Gate1 passes all → no reprompt needed
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1: return pass1Fixture;                      // Pass 1
+        case 2: return makePass2WithEvents(3, 2);         // Pass 2: 3 claims, 2 events
+        case 3: return makeGate1Pass(3);                  // Gate 1: all pass
+        default: throw new Error(`Unexpected LLM call #${llmCallIndex} — no reprompt should fire`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Test input for MT-5(C) no-trigger",
+      originalText: "",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    // 3 claims, no reprompt
+    expect(result.atomicClaims.length).toBe(3);
+    expect(llmCallIndex).toBe(3);
+  });
+
+  it("MT-5(C): should NOT trigger when distinctEvents === 1 and claims === 1", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 2 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    // Pass2 returns 1 claim with 1 event → Gate1 passes → 1 >= 1 (minCore=1), no D1 reprompt
+    // MT-5(C) should NOT fire (distinctEvents === 1, not >= 2)
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1: return pass1Fixture;                      // Pass 1
+        case 2: return makePass2WithEvents(1, 1);         // Pass 2: 1 claim, 1 event
+        case 3: return makeGate1Pass(1);                  // Gate 1: passes
+        default: throw new Error(`Unexpected LLM call #${llmCallIndex} — no reprompt should fire`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Test input for MT-5(C) single-event no-trigger",
+      originalText: "",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    // 1 claim, no reprompt (single event)
+    expect(result.atomicClaims.length).toBe(1);
+    expect(llmCallIndex).toBe(3);
+  });
 });
 
 // ============================================================================
