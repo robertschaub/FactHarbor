@@ -1,5 +1,34 @@
 # Agent Outputs Log
 
+
+---
+### 2026-03-10 | Captain Deputy | Claude Code (claude-sonnet-4-6) | Phase 2 Validation — Completion Handoff
+**Task:** Record Phase 2 validation completion handoff. Mark docs as complete.
+**Files touched:** `Docs/WIP/Phase2_Validation_Plan_2026-03.md` (status → ✅ Complete), `Docs/DEVELOPMENT/Phase2_Validation_Checklist.md` (footer + checkbox updated).
+**Key decisions:** All 7 validation runs SUCCEEDED (Iran ×2, Bolsonaro Q+S, Hydrogen, Venezuela, Article/URL). 0 UNVERIFIED fallbacks, 0 crashes. Input neutrality 2.0% ✅. Pipeline declared production-ready.
+**Open items:** Non-blocking Phase 3 observations: Iran variance Δ20.1% (monitor), Hydrogen truth% outlier, confirm `verdict_direction_issue`/`verdict_grounding_issue` warnings are info-only in UI.
+**Warnings:** None.
+**For next agent:** Phase 2 is closed. Phase 3 roadmap in `Docs/WIP/Report_Quality_Analysis_2026-03-08.md`. Next implementation: MT-1 + MT-3 (`Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`).
+**Learnings:** no
+
+---
+### 2026-03-09 | Senior Developer | Claude Code (claude-sonnet-4-6) | Phase 2 Validation — Broader Input Testing
+**Task:** Run Phase 2 validation across 6 inputs (7 total runs) to confirm pipeline health before production.
+**Files touched:**
+- `Docs/DEVELOPMENT/Phase2_Validation_Checklist.md` — filled reporting table with all run results and success criteria outcomes
+- `Docs/WIP/Phase2_Validation_Plan_2026-03.md` — appended Validation Results section with run summary and assessment
+**Key decisions:**
+- All 7 analyses submitted via REST API to local dev (API:5000, Web:3000), invite code SELF-TEST.
+- Article #6: no prior URL runs found in history; used Wikipedia URL (Iran WMD article) — pipeline auto-detected `detectedInputType: article` correctly.
+- Hydrogen truth% (16.2%) below expected band (25–45%) but verdict direction (MOSTLY-FALSE) is correct — assessed as non-blocking.
+- `verdict_direction_issue` / `verdict_grounding_issue` warnings appear frequently — confirmed as `info`-level internal diagnostics per AGENTS.md, not verdict quality signals.
+**Open items:** None. All success criteria met.
+**Warnings:**
+- Iran run-to-run variance is 20.1% (58.4% vs 78.5%) — expected per checklist note, but notable. Run 1 slightly below lower band edge.
+- `verdict_fallback_partial` + `verdict_partial_recovery` warnings on article run — partial recovery succeeded, result is valid.
+**For next agent:** Phase 2 validation complete. Pipeline is production-ready across question/statement/claim/article input types. See `Docs/DEVELOPMENT/Phase2_Validation_Checklist.md` for full run data. Phase 3 roadmap in `Docs/WIP/Report_Quality_Analysis_2026-03-08.md`.
+**Learnings:** no
+
 ---
 ### 2026-03-09 | Code Reviewer | Cursor (claude-4.6-sonnet) | Phase 2 — Documentation Conclusion
 **Task:** Conclude Phase 2 documentation — update status in Coding Agent Prompts, WIP plan, and Agent_Outputs.
