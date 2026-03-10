@@ -2106,10 +2106,19 @@ function extractDomain(url: string): string {
   }
 }
 
-function SourceReliabilityPanel({ sources }: { sources: any[] }) {
+interface SRSourceEntry {
+  url: string;
+  category: string;
+  trackRecordScore: number | null;
+  trackRecordConfidence?: number | null;
+  trackRecordConsensus?: boolean | null;
+  fetchSuccess?: boolean;
+}
+
+function SourceReliabilityPanel({ sources }: { sources: SRSourceEntry[] }) {
   // Filter to sources that have SR data (a category other than empty, and a domain)
   const scoredSources = useMemo(() => {
-    const filtered = sources.filter((s: any) => {
+    const filtered = sources.filter((s) => {
       if (!s.url) return false;
       // Must have at least a category or a score to be considered "evaluated"
       if (!s.category && s.trackRecordScore == null) return false;
@@ -2117,7 +2126,7 @@ function SourceReliabilityPanel({ sources }: { sources: any[] }) {
     });
 
     // Sort: reliable → insufficient_data → unreliable
-    filtered.sort((a: any, b: any) => {
+    filtered.sort((a, b) => {
       const orderA = SR_CATEGORY_ORDER[a.category] ?? 4;
       const orderB = SR_CATEGORY_ORDER[b.category] ?? 4;
       if (orderA !== orderB) return orderA - orderB;
@@ -2154,7 +2163,7 @@ function SourceReliabilityPanel({ sources }: { sources: any[] }) {
           </tr>
         </thead>
         <tbody>
-          {scoredSources.map((s: any, i: number) => {
+          {scoredSources.map((s, i) => {
             const domain = extractDomain(s.url);
             const category = s.category || "insufficient_data";
             const label = SR_CATEGORY_LABELS[category] || category.replace(/_/g, " ");
