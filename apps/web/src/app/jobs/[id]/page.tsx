@@ -1747,6 +1747,8 @@ export default function JobPage() {
             </ReportSection>
           )}
 
+          <SourceReliabilityPanel sources={sources} />
+
         </div>
       )}
 
@@ -2047,6 +2049,135 @@ function SourcesPanel({
         </>
       )}
     </div>
+  );
+}
+
+// ============================================================================
+// Source Reliability Panel — collapsible SR breakdown
+// ============================================================================
+
+/** Sort priority: reliable tiers first, then insufficient_data, then unreliable tiers */
+const SR_CATEGORY_ORDER: Record<string, number> = {
+  highly_reliable: 0,
+  reliable: 1,
+  leaning_reliable: 2,
+  mixed: 3,
+  insufficient_data: 4,
+  leaning_unreliable: 5,
+  unreliable: 6,
+  highly_unreliable: 7,
+};
+
+/** Human-readable labels for SR categories */
+const SR_CATEGORY_LABELS: Record<string, string> = {
+  highly_reliable: "Highly Reliable",
+  reliable: "Reliable",
+  leaning_reliable: "Leaning Reliable",
+  mixed: "Mixed",
+  insufficient_data: "Insufficient Data",
+  leaning_unreliable: "Leaning Unreliable",
+  unreliable: "Unreliable",
+  highly_unreliable: "Highly Unreliable",
+};
+
+function getSRCategoryColorClass(category: string): string {
+  switch (category) {
+    case "highly_reliable":
+    case "reliable":
+    case "leaning_reliable":
+      return styles.srCategoryGreen;
+    case "mixed":
+      return styles.srCategoryYellow;
+    case "leaning_unreliable":
+    case "unreliable":
+    case "highly_unreliable":
+      return styles.srCategoryRed;
+    default:
+      return styles.srCategoryGrey;
+  }
+}
+
+function extractDomain(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function SourceReliabilityPanel({ sources }: { sources: any[] }) {
+  // Filter to sources that have SR data (a category other than empty, and a domain)
+  const scoredSources = useMemo(() => {
+    const filtered = sources.filter((s: any) => {
+      if (!s.url) return false;
+      // Must have at least a category or a score to be considered "evaluated"
+      if (!s.category && s.trackRecordScore == null) return false;
+      return true;
+    });
+
+    // Sort: reliable → insufficient_data → unreliable
+    filtered.sort((a: any, b: any) => {
+      const orderA = SR_CATEGORY_ORDER[a.category] ?? 4;
+      const orderB = SR_CATEGORY_ORDER[b.category] ?? 4;
+      if (orderA !== orderB) return orderA - orderB;
+      // Within same category, sort by score descending (nulls last)
+      const scoreA = a.trackRecordScore ?? -1;
+      const scoreB = b.trackRecordScore ?? -1;
+      return scoreB - scoreA;
+    });
+
+    return filtered;
+  }, [sources]);
+
+  // Don't render if no scored sources
+  if (scoredSources.length === 0) return null;
+
+  return (
+    <ReportSection
+      title={`Source Reliability`}
+      className={`${styles.reportSurfaceCard} ${styles.inputSection}`}
+      collapsible
+      defaultOpen={false}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          {scoredSources.length} source{scoredSources.length !== 1 ? "s" : ""} evaluated
+        </span>
+      </div>
+      <table className={styles.srTable}>
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>Category</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scoredSources.map((s: any, i: number) => {
+            const domain = extractDomain(s.url);
+            const category = s.category || "insufficient_data";
+            const label = SR_CATEGORY_LABELS[category] || category.replace(/_/g, " ");
+            const colorClass = getSRCategoryColorClass(category);
+            const scoreDisplay =
+              s.trackRecordScore != null
+                ? `${(s.trackRecordScore * 100).toFixed(0)}%`
+                : "\u2014";
+            return (
+              <tr key={`${s.url}-${i}`}>
+                <td className={styles.srDomain} title={domain}>{domain}</td>
+                <td>
+                  <span className={`${styles.srCategoryBadge} ${colorClass}`}>
+                    {label}
+                  </span>
+                </td>
+                <td className={styles.srScore}>{scoreDisplay}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </ReportSection>
   );
 }
 
