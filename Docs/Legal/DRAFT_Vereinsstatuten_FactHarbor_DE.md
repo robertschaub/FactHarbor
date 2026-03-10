@@ -13,20 +13,21 @@ Unter dem Namen **«FactHarbor»** besteht ein Verein im Sinne von Art. 60 ff. d
 Der Sitz des Vereins ist in **Dietlikon, Kanton Zürich, Schweiz**.
 
 ### Art. 3 — Zweck
-1. Der Verein bezweckt, Menschen dabei zu unterstützen, komplexe, unklare und umstrittene Informationen auf evidenzbasierter Grundlage zu verstehen und einzuordnen.
-2. Der Verein verfolgt ausschliesslich **gemeinnützige Zwecke** und ist nicht gewinnorientiert.
+1. Der Verein bezweckt die Förderung der Allgemeinbildung und der informierten Meinungsbildung, indem er Menschen dabei unterstützt, komplexe, unklare und umstrittene Informationen auf evidenzbasierter Grundlage zu verstehen, einzuordnen und zu bewerten.
+2. Der Verein verfolgt ausschliesslich **gemeinnützige Zwecke** im Sinne von Art. 56 lit. g DBG und ist nicht gewinnorientiert. Er verfolgt keine Erwerbszwecke.
 3. Zur Verfolgung seines Zwecks kann der Verein insbesondere:
-   a. Open-Source-Software und Plattformen für evidenzbasierte Informationsanalyse entwickeln und betreiben;
-   b. Forschung zu Informationsqualität, Medienkompetenz und Evidenzbewertung durchführen und veröffentlichen;
-   c. offene Datensätze, offene Protokolle und offene Dokumentation pflegen und publizieren;
-   d. mit Bildungseinrichtungen, Medienorganisationen und der Zivilgesellschaft zusammenarbeiten;
-   e. Bildungsveranstaltungen, Schulungen und gemeinschaftsfördernde Aktivitäten organisieren.
-4. Der Verein ist politisch und konfessionell neutral.
+   a. Open-Source-Software und Plattformen für evidenzbasierte Informationsanalyse und verwandte Anwendungen im Bereich der digitalen Allgemeinbildung entwickeln und betreiben;
+   b. Forschung zu Informationsqualität, Medienkompetenz, Evidenzbewertung und verwandten Themen durchführen und veröffentlichen;
+   c. offene Datensätze, offene Protokolle, offene Standards und offene Dokumentation pflegen und publizieren;
+   d. mit Bildungseinrichtungen, Medienorganisationen, Forschungsinstitutionen und der Zivilgesellschaft zusammenarbeiten;
+   e. Bildungsveranstaltungen, Schulungen, Publikationen und gemeinschaftsfördernde Aktivitäten organisieren;
+   f. weitere Tätigkeiten ausüben, die dem Vereinszweck dienen.
+4. Der Verein ist politisch und konfessionell neutral. Er betreibt keine wesentlichen politischen Aktivitäten und kein Lobbying.
 
 ### Art. 4 — Gemeinnützigkeit und Gewinnverwendung
 1. Der Verein ist gemeinnützig und nicht gewinnorientiert. Er schüttet keine Gewinne an Mitglieder, Gründer, Organe oder Spender aus.
-2. Allfällige Überschüsse werden vollumfänglich für den Vereinszweck eingesetzt.
-3. Angemessene, marktübliche Entschädigungen für im Auftrag des Vereins erbrachte Leistungen sind zulässig, sofern sie vom Vorstand genehmigt werden und mit dem gemeinnützigen Status vereinbar sind.
+2. Allfällige Überschüsse werden **unwiderruflich** und vollumfänglich für den Vereinszweck eingesetzt.
+3. Angemessene Aufwandentschädigungen — nicht Lohn oder Gewinnbeteiligung — für im Auftrag des Vereins erbrachte Leistungen sind zulässig, sofern sie im Rahmen der vom Vorstand genehmigten Budgetvorgaben liegen und mit dem gemeinnützigen Status vereinbar sind. Wesentliche Entschädigungen bedürfen der Genehmigung durch die Mitgliederversammlung.
 4. Die Mittel des Vereins dürfen nur für statutengemässe Zwecke verwendet werden. Die Mitglieder haben keinen Anspruch auf Zuwendungen aus dem Vereinsvermögen.
 
 ---
@@ -50,7 +51,7 @@ Der Verein kennt folgende Mitgliederkategorien:
 
 ### Art. 8 — Ende der Mitgliedschaft
 Die Mitgliedschaft erlischt durch:
-1. **Freiwilligen Austritt** — Ein Mitglied kann jederzeit durch schriftliche Erklärung (einschliesslich elektronischer Form) an den Vorstand austreten, wirksam per Ende des laufenden Kalenderjahres. Ausstehende Mitgliederbeiträge bleiben geschuldet.
+1. **Freiwilligen Austritt** — Ein Mitglied kann jederzeit durch schriftliche Erklärung (einschliesslich elektronischer Form) an den Vorstand austreten, wirksam per Ende des auf die Erklärung folgenden Quartals. Ausstehende Mitgliederbeiträge bleiben geschuldet.
 2. **Nichtbezahlung** — Bezahlt ein Mitglied den Mitgliederbeitrag trotz schriftlicher Mahnung nicht innert 60 Tagen, kann der Vorstand die Mitgliedschaft beenden.
 3. **Ausschluss** — Die Mitgliederversammlung kann ein Mitglied mit einer Zweidrittelmehrheit (2/3) der abgegebenen Stimmen ausschliessen, wenn das Mitglied:
    a. diese Statuten oder die Vereinsreglemente schwerwiegend verletzt;
@@ -100,7 +101,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
    a. Statutenänderung;
    b. Ausschluss eines Mitglieds;
    c. Auflösung des Vereins.
-4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde. Ein Mindestquorum besteht nicht.
+4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde und mindestens **drei (3) Mitglieder oder ein Viertel (1/4) der Mitglieder** — massgebend ist die kleinere Zahl — anwesend oder vertreten sind.
 5. Abstimmungen können durch **Handerheben, schriftliche Stimmabgabe oder elektronische Mittel** erfolgen, wie von der Versammlungsleitung bestimmt.
 6. Bei Stimmengleichheit hat die Versammlungsleitung den Stichentscheid.
 
@@ -148,7 +149,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 ### Art. 18 — Entschädigung
 1. Die Vorstandsmitglieder üben ihr Amt **ehrenamtlich** aus.
 2. Tatsächlich angefallene Auslagen, die im Zusammenhang mit der Vereinstätigkeit stehen, werden gegen Vorlage von Belegen erstattet.
-3. Sofern es die finanzielle Lage des Vereins erlaubt, kann die Mitgliederversammlung eine bescheidene Entschädigung für Vorstandsmitglieder beschliessen. Solche Entschädigungen müssen angemessen, dokumentiert und mit dem gemeinnützigen Status vereinbar sein.
+3. Sofern es die finanzielle Lage des Vereins erlaubt, kann die Mitgliederversammlung eine bescheidene Aufwandentschädigung — nicht Lohn oder Gewinnbeteiligung — für Vorstandsmitglieder beschliessen. Solche Entschädigungen müssen angemessen, dokumentiert und mit dem gemeinnützigen Status vereinbar sein.
 
 ### C. Revisionsstelle
 
@@ -166,7 +167,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
    a. Mitgliederbeiträgen;
    b. Spenden und Zuwendungen;
    c. Beiträgen von Stiftungen, Institutionen und öffentlichen Stellen;
-   d. Einnahmen aus Dienstleistungen (z.B. API-Zugang für kommerzielle Nutzer, Beratung, Schulungen);
+   d. Einnahmen aus Dienstleistungen (z.B. API-Zugang für kommerzielle Nutzer, Beratung, Schulungen), soweit diese wirtschaftlichen Tätigkeiten dem Vereinszweck unmittelbar dienen und gegenüber der ideellen Tätigkeit untergeordnet bleiben;
    e. sonstigen Mitteln, die mit dem Vereinszweck und dem gemeinnützigen Status vereinbar sind.
 2. Folgende Einnahmequellen sind **ausgeschlossen**:
    a. Werbeeinnahmen;
@@ -181,7 +182,8 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 ### Art. 22 — Finanzkontrolle
 1. Für Ausgaben über **CHF 5'000** sind zwei Unterschriften erforderlich.
 2. Für Ausgaben über **CHF 20'000** ist die vorgängige Genehmigung des Vorstands erforderlich.
-3. Der Vorstand legt der Mitgliederversammlung die Jahresrechnung sowie das Budget für das Folgejahr zur Genehmigung vor.
+3. Der Vorstand kann die in Abs. 1 und 2 genannten Schwellenwerte durch Reglement anpassen; die Anpassung bedarf der Genehmigung durch die Mitgliederversammlung.
+4. Der Vorstand legt der Mitgliederversammlung die Jahresrechnung sowie das Budget für das Folgejahr zur Genehmigung vor.
 
 ### Art. 23 — Transparenz
 1. Der Verein veröffentlicht jährlich seine Jahresrechnung.
@@ -195,7 +197,8 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 
 ### Art. 24 — Haftung
 1. Für die Verbindlichkeiten des Vereins haftet ausschliesslich das Vereinsvermögen.
-2. **Eine persönliche Haftung der Mitglieder ist ausgeschlossen.** Kein Mitglied haftet persönlich für Schulden oder Verpflichtungen des Vereins über ausstehende Mitgliederbeiträge hinaus.
+2. **Eine persönliche Haftung der Mitglieder ist ausgeschlossen.** Kein Mitglied haftet persönlich für Schulden oder Verpflichtungen des Vereins.
+3. Die Pflicht zur Bezahlung ausstehender Mitgliederbeiträge gemäss Art. 7 bleibt vorbehalten.
 
 ---
 
@@ -206,9 +209,9 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 2. Die Auflösung muss als Traktandum in der Einladung zur Mitgliederversammlung aufgeführt sein.
 
 ### Art. 26 — Verwendung des Restvermögens
-1. Bei Auflösung des Vereins wird das nach Tilgung sämtlicher Verbindlichkeiten verbleibende Vermögen **einer oder mehreren gemeinnützigen Organisationen mit einem gleichartigen oder verwandten gemeinnützigen Zweck** übertragen, wie von der Mitgliederversammlung bestimmt.
+1. Bei Auflösung des Vereins wird das nach Tilgung sämtlicher Verbindlichkeiten verbleibende Vermögen **unwiderruflich** an **eine oder mehrere gemeinnützige Organisationen mit einem gleichartigen oder verwandten gemeinnützigen Zweck** übertragen, wie von der Mitgliederversammlung bestimmt.
 2. **Die Verteilung des Restvermögens an die Mitglieder ist ausgeschlossen.**
-3. Bestimmt die Mitgliederversammlung keine Empfängerorganisation, wählt der Vorstand eine geeignete gemeinnützige Organisation aus.
+3. Bestimmt die Mitgliederversammlung keine Empfängerorganisation, wird das Restvermögen einer von der ESTV oder dem kantonalen Steueramt anerkannten gemeinnützigen Organisation im Bereich digitale Bildung oder Informationsfreiheit übertragen, wie vom Vorstand bestimmt.
 4. Der letzte amtierende Vorstand übernimmt die Liquidation, sofern die Mitgliederversammlung keine andere Person bestellt.
 
 ---

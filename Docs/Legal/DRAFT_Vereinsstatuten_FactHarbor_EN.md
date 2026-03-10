@@ -14,20 +14,21 @@ Under the name **"FactHarbor"**, an association (Verein) is established in accor
 The registered office (Sitz) of the association is in **Dietlikon, Canton of Zürich, Switzerland**.
 
 ### Article 3 — Purpose
-1. The purpose of FactHarbor is to help people understand complex, unclear, and contested information on an evidence-based foundation.
-2. The association pursues exclusively **non-profit and public-benefit purposes** (gemeinnützige Zwecke). It does not pursue commercial profit.
+1. The purpose of FactHarbor is to promote general education and informed opinion-forming by helping people understand, contextualise, and evaluate complex, unclear, and contested information on an evidence-based foundation.
+2. The association pursues exclusively **non-profit and public-benefit purposes** (gemeinnützige Zwecke) within the meaning of Art. 56 lit. g DBG. It does not pursue commercial profit.
 3. In furtherance of its purpose, the association may in particular:
-   a. Develop and operate open-source software and platforms for evidence-based information analysis;
-   b. Conduct and publish research on information quality, media literacy, and evidence evaluation;
-   c. Maintain and publish open datasets, open protocols, and open documentation;
-   d. Collaborate with educational institutions, media organisations, and civil society;
-   e. Organise educational events, training, and community engagement activities.
-4. The association is politically and religiously neutral.
+   a. Develop and operate open-source software and platforms for evidence-based information analysis and related applications in the field of digital general education;
+   b. Conduct and publish research on information quality, media literacy, evidence evaluation, and related topics;
+   c. Maintain and publish open datasets, open protocols, open standards, and open documentation;
+   d. Collaborate with educational institutions, media organisations, research institutions, and civil society;
+   e. Organise educational events, training, publications, and community engagement activities;
+   f. Undertake further activities that serve the association's purpose.
+4. The association is politically and religiously neutral. It does not engage in substantial political activities or lobbying.
 
 ### Article 4 — Non-Profit Constraint
 1. The association is non-profit (nicht gewinnorientiert). It does not distribute profits to its members, founders, governing bodies, or donors.
-2. Any surplus is reinvested into the association's purpose.
-3. Fair, market-aligned compensation for work performed for the association is permitted, subject to approval by the Governing Team and within the limits of applicable non-profit law.
+2. Any surplus is **irrevocably** reinvested into the association's purpose.
+3. Reasonable expense allowances (Aufwandentschädigungen) — not salary or profit-sharing — for work performed for the association are permitted, provided they fall within the budget approved by the Governing Team and are consistent with the association's non-profit status. Material compensation requires approval by the General Assembly.
 4. Funds of the association may only be used for purposes consistent with the statutes. Members do not receive allocations from the funds of the association.
 
 ---
@@ -51,7 +52,7 @@ The association has the following categories of members:
 
 ### Article 8 — Termination of Membership
 Membership ends by:
-1. **Voluntary resignation** — A member may resign at any time by written notice (including electronic form) to the Governing Team, effective at the end of the current calendar year. Outstanding membership fees remain due.
+1. **Voluntary resignation** — A member may resign at any time by written notice (including electronic form) to the Governing Team, effective at the end of the quarter following the notice. Outstanding membership fees remain due.
 2. **Non-payment** — If a member fails to pay the membership fee within 60 days of a written reminder, the Governing Team may terminate the membership.
 3. **Exclusion** — The General Assembly may exclude a member by a two-thirds (2/3) majority vote if the member:
    a. seriously violates these statutes or the policies of the association;
@@ -101,7 +102,7 @@ The General Assembly is the supreme governing body of the association. It has th
    a. Amendment of the statutes;
    b. Exclusion of a member;
    c. Dissolution of the association.
-4. A quorum is met when the General Assembly has been duly convened. There is no minimum attendance requirement.
+4. A quorum is met when the General Assembly has been duly convened and at least **three (3) members or one quarter (1/4) of the members** — whichever is fewer — are present or represented.
 5. Voting may be conducted by **show of hands, ballot, or electronic means**, as determined by the chairperson.
 6. In the event of a tie, the chairperson has the casting vote.
 
@@ -110,7 +111,7 @@ The General Assembly is the supreme governing body of the association. It has th
 ### Article 13 — Composition
 1. The Governing Team consists of at least **two (2)** and at most **seven (7)** members.
 2. The Governing Team is composed of at least:
-   a. a **President** (Präsident/Facilitator);
+   a. a **President** (Präsident/in);
    b. a **Treasurer** (Kassier/in).
 3. Additional roles (such as Coordinator, Secretary, or additional members) may be assigned by the Governing Team from among its members.
 
@@ -149,7 +150,7 @@ The General Assembly is the supreme governing body of the association. It has th
 ### Article 18 — Compensation
 1. Members of the Governing Team serve on a **voluntary basis** (ehrenamtlich).
 2. Reasonable out-of-pocket expenses incurred in the performance of duties for the association shall be reimbursed upon submission of receipts.
-3. If the financial situation of the association permits, the General Assembly may approve modest compensation for Governing Team members. Any such compensation must be reasonable, documented, and consistent with non-profit status.
+3. If the financial situation of the association permits, the General Assembly may approve modest expense allowances (Aufwandentschädigungen) — not salary or profit-sharing — for Governing Team members. Any such compensation must be reasonable, documented, and consistent with non-profit status.
 
 ### C. Auditor
 
@@ -167,7 +168,7 @@ The General Assembly is the supreme governing body of the association. It has th
    a. membership fees;
    b. donations and gifts;
    c. grants from foundations, institutions, and public bodies;
-   d. revenue from services (e.g., API access for commercial users, consulting, training);
+   d. revenue from services (e.g., API access for commercial users, consulting, training), provided that such commercial activities directly serve the association's purpose and remain subordinate to its non-profit activities;
    e. any other resources consistent with the association's purpose and non-profit status.
 2. The following funding sources are **prohibited**:
    a. advertising revenue;
@@ -182,7 +183,8 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 ### Article 22 — Financial Controls
 1. For expenditures exceeding **CHF 5,000**, two signatures are required.
 2. For expenditures exceeding **CHF 20,000**, prior Governing Team approval is required.
-3. The Governing Team shall present the annual financial statements and a budget for the following year to the General Assembly for approval.
+3. The Governing Team may adjust the thresholds in paragraphs 1 and 2 by regulation; any adjustment requires approval by the General Assembly.
+4. The Governing Team shall present the annual financial statements and a budget for the following year to the General Assembly for approval.
 
 ### Article 23 — Transparency
 1. The association publishes annual financial statements.
@@ -196,7 +198,8 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 
 ### Article 24 — Liability
 1. The association's obligations are secured solely by the assets of the association.
-2. **Personal liability of members is excluded.** No member is personally liable for the debts or obligations of the association beyond unpaid membership fees.
+2. **Personal liability of members is excluded.** No member is personally liable for the debts or obligations of the association.
+3. The obligation to pay outstanding membership fees pursuant to Article 7 is reserved.
 
 ---
 
@@ -207,9 +210,9 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 2. Dissolution must be listed as an agenda item in the invitation to the General Assembly.
 
 ### Article 26 — Use of Remaining Assets
-1. In the event of dissolution, remaining assets — after settlement of all liabilities — shall be transferred to **one or more non-profit organisations with a similar or compatible public-benefit purpose**, as determined by the General Assembly.
+1. In the event of dissolution, remaining assets — after settlement of all liabilities — shall be **irrevocably** transferred to **one or more non-profit organisations with a similar or compatible public-benefit purpose**, as determined by the General Assembly.
 2. **Distribution of remaining assets to members is excluded.**
-3. If the General Assembly does not designate a recipient, the Governing Team shall select a suitable non-profit organisation.
+3. If the General Assembly does not designate a recipient, remaining assets shall be transferred to a non-profit organisation recognised by the ESTV or the cantonal tax authority, active in the field of digital education or freedom of information, as determined by the Governing Team.
 4. The last Governing Team in office acts as liquidator unless the General Assembly appoints a different person.
 
 ---
