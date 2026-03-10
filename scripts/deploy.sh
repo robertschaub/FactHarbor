@@ -31,8 +31,16 @@ warn() { echo -e "${YELLOW}[deploy]${NC} $*"; }
 err()  { echo -e "${RED}[deploy]${NC} $*" >&2; }
 ok()   { echo -e "${GREEN}[deploy]${NC} $*"; }
 
-TAG="${1:-}"
-FORCE_CONFIGS="${2:-}"   # Pass "--force-configs" to force-reseed UCM config defaults
+TAG=""
+FORCE_CONFIGS=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --force-configs) FORCE_CONFIGS="--force-configs" ;;
+        -*) echo "Unknown option: $arg" >&2; exit 1 ;;
+        *) TAG="$arg" ;;
+    esac
+done
 
 echo ""
 echo -e "${CYAN}========================================${NC}"
