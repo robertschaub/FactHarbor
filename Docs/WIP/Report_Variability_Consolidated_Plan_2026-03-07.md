@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-07
 **Author:** Lead Architect (Claude Code, Opus 4.6)
-**Status:** In progress — MT-1 ✅ MT-3 ✅ (2026-03-10) | MT-2 pending | Phase 1 config pending
+**Status:** In progress — MT-1 ✅ MT-2 ✅ MT-3 ✅ (2026-03-10) | MT-4 deferred | Phase 1 config pending
 **Scope:** Consolidation of three agent investigations into one implementation-ready plan
 
 ---
@@ -358,7 +358,7 @@ Cost / risk note:
 - MT-1 will likely increase per-job cost because more runs will execute actual Stage 2 research iterations instead of exiting after seeded preliminary evidence.
 - Validation must track average query count, fetched sources, and Stage 2 LLM-call count before and after the change.
 
-#### Phase MT-2 — Remove artificial STF inflation
+#### Phase MT-2 — Remove artificial STF inflation ✅ Implemented 2026-03-10
 
 **Goal:** stop unscoped evidence from being silently absorbed into the first boundary.
 
