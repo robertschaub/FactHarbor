@@ -28,7 +28,7 @@ The registered office (Sitz) of the association is in **Dietlikon, Canton of Zü
 ### Article 4 — Non-Profit Constraint
 1. The association is non-profit (nicht gewinnorientiert). It does not distribute profits to its members, founders, governing bodies, or donors.
 2. Any surplus is **irrevocably** reinvested into the association's purpose.
-3. Reasonable expense allowances (Aufwandentschädigungen) — not salary or profit-sharing — for work performed for the association are permitted, provided they fall within the budget approved by the Governing Team and are consistent with the association's non-profit status. Material compensation requires approval by the General Assembly.
+3. Reasonable expense allowances (Aufwandentschädigungen) — not salary or profit-sharing — for work performed for the association are permitted, provided they fall within the budget approved by the Governing Team and are consistent with the association's non-profit status. Allowances exceeding CHF 5,000 per person per year require approval by the General Assembly.
 4. Funds of the association may only be used for purposes consistent with the statutes. Members do not receive allocations from the funds of the association.
 
 ---
@@ -102,11 +102,11 @@ The General Assembly is the supreme governing body of the association. It has th
    a. Amendment of the statutes;
    b. Exclusion of a member;
    c. Dissolution of the association.
-4. A quorum is met when the General Assembly has been duly convened and at least **three (3) members or one quarter (1/4) of the members** — whichever is fewer — are present or represented.
+4. A quorum is met when the General Assembly has been duly convened and at least **two (2) members or one quarter (1/4) of the members** — whichever is greater — are present or represented.
 5. Voting may be conducted by **show of hands, ballot, or electronic means**, as determined by the chairperson.
 6. In the event of a tie, the chairperson has the casting vote.
 
-### B. Governing Team (Vorstand)
+### B. Governing Team (Vorstand / Board of Directors)
 
 ### Article 13 — Composition
 1. The Governing Team consists of at least **two (2)** and at most **seven (7)** members.
@@ -190,7 +190,7 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 1. The association publishes annual financial statements.
 2. Major funding sources (exceeding 10% of the annual budget) are publicly disclosed.
 3. Compensation ranges for staff and contractors are publicly disclosed.
-4. The association commits to the transparency standards set out in the Transparency Policy.
+4. The association commits to the transparency standards established and published by the Governing Team.
 
 ---
 

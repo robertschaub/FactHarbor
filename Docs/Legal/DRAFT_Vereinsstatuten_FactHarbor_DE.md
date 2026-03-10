@@ -27,7 +27,7 @@ Der Sitz des Vereins ist in **Dietlikon, Kanton Zürich, Schweiz**.
 ### Art. 4 — Gemeinnützigkeit und Gewinnverwendung
 1. Der Verein ist gemeinnützig und nicht gewinnorientiert. Er schüttet keine Gewinne an Mitglieder, Gründer, Organe oder Spender aus.
 2. Allfällige Überschüsse werden **unwiderruflich** und vollumfänglich für den Vereinszweck eingesetzt.
-3. Angemessene Aufwandentschädigungen — nicht Lohn oder Gewinnbeteiligung — für im Auftrag des Vereins erbrachte Leistungen sind zulässig, sofern sie im Rahmen der vom Vorstand genehmigten Budgetvorgaben liegen und mit dem gemeinnützigen Status vereinbar sind. Wesentliche Entschädigungen bedürfen der Genehmigung durch die Mitgliederversammlung.
+3. Angemessene Aufwandentschädigungen — nicht Lohn oder Gewinnbeteiligung — für im Auftrag des Vereins erbrachte Leistungen sind zulässig, sofern sie im Rahmen der vom Vorstand genehmigten Budgetvorgaben liegen und mit dem gemeinnützigen Status vereinbar sind. Entschädigungen über CHF 5'000 pro Person und Jahr bedürfen der Genehmigung durch die Mitgliederversammlung.
 4. Die Mittel des Vereins dürfen nur für statutengemässe Zwecke verwendet werden. Die Mitglieder haben keinen Anspruch auf Zuwendungen aus dem Vereinsvermögen.
 
 ---
@@ -101,7 +101,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
    a. Statutenänderung;
    b. Ausschluss eines Mitglieds;
    c. Auflösung des Vereins.
-4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde und mindestens **drei (3) Mitglieder oder ein Viertel (1/4) der Mitglieder** — massgebend ist die kleinere Zahl — anwesend oder vertreten sind.
+4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde und mindestens **zwei (2) Mitglieder oder ein Viertel (1/4) der Mitglieder** — massgebend ist die grössere Zahl — anwesend oder vertreten sind.
 5. Abstimmungen können durch **Handerheben, schriftliche Stimmabgabe oder elektronische Mittel** erfolgen, wie von der Versammlungsleitung bestimmt.
 6. Bei Stimmengleichheit hat die Versammlungsleitung den Stichentscheid.
 
@@ -189,7 +189,7 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 1. Der Verein veröffentlicht jährlich seine Jahresrechnung.
 2. Wesentliche Finanzierungsquellen (über 10% des Jahresbudgets) werden öffentlich ausgewiesen.
 3. Die Bandbreiten der Entschädigungen für Mitarbeitende und Beauftragte werden öffentlich ausgewiesen.
-4. Der Verein verpflichtet sich zu den Transparenzstandards gemäss der Transparency Policy.
+4. Der Verein verpflichtet sich zu den vom Vorstand festgelegten und veröffentlichten Transparenzstandards.
 
 ---
 
