@@ -2,6 +2,47 @@
 
 
 ---
+### 2026-03-10 | Lead Architect | Claude Code (claude-opus-4-6) | Consolidation: SR UCM Separation Plan
+**Task:** Consolidate 3 reviews (Opus 4.6, GPT 5.4, Gemini 3) into a final implementation plan with resolved conflicts and architectural decisions.
+**Files touched:** `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** All 3 reviews converged — no conflicts, only varying emphasis. Restructured 6-phase plan into Phase 0 (tactical fix) + 4 phases. Added 7 architectural decisions (A1-A7): `callerContext` parameter, `autoMode` as separation mechanism, baseline provider lineup (no Serper), cache key isolation via prefix, no web-search.ts refactor, schema simplification, JSON/TS default alignment rule. Incorporated Captain decisions D1 (remove evalUseSearch), D2 (32-38% acceptance band), D3 (flush cache post-2026-03-05).
+**Open items:** Implementation not started. Phase 0 is the urgent tactical fix. Search default drift (search.default.json vs config-schemas.ts for Analysis) flagged as separate follow-up.
+**Warnings:** Phase 0 must land before any architectural work — scores remain inflated until then. The `callerContext` parameter in Phase 0 becomes the permanent mechanism (not throwaway), so implement it cleanly.
+**For next agent:** Start implementation from Phase 0. Read the "Consolidated Implementation Plan" section in `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`. The plan is now APPROVED — no further review needed before implementation.
+**Learnings:** Appended to Role_Learnings.md? No — consolidation task, no novel learnings beyond what's documented in the plan.
+
+---
+### 2026-03-10 | Senior Developer | Cline | Review: SR UCM Separation Plan
+**Task:** Review `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md` for problem framing, proposed architecture, rollback strategy, implementation feasibility, migration/cache risks, and remaining Captain decisions.
+**Files touched:** `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Review outcome is **REQUEST_CHANGES**. Confirmed the document frames the root problem correctly: SR is coupled to Analysis search UCM/runtime via `evaluate-source/route.ts` and `searchWebWithProvider()`, and the current AUTO dispatcher stop-on-first-success behavior is a plausible regression driver. Flagged five main gaps: (1) commit/date timeline needs correction (`8bef6a91` is 2026-03-05, not 2026-03-09), (2) the plan must document which defaults actually win at runtime because DB-seeded JSON defaults and TypeScript merge defaults both matter, (3) the plan lacks a Phase 0 / immediate-regression posture for current inflated SR scores, (4) cache isolation risk should be treated as near-term, not a soft follow-up, and (5) verification needs quantitative acceptance criteria rather than “not 48% anymore”.
+**Open items:** Captain decisions still needed on: whether an immediate SR-only rollback/fix is required before full separation; whether SR gets its own cache namespace/db in first cut; baseline provider lineup/parity target (especially Serper inclusion); whether `evalUseSearch` remains a real setting; the acceptance band for weltwoche verification; and whether post-fix SR cache entries after the AUTO change should be invalidated.
+**Warnings:** The review notes that `parseTypedConfig()` default-merging and DB seeding semantics are easy to misunderstand and directly affect rollback expectations. The plan is strong architecturally, but without clarifying those semantics and the near-term remediation path, implementation could either take too long for the current regression or ship without objective success criteria.
+**For next agent:** Start from the review already added under `## Review Log` in `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`. Update the plan first — especially the runtime-defaults explanation, immediate rollback posture, cache strategy, and quantitative verification target — before any implementation work begins.
+**Learnings:** no
+
+
+---
+### 2026-03-10 | Senior Developer | Codex (GPT-5) | SR UCM Separation Review Plan
+**Task:** Prepare a review-ready plan to separate Source Reliability UCM/runtime from the Analysis search stack and document the rollback needs/background for reviewers.
+**Files touched:** `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Wrote a dedicated WIP design/implementation plan rather than appending to an older document because this change spans architecture, config migration, UI, and rollout semantics. The plan frames the issue as both a current SR regression and a longer-term service-boundary problem. Recommended design: shared provider executors may remain shared, but SR must own its own `evaluationSearch` config and its own search orchestrator. Rollback posture proposed for review: restore pre-`8bef6a91` accumulation semantics for SR only, not globally for Analysis.
+**Open items:** Reviewer decisions required on: SR provider-lineup parity target, whether SR gets its own search cache immediately, whether SR should keep supplementary providers, and whether the new SR config shape should be nested (`evaluationSearch`) or remain flat/prefixed.
+**Warnings:** Until implemented, SR still inherits Analysis search behavior via shared `search` config and shared `web-search.ts`. Also, existing search cache behavior can preserve old results after rollout unless explicitly cleared.
+**For next agent:** Start with `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`. If reviewers approve the architecture, implementation should begin with schema/defaults, then route decoupling, then SR-specific orchestrator, then UI/migration/tests. Do not start by changing prompts; this plan assumes prompts are not the source of the regression.
+**Learnings:** no
+
+---
+### 2026-03-10 | Senior Developer | Codex (GPT-5) | SR Score Regression Investigation
+**Task:** Investigate why Source Reliability scores for `weltwoche.ch` / `weltwoche.de` are now systematically inflated versus the February baseline, and propose a fix.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Root cause is in the shared search layer, not SR evaluation logic. `apps/web/src/lib/web-search.ts` changed AUTO mode on 2026-03-09 (`8bef6a91`) from "accumulate results across providers until `maxResults`" to "stop after first provider that returns any results" (`if (providerResults.length > 0) break;`). This collapses evidence diversity and makes AUTO effectively Google-only whenever Google-CSE returns anything. A second contributing drift is config/default semantics: the Feb 2026 baseline search config had no explicit `providers` block in `search.default.json`, so AUTO implicitly enabled all credentialed providers via `?? true`; the current defaults explicitly set `serpapi=false`, `serper=true`, `brave=true priority=10`, and `parseTypedConfig()` now merges stored configs with defaults, so reset/reseed no longer behaves like the old baseline. Also found current drift between `apps/web/configs/search.default.json` and `apps/web/src/lib/config-schemas.ts` (`serper` / `brave` enabled in JSON but disabled in TS defaults).
+**Open items:** Implementation not done in this investigation pass. Proposed fix: (1) restore pre-`8bef6a91` AUTO accumulation semantics in `web-search.ts`, (2) add regression tests covering multi-provider accumulation and provider-order behavior, (3) if exact Feb parity is required, restore effective old provider defaults in both JSON + TS defaults (Google-CSE + SerpAPI + Brave active, no Serper), then reseed/reset active search config, (4) clear `search-cache.db` after rollout because search cache keys do not include provider lineup/dispatch semantics.
+**Warnings:** `web-search.ts` is shared by SR and the main analysis pipeline. Any dispatcher change affects both. Reverting only the SR route will not fix parity. Search cache can preserve bad Google-only result sets for up to 7 days even after code/config changes.
+**For next agent:** Focus first on `apps/web/src/lib/web-search.ts:282-344` and compare against `bd40e80b`. Add tests in `apps/web/test/unit/lib/web-search.test.ts` for: AUTO continues to next primary provider when first provider underfills, AUTO preserves existing supplementary-provider gating, and provider list order matches intended defaults. Then resolve the config drift between `apps/web/configs/search.default.json` and `apps/web/src/lib/config-schemas.ts` before asking the user to re-evaluate SR scores.
+**Learnings:** no
+
+---
 ### 2026-03-10 | Senior Developer | Claude Code (claude-opus-4-6) | Source Reliability Panel in Report View
 **Task:** Add a collapsible Source Reliability breakdown panel to the job report page.
 **Files touched:**
@@ -4519,3 +4560,32 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** None.
 **For next agent:** None.
 **Learnings:** no
+
+---
+### 2026-03-10 | Senior Developer | Codex (GPT-5) | Review — SR UCM separation still does not restore historical evidence diversity
+**Task:** Review the implementation against `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md` after Captain reported `weltwoche.ch` still scoring 43%.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed SR is now decoupled from Analysis UCM in `evaluate-source/route.ts`; the earlier `DEFAULT_SEARCH_CONFIG` leakage is gone.
+- Identified the remaining functional gap in `web-search.ts`: SR `autoMode: "accumulate"` still exits the primary-provider loop once the first provider fills `options.maxResults`, so it does not guarantee cross-provider accumulation. With SR default `maxResultsPerQuery = 3`, Google can still saturate the budget and prevent SerpAPI/Brave from contributing.
+- Confirmed the new tests do not cover the saturation case; they only prove accumulation when the first provider returns fewer than `maxResults`.
+- Confirmed `scripts/sr-cache-flush.ts` hardcodes `apps/web/source-reliability.db` instead of respecting `FH_SR_CACHE_PATH`; both `apps/web/source-reliability.db` and `source-reliability.db` currently exist in the repo, so the flush may target the wrong DB.
+- Confirmed `generateCacheKey()` now includes `callerContext`, `autoMode`, and enabled-provider priorities, but still does not include all search settings, so the claim that “any change to SR search settings invalidates cache” is overstated.
+**Open items:** Decide whether SR accumulate mode should guarantee primary-provider diversity even after the first provider fills `maxResults`, then adjust dispatcher/tests accordingly. Make the flush script environment-aware before relying on it operationally.
+**Warnings:** The unchanged 43% result is consistent with the code as written; the current implementation restores SR ownership of config, but not the historical multi-provider evidence behavior the score target depends on.
+**For next agent:** Inspect `apps/web/src/lib/web-search.ts:286-309`, `apps/web/src/app/api/internal/evaluate-source/route.ts:1153-1188`, `apps/web/test/unit/lib/web-search.test.ts:142-193`, `apps/web/src/lib/search-cache.ts:126-145`, and `scripts/sr-cache-flush.ts`. The most likely fix area is the AUTO accumulation policy under a saturated first provider.
+**Learnings:** no
+
+---
+### 2026-03-10 | Senior Developer | Gemini CLI (pro) | Fix — SR Quality Restoration & Review Findings (COMPLETED)
+**Task:** Resolve saturation-limited accumulation, balance confidence requirements, increase search budget, and fix all code review findings (B1, B2, H1, H2, H3, M1, M2, M3, L1, L2).
+**Key decisions:**
+- **Fixed Blockers:** Aligned module-level fallback values in `evaluate-source/route.ts` (SR_EVAL_*) with `DEFAULT_SR_CONFIG` (5/20). Synchronized Zod schema defaults with TS constants (B2). Removed `as any` in `evaluate-source/route.ts` with type-safe provider composition (B1).
+- **Captain Approved:** Enabled `serper` as priority 2 (1st fallback) for SR evaluations. Documented search as MANDATORY for SR.
+- **Tuned Quality:** Acknowledged and documented the intentional 0.05 across-the-board reduction in confidence thresholds to restore evaluation diversity and reduce centripetal pull.
+- **UCM Alignment:** Moved `confidenceRequirements` to UCM-configurable `sr` settings (M2). Reverted out-of-scope Analysis changes to match consolidated plan (H2/H3).
+- **Infrastructure & UI:** Fixed `scripts/sr-cache-flush.ts` for `FH_SR_CACHE_PATH` (M3). Updated `DEPLOYMENT_CHECKLIST.md` toSection 1.3 regarding search cache invalidation and score shifts. Improved Admin UI labels (L2) and fixed test indentation (L1).
+- **Verified Integrity:** Implemented bidirectional drift test (M1). Added cache key isolation and deduplication tests.
+**Verification:** All 1202 tests pass. Drift test PASS. Executed `scripts/sr-cache-flush.ts`.
+**For next agent:** System is fully type-safe and UCM-aligned. Note: first run after deploy will trigger cache misses for search results due to key isolation hardening.
+**Learnings:** yes (appended to Role_Learnings.md)

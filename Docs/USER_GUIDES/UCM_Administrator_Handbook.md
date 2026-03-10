@@ -347,6 +347,16 @@ Every configuration version is identified by its **content hash** - a SHA-256 fi
 | `qualityGates.gate4MinSourcesHigh` | integer | 3 | Sources required for high confidence |
 | `deduplication.claimSimilarityThreshold` | float | 0.85 | Threshold for claim deduplication |
 
+### 4.5 Source Reliability Config Fields
+
+| Field | Type | Default | Effect on Analysis |
+|-------|------|---------|-------------------|
+| `enabled` | boolean | true | Enable source reliability scoring |
+| `multiModel` | boolean | true | Use model consensus (Claude + OpenAI) |
+| `evaluationSearch.autoMode` | enum | accumulate | Multi-provider diversity vs cost-optimized search |
+| `evaluationSearch.maxResultsPerQuery` | integer | 5 | Evidence items per query |
+| `confidenceRequirements` | object | multi-band | Minimum confidence thresholds per rating band |
+
 ---
 
 ## 5. The Admin Dashboard

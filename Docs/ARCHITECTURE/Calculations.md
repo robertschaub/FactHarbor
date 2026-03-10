@@ -480,6 +480,8 @@ const fetchedSource: FetchedSource = {
 | 0.15–0.28 | Unreliable | Strong pull toward neutral (~15–30% weight) |
 | 0.00–0.14 | Highly Unreliable | Maximum skepticism (~0–15% weight) |
 
+> **Confidence Gating**: A score only qualifies for a band if its evaluation confidence meets the required threshold. These thresholds are UCM-configurable (default: `highly_reliable` 0.80, `reliable` 0.70, etc.). If confidence is insufficient, the rating is downgraded to `insufficient_data` (null score).
+
 Unknown/unevaluated sources remain `null` in Source Reliability. The consuming pipeline/app decides whether to apply a fallback (for example `defaultScore = 0.4`) or to leave unknown sources unweighted.
 
 ### Verdict Adjustment Formula

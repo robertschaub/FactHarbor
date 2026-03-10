@@ -172,6 +172,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Using an LLM to infer geography from claim text and then using that inference to gate search provider parameters is fragile. The LLM can associate input language with a country (German → Germany), infer geography from institutions that are actually international, or from cultural topic associations. If this inference then controls search API parameters (`gl`, `lr`), a wrong guess silently biases the entire evidence base. Keep LLM inference for advisory purposes (query generation) but don't let it control deterministic API parameters.
 **Files:** `apps/web/prompts/claimboundary.prompt.md`
 
+### 2026-03-10 — Automated drift tests protect UCM authoritative defaults
+**Role:** Senior Developer  **Agent/Tool:** Gemini CLI (pro)
+**Category:** useful-pattern
+**Learning:** When using file-backed defaults (`*.default.json`) for UCM, they can easily drift from their TypeScript constant counterparts in `config-schemas.ts`. A recursive comparison test (`config-drift.test.ts`) that fails the build on drift ensures that the JSON remains the authoritative source. This is critical for Admin UI visibility, as the UI relies on JSON schemas/defaults for comparison views. Any new tunable parameter must be explicitly set in both places.
+**Files:** `apps/web/test/unit/lib/config-drift.test.ts`, `apps/web/configs/`, `apps/web/src/lib/config-schemas.ts`
+
 
 ## Technical Writer
 

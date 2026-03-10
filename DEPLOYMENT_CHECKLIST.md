@@ -37,6 +37,14 @@
   - Just start the API - EF Core will create tables automatically
   - ⚠️ May not work without additional DbContext configuration
 
+### 1.3 Search Cache & SR Migration (2026-03-10)
+
+- [ ] **Acknowledge Cache Invalidation**: The search cache key shape has changed to include `callerContext` and `autoMode`.
+  - **Impact**: All existing cached search results will be cache misses on the first run.
+  - **Warning**: Expect a temporary surge in Search API (Google/Brave/Serper) quota usage immediately after deployment.
+- [ ] **SR Score Shift**: Confidence thresholds for Source Reliability have been lowered by 0.05.
+  - **Impact**: You may observe a systematic upward shift in SR ratings as more sources pass confidence gating. This is an intentional tuning change to restore evaluation diversity.
+
 ### 2. Build Verification
 
 - [ ] **Web build successful**

@@ -142,9 +142,15 @@ When introducing a tunable parameter, place it in the correct tier:
 |------|------|----------|
 | **UCM** (Admin UI, runtime) | Anything that affects analysis behavior or quality and may need tuning without redeployment | Thresholds, weights, limits, model selection, prompt profiles, search parameters, SR weights |
 | **Env var** (startup, infra) | Infrastructure, secrets, paths, concurrency — things set once per environment | `FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, DB paths |
-| **Hardcoded** (code change) | Structural constants, fixed design decisions that should not be tunable (making these tunable would compromise system correctness or create confusion) | Status enum values, API route paths, field names, confidence band boundaries (7-band scale), mathematical constants |
+| **Hardcoded** (code change) | Structural constants, fixed design decisions that should not be tunable | Status enum values, API route paths, field names, confidence band boundaries (7-band scale), mathematical constants |
 
 **Default to UCM.** If a parameter influences analysis output and you're unsure where it belongs — make it UCM-configurable. Never hardcode a value that an admin might need to tune.
+
+**JSON is Authoritative for Defaults:**
+File-backed defaults in `apps/web/configs/*.default.json` are the authoritative source for initial system configuration.
+- **MUST remain in sync** with TypeScript constants in `config-schemas.ts`.
+- **Verified by tests**: `apps/web/test/unit/lib/config-drift.test.ts` fails the build if JSON drifts from TS.
+- **Admin Visibility**: All tunable parameters must be present in the JSON files to be visible and editable in the Admin UI comparison views.
 
 UCM implementation: `apps/web/src/lib/config-storage.ts`. UCM docs: see Area-to-Documents mapping for "Configuration" in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2.
 
