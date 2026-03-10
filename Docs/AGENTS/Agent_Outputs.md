@@ -2,6 +2,21 @@
 
 
 ---
+### 2026-03-10 | Senior Developer | Claude Code (claude-sonnet-4-6) | MT-2 — CB_GENERAL_UNSCOPED for unscoped evidence
+**Task:** Implement MT-2: replace the largest-boundary fallback in `assignEvidenceToBoundaries()` with explicit `CB_GENERAL_UNSCOPED` handling, so unscoped evidence is not silently absorbed into a named analytical boundary.
+**Files touched:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Pass 2 of `assignEvidenceToBoundaries()` replaced
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 2 old largest-boundary tests updated, 5 new MT-2 tests added
+**Key decisions:**
+- Three-way branch in Pass 2: (1) single boundary → assign to sole boundary, (2) CB_GENERAL already exists → assign to it, (3) 2+ named boundaries and no CB_GENERAL → create `CB_GENERAL_UNSCOPED` and push into boundaries array.
+- `CB_GENERAL_UNSCOPED` uses `internalCoherence: 0.0` and empty `constituentScopes`. It is visible to verdict LLM via the boundaries array and coverage matrix.
+- `boundaries.push()` mutation is safe: same array used by `evidenceCount` update loop and verdict stage call — `CB_GENERAL_UNSCOPED` gets `evidenceCount` set correctly.
+**Open items:** `unscopedEvidenceCount` not added to named boundary API fields (deferred). UI may want to visually distinguish `CB_GENERAL_UNSCOPED` from analytical boundaries in a future UI pass.
+**Warnings:** Largest-boundary heuristic (27c4ef44) is now fully replaced. Named boundary `evidenceCount` values will be lower for jobs with unscoped evidence; `CB_GENERAL_UNSCOPED` shows the displaced count. This is correct analytical behavior.
+**For next agent:** MT-1+MT-2+MT-3 complete. MT-4 (Gate 1 / claim retention) deferred per plan. Next: variability tracking §10.6 checks or Phase 3.
+**Learnings:** No.
+
+---
 ### 2026-03-10 | Senior Developer | Claude Code (claude-sonnet-4-6) | MT-1 + MT-3 — Sufficiency Guard + Multi-Event Coverage
 **Task:** Implement MT-1 (stop premature sufficiency collapse) and MT-3 (wire distinctEvents into query generation coverage) from the Report Variability Consolidated Plan §10.4–10.5.
 **Files touched:**

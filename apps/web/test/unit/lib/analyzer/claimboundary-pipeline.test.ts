@@ -2602,7 +2602,8 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
     expect(items[0].claimBoundaryId).toBe("CB_GENERAL");
   });
 
-  it("should assign unmatched items to the largest already-assigned boundary", () => {
+  // MT-2: unscoped items in multi-boundary runs go to CB_GENERAL_UNSCOPED
+  it("MT-2: multi-boundary run — unscoped items go to CB_GENERAL_UNSCOPED, not CB_01", () => {
     const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
     const scopeB: EvidenceScope = { name: "B", methodology: "Method B", temporal: "2021" };
     const scopeUnmatched: EvidenceScope = { name: "Other", methodology: "Custom", temporal: "2022" };
@@ -2632,50 +2633,105 @@ describe("Stage 3: assignEvidenceToBoundaries", () => {
 
     assignEvidenceToBoundaries(items, boundaries, []);
 
+    // EV_00 → CB_02 (fingerprint match), EV_01 → CB_GENERAL_UNSCOPED (no match, 2 boundaries)
     expect(items[0].claimBoundaryId).toBe("CB_02");
-    expect(items[1].claimBoundaryId).toBe("CB_02");
+    expect(items[1].claimBoundaryId).toBe("CB_GENERAL_UNSCOPED");
+    // CB_GENERAL_UNSCOPED was added to boundaries array
+    expect(boundaries).toHaveLength(3);
+    expect(boundaries.find(b => b.id === "CB_GENERAL_UNSCOPED")).toBeDefined();
   });
 
-  it("should use constituentScopes count as tie-breaker when assigned counts are equal", () => {
+  it("MT-2: single-boundary run — unscoped items still go to the sole boundary", () => {
     const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
-    const scopeB1: EvidenceScope = { name: "B1", methodology: "Method B1", temporal: "2021" };
-    const scopeB2: EvidenceScope = { name: "B2", methodology: "Method B2", temporal: "2022" };
-    const scopeUnmatched: EvidenceScope = { name: "X", methodology: "Custom", temporal: "2023" };
+    const scopeUnmatched: EvidenceScope = { name: "Other", methodology: "Custom", temporal: "2022" };
 
-    // Both items match their respective boundaries, giving each boundary 1 assigned item
     const items: EvidenceItem[] = [
-      createEvidenceItem({ id: "EV_01", evidenceScope: scopeA }),
-      createEvidenceItem({ id: "EV_02", evidenceScope: scopeB1 }),
-      {
-        id: "EV_03",
-        statement: "Unmatched evidence",
-        category: "direct_evidence",
-        specificity: "high",
-        sourceId: "S1",
-        sourceUrl: "https://example.com/unmatched",
-        sourceTitle: "Unmatched Source",
-        sourceExcerpt: "Unmatched excerpt",
-        claimDirection: "supports",
-        probativeValue: "high",
-        evidenceScope: scopeUnmatched,
-        relevantClaimIds: ["AC_01"],
-      },
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeUnmatched }),
     ];
 
     const boundaries: ClaimAssessmentBoundary[] = [
-      // CB_01 has 1 constituentScope
+      { id: "CB_01", name: "Only Boundary", shortName: "Only", description: "", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, []);
+
+    // Single boundary run: unscoped goes directly to CB_01 (no synthetic boundary)
+    expect(items[0].claimBoundaryId).toBe("CB_01");
+    // No new boundary was added
+    expect(boundaries).toHaveLength(1);
+    expect(boundaries.find(b => b.id === "CB_GENERAL_UNSCOPED")).toBeUndefined();
+  });
+
+  it("MT-2: CB_GENERAL already exists — unscoped items go to it, no CB_GENERAL_UNSCOPED created", () => {
+    const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
+    const scopeUnmatched: EvidenceScope = { name: "Other", methodology: "Custom", temporal: "2022" };
+
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeUnmatched }),
+    ];
+
+    const boundaries: ClaimAssessmentBoundary[] = [
+      { id: "CB_01", name: "Named", shortName: "Named", description: "", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
+      { id: "CB_GENERAL", name: "General Evidence", shortName: "Gen", description: "Fallback", constituentScopes: [], internalCoherence: 0.5, evidenceCount: 0 },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, []);
+
+    // Goes to existing CB_GENERAL, not creating a new CB_GENERAL_UNSCOPED
+    expect(items[0].claimBoundaryId).toBe("CB_GENERAL");
+    expect(boundaries).toHaveLength(2);
+    expect(boundaries.find(b => b.id === "CB_GENERAL_UNSCOPED")).toBeUndefined();
+  });
+
+  it("MT-2: CB_GENERAL_UNSCOPED is present in boundaries array after multi-boundary run with unscoped items", () => {
+    const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
+    const scopeB: EvidenceScope = { name: "B", methodology: "Method B", temporal: "2021" };
+
+    // Two items with no matching scope, 2 named boundaries
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: undefined as any }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: undefined as any }),
+    ];
+
+    const boundaries: ClaimAssessmentBoundary[] = [
+      { id: "CB_01", name: "A", shortName: "A", description: "", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
+      { id: "CB_02", name: "B", shortName: "B", description: "", constituentScopes: [scopeB], internalCoherence: 0.8, evidenceCount: 0 },
+    ];
+
+    assignEvidenceToBoundaries(items, boundaries, []);
+
+    const unscopedBoundary = boundaries.find(b => b.id === "CB_GENERAL_UNSCOPED");
+    expect(unscopedBoundary).toBeDefined();
+    expect(unscopedBoundary?.name).toBe("General / Unscoped Evidence");
+    expect(unscopedBoundary?.shortName).toBe("Unscoped");
+    expect(items[0].claimBoundaryId).toBe("CB_GENERAL_UNSCOPED");
+    expect(items[1].claimBoundaryId).toBe("CB_GENERAL_UNSCOPED");
+    // Only one CB_GENERAL_UNSCOPED boundary created
+    expect(boundaries.filter(b => b.id === "CB_GENERAL_UNSCOPED")).toHaveLength(1);
+  });
+
+  it("should use constituentScopes count as tie-breaker for scoped items (fingerprint match, existing behavior unchanged)", () => {
+    const scopeA: EvidenceScope = { name: "A", methodology: "Method A", temporal: "2020" };
+    const scopeB1: EvidenceScope = { name: "B1", methodology: "Method B1", temporal: "2021" };
+    const scopeB2: EvidenceScope = { name: "B2", methodology: "Method B2", temporal: "2022" };
+
+    // Both items match their respective boundaries via fingerprint — no unscoped items
+    const items: EvidenceItem[] = [
+      createEvidenceItem({ id: "EV_01", evidenceScope: scopeA }),
+      createEvidenceItem({ id: "EV_02", evidenceScope: scopeB1 }),
+    ];
+
+    const boundaries: ClaimAssessmentBoundary[] = [
       { id: "CB_01", name: "Narrow", shortName: "N", description: "", constituentScopes: [scopeA], internalCoherence: 0.8, evidenceCount: 0 },
-      // CB_02 has 2 constituentScopes — should win the tie-break
       { id: "CB_02", name: "Wider", shortName: "W", description: "", constituentScopes: [scopeB1, scopeB2], internalCoherence: 0.8, evidenceCount: 0 },
     ];
 
     assignEvidenceToBoundaries(items, boundaries, []);
 
-    // EV_01 → CB_01 (fingerprint match), EV_02 → CB_02 (fingerprint match)
-    // Both have 1 assigned → tie → CB_02 has more constituentScopes → EV_03 → CB_02
     expect(items[0].claimBoundaryId).toBe("CB_01");
     expect(items[1].claimBoundaryId).toBe("CB_02");
-    expect(items[2].claimBoundaryId).toBe("CB_02");
+    // No unscoped boundary created — all items matched
+    expect(boundaries).toHaveLength(2);
   });
 });
 

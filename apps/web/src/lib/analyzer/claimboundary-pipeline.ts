@@ -4293,29 +4293,37 @@ export function assignEvidenceToBoundaries(
     unassigned.push(item);
   }
 
-  // Pass 2: Assign unmatched items to the largest boundary (Fix 1.2).
-  // Computed AFTER all scoped items are assigned, so counts are complete.
+  // Pass 2: Handle unmatched (unscoped) items — MT-2.
+  // Instead of absorbing them into the largest named boundary (which distorts
+  // boundary evidence counts), route them to an explicit general boundary.
   if (unassigned.length > 0) {
-    const boundaryCounts = new Map<string, number>();
-    for (const ei of evidenceItems) {
-      if (ei.claimBoundaryId) boundaryCounts.set(ei.claimBoundaryId, (boundaryCounts.get(ei.claimBoundaryId) ?? 0) + 1);
-    }
-    // Pick boundary with most assigned items. On tie (including all-zero),
-    // prefer the boundary with more constituent scopes (richer analytical frame).
-    let fallback = boundaries[0];
-    let maxCount = -1;
-    let maxScopes = -1;
-    for (const b of boundaries) {
-      const count = boundaryCounts.get(b.id) ?? 0;
-      const scopes = b.constituentScopes?.length ?? 0;
-      if (count > maxCount || (count === maxCount && scopes > maxScopes)) {
-        maxCount = count;
-        maxScopes = scopes;
-        fallback = b;
+    if (boundaries.length === 1) {
+      // Single-boundary run: everything belongs to the same analytical frame.
+      // Assign directly to that boundary — no synthetic boundary needed.
+      const sole = boundaries[0];
+      for (const item of unassigned) {
+        item.claimBoundaryId = sole.id;
       }
-    }
-    for (const item of unassigned) {
-      if (fallback) item.claimBoundaryId = fallback.id;
+    } else {
+      // Multi-boundary run: absorbing into the largest named boundary inflates
+      // its count artificially. Use a dedicated general boundary instead.
+      let generalBoundary = boundaries.find((b) => b.id === "CB_GENERAL");
+      if (!generalBoundary) {
+        // Create CB_GENERAL_UNSCOPED only if one does not already exist.
+        generalBoundary = {
+          id: "CB_GENERAL_UNSCOPED",
+          name: "General / Unscoped Evidence",
+          shortName: "Unscoped",
+          description: "Evidence items without a matching scope fingerprint.",
+          constituentScopes: [],
+          internalCoherence: 0.0,
+          evidenceCount: 0,
+        };
+        boundaries.push(generalBoundary);
+      }
+      for (const item of unassigned) {
+        item.claimBoundaryId = generalBoundary.id;
+      }
     }
   }
 }
