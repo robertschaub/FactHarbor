@@ -2,6 +2,7 @@ param(
     [string]$Tag = "",
     [string]$SshKey = "",
     [string]$SshHost = "",
+    [switch]$ForceConfigs,
     [switch]$DryRun
 )
 
@@ -27,9 +28,11 @@ param(
     Show what would be done without executing.
 
 .EXAMPLE
-    .\scripts\deploy-remote.ps1                    # Deploy latest main
-    .\scripts\deploy-remote.ps1 -Tag v1.0.0        # Deploy specific tag
-    .\scripts\deploy-remote.ps1 -DryRun             # Show what would happen
+    .\scripts\deploy-remote.ps1                              # Deploy latest main
+    .\scripts\deploy-remote.ps1 -Tag v1.0.0                 # Deploy specific tag
+    .\scripts\deploy-remote.ps1 -ForceConfigs                # Deploy + force UCM config defaults
+    .\scripts\deploy-remote.ps1 -Tag v1.0.0 -ForceConfigs   # Tag + force UCM config defaults
+    .\scripts\deploy-remote.ps1 -DryRun                      # Show what would happen
 #>
 
 $ErrorActionPreference = "Stop"
@@ -96,6 +99,10 @@ if ($Tag) {
     Write-Host "Deploying tag: $Tag" -ForegroundColor Yellow
 } else {
     Write-Host "Deploying latest main" -ForegroundColor Yellow
+}
+if ($ForceConfigs) {
+    $deployCmd += " --force-configs"
+    Write-Host "Force-reseeding UCM configs" -ForegroundColor Yellow
 }
 Write-Host "Target: $SshHost" -ForegroundColor Yellow
 Write-Host ""
