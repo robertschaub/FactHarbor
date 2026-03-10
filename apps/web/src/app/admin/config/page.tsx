@@ -16,6 +16,7 @@ import styles from "./config.module.css";
 import toast from "react-hot-toast";
 import {
   DEFAULT_PIPELINE_CONFIG as SHARED_DEFAULT_PIPELINE_CONFIG,
+  DEFAULT_SR_CONFIG as SHARED_DEFAULT_SR_CONFIG,
   type PipelineConfig as SharedPipelineConfig,
 } from "@/lib/config-schemas";
 
@@ -287,23 +288,7 @@ const DEFAULT_PROMPT_PROFILES = [
   "text-analysis-verdict",
 ] as const;
 
-const DEFAULT_SR_CONFIG: SRConfig = {
-  enabled: true,
-  multiModel: true,
-  openaiModel: "gpt-4o-mini",
-  confidenceThreshold: 0.8,
-  consensusThreshold: 0.20,
-  cacheTtlDays: 90,
-  filterEnabled: true,
-  skipPlatforms: ["blogspot.", "wordpress.com", "medium.com", "substack.com"],
-  skipTlds: ["xyz", "top", "club", "icu", "buzz", "tk", "ml", "ga", "cf", "gq"],
-  rateLimitPerIp: 10,
-  domainCooldownSec: 60,
-  evalUseSearch: false,
-  evalSearchMaxResultsPerQuery: 3,
-  evalMaxEvidenceItems: 12,
-  evalSearchDateRestrict: null,
-};
+const DEFAULT_SR_CONFIG: SRConfig = SHARED_DEFAULT_SR_CONFIG as SRConfig;
 
 /**
  * Get default config for a config type (for form initialization)
