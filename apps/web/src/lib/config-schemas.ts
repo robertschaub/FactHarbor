@@ -2142,7 +2142,13 @@ export function parseTypedConfig<T extends keyof ConfigSchemaTypes>(
     throw new Error(`No schema for config type: ${configType}`);
   }
 
-  const result = schema.safeParse(parsed);
+  // Merge stored config with current defaults so fields added after the config was
+  // saved (e.g. new required fields) get their default values instead of failing validation.
+  const defaultsJson = getDefaultConfig(configType as Exclude<ConfigType, "prompt">);
+  const defaults = defaultsJson ? JSON.parse(defaultsJson) : {};
+  const merged = { ...defaults, ...parsed };
+
+  const result = schema.safeParse(merged);
   if (!result.success) {
     const errors = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
     throw new Error(`Config validation failed: ${errors.join(", ")}`);
