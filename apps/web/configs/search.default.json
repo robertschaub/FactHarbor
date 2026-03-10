@@ -40,15 +40,15 @@
       "priority": 2,
       "dailyQuotaLimit": 0
     },
+    "brave": {
+      "enabled": false,
+      "priority": 2,
+      "dailyQuotaLimit": 10000
+    },
     "serper": {
       "enabled": true,
       "priority": 2,
-      "dailyQuotaLimit": 50000
-    },
-    "brave": {
-      "enabled": true,
-      "priority": 10,
-      "dailyQuotaLimit": 10000
+      "dailyQuotaLimit": 0
     },
     "wikipedia": {
       "enabled": false,
