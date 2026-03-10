@@ -15,6 +15,8 @@ import { useAdminAuth } from "../admin-auth-context";
 import styles from "./config.module.css";
 import toast from "react-hot-toast";
 import {
+  DEFAULT_SEARCH_CONFIG as SHARED_DEFAULT_SEARCH_CONFIG,
+  DEFAULT_CALC_CONFIG as SHARED_DEFAULT_CALC_CONFIG,
   DEFAULT_PIPELINE_CONFIG as SHARED_DEFAULT_PIPELINE_CONFIG,
   DEFAULT_SR_CONFIG as SHARED_DEFAULT_SR_CONFIG,
   type PipelineConfig as SharedPipelineConfig,
@@ -201,82 +203,8 @@ interface SRConfig {
 // DEFAULT VALUES
 // ============================================================================
 
-const DEFAULT_SEARCH_CONFIG: SearchConfig = {
-  enabled: true,
-  provider: "auto",
-  mode: "standard",
-  maxResults: 6,
-  maxSourcesPerIteration: 4,
-  timeoutMs: 12000,
-  dateRestrict: null,
-  domainWhitelist: [],
-  domainBlacklist: [],
-  providers: {
-    googleCse: { enabled: true, priority: 1 },
-    serpapi: { enabled: false, priority: 2 },
-    brave: { enabled: false, priority: 2 },
-    serper: { enabled: false, priority: 2 },
-    wikipedia: { enabled: false, priority: 3, language: "en" },
-    semanticScholar: { enabled: false, priority: 3 },
-    googleFactCheck: { enabled: false, priority: 4 },
-  },
-};
-
-const DEFAULT_CALC_CONFIG: CalcConfig = {
-  aggregation: {
-    centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
-    harmPotentialMultiplier: 1.5,
-    contestationWeights: { established: 0.5, disputed: 0.7, opinion: 1.0 },
-  },
-  sourceReliability: {
-    confidenceThreshold: 0.8,
-    consensusThreshold: 0.2,
-    defaultScore: 0.4,
-  },
-  qualityGates: {
-    gate1OpinionThreshold: 0.7,
-    gate1SpecificityThreshold: 0.3,
-    gate1MinContentWords: 3,
-    gate4MinSourcesHigh: 3,
-    gate4MinSourcesMedium: 2,
-    gate4QualityThresholdHigh: 0.7,
-    gate4QualityThresholdMedium: 0.5,
-    gate4AgreementThresholdHigh: 0.7,
-    gate4AgreementThresholdMedium: 0.5,
-  },
-  contestationPenalties: { established: -12, disputed: -8 },
-  deduplication: {
-    evidenceScopeThreshold: 0.85,
-    claimSimilarityThreshold: 0.85,
-    contextMergeThreshold: 0.7,
-  },
-  mixedConfidenceThreshold: 40,
-  probativeValueWeights: {
-    high: 1.0,
-    medium: 0.9,
-    low: 0.5,
-  },
-  sourceTypeCalibration: {
-    peer_reviewed_study: 1.0,
-    fact_check_report: 1.05,
-    government_report: 1.0,
-    legal_document: 1.0,
-    news_primary: 1.0,
-    news_secondary: 0.95,
-    expert_statement: 0.9,
-    organization_report: 0.95,
-    other: 0.8,
-  },
-  evidenceFilter: {
-    minStatementLength: 20,
-    maxVaguePhraseCount: 2,
-    requireSourceExcerpt: true,
-    minExcerptLength: 30,
-    requireSourceUrl: true,
-    deduplicationThreshold: 0.85,
-  },
-};
-
+const DEFAULT_SEARCH_CONFIG: SearchConfig = SHARED_DEFAULT_SEARCH_CONFIG as SearchConfig;
+const DEFAULT_CALC_CONFIG: CalcConfig = SHARED_DEFAULT_CALC_CONFIG as CalcConfig;
 const DEFAULT_PIPELINE_CONFIG: PipelineConfig = SHARED_DEFAULT_PIPELINE_CONFIG;
 
 const DEFAULT_PROMPT_PROFILES = [
