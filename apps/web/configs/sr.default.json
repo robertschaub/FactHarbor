@@ -49,7 +49,7 @@
   ],
   "rateLimitPerIp": 10,
   "domainCooldownSec": 60,
-  "evalUseSearch": true,
+  "evalUseSearch": false,
   "evalSearchMaxResultsPerQuery": 3,
   "evalMaxEvidenceItems": 12,
   "evalSearchDateRestrict": null,
