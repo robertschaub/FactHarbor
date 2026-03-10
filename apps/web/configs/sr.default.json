@@ -14,8 +14,8 @@
   "evalUseSearch": true,
   "evaluationSearch": {
     "provider": "auto",
-    "maxResultsPerQuery": 5,
-    "maxEvidenceItems": 20,
+    "maxResultsPerQuery": 3,
+    "maxEvidenceItems": 12,
     "dateRestrict": null,
     "timeoutMs": 15000,
     "providers": {

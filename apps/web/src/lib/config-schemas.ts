@@ -955,8 +955,8 @@ export const SourceReliabilityConfigSchema = z.object({
    */
   evaluationSearch: z.object({
     provider: z.enum(["auto", "google-cse", "serpapi", "brave", "serper"]).default("auto"),
-    maxResultsPerQuery: z.number().int().min(1).max(10).default(5),
-    maxEvidenceItems: z.number().int().min(1).max(20).default(20),
+    maxResultsPerQuery: z.number().int().min(1).max(10).default(3),
+    maxEvidenceItems: z.number().int().min(1).max(20).default(12),
     dateRestrict: z.enum(["y", "m", "w"]).nullable().default(null),
     timeoutMs: z.number().int().min(5000).max(60000).default(15000),
     providers: z.object({
@@ -1003,8 +1003,8 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   evalUseSearch: true,
   evaluationSearch: {
     provider: "auto",
-    maxResultsPerQuery: 5,
-    maxEvidenceItems: 20,
+    maxResultsPerQuery: 3,
+    maxEvidenceItems: 12,
     dateRestrict: null,
     timeoutMs: 15000,
     providers: {
