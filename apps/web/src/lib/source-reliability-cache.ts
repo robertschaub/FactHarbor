@@ -19,47 +19,12 @@ import { DEFAULT_SR_CONFIG } from "./config-schemas";
 const SR_CACHE_CONFIG = {
   dbPath: process.env.FH_SR_CACHE_PATH || "./source-reliability.db",
   cacheTtlDays: DEFAULT_SR_CONFIG.cacheTtlDays,
-  cacheTtlByCategory: DEFAULT_SR_CONFIG.cacheTtlByCategory as Record<string, number> | undefined,
-  cacheTtlBySourceType: DEFAULT_SR_CONFIG.cacheTtlBySourceType as Record<string, number> | undefined,
 };
 
 export function setCacheTtlDays(days: number): void {
   if (Number.isFinite(days) && days > 0) {
     SR_CACHE_CONFIG.cacheTtlDays = Math.floor(days);
   }
-}
-
-export function setCacheTtlByCategory(map: Record<string, number> | undefined): void {
-  SR_CACHE_CONFIG.cacheTtlByCategory = map;
-}
-
-export function setCacheTtlBySourceType(map: Record<string, number> | undefined): void {
-  SR_CACHE_CONFIG.cacheTtlBySourceType = map;
-}
-
-/**
- * Resolve cache TTL in days using 3-tier lookup (first match wins):
- * 1. Per-sourceType TTL (if sourceType is known and in the map)
- * 2. Per-category TTL (if category is known and in the map)
- * 3. Flat cacheTtlDays fallback
- */
-export function resolveCacheTtlDays(category?: string | null, sourceType?: string | null): number {
-  // Tier 1: per-sourceType
-  if (sourceType && SR_CACHE_CONFIG.cacheTtlBySourceType) {
-    const sourceTypeTtl = SR_CACHE_CONFIG.cacheTtlBySourceType[sourceType];
-    if (typeof sourceTypeTtl === "number" && sourceTypeTtl > 0) {
-      return sourceTypeTtl;
-    }
-  }
-  // Tier 2: per-category
-  if (category && SR_CACHE_CONFIG.cacheTtlByCategory) {
-    const categoryTtl = SR_CACHE_CONFIG.cacheTtlByCategory[category];
-    if (typeof categoryTtl === "number" && categoryTtl > 0) {
-      return categoryTtl;
-    }
-  }
-  // Tier 3: flat fallback
-  return SR_CACHE_CONFIG.cacheTtlDays;
 }
 
 // ============================================================================
@@ -412,10 +377,8 @@ export async function setCachedScore(
 ): Promise<void> {
   const database = await getDb();
   const now = new Date();
-  // 3-tier TTL: sourceType → category → flat cacheTtlDays
-  const ttlDays = resolveCacheTtlDays(category, sourceType);
   const expiresAt = new Date(
-    now.getTime() + ttlDays * 24 * 60 * 60 * 1000
+    now.getTime() + SR_CACHE_CONFIG.cacheTtlDays * 24 * 60 * 60 * 1000
   );
 
   // Convert evidenceCited array to JSON string for storage

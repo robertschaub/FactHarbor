@@ -281,6 +281,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
       for (const providerInfo of primaryCandidates) {
         if (results.length >= options.maxResults) break;
+
         if (!providerInfo.available) {
           providersUsed.push(`${providerInfo.provider.name} (circuit-open)`);
           continue;
@@ -295,9 +296,8 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
           results.push(...providerResults);
           // 0 results is a valid response (not a failure); reset consecutive failures
           recordSuccess(providerInfo.provider.name, cbConfig);
-          // Fix 1.4: Stop after first provider that returns ANY results.
-          // Previously continued to fill remaining slots from fallback providers,
-          // creating inconsistent evidence pools (provider-mix variance).
+          // Stop after first provider that returns ANY results.
+          // Prevents inconsistent evidence pools (provider-mix variance).
           if (providerResults.length > 0) break;
         } catch (err) {
           if (err instanceof SearchProviderError) {

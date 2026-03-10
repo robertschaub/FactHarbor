@@ -188,7 +188,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       dailyQuotaLimit: 10000, // Adjust based on plan
     },
     serper: {
-      enabled: false,
+      enabled: true,
       priority: 2,
       dailyQuotaLimit: 0, // Paid per search
     },
@@ -899,7 +899,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   tigerScoreTier: "sonnet",
   tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
-  selfConsistencyTemperature: 0.4, // Alpha optimization: increased from 0.3 for broader exploration
+  selfConsistencyTemperature: 0.4,
+  challengerTemperature: 0.3,
   calibrationInverseGateAction: "warn",
   verdictGroundingPolicy: "disabled",
   verdictDirectionPolicy: "disabled",
@@ -935,13 +936,7 @@ export const SourceReliabilityConfigSchema = z.object({
   consensusThreshold: z.number().min(0).max(1).describe("Max score difference between models for consensus"),
 
   // === Cache Settings ===
-  cacheTtlDays: z.number().int().min(1).max(365).describe("Cache TTL in days (fallback for unrecognised categories)"),
-  cacheTtlByCategory: z.record(z.string(), z.number().int().min(1).max(365))
-    .optional()
-    .describe("Per-reliability-category cache TTL in days. Keys: highly_reliable, leaning_reliable, mixed, leaning_unreliable, unreliable, etc. Falls back to cacheTtlDays for missing keys."),
-  cacheTtlBySourceType: z.record(z.string(), z.number().int().min(1).max(365))
-    .optional()
-    .describe("Per-sourceType cache TTL in days. Keys: government, wire_service, etc. Highest priority in TTL lookup: sourceType → category → flat cacheTtlDays."),
+  cacheTtlDays: z.number().int().min(1).max(365).describe("Cache TTL in days"),
 
   // === Filtering ===
   filterEnabled: z.boolean().describe("Skip evaluation for low-value domains"),
@@ -953,31 +948,31 @@ export const SourceReliabilityConfigSchema = z.object({
   domainCooldownSec: z.number().int().min(0).max(3600).optional().describe("Cooldown between re-evaluating same domain"),
 
   // === Evaluation Search ===
-  evalUseSearch: z.boolean().optional().describe("Enable web search for SR evaluation evidence"),
-  evalSearchMaxResultsPerQuery: z
-    .number()
-    .int()
-    .min(1)
-    .max(10)
-    .optional()
-    .describe("Max search results per SR evaluation query"),
-  evalMaxEvidenceItems: z
-    .number()
-    .int()
-    .min(1)
-    .max(20)
-    .optional()
-    .describe("Max evidence items collected per SR evaluation"),
-  evalSearchDateRestrict: z
-    .enum(["y", "m", "w"])
-    .nullable()
-    .optional()
-    .describe("Date restrict for SR evaluation searches (y|m|w). Null uses search config."),
+  evalUseSearch: z.boolean().optional().describe("Enable web search for SR evaluation evidence (default: true)"),
+
+  /**
+   * SR-owned evaluation search settings.
+   */
+  evaluationSearch: z.object({
+    provider: z.enum(["auto", "google-cse", "serpapi", "brave", "serper"]).default("auto"),
+    maxResultsPerQuery: z.number().int().min(1).max(10).default(5),
+    maxEvidenceItems: z.number().int().min(1).max(20).default(20),
+    dateRestrict: z.enum(["y", "m", "w"]).nullable().default(null),
+    timeoutMs: z.number().int().min(5000).max(60000).default(15000),
+    providers: z.object({
+      googleCse: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 1, dailyQuotaLimit: 0 }),
+      serper: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 2, dailyQuotaLimit: 0 }),
+      serpapi: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 3, dailyQuotaLimit: 0 }),
+      brave: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 4, dailyQuotaLimit: 0 }),
+    }).default({}),
+  }).optional().describe("SR-owned search settings for evaluation evidence collection"),
+
   // === Performance & Reliability ===
   evalConcurrency: z.number().int().min(1).max(10).optional().describe("Max concurrent SR evaluations (default: 3)"),
   evalTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for individual SR evaluations (ms) (default: 90000)"),
   defaultConfidence: z.number().min(0).max(1).optional().describe("Default confidence for missing track records (default: 0.7)"),
   unknownSourceConfidence: z.number().min(0).max(1).optional().describe("Confidence assigned to unknown sources (default: 0.5)"),
+
 });
 
 export type SourceReliabilityConfig = z.infer<typeof SourceReliabilityConfigSchema>;
@@ -986,7 +981,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   // Core settings
   enabled: true,
   multiModel: true,
-  openaiModel: "gpt-4.1-mini",
+  openaiModel: "gpt-4.1",
 
   // Thresholds
   confidenceThreshold: 0.8,
@@ -994,28 +989,6 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
 
   // Cache
   cacheTtlDays: 90,
-  cacheTtlByCategory: {
-    highly_reliable: 60,
-    reliable: 60,
-    leaning_reliable: 45,
-    mixed: 21,
-    leaning_unreliable: 14,
-    unreliable: 7,
-    highly_unreliable: 7,
-  },
-  cacheTtlBySourceType: {
-    government: 21,
-    state_controlled_media: 21,
-    unknown: 21,
-    state_media: 30,
-    advocacy: 30,
-    platform_ugc: 45,
-    aggregator: 45,
-    editorial_publisher: 60,
-    wire_service: 90,
-    propaganda_outlet: 90,
-    known_disinformation: 90,
-  },
 
   // Filtering
   filterEnabled: true,
@@ -1028,9 +1001,19 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
 
   // Evaluation search
   evalUseSearch: true,
-  evalSearchMaxResultsPerQuery: 3,
-  evalMaxEvidenceItems: 12,
-  evalSearchDateRestrict: null,
+  evaluationSearch: {
+    provider: "auto",
+    maxResultsPerQuery: 5,
+    maxEvidenceItems: 20,
+    dateRestrict: null,
+    timeoutMs: 15000,
+    providers: {
+      googleCse: { enabled: true, priority: 1, dailyQuotaLimit: 0 },
+      serper: { enabled: true, priority: 2, dailyQuotaLimit: 0 },
+      serpapi: { enabled: true, priority: 3, dailyQuotaLimit: 0 },
+      brave: { enabled: true, priority: 4, dailyQuotaLimit: 0 },
+    },
+  },
   evalConcurrency: 5,
   evalTimeoutMs: 90000,
   defaultConfidence: 0.8,
@@ -1610,7 +1593,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   evidenceBalanceSkewThreshold: 0.8,
   evidenceBalanceMinDirectional: 3,
   evidenceSufficiencyMinItems: 3,
-  evidenceSufficiencyMinSourceTypes: 1, // Temporary mitigation approved 2026-03-03 until domain-diversity fallback stabilizes in production
+  evidenceSufficiencyMinSourceTypes: 2,
   evidenceSufficiencyMinDistinctDomains: 3,
   evidencePartitioningEnabled: true,
   contrarianRetrievalEnabled: true,

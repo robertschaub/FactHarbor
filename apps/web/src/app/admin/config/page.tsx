@@ -193,10 +193,14 @@ interface SRConfig {
   skipTlds: string[];
   rateLimitPerIp?: number;
   domainCooldownSec?: number;
-  evalUseSearch?: boolean;
-  evalSearchMaxResultsPerQuery?: number;
-  evalMaxEvidenceItems?: number;
-  evalSearchDateRestrict?: "y" | "m" | "w" | null;
+  evaluationSearch?: {
+    provider: "auto" | "google-cse" | "serpapi" | "brave" | "serper";
+    maxResultsPerQuery: number;
+    maxEvidenceItems: number;
+    dateRestrict: "y" | "m" | "w" | null;
+    timeoutMs: number;
+    providers: Record<string, { enabled: boolean; priority: number }>;
+  };
 }
 
 // ============================================================================
@@ -2055,66 +2059,119 @@ function SRConfigForm({
 
       {/* Evaluation Search */}
       <h3 className={styles.formSectionTitle}>Evaluation Search</h3>
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>
-          <input
-            type="checkbox"
-            checked={config.evalUseSearch ?? false}
-            onChange={(e) => updateField("evalUseSearch", e.target.checked)}
-            style={{ marginRight: 8 }}
-          />
-          Enable Search During Evaluation
-        </label>
-        <div className={styles.formHelp}>Uses web search results to ground SR evaluations</div>
-      </div>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Configure search settings specifically for Source Reliability evaluations. These are independent of the main
+        analysis pipeline settings.
+      </p>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Max Results per Query</label>
           <input
             type="number"
             className={styles.formInput}
-            value={config.evalSearchMaxResultsPerQuery ?? 3}
+            value={config.evaluationSearch?.maxResultsPerQuery ?? 3}
             min={1}
             max={10}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              updateField("evalSearchMaxResultsPerQuery", isNaN(v) ? 3 : v);
+              const current = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
+              updateField("evaluationSearch", { ...current, maxResultsPerQuery: isNaN(v) ? 3 : v });
             }}
           />
-          <div className={styles.formHelp}>Upper bound per SR evaluation query</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Max Evidence Items</label>
           <input
             type="number"
             className={styles.formInput}
-            value={config.evalMaxEvidenceItems ?? 12}
+            value={config.evaluationSearch?.maxEvidenceItems ?? 12}
             min={1}
             max={20}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              updateField("evalMaxEvidenceItems", isNaN(v) ? 12 : v);
+              const current = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
+              updateField("evaluationSearch", { ...current, maxEvidenceItems: isNaN(v) ? 12 : v });
             }}
           />
-          <div className={styles.formHelp}>Total evidence items collected per evaluation</div>
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Date Restrict</label>
-          <select
+          <label className={styles.formLabel}>Timeout (ms)</label>
+          <input
+            type="number"
             className={styles.formInput}
-            value={config.evalSearchDateRestrict ?? ""}
+            value={config.evaluationSearch?.timeoutMs ?? 15000}
+            min={5000}
+            max={60000}
+            step={1000}
             onChange={(e) => {
-              const v = e.target.value as "" | "y" | "m" | "w";
-              updateField("evalSearchDateRestrict", v === "" ? null : v);
+              const v = parseInt(e.target.value, 10);
+              const current = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
+              updateField("evaluationSearch", { ...current, timeoutMs: isNaN(v) ? 15000 : v });
             }}
-          >
-            <option value="">Use search config</option>
-            <option value="y">Past year</option>
-            <option value="m">Past month</option>
-            <option value="w">Past week</option>
-          </select>
-          <div className={styles.formHelp}>Override search recency for SR evaluation</div>
+          />
         </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Date Restrict</label>
+        <select
+          className={styles.formInput}
+          value={config.evaluationSearch?.dateRestrict ?? ""}
+          onChange={(e) => {
+            const v = e.target.value as "" | "y" | "m" | "w";
+            const current = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
+            updateField("evaluationSearch", { ...current, dateRestrict: v === "" ? null : v });
+          }}
+        >
+          <option value="">No restriction</option>
+          <option value="y">Past year</option>
+          <option value="m">Past month</option>
+          <option value="w">Past week</option>
+        </select>
+      </div>
+
+      <h4 style={{ fontSize: 13, fontWeight: 600, marginTop: 16, marginBottom: 8 }}>SR Search Providers</h4>
+      <div className={styles.providerGrid}>
+        {["googleCse", "serpapi", "brave", "serper"].map((providerKey) => {
+          const evalSearch = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
+          const providerConfig = evalSearch.providers[providerKey] || { enabled: false, priority: 5 };
+          
+          return (
+            <div key={providerKey} className={styles.providerCard} style={{ padding: 10 }}>
+              <strong style={{ fontSize: 12 }}>{providerKey}</strong>
+              <div className={styles.formGroup} style={{ marginBottom: 4 }}>
+                <label className={styles.formLabel} style={{ fontSize: 11 }}>
+                  <input
+                    type="checkbox"
+                    checked={providerConfig.enabled}
+                    onChange={(e) => {
+                      const nextProviders = { ...evalSearch.providers, [providerKey]: { ...providerConfig, enabled: e.target.checked } };
+                      updateField("evaluationSearch", { ...evalSearch, providers: nextProviders });
+                    }}
+                    style={{ marginRight: 4 }}
+                  />
+                  Enabled
+                </label>
+              </div>
+              <div className={styles.formGroup}>
+                <input
+                  type="number"
+                  className={styles.formInput}
+                  style={{ padding: "2px 4px", fontSize: 11 }}
+                  value={providerConfig.priority}
+                  min={1}
+                  max={10}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    const nextProviders = { ...evalSearch.providers, [providerKey]: { ...providerConfig, priority: isNaN(v) ? 5 : v } };
+                    updateField("evaluationSearch", { ...evalSearch, providers: nextProviders });
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -47,7 +47,6 @@ import {
 import { getEnv, checkRunnerKey } from "@/lib/auth";
 import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
 
-
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
 
@@ -64,10 +63,9 @@ let RATE_LIMIT_PER_IP = DEFAULT_SR_CONFIG.rateLimitPerIp ?? 10;
 let DOMAIN_COOLDOWN_SEC = DEFAULT_SR_CONFIG.domainCooldownSec ?? 60;
 let SR_SEARCH_CONFIG: SearchConfig = DEFAULT_SEARCH_CONFIG;
 let SR_EVAL_USE_SEARCH = DEFAULT_SR_CONFIG.evalUseSearch ?? true;
-let SR_EVAL_MAX_RESULTS_PER_QUERY = DEFAULT_SR_CONFIG.evalSearchMaxResultsPerQuery ?? 3;
-let SR_EVAL_MAX_EVIDENCE_ITEMS = DEFAULT_SR_CONFIG.evalMaxEvidenceItems ?? 12;
-let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null =
-  DEFAULT_SR_CONFIG.evalSearchDateRestrict ?? null;
+let SR_EVAL_MAX_RESULTS_PER_QUERY = DEFAULT_SR_CONFIG.evaluationSearch?.maxResultsPerQuery ?? 5;
+let SR_EVAL_MAX_EVIDENCE_ITEMS = DEFAULT_SR_CONFIG.evaluationSearch?.maxEvidenceItems ?? 20;
+let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null = DEFAULT_SR_CONFIG.evaluationSearch?.dateRestrict ?? null;
 
 debugLog(`[SR-Eval] Configuration check`, {
   anthropicKey: hasAnthropicKey ? "configured" : "MISSING",
@@ -2611,20 +2609,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const [srConfigResult, searchConfigResult] = await Promise.all([
-    getConfig("sr", "default"),
-    getConfig("search", "default"),
-  ]);
+  const srConfigResult = await getConfig("sr", "default");
   const srConfig = srConfigResult.config;
-  SR_SEARCH_CONFIG = searchConfigResult.config;
+
+  // Decision A1/A2: Derive search config directly from SR evaluationSearch settings.
+  // No longer loads shared 'search' profile from UCM and NO LONGER spreads DEFAULT_SEARCH_CONFIG.
+  // This ensures SR is fully independent from Analysis-side default changes (e.g. domainBlacklist).
+  const evalSearch = srConfig.evaluationSearch || DEFAULT_SR_CONFIG.evaluationSearch!;
+
+  SR_SEARCH_CONFIG = {
+    enabled: true,
+    provider: evalSearch.provider,
+    mode: "standard",
+    maxResults: evalSearch.maxResultsPerQuery,
+    maxSourcesPerIteration: evalSearch.maxResultsPerQuery,
+    timeoutMs: evalSearch.timeoutMs,
+    dateRestrict: evalSearch.dateRestrict,
+    domainWhitelist: [],
+    domainBlacklist: [], // SR uses empty blacklist to ensure broad coverage
+    providers: {
+      googleCse: { ...evalSearch.providers.googleCse, dailyQuotaLimit: evalSearch.providers.googleCse.dailyQuotaLimit ?? 0 },
+      serpapi: { ...evalSearch.providers.serpapi, dailyQuotaLimit: evalSearch.providers.serpapi.dailyQuotaLimit ?? 0 },
+      brave: { ...evalSearch.providers.brave, dailyQuotaLimit: evalSearch.providers.brave.dailyQuotaLimit ?? 0 },
+      serper: { ...evalSearch.providers.serper, dailyQuotaLimit: evalSearch.providers.serper.dailyQuotaLimit ?? 0 },
+    },
+    cache: { enabled: true, ttlDays: 7 }, // Internal search cache remains enabled
+  };
+
   SR_OPENAI_MODEL = srConfig.openaiModel;
   RATE_LIMIT_PER_IP = srConfig.rateLimitPerIp ?? RATE_LIMIT_PER_IP;
   DOMAIN_COOLDOWN_SEC = srConfig.domainCooldownSec ?? DOMAIN_COOLDOWN_SEC;
   SR_EVAL_USE_SEARCH = srConfig.evalUseSearch ?? SR_EVAL_USE_SEARCH;
-  SR_EVAL_MAX_RESULTS_PER_QUERY =
-    srConfig.evalSearchMaxResultsPerQuery ?? SR_EVAL_MAX_RESULTS_PER_QUERY;
-  SR_EVAL_MAX_EVIDENCE_ITEMS = srConfig.evalMaxEvidenceItems ?? SR_EVAL_MAX_EVIDENCE_ITEMS;
-  SR_EVAL_DATE_RESTRICT = srConfig.evalSearchDateRestrict ?? SR_EVAL_DATE_RESTRICT;
+  SR_EVAL_MAX_RESULTS_PER_QUERY = evalSearch.maxResultsPerQuery;
+  SR_EVAL_MAX_EVIDENCE_ITEMS = evalSearch.maxEvidenceItems;
+  SR_EVAL_DATE_RESTRICT = evalSearch.dateRestrict;
 
   const effectiveMultiModel = raw.multiModel !== undefined ? body.multiModel : srConfig.multiModel;
   const effectiveConfidenceThreshold =

@@ -11,6 +11,7 @@ import {
   getCacheStats,
   closeSearchCacheDb,
 } from "@/lib/search-cache";
+import { DEFAULT_SEARCH_CONFIG } from "@/lib/config-schemas";
 import type { WebSearchOptions, WebSearchResult } from "@/lib/web-search";
 
 const TEST_CACHE_CONFIG = { enabled: true, ttlDays: 7 };
@@ -175,4 +176,5 @@ describe("Search Cache", () => {
     const cached = await getCachedSearchResults(options, { enabled: false, ttlDays: 7 });
     expect(cached).toBeNull();
   });
+
 });

@@ -131,16 +131,16 @@ export const WEAK_FOUNDEDNESS_THRESHOLD = 2;
 /**
  * Higher confidence required for high scores (skeptical default).
  * Accepting a high score should be harder than accepting a low score.
- * Tuned: lowered requirements for borderline ratings to allow more through.
+ * These are structural constants, not UCM-tunable.
  */
 export const CONFIDENCE_REQUIREMENTS: Record<string, number> = {
-  highly_reliable: 0.85,      // Need strong evidence for best rating
-  reliable: 0.75,             // Lowered from 0.80 - consensus boost often lands ~79%
-  leaning_reliable: 0.65,     // Lowered from 0.70 - allows consensus to pass more easily
-  mixed: 0.55,                // Lowered from 0.65 - allows borderline sources
-  leaning_unreliable: 0.50,   // Lowered from 0.55
-  unreliable: 0.45,           // Lowered from 0.50
-  highly_unreliable: 0.40,    // Lowered from 0.45
+  highly_reliable: 0.85,
+  reliable: 0.75,
+  leaning_reliable: 0.65,
+  mixed: 0.55,
+  leaning_unreliable: 0.50,
+  unreliable: 0.45,
+  highly_unreliable: 0.40,
 };
 
 /**

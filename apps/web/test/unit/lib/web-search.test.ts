@@ -10,6 +10,7 @@ const {
   mockRecordFailure,
   mockRecordSearchQuery,
   mockSearchGoogleCse,
+  mockSearchBrave,
   mockSearchWikipedia,
   mockSearchSemanticScholar,
   mockSearchGoogleFactCheck,
@@ -21,6 +22,7 @@ const {
   mockRecordFailure: vi.fn(),
   mockRecordSearchQuery: vi.fn(),
   mockSearchGoogleCse: vi.fn(),
+  mockSearchBrave: vi.fn(),
   mockSearchWikipedia: vi.fn(),
   mockSearchSemanticScholar: vi.fn(),
   mockSearchGoogleFactCheck: vi.fn(),
@@ -45,6 +47,10 @@ vi.mock("@/lib/search-google-cse", () => ({
   searchGoogleCse: mockSearchGoogleCse,
 }));
 
+vi.mock("@/lib/search-brave", () => ({
+  searchBrave: mockSearchBrave,
+}));
+
 vi.mock("@/lib/search-wikipedia", () => ({
   searchWikipedia: mockSearchWikipedia,
 }));
@@ -62,6 +68,7 @@ describe("searchWebWithProvider", () => {
     vi.clearAllMocks();
     vi.stubEnv("GOOGLE_CSE_API_KEY", "test-key");
     vi.stubEnv("GOOGLE_CSE_ID", "test-cse");
+    vi.stubEnv("BRAVE_API_KEY", "test-brave");
     mockGetCachedSearchResults.mockResolvedValue(null);
     mockCacheSearchResults.mockResolvedValue(undefined);
     mockIsProviderAvailable.mockReturnValue(true);
@@ -69,6 +76,7 @@ describe("searchWebWithProvider", () => {
     mockRecordFailure.mockReturnValue(undefined);
     mockRecordSearchQuery.mockReturnValue(undefined);
     mockSearchGoogleCse.mockResolvedValue([]);
+    mockSearchBrave.mockResolvedValue([]);
     mockSearchWikipedia.mockResolvedValue([]);
     mockSearchSemanticScholar.mockResolvedValue([]);
     mockSearchGoogleFactCheck.mockResolvedValue([]);
@@ -129,5 +137,19 @@ describe("searchWebWithProvider", () => {
       { url: "https://example.com/wiki", title: "Wiki", snippet: "Wiki snippet" },
     ]);
     expect(response.providersUsed).toContain("Wikipedia");
+  });
+
+  it("falls back to DEFAULT_SEARCH_CONFIG if config is missing evaluationSearch block", async () => {
+    // If we pass no config, it uses global defaults
+    mockSearchGoogleCse.mockResolvedValue([{ url: "https://def.com", title: "Def", snippet: null }]);
+
+    const response = await searchWebWithProvider({
+      query: "test query",
+      maxResults: 5,
+      // No config passed -> should use DEFAULT_SEARCH_CONFIG
+    });
+
+    expect(mockSearchGoogleCse).toHaveBeenCalled();
+    expect(response.results).toHaveLength(1);
   });
 });
