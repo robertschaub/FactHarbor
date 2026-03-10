@@ -147,8 +147,9 @@ export async function POST(req: Request) {
           continue;
         }
 
-        // Call internal evaluate endpoint
-        const evalUrl = new URL("/api/internal/evaluate-source", req.url);
+        // Call internal evaluate endpoint — must use localhost (not req.url which may be the public HTTPS hostname)
+        const internalBase = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
+        const evalUrl = new URL("/api/internal/evaluate-source", internalBase);
         const evalResponse = await fetch(evalUrl.toString(), {
           method: "POST",
           headers: {
