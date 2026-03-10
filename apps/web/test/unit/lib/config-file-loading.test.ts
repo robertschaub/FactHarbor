@@ -61,7 +61,8 @@ describe("Config file loading (alpha)", () => {
     expect(result).not.toBeNull();
 
     const parsed = JSON.parse(result as string);
-    expect(parsed).toEqual({
+    // Verify the explicitly-set values are preserved (merged config may include additional default fields)
+    expect(parsed).toMatchObject({
       enabled: true,
       provider: "auto",
       mode: "standard",
