@@ -1034,7 +1034,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   domainCooldownSec: 60,
 
   // Evaluation search
-  evalUseSearch: false,
+  evalUseSearch: true,
   evalSearchMaxResultsPerQuery: 3,
   evalMaxEvidenceItems: 12,
   evalSearchDateRestrict: null,

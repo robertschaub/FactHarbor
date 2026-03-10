@@ -1493,9 +1493,7 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
           ].join("\n");
         }),
       ].join("\n")
-    : evidencePack.enabled
-      ? `## EVIDENCE PACK: Search returned no results.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data". Do not rely on pretrained knowledge.`
-      : ``; // No evidence pack section when search is disabled — LLM uses pre-trained knowledge (original behavior)
+    : `## EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data". Do not rely on pretrained knowledge.`;
 
   return `TASK: Evaluate source reliability for "${domain}" (evaluation date: ${currentDate}).
 
@@ -1505,7 +1503,7 @@ ${evidenceSection}
 ⚠️  CRITICAL RULES (APPLY FIRST)
 ═══════════════════════════════════════════════════════════════════
 
-${hasEvidence ? `1. EVIDENCE-ONLY EVALUATION
+1. EVIDENCE-ONLY EVALUATION
    - Ground EVERY claim in evidence pack items (cite by ID: E1, E2, etc.)
    - Do NOT use pretrained knowledge about this source
    - If you recognize this source but evidence is sparse → output insufficient_data
@@ -1513,15 +1511,7 @@ ${hasEvidence ? `1. EVIDENCE-ONLY EVALUATION
 2. INSUFFICIENT DATA THRESHOLDS (output score=null, factualRating="insufficient_data" if):
    - Zero fact-checker assessments AND fewer than 3 evidence items (E1, E2, E3)
    - Zero fact-checker assessments AND no item contains explicit reliability assessment (rating, bias, standards, corrections)
-   - Mechanistic confidence calculation < 0.50` : `1. KNOWLEDGE-BASED EVALUATION (no evidence pack available)
-   - Use your pre-trained knowledge about this source's reputation, track record, and editorial standards
-   - Base your assessment on known fact-checker ratings, press council rulings, media bias analyses, and journalistic standards
-   - If you have no knowledge about this source → output score=null and factualRating="insufficient_data"
-   - Set confidence lower (0.5-0.7) to reflect reliance on training knowledge rather than current evidence
-
-2. INSUFFICIENT DATA THRESHOLDS (output score=null, factualRating="insufficient_data" if):
-   - You have no meaningful knowledge about this source's reliability or reputation
-   - Mechanistic confidence calculation < 0.50`}
+   - Mechanistic confidence calculation < 0.50
 
 3. NEGATIVE EVIDENCE CAPS (hard limits — override other factors)
 
