@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-07
 **Author:** Lead Architect (Claude Code, Opus 4.6)
-**Status:** Review-ready — awaiting Captain approval
+**Status:** In progress — MT-1 ✅ MT-3 ✅ (2026-03-10) | MT-2 pending | Phase 1 config pending
 **Scope:** Consolidation of three agent investigations into one implementation-ready plan
 
 ---
@@ -335,7 +335,7 @@ Expected effect:
 - MT-2 does not surprise UI/report consumers
 - regression debugging remains possible even before full Phase 2 telemetry lands
 
-#### Phase MT-1 — Stop the premature collapse (highest priority)
+#### Phase MT-1 — Stop the premature collapse (highest priority) ✅ Implemented 2026-03-10
 
 **Goal:** ensure Stage 2 main research actually runs before sufficiency is declared.
 
@@ -377,7 +377,7 @@ Expected effect:
 - boundary counts become analytically honest
 - `CB_01` no longer looks dominant just because it happens to be first
 
-#### Phase MT-3 — Use `distinctEvents` to widen coverage
+#### Phase MT-3 — Use `distinctEvents` to widen coverage ✅ Implemented 2026-03-10
 
 **Goal:** make Stage 2 research honor multi-proceeding inputs when the input itself already names multiplicity.
 
