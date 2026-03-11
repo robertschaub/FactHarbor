@@ -2,7 +2,7 @@
   "schemaVersion": "3.0.0",
   "enabled": true,
   "multiModel": true,
-  "openaiModel": "gpt-4.1-mini",
+  "openaiModel": "gpt-4o-mini",
   "confidenceThreshold": 0.8,
   "consensusThreshold": 0.2,
   "cacheTtlDays": 90,
