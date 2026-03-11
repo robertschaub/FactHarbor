@@ -31,15 +31,26 @@ describe("parseEvidenceQualityAssessmentResponse", () => {
     const parsed = parseEvidenceQualityAssessmentResponse(
       JSON.stringify({
         classifications: [
-          { id: "E1", probativeValue: "HIGH", evidenceCategory: "fact_checker_rating" },
-          { id: "E2", probativeValue: "medium", evidenceCategory: "unknown_label" },
+          { id: "E1", probativeValue: "HIGH", evidenceCategory: "fact_checker_rating", relevant: true },
+          { id: "E2", probativeValue: "medium", evidenceCategory: "unknown_label", relevant: false },
         ],
       }),
     );
     expect(parsed).toEqual([
-      { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating" },
-      { id: "E2", probativeValue: "medium", evidenceCategory: "other" },
+      { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating", relevant: true },
+      { id: "E2", probativeValue: "medium", evidenceCategory: "other", relevant: false },
     ]);
+  });
+
+  it("defaults relevant to false when missing from LLM response", () => {
+    const parsed = parseEvidenceQualityAssessmentResponse(
+      JSON.stringify({
+        classifications: [
+          { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating" },
+        ],
+      }),
+    );
+    expect(parsed[0].relevant).toBe(false);
   });
 
   it("throws on invalid json", () => {
@@ -50,16 +61,19 @@ describe("parseEvidenceQualityAssessmentResponse", () => {
 describe("mergeEvidenceQualityAssessment", () => {
   it("guarantees N-in N-out with defaults, unknown ID ignore, and first-duplicate wins", () => {
     const merged = mergeEvidenceQualityAssessment(baseItems, [
-      { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating" },
-      { id: "E1", probativeValue: "low", evidenceCategory: "opinion" }, // duplicate ignored
-      { id: "E9", probativeValue: "medium", evidenceCategory: "academic_research" }, // unknown ID
+      { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating", relevant: true },
+      { id: "E1", probativeValue: "low", evidenceCategory: "opinion", relevant: false }, // duplicate ignored
+      { id: "E9", probativeValue: "medium", evidenceCategory: "academic_research", relevant: true }, // unknown ID
     ]);
 
     expect(merged.items).toHaveLength(baseItems.length);
     expect(merged.items[0].probativeValue).toBe("high");
     expect(merged.items[0].evidenceCategory).toBe("fact_checker_rating");
+    expect(merged.items[0].relevant).toBe(true);
+    // Unassessed items default to relevant: true (conservative — don't filter out)
     expect(merged.items[1].probativeValue).toBe("low");
     expect(merged.items[1].evidenceCategory).toBe("unclassified");
+    expect(merged.items[1].relevant).toBe(true);
     expect(merged.unknownIds).toEqual(["E9"]);
     expect(merged.duplicateIds).toEqual(["E1"]);
   });
@@ -90,7 +104,7 @@ describe("assessEvidenceQuality", () => {
     const classify = vi.fn(async () =>
       JSON.stringify({
         classifications: [
-          { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating" },
+          { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating", relevant: true },
         ],
       }),
     );
@@ -211,9 +225,9 @@ describe("assessEvidenceQuality", () => {
       classify: async () =>
         JSON.stringify({
           classifications: [
-            { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating" },
-            { id: "E2", probativeValue: "medium", evidenceCategory: "journalistic_analysis" },
-            { id: "E3", probativeValue: "low", evidenceCategory: "general_mention" },
+            { id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating", relevant: true },
+            { id: "E2", probativeValue: "medium", evidenceCategory: "journalistic_analysis", relevant: true },
+            { id: "E3", probativeValue: "low", evidenceCategory: "general_mention", relevant: false },
           ],
         }),
     });

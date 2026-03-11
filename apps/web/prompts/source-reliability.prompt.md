@@ -220,10 +220,17 @@ NOT INDEPENDENT ASSESSORS:
 
 ## EVIDENCE QUALITY ASSESSMENT TASK
 
-TASK: For each evidence item about "${domain}", classify:
+TASK: For each evidence item about "${domain}", classify THREE fields:
 
-1. probativeValue: high | medium | low
-2. evidenceCategory:
+1. relevant: true | false
+   Is this search result ABOUT the reliability, credibility, bias, or journalistic quality
+   of "${domain}"? Results that merely cite, quote, or reference the source without
+   assessing its reliability are NOT relevant. Results that discuss the source's ownership,
+   editorial standards, fact-check ratings, bias assessments, or trustworthiness ARE relevant.
+   When in doubt, mark relevant: true (prefer false negatives in quality over false negatives in coverage).
+
+2. probativeValue: high | medium | low
+3. evidenceCategory:
    fact_checker_rating | press_council_ruling | academic_research | journalistic_analysis |
    industry_report | general_mention | opinion | self_published | other | unclassified
 
@@ -240,6 +247,8 @@ Guidance:
   Examples: blog posts mentioning the source in passing, social media references,
   opinion pieces without evidence, forum discussions.
 - If uncertain, prefer conservative labeling (low + unclassified).
+- Items marked relevant: false should still receive probativeValue and evidenceCategory
+  (for diagnostic purposes), but will be excluded from the evaluation.
 
 Evidence items:
 ${itemsBlock}
@@ -254,6 +263,7 @@ Return JSON only (no markdown, no commentary):
   "classifications": [
     {
       "id": "E1",
+      "relevant": true,
       "probativeValue": "high|medium|low",
       "evidenceCategory": "fact_checker_rating|press_council_ruling|academic_research|journalistic_analysis|industry_report|general_mention|opinion|self_published|other|unclassified"
     }

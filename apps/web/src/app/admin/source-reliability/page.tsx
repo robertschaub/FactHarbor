@@ -24,6 +24,46 @@ interface CachedScore {
   identifiedEntity?: string | null; // The organization evaluated
 }
 
+type ProbativeValue = "high" | "medium" | "low";
+
+interface EvidencePackItemView {
+  id?: string;
+  url?: string;
+  title?: string;
+  snippet?: string | null;
+  query?: string;
+  provider?: string;
+  probativeValue?: ProbativeValue | string;
+  evidenceCategory?: string;
+  enrichmentVersion?: number;
+}
+
+interface EvidencePackQualityAssessmentView {
+  status?: "applied" | "skipped" | "failed";
+  version?: number;
+  model?: string;
+  timeoutMs?: number;
+  latencyMs?: number;
+  assessedItemCount?: number;
+  skippedReason?: string;
+  errorType?: string;
+}
+
+interface EvidencePackView {
+  providersUsed: string[];
+  queries: string[];
+  items: EvidencePackItemView[];
+  qualityAssessment?: EvidencePackQualityAssessmentView;
+}
+
+interface ExecutionTraceStep {
+  key: string;
+  title: string;
+  status: string;
+  tone: "neutral" | "success" | "warning";
+  details: string[];
+}
+
 interface CacheStats {
   totalEntries: number;
   expiredEntries: number;
@@ -491,6 +531,212 @@ export default function SourceReliabilityPage() {
     return `${month}/${day}/${year} ${hours}:${minutes}`;
   };
 
+  const parseEvidencePack = (evidencePackJson?: string | null): EvidencePackView | null => {
+    if (!evidencePackJson) return null;
+    try {
+      const parsed = JSON.parse(evidencePackJson) as Record<string, unknown>;
+      const itemsRaw = Array.isArray(parsed?.items) ? parsed.items : [];
+      const items: EvidencePackItemView[] = [];
+      for (const item of itemsRaw) {
+        if (!item || typeof item !== "object") continue;
+        const row = item as Record<string, unknown>;
+        items.push({
+          id: typeof row.id === "string" ? row.id : undefined,
+          url: typeof row.url === "string" ? row.url : undefined,
+          title: typeof row.title === "string" ? row.title : undefined,
+          snippet: typeof row.snippet === "string" || row.snippet === null ? row.snippet : null,
+          query: typeof row.query === "string" ? row.query : undefined,
+          provider: typeof row.provider === "string" ? row.provider : undefined,
+          probativeValue: typeof row.probativeValue === "string" ? row.probativeValue : undefined,
+          evidenceCategory:
+            typeof row.evidenceCategory === "string" ? row.evidenceCategory : undefined,
+          enrichmentVersion:
+            typeof row.enrichmentVersion === "number" ? row.enrichmentVersion : undefined,
+        });
+      }
+      const providersUsed = Array.isArray(parsed?.providersUsed)
+        ? parsed.providersUsed.filter((provider): provider is string => typeof provider === "string")
+        : [];
+      const queries = Array.isArray(parsed?.queries)
+        ? parsed.queries.filter((query): query is string => typeof query === "string")
+        : [];
+      const qualityAssessment =
+        parsed?.qualityAssessment && typeof parsed.qualityAssessment === "object"
+          ? (parsed.qualityAssessment as EvidencePackQualityAssessmentView)
+          : undefined;
+      return { items, providersUsed, queries, qualityAssessment };
+    } catch {
+      return null;
+    }
+  };
+
+  const summarizeProbativeDistribution = (items: EvidencePackItemView[]) => {
+    const counts: Record<ProbativeValue, number> = { high: 0, medium: 0, low: 0 };
+    let unknown = 0;
+    for (const item of items) {
+      const bucket = typeof item.probativeValue === "string" ? item.probativeValue.toLowerCase() : "";
+      if (bucket === "high" || bucket === "medium" || bucket === "low") {
+        counts[bucket] += 1;
+      } else {
+        unknown += 1;
+      }
+    }
+    return { ...counts, unknown };
+  };
+
+  const buildExecutionTrace = (
+    entry: CachedScore,
+    evidencePack: EvidencePackView | null,
+  ): ExecutionTraceStep[] => {
+    const steps: ExecutionTraceStep[] = [];
+
+    if (evidencePack) {
+      const providerCounts = new Map<string, number>();
+      for (const item of evidencePack.items) {
+        if (!item.provider) continue;
+        providerCounts.set(item.provider, (providerCounts.get(item.provider) ?? 0) + 1);
+      }
+      const providers = evidencePack.providersUsed.length > 0
+        ? evidencePack.providersUsed
+        : Array.from(providerCounts.keys());
+      const providerSummary = providers.length > 0
+        ? providers
+            .map((provider) =>
+              providerCounts.has(provider)
+                ? `${provider} (${providerCounts.get(provider)})`
+                : provider,
+            )
+            .join(", ")
+        : "unknown";
+      const queryPreview = evidencePack.queries.slice(0, 3).join(" | ");
+
+      steps.push({
+        key: "search",
+        title: "Search Acquisition",
+        status: evidencePack.items.length > 0 ? "completed" : "completed (no retained items)",
+        tone: "neutral",
+        details: [
+          `Providers: ${providerSummary}`,
+          `Queries: ${evidencePack.queries.length}${queryPreview ? ` (${queryPreview}${evidencePack.queries.length > 3 ? " …" : ""})` : ""}`,
+          `Evidence items retained: ${evidencePack.items.length}`,
+        ],
+      });
+    } else {
+      steps.push({
+        key: "search",
+        title: "Search Acquisition",
+        status: "legacy cache entry (details unavailable)",
+        tone: "neutral",
+        details: ["No evidence-pack metadata found for this cached entry."],
+      });
+    }
+
+    const qa = evidencePack?.qualityAssessment;
+    if (!qa) {
+      steps.push({
+        key: "enrichment",
+        title: "Evidence Enrichment",
+        status: "not available (older cache schema)",
+        tone: "neutral",
+        details: ["This entry does not include enrichment metadata."],
+      });
+    } else if (qa.status === "applied") {
+      const distribution = summarizeProbativeDistribution(evidencePack?.items ?? []);
+      const distributionLine = `Probative tiers H/M/L: ${distribution.high}/${distribution.medium}/${distribution.low}`;
+      steps.push({
+        key: "enrichment",
+        title: "Evidence Enrichment",
+        status: "applied",
+        tone: "success",
+        details: [
+          `Model: ${qa.model ?? "unknown"}`,
+          `Assessed items: ${qa.assessedItemCount ?? evidencePack?.items.length ?? 0}`,
+          distribution.unknown > 0
+            ? `${distributionLine} (+${distribution.unknown} unlabeled)`
+            : distributionLine,
+          qa.latencyMs ? `Latency: ${qa.latencyMs}ms` : "Latency: n/a",
+        ],
+      });
+    } else if (qa.status === "skipped") {
+      steps.push({
+        key: "enrichment",
+        title: "Evidence Enrichment",
+        status: `skipped (${qa.skippedReason ?? "unspecified"})`,
+        tone: "neutral",
+        details: [
+          `Model: ${qa.model ?? "n/a"}`,
+          qa.timeoutMs ? `Configured timeout: ${qa.timeoutMs}ms` : "Configured timeout: n/a",
+        ],
+      });
+    } else {
+      steps.push({
+        key: "enrichment",
+        title: "Evidence Enrichment",
+        status: `failed (${qa.errorType ?? "unknown"})`,
+        tone: "warning",
+        details: [
+          `Model: ${qa.model ?? "unknown"}`,
+          qa.timeoutMs ? `Timeout budget: ${qa.timeoutMs}ms` : "Timeout budget: n/a",
+          "Fallback behavior: continued with flat evidence weighting",
+        ],
+      });
+    }
+
+    steps.push({
+      key: "primary",
+      title: "Primary Evaluation",
+      status: "completed",
+      tone: "neutral",
+      details: [
+        `Model: ${entry.modelPrimary || "unknown"}`,
+        `Output: score ${formatScore(entry.score)} with ${formatScore(entry.confidence)} confidence`,
+      ],
+    });
+
+    if (entry.modelSecondary) {
+      steps.push({
+        key: "refinement",
+        title: "Secondary Cross-Check",
+        status: entry.consensusAchieved
+          ? "cross-checked and refined"
+          : entry.fallbackUsed
+            ? "disagreement → fallback applied"
+            : "disagreement",
+        tone: entry.consensusAchieved ? "success" : "warning",
+        details: [
+          `Model: ${entry.modelSecondary}`,
+          entry.fallbackUsed && entry.fallbackReason
+            ? `Fallback reason: ${entry.fallbackReason}`
+            : "Fallback reason: n/a",
+        ],
+      });
+    } else {
+      steps.push({
+        key: "refinement",
+        title: "Secondary Cross-Check",
+        status: "not configured (single-model mode)",
+        tone: "neutral",
+        details: ["Only the primary model was used for this evaluation."],
+      });
+    }
+
+    const ttlMs = new Date(entry.expiresAt).getTime() - new Date(entry.evaluatedAt).getTime();
+    const ttlDays = Number.isFinite(ttlMs) ? Math.max(0, Math.round(ttlMs / (1000 * 60 * 60 * 24))) : null;
+    steps.push({
+      key: "cache",
+      title: "Cache Lifecycle",
+      status: "cached",
+      tone: "neutral",
+      details: [
+        `Evaluated: ${formatDate(entry.evaluatedAt)}`,
+        `Expires: ${formatDate(entry.expiresAt)}`,
+        `TTL window: ${ttlDays !== null ? `~${ttlDays} days` : "n/a"}`,
+      ],
+    });
+
+    return steps;
+  };
+
   // 7-band credibility scale (original ranges for backward compatibility with cached entries)
   const getScoreColor = (score: number | null): string => {
     if (score === null) return "#ffffff"; // white - insufficient data
@@ -865,6 +1111,8 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
   }
 
   const totalPages = data ? Math.ceil(data.total / pageSize) : 0;
+  const selectedEvidencePack = selectedEntry ? parseEvidencePack(selectedEntry.evidencePack) : null;
+  const executionTrace = selectedEntry ? buildExecutionTrace(selectedEntry, selectedEvidencePack) : [];
 
   return (
     <div className={styles.container}>
@@ -1372,54 +1620,67 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                 return null;
               })()}
 
-              {selectedEntry.evidencePack && (() => {
-                try {
-                  const pack = JSON.parse(selectedEntry.evidencePack);
-                  const items = Array.isArray(pack?.items) ? pack.items : [];
-                  const queries = Array.isArray(pack?.queries) ? pack.queries : [];
-                  const providers = Array.isArray(pack?.providersUsed) ? pack.providersUsed : [];
-                  if (items.length === 0) return null;
-
-                  return (
-                    <div className={styles.detailSection}>
-                      <h3>Evidence Pack (E# Source Map)</h3>
-                      {providers.length > 0 && (
-                        <div className={styles.reasoningBox} style={{ marginBottom: "8px" }}>
-                          <strong>Providers:</strong> {providers.join(", ")}
-                        </div>
-                      )}
-                      <ul className={styles.evidenceList}>
-                        {items.map((it: any, idx: number) => (
-                          <li key={idx}>
-                            <strong>{it.id || `E${idx + 1}`}: </strong>
-                            {it.url ? (
-                              <a href={it.url} target="_blank" rel="noreferrer">
-                                {it.title || it.url}
-                              </a>
-                            ) : (
-                              <span>{it.title || "(no title)"}</span>
-                            )}
-                            {it.query && (
-                              <>
-                                <br />
-                                <span className={styles.evidenceBasis}>Query: {it.query}</span>
-                              </>
-                            )}
-                            {it.snippet && (
-                              <>
-                                <br />
-                                <span className={styles.evidenceBasis}>{it.snippet}</span>
-                              </>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+              {selectedEvidencePack && selectedEvidencePack.items.length > 0 && (
+                <div className={styles.detailSection}>
+                  <h3>Evidence Pack (E# Source Map)</h3>
+                  {selectedEvidencePack.providersUsed.length > 0 && (
+                    <div className={styles.reasoningBox} style={{ marginBottom: "8px" }}>
+                      <strong>Providers:</strong> {selectedEvidencePack.providersUsed.join(", ")}
                     </div>
-                  );
-                } catch {
-                  return null;
-                }
-              })()}
+                  )}
+                  <ul className={styles.evidenceList}>
+                    {selectedEvidencePack.items.map((it, idx) => (
+                      <li key={idx}>
+                        <strong>{it.id || `E${idx + 1}`}: </strong>
+                        {it.url ? (
+                          <a href={it.url} target="_blank" rel="noreferrer">
+                            {it.title || it.url}
+                          </a>
+                        ) : (
+                          <span>{it.title || "(no title)"}</span>
+                        )}
+                        {it.query && (
+                          <>
+                            <br />
+                            <span className={styles.evidenceBasis}>Query: {it.query}</span>
+                          </>
+                        )}
+                        {it.snippet && (
+                          <>
+                            <br />
+                            <span className={styles.evidenceBasis}>{it.snippet}</span>
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className={styles.detailSection}>
+                <h3>Execution Trace</h3>
+                <div className={styles.traceList}>
+                  {executionTrace.map((step) => (
+                    <div key={step.key} className={styles.traceItem}>
+                      <div className={styles.traceHeader}>
+                        <span className={styles.traceTitle}>{step.title}</span>
+                        <span
+                          className={`${styles.traceStatus} ${step.tone === "success" ? styles.traceStatusSuccess : step.tone === "warning" ? styles.traceStatusWarning : styles.traceStatusNeutral}`}
+                        >
+                          {step.status}
+                        </span>
+                      </div>
+                      {step.details.length > 0 && (
+                        <ul className={styles.traceDetails}>
+                          {step.details.map((detail, index) => (
+                            <li key={`${step.key}-${index}`}>{detail}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className={styles.detailGrid}>
                 <div className={styles.detailSection}>

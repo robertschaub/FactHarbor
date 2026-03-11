@@ -398,99 +398,21 @@ import { getAllFactCheckerDomains, getGlobalFactCheckerSites } from "@/lib/fact-
  */
 const FACT_CHECKER_DOMAINS = getAllFactCheckerDomains();
 
-/**
- * English terms that indicate a result is actually ABOUT reliability/credibility assessment,
- * not just citing the source. Translations are added dynamically from LLM.
- */
-const RELIABILITY_ASSESSMENT_TERMS_EN = [
-  // Core assessment terms
-  "reliability", "credibility", "bias", "rating", "rated", "assessment",
-  "fact check", "fact-check", "factcheck", "misinformation", "disinformation",
-  "propaganda", "fake news", "misleading", "false claim", "debunk",
-  "media bias", "news quality", "trustworth", "accuracy",
-  // Organization identity / accountability terms (neutral signals)
-  "news outlet", "news organization", "media outlet", "media company",
-  "newspaper", "publisher", "ownership", "owner",
-  "editor-in-chief", "editorial board", "editorial policy",
-  "press council", "ombudsman", "code of ethics",
-  // Bias/slant indicators
-  "partisan", "right-wing", "left-wing", "far-right", "far-left",
-  "conservative bias", "liberal bias", "political slant",
-  // Criticism indicators
-  "criticism", "criticized", "controversial", "questioned", "problematic",
-  "unreliable", "untrustworthy", "inaccurate", "sensational",
-  // Propaganda/state media indicators
-  "kremlin", "state-aligned", "state-funded", "government-backed",
-  "state-sponsored", "state narrative", "state narratives", "pro-government",
-  "pro-regime", "government narrative", "government narratives",
-  "narratives", "echo", "amplif", "disinformation campaign",
-  "influence operation", "information operation", "influence campaign",
-  "coordinated inauthentic behavior", "cib", "astroturf", "proxy media",
-  // Broader manipulation / fringe indicators
-  "conspiracy", "conspiracy theory", "hoax", "falsehood", "deceptive",
-  "manipulation", "propaganda network", "disinformation network",
-  "fringe", "extremist", "radical", "hate", "hate speech", "white nationalist",
-  // Quality indicators
-  "journalistic standards", "editorial standards", "corrections policy",
-  "retraction", "correction", "apolog",
-];
+// REMOVED: RELIABILITY_ASSESSMENT_TERMS_EN and getReliabilityAssessmentTerms()
+// Relevance filtering is now handled by the LLM evidence quality assessment call
+// (see evidence-quality-assessment.ts `relevant` field). Only structural pre-filters
+// remain: self-domain exclusion, source-mention check, dedup.
 
 /**
- * Build full assessment terms list including dynamic translations.
+ * Structural pre-filter: does a search result mention the source being evaluated?
+ * Does NOT interpret text meaning — only checks for domain/brand name presence.
+ * Relevance assessment (is this result ABOUT reliability?) is delegated to the
+ * LLM evidence quality assessment call.
  */
-function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>): string[] {
-  const terms = [...RELIABILITY_ASSESSMENT_TERMS_EN];
-
-  // Add translated versions of key assessment terms
-  const keysToTranslate = [
-    "reliability", "credibility", "fact check", "misinformation",
-    "disinformation", "propaganda", "fake news", "media bias",
-    "partisan", "left-wing", "far-left", "right-wing", "far-right", "controversial",
-    "criticism", "unreliable", "inaccurate",
-    "state propaganda", "foreign propaganda", "government propaganda",
-    "state media", "state-backed", "government-backed",
-    "influence operation", "information operation", "influence campaign",
-    "coordinated inauthentic behavior", "state-sponsored",
-    "conspiracy", "conspiracy theory", "hoax", "falsehood", "deceptive",
-    "manipulation", "propaganda network", "disinformation network",
-    "fringe", "extremist", "radical", "hate", "hate speech",
-    "news outlet", "news organization", "media outlet", "media company",
-    "newspaper", "publisher", "ownership", "owner",
-    "editor-in-chief", "editorial board", "editorial policy",
-    "press council", "ombudsman", "code of ethics",
-    "editorial standards", "corrections policy", "journalistic standards",
-  ];
-
-  for (const key of keysToTranslate) {
-    const translated = translatedTerms[key];
-    if (translated && translated !== key && !terms.includes(translated.toLowerCase())) {
-      terms.push(translated.toLowerCase());
-    }
-  }
-
-  return terms;
-}
-
-/**
- * Check if a search result is relevant to the domain being evaluated.
- * Now uses brand variants for more flexible matching.
- * EXCLUDES results FROM the source itself (those are not reliability assessments).
- * PRIORITIZES results that actually assess reliability, not just cite the source.
- *
- * DESIGN NOTE (AGENTS.md acknowledgment): This function uses keyword-based filtering
- * (RELIABILITY_ASSESSMENT_TERMS_EN + LLM-translated variants) which is a deterministic
- * text-matching decision. This is an intentional STRUCTURAL PRE-FILTER for efficiency —
- * it reduces noise before the LLM evaluation, not an analytical classification.
- * False negatives are acceptable: the LLM evaluation handles whatever passes through.
- * The translated terms mitigate non-English gaps. If this becomes a quality bottleneck,
- * replace with a lightweight LLM relevance call (batched).
- */
-function isRelevantSearchResult(
+function resultMentionsSource(
   r: WebSearchResult,
   domain: string,
   brandVariants: string[],
-  assessmentTerms: string[] = RELIABILITY_ASSESSMENT_TERMS_EN,
-  relaxAssessmentTerms: boolean = false
 ): boolean {
   const url = (r.url ?? "").toLowerCase();
   const title = (r.title ?? "").toLowerCase();
@@ -502,46 +424,10 @@ function isRelevantSearchResult(
   const d = String(domain || "").toLowerCase();
   if (!d) return true;
 
-  // EXCLUDE results FROM the source itself - these are not reliability assessments
-  if (isResultFromSourceDomain(r, domain)) {
-    return false;
-  }
-
-  // Check if result mentions the source (domain or brand)
-  // Note: Use length >= 3 for brands to support short abbreviations like FDA, BBC, CNN, NZZ
-  const mentionsSource = blob.includes(d) ||
+  return blob.includes(d) ||
     blob.includes(`www.${d}`) ||
     brandVariants.some(v => v.length >= 3 && blob.includes(v)) ||
     brandVariantsNoSpaces.some(v => v.length >= 5 && blobNoSpaces.includes(v));
-
-  if (!mentionsSource) return false;
-
-  // Check if result is FROM a known fact-checker domain (always relevant)
-  try {
-    const resultHost = new URL(r.url).hostname.toLowerCase().replace(/^www\./, "");
-    if (FACT_CHECKER_DOMAINS.has(resultHost) ||
-        [...FACT_CHECKER_DOMAINS].some(fc => resultHost.endsWith(`.${fc}`))) {
-      return true;
-    }
-  } catch {
-    // ignore URL parse errors
-  }
-
-  // Check if result contains reliability/assessment-related terms (including translations)
-  const hasAssessmentTerms = assessmentTerms.some(term => blob.includes(term));
-
-  if (hasAssessmentTerms) return true;
-
-  if (relaxAssessmentTerms) {
-    // When evidence is sparse, allow source-mention results even if
-    // assessment terms are missing (still excludes source's own domain).
-    return true;
-  }
-
-  // Exclude results that just cite the source without assessing it
-  // These are typically academic papers, news articles, etc. that reference the outlet
-  // but don't evaluate its reliability
-  return false;
 }
 
 function isSearchEnabledForSrEval(): { enabled: boolean; providersUsed: string[] } {
@@ -1007,9 +893,6 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   // Helper to get translated term or fallback to English
   const t = (term: string): string => translatedTerms[term] || term;
 
-  // Build assessment terms with dynamic translations (no hardcoded non-English terms)
-  const assessmentTerms = getReliabilityAssessmentTerms(translatedTerms);
-
   // Phase 1: Reliability assessment queries - focused on ABOUT the source
   // Use "rating" and "assessment" to find fact-checker evaluations, not articles FROM the source
   const standardQueries = [
@@ -1165,7 +1048,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   );
   const maxEvidenceItems = Math.max(
     1,
-    Math.min(SR_EVAL_MAX_EVIDENCE_ITEMS, 20)
+    Math.min(SR_EVAL_MAX_EVIDENCE_ITEMS, 40)
   );
   const dateRestrict =
     (SR_EVAL_DATE_RESTRICT ?? SR_SEARCH_CONFIG.dateRestrict) ?? undefined;
@@ -1174,13 +1057,13 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const rawItems: Array<{ r: WebSearchResult; query: string; provider: string }> = [];
   const allQueries: string[] = [];
 
-  // Helper to run a query and collect results
-  const sparseThreshold = Math.max(2, Math.floor(maxEvidenceItems / 3));
-
+  // Helper to run a query and collect results.
+  // Structural pre-filters only: self-domain exclusion, source-mention check, dedup.
+  // Relevance assessment (is this ABOUT reliability?) is delegated to the LLM
+  // evidence quality assessment call downstream.
   async function runQuery(
     q: string,
     maxResultsOverride?: number,
-    relaxWhenSparse: boolean = false
   ): Promise<number> {
     allQueries.push(q);
     let added = 0;
@@ -1199,8 +1082,8 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       for (const r of resp.results) {
         if (!r.url) continue;
         if (seen.has(r.url)) continue;
-        const relax = relaxWhenSparse && rawItems.length < sparseThreshold;
-        if (!isRelevantSearchResult(r, domain, brandVariants, assessmentTerms, relax)) continue;
+        if (isResultFromSourceDomain(r, domain)) continue;
+        if (!resultMentionsSource(r, domain, brandVariants)) continue;
         seen.add(r.url);
         rawItems.push({ r, query: q, provider });
         added++;
@@ -1216,18 +1099,18 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   async function runPhase(
     queries: string[],
     budget: number,
-    opts?: { maxResultsOverride?: number; relax?: boolean }
+    opts?: { maxResultsOverride?: number }
   ): Promise<void> {
     for (const q of queries) {
       if (rawItems.length >= budget) break;
-      await runQuery(q, opts?.maxResultsOverride, opts?.relax ?? false);
+      await runQuery(q, opts?.maxResultsOverride);
     }
   }
 
   // Phase budgets - preserve priority ordering from original sequential flow
   const phase1Budget = Math.floor(maxEvidenceItems * 0.5); // 50% for fact-checkers
   const phase2Budget = Math.floor(maxEvidenceItems * 0.75); // 75% cumulative
-  const relaxedOpts = { maxResultsOverride: Math.min(maxResultsPerQuery + 2, 10), relax: true };
+  const widerOpts = { maxResultsOverride: Math.min(maxResultsPerQuery + 2, 10) };
 
   // ── PHASE 1 (sequential): Fact-checkers FIRST ─────────────────────
   // Highest priority: fact-checker site-specific queries fill budget first.
@@ -1249,7 +1132,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       runPhase(
         [...negativeSignalQueries, ...negativeSignalQueriesTranslated],
         maxEvidenceItems,
-        relaxedOpts
+        widerOpts
       ),
       // Press council + ethics violations
       runPhase([...pressCouncilQueries, ...pressCouncilQueriesTranslated], maxEvidenceItems),
@@ -1257,7 +1140,7 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       runPhase(
         [...institutionalIndependenceQueries, ...institutionalIndependenceQueriesTranslated],
         maxEvidenceItems,
-        relaxedOpts
+        widerOpts
       ),
     ]);
   }
@@ -1267,9 +1150,9 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     debugLog(`[SR-Eval] Wave 4: science denial + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
       // Science denial (separate topic, kept distinct)
-      runPhase(scienceDenialQueries, maxEvidenceItems, relaxedOpts),
+      runPhase(scienceDenialQueries, maxEvidenceItems, widerOpts),
       // Neutral/identity queries (entity detection)
-      runPhase(neutralSignalQueries, maxEvidenceItems, { relax: true }),
+      runPhase(neutralSignalQueries, maxEvidenceItems),
       // Entity-focused queries (lowest priority)
       runPhase(entityQueries, maxEvidenceItems),
     ]);
@@ -1463,7 +1346,7 @@ async function enrichEvidencePackWithQualityAssessment(
             model,
             prompt,
             temperature: getDeterministicTemperature(0.1),
-            maxOutputTokens: 1200,
+            maxOutputTokens: 3000,
           }),
       );
       return response.text ?? "";
@@ -1489,9 +1372,32 @@ async function enrichEvidencePackWithQualityAssessment(
     });
   }
 
+  // Post-LLM relevance filtering: remove items the LLM marked as not about
+  // reliability assessment. Fact-checker domain items auto-pass regardless.
+  const enrichedItems = assessment.items;
+  const relevanceFiltered = assessment.qualityAssessment.status === "applied"
+    ? enrichedItems.filter(item => {
+        if (item.relevant !== false) return true;
+        // Auto-pass known fact-checker domains even if LLM said not relevant
+        try {
+          const host = new URL(item.url).hostname.toLowerCase().replace(/^www\./, "");
+          if (FACT_CHECKER_DOMAINS.has(host) ||
+              [...FACT_CHECKER_DOMAINS].some(fc => host.endsWith(`.${fc}`))) {
+            return true;
+          }
+        } catch { /* ignore URL parse errors */ }
+        return false;
+      })
+    : enrichedItems; // If assessment was skipped/failed, pass all items through
+
+  const filteredCount = enrichedItems.length - relevanceFiltered.length;
+  if (filteredCount > 0) {
+    debugLog(`[SR-Eval] Relevance filter: ${relevanceFiltered.length}/${enrichedItems.length} items passed (${filteredCount} removed)`, { domain });
+  }
+
   return {
     ...evidencePack,
-    items: assessment.items,
+    items: relevanceFiltered,
     qualityAssessment: assessment.qualityAssessment,
   };
 }

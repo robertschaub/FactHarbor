@@ -4626,3 +4626,16 @@ esponse.text()/arrayBuffer() direct buffering paths).
 - For strict timeout behavior, inspect `evaluate-source/route.ts` budget guard + clamped timeout block before changing per-domain SR timeouts.
 - Keep all new SR enrichment prompt semantics in `apps/web/prompts/source-reliability.prompt.md` sections; avoid inlining semantic strings in TS.
 **Learnings:** no
+---
+### 2026-03-11 | Lead Developer | Codex (GPT-5) | SR Admin Details Modal — Add Execution Trace
+**Task:** Implement an admin-facing execution trace in Source Reliability details view showing search, enrichment, model, refinement, and cache lifecycle steps.
+**Files touched:** `apps/web/src/app/admin/source-reliability/page.tsx`, `apps/web/src/app/admin/source-reliability/source-reliability.module.css`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a structured `Execution Trace` section in the details modal (admin-only) with per-step status chips and bullet details.
+- Trace content is metadata-driven from cached `evidencePack` (`providersUsed`, `queries`, items, `qualityAssessment`) plus model/cache fields from the row.
+- Added graceful legacy handling: older cache entries without enrichment metadata show neutral “not available” messages.
+- Used warning styling only for genuinely degrading states (enrichment failed, model disagreement), while non-degrading states remain neutral/success informational.
+**Open items:** Optional follow-up: include the same execution-trace section in HTML/Markdown exports for exact parity with modal view.
+**Warnings:** Build runs postbuild prompt reseed script by design (`scripts/reseed-all-prompts.ts`).
+**For next agent:** If step labels or detail density should be tuned, edit `buildExecutionTrace()` in `apps/web/src/app/admin/source-reliability/page.tsx` and keep severity semantics aligned with AGENTS Report Quality rules.
+**Learnings:** no

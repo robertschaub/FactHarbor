@@ -15,7 +15,7 @@
   "evaluationSearch": {
     "provider": "auto",
     "maxResultsPerQuery": 3,
-    "maxEvidenceItems": 12,
+    "maxEvidenceItems": 30,
     "dateRestrict": null,
     "timeoutMs": 15000,
     "providers": {
@@ -29,7 +29,7 @@
     "enabled": true,
     "model": "haiku",
     "timeoutMs": 8000,
-    "maxItemsPerAssessment": 12,
+    "maxItemsPerAssessment": 30,
     "minRemainingBudgetMs": 20000
   },
   "evalConcurrency": 5,

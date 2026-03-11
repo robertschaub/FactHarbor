@@ -956,7 +956,7 @@ export const SourceReliabilityConfigSchema = z.object({
   evaluationSearch: z.object({
     provider: z.enum(["auto", "google-cse", "serpapi", "brave", "serper"]).default("auto"),
     maxResultsPerQuery: z.number().int().min(1).max(10).default(3),
-    maxEvidenceItems: z.number().int().min(1).max(20).default(12),
+    maxEvidenceItems: z.number().int().min(1).max(40).default(30).describe("Maximum evidence items collected before LLM relevance filtering"),
     dateRestrict: z.enum(["y", "m", "w"]).nullable().default(null),
     timeoutMs: z.number().int().min(5000).max(60000).default(15000),
     providers: z.object({
@@ -972,7 +972,7 @@ export const SourceReliabilityConfigSchema = z.object({
     enabled: z.boolean().default(true).describe("Enable evidence quality enrichment before SR evaluation"),
     model: z.string().min(1).default("haiku").describe("Model alias or ID for SR evidence quality assessment"),
     timeoutMs: z.number().int().min(1000).max(30000).default(8000).describe("Timeout for SR evidence quality assessment call (ms)"),
-    maxItemsPerAssessment: z.number().int().min(1).max(20).default(12).describe("Maximum evidence items sent to quality assessment (independent cap)"),
+    maxItemsPerAssessment: z.number().int().min(1).max(40).default(30).describe("Maximum evidence items sent to quality assessment — also determines relevance filtering batch size"),
     minRemainingBudgetMs: z.number().int().min(0).max(120000).default(20000).describe("Skip quality assessment when remaining per-domain budget is below this threshold"),
   }).optional().describe("SR-owned evidence quality enrichment settings"),
 
@@ -1012,7 +1012,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   evaluationSearch: {
     provider: "auto",
     maxResultsPerQuery: 3,
-    maxEvidenceItems: 12,
+    maxEvidenceItems: 30,
     dateRestrict: null,
     timeoutMs: 15000,
     providers: {
@@ -1026,7 +1026,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
     enabled: true,
     model: "haiku",
     timeoutMs: 8000,
-    maxItemsPerAssessment: 12,
+    maxItemsPerAssessment: 30,
     minRemainingBudgetMs: 20000,
   },
   evalConcurrency: 5,

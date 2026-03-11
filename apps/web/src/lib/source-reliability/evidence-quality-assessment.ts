@@ -38,6 +38,8 @@ export interface EvidencePackItemForQuality {
   provider: string;
   probativeValue?: EvidenceProbativeValue;
   evidenceCategory?: EvidenceCategory;
+  /** LLM-assessed: is this result about the reliability/credibility of the source? */
+  relevant?: boolean;
   enrichmentVersion?: 1;
 }
 
@@ -45,6 +47,8 @@ export interface EnrichedEvidenceItem {
   id: string;
   probativeValue: EvidenceProbativeValue;
   evidenceCategory: EvidenceCategory;
+  /** Is this search result about the reliability/credibility assessment of the source? */
+  relevant: boolean;
 }
 
 export interface EvidenceQualityAssessmentConfig {
@@ -186,6 +190,7 @@ export function parseEvidenceQualityAssessmentResponse(rawText: string): Enriche
       id,
       probativeValue: normalizeProbativeValue(entry?.probativeValue) ?? "low",
       evidenceCategory: normalizeEvidenceCategory(entry?.evidenceCategory),
+      relevant: entry?.relevant === true,
     });
   }
 
@@ -226,6 +231,7 @@ export function mergeEvidenceQualityAssessment(
         ...item,
         probativeValue: "low" as const,
         evidenceCategory: "unclassified" as const,
+        relevant: true, // Not assessed — assume relevant (conservative)
         enrichmentVersion: ENRICHMENT_VERSION,
       };
     }
@@ -233,6 +239,7 @@ export function mergeEvidenceQualityAssessment(
       ...item,
       probativeValue: found.probativeValue,
       evidenceCategory: found.evidenceCategory,
+      relevant: found.relevant,
       enrichmentVersion: ENRICHMENT_VERSION,
     };
   });
