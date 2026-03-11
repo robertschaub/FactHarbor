@@ -9,7 +9,7 @@
 
 == Executive Summary ==
 
-The fact-checking landscape in 2026 is experiencing significant disruption. Meta's withdrawal from US third-party fact-checking, Google's removal of ClaimReview from search, and the shift toward "Funnel Architectures" (processing millions of sentences to find checkworthy claims) have redefined the field. **FactHarbor is currently the only system with a working multi-agent debate (MAD) implementation for fact-checking.** While research frameworks like **ED2D (EMNLP 2025)** and **Tool-MAD (2026)** validate the debate-centric approach, FactHarbor is uniquely positioned with a functional pipeline and a rigorous calibration methodology (C18/C13).
+The fact-checking landscape in 2026 is experiencing significant disruption. Meta's withdrawal from US third-party fact-checking, Google's removal of ClaimReview from search, and the shift toward "Funnel Architectures" (processing millions of sentences to find checkworthy claims) have redefined the field. **FactHarbor is the only end-to-end multi-agent debate (MAD) system for fact-checking with live evidence retrieval.** Research frameworks like **ED2D (EMNLP 2025)** and **Tool-MAD (2026)** have released code and validate the debate-centric approach, but operate as benchmark reproductions rather than user-facing services. FactHarbor is uniquely positioned with a functional pipeline, live web evidence, and a rigorous calibration methodology (C18/C13).
 
 **Key Finding:** No current solution provides transparent, boundary-based, probabilistic fact-checking with explicit assumptions—FactHarbor's core differentiation. However, FactHarbor must close the **evidence retrieval gap** identified in recent benchmarks (C13 evidence asymmetry).
 

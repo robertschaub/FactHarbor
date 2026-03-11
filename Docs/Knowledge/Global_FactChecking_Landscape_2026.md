@@ -13,13 +13,13 @@
 
 ### The Bottom Line
 
-**FactHarbor is the only system with a working multi-agent debate implementation for fact-checking.** Academic papers (ED2D, Tool-MAD, DelphiAgent) validate the approach, but none are deployed. Full Fact AI leads in monitoring scale (350K sentences/day, 45 orgs, 26 countries) but deliberately does not automate verdicts. No system — academic or commercial — achieves reliable end-to-end automated fact-checking of arbitrary real-world claims. FactHarbor's ambition to do this places it at the research frontier.
+**FactHarbor is the only end-to-end multi-agent debate system for fact-checking with live evidence retrieval.** ED2D and MADR have released research code (benchmark reproductions), and Tool-MAD/DelphiAgent validate the approach in research settings, but no system besides FactHarbor operates as a user-facing service with live web search, sourced verdict reports, and multi-provider debate. Full Fact AI leads in monitoring scale (350K sentences/day, 45 orgs, 26 countries) but deliberately does not automate verdicts. No system — academic or commercial — achieves reliable end-to-end automated fact-checking of arbitrary real-world claims. FactHarbor's ambition to do this places it at the research frontier.
 
 ### FactHarbor's Competitive Position
 
 | Dimension | FactHarbor | Best Competitor | Gap |
 |-----------|-----------|----------------|-----|
-| **Multi-agent debate** | 5-step working implementation (3 advocates + challenger + reconciler + validator) | ED2D (5-stage, EMNLP 2025) — research only | **FH leads** — only working implementation |
+| **Multi-agent debate** | 5-step end-to-end implementation with live evidence | ED2D (5-stage, EMNLP 2025) — research code released | **FH leads** — only end-to-end MAD system |
 | **Calibration methodology** | C18 hard gate, C13 rebalancing, systematic bias measurement | No published equivalent | **FH leads** — publishable contribution |
 | **Evidence retrieval** | Web search only | KG²RAG (graph-guided), Tool-MAD (tool-diverse agents) | **FH lags** — #1 quality bottleneck |
 | **Monitoring scale** | User-submitted claims only | Full Fact AI: 350K sentences/day | **FH lags** — no detection layer |

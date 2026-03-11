@@ -37,7 +37,7 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 )))
 == Where FactHarbor stands out ==
 
-FactHarbor runs an end-to-end automated verdict pipeline on real claims and, according to our research, is the only system with a working **multi-agent debate** implementation for fact-checking. It uses evidence-defined analysis boundaries, structured advocate/challenger/reconciler roles, cross-provider model routing (Anthropic, OpenAI, Google, Mistral), and evidence-weighted contestation rules so unsupported objections do not change verdicts. Each verdict is auditable: you can see the cited evidence, source-quality weighting, and which evidence-backed challenges changed the outcome.
+FactHarbor runs an end-to-end automated verdict pipeline on real claims and is the only end-to-end **multi-agent debate** system for fact-checking with live evidence retrieval. While research implementations exist (ED2D, MADR), FactHarbor is unique as a user-facing service. It uses evidence-defined analysis boundaries, structured advocate/challenger/reconciler roles, cross-provider model routing (Anthropic, OpenAI, Google, Mistral), and evidence-weighted contestation rules so unsupported objections do not change verdicts. Each verdict is auditable: you can see the cited evidence, source-quality weighting, and which evidence-backed challenges changed the outcome.
 
 
 {{mermaid}}

@@ -11,7 +11,7 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 
 | If you want to understand... | Read | Key takeaway |
 |------------------------------|------|-------------|
-| **Global landscape, top systems, cooperation targets** | [**Global Fact-Checking Landscape 2026**](Global_FactChecking_Landscape_2026.md) | Full Fact AI (#1 deployed), ED2D/Tool-MAD (#1 research debate), 3 concepts to learn from. FactHarbor has the only working MAD implementation; evidence retrieval is the #1 gap. |
+| **Global landscape, top systems, cooperation targets** | [**Global Fact-Checking Landscape 2026**](Global_FactChecking_Landscape_2026.md) | Full Fact AI (#1 deployed), ED2D/Tool-MAD (#1 research debate), 3 concepts to learn from. FactHarbor is the only end-to-end MAD system for fact-checking with live evidence retrieval; evidence quality is the #1 gap. |
 | **Full Fact AI**: architecture, PASTEL, 7 lessons, cooperation path | [**Full Fact AI Analysis**](FullFact_AI_Lessons_for_FactHarbor.md) | Funnel architecture (333K sentences → 100K claims → human review), PASTEL checkworthiness via LLM yes/no questions + linear regression, deliberate no-verdict stance. Natural complement: their monitoring + our verdicts. |
 | **Factiverse**: architecture, 8 lessons, multi-source evidence | [**Factiverse Analysis**](Factiverse_Lessons_for_FactHarbor.md) | 6-stage LiveFC pipeline, fine-tuned XLM-RoBERTa beats GPT-4, 6 evidence sources including Semantic Scholar + FactiSearch (330K fact-checks). Proves multi-source retrieval is achievable — validates our #1 evidence gap. |
 | Climinator paper vs code, 11 lessons | [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) | Paper-vs-code gap remains: debate.py still empty. PR #108 pivots to Advocate-Mediator pattern (not debate). Main branch inactive since May 2025. FactHarbor's debate is more sophisticated than Climinator's actual code. |
@@ -31,11 +31,11 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 
 **ED2D (EMNLP 2025)** is the most sophisticated multi-agent debate architecture published: 5-stage structured debate where agents retrieve new evidence during the debate itself — solving the "static evidence pool" problem.
 
-**FactHarbor is the only system with a working multi-agent debate implementation for fact-checking.** Full Fact monitors at scale but won't automate verdicts. ED2D has the best debate architecture but exists only as a research paper. FactHarbor sits at the intersection — a functional, pre-release system with a debate architecture more sophisticated than any competitor, but weaker evidence retrieval than the research frontier.
+**FactHarbor is the only end-to-end multi-agent debate system for fact-checking with live evidence retrieval.** ED2D and MADR have released research code (benchmark reproductions), but no system besides FactHarbor operates as a user-facing fact-checking service with live web search, sourced reports, and multi-provider debate. Full Fact monitors at scale but won't automate verdicts. FactHarbor sits at the intersection — a functional, pre-release system combining debate architecture, calibration methodology, and live evidence pipeline in a way no competitor does.
 
 | Dimension | FactHarbor | Best Competitor | Gap |
 |-----------|-----------|----------------|-----|
-| **Multi-agent debate** | 5-step working implementation | ED2D (EMNLP 2025) — research only | **FH leads** — only working MAD implementation |
+| **Multi-agent debate** | 5-step end-to-end implementation with live evidence | ED2D (EMNLP 2025) — research code released | **FH leads** — only end-to-end MAD system |
 | **Calibration methodology** | C18 hard gate, C13 rebalancing | No published equivalent | **FH leads** — publishable contribution |
 | **Evidence retrieval** | Web search only → [multi-source spec](../Specification/Multi_Source_Evidence_Retrieval.md) | KG²RAG, Tool-MAD (tool-diverse agents) | **FH lags** — #1 quality bottleneck; spec ready |
 | **Monitoring scale** | User-submitted claims only | Full Fact AI: 350K sentences/day | **FH lags** — no detection layer |

@@ -422,7 +422,7 @@ graph TB
 | **Climinator** (paper) | npj CA 2025 | 5-6 + mediator | RAG (5 corpora) | 1-18 | Full consensus | Knowledge diversity; iterative until convergence |
 | **Climinator** (code) | — | 3 + mediator | RAG (3 corpora) | 1 (single) | None | [Paper-vs-code gap is significant](Climinator_Lessons_for_FactHarbor.md) |
 | **Factiverse LiveFC** | WSDM 2025 | Single-pass NLI | 6 search engines + Semantic Scholar + FactiSearch | 1 (pipeline) | Majority voting | 83.92% F1 on US debate; XLM-RoBERTa beats GPT-4; [deep dive](Factiverse_Lessons_for_FactHarbor.md) |
-| **FactHarbor** | Pre-release | 5 roles + multi-model | Web search | 7 LLM calls | Temperature-spread | **Only working MAD implementation**; multi-provider; calibration methodology |
+| **FactHarbor** | Pre-release | 5 roles + multi-model | Web search | 7 LLM calls | Temperature-spread | **Only end-to-end MAD system** with live evidence retrieval; multi-provider; calibration methodology |
 
 > For detailed profiles of ED2D, Tool-MAD, DelphiAgent, FACT-AUDIT, A-HMAD and others, see [Global Fact-Checking Landscape §4.2](Global_FactChecking_Landscape_2026.md#42-multi-agent-debate-systems-research). For Full Fact AI and Factiverse deep dives, see [Full Fact AI Analysis](FullFact_AI_Lessons_for_FactHarbor.md) and [Factiverse Analysis](Factiverse_Lessons_for_FactHarbor.md).
 
@@ -448,7 +448,7 @@ graph TD
 
     subgraph "Domain-Specific / Operational"
         CL["Climinator (npj CA 2025)<br/>Mediator-Advocate + RAG"]
-        FH["FactHarbor (pre-release)<br/>5-Step Debate + Calibration<br/>Only working MAD implementation"]
+        FH["FactHarbor (pre-release)<br/>5-Step Debate + Calibration<br/>End-to-end MAD + live evidence"]
     end
 
     DU -->|"Debate validated"| ED
