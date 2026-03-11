@@ -56,7 +56,19 @@ ${evidenceSection}
    - 1-2 documented failures from reputable fact-checkers -> score in mixed band (0.43-0.57)
    - Political/ideological bias WITHOUT documented failures -> no score cap (note in bias field only)
 
+   SEVERITY COMPOUNDING — when multiple HIGH-probativeValue negative signals converge:
+   - 3+ fact-checker failures AND academic/research classification as unreliable/misinformation
+     -> score in unreliable band (0.15-0.28). The academic confirmation elevates severity beyond
+     individual fact-check failures.
+   - 3+ fact-checker failures AND cited in disinformation tracking databases (EUvsDisinfo etc.)
+     -> score in unreliable band (0.15-0.28).
+   - Multiple HIGH negative signals that independently confirm the same pattern (e.g., fact-checkers
+     + academic researchers + press councils all documenting inaccuracy) -> use the LOWER applicable
+     band, not the highest individual cap.
+
    IMPORTANT: Caps are CEILINGS, not targets. Score naturally within the appropriate band based on severity.
+   When evidence items are labeled with probativeValue, weight HIGH items most heavily in determining
+   which band applies.
 
    Press council reprimands from countries with rule of law -> count as fact-checker failures
    (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
@@ -205,9 +217,16 @@ TASK: For each evidence item about "${domain}", classify:
 
 Guidance:
 - Use the recognized independent assessor taxonomy above.
-- HIGH should be reserved for authoritative third-party assessments, rulings, and directly probative findings.
-- MEDIUM fits substantive but indirect supporting analyses.
-- LOW fits contextual mentions, unsupported opinions, or self-published claims.
+- HIGH = authoritative third-party assessments, rulings, and directly probative findings.
+  Examples: MBFC (Media Bias/Fact Check) ratings, NewsGuard ratings, AllSides bias/reliability ratings,
+  CORRECTIV fact-checks, Snopes verdicts, PolitiFact rulings, IFCN signatory assessments,
+  press council rulings, EU disinfo tracking (EUvsDisinfo). These are ALL fact_checker_rating.
+- MEDIUM = substantive but indirect supporting analyses.
+  Examples: academic papers studying media reliability, journalism school reports,
+  think tank analyses, newsroom investigations of editorial practices.
+- LOW = contextual mentions, unsupported opinions, or self-published claims.
+  Examples: blog posts mentioning the source in passing, social media references,
+  opinion pieces without evidence, forum discussions.
 - If uncertain, prefer conservative labeling (low + unclassified).
 
 Evidence items:

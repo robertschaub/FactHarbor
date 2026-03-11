@@ -1616,7 +1616,16 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
     ? [
         `## EVIDENCE PACK`,
         hasQualityLabels
-          ? `The following ${evidencePack.items.length} search results are your ONLY external evidence. They are grouped by probativeValue. Base all claims on these items using their IDs (E1, E2, etc.).`
+          ? [
+              `The following ${evidencePack.items.length} search results are your ONLY external evidence. They are grouped by probativeValue (pre-assessed quality). Base all claims on these items using their IDs (E1, E2, etc.).`,
+              ``,
+              `EVIDENCE WEIGHTING RULES:`,
+              `- HIGH probativeValue items are authoritative assessments (fact-checker ratings, press council rulings). They carry the MOST weight and can establish a verdict direction alone.`,
+              `- MEDIUM probativeValue items are substantive analysis (academic research, journalistic investigations). They support and refine the picture from HIGH items.`,
+              `- LOW probativeValue items are contextual mentions (blog posts, passing references, opinions). They provide background but must NOT override signals from HIGH or MEDIUM items.`,
+              `- If HIGH items consistently indicate unreliability (e.g., multiple fact-checker failures), the score MUST reflect that — even if LOW items are neutral or ambiguous.`,
+              `- If HIGH items consistently indicate reliability (e.g., positive fact-checker ratings), LOW negative mentions should not pull the score down significantly.`,
+            ].join("\n")
           : `The following ${evidencePack.items.length} search results are your ONLY external evidence. Base all claims on these items using their IDs (E1, E2, etc.).`,
         ``,
         evidenceBody,
@@ -1678,7 +1687,15 @@ ${evidenceSection}
    - 1-2 documented failures from reputable fact-checkers → score in mixed band (0.43-0.57)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
 
+   SEVERITY COMPOUNDING — when multiple HIGH-probativeValue negative signals converge:
+   - 3+ fact-checker failures AND academic/research classification as unreliable/misinformation
+     → score in unreliable band (0.15-0.28). Academic confirmation elevates severity.
+   - 3+ fact-checker failures AND cited in disinformation tracking databases
+     → score in unreliable band (0.15-0.28).
+   - Multiple independent HIGH negative signals confirming same pattern → use LOWER applicable band.
+
    IMPORTANT: Caps are CEILINGS, not targets. Score naturally within the appropriate band based on severity.
+   When evidence items are labeled with probativeValue, weight HIGH items most heavily.
 
    Press council reprimands from countries with rule of law → count as fact-checker failures
    (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
@@ -2043,6 +2060,13 @@ ${(initialResult.caveats ?? []).map(c => `- ${c}`).join("\n") || "(none)"}
 ═══════════════════════════════════════════════════════════════════════════════
 EVIDENCE PACK (Same evidence the initial evaluation used)
 ═══════════════════════════════════════════════════════════════════════════════
+
+EVIDENCE WEIGHTING RULES (if items are grouped by probativeValue):
+- HIGH = authoritative assessments (fact-checker ratings, press council rulings). Carry the MOST weight.
+- MEDIUM = substantive analysis (academic research, journalistic investigations). Support/refine.
+- LOW = contextual mentions (blog posts, passing references). Must NOT override HIGH/MEDIUM signals.
+- If HIGH items consistently indicate unreliability, the score MUST reflect that regardless of LOW items.
+
 ${evidenceSection}
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -2110,7 +2134,13 @@ YOUR TASK: CROSS-CHECK AND REFINE
      * Tier 1 assessor rates factual reporting as "Low"/"Not Credible"/"Mixed" → score ≤ 0.42
        ("Low"/"Not Credible" should be in lower half: 0.29-0.35)
 
+     SEVERITY COMPOUNDING — multiple HIGH-probativeValue negative signals:
+     * 3+ fact-checker failures + academic/research classification as unreliable → unreliable band (0.15-0.28)
+     * 3+ fact-checker failures + cited in disinformation databases → unreliable band (0.15-0.28)
+     * Multiple independent HIGH negative signals confirming same pattern → use LOWER applicable band
+
      IMPORTANT: Caps are CEILINGS, not targets. Score naturally within appropriate band.
+     Weight HIGH probativeValue evidence most heavily when determining which band applies.
 
      If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
