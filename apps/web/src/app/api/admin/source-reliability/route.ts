@@ -217,7 +217,8 @@ export async function POST(req: Request) {
           evalData.evidencePack,
           evalData.fallbackUsed || false,
           evalData.fallbackReason || null,
-          evalData.identifiedEntity || null
+          evalData.identifiedEntity || null,
+          evalData.sourceType || null
         );
 
         results.push({

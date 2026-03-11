@@ -259,6 +259,7 @@ interface ResponsePayload {
   consensusAchieved: boolean;
   reasoning: string;
   category: string;
+  sourceType?: string; // LLM-classified source type (e.g., propaganda_outlet, state_controlled_media)
   identifiedEntity?: string | null; // The organization evaluated, or null if unknown
   evidencePack?: {
     providersUsed: string[];
@@ -2472,6 +2473,7 @@ function buildResponsePayload(
     consensusAchieved,
     reasoning: result.reasoning,
     category: result.factualRating,
+    sourceType: result.sourceType || "unknown",
     evidencePack: {
       providersUsed: evidencePack.providersUsed,
       queries: evidencePack.queries,
