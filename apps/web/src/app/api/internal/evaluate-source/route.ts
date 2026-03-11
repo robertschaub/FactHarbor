@@ -1212,46 +1212,48 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     }
   }
 
+  // Phase budgets - preserve priority ordering from original sequential flow
+  const phase1Budget = Math.floor(maxEvidenceItems * 0.5); // 50% for fact-checkers
+  const phase2Budget = Math.floor(maxEvidenceItems * 0.75); // 75% cumulative
   const relaxedOpts = { maxResultsOverride: Math.min(maxResultsPerQuery + 2, 10), relax: true };
 
-  // ── WAVE 1 (parallel): Core discovery ─────────────────────────────
-  // Run fact-checker, standard, and identity queries concurrently.
-  // These are independent and represent the highest-value searches.
-  debugLog(`[SR-Eval] Wave 1: fact-checker + standard + identity queries for ${domain}`, { brand });
+  // ── WAVE 1 (parallel): Fact-checker + Standard ─────────────────────
+  // Highest priority: fact-checker ratings and standard reliability queries.
+  // Budget-limited to leave room for negative signal phases.
+  debugLog(`[SR-Eval] Wave 1: fact-checker + standard queries for ${domain}`, { brand });
   await Promise.all([
-    // Fact-checker queries (global + regional)
-    runPhase([...factCheckerQueries, ...regionalFactCheckerQueries], maxEvidenceItems),
-    // Standard reliability + translated
-    runPhase([...standardQueries, ...standardQueriesTranslated], maxEvidenceItems),
-    // Neutral/identity queries (entity detection)
-    runPhase(neutralSignalQueries, maxEvidenceItems, { relax: true }),
+    // Fact-checker queries (global + regional) — budget-limited
+    runPhase([...factCheckerQueries, ...regionalFactCheckerQueries], phase1Budget),
+    // Standard reliability + translated — budget-limited
+    runPhase([...standardQueries, ...standardQueriesTranslated], phase2Budget),
   ]);
 
-  // ── WAVE 2 (parallel, if budget remains): Deep signals ────────────
-  // Press council, institutional independence, propaganda, negative signals
+  // ── WAVE 2 (parallel): Negative signals + Press council + Independence
+  // Critical for detecting problems: negative evidence, press council rulings,
+  // institutional independence concerns. These MUST run to catch bad sources.
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Wave 2: deep signal queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    debugLog(`[SR-Eval] Wave 2: negative signal + press council + independence for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
-      // Institutional independence (always run - critical for government sources)
+      // Negative signals (English + translated) — critical for catching bad sources
       runPhase(
-        [...institutionalIndependenceQueries, ...institutionalIndependenceQueriesTranslated],
+        [...negativeSignalQueries, ...negativeSignalQueriesTranslated],
         maxEvidenceItems,
         relaxedOpts
       ),
       // Press council + ethics violations
       runPhase([...pressCouncilQueries, ...pressCouncilQueriesTranslated], maxEvidenceItems),
-      // Negative signals (English + translated)
+      // Institutional independence (critical for government sources)
       runPhase(
-        [...negativeSignalQueries, ...negativeSignalQueriesTranslated],
+        [...institutionalIndependenceQueries, ...institutionalIndependenceQueriesTranslated],
         maxEvidenceItems,
         relaxedOpts
       ),
     ]);
   }
 
-  // ── WAVE 3 (parallel, if budget remains): Propaganda + entity ─────
+  // ── WAVE 3 (parallel, if budget remains): Propaganda + Identity + Entity
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Wave 3: propaganda + entity queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    debugLog(`[SR-Eval] Wave 3: propaganda + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
       // Propaganda + science denial (English + translated)
       runPhase(
@@ -1259,6 +1261,8 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
         maxEvidenceItems,
         relaxedOpts
       ),
+      // Neutral/identity queries (entity detection)
+      runPhase(neutralSignalQueries, maxEvidenceItems, { relax: true }),
       // Entity-focused queries (lowest priority)
       runPhase(entityQueries, maxEvidenceItems),
     ]);
