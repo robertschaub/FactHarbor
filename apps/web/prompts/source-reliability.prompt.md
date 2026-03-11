@@ -333,8 +333,10 @@ otherBias: pro_government | anti_government | corporate_interest | sensationalis
 CRITICAL: Output MUST be raw JSON. Do NOT wrap in code fences.
 First character MUST be "{" and last character MUST be "}".
 
+MANDATORY: "sourceType" MUST be populated with the most specific applicable type from the list below. Do NOT leave empty or omit. Use "unknown" ONLY when evidence is truly insufficient to determine any type. If your reasoning identifies the source as state-controlled, propaganda, or disinformation, sourceType MUST reflect that classification — score caps depend on it.
+
 {
-  "sourceType": "editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
+  "sourceType": "REQUIRED — editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
   "identifiedEntity": "string, the organization name if domain is primary outlet OR null",
   "evidenceQuality": {
     "independentAssessmentsCount": "number 0-10",

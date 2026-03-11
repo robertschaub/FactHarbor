@@ -215,7 +215,7 @@ const FactualRatingSchema = z
 const EvaluationResultSchema = z.object({
   domain: z.string().optional(),
   evaluationDate: z.string().optional(),
-  sourceType: z.string().optional(),
+  sourceType: z.string().min(1).default("unknown"),
   identifiedEntity: z.string().nullable().optional(), // The organization evaluated, or null if unknown
   evidenceQuality: z.object({
     independentAssessmentsCount: z.coerce.number().min(0).max(10).optional(),
@@ -1820,9 +1820,10 @@ ${SHARED_BIAS_VALUES}
 OUTPUT FORMAT (JSON only, no markdown, no commentary)
 CRITICAL: Output MUST be raw JSON. Do NOT wrap in code fences.
 First character MUST be "{" and last character MUST be "}".
+MANDATORY: "sourceType" MUST be populated with the most specific applicable type. Do NOT leave empty or omit. Use "unknown" ONLY when evidence is truly insufficient to determine any type. If your reasoning identifies the source as state-controlled, propaganda, or disinformation, sourceType MUST reflect that — score caps depend on it.
 ─────────────────────────────────────────────────────────────────────
 {
-  "sourceType": "editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
+  "sourceType": "REQUIRED — editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
   "identifiedEntity": "string, the organization name if domain is primary outlet OR null",
   "evidenceQuality": {
     "independentAssessmentsCount": "number 0-10",
@@ -2383,28 +2384,33 @@ function applyPostProcessing(result: EvaluationResult, evidencePack: EvidencePac
     return processed;
   }
 
-  // 1. Validate source type caps (warn but don't override - prompt is authoritative v2.8.3)
-  const sourceType = processed.sourceType ?? "";
+  // 1. Flag missing sourceType classification
+  const sourceType = processed.sourceType ?? "unknown";
+  if (sourceType === "unknown") {
+    debugLog(`[SR-Eval] sourceType is "unknown" — LLM did not classify the source type`, { domain: processed.domain });
+    processed.caveats.push(`sourceType not classified by LLM — source type caps could not be applied.`);
+  }
+
+  // 2. Enforce source type caps (deterministic quality gate)
   const expectedCap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
 
   if (expectedCap !== undefined && processed.score > expectedCap) {
-    // LLM gave score above expected cap - add warning caveat but TRUST the LLM
-    // The prompt explicitly instructs caps; if LLM exceeded, it may have good reason
-    debugLog(`[SR-Eval] Score exceeds expected ${sourceType} cap: ${processed.score.toFixed(2)} > ${expectedCap.toFixed(2)} (not overriding - prompt authoritative)`, { sourceType, score: processed.score, expectedCap });
+    const originalScore = processed.score;
+    processed.score = expectedCap;
+    debugLog(`[SR-Eval] Source type cap enforced: ${sourceType} score ${originalScore.toFixed(2)} → ${expectedCap.toFixed(2)}`, { sourceType, originalScore, expectedCap });
     processed.caveats.push(
-      `Note: Score ${(processed.score * 100).toFixed(0)}% exceeds typical ${(expectedCap * 100).toFixed(0)}% cap for sourceType="${sourceType}". LLM may have found mitigating evidence.`
+      `Score capped from ${(originalScore * 100).toFixed(0)}% to ${(expectedCap * 100).toFixed(0)}% due to sourceType="${sourceType}".`
     );
-    // DO NOT override: processed.score = expectedCap; (prompt is authoritative)
   }
 
-  // 2. Align factualRating with (potentially capped) score
+  // 3. Align factualRating with (potentially capped) score
   const expectedRating = scoreToFactualRating(processed.score);
   if (processed.factualRating !== expectedRating) {
     debugLog(`[SR-Eval] Aligning factualRating: ${processed.factualRating} → ${expectedRating}`);
     processed.factualRating = expectedRating;
   }
 
-  // 3. Check grounding for high scores (asymmetric skepticism)
+  // 4. Check grounding for high scores (asymmetric skepticism)
   const foundedness = computeFoundednessScore(processed, evidencePack);
   const uniqueEvidence = countUniqueEvidenceIds(processed, evidencePack);
 
