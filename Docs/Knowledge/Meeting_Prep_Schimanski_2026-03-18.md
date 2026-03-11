@@ -52,6 +52,32 @@
 
 ---
 
+## 2.5 Code Repositories — What We Found
+
+All of Tobias' papers have public code — contrary to initial assumption. The primary code author is **Edison Ni** (EdisonNi-hku on GitHub), not Tobias himself.
+
+| Paper | Repository | Author | Stars |
+|-------|-----------|--------|-------|
+| DIRAS (NAACL 2025) | github.com/EdisonNi-hku/DIRAS | Edison Ni | 6 |
+| Faithful LLM Specialists (ACL 2024) | github.com/EdisonNi-hku/Robust_Evidence_Based_QA | Edison Ni | 8 |
+| ClimRetrieve (EMNLP 2024) | github.com/tobischimanski/ClimRetrieve | Tobias | 6 |
+| Climinator (npj 2025) | github.com/climateandtech/factchecker | Org | 12 |
+| ChatReport | github.com/EdisonNi-hku/chatreport | Edison Ni | 23 |
+| AFaCTA (ACL 2024) | github.com/EdisonNi-hku/AFaCTA | Edison Ni | 9 |
+| pdfQA (Jan 2026) | github.com/tobischimanski/pdfQA | Tobias | 13 |
+
+**GitHub presence:**
+- Tobias' personal GitHub (tobischimanski): 4 public repos.
+- Edison Ni (EdisonNi-hku): 18+ public repos — the primary implementer.
+- Professors (Leippold, Ash): No research repos on their personal accounts.
+
+**Implications for the meeting:**
+- **Question to ask:** "Who would do the technical implementation on your side? Would Edison Ni be involved?"
+- The DIRAS repo contains a complete training pipeline — we can evaluate it before building anything.
+- The code quality and completeness of DIRAS and Faithful Specialists is much better than Climinator's — these are Tobias/Edison's projects, not Leippold's.
+
+---
+
 ## 3. Agenda — 5 Topics (Pick 3-4 for One Hour)
 
 ### Topic 1: Live Demo + Architecture Walk-Through (10-15 min — mandatory)

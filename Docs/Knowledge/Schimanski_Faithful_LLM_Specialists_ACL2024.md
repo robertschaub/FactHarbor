@@ -262,10 +262,28 @@ flowchart TD
 
 ---
 
-## 7. References
+## 7. Code Repository
+
+**Repo:** [EdisonNi-hku/Robust_Evidence_Based_QA](https://github.com/EdisonNi-hku/Robust_Evidence_Based_QA) — Public, MIT license, 8 stars, 0 forks. Python 98.8%.
+
+**What's included:**
+- Full data pipeline for synthetic QA generation across 100+ scientific topics
+- Quality filtering scripts (source quality + attributability filters described in the paper)
+- QLoRA fine-tuning scripts for Zephyr-7B and Llama-2
+- Three dataset versions: SynSciQA, SynSciQA+, SynSciQA++
+- Test sets including ChatReport and ClimateQA
+- Human evaluation data
+
+**Primary implementer:** Edison Ni ([EdisonNi-hku](https://github.com/EdisonNi-hku) on GitHub), second author on the paper. Ni is also the author of the [DIRAS](https://github.com/EdisonNi-hku/DIRAS), [ChatReport](https://github.com/EdisonNi-hku/ChatReport), and [AFaCTA](https://github.com/EdisonNi-hku/AFaCTA) repositories — indicating he is the primary code implementer across the Schimanski/Leippold research group's LLM projects.
+
+**Last activity:** February 2024 (12 commits total). The repo appears complete but not actively maintained — consistent with a paper-accompanying release rather than an ongoing project.
+
+---
+
+## 8. References
 
 ### This Paper
-- Schimanski, T., Ni, J., Kraus, M., Ash, E. & Leippold, M. (2024). Towards Faithful and Robust LLM Specialists for Evidence-Based Question-Answering. *ACL 2024*. [ACL Anthology](https://aclanthology.org/2024.acl-long.105/) | [arXiv](https://arxiv.org/abs/2402.08277)
+- Schimanski, T., Ni, J., Kraus, M., Ash, E. & Leippold, M. (2024). Towards Faithful and Robust LLM Specialists for Evidence-Based Question-Answering. *ACL 2024*. [ACL Anthology](https://aclanthology.org/2024.acl-long.105/) | [arXiv](https://arxiv.org/abs/2402.08277) | [GitHub](https://github.com/EdisonNi-hku/Robust_Evidence_Based_QA)
 
 ### Related Work by Same Authors
 - Schimanski et al. (2024). ClimRetrieve: Benchmarking Dataset for Information Retrieval from Corporate Climate Disclosures. *EMNLP 2024*. [ACL Anthology](https://aclanthology.org/2024.emnlp-main.969/)

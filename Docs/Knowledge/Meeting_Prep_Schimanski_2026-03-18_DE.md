@@ -52,6 +52,32 @@
 
 ---
 
+## 2.5 Code Repositories — was wir gefunden haben
+
+Alle Paper von Tobias haben öffentlichen Code — entgegen der ursprünglichen Annahme. Der primäre Code-Autor ist **Edison Ni** (EdisonNi-hku auf GitHub), nicht Tobias selbst.
+
+| Paper | Repository | Autor | Stars |
+|-------|-----------|-------|-------|
+| DIRAS (NAACL 2025) | github.com/EdisonNi-hku/DIRAS | Edison Ni | 6 |
+| Faithful LLM Specialists (ACL 2024) | github.com/EdisonNi-hku/Robust_Evidence_Based_QA | Edison Ni | 8 |
+| ClimRetrieve (EMNLP 2024) | github.com/tobischimanski/ClimRetrieve | Tobias | 6 |
+| Climinator (npj 2025) | github.com/climateandtech/factchecker | Org | 12 |
+| ChatReport | github.com/EdisonNi-hku/chatreport | Edison Ni | 23 |
+| AFaCTA (ACL 2024) | github.com/EdisonNi-hku/AFaCTA | Edison Ni | 9 |
+| pdfQA (Jan 2026) | github.com/tobischimanski/pdfQA | Tobias | 13 |
+
+**GitHub-Präsenz:**
+- Tobias' persönliches GitHub (tobischimanski): 4 öffentliche Repos.
+- Edison Ni (EdisonNi-hku): 18+ öffentliche Repos — der primäre Implementierer.
+- Professoren (Leippold, Ash): Keine Forschungs-Repos auf ihren persönlichen Accounts.
+
+**Implikationen für das Treffen:**
+- **Frage stellen:** "Wer würde bei euch die technische Implementierung übernehmen? Wäre Edison Ni involviert?"
+- Das DIRAS-Repo enthält eine vollständige Training-Pipeline — wir können sie evaluieren, bevor wir etwas bauen.
+- Die Code-Qualität und Vollständigkeit von DIRAS und Faithful Specialists ist deutlich besser als bei Climinator — das sind Tobias/Edisons Projekte, nicht Leippolds.
+
+---
+
 ## 3. Agenda — 5 Themen (3-4 für eine Stunde auswählen)
 
 ### Thema 1: Live-Demo + Architektur-Durchgang (10-15 Min. — obligatorisch)

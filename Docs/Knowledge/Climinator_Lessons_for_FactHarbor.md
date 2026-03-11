@@ -315,6 +315,64 @@ The repository has active development on branches since Feb 2025, with ~20+ comm
 
 **Implication for FactHarbor:** The project is alive and the Spectrum experiment shows independent convergence on the same questions we're exploring (which debate topology works best, how to classify evidence). This validates the collaboration opportunity — especially with Tobias, who bridges the Climinator group (Leippold) and the Ash group.
 
+### 3.10. climateandtech GitHub Organization — Full Inventory
+
+The `factchecker` repository sits within a broader [climateandtech](https://github.com/climateandtech) GitHub organization containing 13 repositories. This gives a fuller picture of the group's technical scope and active interests.
+
+**Core / actively maintained:**
+
+| Repository | Description | Stars | License | Last Updated |
+|------------|-------------|-------|---------|-------------|
+| `factchecker` | The Climinator — climate claim fact-checking (documented above) | 12 | AGPL-3.0 | Mar 2026 |
+| `carbonara` | TypeScript CO2 assessment & sustainability platform | 13 | — | Feb 2026 |
+| `ragecheck` | Fork of `aagoldberg/ragecheck` — outrage-framing pattern detection in media (TypeScript) | — | — | Jan 2026 |
+
+**Research forks and tools:**
+
+| Repository | Description | Last Updated |
+|------------|-------------|-------------|
+| `ClimRetrieve` | Fork of `tobischimanski/ClimRetrieve` — dataset corrections | Dec 2025 |
+| `chatreport` | Fork of `EdisonNi-hku/chatreport` | — |
+| `pdf` | Python PDF utility | Jul 2025 |
+| `climate-policy-radar-knowledge-graph` | Python, Apache-2.0 | Apr 2025 |
+| `wikirate` | Ruby fork, GPL-3.0 | Jan 2025 |
+
+**Low activity / scaffolding:**
+
+| Repository | Description |
+|------------|-------------|
+| `sustainabilty-report-benchmark` | AGPL-3.0, essentially empty (1 commit, Jul 2025) |
+| `esg-classifier-playground` | JavaScript |
+| `awesome-books` | Curated reading list |
+| `awesome-bureaucracy` | Resource collection |
+
+**Observations:** The org's scope extends well beyond fact-checking into sustainability reporting (`carbonara`, `chatreport`, `sustainabilty-report-benchmark`), media analysis (`ragecheck`), and climate NLP (`ClimRetrieve`, `climate-policy-radar-knowledge-graph`). The `carbonara` and `ragecheck` repos — both TypeScript — suggest the team has significant TypeScript experience, relevant if considering code-level collaboration with FactHarbor. The forks of `ClimRetrieve` (Tobias Schimanski) and `chatreport` (Edison Ni) trace directly to the student-authored research code pattern described in §3.12.
+
+### 3.11. HuggingFace Presence: ClimateBERT
+
+The research group also maintains a significant presence on HuggingFace through the **ClimateBERT** organization:
+
+- **16 models**, **840K+ downloads**, **7 datasets**
+- **Base model:** `distilroberta-base-climate-s` (domain-adapted language model for climate text)
+- **Task-specific classifiers:** `environmental-claims`, `climate-detector`, `commitment`, `tcfd` (Task Force on Climate-related Financial Disclosures)
+
+These models represent the group's earlier (pre-LLM) approach to climate text classification — fine-tuned transformer models for specific tasks. The shift from ClimateBERT (task-specific fine-tuning) to Climinator (LLM-based debate with RAG) mirrors the broader industry transition from fine-tuned classifiers to prompt-based LLM systems.
+
+**Relevance to FactHarbor:** The ClimateBERT models are domain-specific and not directly applicable to FactHarbor's topic-agnostic architecture. However, the 840K+ download count demonstrates the group's reach in the NLP/climate research community — relevant context for any collaboration discussions.
+
+### 3.12. Code Authorship Patterns
+
+Understanding who writes the code clarifies who to engage for technical collaboration:
+
+| Person | Role | Where They Publish |
+|--------|------|--------------------|
+| **Markus Leippold** | Professor, PI (UZH) | No personal GitHub — publishes through student accounts and org repos |
+| **Elliott Ash** | Professor, PI (ETH) | `elliottash` on GitHub — only teaching materials, no research repos |
+| **Edison Ni** (EdisonNi-hku) | Student/researcher | Primary code author for `chatreport` and related tools (forked into climateandtech org) |
+| **Tobias Schimanski** (tobischimanski) | Student/researcher | Primary code author for `ClimRetrieve` and Climinator contributions (forked into climateandtech org) |
+
+**Pattern:** The professors (Leippold, Ash) drive research direction and funding but do not author code. The implementation work is done by students — primarily Edison Ni and Tobias Schimanski. The climateandtech org then forks or absorbs their work. This is a standard academic pattern but important for FactHarbor: **technical collaboration means engaging Tobias and Edison, not the PIs.** This reinforces the assessment in §3.9 that Tobias — who bridges both research groups — is the key contact.
+
 ---
 
 ## 4. Lessons for FactHarbor

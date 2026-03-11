@@ -1,7 +1,7 @@
 # DIRAS: Efficient LLM Annotation of Document Relevance for RAG — Lessons for FactHarbor
 
 **Paper:** Ni, Schimanski, Lin, Sachan, Ash, Leippold (2025). *DIRAS: Efficient LLM Annotation of Document Relevance in Retrieval Augmented Generation.* NAACL 2025.
-**Links:** [ACL Anthology](https://aclanthology.org/2025.naacl-long.271/) | [arXiv](https://arxiv.org/abs/2406.14162)
+**Links:** [ACL Anthology](https://aclanthology.org/2025.naacl-long.271/) | [arXiv](https://arxiv.org/abs/2406.14162) | [GitHub](https://github.com/EdisonNi-hku/DIRAS)
 **Reviewed by:** Claude Opus 4.6 (2026-03-10)
 
 > **Related docs:** [Faithful LLM Specialists (ACL 2024)](Schimanski_Faithful_LLM_Specialists_ACL2024.md) for the source attribution companion paper. [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the Mediator-Advocate debate deep-dive. [Executive Summary](EXECUTIVE_SUMMARY.md) for the consolidated priority table.
@@ -322,10 +322,67 @@ DIRAS reinforces several existing priorities:
 
 ---
 
-## 8. References
+## 8. Code Repository
+
+**Repo:** [github.com/EdisonNi-hku/DIRAS](https://github.com/EdisonNi-hku/DIRAS) — Public, MIT license, 6 stars, 1 fork. Python 98.9%.
+
+### What's Included
+
+- **GPT-4o distillation pipeline** — teacher annotation scripts for generating relevance labels
+- **QLoRA fine-tuning** — scripts to fine-tune Llama-3-8B as the student relevance scorer
+- **Inference scripts** — run the trained DIRAS model on new query-document pairs
+- **Benchmark data** — ChatReport + ClimRetrieve retrieval evaluation datasets
+- **General QA datasets** — ELI5, ASQA, QAMPARI, RAG-Bench (added October 2024)
+
+### Discoverability Note
+
+The ACL Anthology page for this paper does **not** link to the repository. The repo is only discoverable via GitHub search by author (EdisonNi-hku). Last activity: October 2024 (general domain QA datasets added).
+
+### Edison Ni — Primary Implementer
+
+Edison Ni ([EdisonNi-hku](https://github.com/EdisonNi-hku) on GitHub) is the primary code author for the Schimanski/Leippold research group's papers. Beyond DIRAS, he authored the repositories for [Faithful LLM Specialists](https://github.com/EdisonNi-hku/Robust_Evidence_Based_QA), [ChatReport](https://github.com/EdisonNi-hku/chatreport), and [AFaCTA](https://github.com/EdisonNi-hku/AFaCTA).
+
+### Schimanski/Leippold Ecosystem — Repository Map
+
+```mermaid
+flowchart TD
+    subgraph edison["EdisonNi-hku (GitHub)"]
+        direction TB
+        DIRAS["<b>DIRAS</b><br>NAACL 2025<br>Relevance annotation<br>+ distillation"]
+        ROBUST["<b>Robust_Evidence_Based_QA</b><br>ACL 2024<br>Faithful LLM Specialists"]
+        CLIMRET["<b>ClimRetrieve</b><br>EMNLP 2024<br>IR benchmark for<br>climate disclosures"]
+        CHATREP["<b>ChatReport</b><br>EMNLP 2023<br>LLM-based climate<br>report analysis"]
+        AFACTA["<b>AFaCTA</b><br>EMNLP 2024<br>Automated fact-checking<br>annotation framework"]
+    end
+
+    subgraph tobias["tobischimanski (GitHub)"]
+        direction TB
+        FACTCHK["<b>factchecker</b><br>npj Climate Action 2025<br>Climinator: LLM-based<br>climate fact-checker"]
+    end
+
+    subgraph cat["climateandtech (GitHub)"]
+        direction TB
+        CATORG["Organization repos<br>(ChatReport deployment,<br>climate NLP tools)"]
+    end
+
+    DIRAS -.->|"uses benchmarks from"| CLIMRET
+    DIRAS -.->|"uses benchmarks from"| CHATREP
+    ROBUST -.->|"quality filtering for"| DIRAS
+    AFACTA -.->|"annotation framework"| FACTCHK
+
+    style edison fill:#e3f2fd,stroke:#1565c0
+    style tobias fill:#fff3e0,stroke:#ef6c00
+    style cat fill:#e8f5e9,stroke:#2e7d32
+```
+
+*The Schimanski/Leippold group's code is spread across three GitHub accounts. Edison Ni (EdisonNi-hku) is the primary implementer for the research papers, while Tobias Schimanski (tobischimanski) hosts the Climinator fact-checker, and climateandtech hosts deployment and organizational tools.*
+
+---
+
+## 9. References
 
 ### This Paper
-- Ni, J., Schimanski, T., Lin, M., Sachan, M., Ash, E. & Leippold, M. (2025). DIRAS: Efficient LLM Annotation of Document Relevance in Retrieval Augmented Generation. *NAACL 2025*, pp. 5238-5258. [ACL Anthology](https://aclanthology.org/2025.naacl-long.271/) | [arXiv](https://arxiv.org/abs/2406.14162)
+- Ni, J., Schimanski, T., Lin, M., Sachan, M., Ash, E. & Leippold, M. (2025). DIRAS: Efficient LLM Annotation of Document Relevance in Retrieval Augmented Generation. *NAACL 2025*, pp. 5238-5258. [ACL Anthology](https://aclanthology.org/2025.naacl-long.271/) | [arXiv](https://arxiv.org/abs/2406.14162) | [GitHub](https://github.com/EdisonNi-hku/DIRAS)
 
 ### Related Work by Same Authors
 - Schimanski, T., Ni, J., Kraus, M., Ash, E. & Leippold, M. (2024). Towards Faithful and Robust LLM Specialists for Evidence-Based Question-Answering. *ACL 2024*. [Analysis](Schimanski_Faithful_LLM_Specialists_ACL2024.md)

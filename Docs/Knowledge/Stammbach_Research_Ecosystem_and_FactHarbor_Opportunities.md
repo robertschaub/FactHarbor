@@ -18,6 +18,7 @@
 | **Jingwei Ni** | ETH Zurich (PhD) | AI trustworthiness, ClimateNLP; co-supervised by Ash + Leippold | **Bridge researcher** between Ash (ETH) and Leippold (UZH); key contact for cross-group collaboration |
 | **Saeid Vaghefi** | UZH Geography | ML/NLP for climate; ChatClimate + Climinator lead implementer | Primary technical contact for Climinator code |
 | **Tobias Schimanski** | UZH | NLP for sustainable finance, ClimRetrieve | Evidence retrieval expertise |
+| **Edison Ni** | HKU / ETH-affiliated | Primary code author for Schimanski/Leippold/Ash group papers (AFaCTA, DIRAS, ChatReport, Faithful LLM Specialists). 18+ public repos on [GitHub](https://github.com/EdisonNi-hku). | Notable implementer — key contact for code-level questions on group outputs |
 | **Julia Bingler** | University of Oxford | Corporate climate disclosures, ClimateBERT co-creator | Climate+finance NLP |
 | **Vera Schmitt** | TU Berlin / DFKI | XplaiNLP, disinformation detection | Climate+Tech partner, ClimateCheck shared task |
 
@@ -629,12 +630,13 @@ Beyond the 11 Climinator-specific lessons in [Climinator Analysis](Climinator_Le
 
 ### Leippold Group
 
-- **DIRAS:** Ni et al. (2025). NAACL 2025.
-- **ClimRetrieve:** Schimanski et al. (2024). EMNLP 2024. [ACL Anthology](https://aclanthology.org/2024.emnlp-main.969/)
+- **DIRAS:** Ni et al. (2025). NAACL 2025. [GitHub](https://github.com/EdisonNi-hku/DIRAS) (MIT, 6 stars)
+- **ClimRetrieve:** Schimanski et al. (2024). EMNLP 2024. [ACL Anthology](https://aclanthology.org/2024.emnlp-main.969/) | [GitHub](https://github.com/tobischimanski/ClimRetrieve) (6 stars, updated Feb 2026)
 - **Agentic RAG for Climate Finance:** Vaghefi et al. (2025). [arXiv](https://arxiv.org/abs/2504.05104)
 - **ChatClimate:** Vaghefi et al. (2023). Communications Earth & Environment. [chatclimate.ai](https://www.chatclimate.ai/)
-- **Faithful LLM Specialists:** Schimanski et al. (2024). ACL 2024. [ACL Anthology](https://aclanthology.org/2024.acl-long.105/)
+- **Faithful LLM Specialists:** Schimanski et al. (2024). ACL 2024. [ACL Anthology](https://aclanthology.org/2024.acl-long.105/) | [GitHub](https://github.com/EdisonNi-hku/Robust_Evidence_Based_QA) (MIT, 8 stars)
 - **vBoN:** Amini et al. (2025). ICLR 2025. [arXiv](https://arxiv.org/abs/2407.06057)
+- **pdfQA:** Schimanski et al. (2026). Document-level QA benchmark. [GitHub](https://github.com/tobischimanski/pdfQA) (13 stars, Jan 2026) — evaluates QA systems on full PDF documents; relevant to evidence extraction from long-form sources.
 
 ### Multi-Agent Debate Literature
 
@@ -657,4 +659,14 @@ Beyond the 11 Climinator-specific lessons in [Climinator Analysis](Climinator_Le
 - Elliott Ash: [ETH Zurich](https://lawecon.ethz.ch/group/professors/ash.html)
 - Jingwei Ni: [ETH](https://lawecon.ethz.ch/group/scientific-team/ni.html) | [Personal](https://edisonni-hku.github.io/)
 - Vera Schmitt: [TU Berlin](https://www.tu.berlin/en/qu/ueber-uns/team-personen/senior-researchers/dr-vera-schmitt)
+- Edison Ni: [GitHub (EdisonNi-hku)](https://github.com/EdisonNi-hku) — 18+ public repos, primary code author for group papers
 - ChatClimate team: [chatclimate.ai/team](https://www.chatclimate.ai/team)
+
+### GitHub Profiles / Code Ownership
+
+| Person | GitHub | Notes |
+|--------|--------|-------|
+| **Edison Ni** (EdisonNi-hku) | [github.com/EdisonNi-hku](https://github.com/EdisonNi-hku) | Primary code author for Schimanski/Leippold/Ash group papers. 18+ public repos. Implements AFaCTA, DIRAS, Faithful LLM Specialists, ChatReport. |
+| **Tobias Schimanski** (tobischimanski) | [github.com/tobischimanski](https://github.com/tobischimanski) | 4 public repos. ClimRetrieve, pdfQA. |
+| **Elliott Ash** (elliottash) | [github.com/elliottash](https://github.com/elliottash) | Only teaching materials — no research code. |
+| **Markus Leippold** | — | No personal GitHub profile. Group code published under student/postdoc accounts or [climateandtech](https://github.com/climateandtech). |
