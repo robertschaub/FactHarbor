@@ -1432,16 +1432,12 @@ ${evidenceSection}
 
 3. NEGATIVE EVIDENCE CAPS (hard limits — override other factors)
 
-   *** CHECK CUMULATIVE RULES FIRST ***
+   *** CHECK CUMULATIVE RULE FIRST ***
    CUMULATIVE NEGATIVE EVIDENCE (MUST CHECK BEFORE individual caps):
+   If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
+   → score MUST be in unreliable band (0.15-0.28) — this is NON-NEGOTIABLE
 
-   CUMULATIVE RULE A: propaganda echoing + fact-checker/press-council failures
-   → score MUST be in unreliable band (0.15-0.28) — NON-NEGOTIABLE
-   Example: "verbatim translation of state media" + "3 press council rulings" → 0.15-0.28
-
-   CUMULATIVE RULE B: 3+ fact-checker failures + academic/research classification as unreliable
-   → score MUST be in unreliable band (0.15-0.28) — NON-NEGOTIABLE
-   Example: "3 CORRECTIV fact-checks" + "classified as regressive alternative media" → 0.15-0.28
+   Example: "verbatim translation of state media" + "3 press council rulings" = CUMULATIVE → score in 0.15-0.28
 
    PROPAGANDA ECHOING INDICATORS (any ONE of these = echoing):
    - "verbatim translation" of state media content
@@ -1456,13 +1452,10 @@ ${evidenceSection}
    - Tier 1 assessor rates factual reporting as low/not credible (e.g., MBFC "Mixed"/"Low"
      /"Not Credible") → score in leaning_unreliable band (0.29-0.42).
      "Low" or "Not Credible" should score in the LOWER half of this band (0.29-0.35).
-     "Mixed" should score 0.29-0.38 (midpoint ~0.33).
    - 1-2 documented failures from reputable fact-checkers → score in mixed band (0.43-0.57)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
 
    IMPORTANT: Caps are CEILINGS, not targets. Score naturally within the appropriate band based on severity.
-   MULTIPLE negative indicators compound: if a source has BOTH a Tier 1 "Mixed" rating AND documented
-   fact-checker failures, score in the LOWER quarter of the applicable band (e.g., 0.29-0.32 for leaning_unreliable).
 
    Press council reprimands from countries with rule of law → count as fact-checker failures
    (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
@@ -1879,26 +1872,22 @@ YOUR TASK: CROSS-CHECK AND REFINE
      * Publishing unverified claims from propaganda outlets
      * Multiple documented instances of misleading content
    - ENFORCE NEGATIVE EVIDENCE CAPS (CHECK CUMULATIVE FIRST):
-     *** CUMULATIVE RULES (check FIRST, take precedence): ***
-
-     CUMULATIVE RULE A: propaganda echoing + fact-checker/press-council failures
+     *** CUMULATIVE RULE (check FIRST, takes precedence): ***
+     If evidence shows BOTH propaganda echoing AND fact-checker/press-council failures:
      → score MUST be in unreliable band (0.15-0.28) — NON-NEGOTIABLE
+
      PROPAGANDA ECHOING = "verbatim translation", republishing state media, cited in disinformation databases
      Press council rulings from rule-of-law countries = fact-checker failures
 
-     CUMULATIVE RULE B: 3+ fact-checker failures + academic/research classification as unreliable
-     → score MUST be in unreliable band (0.15-0.28) — NON-NEGOTIABLE
-     Example: "3 CORRECTIV fact-checks" + "classified as regressive alternative media" → 0.15-0.28
+     Example: "verbatim translation" + "3 press council rulings" = CUMULATIVE → score in 0.15-0.28
 
      Individual caps define UPPER BOUNDS - score within the band, not at the border:
      * Echoing ONLY → score in 0.29-0.42 band
      * Failures ONLY → score in 0.29-0.57 depending on severity
      * Tier 1 assessor rates factual reporting as "Low"/"Not Credible"/"Mixed" → score ≤ 0.42
        ("Low"/"Not Credible" should be in lower half: 0.29-0.35)
-       ("Mixed" should be 0.29-0.38, midpoint ~0.33)
 
      IMPORTANT: Caps are CEILINGS, not targets. Score naturally within appropriate band.
-     MULTIPLE negative indicators compound: Tier 1 "Mixed" + fact-checker failures → lower quarter of band (0.29-0.32).
 
      If initial evaluation scored above these caps despite evidence, LOWER THE SCORE
    - NO adjustment if evidence is simply sparse (sparse ≠ positive)
