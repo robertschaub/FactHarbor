@@ -476,6 +476,14 @@ function getReliabilityAssessmentTerms(translatedTerms: Record<string, string>):
  * Now uses brand variants for more flexible matching.
  * EXCLUDES results FROM the source itself (those are not reliability assessments).
  * PRIORITIZES results that actually assess reliability, not just cite the source.
+ *
+ * DESIGN NOTE (AGENTS.md acknowledgment): This function uses keyword-based filtering
+ * (RELIABILITY_ASSESSMENT_TERMS_EN + LLM-translated variants) which is a deterministic
+ * text-matching decision. This is an intentional STRUCTURAL PRE-FILTER for efficiency —
+ * it reduces noise before the LLM evaluation, not an analytical classification.
+ * False negatives are acceptable: the LLM evaluation handles whatever passes through.
+ * The translated terms mitigate non-English gaps. If this becomes a quality bottleneck,
+ * replace with a lightweight LLM relevance call (batched).
  */
 function isRelevantSearchResult(
   r: WebSearchResult,

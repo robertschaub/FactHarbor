@@ -831,6 +831,70 @@
   margin: 0;
 }
 
+.traceList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.traceItem {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+}
+
+.traceHeader {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.traceTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.traceStatus {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  border: 1px solid transparent;
+}
+
+.traceStatusNeutral {
+  background: var(--bg-surface2);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+.traceStatusSuccess {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--text-primary);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.traceStatusWarning {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--text-primary);
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.traceDetails {
+  margin: 8px 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .evidenceList {
   margin: 0;
   padding-left: 20px;

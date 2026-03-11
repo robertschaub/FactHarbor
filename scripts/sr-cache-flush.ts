@@ -1,10 +1,16 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import fs from 'fs';
 import path from 'path';
 
 async function flushSRCache() {
   const dbPath = path.resolve(process.env.FH_SR_CACHE_PATH || 'apps/web/source-reliability.db');
   console.log(`[SR-Cache] Opening database at ${dbPath}`);
+
+  if (!fs.existsSync(dbPath)) {
+    console.error(`[SR-Cache] Database not found at ${dbPath}`);
+    process.exit(1);
+  }
 
   const db = await open({
     filename: dbPath,

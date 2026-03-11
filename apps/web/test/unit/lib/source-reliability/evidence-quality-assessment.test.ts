@@ -144,6 +144,29 @@ describe("assessEvidenceQuality", () => {
     expect(result.warningMessage).toMatch(/failed/i);
   });
 
+  it("skips when remaining budget is below minRemainingBudgetMs", async () => {
+    const classify = vi.fn(async () => "[]");
+    const result = await assessEvidenceQuality({
+      domain: "example.org",
+      items: baseItems,
+      config: {
+        enabled: true,
+        model: "haiku",
+        timeoutMs: 8000,
+        maxItemsPerAssessment: 12,
+        minRemainingBudgetMs: 20000,
+      },
+      modelName: "claude-haiku-4-5-20251001",
+      remainingBudgetMs: 15000, // below minRemainingBudgetMs
+      promptTemplate: "task ${domain}\n${itemsBlock}",
+      classify,
+    });
+    expect(result.qualityAssessment.status).toBe("skipped");
+    expect(result.qualityAssessment.skippedReason).toBe("budget_guard");
+    expect(result.items).toEqual(baseItems);
+    expect(classify).not.toHaveBeenCalled();
+  });
+
   it("handles multilingual evidence snippets (de/fr/en) without structural failure", async () => {
     const multilingualItems: EvidencePackItemForQuality[] = [
       {
