@@ -1217,22 +1217,22 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   const phase2Budget = Math.floor(maxEvidenceItems * 0.75); // 75% cumulative
   const relaxedOpts = { maxResultsOverride: Math.min(maxResultsPerQuery + 2, 10), relax: true };
 
-  // ── WAVE 1 (parallel): Fact-checker + Standard ─────────────────────
-  // Highest priority: fact-checker ratings and standard reliability queries.
-  // Budget-limited to leave room for negative signal phases.
-  debugLog(`[SR-Eval] Wave 1: fact-checker + standard queries for ${domain}`, { brand });
-  await Promise.all([
-    // Fact-checker queries (global + regional) — budget-limited
-    runPhase([...factCheckerQueries, ...regionalFactCheckerQueries], phase1Budget),
-    // Standard reliability + translated — budget-limited
-    runPhase([...standardQueries, ...standardQueriesTranslated], phase2Budget),
-  ]);
+  // ── PHASE 1 (sequential): Fact-checkers FIRST ─────────────────────
+  // Highest priority: fact-checker site-specific queries fill budget first.
+  // Sequential to ensure fact-checker evidence gets priority slots.
+  debugLog(`[SR-Eval] Phase 1: fact-checker queries for ${domain}`, { brand });
+  await runPhase([...factCheckerQueries, ...regionalFactCheckerQueries], phase1Budget);
 
-  // ── WAVE 2 (parallel): Negative signals + Press council + Independence
-  // Critical for detecting problems: negative evidence, press council rulings,
-  // institutional independence concerns. These MUST run to catch bad sources.
+  // ── PHASE 2 (sequential): Standard reliability queries ─────────────
+  debugLog(`[SR-Eval] Phase 2: standard reliability queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+  await runPhase([...standardQueries, ...standardQueriesTranslated], phase2Budget);
+
+  // ── WAVE 3 (parallel): Deep signals ────────────────────────────────
+  // All remaining phases run in parallel — they're independent and fill
+  // the remaining budget. Negative signals, press council, independence,
+  // propaganda all compete fairly for remaining slots.
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Wave 2: negative signal + press council + independence for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    debugLog(`[SR-Eval] Wave 3: deep signal queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
       // Negative signals (English + translated) — critical for catching bad sources
       runPhase(
@@ -1251,9 +1251,9 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     ]);
   }
 
-  // ── WAVE 3 (parallel, if budget remains): Propaganda + Identity + Entity
+  // ── WAVE 4 (parallel, if budget remains): Propaganda + Identity + Entity
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Wave 3: propaganda + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    debugLog(`[SR-Eval] Wave 4: propaganda + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
       // Propaganda + science denial (English + translated)
       runPhase(
