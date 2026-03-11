@@ -4248,7 +4248,7 @@ export default function ConfigAdminPage() {
             }}>
               <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: "var(--text-primary)" }}>Sections</div>
               {promptContent.split("\n").map((line, i) => {
-                const match = line.match(/^## ([A-Z][A-Z0-9_]+)\s*$/);
+                const match = line.match(/^## ([A-Z][A-Z0-9_ ]+(?:\([^)]*\))?)\s*$/);
                 if (match) {
                   return (
                     <div
@@ -4282,7 +4282,7 @@ export default function ConfigAdminPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface2)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
-                      {match[1]}
+                      {match[1].trim()}
                     </div>
                   );
                 }
