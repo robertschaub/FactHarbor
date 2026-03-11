@@ -1046,77 +1046,64 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
       ]
     : [];
 
-  // Phase 4: State/foreign propaganda tracking queries
-  // Critical for finding outlets that echo state propaganda (any country)
-  // Generic terms only - no country-specific hardcoding per AGENTS.md
-  const statePropagandaQueries = [
+  // Phase 4: Merged negative signals — English
+  // Combines state/foreign propaganda tracking + negative-signal queries.
+  // Duplicates across the former Phase 4 and Phase 5 have been removed;
+  // every query below is unique. Generic terms only per AGENTS.md.
+  const negativeSignalQueries = [
+    // State/foreign propaganda tracking
     `"${brand}" state propaganda OR foreign propaganda OR government propaganda`,
     `"${brand}" site:euvsdisinfo.eu OR site:disinfo.eu`,
     `"${brand}" "disinformation" "state media" OR "state-backed"`,
     `"${brand}" "propaganda outlet" OR "government-controlled media"`,
-    `"${brand}" "influence operation" OR "information operation" OR "influence campaign"`,
-    `"${brand}" "coordinated inauthentic behavior" OR "state-sponsored"`,
     `"${brand}" "state narrative" OR "government narrative"`,
+    `"${brand}" "echo chamber" OR "amplifies" OR "amplifying"`,
+    // Influence operations & coordinated inauthenticity (merged — was in both phases)
+    `"${brand}" "influence operation" OR "information operation" OR "influence campaign"`,
+    `"${brand}" "coordinated inauthentic behavior" OR "state-sponsored" OR astroturf`,
+    // Conspiracy / disinformation networks / fringe (merged — was in both phases)
     `"${brand}" conspiracy OR "conspiracy theory" OR hoax`,
     `"${brand}" "disinformation network" OR "propaganda network"`,
     `"${brand}" fringe OR extremist OR radical OR "hate speech"`,
-    `"${brand}" "echo chamber" OR "amplifies" OR "amplifying"`,
+    // General negative signals
+    `${domainToken} propaganda accusations disinformation`,
+    `"${brand}" false claims debunked misinformation`,
+    `"${brand}" fact check failed OR misleading`,
+    `"${brand}" bias criticism controversial`,
+    `"${brand}" partisan left-wing OR far-left OR right-wing OR far-right`,
+    `"${brand}" unreliable OR inaccurate OR sensationalist`,
+    // Wikipedia often has documented controversies
+    `"${brand}" site:wikipedia.org controversy OR criticism`,
   ];
 
-  // Phase 4b: Science/expert consensus denial queries
+  // Phase 4b: Science/expert consensus denial queries (separate — distinct topic)
   const scienceDenialQueries = [
     `"${brand}" anti-science OR science denial OR pseudo-science`,
     `"${brand}" denialism OR rejects scientific consensus`,
     `"${brand}" promotes debunked claims OR spreads misinformation`,
   ];
 
-  // Phase 4c: State propaganda queries in source language
-  // Generic terms only - no country-specific hardcoding per AGENTS.md
-  const statePropagandaQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
+  // Phase 4c: Merged negative signals in source language (if non-English)
+  // Combines former state-propaganda translated + negative-signal translated.
+  // Duplicates removed; every query is unique.
+  const negativeSignalQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
     ? [
+        // State/foreign propaganda (unique to former Phase 4c)
         `"${brand}" ${t("state propaganda")} OR ${t("foreign propaganda")}`,
         `"${brand}" ${t("state media")} ${t("disinformation")}`,
         `"${brand}" ${t("state-backed")} OR ${t("government propaganda")}`,
+        // Influence operations & coordinated inauthenticity (merged — was in both)
         `"${brand}" ${t("influence operation")} OR ${t("information operation")} OR ${t("influence campaign")}`,
         `"${brand}" ${t("coordinated inauthentic behavior")} OR ${t("state-sponsored")}`,
+        // Conspiracy / disinformation networks / fringe (merged — was in both)
         `"${brand}" ${t("conspiracy")} OR ${t("conspiracy theory")} OR ${t("hoax")}`,
         `"${brand}" ${t("disinformation network")} OR ${t("propaganda network")}`,
         `"${brand}" ${t("fringe")} OR ${t("extremist")} OR ${t("radical")}`,
-      ]
-    : [];
-
-  // Phase 5: Negative-signal queries - English
-  // These help find documented problems with the source
-  const negativeSignalQueries = [
-    `${domainToken} propaganda accusations disinformation`,
-    `"${brand}" false claims debunked misinformation`,
-    `"${brand}" fact check failed OR misleading`,
-    // Broader criticism/bias coverage
-    `"${brand}" bias criticism controversial`,
-    `"${brand}" partisan left-wing OR far-left OR right-wing OR far-right`,
-    `"${brand}" unreliable OR inaccurate OR sensationalist`,
-    `"${brand}" influence operation OR information operation`,
-    `"${brand}" coordinated inauthentic behavior OR astroturf`,
-    `"${brand}" conspiracy OR "conspiracy theory" OR hoax`,
-    `"${brand}" "disinformation network" OR "propaganda network"`,
-    `"${brand}" fringe OR extremist OR radical OR "hate speech"`,
-    // Wikipedia often has documented controversies
-    `"${brand}" site:wikipedia.org controversy OR criticism`,
-  ];
-
-  // Phase 5b: Negative-signal queries in source language (if non-English)
-  // Critical for finding local fact-checker assessments of problematic sources
-  const negativeSignalQueriesTranslated: string[] = sourceLanguage && Object.keys(translatedTerms).length > 0
-    ? [
+        // General negative signals (unique to former Phase 5b)
         `${domainToken} ${t("propaganda")} ${t("disinformation")}`,
         `"${brand}" ${t("fake news")} ${t("debunked")} ${t("false claims")}`,
         `"${brand}" ${t("partisan")} ${t("controversial")}`,
         `"${brand}" ${t("criticism")} ${t("unreliable")}`,
-        `"${brand}" ${t("influence operation")} OR ${t("information operation")}`,
-        `"${brand}" ${t("coordinated inauthentic behavior")} OR ${t("state-sponsored")}`,
-        `"${brand}" ${t("conspiracy")} OR ${t("conspiracy theory")} OR ${t("hoax")}`,
-        `"${brand}" ${t("disinformation network")} OR ${t("propaganda network")}`,
-        `"${brand}" ${t("fringe")} OR ${t("extremist")} OR ${t("radical")}`,
       ]
     : [];
 
@@ -1227,14 +1214,13 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   debugLog(`[SR-Eval] Phase 2: standard reliability queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
   await runPhase([...standardQueries, ...standardQueriesTranslated], phase2Budget);
 
-  // ── WAVE 3 (parallel): Deep signals ────────────────────────────────
-  // All remaining phases run in parallel — they're independent and fill
-  // the remaining budget. Negative signals, press council, independence,
-  // propaganda all compete fairly for remaining slots.
+  // ── WAVE 3 (parallel): Merged negative signals + deep signals ──────
+  // Negative signals now include former propaganda queries (duplicates removed).
+  // All run in parallel — independent and fill remaining budget.
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Wave 3: deep signal queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    debugLog(`[SR-Eval] Wave 3: negative signals + deep signal queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
-      // Negative signals (English + translated) — critical for catching bad sources
+      // Merged negative signals (English + translated) — covers propaganda + negative signals
       runPhase(
         [...negativeSignalQueries, ...negativeSignalQueriesTranslated],
         maxEvidenceItems,
@@ -1251,16 +1237,12 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     ]);
   }
 
-  // ── WAVE 4 (parallel, if budget remains): Propaganda + Identity + Entity
+  // ── WAVE 4 (parallel, if budget remains): Science denial + Identity + Entity
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Wave 4: propaganda + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    debugLog(`[SR-Eval] Wave 4: science denial + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
     await Promise.all([
-      // Propaganda + science denial (English + translated)
-      runPhase(
-        [...statePropagandaQueries, ...scienceDenialQueries, ...statePropagandaQueriesTranslated],
-        maxEvidenceItems,
-        relaxedOpts
-      ),
+      // Science denial (separate topic, kept distinct)
+      runPhase(scienceDenialQueries, maxEvidenceItems, relaxedOpts),
       // Neutral/identity queries (entity detection)
       runPhase(neutralSignalQueries, maxEvidenceItems, { relax: true }),
       // Entity-focused queries (lowest priority)
@@ -2402,7 +2384,6 @@ async function evaluateSourceWithConsensus(
   domain: string,
   multiModel: boolean,
   confidenceThreshold: number,
-  _consensusThreshold: number // Kept for API compatibility, not used in sequential mode
 ): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
   const evidencePack = await buildEvidencePack(domain);
   if (evidencePack.enabled) {
@@ -2618,9 +2599,6 @@ export async function POST(req: Request) {
   const effectiveMultiModel = raw.multiModel !== undefined ? body.multiModel : srConfig.multiModel;
   const effectiveConfidenceThreshold =
     raw.confidenceThreshold !== undefined ? body.confidenceThreshold : srConfig.confidenceThreshold;
-  const effectiveConsensusThreshold =
-    raw.consensusThreshold !== undefined ? body.consensusThreshold : srConfig.consensusThreshold;
-
   // Rate limiting
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
   const rateCheck = checkRateLimit(ip, body.domain);
@@ -2636,7 +2614,6 @@ export async function POST(req: Request) {
     body.domain,
     effectiveMultiModel,
     effectiveConfidenceThreshold,
-    effectiveConsensusThreshold
   );
 
   if (!result.success) {
