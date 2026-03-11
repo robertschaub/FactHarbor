@@ -4681,3 +4681,16 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Build refreshed active default calculation config because the seed file changed (expected behavior in this setup).
 **For next agent:** If you introduce new SR tunables, add them in this order: `config-schemas.ts` -> `apps/web/configs/sr.default.json` -> admin SR form -> route normalization (no local numeric literals).
 **Learnings:** no
+---
+### 2026-03-11 | Lead Developer | Codex (GPT-5) | SR Guard Patch — Skip Enrichment When Budget Is Tight
+**Task:** Implement a minimal guard for finding #1: skip SR evidence-quality enrichment when remaining per-domain budget is too tight, to preserve core evaluation time.
+**Files touched:** `apps/web/src/app/api/internal/evaluate-source/route.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a simple pre-enrichment budget check in `evaluateSourceWithConsensus()` before calling enrichment.
+- Guard computes required core budget as `SR_PRIMARY_EVALUATION_TIMEOUT_MS (+ SR_REFINEMENT_TIMEOUT_MS when multiModel)` and requires remaining budget to exceed that plus `evidenceQualityAssessment.minRemainingBudgetMs`.
+- If budget is tight, enrichment is skipped with `qualityAssessment.status="skipped"` and `skippedReason="budget_guard"`.
+- Kept existing enrichment-internal budget checks unchanged (defense-in-depth).
+**Open items:** None.
+**Warnings:** This is intentionally conservative; under tight budgets you may see more skipped enrichment and thus flatter evidence weighting in SR eval.
+**For next agent:** If tuning is needed, adjust only `sr.evidenceQualityAssessment.minRemainingBudgetMs` in UCM first before changing code.
+**Learnings:** no

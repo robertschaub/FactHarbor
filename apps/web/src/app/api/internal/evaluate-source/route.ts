@@ -1246,6 +1246,10 @@ function getRemainingBudgetMs(requestStartedAtMs: number, requestBudgetMs: numbe
   return Math.max(0, requestBudgetMs - elapsedMs);
 }
 
+function getMinimumCoreEvaluationBudgetMs(multiModel: boolean): number {
+  return SR_PRIMARY_EVALUATION_TIMEOUT_MS + (multiModel ? SR_REFINEMENT_TIMEOUT_MS : 0);
+}
+
 function normalizeEvidenceQualityAssessmentConfig(
   config: unknown,
 ): EvidenceQualityAssessmentConfig {
@@ -2646,14 +2650,51 @@ async function evaluateSourceWithConsensus(
   }
 
   // Budget note: per-domain prefetch timeout in analyzer defaults to 90s (`SR_CONFIG.evalTimeoutMs`).
-  // The enrichment call is budget-guarded and timeout-clamped to avoid stealing time from core evaluation.
-  const evidencePack = await enrichEvidencePackWithQualityAssessment(
-    domain,
-    initialEvidencePack,
-    options.evidenceQualityAssessmentConfig,
+  // Guard enrichment up front so core evaluation budget stays available.
+  const remainingBudgetBeforeEnrichmentMs = getRemainingBudgetMs(
     options.requestStartedAtMs,
     options.requestBudgetMs,
   );
+  const minimumBudgetForCoreEvaluationMs = getMinimumCoreEvaluationBudgetMs(multiModel);
+  const minimumBudgetToAttemptEnrichmentMs =
+    minimumBudgetForCoreEvaluationMs +
+    Math.max(0, options.evidenceQualityAssessmentConfig.minRemainingBudgetMs);
+
+  let evidencePack: EvidencePack;
+  if (
+    remainingBudgetBeforeEnrichmentMs !== null &&
+    remainingBudgetBeforeEnrichmentMs < minimumBudgetToAttemptEnrichmentMs
+  ) {
+    const modelName = resolveEvidenceQualityAssessmentModel(
+      options.evidenceQualityAssessmentConfig.model,
+    ).modelName;
+    debugLog(
+      "[SR-Eval] Skipping evidence quality assessment due to tight request budget",
+      {
+        domain,
+        remainingBudgetMs: remainingBudgetBeforeEnrichmentMs,
+        minimumBudgetToAttemptEnrichmentMs,
+        minimumBudgetForCoreEvaluationMs,
+        multiModel,
+      },
+    );
+    evidencePack = {
+      ...initialEvidencePack,
+      qualityAssessment: {
+        status: "skipped",
+        model: modelName,
+        skippedReason: "budget_guard",
+      },
+    };
+  } else {
+    evidencePack = await enrichEvidencePackWithQualityAssessment(
+      domain,
+      initialEvidencePack,
+      options.evidenceQualityAssessmentConfig,
+      options.requestStartedAtMs,
+      options.requestBudgetMs,
+    );
+  }
 
   // ============================================================================
   // STEP 1: Primary evaluation (Anthropic Claude)
