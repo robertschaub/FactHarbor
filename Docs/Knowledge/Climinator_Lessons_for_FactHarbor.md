@@ -297,15 +297,15 @@ The repository has active development on branches since Feb 2025, with ~20+ comm
 
 | Date | Development | Significance |
 |------|-------------|-------------|
-| **Mar 2026** | **PR #108 "Spectrum experiment"** | Systematic ablation study: evidence classification, chunk labeling (supports/refutes/NIN), mediator modes (LLM vs formula), 6-run comparison. **They are actively experimenting with debate topology — converging with FactHarbor's questions.** |
-| Feb 2026 | Issue #100: Ollama batch embeddings | Moving toward local model support |
-| Feb 2026 | PR #99: Sources downloader improvements | Better data pipeline infrastructure |
+| **Mar 2026** | **PR #108 "Spectrum experiment"** (by **suung**, labeled "DO NOT MERGE") | Systematic ablation study: evidence classification, chunk labeling (supports/refutes/NIN), mediator modes (LLM vs formula), 6-run comparison. Targets feature branch `42-ollama-batch-embeddings`, not main. **They are actively experimenting with debate topology — converging with FactHarbor's questions.** |
+| Feb 2026 | PR #100: Ollama batch embeddings (by **suung**) | Moving toward local model support |
+| Feb 2026 | PR #99: Sources downloader improvements (by **suung**) | Better data pipeline infrastructure |
 | Feb 2026 | Dependency modernization | Gradio 5.12→6.7, LangChain-core 0.1→1.2 — significant upgrades |
 | Feb 2025 | Semantic Scholar integration | Added Knowledge Graph API key support |
 | Mar-Apr 2025 | SourcesDownloader class | New infrastructure for downloading WMO reports, Climate Feedback references from CSV |
 | Apr 2025 | Documentation overhaul | Improved README, getting started guide |
 
-**Paper-vs-code gap status (verified 2026-03-11):** `debate.py` is still empty (0 bytes) on both `main` and the `experiment/climatefeedback-spectrum` branch. PR #108 does **not** implement debate — it builds an **Advocate-Mediator pattern** (`advocate.py`, `mediator.py`, `evidence_classifier.py`), effectively pivoting away from the paper's debate architecture. The `main` branch has not received a commit since May 2025; all active development is on the Spectrum branch (marked "DO NOT MERGE"). `debate.py` will likely remain an unused placeholder.
+**Paper-vs-code gap status (verified 2026-03-11):** `debate.py` is still empty (0 bytes) on both `main` and the `experiment/climatefeedback-spectrum` branch. PR #108 does **not** implement debate — it builds an **Advocate-Mediator pattern** (`advocate.py`, `mediator.py`, `evidence_classifier.py`), effectively pivoting away from the paper's debate architecture. The `main` branch has not received a commit since May 3, 2025 (last merge by marchburg); all active development since Feb 2026 is by **suung** on feature branches. PR #108 is labeled "DO NOT MERGE" and targets a feature branch, not main. `debate.py` will likely remain an unused placeholder.
 
 **Related ecosystem activity:**
 - **SERI grant NATURE-3B** (Jan 2025, 748K CHF to Leippold): NLP tools for biodiversity/TNFD scoring — adjacent project, same group

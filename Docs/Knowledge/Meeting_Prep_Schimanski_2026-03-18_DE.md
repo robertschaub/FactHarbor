@@ -47,7 +47,7 @@
 
 - Mediator-Advocate-Debattenrahmen mit RAG auf unterschiedlichen Korpora
 - Tobias ist Co-Autor, aber KEIN Hauptbeitragender
-- Paper-vs-Code-Kluft ist signifikant (debate.py immer noch leer, 0 Bytes). PR #108 "Spectrum-Experiment" baut stattdessen ein Advocate-Mediator-Pattern — effektiv ein Pivot weg von der Debatten-Architektur des Papers. Main-Branch inaktiv seit Mai 2025.
+- Paper-vs-Code-Kluft ist signifikant (debate.py immer noch leer, 0 Bytes). PR #108 "Spectrum-Experiment" (von suung, Label "DO NOT MERGE") baut stattdessen ein Advocate-Mediator-Pattern — Pivot weg von der Debatten-Architektur des Papers. Main-Branch inaktiv seit Mai 2025; aktuelle Aktivität (Feb-März 2026) nur von suung auf Feature-Branches.
 - **Dein Takeaway:** Nicht mit diesem Paper anfangen — es ist eher Leippolds Projekt. Aber die architektonischen Parallelen bestätigen die Zusammenarbeit.
 
 ---

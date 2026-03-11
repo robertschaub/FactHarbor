@@ -202,7 +202,7 @@ graph TB
 
 Mediator-Advocate debate framework for climate claim fact-checking. Paper describes 5-6 RAG advocates with iterative debate until convergence, reporting >96% accuracy.
 
-> **Critical finding (verified 2026-03-11):** The open-source code significantly diverges from the paper. `debate.py` is empty (0 bytes) and will likely remain so — PR #108 pivots to an Advocate-Mediator pattern instead. Only 3/6 corpora exist, claim decomposition is absent, and advocates execute sequentially. Main branch inactive since May 2025. See [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the full paper-vs-code gap analysis, codebase deep-dive, and 11 lessons for FactHarbor.
+> **Critical finding (verified 2026-03-11):** The open-source code significantly diverges from the paper. `debate.py` is empty (0 bytes) and will likely remain so — PR #108 (by suung, labeled "DO NOT MERGE") pivots to an Advocate-Mediator pattern instead. Only 3/6 corpora exist, claim decomposition is absent, and advocates execute sequentially. Main branch inactive since May 2025; recent activity (Feb-Mar 2026) only by suung on feature branches. See [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the full paper-vs-code gap analysis, codebase deep-dive, and 11 lessons for FactHarbor.
 
 ### 3.4. EMNLP 2024: Balanced Overviews Pattern
 
