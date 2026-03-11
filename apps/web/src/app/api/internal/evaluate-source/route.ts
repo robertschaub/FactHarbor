@@ -1200,140 +1200,68 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
     return added;
   }
 
-  // Phase budgets - ensure later phases get slots even if early phases find lots of results
-  const phase1Budget = Math.floor(maxEvidenceItems * 0.5); // 50% for fact-checkers
-  const phase2Budget = Math.floor(maxEvidenceItems * 0.75); // 75% cumulative for standard + institutional
-  // Remaining 25% for negative signal, entity queries, etc.
-
-  // Phase 1: Run fact-checker site-specific queries FIRST (highest priority)
-  // These directly target known fact-checker domains for assessments
-  // Budget-limited to ensure other phases get slots
-  if (rawItems.length < phase1Budget) {
-    debugLog(`[SR-Eval] Running global fact-checker queries for ${domain}`, { brand });
-    for (const q of factCheckerQueries) {
-      await runQuery(q);
-      if (rawItems.length >= phase1Budget) break;
+  // Helper to run a batch of queries sequentially within a phase, respecting budget
+  async function runPhase(
+    queries: string[],
+    budget: number,
+    opts?: { maxResultsOverride?: number; relax?: boolean }
+  ): Promise<void> {
+    for (const q of queries) {
+      if (rawItems.length >= budget) break;
+      await runQuery(q, opts?.maxResultsOverride, opts?.relax ?? false);
     }
   }
 
-  // Phase 1b: Run regional fact-checker queries (language-specific) - also high priority
-  if (rawItems.length < phase1Budget && regionalFactCheckerQueries.length > 0) {
-    debugLog(`[SR-Eval] Running regional fact-checker queries for ${domain}`, { language: sourceLanguage });
-    for (const q of regionalFactCheckerQueries) {
-      await runQuery(q);
-      if (rawItems.length >= phase1Budget) break;
-    }
-  }
+  const relaxedOpts = { maxResultsOverride: Math.min(maxResultsPerQuery + 2, 10), relax: true };
 
-  // Phase 2: Run standard reliability assessment queries (English)
-  for (const q of standardQueries) {
-    await runQuery(q);
-    if (rawItems.length >= phase2Budget) break;
-  }
+  // ── WAVE 1 (parallel): Core discovery ─────────────────────────────
+  // Run fact-checker, standard, and identity queries concurrently.
+  // These are independent and represent the highest-value searches.
+  debugLog(`[SR-Eval] Wave 1: fact-checker + standard + identity queries for ${domain}`, { brand });
+  await Promise.all([
+    // Fact-checker queries (global + regional)
+    runPhase([...factCheckerQueries, ...regionalFactCheckerQueries], maxEvidenceItems),
+    // Standard reliability + translated
+    runPhase([...standardQueries, ...standardQueriesTranslated], maxEvidenceItems),
+    // Neutral/identity queries (entity detection)
+    runPhase(neutralSignalQueries, maxEvidenceItems, { relax: true }),
+  ]);
 
-  // Phase 2b: Run standard queries (translated) - important for local fact-checkers
-  if (rawItems.length < phase2Budget && standardQueriesTranslated.length > 0) {
-    debugLog(`[SR-Eval] Running translated queries for ${domain}`, { language: sourceLanguage });
-    for (const q of standardQueriesTranslated) {
-      await runQuery(q);
-      if (rawItems.length >= phase2Budget) break;
-    }
-  }
-
-  // Phase 2c: Run institutional independence queries (HIGH PRIORITY - ALWAYS RUN)
-  // Critical for detecting politicization or compromised independence (especially government sources)
-  // These ALWAYS run regardless of current count to ensure independence concerns are captured
-  debugLog(`[SR-Eval] Running institutional independence queries for ${domain}`, { brand });
-  for (const q of institutionalIndependenceQueries) {
-    await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-    if (rawItems.length >= maxEvidenceItems) break;
-  }
-
-  // Phase 2d: Run institutional independence queries (translated)
-  if (institutionalIndependenceQueriesTranslated.length > 0) {
-    for (const q of institutionalIndependenceQueriesTranslated) {
-      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 3: Run press council / ethics violation queries (high priority)
-  // These find documented ethical failures and regulatory reprimands
+  // ── WAVE 2 (parallel, if budget remains): Deep signals ────────────
+  // Press council, institutional independence, propaganda, negative signals
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Running press council queries for ${domain}`, { brand });
-    for (const q of pressCouncilQueries) {
-      await runQuery(q);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
+    debugLog(`[SR-Eval] Wave 2: deep signal queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    await Promise.all([
+      // Institutional independence (always run - critical for government sources)
+      runPhase(
+        [...institutionalIndependenceQueries, ...institutionalIndependenceQueriesTranslated],
+        maxEvidenceItems,
+        relaxedOpts
+      ),
+      // Press council + ethics violations
+      runPhase([...pressCouncilQueries, ...pressCouncilQueriesTranslated], maxEvidenceItems),
+      // Negative signals (English + translated)
+      runPhase(
+        [...negativeSignalQueries, ...negativeSignalQueriesTranslated],
+        maxEvidenceItems,
+        relaxedOpts
+      ),
+    ]);
   }
 
-  // Phase 3b: Run press council queries (translated)
-  if (rawItems.length < maxEvidenceItems && pressCouncilQueriesTranslated.length > 0) {
-    for (const q of pressCouncilQueriesTranslated) {
-      await runQuery(q);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 4: Run propaganda/echoing tracking queries
-  // Uses relaxed filtering which can fill pack with weaker results
+  // ── WAVE 3 (parallel, if budget remains): Propaganda + entity ─────
   if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Running propaganda/echoing queries for ${domain}`, { brand });
-    for (const q of statePropagandaQueries) {
-      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 4b: Run science denial queries
-  if (rawItems.length < maxEvidenceItems) {
-    debugLog(`[SR-Eval] Running science denial queries for ${domain}`, { brand });
-    for (const q of scienceDenialQueries) {
-      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 4c: Run propaganda/echoing queries (translated)
-  if (rawItems.length < maxEvidenceItems && statePropagandaQueriesTranslated.length > 0) {
-    for (const q of statePropagandaQueriesTranslated) {
-      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 5: Run neutral/identity queries (helps entity detection when sparse)
-  if (rawItems.length < maxEvidenceItems && neutralSignalQueries.length > 0) {
-    for (const q of neutralSignalQueries) {
-      await runQuery(q, maxResultsPerQuery, true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 6: Run negative-signal queries (English)
-  // These help find documented problems with the source
-  if (rawItems.length < maxEvidenceItems) {
-    for (const q of negativeSignalQueries) {
-      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 6b: Run negative-signal queries (translated)
-  if (rawItems.length < maxEvidenceItems && negativeSignalQueriesTranslated.length > 0) {
-    for (const q of negativeSignalQueriesTranslated) {
-      await runQuery(q, Math.min(maxResultsPerQuery + 2, 10), true);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
-  }
-
-  // Phase 7: Run entity-focused queries (English)
-  // Lower priority - general organization info
-  if (rawItems.length < maxEvidenceItems) {
-    for (const q of entityQueries) {
-      await runQuery(q);
-      if (rawItems.length >= maxEvidenceItems) break;
-    }
+    debugLog(`[SR-Eval] Wave 3: propaganda + entity queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
+    await Promise.all([
+      // Propaganda + science denial (English + translated)
+      runPhase(
+        [...statePropagandaQueries, ...scienceDenialQueries, ...statePropagandaQueriesTranslated],
+        maxEvidenceItems,
+        relaxedOpts
+      ),
+      // Entity-focused queries (lowest priority)
+      runPhase(entityQueries, maxEvidenceItems),
+    ]);
   }
 
   const items: EvidencePackItem[] = rawItems.slice(0, maxEvidenceItems).map((it, idx) => ({
@@ -1499,10 +1427,22 @@ ${evidenceSection}
    - Do NOT use pretrained knowledge about this source
    - If you recognize this source but evidence is sparse → output insufficient_data
 
-2. INSUFFICIENT DATA THRESHOLDS (output score=null, factualRating="insufficient_data" if):
+2. INSUFFICIENT DATA THRESHOLDS:
+   DEFAULT PATH (output score=null, factualRating="insufficient_data" if):
    - Zero fact-checker assessments AND fewer than 3 evidence items (E1, E2, E3)
    - Zero fact-checker assessments AND no item contains explicit reliability assessment (rating, bias, standards, corrections)
    - Mechanistic confidence calculation < 0.50
+
+   SOURCE-TYPE SCORING EXCEPTION (overrides DEFAULT PATH):
+   If the source type is clearly identifiable from the evidence (e.g., political party website,
+   corporate PR, personal blog, government agency) AND the default path would produce insufficient_data,
+   you MAY instead assign a score based on the inherent reliability characteristics of that source type.
+   In this case:
+   - Set confidence proportional to how clearly the source type is identified (typically 0.50-0.70)
+   - Apply the appropriate source type caps
+   - Note in reasoning that the score is based on source type classification, not independent assessments
+   This exception does NOT apply when fact-checker ratings or explicit reliability assessments exist —
+   in that case, use the evidence to score normally.
 
 3. NEGATIVE EVIDENCE CAPS (hard limits — override other factors)
 
@@ -1786,21 +1726,41 @@ Output:
   "caveats": []
 }
 
-**Example 5: Insufficient Data**
+**Example 5: Identifiable Source Type Without Fact-Checker Ratings**
+Input: "party-website.example"
+Evidence: [E1] Government directory listing: official website of political party X. [E2] Academic paper citing party publications. [E3] News article mentioning party's political positions.
+Output:
+{
+  "sourceType": "political_party",
+  "identifiedEntity": "Political Party X",
+  "evidenceQuality": { "independentAssessmentsCount": 0, "recencyWindowUsed": "2020-2025", "notes": "Source type clearly identifiable from evidence. No independent reliability assessments but source type characteristics allow scoring." },
+  "score": 0.30,
+  "confidence": 0.60,
+  "factualRating": "leaning_unreliable",
+  "bias": { "politicalBias": "right", "otherBias": "advocacy" },
+  "reasoning": "Evidence clearly identifies this as an official political party website. Political party websites are inherently advocacy sources — they present partisan positions, selectively use data, and lack editorial independence or corrections policies. Score of 0.30 reflects the inherent limitations of advocacy sources. No independent fact-checker ratings exist to adjust this assessment up or down.",
+  "evidenceCited": [
+    { "claim": "Official political party website", "basis": "E1", "recency": "2023" },
+    { "claim": "Referenced in academic research as party source", "basis": "E2", "recency": "2020" }
+  ],
+  "caveats": ["Score based on source type classification (advocacy/political party), not independent fact-checker assessments", "No independent reliability ratings available"]
+}
+
+**Example 6: Insufficient Data (truly unknown)**
 Input: "unknown-local-outlet.example"
-Evidence: [E1] Mention in a directory listing.
+Evidence: (empty evidence pack)
 Output:
 {
   "sourceType": "unknown",
   "identifiedEntity": null,
-  "evidenceQuality": { "independentAssessmentsCount": 0, "recencyWindowUsed": "unknown", "notes": "No independent assessments or detailed information available." },
+  "evidenceQuality": { "independentAssessmentsCount": 0, "recencyWindowUsed": "unknown", "notes": "No evidence available at all." },
   "score": null,
-  "confidence": 0.20,
+  "confidence": 0.15,
   "factualRating": "insufficient_data",
   "bias": { "politicalBias": "not_applicable", "otherBias": null },
-  "reasoning": "There is insufficient evidence to form a reliable assessment. No fact-checker data found. Confidence below threshold.",
+  "reasoning": "Empty evidence pack — no information available to assess this source. Cannot determine source type or reliability.",
   "evidenceCited": [],
-  "caveats": ["No fact-checker data found", "Source is not widely indexed", "Confidence 20% below 50% threshold"]
+  "caveats": ["No evidence available", "Source type unknown"]
 }
 
 ─────────────────────────────────────────────────────────────────────
@@ -1812,6 +1772,7 @@ FINAL VALIDATION (check before responding)
 □ Applied SOURCE TYPE CAPS if sourceType is propaganda_outlet/known_disinformation/state_controlled_media/platform_ugc
 □ Applied negative evidence caps if applicable
 □ If confidence < 0.50 or zero fact-checkers + weak mentions → considered insufficient_data
+□ EXCEPTION: If source type clearly identifiable → scored by source type even without fact-checker ratings
 □ Recency weighting applied (discounted old evidence appropriately)
 □ Political bias noted but did NOT reduce score unless paired with documented failures
 □ Self-published pages were NOT counted as independent assessments
@@ -2353,7 +2314,7 @@ async function evaluateWithModel(
 (3) Apply negative evidence caps: fabrication/disinformation → ≤14%, 3+ failures → ≤42%, 1-2 failures → ≤57%.
 (4) Never use pretrained knowledge about sources.
 (5) Self-published pages (source's own website) do NOT count as independent assessments.
-(6) Default to insufficient_data when evidence is sparse (confidence < 0.50).
+(6) Default to insufficient_data when evidence is sparse (confidence < 0.50), unless source type is clearly identifiable (then score by source type).
 (7) Separate political bias from accuracy - bias alone does not reduce score.
 Always respond with valid JSON only.`,
               providerOptions: getPromptCachingOptions(modelProvider),
@@ -2457,9 +2418,10 @@ async function evaluateSourceWithConsensus(
     };
   }
 
-  // Handle insufficient_data case - no refinement needed
-  if (primary.result.factualRating === "insufficient_data" || primary.result.score === null) {
-    debugLog(`[SR-Eval] Insufficient data for ${domain}`);
+  // Handle insufficient_data case - skip refinement only if evidence pack is empty
+  if ((primary.result.factualRating === "insufficient_data" || primary.result.score === null)
+      && evidencePack.items.length === 0) {
+    debugLog(`[SR-Eval] Insufficient data (no evidence) for ${domain}`);
     const payload = buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack);
     applyLanguageDetectionCaveat(payload, domain);
     return {

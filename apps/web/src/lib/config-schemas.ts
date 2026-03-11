@@ -981,7 +981,7 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   // Core settings
   enabled: true,
   multiModel: true,
-  openaiModel: "gpt-4.1",
+  openaiModel: "gpt-4.1-mini",
 
   // Thresholds
   confidenceThreshold: 0.8,
