@@ -47,7 +47,7 @@
 
 - Mediator-Advocate debate framework with RAG on distinct corpora
 - Tobias is a co-author but NOT a lead contributor
-- Paper-vs-code gap is significant (debate.py empty) but they're actively working on it (Spectrum experiment PR #108, March 2026)
+- Paper-vs-code gap is significant (debate.py still empty, 0 bytes). PR #108 "Spectrum experiment" builds Advocate-Mediator pattern instead — effectively pivoting away from the paper's debate architecture. Main branch inactive since May 2025.
 - **Your takeaway:** Don't lead with this paper — it's more Leippold's project. But the architectural parallels validate the collaboration.
 
 ---

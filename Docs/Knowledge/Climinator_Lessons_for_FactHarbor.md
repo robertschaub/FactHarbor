@@ -305,7 +305,7 @@ The repository has active development on branches since Feb 2025, with ~20+ comm
 | Mar-Apr 2025 | SourcesDownloader class | New infrastructure for downloading WMO reports, Climate Feedback references from CSV |
 | Apr 2025 | Documentation overhaul | Improved README, getting started guide |
 
-**Paper-vs-code gap status:** `debate.py` is still empty on `main`. The Spectrum experiment PR (#108) suggests they are actively working on closing this gap — testing different advocate-mediator configurations including evidence classification approaches.
+**Paper-vs-code gap status (verified 2026-03-11):** `debate.py` is still empty (0 bytes) on both `main` and the `experiment/climatefeedback-spectrum` branch. PR #108 does **not** implement debate — it builds an **Advocate-Mediator pattern** (`advocate.py`, `mediator.py`, `evidence_classifier.py`), effectively pivoting away from the paper's debate architecture. The `main` branch has not received a commit since May 2025; all active development is on the Spectrum branch (marked "DO NOT MERGE"). `debate.py` will likely remain an unused placeholder.
 
 **Related ecosystem activity:**
 - **SERI grant NATURE-3B** (Jan 2025, 748K CHF to Leippold): NLP tools for biodiversity/TNFD scoring — adjacent project, same group

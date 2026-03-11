@@ -45,7 +45,7 @@ The paper measures **stance generation** quality, not **claim verification** acc
 ### Tier 1: Directly relevant to FactHarbor
 
 **Climinator** (npj Climate Action 2025) — [Link](https://www.nature.com/articles/s44168-025-00215-8) | [Full analysis](Climinator_Lessons_for_FactHarbor.md)
-Mediator-Advocate framework with RAG on distinct corpora. >96% reported accuracy. **Critical: open-source code diverges significantly from paper** (debate.py empty, only 3/6 corpora). FactHarbor's debate is already more sophisticated. See [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the complete paper-vs-code gap analysis and 11 lessons.
+Mediator-Advocate framework with RAG on distinct corpora. >96% reported accuracy. **Critical: open-source code diverges significantly from paper** (debate.py still empty, 0 bytes; PR #108 pivots to Advocate-Mediator pattern instead; main branch inactive since May 2025). FactHarbor's debate is already more sophisticated. See [Climinator Analysis](Climinator_Lessons_for_FactHarbor.md) for the complete paper-vs-code gap analysis and 11 lessons.
 
 **Status (2026-02-23):** Addressed. Debate role routing supports provider-level separation via UCM (`debateModelTiers`, `debateModelProviders`) and `LLMCallFn` provider override wiring. Each role's tier and provider are configured directly — no preset profiles. Common configurations: baseline (no overrides), cross-provider (`debateModelProviders: { "challenger": "openai" }`), max-diversity (challenger=openai + selfConsistency=google). Runtime fallback warnings (`debate_provider_fallback`) surface in `analysisWarnings` JSON. Diversity warning (`checkDebateTierDiversity`) correctly evaluates resolved config.
 
