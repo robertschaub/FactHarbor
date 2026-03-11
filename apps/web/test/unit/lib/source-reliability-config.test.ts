@@ -10,7 +10,6 @@ import {
   DEFAULT_CONSENSUS_THRESHOLD,
   SOURCE_TYPE_EXPECTED_CAPS,
   scoreToFactualRating,
-  ratingToScoreRange,
   meetsConfidenceRequirement,
   CONFIDENCE_REQUIREMENTS,
   getSRConfig,
@@ -115,22 +114,6 @@ describe("scoreToFactualRating", () => {
     expect(scoreToFactualRating(0.429)).toBe("leaning_unreliable");
     expect(scoreToFactualRating(0.289)).toBe("unreliable");
     expect(scoreToFactualRating(0.149)).toBe("highly_unreliable");
-  });
-});
-
-describe("ratingToScoreRange", () => {
-  it("returns correct range for highly_reliable", () => {
-    const range = ratingToScoreRange("highly_reliable");
-    expect(range).toEqual({ min: 0.86, max: 1.00 });
-  });
-
-  it("returns correct range for mixed", () => {
-    const range = ratingToScoreRange("mixed");
-    expect(range).toEqual({ min: 0.43, max: 0.579 });
-  });
-
-  it("returns null for insufficient_data", () => {
-    expect(ratingToScoreRange("insufficient_data")).toBeNull();
   });
 });
 

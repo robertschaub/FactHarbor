@@ -38,7 +38,6 @@ export const SR_CONFIG = {
   evalConcurrency: sharedConfig.evalConcurrency ?? 5,
   evalTimeoutMs: sharedConfig.evalTimeoutMs ?? 90000,
   defaultConfidence: sharedConfig.defaultConfidence ?? 0.8,
-  unknownSourceConfidence: sharedConfig.unknownSourceConfidence ?? 0.5,
 };
 
 /**
@@ -64,7 +63,6 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.evalConcurrency = next.evalConcurrency ?? 5;
   SR_CONFIG.evalTimeoutMs = next.evalTimeoutMs ?? 90000;
   SR_CONFIG.defaultConfidence = next.defaultConfidence ?? 0.8;
-  SR_CONFIG.unknownSourceConfidence = next.unknownSourceConfidence ?? 0.5;
   setCacheTtlDays(next.cacheTtlDays);
 }
 

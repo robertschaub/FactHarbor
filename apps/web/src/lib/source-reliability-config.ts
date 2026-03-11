@@ -86,23 +86,6 @@ export function scoreToFactualRating(score: number | null): FactualRating {
   return "highly_unreliable";
 }
 
-/**
- * Get the expected score range for a given rating.
- */
-export function ratingToScoreRange(rating: FactualRating): { min: number; max: number } | null {
-  switch (rating) {
-    case "highly_reliable": return { min: 0.86, max: 1.00 };
-    case "reliable": return { min: 0.72, max: 0.859 };
-    case "leaning_reliable": return { min: 0.58, max: 0.719 };
-    case "mixed": return { min: 0.43, max: 0.579 };
-    case "leaning_unreliable": return { min: 0.29, max: 0.429 };
-    case "unreliable": return { min: 0.15, max: 0.289 };
-    case "highly_unreliable": return { min: 0.00, max: 0.149 };
-    case "insufficient_data": return null;
-    default: return null;
-  }
-}
-
 // ============================================================================
 // GROUNDING REQUIREMENTS
 // ============================================================================
@@ -122,7 +105,7 @@ export const MIN_FOUNDEDNESS_FOR_HIGH_SCORES = 3;
 /**
  * Foundedness threshold below which we require higher confidence.
  */
-export const WEAK_FOUNDEDNESS_THRESHOLD = 2;
+const WEAK_FOUNDEDNESS_THRESHOLD = 2;
 
 // ============================================================================
 // ASYMMETRIC CONFIDENCE GATING

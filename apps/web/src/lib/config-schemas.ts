@@ -971,7 +971,6 @@ export const SourceReliabilityConfigSchema = z.object({
   evalConcurrency: z.number().int().min(1).max(10).optional().describe("Max concurrent SR evaluations (default: 3)"),
   evalTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for individual SR evaluations (ms) (default: 90000)"),
   defaultConfidence: z.number().min(0).max(1).optional().describe("Default confidence for missing track records (default: 0.7)"),
-  unknownSourceConfidence: z.number().min(0).max(1).optional().describe("Confidence assigned to unknown sources (default: 0.5)"),
 
 });
 
@@ -1017,7 +1016,6 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   evalConcurrency: 5,
   evalTimeoutMs: 90000,
   defaultConfidence: 0.8,
-  unknownSourceConfidence: 0.5,
 };
 
 // ============================================================================
