@@ -1505,7 +1505,15 @@ const SHARED_RATING_SCALE = `
   0.29–0.42 → leaning_unreliable  (lax standards, often inaccurate, slow to correct)
   0.15–0.28 → unreliable          (poor standards, inaccurate, rarely corrects)
   0.00–0.14 → highly_unreliable   (lowest standards, fabricates, resists correction)
-  null      → insufficient_data   (cannot evaluate — sparse/no evidence)`;
+  null      → insufficient_data   (cannot evaluate — sparse/no evidence)
+
+  USE THE FULL RANGE of each band — do not default to the midpoint.
+  Strong evidence for the band description → score toward the EDGES (closer to adjacent bands).
+  Differentiate within bands: 1 failure vs 5 failures matters, even if both land in the same band.
+
+  AVOID CENTER-GRAVITY BIAS: Resist the tendency to regress scores toward 0.50.
+  Clearly reliable → 0.72-0.90, not pulled toward 0.60. Clearly unreliable → 0.15-0.35, not pulled toward 0.40.
+  Only score near 0.50 when evidence genuinely shows BOTH positive and negative signals equally.`;
 
 /**
  * Evidence quality signals - shared understanding of what counts as positive/negative

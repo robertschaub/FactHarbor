@@ -114,6 +114,18 @@ ${evidenceSection}
   0.00-0.14 -> highly_unreliable   (lowest standards, fabricates, resists correction)
   null      -> insufficient_data   (cannot evaluate - sparse/no evidence)
 
+  USE THE FULL RANGE of each band — do not default to the midpoint.
+  - Strong evidence for the band description → score toward the EDGES of the band (closer to adjacent bands)
+  - A source that is clearly reliable but not exceptional → score 0.72-0.76 (low end of reliable), not 0.78
+  - A source with severe fact-checker failures → score 0.29-0.32 (low end of leaning_unreliable), not 0.35
+  - Differentiate within bands: a source with 1 failure is different from one with 5 failures, even if both are in the same band
+
+  AVOID CENTER-GRAVITY BIAS: There is a natural tendency to regress scores toward 0.50 when
+  uncertain. Resist this. If evidence clearly points to reliability, score in the 0.72-0.90
+  range — do not pull toward 0.60. If evidence clearly points to unreliability, score in the
+  0.15-0.35 range — do not pull toward 0.40. Only score near 0.50 (mixed band) when evidence
+  genuinely shows BOTH positive and negative signals in roughly equal measure.
+
 ## CONFIDENCE ASSESSMENT
 
 Your confidence reflects how well the evidence supports your assessment.
