@@ -4639,3 +4639,45 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Build runs postbuild prompt reseed script by design (`scripts/reseed-all-prompts.ts`).
 **For next agent:** If step labels or detail density should be tuned, edit `buildExecutionTrace()` in `apps/web/src/app/admin/source-reliability/page.tsx` and keep severity semantics aligned with AGENTS Report Quality rules.
 **Learnings:** no
+---
+### 2026-03-11 | Code Reviewer + Lead Developer | Claude Code (Opus) | Replace keyword filter with LLM relevance classification
+**Task:** Remove AGENTS.md-violating deterministic keyword-based search result filtering (`RELIABILITY_ASSESSMENT_TERMS_EN`, `isRelevantSearchResult`) from SR evaluation and replace with LLM-based relevance classification merged into the existing evidence quality assessment call.
+**Files touched:** `apps/web/src/app/api/internal/evaluate-source/route.ts`, `apps/web/src/lib/source-reliability/evidence-quality-assessment.ts`, `apps/web/prompts/source-reliability.prompt.md`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/sr.default.json`, `apps/web/test/unit/lib/source-reliability/evidence-quality-assessment.test.ts`, `Docs/WIP/SR_Evidence_Quality_Assessment_Plan_2026-03-11.md`, `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`
+**Key decisions:**
+- **Removed:** `RELIABILITY_ASSESSMENT_TERMS_EN` (60+ hardcoded English keywords), `getReliabilityAssessmentTerms()`, `isRelevantSearchResult()`, `relaxAssessmentTerms`/`sparseThreshold` sparse-mode logic.
+- **Added:** `relevant: boolean` field to `EnrichedEvidenceItem`. LLM classifies relevance alongside `probativeValue` and `evidenceCategory` in one Haiku call — zero extra LLM calls.
+- **Structural pre-filters kept:** Self-domain exclusion, source-mention check (`resultMentionsSource()`), dedup.
+- **Post-LLM relevance filter:** After assessment, `relevant: false` items filtered out. Fact-checker domain items auto-pass.
+- **Defaults raised:** `maxEvidenceItems` and `maxItemsPerAssessment` 12 → 30, `maxOutputTokens` 1200 → 3000.
+- **Translation LLM call stays:** `SEARCH_TERMS_TO_TRANSLATE` still used for multilingual query construction, not filtering.
+**Open items:** None.
+**Warnings:** First SR evaluations after deploy collect more raw results (30 vs 12 cap) before LLM filtering. Monitor Haiku latency.
+**For next agent:** `relevant` field is now part of evidence quality assessment contract. Fact-checker domain auto-pass uses `FACT_CHECKER_DOMAINS` from `fact-checker-service.ts`.
+**Learnings:** no
+---
+### 2026-03-11 | Lead Developer | Codex (GPT-5) | UCM SR Form Alignment for New Enrichment Config
+**Task:** Ensure Admin UCM UI correctly handles newly added Source Reliability enrichment settings.
+**Files touched:** `apps/web/src/app/admin/config/page.tsx`
+**Key decisions:**
+- Aligned SR form defaults/ranges with schema defaults from shared SR config instead of stale hardcoded values.
+- Updated OpenAI refinement model dropdown to include current SR defaults (`gpt-4.1-mini`, `gpt-4.1`) while keeping existing options.
+- Updated Evidence Quality Assessment controls to support configured ranges (`maxItemsPerAssessment` up to 40) and default fallback values from shared config.
+- Updated evaluation search max evidence input to schema-aligned range/default (`maxEvidenceItems` up to 40).
+**Open items:** None.
+**Warnings:** Build runs postbuild prompt reseed script by design.
+**For next agent:** Keep SR form fallback values sourced from `SHARED_DEFAULT_SR_CONFIG` to avoid schema/UI drift.
+**Learnings:** no
+---
+### 2026-03-11 | Lead Developer | Codex (GPT-5) | UCM Cleanup — Seed-First Defaults + SR Separation Hygiene
+**Task:** Ensure SR UCM tunables are not stale-hardcoded, defaults originate from seeded config files, and moved SR config fields are cleaned from old UCM surfaces.
+**Files touched:** `apps/web/src/lib/config-storage.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/calculation.default.json`, `apps/web/src/app/admin/config/page.tsx`, `apps/web/src/app/api/internal/evaluate-source/route.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added runtime default resolution in config storage to prefer seeded files (`apps/web/configs/*.default.json`) before code constants when DB active config is missing.
+- Removed stale moved fields from active calculation UCM surface: `sourceReliability.confidenceThreshold` and `sourceReliability.consensusThreshold` no longer seeded/displayed for Calculation; only `defaultScore` remains there.
+- Kept schema backward compatibility for existing stored calculation configs by accepting deprecated threshold fields as optional.
+- Reworked SR evaluator startup defaults to use SR defaults consistently (no stale 12/20 caps) and aligned EQA cap clamp to schema max (`40`).
+- Removed residual SR coupling to shared search defaults at route initialization by deriving SR search config from SR evaluationSearch defaults.
+**Open items:** Existing active DB configs may still contain deprecated calculation threshold keys historically; they are now ignored by the form and no longer part of default seed.
+**Warnings:** Build refreshed active default calculation config because the seed file changed (expected behavior in this setup).
+**For next agent:** If you introduce new SR tunables, add them in this order: `config-schemas.ts` -> `apps/web/configs/sr.default.json` -> admin SR form -> route normalization (no local numeric literals).
+**Learnings:** no

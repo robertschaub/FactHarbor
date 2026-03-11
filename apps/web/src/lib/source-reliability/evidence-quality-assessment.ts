@@ -324,6 +324,40 @@ export function formatEvidenceForEvaluationPrompt(
   return sections.join("\n\n");
 }
 
+/**
+ * Post-LLM relevance filtering: removes items the LLM marked as irrelevant,
+ * but auto-passes items from known fact-checker domains.
+ * Only applied when quality assessment was successfully applied.
+ */
+export function filterByRelevance(
+  items: EvidencePackItemForQuality[],
+  assessmentApplied: boolean,
+  factCheckerDomains: ReadonlySet<string>,
+): { filtered: EvidencePackItemForQuality[]; removedCount: number } {
+  if (!assessmentApplied) {
+    return { filtered: items, removedCount: 0 };
+  }
+
+  const filtered = items.filter((item) => {
+    if (item.relevant !== false) return true;
+    // Auto-pass known fact-checker domains even if LLM said not relevant
+    try {
+      const host = new URL(item.url).hostname.toLowerCase().replace(/^www\./, "");
+      if (
+        factCheckerDomains.has(host) ||
+        [...factCheckerDomains].some((fc) => host.endsWith(`.${fc}`))
+      ) {
+        return true;
+      }
+    } catch {
+      /* ignore URL parse errors */
+    }
+    return false;
+  });
+
+  return { filtered, removedCount: items.length - filtered.length };
+}
+
 function computeAssessmentTimeoutMs(
   configuredTimeoutMs: number,
   remainingBudgetMs: number | null,

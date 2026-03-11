@@ -26,7 +26,7 @@ import { getPromptCachingOptions } from "@/lib/analyzer/llm";
 import { getSection, loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import { getConfig } from "@/lib/config-storage";
-import { DEFAULT_SEARCH_CONFIG, DEFAULT_SR_CONFIG, type SearchConfig } from "@/lib/config-schemas";
+import { DEFAULT_SR_CONFIG, type SearchConfig, type SourceReliabilityConfig } from "@/lib/config-schemas";
 import {
   computeRefinementConfidenceBoost,
   countUniqueEvidenceIds,
@@ -46,6 +46,7 @@ import {
 } from "@/lib/source-reliability-config";
 import {
   assessEvidenceQuality,
+  filterByRelevance,
   formatEvidenceForEvaluationPrompt,
   type EvidenceCategory,
   type EvidencePackItemForQuality,
@@ -66,22 +67,86 @@ export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
 const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.startsWith("PASTE_");
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith("PASTE_");
 
+const SR_DEFAULT_EVALUATION_SEARCH = DEFAULT_SR_CONFIG.evaluationSearch!;
+const SR_DEFAULT_EQA_CONFIG: EvidenceQualityAssessmentConfig =
+  DEFAULT_SR_CONFIG.evidenceQualityAssessment ?? {
+    enabled: true,
+    model: "haiku",
+    timeoutMs: 8000,
+    maxItemsPerAssessment: 30,
+    minRemainingBudgetMs: 20000,
+  };
+
+function buildSrSearchConfigFromEvalSearch(
+  evalSearch: SourceReliabilityConfig["evaluationSearch"],
+): SearchConfig {
+  const cfg = evalSearch ?? SR_DEFAULT_EVALUATION_SEARCH;
+  return {
+    enabled: true,
+    provider: cfg.provider,
+    mode: "standard",
+    maxResults: cfg.maxResultsPerQuery,
+    maxSourcesPerIteration: cfg.maxResultsPerQuery,
+    timeoutMs: cfg.timeoutMs,
+    dateRestrict: cfg.dateRestrict,
+    domainWhitelist: [],
+    domainBlacklist: [],
+    providers: {
+      googleCse: {
+        ...SR_DEFAULT_EVALUATION_SEARCH.providers.googleCse,
+        ...cfg.providers.googleCse,
+        dailyQuotaLimit:
+          cfg.providers.googleCse.dailyQuotaLimit ??
+          SR_DEFAULT_EVALUATION_SEARCH.providers.googleCse.dailyQuotaLimit ??
+          0,
+      },
+      serpapi: {
+        ...SR_DEFAULT_EVALUATION_SEARCH.providers.serpapi,
+        ...cfg.providers.serpapi,
+        dailyQuotaLimit:
+          cfg.providers.serpapi.dailyQuotaLimit ??
+          SR_DEFAULT_EVALUATION_SEARCH.providers.serpapi.dailyQuotaLimit ??
+          0,
+      },
+      brave: {
+        ...SR_DEFAULT_EVALUATION_SEARCH.providers.brave,
+        ...cfg.providers.brave,
+        dailyQuotaLimit:
+          cfg.providers.brave.dailyQuotaLimit ??
+          SR_DEFAULT_EVALUATION_SEARCH.providers.brave.dailyQuotaLimit ??
+          0,
+      },
+      serper: {
+        ...SR_DEFAULT_EVALUATION_SEARCH.providers.serper,
+        ...cfg.providers.serper,
+        dailyQuotaLimit:
+          cfg.providers.serper.dailyQuotaLimit ??
+          SR_DEFAULT_EVALUATION_SEARCH.providers.serper.dailyQuotaLimit ??
+          0,
+      },
+    },
+    cache: { enabled: true, ttlDays: 7 },
+  };
+}
+
 // Configurable model selection (from UCM)
 let SR_OPENAI_MODEL = DEFAULT_SR_CONFIG.openaiModel;
 let RATE_LIMIT_PER_IP = DEFAULT_SR_CONFIG.rateLimitPerIp ?? 10;
 let DOMAIN_COOLDOWN_SEC = DEFAULT_SR_CONFIG.domainCooldownSec ?? 60;
-let SR_SEARCH_CONFIG: SearchConfig = DEFAULT_SEARCH_CONFIG;
+let SR_SEARCH_CONFIG: SearchConfig = buildSrSearchConfigFromEvalSearch(
+  SR_DEFAULT_EVALUATION_SEARCH,
+);
 let SR_EVAL_USE_SEARCH = DEFAULT_SR_CONFIG.evalUseSearch ?? true;
-let SR_EVAL_MAX_RESULTS_PER_QUERY = DEFAULT_SR_CONFIG.evaluationSearch?.maxResultsPerQuery ?? 5;
-let SR_EVAL_MAX_EVIDENCE_ITEMS = DEFAULT_SR_CONFIG.evaluationSearch?.maxEvidenceItems ?? 20;
-let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null = DEFAULT_SR_CONFIG.evaluationSearch?.dateRestrict ?? null;
+let SR_EVAL_MAX_RESULTS_PER_QUERY = SR_DEFAULT_EVALUATION_SEARCH.maxResultsPerQuery;
+let SR_EVAL_MAX_EVIDENCE_ITEMS = SR_DEFAULT_EVALUATION_SEARCH.maxEvidenceItems;
+let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null = SR_DEFAULT_EVALUATION_SEARCH.dateRestrict;
 
 const DEFAULT_EVIDENCE_QUALITY_ASSESSMENT_CONFIG: EvidenceQualityAssessmentConfig = {
-  enabled: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.enabled ?? true,
-  model: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.model ?? "haiku",
-  timeoutMs: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.timeoutMs ?? 8000,
-  maxItemsPerAssessment: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.maxItemsPerAssessment ?? 12,
-  minRemainingBudgetMs: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.minRemainingBudgetMs ?? 20000,
+  enabled: SR_DEFAULT_EQA_CONFIG.enabled,
+  model: SR_DEFAULT_EQA_CONFIG.model,
+  timeoutMs: SR_DEFAULT_EQA_CONFIG.timeoutMs,
+  maxItemsPerAssessment: SR_DEFAULT_EQA_CONFIG.maxItemsPerAssessment,
+  minRemainingBudgetMs: SR_DEFAULT_EQA_CONFIG.minRemainingBudgetMs,
 };
 
 debugLog(`[SR-Eval] Configuration check`, {
@@ -1194,7 +1259,7 @@ function normalizeEvidenceQualityAssessmentConfig(
         : fallback.timeoutMs,
     maxItemsPerAssessment:
       typeof c.maxItemsPerAssessment === "number" && Number.isFinite(c.maxItemsPerAssessment)
-        ? Math.max(1, Math.min(20, Math.floor(c.maxItemsPerAssessment)))
+        ? Math.max(1, Math.min(40, Math.floor(c.maxItemsPerAssessment)))
         : fallback.maxItemsPerAssessment,
     minRemainingBudgetMs:
       typeof c.minRemainingBudgetMs === "number" && Number.isFinite(c.minRemainingBudgetMs)
@@ -1374,25 +1439,14 @@ async function enrichEvidencePackWithQualityAssessment(
 
   // Post-LLM relevance filtering: remove items the LLM marked as not about
   // reliability assessment. Fact-checker domain items auto-pass regardless.
-  const enrichedItems = assessment.items;
-  const relevanceFiltered = assessment.qualityAssessment.status === "applied"
-    ? enrichedItems.filter(item => {
-        if (item.relevant !== false) return true;
-        // Auto-pass known fact-checker domains even if LLM said not relevant
-        try {
-          const host = new URL(item.url).hostname.toLowerCase().replace(/^www\./, "");
-          if (FACT_CHECKER_DOMAINS.has(host) ||
-              [...FACT_CHECKER_DOMAINS].some(fc => host.endsWith(`.${fc}`))) {
-            return true;
-          }
-        } catch { /* ignore URL parse errors */ }
-        return false;
-      })
-    : enrichedItems; // If assessment was skipped/failed, pass all items through
+  const { filtered: relevanceFiltered, removedCount: filteredCount } = filterByRelevance(
+    assessment.items,
+    assessment.qualityAssessment.status === "applied",
+    FACT_CHECKER_DOMAINS,
+  );
 
-  const filteredCount = enrichedItems.length - relevanceFiltered.length;
   if (filteredCount > 0) {
-    debugLog(`[SR-Eval] Relevance filter: ${relevanceFiltered.length}/${enrichedItems.length} items passed (${filteredCount} removed)`, { domain });
+    debugLog(`[SR-Eval] Relevance filter: ${relevanceFiltered.length}/${assessment.items.length} items passed (${filteredCount} removed)`, { domain });
   }
 
   return {
@@ -2771,31 +2825,14 @@ export async function POST(req: Request) {
   // Decision A1/A2: Derive search config directly from SR evaluationSearch settings.
   // No longer loads shared 'search' profile from UCM and NO LONGER spreads DEFAULT_SEARCH_CONFIG.
   // This ensures SR is fully independent from Analysis-side default changes (e.g. domainBlacklist).
-  const evalSearch = srConfig.evaluationSearch || DEFAULT_SR_CONFIG.evaluationSearch!;
+  const evalSearch = srConfig.evaluationSearch || SR_DEFAULT_EVALUATION_SEARCH;
 
-  SR_SEARCH_CONFIG = {
-    enabled: true,
-    provider: evalSearch.provider,
-    mode: "standard",
-    maxResults: evalSearch.maxResultsPerQuery,
-    maxSourcesPerIteration: evalSearch.maxResultsPerQuery,
-    timeoutMs: evalSearch.timeoutMs,
-    dateRestrict: evalSearch.dateRestrict,
-    domainWhitelist: [],
-    domainBlacklist: [], // SR uses empty blacklist to ensure broad coverage
-    providers: {
-      googleCse: { ...evalSearch.providers.googleCse, dailyQuotaLimit: evalSearch.providers.googleCse.dailyQuotaLimit ?? 0 },
-      serpapi: { ...evalSearch.providers.serpapi, dailyQuotaLimit: evalSearch.providers.serpapi.dailyQuotaLimit ?? 0 },
-      brave: { ...evalSearch.providers.brave, dailyQuotaLimit: evalSearch.providers.brave.dailyQuotaLimit ?? 0 },
-      serper: { ...evalSearch.providers.serper, dailyQuotaLimit: evalSearch.providers.serper.dailyQuotaLimit ?? 0 },
-    },
-    cache: { enabled: true, ttlDays: 7 }, // Internal search cache remains enabled
-  };
+  SR_SEARCH_CONFIG = buildSrSearchConfigFromEvalSearch(evalSearch);
 
   SR_OPENAI_MODEL = srConfig.openaiModel;
-  RATE_LIMIT_PER_IP = srConfig.rateLimitPerIp ?? RATE_LIMIT_PER_IP;
-  DOMAIN_COOLDOWN_SEC = srConfig.domainCooldownSec ?? DOMAIN_COOLDOWN_SEC;
-  SR_EVAL_USE_SEARCH = srConfig.evalUseSearch ?? SR_EVAL_USE_SEARCH;
+  RATE_LIMIT_PER_IP = srConfig.rateLimitPerIp ?? (DEFAULT_SR_CONFIG.rateLimitPerIp ?? 10);
+  DOMAIN_COOLDOWN_SEC = srConfig.domainCooldownSec ?? (DEFAULT_SR_CONFIG.domainCooldownSec ?? 60);
+  SR_EVAL_USE_SEARCH = srConfig.evalUseSearch ?? (DEFAULT_SR_CONFIG.evalUseSearch ?? true);
   SR_EVAL_MAX_RESULTS_PER_QUERY = evalSearch.maxResultsPerQuery;
   SR_EVAL_MAX_EVIDENCE_ITEMS = evalSearch.maxEvidenceItems;
   SR_EVAL_DATE_RESTRICT = evalSearch.dateRestrict;

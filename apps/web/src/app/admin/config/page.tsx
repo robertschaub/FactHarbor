@@ -126,8 +126,6 @@ interface CalcConfig {
     contestationWeights: { established: number; disputed: number; opinion: number };
   };
   sourceReliability: {
-    confidenceThreshold: number;
-    consensusThreshold: number;
     defaultScore: number;
   };
   qualityGates: {
@@ -642,43 +640,11 @@ function CalcConfigForm({
       {/* Source Reliability */}
       <div className={styles.formSection}>
         <h3 className={styles.formSectionTitle}>Source Reliability</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Confidence Threshold</label>
-            <input
-              type="number"
-              className={styles.formInput}
-              value={config.sourceReliability.confidenceThreshold}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                updateNested("sourceReliability", {
-                  confidenceThreshold: isNaN(v) ? 0.8 : v,
-                });
-              }}
-            />
-            <div className={styles.formHelp}>Min LLM confidence (0-1)</div>
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Consensus Threshold</label>
-            <input
-              type="number"
-              className={styles.formInput}
-              value={config.sourceReliability.consensusThreshold}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                updateNested("sourceReliability", {
-                  consensusThreshold: isNaN(v) ? 0.2 : v,
-                });
-              }}
-            />
-            <div className={styles.formHelp}>Max disagreement (0-1)</div>
-          </div>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+          SR thresholds and consensus settings are now owned by the separate <strong>Source Reliability</strong> UCM profile.
+          This section only configures the consumer fallback used when SR has no score.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Default Score</label>
             <input
@@ -691,7 +657,7 @@ function CalcConfigForm({
               onChange={(e) => {
                 const v = parseFloat(e.target.value);
                 updateNested("sourceReliability", {
-                  defaultScore: isNaN(v) ? 0.4 : v,
+                  defaultScore: isNaN(v) ? DEFAULT_CALC_CONFIG.sourceReliability.defaultScore : v,
                 });
               }}
             />
@@ -1887,6 +1853,15 @@ function SRConfigForm({
     onChange({ ...config, [key]: value });
   };
 
+  const defaultEvalSearch = (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
+  const defaultEqa = (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
+    enabled: true,
+    model: "haiku",
+    timeoutMs: 8000,
+    maxItemsPerAssessment: 30,
+    minRemainingBudgetMs: 20000,
+  };
+
   return (
     <div className={styles.formSection}>
       {/* Core Settings */}
@@ -1928,10 +1903,12 @@ function SRConfigForm({
           value={config.openaiModel}
           onChange={(e) => updateField("openaiModel", e.target.value)}
         >
-          <option value="gpt-4o">gpt-4o (best quality)</option>
-          <option value="gpt-4o-mini">gpt-4o-mini (~15x cheaper)</option>
+          <option value="gpt-4.1-mini">gpt-4.1-mini (default, cost-balanced)</option>
+          <option value="gpt-4.1">gpt-4.1 (higher quality)</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="gpt-4o">gpt-4o</option>
         </select>
-        <div className={styles.formHelp}>Secondary model for consensus. gpt-4o-mini is usually sufficient.</div>
+        <div className={styles.formHelp}>Secondary model for SR cross-check refinement.</div>
       </div>
 
       {/* Thresholds */}
@@ -2077,13 +2054,16 @@ function SRConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.evaluationSearch?.maxResultsPerQuery ?? 3}
+            value={config.evaluationSearch?.maxResultsPerQuery ?? defaultEvalSearch.maxResultsPerQuery}
             min={1}
             max={10}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              const current = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
-              updateField("evaluationSearch", { ...current, maxResultsPerQuery: isNaN(v) ? 3 : v });
+              const current = config.evaluationSearch || defaultEvalSearch;
+              updateField("evaluationSearch", {
+                ...current,
+                maxResultsPerQuery: isNaN(v) ? defaultEvalSearch.maxResultsPerQuery : v,
+              });
             }}
           />
         </div>
@@ -2092,13 +2072,16 @@ function SRConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.evaluationSearch?.maxEvidenceItems ?? 12}
+            value={config.evaluationSearch?.maxEvidenceItems ?? defaultEvalSearch.maxEvidenceItems}
             min={1}
-            max={20}
+            max={40}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              const current = config.evaluationSearch || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evaluationSearch!;
-              updateField("evaluationSearch", { ...current, maxEvidenceItems: isNaN(v) ? 12 : v });
+              const current = config.evaluationSearch || defaultEvalSearch;
+              updateField("evaluationSearch", {
+                ...current,
+                maxEvidenceItems: isNaN(v) ? defaultEvalSearch.maxEvidenceItems : v,
+              });
             }}
           />
         </div>
@@ -2190,15 +2173,9 @@ function SRConfigForm({
         <label className={styles.formLabel}>
           <input
             type="checkbox"
-            checked={config.evidenceQualityAssessment?.enabled ?? true}
+            checked={config.evidenceQualityAssessment?.enabled ?? defaultEqa.enabled}
             onChange={(e) => {
-              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
-                enabled: true,
-                model: "haiku",
-                timeoutMs: 8000,
-                maxItemsPerAssessment: 12,
-                minRemainingBudgetMs: 20000,
-              };
+              const current = config.evidenceQualityAssessment || defaultEqa;
               updateField("evidenceQualityAssessment", { ...current, enabled: e.target.checked });
             }}
             style={{ marginRight: 8 }}
@@ -2212,15 +2189,9 @@ function SRConfigForm({
           <label className={styles.formLabel}>Assessment Model</label>
           <select
             className={styles.formInput}
-            value={config.evidenceQualityAssessment?.model ?? "haiku"}
+            value={config.evidenceQualityAssessment?.model ?? defaultEqa.model}
             onChange={(e) => {
-              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
-                enabled: true,
-                model: "haiku",
-                timeoutMs: 8000,
-                maxItemsPerAssessment: 12,
-                minRemainingBudgetMs: 20000,
-              };
+              const current = config.evidenceQualityAssessment || defaultEqa;
               updateField("evidenceQualityAssessment", { ...current, model: e.target.value });
             }}
           >
@@ -2236,20 +2207,17 @@ function SRConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.evidenceQualityAssessment?.timeoutMs ?? 8000}
+            value={config.evidenceQualityAssessment?.timeoutMs ?? defaultEqa.timeoutMs}
             min={1000}
             max={30000}
             step={500}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
-                enabled: true,
-                model: "haiku",
-                timeoutMs: 8000,
-                maxItemsPerAssessment: 12,
-                minRemainingBudgetMs: 20000,
-              };
-              updateField("evidenceQualityAssessment", { ...current, timeoutMs: isNaN(v) ? 8000 : v });
+              const current = config.evidenceQualityAssessment || defaultEqa;
+              updateField("evidenceQualityAssessment", {
+                ...current,
+                timeoutMs: isNaN(v) ? defaultEqa.timeoutMs : v,
+              });
             }}
           />
           <div className={styles.formHelp}>Hard timeout for the enrichment call.</div>
@@ -2261,19 +2229,16 @@ function SRConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.evidenceQualityAssessment?.maxItemsPerAssessment ?? 12}
+            value={config.evidenceQualityAssessment?.maxItemsPerAssessment ?? defaultEqa.maxItemsPerAssessment}
             min={1}
-            max={20}
+            max={40}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
-                enabled: true,
-                model: "haiku",
-                timeoutMs: 8000,
-                maxItemsPerAssessment: 12,
-                minRemainingBudgetMs: 20000,
-              };
-              updateField("evidenceQualityAssessment", { ...current, maxItemsPerAssessment: isNaN(v) ? 12 : v });
+              const current = config.evidenceQualityAssessment || defaultEqa;
+              updateField("evidenceQualityAssessment", {
+                ...current,
+                maxItemsPerAssessment: isNaN(v) ? defaultEqa.maxItemsPerAssessment : v,
+              });
             }}
           />
           <div className={styles.formHelp}>Independent cap for quality assessment batch size.</div>
@@ -2283,20 +2248,17 @@ function SRConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.evidenceQualityAssessment?.minRemainingBudgetMs ?? 20000}
+            value={config.evidenceQualityAssessment?.minRemainingBudgetMs ?? defaultEqa.minRemainingBudgetMs}
             min={0}
             max={120000}
             step={1000}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
-                enabled: true,
-                model: "haiku",
-                timeoutMs: 8000,
-                maxItemsPerAssessment: 12,
-                minRemainingBudgetMs: 20000,
-              };
-              updateField("evidenceQualityAssessment", { ...current, minRemainingBudgetMs: isNaN(v) ? 20000 : v });
+              const current = config.evidenceQualityAssessment || defaultEqa;
+              updateField("evidenceQualityAssessment", {
+                ...current,
+                minRemainingBudgetMs: isNaN(v) ? defaultEqa.minRemainingBudgetMs : v,
+              });
             }}
           />
           <div className={styles.formHelp}>Skip enrichment when remaining per-domain time budget is too tight.</div>

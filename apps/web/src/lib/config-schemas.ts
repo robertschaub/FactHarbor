@@ -972,7 +972,7 @@ export const SourceReliabilityConfigSchema = z.object({
     enabled: z.boolean().default(true).describe("Enable evidence quality enrichment before SR evaluation"),
     model: z.string().min(1).default("haiku").describe("Model alias or ID for SR evidence quality assessment"),
     timeoutMs: z.number().int().min(1000).max(30000).default(8000).describe("Timeout for SR evidence quality assessment call (ms)"),
-    maxItemsPerAssessment: z.number().int().min(1).max(40).default(30).describe("Maximum evidence items sent to quality assessment — also determines relevance filtering batch size"),
+    maxItemsPerAssessment: z.number().int().min(1).max(40).default(30).describe("Maximum evidence items sent to quality assessment (independent cap)"),
     minRemainingBudgetMs: z.number().int().min(0).max(120000).default(20000).describe("Skip quality assessment when remaining per-domain budget is below this threshold"),
   }).optional().describe("SR-owned evidence quality enrichment settings"),
 
@@ -1163,11 +1163,12 @@ export const CalcConfigSchema = z.object({
   }),
 
   sourceReliability: z.object({
-    confidenceThreshold: z.number().min(0).max(1),
-    consensusThreshold: z.number().min(0).max(1),
     // Consumer fallback for unknown/unrated sources (SR module itself returns null).
     defaultScore: z.number().min(0).max(1)
       .describe("Fallback score used by consuming pipelines when source reliability is unknown"),
+    // Deprecated (moved to SR config): accepted only for backward compatibility with older stored configs.
+    confidenceThreshold: z.number().min(0).max(1).optional(),
+    consensusThreshold: z.number().min(0).max(1).optional(),
   }),
 
   qualityGates: z
@@ -1472,8 +1473,6 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     },
   },
   sourceReliability: {
-    confidenceThreshold: 0.8,
-    consensusThreshold: 0.2,
     // Consumer-owned fallback when SR returns null for unknown/unrated sources.
     defaultScore: 0.45,
   },

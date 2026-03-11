@@ -863,6 +863,18 @@ const DEFAULT_CONFIGS: Record<Exclude<ConfigType, "prompt">, unknown> = {
   sr: DEFAULT_SR_CONFIG,
 };
 
+function getRuntimeDefaultConfig<T extends Exclude<ConfigType, "prompt">>(
+  configType: T,
+): ConfigSchemaTypes[T] {
+  // Canonical defaults live in seeded config files (apps/web/configs/*.default.json).
+  // If file load/validation fails, fall back to compile-time constants.
+  const fromFile = loadDefaultConfigFromFile(configType);
+  if (fromFile) {
+    return parseTypedConfig(configType, fromFile) as ConfigSchemaTypes[T];
+  }
+  return DEFAULT_CONFIGS[configType] as ConfigSchemaTypes[T];
+}
+
 /**
  * Get typed configuration with caching.
  *
@@ -944,14 +956,9 @@ export async function getConfig<T extends keyof ConfigSchemaTypes>(
     baseConfig = parseTypedConfig(configType, activeConfig.content);
     contentHash = activeConfig.contentHash;
   } else {
-    // Fall back to default config
-    const defaultConfig = DEFAULT_CONFIGS[configType as Exclude<ConfigType, "prompt">];
-    if (defaultConfig) {
-      baseConfig = defaultConfig as ConfigSchemaTypes[T];
-      fromDefault = true;
-    } else {
-      throw new Error(`No config found for ${configType}/${profileKey} and no default available`);
-    }
+    // Fall back to defaults: prefer seeded file defaults, then code constants.
+    baseConfig = getRuntimeDefaultConfig(configType as Exclude<ConfigType, "prompt">) as ConfigSchemaTypes[T];
+    fromDefault = true;
   }
 
   const result = {

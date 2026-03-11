@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   assessEvidenceQuality,
+  filterByRelevance,
   formatEvidenceForEvaluationPrompt,
   mergeEvidenceQualityAssessment,
   parseEvidenceQualityAssessmentResponse,
@@ -235,6 +236,49 @@ describe("assessEvidenceQuality", () => {
     expect(result.qualityAssessment.status).toBe("applied");
     expect(result.items).toHaveLength(3);
     expect(result.items.map((item) => item.probativeValue)).toEqual(["high", "medium", "low"]);
+  });
+});
+
+describe("filterByRelevance", () => {
+  const factCheckerDomains = new Set(["mediabiasfactcheck.com", "correctiv.org"]);
+
+  const enrichedItems: EvidencePackItemForQuality[] = [
+    { ...baseItems[0], url: "https://mediabiasfactcheck.com/test", relevant: false, probativeValue: "high", evidenceCategory: "fact_checker_rating" },
+    { ...baseItems[1], url: "https://example.org/blog", relevant: false, probativeValue: "low", evidenceCategory: "general_mention" },
+    { id: "E3", url: "https://example.org/relevant", title: "Relevant", snippet: "yes", query: "q", provider: "serper", relevant: true, probativeValue: "medium", evidenceCategory: "journalistic_analysis" },
+  ];
+
+  it("passes all items through when assessment was not applied", () => {
+    const { filtered, removedCount } = filterByRelevance(enrichedItems, false, factCheckerDomains);
+    expect(filtered).toHaveLength(3);
+    expect(removedCount).toBe(0);
+  });
+
+  it("removes irrelevant items but auto-passes fact-checker domains", () => {
+    const { filtered, removedCount } = filterByRelevance(enrichedItems, true, factCheckerDomains);
+    expect(removedCount).toBe(1);
+    expect(filtered).toHaveLength(2);
+    // Fact-checker domain kept despite relevant: false
+    expect(filtered[0].url).toContain("mediabiasfactcheck.com");
+    // Relevant item kept
+    expect(filtered[1].id).toBe("E3");
+  });
+
+  it("auto-passes subdomains of fact-checker domains", () => {
+    const items: EvidencePackItemForQuality[] = [
+      { id: "E1", url: "https://de.correctiv.org/faktencheck", title: "Test", snippet: null, query: "q", provider: "serper", relevant: false },
+    ];
+    const { filtered } = filterByRelevance(items, true, factCheckerDomains);
+    expect(filtered).toHaveLength(1);
+  });
+
+  it("handles invalid URLs gracefully", () => {
+    const items: EvidencePackItemForQuality[] = [
+      { id: "E1", url: "not-a-url", title: "Bad URL", snippet: null, query: "q", provider: "serper", relevant: false },
+    ];
+    const { filtered, removedCount } = filterByRelevance(items, true, factCheckerDomains);
+    expect(filtered).toHaveLength(0);
+    expect(removedCount).toBe(1);
   });
 });
 
