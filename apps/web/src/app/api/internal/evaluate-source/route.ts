@@ -1467,6 +1467,9 @@ ${evidenceSection}
    - Evidence of fabricated stories/disinformation → score in highly_unreliable band (0.01-0.14)
    - Propaganda echoing ONLY (without other failures) → score in leaning_unreliable band (0.29-0.42)
    - 3+ documented fact-checker failures → score in leaning_unreliable band (0.29-0.42)
+   - Tier 1 assessor rates factual reporting as low/not credible (e.g., MBFC "Mixed"/"Low"
+     /"Not Credible") → score in leaning_unreliable band (0.29-0.42).
+     "Low" or "Not Credible" should score in the LOWER half of this band (0.29-0.35).
    - 1-2 documented failures from reputable fact-checkers → score in mixed band (0.43-0.57)
    - Political/ideological bias WITHOUT documented failures → no score cap (note in bias field only)
 
