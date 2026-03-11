@@ -23,7 +23,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
 import { debugLog } from "@/lib/analyzer/debug";
 import { getPromptCachingOptions } from "@/lib/analyzer/llm";
-import { loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
+import { getSection, loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import { getConfig } from "@/lib/config-storage";
 import { DEFAULT_SEARCH_CONFIG, DEFAULT_SR_CONFIG, type SearchConfig } from "@/lib/config-schemas";
@@ -44,6 +44,15 @@ import {
   MIN_FOUNDEDNESS_FOR_HIGH_SCORES,
   type FactualRating,
 } from "@/lib/source-reliability-config";
+import {
+  assessEvidenceQuality,
+  formatEvidenceForEvaluationPrompt,
+  type EvidenceCategory,
+  type EvidencePackItemForQuality,
+  type EvidenceProbativeValue,
+  type EvidenceQualityAssessmentConfig,
+  type EvidenceQualityAssessmentMeta,
+} from "@/lib/source-reliability/evidence-quality-assessment";
 import { getEnv, checkRunnerKey } from "@/lib/auth";
 import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
 
@@ -66,6 +75,14 @@ let SR_EVAL_USE_SEARCH = DEFAULT_SR_CONFIG.evalUseSearch ?? true;
 let SR_EVAL_MAX_RESULTS_PER_QUERY = DEFAULT_SR_CONFIG.evaluationSearch?.maxResultsPerQuery ?? 5;
 let SR_EVAL_MAX_EVIDENCE_ITEMS = DEFAULT_SR_CONFIG.evaluationSearch?.maxEvidenceItems ?? 20;
 let SR_EVAL_DATE_RESTRICT: "y" | "m" | "w" | null = DEFAULT_SR_CONFIG.evaluationSearch?.dateRestrict ?? null;
+
+const DEFAULT_EVIDENCE_QUALITY_ASSESSMENT_CONFIG: EvidenceQualityAssessmentConfig = {
+  enabled: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.enabled ?? true,
+  model: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.model ?? "haiku",
+  timeoutMs: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.timeoutMs ?? 8000,
+  maxItemsPerAssessment: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.maxItemsPerAssessment ?? 12,
+  minRemainingBudgetMs: DEFAULT_SR_CONFIG.evidenceQualityAssessment?.minRemainingBudgetMs ?? 20000,
+};
 
 debugLog(`[SR-Eval] Configuration check`, {
   anthropicKey: hasAnthropicKey ? "configured" : "MISSING",
@@ -107,6 +124,7 @@ const RequestSchema = z.object({
   multiModel: z.boolean().default(true),
   confidenceThreshold: z.number().min(0).max(1).default(DEFAULT_CONFIDENCE_THRESHOLD),
   consensusThreshold: z.number().min(0).max(1).default(DEFAULT_CONSENSUS_THRESHOLD),
+  budgetMs: z.number().int().min(10000).max(300000).optional(),
 });
 
 const FactualRatingSchema = z
@@ -181,6 +199,7 @@ interface ResponsePayload {
     providersUsed: string[];
     queries: string[];
     items: EvidencePackItem[];
+    qualityAssessment?: EvidenceQualityAssessmentMeta;
   };
   biasIndicator: string | null | undefined;
   bias?: {
@@ -246,13 +265,10 @@ function checkRateLimit(ip: string, domain: string): { allowed: boolean; reason?
 // BRAND VARIANT GENERATION (for improved relevance matching)
 // ============================================================================
 
-type EvidencePackItem = {
-  id: string;
-  url: string;
-  title: string;
-  snippet: string | null;
-  query: string;
-  provider: string;
+type EvidencePackItem = EvidencePackItemForQuality & {
+  probativeValue?: EvidenceProbativeValue;
+  evidenceCategory?: EvidenceCategory;
+  enrichmentVersion?: 1;
 };
 
 type EvidencePack = {
@@ -260,6 +276,7 @@ type EvidencePack = {
   providersUsed: string[];
   queries: string[];
   items: EvidencePackItem[];
+  qualityAssessment?: EvidenceQualityAssessmentMeta;
 };
 
 /**
@@ -1262,6 +1279,215 @@ async function buildEvidencePack(domain: string): Promise<EvidencePack> {
   return { enabled: true, providersUsed, queries: allQueries, items };
 }
 
+const SR_PROMPT_PIPELINE: Pipeline = "source-reliability";
+const SR_EQA_PROMPT_TASK_SECTION = "EVIDENCE QUALITY ASSESSMENT TASK";
+const SR_EQA_PROMPT_OUTPUT_SECTION = "EVIDENCE QUALITY ASSESSMENT OUTPUT FORMAT";
+
+function getRemainingBudgetMs(requestStartedAtMs: number, requestBudgetMs: number | null): number | null {
+  if (requestBudgetMs === null) return null;
+  const elapsedMs = Date.now() - requestStartedAtMs;
+  return Math.max(0, requestBudgetMs - elapsedMs);
+}
+
+function normalizeEvidenceQualityAssessmentConfig(
+  config: unknown,
+): EvidenceQualityAssessmentConfig {
+  const c = (config ?? {}) as Partial<EvidenceQualityAssessmentConfig>;
+  const fallback = DEFAULT_EVIDENCE_QUALITY_ASSESSMENT_CONFIG;
+  return {
+    enabled: typeof c.enabled === "boolean" ? c.enabled : fallback.enabled,
+    model: typeof c.model === "string" && c.model.trim().length > 0 ? c.model : fallback.model,
+    timeoutMs:
+      typeof c.timeoutMs === "number" && Number.isFinite(c.timeoutMs)
+        ? Math.max(1000, Math.min(30000, Math.floor(c.timeoutMs)))
+        : fallback.timeoutMs,
+    maxItemsPerAssessment:
+      typeof c.maxItemsPerAssessment === "number" && Number.isFinite(c.maxItemsPerAssessment)
+        ? Math.max(1, Math.min(20, Math.floor(c.maxItemsPerAssessment)))
+        : fallback.maxItemsPerAssessment,
+    minRemainingBudgetMs:
+      typeof c.minRemainingBudgetMs === "number" && Number.isFinite(c.minRemainingBudgetMs)
+        ? Math.max(0, Math.floor(c.minRemainingBudgetMs))
+        : fallback.minRemainingBudgetMs,
+  };
+}
+
+function resolveEvidenceQualityAssessmentModel(modelAliasOrId: string): {
+  provider: "anthropic" | "openai";
+  modelName: string;
+} {
+  const normalized = modelAliasOrId.trim().toLowerCase();
+  if (normalized === "haiku") {
+    return { provider: "anthropic", modelName: ANTHROPIC_MODELS.budget.modelId };
+  }
+  if (normalized === "sonnet") {
+    return { provider: "anthropic", modelName: ANTHROPIC_MODELS.premium.modelId };
+  }
+  if (normalized.startsWith("gpt-")) {
+    return { provider: "openai", modelName: modelAliasOrId.trim() };
+  }
+  if (normalized.startsWith("claude-")) {
+    return { provider: "anthropic", modelName: modelAliasOrId.trim() };
+  }
+  // Conservative default: cheapest SR model.
+  return { provider: "anthropic", modelName: ANTHROPIC_MODELS.budget.modelId };
+}
+
+async function renderEvidenceQualityAssessmentPrompt(
+): Promise<{ taskTemplate: string; outputTemplate: string } | null> {
+  const promptResult = await loadPromptFile(SR_PROMPT_PIPELINE);
+  if (!promptResult.success || !promptResult.prompt) {
+    console.warn("[SR-Eval][warning] sr_evidence_quality_assessment_failed: prompt load failed");
+    return null;
+  }
+
+  const taskSection = getSection(promptResult.prompt, SR_EQA_PROMPT_TASK_SECTION);
+  const outputSection = getSection(promptResult.prompt, SR_EQA_PROMPT_OUTPUT_SECTION);
+  // Reuse SR assessor taxonomy in the same prompt surface (no duplicated hardcoded list in code).
+  const assessorSection = getSection(
+    promptResult.prompt,
+    "RECOGNIZED INDEPENDENT ASSESSORS (any of these count as \"fact-checker\")",
+  );
+  if (!taskSection || !outputSection || !assessorSection) {
+    console.warn(
+      "[SR-Eval][warning] sr_evidence_quality_assessment_failed: required SR prompt sections missing",
+      {
+        hasTaskSection: !!taskSection,
+        hasOutputSection: !!outputSection,
+        hasAssessorSection: !!assessorSection,
+      },
+    );
+    return null;
+  }
+
+  const taskTemplate = [
+    taskSection.content,
+    `## RECOGNIZED INDEPENDENT ASSESSORS`,
+    assessorSection.content,
+  ].join("\n\n");
+
+  return {
+    taskTemplate,
+    outputTemplate: outputSection.content,
+  };
+}
+
+async function enrichEvidencePackWithQualityAssessment(
+  domain: string,
+  evidencePack: EvidencePack,
+  config: EvidenceQualityAssessmentConfig,
+  requestStartedAtMs: number,
+  requestBudgetMs: number | null,
+): Promise<EvidencePack> {
+  if (!evidencePack.enabled) {
+    return {
+      ...evidencePack,
+      qualityAssessment: {
+        status: "skipped",
+        skippedReason: "disabled",
+      },
+    };
+  }
+
+  if (!config.enabled) {
+    return {
+      ...evidencePack,
+      qualityAssessment: {
+        status: "skipped",
+        skippedReason: "disabled",
+      },
+    };
+  }
+
+  if (evidencePack.items.length === 0) {
+    return {
+      ...evidencePack,
+      qualityAssessment: {
+        status: "skipped",
+        skippedReason: "empty_evidence",
+      },
+    };
+  }
+
+  const remainingBudgetMs = getRemainingBudgetMs(requestStartedAtMs, requestBudgetMs);
+  if (
+    remainingBudgetMs !== null &&
+    remainingBudgetMs < Math.max(0, config.minRemainingBudgetMs)
+  ) {
+    return {
+      ...evidencePack,
+      qualityAssessment: {
+        status: "skipped",
+        model: resolveEvidenceQualityAssessmentModel(config.model).modelName,
+        skippedReason: "budget_guard",
+      },
+    };
+  }
+
+  const promptTemplate = await renderEvidenceQualityAssessmentPrompt();
+  if (!promptTemplate) {
+    return {
+      ...evidencePack,
+      qualityAssessment: {
+        status: "failed",
+        model: resolveEvidenceQualityAssessmentModel(config.model).modelName,
+        errorType: "unknown",
+      },
+    };
+  }
+
+  const { provider, modelName } = resolveEvidenceQualityAssessmentModel(config.model);
+  const assessment = await assessEvidenceQuality({
+    domain,
+    items: evidencePack.items,
+    config,
+    modelName,
+    remainingBudgetMs,
+    promptTemplate: promptTemplate.taskTemplate,
+    outputFormatTemplate: promptTemplate.outputTemplate,
+    classify: async (prompt, timeoutMs) => {
+      const model = provider === "anthropic" ? anthropic(modelName) : openai(modelName);
+      const response = await withTimeout(
+        "SR evidence quality assessment",
+        timeoutMs,
+        () =>
+          generateText({
+            model,
+            prompt,
+            temperature: getDeterministicTemperature(0.1),
+            maxOutputTokens: 1200,
+          }),
+      );
+      return response.text ?? "";
+    },
+  });
+
+  if (assessment.warningMessage) {
+    console.warn("[SR-Eval][warning] sr_evidence_quality_assessment_failed", {
+      domain,
+      model: modelName,
+      errorType: assessment.qualityAssessment.errorType ?? "unknown",
+      timeoutMs: assessment.qualityAssessment.timeoutMs,
+      latencyMs: assessment.qualityAssessment.latencyMs,
+      assessedItemCount: assessment.qualityAssessment.assessedItemCount,
+    });
+  } else if (assessment.qualityAssessment.status === "applied") {
+    debugLog("[SR-Eval] Evidence quality assessment applied", {
+      domain,
+      model: modelName,
+      timeoutMs: assessment.qualityAssessment.timeoutMs,
+      latencyMs: assessment.qualityAssessment.latencyMs,
+      assessedItemCount: assessment.qualityAssessment.assessedItemCount,
+    });
+  }
+
+  return {
+    ...evidencePack,
+    items: assessment.items,
+    qualityAssessment: assessment.qualityAssessment,
+  };
+}
+
 // ============================================================================
 // SHARED PROMPT SECTIONS
 // ============================================================================
@@ -1383,20 +1609,17 @@ function getEvaluationPrompt(domain: string, evidencePack: EvidencePack): string
   const currentDate = new Date().toISOString().split("T")[0];
 
   const hasEvidence = evidencePack.enabled && evidencePack.items.length > 0;
+  const evidenceBody = hasEvidence ? formatEvidenceForEvaluationPrompt(evidencePack.items) : "";
+  const hasQualityLabels = hasEvidence && evidencePack.items.some((item) => !!item.probativeValue);
 
   const evidenceSection = hasEvidence
     ? [
         `## EVIDENCE PACK`,
-        `The following ${evidencePack.items.length} search results are your ONLY external evidence. Base all claims on these items using their IDs (E1, E2, etc.).`,
+        hasQualityLabels
+          ? `The following ${evidencePack.items.length} search results are your ONLY external evidence. They are grouped by probativeValue. Base all claims on these items using their IDs (E1, E2, etc.).`
+          : `The following ${evidencePack.items.length} search results are your ONLY external evidence. Base all claims on these items using their IDs (E1, E2, etc.).`,
         ``,
-        ...evidencePack.items.map((it) => {
-          const snip = (it.snippet ?? "").replace(/\s+/g, " ").trim();
-          return [
-            `[${it.id}] ${it.title}`,
-            `    URL: ${it.url}`,
-            snip ? `    Excerpt: ${snip}` : `    Excerpt: (none)`,
-          ].join("\n");
-        }),
+        evidenceBody,
       ].join("\n")
     : `## EVIDENCE PACK: Empty or unavailable.\nWithout external evidence, you MUST output score=null and factualRating="insufficient_data". Do not rely on pretrained knowledge.`;
 
@@ -1995,10 +2218,7 @@ async function refineEvaluation(
 
   // Build evidence section for the refinement prompt
   const evidenceSection = evidencePack.enabled && evidencePack.items.length > 0
-    ? evidencePack.items.map((it) => {
-        const snip = (it.snippet ?? "").replace(/\s+/g, " ").trim();
-        return `[${it.id}] ${it.title}\n    URL: ${it.url}\n    Excerpt: ${snip || "(none)"}`;
-      }).join("\n\n")
+    ? formatEvidenceForEvaluationPrompt(evidencePack.items)
     : "(No evidence items available)";
 
   const prompt = getRefinementPrompt(domain, evidenceSection, initialResult, initialModelName);
@@ -2244,6 +2464,7 @@ function buildResponsePayload(
       providersUsed: evidencePack.providersUsed,
       queries: evidencePack.queries,
       items: evidencePack.items,
+      qualityAssessment: evidencePack.qualityAssessment,
     },
     biasIndicator: extractBiasIndicator(result.bias),
     bias: result.bias,
@@ -2256,6 +2477,18 @@ function applyLanguageDetectionCaveat(payload: ResponsePayload, domain: string):
   const caveat = getLanguageDetectionCaveat(domain);
   if (!caveat) return;
   payload.caveats = [...(payload.caveats ?? []), caveat];
+}
+
+function applyEvidenceQualityAssessmentCaveat(
+  payload: ResponsePayload,
+  evidencePack: EvidencePack,
+): void {
+  const qa = evidencePack.qualityAssessment;
+  if (!qa || qa.status !== "failed") return;
+  payload.caveats = [
+    ...(payload.caveats ?? []),
+    "⚠️ Evidence quality assessment failed; fallback to flat evidence weighting was used.",
+  ];
 }
 
 async function evaluateWithModel(
@@ -2384,14 +2617,29 @@ async function evaluateSourceWithConsensus(
   domain: string,
   multiModel: boolean,
   confidenceThreshold: number,
+  options: {
+    requestStartedAtMs: number;
+    requestBudgetMs: number | null;
+    evidenceQualityAssessmentConfig: EvidenceQualityAssessmentConfig;
+  },
 ): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
-  const evidencePack = await buildEvidencePack(domain);
-  if (evidencePack.enabled) {
+  const initialEvidencePack = await buildEvidencePack(domain);
+  if (initialEvidencePack.enabled) {
     debugLog(
-      `[SR-Eval] Evidence pack for ${domain}: ${evidencePack.items.length} items`,
-      { domain, itemCount: evidencePack.items.length, providers: evidencePack.providersUsed }
+      `[SR-Eval] Evidence pack for ${domain}: ${initialEvidencePack.items.length} items`,
+      { domain, itemCount: initialEvidencePack.items.length, providers: initialEvidencePack.providersUsed },
     );
   }
+
+  // Budget note: per-domain prefetch timeout in analyzer defaults to 90s (`SR_CONFIG.evalTimeoutMs`).
+  // The enrichment call is budget-guarded and timeout-clamped to avoid stealing time from core evaluation.
+  const evidencePack = await enrichEvidencePackWithQualityAssessment(
+    domain,
+    initialEvidencePack,
+    options.evidenceQualityAssessmentConfig,
+    options.requestStartedAtMs,
+    options.requestBudgetMs,
+  );
 
   // ============================================================================
   // STEP 1: Primary evaluation (Anthropic Claude)
@@ -2414,6 +2662,7 @@ async function evaluateSourceWithConsensus(
     debugLog(`[SR-Eval] Insufficient data (no evidence) for ${domain}`);
     const payload = buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack);
     applyLanguageDetectionCaveat(payload, domain);
+    applyEvidenceQualityAssessmentCaveat(payload, evidencePack);
     return {
       success: true,
       data: payload,
@@ -2433,6 +2682,7 @@ async function evaluateSourceWithConsensus(
       evidencePack
     );
     applyLanguageDetectionCaveat(payload, domain);
+    applyEvidenceQualityAssessmentCaveat(payload, evidencePack);
     return {
       success: true,
       data: payload,
@@ -2464,6 +2714,7 @@ async function evaluateSourceWithConsensus(
       primary.result.confidence * 0.9 // Slight confidence reduction when refinement fails
     );
     applyLanguageDetectionCaveat(payload, domain);
+    applyEvidenceQualityAssessmentCaveat(payload, evidencePack);
     payload.identifiedEntity = primary.result.identifiedEntity;
     payload.caveats = [
       ...(payload.caveats ?? []),
@@ -2518,6 +2769,7 @@ async function evaluateSourceWithConsensus(
     boostedConfidence
   );
   applyLanguageDetectionCaveat(payload, domain);
+  applyEvidenceQualityAssessmentCaveat(payload, evidencePack);
 
   payload.category = finalRating;
   payload.identifiedEntity = refinedResult.identifiedEntity;
@@ -2599,6 +2851,14 @@ export async function POST(req: Request) {
   const effectiveMultiModel = raw.multiModel !== undefined ? body.multiModel : srConfig.multiModel;
   const effectiveConfidenceThreshold =
     raw.confidenceThreshold !== undefined ? body.confidenceThreshold : srConfig.confidenceThreshold;
+  const evidenceQualityAssessmentConfig = normalizeEvidenceQualityAssessmentConfig(
+    srConfig.evidenceQualityAssessment,
+  );
+  const requestStartedAtMs = Date.now();
+  const requestBudgetMs = raw.budgetMs !== undefined
+    ? body.budgetMs ?? (srConfig.evalTimeoutMs ?? DEFAULT_SR_CONFIG.evalTimeoutMs ?? 90000)
+    : (srConfig.evalTimeoutMs ?? DEFAULT_SR_CONFIG.evalTimeoutMs ?? 90000);
+
   // Rate limiting
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
   const rateCheck = checkRateLimit(ip, body.domain);
@@ -2614,6 +2874,11 @@ export async function POST(req: Request) {
     body.domain,
     effectiveMultiModel,
     effectiveConfidenceThreshold,
+    {
+      requestStartedAtMs,
+      requestBudgetMs,
+      evidenceQualityAssessmentConfig,
+    },
   );
 
   if (!result.success) {

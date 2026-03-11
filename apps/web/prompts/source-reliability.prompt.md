@@ -7,6 +7,7 @@ variables:
   - domain
   - currentDate
   - evidenceSection
+  - itemsBlock
 models:
   - anthropic
   - openai
@@ -192,6 +193,41 @@ NOT INDEPENDENT ASSESSORS:
   - Competitor news outlets without research backing
   - Anonymous blogs or forums
   - Partisan attack pieces without evidence
+
+## EVIDENCE QUALITY ASSESSMENT TASK
+
+TASK: For each evidence item about "${domain}", classify:
+
+1. probativeValue: high | medium | low
+2. evidenceCategory:
+   fact_checker_rating | press_council_ruling | academic_research | journalistic_analysis |
+   industry_report | general_mention | opinion | self_published | other | unclassified
+
+Guidance:
+- Use the recognized independent assessor taxonomy above.
+- HIGH should be reserved for authoritative third-party assessments, rulings, and directly probative findings.
+- MEDIUM fits substantive but indirect supporting analyses.
+- LOW fits contextual mentions, unsupported opinions, or self-published claims.
+- If uncertain, prefer conservative labeling (low + unclassified).
+
+Evidence items:
+${itemsBlock}
+
+Return classifications for the provided IDs only.
+
+## EVIDENCE QUALITY ASSESSMENT OUTPUT FORMAT
+
+Return JSON only (no markdown, no commentary):
+
+{
+  "classifications": [
+    {
+      "id": "E1",
+      "probativeValue": "high|medium|low",
+      "evidenceCategory": "fact_checker_rating|press_council_ruling|academic_research|journalistic_analysis|industry_report|general_mention|opinion|self_published|other|unclassified"
+    }
+  ]
+}
 
 ## EVIDENCE QUALITY HIERARCHY
 

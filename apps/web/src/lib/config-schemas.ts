@@ -967,6 +967,15 @@ export const SourceReliabilityConfigSchema = z.object({
     }).default({}),
   }).optional().describe("SR-owned search settings for evaluation evidence collection"),
 
+  // === Evidence Quality Assessment (SR-owned enrichment step) ===
+  evidenceQualityAssessment: z.object({
+    enabled: z.boolean().default(true).describe("Enable evidence quality enrichment before SR evaluation"),
+    model: z.string().min(1).default("haiku").describe("Model alias or ID for SR evidence quality assessment"),
+    timeoutMs: z.number().int().min(1000).max(30000).default(8000).describe("Timeout for SR evidence quality assessment call (ms)"),
+    maxItemsPerAssessment: z.number().int().min(1).max(20).default(12).describe("Maximum evidence items sent to quality assessment (independent cap)"),
+    minRemainingBudgetMs: z.number().int().min(0).max(120000).default(20000).describe("Skip quality assessment when remaining per-domain budget is below this threshold"),
+  }).optional().describe("SR-owned evidence quality enrichment settings"),
+
   // === Performance & Reliability ===
   evalConcurrency: z.number().int().min(1).max(10).optional().describe("Max concurrent SR evaluations (default: 3)"),
   evalTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for individual SR evaluations (ms) (default: 90000)"),
@@ -1012,6 +1021,13 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
       serpapi: { enabled: true, priority: 3, dailyQuotaLimit: 0 },
       brave: { enabled: true, priority: 4, dailyQuotaLimit: 0 },
     },
+  },
+  evidenceQualityAssessment: {
+    enabled: true,
+    model: "haiku",
+    timeoutMs: 8000,
+    maxItemsPerAssessment: 12,
+    minRemainingBudgetMs: 20000,
   },
   evalConcurrency: 5,
   evalTimeoutMs: 90000,

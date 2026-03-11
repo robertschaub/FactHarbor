@@ -201,6 +201,13 @@ interface SRConfig {
     timeoutMs: number;
     providers: Record<string, { enabled: boolean; priority: number }>;
   };
+  evidenceQualityAssessment?: {
+    enabled: boolean;
+    model: string;
+    timeoutMs: number;
+    maxItemsPerAssessment: number;
+    minRemainingBudgetMs: number;
+  };
 }
 
 // ============================================================================
@@ -2172,6 +2179,128 @@ function SRConfigForm({
             </div>
           );
         })}
+      </div>
+
+      {/* Evidence Quality Assessment */}
+      <h3 className={styles.formSectionTitle}>Evidence Quality Assessment</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Optional SR-only enrichment pass that labels evidence quality before the main SR evaluation.
+      </p>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.evidenceQualityAssessment?.enabled ?? true}
+            onChange={(e) => {
+              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
+                enabled: true,
+                model: "haiku",
+                timeoutMs: 8000,
+                maxItemsPerAssessment: 12,
+                minRemainingBudgetMs: 20000,
+              };
+              updateField("evidenceQualityAssessment", { ...current, enabled: e.target.checked });
+            }}
+            style={{ marginRight: 8 }}
+          />
+          Enable Evidence Quality Assessment
+        </label>
+        <div className={styles.formHelp}>When disabled, SR uses flat evidence presentation (legacy behavior).</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Assessment Model</label>
+          <select
+            className={styles.formInput}
+            value={config.evidenceQualityAssessment?.model ?? "haiku"}
+            onChange={(e) => {
+              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
+                enabled: true,
+                model: "haiku",
+                timeoutMs: 8000,
+                maxItemsPerAssessment: 12,
+                minRemainingBudgetMs: 20000,
+              };
+              updateField("evidenceQualityAssessment", { ...current, model: e.target.value });
+            }}
+          >
+            <option value="haiku">haiku</option>
+            <option value="sonnet">sonnet</option>
+            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+            <option value="gpt-4.1">gpt-4.1</option>
+          </select>
+          <div className={styles.formHelp}>Alias or model ID used only for evidence quality labeling.</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Assessment Timeout (ms)</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.evidenceQualityAssessment?.timeoutMs ?? 8000}
+            min={1000}
+            max={30000}
+            step={500}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
+                enabled: true,
+                model: "haiku",
+                timeoutMs: 8000,
+                maxItemsPerAssessment: 12,
+                minRemainingBudgetMs: 20000,
+              };
+              updateField("evidenceQualityAssessment", { ...current, timeoutMs: isNaN(v) ? 8000 : v });
+            }}
+          />
+          <div className={styles.formHelp}>Hard timeout for the enrichment call.</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Items per Assessment</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.evidenceQualityAssessment?.maxItemsPerAssessment ?? 12}
+            min={1}
+            max={20}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
+                enabled: true,
+                model: "haiku",
+                timeoutMs: 8000,
+                maxItemsPerAssessment: 12,
+                minRemainingBudgetMs: 20000,
+              };
+              updateField("evidenceQualityAssessment", { ...current, maxItemsPerAssessment: isNaN(v) ? 12 : v });
+            }}
+          />
+          <div className={styles.formHelp}>Independent cap for quality assessment batch size.</div>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Min Remaining Budget (ms)</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.evidenceQualityAssessment?.minRemainingBudgetMs ?? 20000}
+            min={0}
+            max={120000}
+            step={1000}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              const current = config.evidenceQualityAssessment || (SHARED_DEFAULT_SR_CONFIG as SRConfig).evidenceQualityAssessment || {
+                enabled: true,
+                model: "haiku",
+                timeoutMs: 8000,
+                maxItemsPerAssessment: 12,
+                minRemainingBudgetMs: 20000,
+              };
+              updateField("evidenceQualityAssessment", { ...current, minRemainingBudgetMs: isNaN(v) ? 20000 : v });
+            }}
+          />
+          <div className={styles.formHelp}>Skip enrichment when remaining per-domain time budget is too tight.</div>
+        </div>
       </div>
     </div>
   );

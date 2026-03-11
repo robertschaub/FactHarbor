@@ -446,6 +446,7 @@ async function evaluateSourceInternal(
         multiModel: SR_CONFIG.multiModel,
         confidenceThreshold: SR_CONFIG.confidenceThreshold,
         consensusThreshold: SR_CONFIG.consensusThreshold,
+        budgetMs: EVAL_TIMEOUT_MS,
       }),
       signal: controller.signal,
     });

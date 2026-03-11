@@ -4589,3 +4589,40 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Verification:** All 1202 tests pass. Drift test PASS. Executed `scripts/sr-cache-flush.ts`.
 **For next agent:** System is fully type-safe and UCM-aligned. Note: first run after deploy will trigger cache misses for search results due to key isolation hardening.
 **Learnings:** yes (appended to Role_Learnings.md)
+---
+### 2026-03-11 | Lead Developer | Codex (GPT-5) | Incorporate Architect Review into SR Evidence Quality Plan
+**Task:** Update the SR Evidence Quality Assessment plan to address Lead Architect findings and align implementation guardrails with separable SR architecture.
+**Files touched:** `Docs/WIP/SR_Evidence_Quality_Assessment_Plan_2026-03-11.md`, `Docs/STATUS/Backlog.md`
+**Key decisions:**
+- Reclassified SR enrichment-call failure as warning-level quality degradation (not informational) with explicit degraded-mode semantics.
+- Locked `EnrichedEvidenceItem` as SR-internal type only and clarified merge writes onto `EvidencePackItem` at boundary.
+- Added explicit timeout-budget phase (budget guard + timeout clamping) so enrichment cannot violate per-domain SR timeout guarantees.
+- Added UCM fields `maxItemsPerAssessment` and `minRemainingBudgetMs`; added `enrichmentVersion` + quality-assessment metadata for cache provenance.
+- Removed shared-evidence-library content from implementation plan and moved it to Backlog Future Research.
+**Open items:** Implementation code changes are still pending; this update is planning-only.
+**Warnings:** Existing SR route still contains inline semantic prompt text and mixed timeout constants; implementation must execute planned prompt-governance and budget alignment changes.
+**For next agent:** Implement Phase 1-5 exactly as documented, starting with SR prompt section additions and budget-guard wiring in `evaluate-source` route path.
+**Learnings:** no
+---
+### 2026-03-11 | Lead Developer | Codex (GPT-5) | Implement SR Evidence Quality Assessment (Phases 1-5)
+**Task:** Implement the approved SR Evidence Quality Assessment plan with dedicated SR config, prompt sections, enrichment module, cache/schema extension, tiered evidence presentation, and timeout budget guard.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/sr.default.json`, `apps/web/src/app/admin/config/page.tsx`, `apps/web/src/lib/source-reliability/evidence-quality-assessment.ts`, `apps/web/prompts/source-reliability.prompt.md`, `apps/web/src/app/api/internal/evaluate-source/route.ts`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/test/unit/lib/source-reliability/evidence-quality-assessment.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Implemented dedicated SR UCM namespace `evidenceQualityAssessment` with killswitch and budget controls (`enabled`, `model`, `timeoutMs`, `maxItemsPerAssessment`, `minRemainingBudgetMs`).
+- Kept enrichment types SR-internal in new module; merge writes onto SR evidence items by ID with safe defaults and N-in/N-out contract.
+- Classified enrichment failure as quality-degrading warning path in route logs (`sr_evidence_quality_assessment_failed`) and surfaced degraded-mode caveat payload data.
+- Added `enrichmentVersion` and `qualityAssessment` metadata for cache provenance and backward-compatible reads.
+- Enforced timeout budget fit using route-level remaining-budget guard and timeout clamping before assessment call.
+- Kept prompt instructions in prompt file sections and loaded assessment content through prompt-loader section rendering.
+- Added multilingual-focused unit coverage (de/fr/en snippets) for structural robustness.
+**Open items:**
+- Optional follow-up: add admin-facing telemetry panel for quality-assessment skip reasons and latency distribution.
+- Optional follow-up: decide if future cache invalidation should actively target stale `enrichmentVersion` values or rely on TTL only.
+**Warnings:**
+- `npm -w apps/web run build` reseeds prompts and may update prompt-backed config DB entries as part of normal postbuild behavior.
+- Workspace contains unrelated pre-existing doc changes not modified by this implementation.
+**For next agent:**
+- If tuning is needed, start in Admin UCM `sr.evidenceQualityAssessment` before code edits.
+- For strict timeout behavior, inspect `evaluate-source/route.ts` budget guard + clamped timeout block before changing per-domain SR timeouts.
+- Keep all new SR enrichment prompt semantics in `apps/web/prompts/source-reliability.prompt.md` sections; avoid inlining semantic strings in TS.
+**Learnings:** no
