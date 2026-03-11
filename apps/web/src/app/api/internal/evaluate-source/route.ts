@@ -1902,6 +1902,8 @@ YOUR TASK: CROSS-CHECK AND REFINE
      Individual caps define UPPER BOUNDS - score within the band, not at the border:
      * Echoing ONLY → score in 0.29-0.42 band
      * Failures ONLY → score in 0.29-0.57 depending on severity
+     * Tier 1 assessor rates factual reporting as "Low"/"Not Credible"/"Mixed" → score ≤ 0.42
+       ("Low"/"Not Credible" should be in lower half: 0.29-0.35)
 
      IMPORTANT: Caps are CEILINGS, not targets. Score naturally within appropriate band.
 
