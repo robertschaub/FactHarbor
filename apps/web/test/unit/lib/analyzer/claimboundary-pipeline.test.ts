@@ -671,6 +671,7 @@ vi.mock("@/lib/analyzer/source-reliability", () => ({
     errorSamples: [],
   })),
   getTrackRecordScore: vi.fn(() => 0.7),
+  getTrackRecordData: vi.fn(() => ({ score: 0.7, confidence: 0.9, consensusAchieved: true })),
 }));
 
 vi.mock("@/lib/analyzer/evidence-filter", () => ({

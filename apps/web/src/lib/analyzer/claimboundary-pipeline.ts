@@ -47,7 +47,7 @@ import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
 import { filterByProbativeValue } from "./evidence-filter";
-import { prefetchSourceReliability, getTrackRecordScore } from "./source-reliability";
+import { prefetchSourceReliability, getTrackRecordData } from "./source-reliability";
 import { percentageToArticleVerdict } from "./truth-scale";
 import { debugLog } from "./debug";
 
@@ -2579,6 +2579,17 @@ export async function researchEvidence(
         },
       });
     }
+
+    // Backfill SR data onto FetchedSource objects now that the prefetch map is populated.
+    // Sources were created during research before the prefetch ran, so scores were null.
+    for (const source of state.sources) {
+      const srData = getTrackRecordData(source.url);
+      if (srData) {
+        source.trackRecordScore = srData.score;
+        source.trackRecordConfidence = srData.confidence;
+        source.trackRecordConsensus = srData.consensusAchieved;
+      }
+    }
   }
 
   // ------------------------------------------------------------------
@@ -3401,7 +3412,7 @@ export async function fetchSources(
         id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
         url: result.source.url,
         title: result.content.title || result.source.url,
-        trackRecordScore: getTrackRecordScore(result.source.url),
+        trackRecordScore: null, // Backfilled after SR prefetch (Step 4)
         fullText: result.content.text,
         fetchedAt: new Date().toISOString(),
         category: result.content.contentType || "text/html",

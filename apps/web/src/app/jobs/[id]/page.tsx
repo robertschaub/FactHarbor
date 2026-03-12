@@ -42,6 +42,7 @@ import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
 import { VerdictNarrativeDisplay } from "./components/VerdictNarrative";
 import narrativeStyles from "./components/VerdictNarrative.module.css";
+import { scoreToFactualRating } from "../../../lib/source-reliability-config";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
@@ -2120,15 +2121,15 @@ function SourceReliabilityPanel({ sources }: { sources: SRSourceEntry[] }) {
   const scoredSources = useMemo(() => {
     const filtered = sources.filter((s) => {
       if (!s.url) return false;
-      // Must have at least a category or a score to be considered "evaluated"
-      if (!s.category && s.trackRecordScore == null) return false;
+      // Show only SR-evaluated sources (confidence is set even when score is null due to low confidence)
+      if (s.trackRecordScore == null && s.trackRecordConfidence == null) return false;
       return true;
     });
 
     // Sort: reliable → insufficient_data → unreliable
     filtered.sort((a, b) => {
-      const orderA = SR_CATEGORY_ORDER[a.category] ?? 4;
-      const orderB = SR_CATEGORY_ORDER[b.category] ?? 4;
+      const orderA = SR_CATEGORY_ORDER[scoreToFactualRating(a.trackRecordScore)] ?? 4;
+      const orderB = SR_CATEGORY_ORDER[scoreToFactualRating(b.trackRecordScore)] ?? 4;
       if (orderA !== orderB) return orderA - orderB;
       // Within same category, sort by score descending (nulls last)
       const scoreA = a.trackRecordScore ?? -1;
@@ -2165,7 +2166,7 @@ function SourceReliabilityPanel({ sources }: { sources: SRSourceEntry[] }) {
         <tbody>
           {scoredSources.map((s, i) => {
             const domain = extractDomain(s.url);
-            const category = s.category || "insufficient_data";
+            const category = scoreToFactualRating(s.trackRecordScore);
             const label = SR_CATEGORY_LABELS[category] || category.replace(/_/g, " ");
             const colorClass = getSRCategoryColorClass(category);
             const scoreDisplay =
