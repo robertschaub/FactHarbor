@@ -941,6 +941,90 @@ describe("Stage 1: runPass2", () => {
   });
 });
 
+describe("Stage 1: runPass2 — inferredGeography wiring (Fix 0)", () => {
+  // Required unit tests per Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md §6.
+  // Verifies that BOTH Pass 2 render paths receive inferredGeography as a template variable.
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig = {} as any;
+  const validPass2Fixture = {
+    impliedClaim: "Entity A's courts followed due process",
+    backgroundDetails: "Background",
+    articleThesis: "Thesis",
+    atomicClaims: [
+      {
+        id: "AC_01",
+        statement: "Entity A courts followed standard legal procedures",
+        category: "factual",
+        centrality: "high",
+        harmPotential: "low",
+        isCentral: true,
+        claimDirection: "supports_thesis",
+        keyEntities: ["Entity A"],
+        checkWorthiness: "high",
+        specificityScore: 0.8,
+        groundingQuality: "moderate",
+        expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+      },
+    ],
+  };
+
+  it("both Pass 2 render paths receive inferredGeography when provided", async () => {
+    const mockLoadSection = vi.mocked(loadAndRenderSection);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    vi.mocked((await import("ai")).generateText).mockResolvedValue({ text: "" } as any);
+    vi.mocked((await import("@/lib/analyzer/llm")).extractStructuredOutput).mockReturnValue(validPass2Fixture);
+
+    await runPass2("test input", [], mockPipelineConfig, "2026-02-17", undefined, undefined, "BR");
+
+    // Both CLAIM_EXTRACTION_PASS2 renders (primary + soft-refusal retry) must receive the geography anchor
+    const pass2Calls = mockLoadSection.mock.calls.filter(
+      ([, section]) => section === "CLAIM_EXTRACTION_PASS2"
+    );
+    expect(pass2Calls).toHaveLength(2);
+    for (const call of pass2Calls) {
+      expect(call[2]).toMatchObject({ inferredGeography: "BR" });
+    }
+  });
+
+  it("both Pass 2 render paths use 'not geographically specific' when inferredGeography is null", async () => {
+    const mockLoadSection = vi.mocked(loadAndRenderSection);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    vi.mocked((await import("ai")).generateText).mockResolvedValue({ text: "" } as any);
+    vi.mocked((await import("@/lib/analyzer/llm")).extractStructuredOutput).mockReturnValue(validPass2Fixture);
+
+    await runPass2("test input", [], mockPipelineConfig, "2026-02-17", undefined, undefined, null);
+
+    const pass2Calls = mockLoadSection.mock.calls.filter(
+      ([, section]) => section === "CLAIM_EXTRACTION_PASS2"
+    );
+    expect(pass2Calls).toHaveLength(2);
+    for (const call of pass2Calls) {
+      expect(call[2]).toMatchObject({ inferredGeography: "not geographically specific" });
+    }
+  });
+
+  it("both Pass 2 render paths use 'not geographically specific' when inferredGeography is omitted (backwards compat)", async () => {
+    const mockLoadSection = vi.mocked(loadAndRenderSection);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    vi.mocked((await import("ai")).generateText).mockResolvedValue({ text: "" } as any);
+    vi.mocked((await import("@/lib/analyzer/llm")).extractStructuredOutput).mockReturnValue(validPass2Fixture);
+
+    // No inferredGeography arg — pre-Fix-0 call sites are still valid
+    await runPass2("test input", [], mockPipelineConfig, "2026-02-17");
+
+    const pass2Calls = mockLoadSection.mock.calls.filter(
+      ([, section]) => section === "CLAIM_EXTRACTION_PASS2"
+    );
+    expect(pass2Calls).toHaveLength(2);
+    for (const call of pass2Calls) {
+      expect(call[2]).toMatchObject({ inferredGeography: "not geographically specific" });
+    }
+  });
+});
+
 describe("Stage 1: runGate1Validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();

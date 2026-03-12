@@ -1,5 +1,40 @@
 # Agent Outputs Log
 
+---
+### 2026-03-12 | Senior Developer | Claude Code (claude-sonnet-4-6) | Phase A / Fix 0: inferredGeography wiring into Pass 2
+**Task:** Implement Phase A of `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — Fix 0 (root cause: `distinctEvents` has no prompt instructions) plus 4 unit tests.
+**Files touched:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — `runPass2` signature + both `CLAIM_EXTRACTION_PASS2` render calls + all 3 callers in `extractClaims`
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 3 new tests under "Stage 1: runPass2 — inferredGeography wiring (Fix 0)"
+- `apps/web/prompts/claimboundary.prompt.md` — geography examples replaced (abstract), prompt section already present from prior session
+**Key decisions:**
+- Prompt `### Distinct Events Rules` section was already present; only code wiring was missing
+- `inferredGeography` added as optional 8th param to `runPass2`; defaults to `"not geographically specific"` when null/omitted
+- Both render paths (primary at line 1683 and soft-refusal retry at line 1696) now pass the variable — the plan explicitly required both, with the retry being the most critical failure mode (politically sensitive inputs)
+- All 3 callers in `extractClaims` (initial, minimum-claim reprompt, multi-event reprompt) now pass `pass1.inferredGeography`
+- Pre-existing build error (`applyEvidenceWeighting` type cast at line 446) confirmed pre-dates this change; not in scope
+**Open items:**
+- Phase A validation: re-run H3 ("Were the various Bolsonaro trials...") to confirm 0 foreign-contaminated boundaries
+- Phase A+ (Fix 2, query constraints) only if H3 re-run shows residual contamination
+- Fix 1 (jurisdiction-aware relevance) and Fix 3 (post-extraction assessment) deferred to Phase B/C
+**Warnings:**
+- Unit tests confirm both render paths are wired. End-to-end confirmation requires an expensive H3 re-run (do not run unless explicitly asked)
+- Build has a pre-existing TS error (`applyEvidenceWeighting` cast at `claimboundary-pipeline.ts:446`) — tracked separately
+**For next agent:** Phase A validation re-run needed. Claim: "Were the various Bolsonaro trials conducted in accordance with Brazilian law and international standards of due process?" (EN). Success = 0 U.S. government-focused boundaries. If contamination persists, proceed with Phase A+ (Fix 2 prompt change to `GENERATE_QUERIES`).
+**Learnings:** No new learnings beyond what's in the plan.
+
+---
+### 2026-03-12 | Lead Developer | Cline | Review: Evidence Jurisdiction Contamination Fix Plan
+**Task:** Review `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` for implementation feasibility, code quality, and structural correctness.
+**Files touched:** `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Approved the implementation plan and marked it "APPROVED — ready for Act Mode".
+- Fixed out-of-scope variable references (`pass1Result`) in the plan's code snippets for Fix 0 (`runPass2`) and Fix 1 (`classifyRelevance`).
+- Corrected the `runPass2` signature in the plan to reflect adding `inferredGeography` as an optional parameter.
+**Open items:** None. Implementation can proceed with Phase A (Fix 0).
+**Warnings:** None.
+**For next agent:** Proceed with Phase A implementation per the approved plan. Start by adding `inferredGeography` to `runPass2` and updating the `CLAIM_EXTRACTION_PASS2` prompt.
+**Learnings:** No.
 
 ---
 ### 2026-03-10 | Lead Architect | Claude Code (claude-opus-4-6) | Consolidation: SR UCM Separation Plan
@@ -4574,6 +4609,20 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** Decide whether SR accumulate mode should guarantee primary-provider diversity even after the first provider fills `maxResults`, then adjust dispatcher/tests accordingly. Make the flush script environment-aware before relying on it operationally.
 **Warnings:** The unchanged 43% result is consistent with the code as written; the current implementation restores SR ownership of config, but not the historical multi-provider evidence behavior the score target depends on.
 **For next agent:** Inspect `apps/web/src/lib/web-search.ts:286-309`, `apps/web/src/app/api/internal/evaluate-source/route.ts:1153-1188`, `apps/web/test/unit/lib/web-search.test.ts:142-193`, `apps/web/src/lib/search-cache.ts:126-145`, and `scripts/sr-cache-flush.ts`. The most likely fix area is the AUTO accumulation policy under a saturated first provider.
+**Learnings:** no
+
+---
+### 2026-03-12 | Lead Developer | Codex (GPT-5) | Review — Evidence Jurisdiction Contamination Fix Plan
+**Task:** Review `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` for implementation feasibility and technical risk.
+**Files touched:** `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a `Lead Developer` review with `REQUEST_CHANGES` to the plan document.
+- Identified a critical mismatch in Fix 3: the plan classifies `applicability` after research but relies on `evidence-filter.ts`, which currently runs earlier inside each iteration. As written, the new filter branch would never execute on assessed items.
+- Identified a critical mismatch in Fix 1: the proposed `classifyRelevance()` signature drops the existing `currentDate` parameter even though the live function and call site still require it.
+- Identified an important schema-placement gap: the plan references `EvidenceItemSchema` in `types.ts`, but the active Zod extraction schema is `Stage2EvidenceItemSchema` in `claimboundary-pipeline.ts`.
+**Open items:** The plan needs to be revised so Fix 1 preserves `currentDate`, and Fix 3 defines a coherent assessment/filtering order before implementation begins.
+**Warnings:** The plan is close, but these are implementation blockers rather than documentation nits. Approving it as-is would likely produce a partial or non-functional fix.
+**For next agent:** Rework §4 Fix 1 and Fix 3 in the WIP doc before assigning implementation. The review section added to the plan points to the exact mismatches.
 **Learnings:** no
 
 ---

@@ -843,6 +843,8 @@ export async function extractClaims(
     pipelineConfig,
     currentDate,
     state,
+    undefined,
+    pass1.inferredGeography,
   );
   state.llmCalls++;
 
@@ -935,6 +937,7 @@ export async function extractClaims(
           currentDate,
           state,
           guidance,
+          pass1.inferredGeography,
         );
         state.llmCalls++;
 
@@ -1042,6 +1045,7 @@ export async function extractClaims(
         currentDate,
         state,
         multiEventGuidance,
+        pass1.inferredGeography,
       );
       state.llmCalls++;
 
@@ -1664,6 +1668,7 @@ export async function runPass2(
   currentDate: string,
   state?: Pick<CBResearchState, "warnings" | "onEvent">,
   repromptGuidance?: string,
+  inferredGeography?: string | null,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
   const buildPreliminaryEvidencePayload = (items: PreliminaryEvidenceItem[]): string =>
     JSON.stringify(
@@ -1685,6 +1690,7 @@ export async function runPass2(
     analysisInput: inputText,
     preliminaryEvidence: buildPreliminaryEvidencePayload(preliminaryEvidence),
     atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
+    inferredGeography: inferredGeography ?? "not geographically specific",
   });
   if (!renderedWithEvidence) {
     throw new Error("Stage 1 Pass 2: Failed to load CLAIM_EXTRACTION_PASS2 prompt section");
@@ -1698,6 +1704,7 @@ export async function runPass2(
     analysisInput: inputText,
     preliminaryEvidence: "[]",
     atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
+    inferredGeography: inferredGeography ?? "not geographically specific",
   }) ?? renderedWithEvidence;
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);

@@ -9,6 +9,7 @@ variables:
   - originalClaim
   - atomicityGuidance
   - scopes
+  - inferredGeography
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_EXTRACTION_PASS2"
@@ -167,6 +168,25 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - **Cover distinct aspects EXPLICITLY STATED or INHERENTLY IMPLIED in the input**: If the input text explicitly names multiple distinct events, proceedings, rulings, or phenomena, your claims may span those explicitly-stated aspects. If the input uses an ambiguous predicate (classified as ambiguous_single_claim), the distinct factual dimensions inherent in that predicate also count as "aspects" — these are implied by the wording, not imported from evidence. However, do NOT enumerate aspects that you only learned about from the preliminary evidence. A question like "Was X fair?" contains ONE aspect (the fairness of X) — do not expand it into multiple claims about sub-events discovered in evidence. Only the user's own words (including their inherent semantic range) determine what aspects exist.
 - **Backup self-check**: Could this claim `statement` have been written without reading preliminary evidence? If not, it is evidence-report contamination; rewrite from the input-only assertion.
 - **Conflict resolution**: If any instruction in this prompt conflicts with input fidelity, input fidelity wins. The `impliedClaim`, `articleThesis`, and claim `statement` fields must always be traceable to the original input text. Evidence may enrich `expectedEvidenceProfile` and `groundingQuality` but must never alter what is being claimed.
+
+### Distinct Events Rules
+
+`distinctEvents` identifies separate proceedings, episodes, or time-bounded events that the claim encompasses. These drive multi-event query coverage in Stage 2.
+
+**Include:**
+- Events, proceedings, rulings, or episodes that are WITHIN the claim's jurisdiction and directly relevant to the claim's substance.
+- Multiple proceedings or trials by the jurisdiction's own institutions.
+- Temporal episodes of the same phenomenon (e.g., "2022 trial" and "2024 appeal").
+
+**Exclude:**
+- Foreign government reactions, sanctions, or statements about the claim's jurisdiction. These are third-party responses, not events within the claim's scope.
+- International media coverage or foreign political commentary.
+- Events that are consequences or ripple effects of the claim's subject in other jurisdictions.
+
+**Test:** For each proposed event, ask: "Did this event occur within the claim's jurisdiction/system?" If a claim is about Country A's courts, only proceedings in Country A's courts qualify. Country B's sanctions against Country A are NOT a distinct event — they are a foreign reaction.
+
+When unsure, err on the side of exclusion. Fewer, jurisdiction-accurate events produce better evidence than many events that dilute the search across foreign reactions.
+When `${inferredGeography}` is set, treat it as the claim's jurisdiction anchor.
 
 **${atomicityGuidance}**
 
