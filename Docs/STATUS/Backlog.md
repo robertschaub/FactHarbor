@@ -310,6 +310,7 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 |---|---|---|---|
 | **Shadow Mode: Self-learning prompt optimization**: Observe LLM behavior across thousands of cases, detect inconsistencies, propose prompt improvements, A/B test variations. Requires 3+ months production data. | Analyzer / LLM | Design complete | [Shadow Mode Architecture](../ARCHIVE/Shadow_Mode_Architecture.md) |
 | **Vector database integration**: Optional embeddings store for similarity detection and clustering beyond text-hash matches. Deferred pending evidence of need. | Architecture / Data | Assessment complete | [Vector DB Assessment](../ARCHIVE/Vector_DB_Assessment.md) |
+| **SR standalone extraction + shared evidence-core feasibility**: Evaluate extracting Source Reliability into a standalone service and assess whether a shared `evidence-core` library is beneficial without reintroducing runtime coupling to the main pipeline. | Architecture / SR | Deferred | `Docs/WIP/SR_Evidence_Quality_Assessment_Plan_2026-03-11.md` |
 
 ---
 

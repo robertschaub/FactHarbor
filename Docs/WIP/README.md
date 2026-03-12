@@ -75,7 +75,46 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### 4. Backlog Proposals (3 files)
+### 4. Report Quality & Validation (4 files)
+
+#### Report Quality Criteria & Scorecard (2026-03-12)
+**Status:** 📋 Active — Criteria defined, baseline scored
+- **Document:** [Report_Quality_Criteria_Scorecard_2026-03-12.md](Report_Quality_Criteria_Scorecard_2026-03-12.md)
+- **Scope:** General + Bolsonaro-specific quality criteria (7 each). Full scorecard of 13 Bolsonaro runs. Trump/U.S. contamination analysis. Cross-claim stability.
+- **Key Finding:** No run passes all criteria. STF/TSE decomposition and Trump immunity trade off against each other.
+- **Next Step:** Use criteria to guide pipeline improvements (evidence relevance filter, political contestation classifier, boundary guardrails).
+
+#### Bolsonaro Report Variability Investigation (2026-03-07)
+**Status:** 🔬 Investigation — Findings absorbed into Scorecard
+- **Document:** [Bolsonaro_Report_Variability_Investigation_2026-03-07.md](Bolsonaro_Report_Variability_Investigation_2026-03-07.md)
+
+#### Report Quality Analysis (2026-03-08)
+**Status:** 🔬 Investigation — Findings absorbed into Scorecard
+- **Document:** [Report_Quality_Analysis_2026-03-08.md](Report_Quality_Analysis_2026-03-08.md)
+
+#### Report Variability Consolidated Plan (2026-03-07)
+**Status:** 🔧 In Progress — MT-5(A) committed, MT-5(C) pending approval
+- **Document:** [Report_Variability_Consolidated_Plan_2026-03-07.md](Report_Variability_Consolidated_Plan_2026-03-07.md)
+
+#### Report Quality Baseline Test Plan (2026-03-12)
+**Status:** ✅ Phase 1 Complete — Phase 2 paused pending contamination fix
+- **Document:** [Report_Quality_Baseline_Test_Plan_2026-03-12.md](Report_Quality_Baseline_Test_Plan_2026-03-12.md)
+- **Scope:** Phase 1 (HEAD, 4 runs) and Phase 2 (worktree at 523ee2aa, gated). Formal test plan with scoring criteria.
+
+#### Baseline Test Results — Phase 1 (2026-03-12)
+**Status:** 📋 Baseline Recorded — pre-SR-weighting snapshot
+- **Document:** [Baseline_Test_Results_Phase1_2026-03-12.md](Baseline_Test_Results_Phase1_2026-03-12.md)
+- **Scope:** 4 runs (H1a, H1b PT; H3 EN; H4 DE). B1-B7 and G1-G6 scoring. SR scores (observational). Key finding: H1 mean=56% (34pp below deployed 90%), H3 has severe U.S. contamination (15% B-score).
+
+#### Evidence Jurisdiction Contamination Fix Plan (2026-03-12)
+**Status:** 📋 PROPOSAL — awaiting Captain review
+- **Document:** [Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md](Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md)
+- **Scope:** 3 fixes (relevance prompt, contrarian constraint, post-extraction filter) to eliminate foreign-jurisdiction evidence contamination in boundaries. #1 quality blocker.
+- **Next Step:** Captain review → approve fix order → implement.
+
+---
+
+### 5. Backlog Proposals (3 files)
 
 #### API Cost Reduction Strategy (2026-02-13)
 **Status:** 🧭 Proposal — Key items: Batch API, NPO/OSS credits
