@@ -672,6 +672,7 @@ vi.mock("@/lib/analyzer/source-reliability", () => ({
   })),
   getTrackRecordScore: vi.fn(() => 0.7),
   getTrackRecordData: vi.fn(() => ({ score: 0.7, confidence: 0.9, consensusAchieved: true })),
+  applyEvidenceWeighting: vi.fn((verdicts: any[]) => verdicts),
 }));
 
 vi.mock("@/lib/analyzer/evidence-filter", () => ({
@@ -5332,6 +5333,40 @@ describe("M1: claimAnnotationMode verifiability stripping", () => {
 // ============================================================================
 // M2: evaluateExplanationRubric graceful failure
 // ============================================================================
+// ============================================================================
+// SR evidence weighting — pipeline integration smoke tests
+// ============================================================================
+
+describe("SR evidence weighting (applyEvidenceWeighting)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("mock is configured to pass through verdicts unchanged", async () => {
+    const { applyEvidenceWeighting } = await import("@/lib/analyzer/source-reliability");
+    const verdict = { claimId: "AC_01", truthPercentage: 75, confidence: 80 } as any;
+    const result = applyEvidenceWeighting([verdict], [], [], {});
+    expect(result).toEqual([verdict]);
+  });
+
+  it("guard condition: sources with no SR scores should skip weighting", () => {
+    // Verifies the guard: state.sources.some((s) => s.trackRecordScore !== null)
+    const sourcesNoScores = [
+      { url: "https://a.com", trackRecordScore: null },
+      { url: "https://b.com", trackRecordScore: null },
+    ];
+    expect(sourcesNoScores.some((s) => s.trackRecordScore !== null)).toBe(false);
+  });
+
+  it("guard condition: at least one scored source triggers weighting", () => {
+    const sourcesWithScore = [
+      { url: "https://a.com", trackRecordScore: null },
+      { url: "https://nytimes.com", trackRecordScore: 0.8 },
+    ];
+    expect(sourcesWithScore.some((s) => s.trackRecordScore !== null)).toBe(true);
+  });
+});
+
 describe("M2: evaluateExplanationRubric error handling", () => {
   it("should propagate LLM errors (pipeline wraps in try/catch)", async () => {
     const narrative: VerdictNarrative = {

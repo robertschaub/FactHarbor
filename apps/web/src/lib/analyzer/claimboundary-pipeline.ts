@@ -47,7 +47,7 @@ import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
 import { filterByProbativeValue } from "./evidence-filter";
-import { prefetchSourceReliability, getTrackRecordData } from "./source-reliability";
+import { prefetchSourceReliability, getTrackRecordData, applyEvidenceWeighting } from "./source-reliability";
 import { percentageToArticleVerdict } from "./truth-scale";
 import { debugLog } from "./debug";
 
@@ -424,7 +424,7 @@ export async function runClaimBoundaryAnalysis(
       )
     );
 
-    const claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
+    let claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
     endPhase("verdict");
 
     // B-7: Strip misleadingness fields if annotation mode doesn't include them
@@ -435,8 +435,21 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
-    // Record Gate 4 stats after verdicts
+    // Record Gate 4 stats after verdicts (before SR weighting — captures raw confidence)
     recordGate4Stats(claimVerdicts);
+
+    // Apply SR evidence weighting: adjust truthPercentage and confidence based on the
+    // track record scores of each verdict's supporting sources. Only runs when at least
+    // one source has a score (i.e. SR prefetch succeeded for at least one domain).
+    if (state.sources.some((s) => s.trackRecordScore !== null)) {
+      const unknownSourceScore = initialCalcConfig.sourceReliability?.defaultScore ?? null;
+      claimVerdicts = applyEvidenceWeighting(
+        claimVerdicts,
+        state.evidenceItems,
+        state.sources,
+        { unknownSourceScore }
+      ) as CBClaimVerdict[];
+    }
 
     // Stage 5: Aggregate
     checkAbortSignal(input.jobId);
