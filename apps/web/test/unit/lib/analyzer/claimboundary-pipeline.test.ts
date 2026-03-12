@@ -51,6 +51,7 @@ import {
   checkExplanationStructure,
   evaluateExplanationRubric,
   extractDomain,
+  assessEvidenceApplicability,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -2033,6 +2034,132 @@ describe("Stage 2: classifyRelevance — jurisdiction filtering (Fix 1)", () => 
     // With cap at 0.5, the score is capped to 0.5 which is >= 0.4, so it passes
     expect(result).toHaveLength(1);
     expect(result[0].url).toBe("https://example.com/foreign");
+  });
+});
+
+describe("Fix 3: assessEvidenceApplicability — post-extraction jurisdiction filter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockConfig = {} as any;
+
+  it("should classify evidence and populate applicability field", async () => {
+    const claims = [createAtomicClaim({ statement: "Brazilian courts followed due process" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", statement: "STF ruling on procedure", sourceUrl: "https://stf.jus.br/ruling", sourceTitle: "STF Ruling" }),
+      createEvidenceItem({ id: "EV_02", statement: "U.S. Treasury sanctions on Brazil", sourceUrl: "https://home.treasury.gov/sanctions", sourceTitle: "OFAC Sanctions" }),
+      createEvidenceItem({ id: "EV_03", statement: "HRW report on Brazilian trials", sourceUrl: "https://hrw.org/brazil", sourceTitle: "HRW Report" }),
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      assessments: [
+        { evidenceIndex: 0, applicability: "direct", reasoning: "Brazilian court ruling" },
+        { evidenceIndex: 1, applicability: "foreign_reaction", reasoning: "U.S. government sanctions" },
+        { evidenceIndex: 2, applicability: "contextual", reasoning: "International NGO report" },
+      ],
+    });
+
+    const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+    expect(result).toHaveLength(3);
+    expect(result[0].applicability).toBe("direct");
+    expect(result[1].applicability).toBe("foreign_reaction");
+    expect(result[2].applicability).toBe("contextual");
+  });
+
+  it("should skip assessment when inferredGeography is null", async () => {
+    const claims = [createAtomicClaim({ statement: "Generic claim" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+
+    const result = await assessEvidenceApplicability(claims, evidence, null, mockConfig);
+
+    // No LLM call — returns items unmodified
+    expect(result).toHaveLength(1);
+    expect(result[0].applicability).toBeUndefined();
+    expect(mockGenerateText).not.toHaveBeenCalled();
+  });
+
+  it("should skip assessment when applicabilityFilterEnabled is false", async () => {
+    const claims = [createAtomicClaim({ statement: "Test" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const disabledConfig = { applicabilityFilterEnabled: false } as any;
+
+    const result = await assessEvidenceApplicability(claims, evidence, "BR", disabledConfig);
+
+    expect(result).toHaveLength(1);
+    expect(mockGenerateText).not.toHaveBeenCalled();
+  });
+
+  it("should default unclassified items to 'direct' (fail-open for missing indices)", async () => {
+    const claims = [createAtomicClaim({ statement: "Test" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01" }),
+      createEvidenceItem({ id: "EV_02" }),
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    // LLM only returns assessment for index 0, not index 1
+    mockExtractOutput.mockReturnValue({
+      assessments: [
+        { evidenceIndex: 0, applicability: "contextual", reasoning: "external observer" },
+      ],
+    });
+
+    const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].applicability).toBe("contextual");
+    expect(result[1].applicability).toBe("direct"); // default for missing
+  });
+
+  it("should fail-open on LLM error — keeps all evidence without applicability", async () => {
+    const claims = [createAtomicClaim({ statement: "Test" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockRejectedValue(new Error("LLM timeout"));
+
+    const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+    // Fail-open: all evidence preserved
+    expect(result).toHaveLength(1);
+    expect(result[0].applicability).toBeUndefined();
+  });
+
+  it("should pass inferredGeography and claims to the prompt template", async () => {
+    const claims = [createAtomicClaim({ id: "AC_01", statement: "Brazilian courts" })];
+    const evidence = [createEvidenceItem({ id: "EV_01", sourceUrl: "https://example.com/source" })];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      assessments: [{ evidenceIndex: 0, applicability: "direct", reasoning: "ok" }],
+    });
+
+    await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+    const renderCall = mockLoadSection.mock.calls.find(
+      ([, section]) => section === "APPLICABILITY_ASSESSMENT"
+    );
+    expect(renderCall).toBeDefined();
+    expect(renderCall![2]).toMatchObject({ inferredGeography: "BR" });
+    // Claims should be serialized
+    const claimsArg = renderCall![2].claims;
+    expect(claimsArg).toContain("AC_01");
+    expect(claimsArg).toContain("Brazilian courts");
+  });
+
+  it("should handle empty evidence array", async () => {
+    const claims = [createAtomicClaim({ statement: "Test" })];
+
+    const result = await assessEvidenceApplicability(claims, [], "BR", mockConfig);
+
+    expect(result).toHaveLength(0);
+    expect(mockGenerateText).not.toHaveBeenCalled();
   });
 });
 

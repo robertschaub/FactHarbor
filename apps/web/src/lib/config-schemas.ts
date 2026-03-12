@@ -402,6 +402,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Deduplication threshold used by deterministic probative filter (default: 0.75)"),
   foreignJurisdictionRelevanceCap: z.number().min(0).max(1).optional()
     .describe("Max relevance score for foreign-reaction sources (default: 0.35, below the 0.4 pass threshold)"),
+  applicabilityFilterEnabled: z.boolean().optional()
+    .describe("Enable post-extraction applicability assessment to filter foreign-jurisdiction evidence (default: true)"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -889,6 +891,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextClaimsAnchorClaimsWeight: 0.6,
   probativeDeduplicationThreshold: 0.75,
   foreignJurisdictionRelevanceCap: 0.35,
+  applicabilityFilterEnabled: true,
 
   // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
   verdictBatchSize: 5,

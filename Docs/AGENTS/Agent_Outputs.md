@@ -1,6 +1,109 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-12 | Senior Developer | Claude Code (claude-opus-4-6) | Fix 3: Post-extraction applicability assessment — VALIDATED ✅
+**Task:** Implement Fix 3 from `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — post-extraction applicability assessment as safety net for jurisdiction contamination.
+**Files touched:**
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — new `assessEvidenceApplicability()` function + `ApplicabilityAssessmentOutputSchema` + pipeline integration before `clusterBoundaries()`
+- `apps/web/src/lib/analyzer/types.ts` — added `evidence_applicability_filter` to `AnalysisWarningType` union (applicability field already existed)
+- `apps/web/src/lib/config-schemas.ts` — added `applicabilityFilterEnabled` to `PipelineConfigSchema` + `DEFAULT_PIPELINE_CONFIG`
+- `apps/web/configs/pipeline.default.json` — added `"applicabilityFilterEnabled": true`
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 7 new tests in "Fix 3: assessEvidenceApplicability" describe block
+- `apps/web/src/lib/analyzer/warning-display.ts` — registered `evidence_applicability_filter` in `WARNING_CLASSIFICATION`
+- `apps/web/prompts/claimboundary.prompt.md` — `APPLICABILITY_ASSESSMENT` section already existed, no changes needed
+**Key decisions:**
+- Fix 3 is the decisive filter per Captain direction. Fix 0 (root cause) + Fix 1 (soft upstream reduction) remain as-is. Fix 2 already reverted.
+- Single batched Haiku-tier LLM call for all evidence items (~$0.0002/run). Uses `getModelForTask("understand")`.
+- Fail-open: LLM errors keep all evidence (pipeline not blocked).
+- Missing LLM classifications default to `"direct"` (fail-open on partial response).
+- `foreign_reaction` items filtered out completely at pipeline integration point. `contextual` items kept.
+- Debug logging: `debugLog` with per-category counts + foreign domain list. `console.info` with compact summary.
+- Warning type `evidence_applicability_filter` at severity `info` (admin-only — this is routine operation, not a user-facing quality issue).
+
+**Runtime bugs found and fixed during validation:**
+The initial implementation had 5 bugs in the `generateText` call, all caused by not following the established pipeline LLM call pattern:
+1. **`rendered` instead of `rendered.content`** — `loadAndRenderSection` returns `{ content, contentHash, ... }`, not a string. Passed `[object Object]` as system prompt.
+2. **Missing `output: Output.object({ schema })`** — AI SDK didn't know to request structured JSON output.
+3. **`getStructuredOutputProviderOptions` spread at top level** — should be under `providerOptions:` key.
+4. **`getPromptCachingOptions` spread at top level** — should be on the system message's `providerOptions`.
+5. **No user message** — Anthropic API requires at least one user message in addition to system.
+6. **`evidence_applicability_filter` not registered in `warning-display.ts`** — caused TS compilation error.
+
+**H3 Validation Results (job `b0cc6e02c29e4383a0566b1b24a2b891`):**
+
+| Metric | Baseline (pre-Fix) | Fix 0+1 only | **Fix 0+1+3** |
+|--------|-------------------|-------------|--------------|
+| U.S. gov items | 21/49 (42.9%) | 23/42 (54.8%) | **0/70 (0%)** ✅ |
+| Foreign reaction items | — | — | **0 remaining** (2 filtered) |
+| U.S.-focused boundaries | 3/6 | 3/? | **0/6** ✅ |
+| Truth % | 56% | 54% | **51%** |
+| Confidence | 58% | 16% | **58.3%** |
+| Verdict | MIXED | UNVERIFIED | **MIXED** |
+| Evidence count | 49 | 42 | **70** |
+
+Applicability breakdown: 0 direct, 70 contextual, 2 foreign_reaction (both `www.state.gov`). 0 unclassified. Haiku compliance: **100%** (72/72 items classified).
+
+All 6 boundaries are Brazil-relevant: Supreme Court proceedings, Federal Police investigation, defendant statements, Lula trial bias ruling, expert legal commentary, general evidence.
+
+**All success criteria met:**
+- ✅ 0 foreign-government-action items
+- ✅ 0 foreign-reaction-only boundaries
+- ✅ Contextual descriptive reports retained (state.gov HR reports classified `contextual`)
+- ✅ Confidence restored to baseline level (58.3% vs 58% baseline)
+- ✅ 1201/1201 unit tests passing across 64 files
+
+**Open items:**
+- **Not yet committed.** Changes validated but uncommitted — awaiting Captain approval to commit.
+- Pre-existing build error at `claimboundary-pipeline.ts:474` (`applyEvidenceWeighting` type cast) remains.
+- SR weighting confound still unresolved — active in validation runs but absent from original baseline.
+- All 70 items classified as `contextual` (0 `direct`) — the LLM is conservative about classifying items as `direct`. Not a problem for filtering (only `foreign_reaction` is removed), but worth monitoring.
+
+**Warnings:**
+- The function uses `new URL(item.sourceUrl)` for domain logging — could throw on malformed URLs. Wrapped in the overall try/catch (fail-open).
+- The `generateText` call pattern was initially wrong in 5 ways — **future LLM call implementations must follow the established pattern**: system message with `providerOptions: getPromptCachingOptions()`, user message, `output: Output.object({ schema })`, top-level `providerOptions: getStructuredOutputProviderOptions()`, and `extractStructuredOutput(result)` with single arg.
+
+**For next agent:**
+1. **Commit Fix 3** — all validation passed, ready for commit.
+2. Consider whether `0 direct / 70 contextual` classification is desirable or if the prompt should be tuned to classify more items as `direct`.
+3. SR weighting confound should be investigated separately (compare baseline with SR active vs inactive).
+**Learnings:** Appended to Role_Learnings.md? No — but critical insight: **Always copy the exact `generateText` call pattern from an existing working call in the pipeline.** The pattern includes 5 interrelated parts (messages structure, output, providerOptions, prompt caching, extractStructuredOutput) that must all match. Getting any one wrong causes silent runtime failures caught by the fail-open catch block.
+
+---
+### 2026-03-12 | Senior Developer | Claude Code (claude-opus-4-6) | Phase A+A+ Validation: Fix 0 + Fix 2 Results
+**Task:** Validate Phase A (Fix 0) and Phase A+ (Fix 2) of `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` by running H3 twice, then report findings.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`, `apps/web/prompts/claimboundary.prompt.md` (Fix 2 committed as `c11110e8`)
+**Key decisions:**
+- Fix 0 alone (commit `7ed71a05`): `distinctEvents` are now jurisdiction-clean ✅ but contamination persists through query generation and relevance classification. U.S. gov items 24/53 (45%), 3/6 boundaries U.S.-focused. **Fix 0 alone insufficient.**
+- Fix 0+2 (commit `c11110e8`): Dedicated U.S. boundaries eliminated (3→0) ✅, foreign govt actions reduced (sanctions 4→2, congress 1→0). But overall verdict quality collapsed: TP 56%→49.4%, Conf 58%→42%, verdict downgraded from MIXED to UNVERIFIED/INSUFFICIENT EVIDENCE/LOW CONFIDENCE. The query-level constraints are too blunt — they reduce evidence volume rather than classifying it.
+- Remaining `state.gov` 15 items are from the annual Country Report on Human Rights Practices for *Brazil* — these discuss Brazilian police courts, impunity, prosecution rates. They are `contextual` (external observer about the jurisdiction), not `foreign_reaction` (sanctions/policy actions). Filtering them at query level starves the pipeline.
+
+**Validation run data:**
+
+| Run | JobId | Commit | TP | Conf | Verdict | U.S. Gov Items | U.S. Boundaries |
+|-----|-------|--------|-----|------|---------|---------------|----------------|
+| Baseline H3 | `fe595e71` | `c02658eb` | 56% | 58% | MIXED | 21/49 (42.9%) | 3/6 |
+| Fix 0 only | `8c332bf2` | `7ed71a05` | 51% | 42% | UNVERIFIED | 24/53 (45.3%) | 3/6 |
+| Fix 0+2 | `53de9247` | `c11110e8` | 49.4% | 42.1% | UNVERIFIED | 17/46 (36%) | 0/6 ✅ |
+
+**Open items:**
+- **Fix 2 should be reverted.** Query-level jurisdiction constraints are too blunt. They reduce evidence volume, collapsing verdict confidence. The structural improvement (0 dedicated U.S. boundaries) came mostly from Fix 0's `distinctEvents` cleanup + LLM variance in clustering.
+- **Fix 1 (Phase B) is the correct next step.** `classifyRelevance()` needs a jurisdiction dimension to surgically filter foreign *government actions* (sanctions, EOs → `foreign_reaction`, cap at 0.3) while keeping foreign *observations about the jurisdiction* (HR reports, academic studies → `contextual`, pass normally). This is the surgical tool the plan designed — query-level filtering was always the wrong granularity.
+- **state.gov HR report over-extraction** is a separate issue: 15 items from a single source is excessive regardless of jurisdiction. Per-source extraction cap needed (tracked in plan §7).
+
+**Warnings:**
+- Both validation runs show UNVERIFIED/LOW CONFIDENCE — this is **worse** than baseline. The prompt changes in Fix 2 may be actively harmful by constraining evidence gathering too aggressively.
+- The `applyEvidenceWeighting` (SR weighting, commit `9550eb26`) is now active in these runs but was NOT active in the baseline. This confounds TP/Conf comparison. Some of the TP drop (56%→49%) may be SR weighting pulling low-reliability sources toward 50%, not contamination effects.
+- Pre-existing build error at `claimboundary-pipeline.ts:446` (`applyEvidenceWeighting` type cast) remains unfixed.
+
+**For next agent:**
+1. **Revert Fix 2** (`git revert c11110e8`) — keep Fix 0 only.
+2. **Implement Fix 1** (jurisdiction-aware `classifyRelevance`) per plan §4 Fix 1. Key changes: add `inferredGeography` to `classifyRelevance()` signature + prompt, add `jurisdictionMatch` field (`direct`/`contextual`/`foreign_reaction`) to relevance output schema, cap `foreign_reaction` at 0.35 (below 0.4 threshold). Three-location UCM config for `foreignJurisdictionRelevanceCap`.
+3. After Fix 1, re-run H3. Success = state.gov sanctions/EOs filtered, state.gov HR report items retained as `contextual`.
+4. Investigate SR weighting's contribution to TP drop separately.
+
+**Learnings:** Appended to Role_Learnings.md? No — but key insight: prompt-level query constraints are too blunt for jurisdiction filtering. They reduce evidence volume without distinguishing observation from action. Classification-level filtering (Fix 1) is the correct granularity.
+
+---
 ### 2026-03-12 | Senior Developer | Claude Code (claude-sonnet-4-6) | Phase A / Fix 0: inferredGeography wiring into Pass 2
 **Task:** Implement Phase A of `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — Fix 0 (root cause: `distinctEvents` has no prompt instructions) plus 4 unit tests.
 **Files touched:**
@@ -4623,6 +4726,34 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** The plan needs to be revised so Fix 1 preserves `currentDate`, and Fix 3 defines a coherent assessment/filtering order before implementation begins.
 **Warnings:** The plan is close, but these are implementation blockers rather than documentation nits. Approving it as-is would likely produce a partial or non-functional fix.
 **For next agent:** Rework §4 Fix 1 and Fix 3 in the WIP doc before assigning implementation. The review section added to the plan points to the exact mismatches.
+**Learnings:** no
+
+---
+### 2026-03-12 | Lead Developer | Codex (GPT-5) | Handoff — Report Quality Worktree Comparison Runbook
+**Task:** Prepare a detailed handoff so another agent can execute cross-checkpoint report-quality comparisons while keeping the reviewer available for result interpretation.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-12_Senior_Developer_Report_Quality_Worktree_Comparison_Runbook.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the `Alpha` git tag is not a usable code baseline for this task; it resolves to docs commit `1a3d5281`.
+- Selected meaningful comparison checkpoints instead: `523ee2aa`, `c02658eb`, `7ed71a05`, `172bba3d`, optional `9550eb26`, and current `HEAD`.
+- Captured the known confounds that must be recorded during execution: config drift, SR weighting onset, live-search drift, and SR cache extraction details.
+- Wrote a concrete runbook with worktree setup, port strategy, exact claims, SQL for SR extraction, data collection requirements, interpretation rules, and a ready-to-use prompt for another Senior Developer.
+**Open items:** Execution is still pending. Another agent should run the checkpoint comparisons and write a results doc.
+**Warnings:** Do not use the `Alpha` tag literally for analytical comparison; it will waste time and produce non-actionable results.
+**For next agent:** Start with `Docs/AGENTS/Handoffs/2026-03-12_Senior_Developer_Report_Quality_Worktree_Comparison_Runbook.md`. If budget is tight, use the runbook’s minimal path first.
+**Learnings:** no
+
+---
+### 2026-03-12 | Lead Developer | Codex (GPT-5) | Update — Worktree Comparison Runbook aligned to remembered quality window
+**Task:** Refine the worktree-comparison handoff to use the user’s remembered high-quality window instead of the earlier proxy-first checkpoint list.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-12_Senior_Developer_Report_Quality_Worktree_Comparison_Runbook.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added clear `quality_*` tag naming aligned to the user’s subjective quality window: `quality_window_start`, `quality_window_end`, `quality_post_window_first_code`, `quality_deployed_proxy`, `quality_fix0`, `quality_fix1`, `quality_head`, `quality_sr_weighting_onset`.
+- Documented that `quality_window_end` is a docs-only boundary marker and should not be treated as a full execution checkpoint by default.
+- Added explicit “how many inputs by tag” guidance, including the recommended first-pass set: PT Bolsonaro + EN Bolsonaro on the 4 main tags, with DE Kinder Migration as the control pass.
+- Updated worktree setup, port mapping, execution order, and interpretation rules to the `quality_*` tags.
+**Open items:** Execution is still pending.
+**Warnings:** The comparison should focus on `quality_window_start`, `quality_post_window_first_code`, `quality_deployed_proxy`, and `quality_head`. Everything else is diagnostic.
+**For next agent:** Use the short prompt derived from the updated runbook and do not fall back to the older `test_runbook_*` naming.
 **Learnings:** no
 
 ---

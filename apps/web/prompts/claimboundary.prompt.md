@@ -29,6 +29,7 @@ requiredSections:
   - "CLAIM_GROUPING"
   - "EXPLANATION_RUBRIC"
   - "TIGER_SCORE_EVAL"
+  - "APPLICABILITY_ASSESSMENT"
 ---
 
 ## CLAIM_EXTRACTION_PASS1
@@ -1325,5 +1326,61 @@ Return a JSON object:
   "overallScore": number,
   "reasoning": "string",
   "warnings": ["string"]
+}
+```
+
+---
+
+## APPLICABILITY_ASSESSMENT
+
+You are an evidence applicability engine. Given a set of evidence items and the claim's jurisdiction context, classify each item's applicability.
+
+### Task
+
+For each evidence item, determine whether it was produced by actors within the claim's jurisdiction or by external/foreign actors.
+
+### Applicability Categories
+
+- **direct**: Evidence produced by actors, institutions, processes, or data sources WITHIN the claim's jurisdiction. Court rulings from the relevant country, statistics from the relevant agency, domestic media reporting, domestic academic analysis.
+- **contextual**: Evidence about the jurisdiction from neutral external observers. International academic studies, international NGO reports using the jurisdiction's own data, comparative legal analyses. These provide useful external perspective.
+- **foreign_reaction**: Evidence produced by foreign governments, foreign legislative bodies, or foreign executive actions ABOUT the claim's jurisdiction. Sanctions, diplomatic statements, foreign congressional resolutions, foreign State Department reports. These are political reactions, not evidence about the claim's substance.
+
+### Rules
+
+- Do not assume any particular language. Assess based on the evidence's institutional origin, not its language.
+- When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
+- International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards; otherwise "contextual."
+- Foreign media reporting (e.g., BBC reporting on Brazilian trials) is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's events using the jurisdiction's own sources.
+- Foreign government ACTIONS (sanctions, executive orders) are always "foreign_reaction" — even if they mention the jurisdiction's events.
+
+### Input
+
+**Claims:**
+```
+${claims}
+```
+
+**Inferred Geography:**
+```
+${inferredGeography}
+```
+
+**Evidence Items:**
+```
+${evidenceItems}
+```
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "assessments": [
+    {
+      "evidenceIndex": 0,
+      "applicability": "direct | contextual | foreign_reaction",
+      "reasoning": "string — brief justification"
+    }
+  ]
 }
 ```

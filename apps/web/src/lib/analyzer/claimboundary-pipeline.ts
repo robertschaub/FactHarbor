@@ -292,6 +292,34 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
+    // Fix 3: Post-extraction applicability assessment (safety net for jurisdiction contamination)
+    if (initialPipelineConfig.applicabilityFilterEnabled ?? true) {
+      checkAbortSignal(input.jobId);
+      onEvent("Assessing evidence applicability...", 58);
+      const beforeApplicability = state.evidenceItems.length;
+      const assessed = await assessEvidenceApplicability(
+        understanding.atomicClaims,
+        state.evidenceItems,
+        understanding.inferredGeography ?? null,
+        initialPipelineConfig,
+      );
+      state.evidenceItems = assessed.filter(
+        (item) => item.applicability !== "foreign_reaction"
+      );
+      const removedCount = beforeApplicability - state.evidenceItems.length;
+      if (removedCount > 0) {
+        console.info(
+          `[Fix3] Removed ${removedCount} foreign_reaction evidence items (${beforeApplicability} → ${state.evidenceItems.length})`
+        );
+        state.warnings.push({
+          type: "evidence_applicability_filter" as const,
+          severity: "info" as const,
+          message: `Applicability filter removed ${removedCount} foreign-jurisdiction evidence items.`,
+          details: { removedCount, beforeCount: beforeApplicability, afterCount: state.evidenceItems.length },
+        });
+      }
+    }
+
     // Stage 3: Cluster Boundaries
     checkAbortSignal(input.jobId);
     onEvent("Clustering evidence into boundaries...", 60);
@@ -3359,6 +3387,160 @@ export async function classifyRelevance(
     });
     console.warn("[Stage2] Relevance classification failed, accepting all results:", err);
     return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+  }
+}
+
+// --- Zod schema for applicability assessment output ---
+const ApplicabilityAssessmentOutputSchema = z.object({
+  assessments: z.array(z.object({
+    evidenceIndex: z.number(),
+    applicability: z.enum(["direct", "contextual", "foreign_reaction"]).catch("direct"),
+    reasoning: z.string(),
+  })),
+});
+
+/**
+ * Fix 3: Post-extraction applicability assessment — safety net for jurisdiction contamination.
+ *
+ * Batches all evidence items into a single Haiku-tier LLM call to classify each item
+ * as "direct", "contextual", or "foreign_reaction". Items classified as "foreign_reaction"
+ * are filtered out by the caller.
+ *
+ * Called between research completion and clusterBoundaries() in the main pipeline.
+ *
+ * @param claims - The atomic claims being analyzed
+ * @param evidenceItems - All gathered evidence items
+ * @param inferredGeography - The claim's inferred jurisdiction (null = no filtering)
+ * @param pipelineConfig - Pipeline configuration
+ * @returns Evidence items with `applicability` field populated
+ */
+export async function assessEvidenceApplicability(
+  claims: AtomicClaim[],
+  evidenceItems: EvidenceItem[],
+  inferredGeography: string | null,
+  pipelineConfig: PipelineConfig,
+): Promise<EvidenceItem[]> {
+  // Skip if no geography or disabled
+  if (!inferredGeography || !(pipelineConfig.applicabilityFilterEnabled ?? true)) {
+    return evidenceItems;
+  }
+
+  // Skip if no evidence
+  if (evidenceItems.length === 0) {
+    return evidenceItems;
+  }
+
+  // Prepare compact evidence summaries for LLM (minimize tokens)
+  const evidenceSummaries = evidenceItems.map((item, index) => ({
+    index,
+    statement: item.statement.slice(0, 200),
+    sourceUrl: item.sourceUrl ?? "unknown",
+    sourceTitle: item.sourceTitle ?? "unknown",
+    category: item.category,
+  }));
+
+  const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", {
+    claims: JSON.stringify(claims.map(c => ({ id: c.id, statement: c.statement })), null, 2),
+    inferredGeography,
+    evidenceItems: JSON.stringify(evidenceSummaries, null, 2),
+  });
+
+  if (!rendered) {
+    console.warn("[Fix3] APPLICABILITY_ASSESSMENT prompt section not found — skipping applicability filter");
+    return evidenceItems;
+  }
+
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: any;
+
+  try {
+    result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(model.provider),
+        },
+        { role: "user", content: "Classify each evidence item by applicability." },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: ApplicabilityAssessmentOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        model.provider,
+      ),
+    });
+
+    const validated = extractStructuredOutput(result) as z.infer<typeof ApplicabilityAssessmentOutputSchema>;
+
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    // Apply classifications to evidence items
+    const classificationMap = new Map<number, "direct" | "contextual" | "foreign_reaction">();
+    for (const assessment of validated.assessments) {
+      classificationMap.set(assessment.evidenceIndex, assessment.applicability);
+    }
+
+    // Debug: count by category
+    const counts = { direct: 0, contextual: 0, foreign_reaction: 0, unclassified: 0 };
+    const foreignDomains: string[] = [];
+
+    const assessed = evidenceItems.map((item, index) => {
+      const applicability = classificationMap.get(index) ?? "direct";
+      counts[applicability]++;
+      if (applicability === "foreign_reaction") {
+        foreignDomains.push(item.sourceUrl ? new URL(item.sourceUrl).hostname : "unknown");
+      }
+      return { ...item, applicability };
+    });
+
+    // Count unclassified (items not in LLM response — default to "direct")
+    counts.unclassified = evidenceItems.length - classificationMap.size;
+
+    debugLog(
+      `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
+      `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
+      `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.join(", ") : "none"}`
+    );
+    console.info(
+      `[Fix3] Applicability: ${counts.direct}D/${counts.contextual}C/${counts.foreign_reaction}F ` +
+      `(${evidenceItems.length} total, geography: ${inferredGeography})`
+    );
+
+    return assessed;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
+    // Fail-open: if assessment fails, keep all evidence (don't block pipeline)
+    console.warn("[Fix3] Applicability assessment failed, keeping all evidence:", err);
+    debugLog(`[Fix3] ERROR: Applicability assessment failed: ${errorMessage}`);
+    return evidenceItems;
   }
 }
 

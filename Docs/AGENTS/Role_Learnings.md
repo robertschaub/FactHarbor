@@ -178,6 +178,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** When using file-backed defaults (`*.default.json`) for UCM, they can easily drift from their TypeScript constant counterparts in `config-schemas.ts`. A recursive comparison test (`config-drift.test.ts`) that fails the build on drift ensures that the JSON remains the authoritative source. This is critical for Admin UI visibility, as the UI relies on JSON schemas/defaults for comparison views. Any new tunable parameter must be explicitly set in both places.
 **Files:** `apps/web/test/unit/lib/config-drift.test.ts`, `apps/web/configs/`, `apps/web/src/lib/config-schemas.ts`
 
+### 2026-03-12 — Always copy the exact generateText call pattern from an existing pipeline call
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (claude-opus-4-6)
+**Category:** gotcha
+**Learning:** The pipeline's `generateText` call has 5 interrelated parts that must all match: (1) system message with `providerOptions: getPromptCachingOptions()`, (2) at least one user message, (3) `output: Output.object({ schema })`, (4) top-level `providerOptions: getStructuredOutputProviderOptions()`, (5) `extractStructuredOutput(result)` with single arg. Getting any one wrong causes a silent runtime failure caught by the fail-open catch block — no build error, no test failure, just a silently ineffective function. The Fix 3 implementation had 5 bugs in its `generateText` call because it used a different pattern (`...spread` instead of nested properties, `rendered` instead of `rendered.content`, missing user message). Always copy-paste from an existing working call and adapt.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (assessEvidenceApplicability)
+
 
 ## Technical Writer
 
