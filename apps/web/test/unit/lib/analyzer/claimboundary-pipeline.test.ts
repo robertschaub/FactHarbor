@@ -1918,6 +1918,124 @@ describe("Stage 2: classifyRelevance", () => {
   });
 });
 
+describe("Stage 2: classifyRelevance — jurisdiction filtering (Fix 1)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockPipelineConfig2 = {} as any;
+
+  it("should cap foreign_reaction scores below the 0.4 threshold", async () => {
+    const claim = createAtomicClaim({ statement: "Country A courts followed due process" });
+    const searchResults = [
+      { url: "https://example.com/domestic", title: "Domestic Court Ruling", snippet: "relevant" },
+      { url: "https://example.com/sanctions", title: "Foreign Sanctions", snippet: "sanctions" },
+      { url: "https://example.com/ngo", title: "International NGO Report", snippet: "report" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/domestic", relevanceScore: 0.85, jurisdictionMatch: "direct", reasoning: "domestic court" },
+        { url: "https://example.com/sanctions", relevanceScore: 0.75, jurisdictionMatch: "foreign_reaction", reasoning: "foreign sanctions" },
+        { url: "https://example.com/ngo", relevanceScore: 0.7, jurisdictionMatch: "contextual", reasoning: "NGO analysis" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    // domestic (direct, 0.85) and NGO (contextual, 0.7) pass; sanctions (foreign_reaction, capped to 0.35) filtered out
+    expect(result).toHaveLength(2);
+    expect(result.map(r => r.url)).toContain("https://example.com/domestic");
+    expect(result.map(r => r.url)).toContain("https://example.com/ngo");
+    expect(result.map(r => r.url)).not.toContain("https://example.com/sanctions");
+  });
+
+  it("should default missing jurisdictionMatch to 'contextual' via .catch()", async () => {
+    const claim = createAtomicClaim({ statement: "Test claim" });
+    const searchResults = [
+      { url: "https://example.com/1", title: "Source", snippet: "text" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    // LLM returns without jurisdictionMatch field — schema .catch("contextual") should fill it
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/1", relevanceScore: 0.8, reasoning: "relevant" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    // Missing jurisdictionMatch defaults to "contextual" (not "direct"), so source passes normally
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://example.com/1");
+  });
+
+  it("should pass inferredGeography to the prompt template", async () => {
+    const claim = createAtomicClaim({ statement: "Test" });
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/1", relevanceScore: 0.8, jurisdictionMatch: "direct", reasoning: "ok" },
+      ],
+    });
+
+    await classifyRelevance(claim, [{ url: "https://example.com/1", title: "T", snippet: "s" }], mockPipelineConfig2, "2026-03-12", "DE");
+
+    const renderCall = mockLoadSection.mock.calls.find(
+      ([, section]) => section === "RELEVANCE_CLASSIFICATION"
+    );
+    expect(renderCall).toBeDefined();
+    expect(renderCall![2]).toMatchObject({ inferredGeography: "DE" });
+  });
+
+  it("should use 'null' as inferredGeography when not provided (backwards compat)", async () => {
+    const claim = createAtomicClaim({ statement: "Test" });
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/1", relevanceScore: 0.8, jurisdictionMatch: "direct", reasoning: "ok" },
+      ],
+    });
+
+    await classifyRelevance(claim, [{ url: "https://example.com/1", title: "T", snippet: "s" }], mockPipelineConfig2, "2026-03-12");
+
+    const renderCall = mockLoadSection.mock.calls.find(
+      ([, section]) => section === "RELEVANCE_CLASSIFICATION"
+    );
+    expect(renderCall![2]).toMatchObject({ inferredGeography: "null" });
+  });
+
+  it("should respect foreignJurisdictionRelevanceCap from UCM config", async () => {
+    const claim = createAtomicClaim({ statement: "Country A" });
+    const searchResults = [
+      { url: "https://example.com/foreign", title: "Foreign Gov Action", snippet: "sanctions" },
+    ];
+
+    // Set a higher cap (0.5) so foreign_reaction passes the 0.4 threshold
+    const configWithHighCap = { foreignJurisdictionRelevanceCap: 0.5 } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/foreign", relevanceScore: 0.9, jurisdictionMatch: "foreign_reaction", reasoning: "sanctions" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, configWithHighCap, "2026-03-12", "BR");
+
+    // With cap at 0.5, the score is capped to 0.5 which is >= 0.4, so it passes
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://example.com/foreign");
+  });
+});
+
 describe("Stage 2: extractResearchEvidence", () => {
   beforeEach(() => {
     vi.clearAllMocks();

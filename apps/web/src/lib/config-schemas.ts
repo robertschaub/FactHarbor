@@ -400,6 +400,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Blend weight of claims average when anchoring verdicts (default: 0.6)"),
   probativeDeduplicationThreshold: z.number().min(0.5).max(0.95).optional()
     .describe("Deduplication threshold used by deterministic probative filter (default: 0.75)"),
+  foreignJurisdictionRelevanceCap: z.number().min(0).max(1).optional()
+    .describe("Max relevance score for foreign-reaction sources (default: 0.35, below the 0.4 pass threshold)"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -886,6 +888,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contextClaimsAnchorDivergenceThreshold: 15,
   contextClaimsAnchorClaimsWeight: 0.6,
   probativeDeduplicationThreshold: 0.75,
+  foreignJurisdictionRelevanceCap: 0.35,
 
   // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
   verdictBatchSize: 5,

@@ -2339,6 +2339,7 @@ const RelevanceClassificationOutputSchema = z.object({
   relevantSources: z.array(z.object({
     url: z.string(),
     relevanceScore: z.number(),
+    jurisdictionMatch: z.enum(["direct", "contextual", "foreign_reaction"]).catch("contextual"),
     reasoning: z.string(),
   })),
 });
@@ -2986,6 +2987,7 @@ export async function runResearchIteration(
         response.results,
         pipelineConfig,
         currentDate,
+        state.understanding?.inferredGeography ?? null,
       );
       state.llmCalls++;
 
@@ -3248,10 +3250,12 @@ export async function classifyRelevance(
   searchResults: Array<{ url: string; title: string; snippet?: string | null }>,
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  inferredGeography?: string | null,
 ): Promise<Array<{ url: string; relevanceScore: number }>> {
   const rendered = await loadAndRenderSection("claimboundary", "RELEVANCE_CLASSIFICATION", {
     currentDate,
     claim: claim.statement,
+    inferredGeography: inferredGeography ?? "null",
     searchResults: JSON.stringify(
       searchResults.map((r) => ({ url: r.url, title: r.title, snippet: r.snippet ?? "" })),
       null,
@@ -3308,7 +3312,18 @@ export async function classifyRelevance(
     }
 
     const validated = RelevanceClassificationOutputSchema.parse(parsed);
-    const relevantSources = validated.relevantSources.filter((s) => s.relevanceScore >= 0.4);
+
+    // Cap foreign_reaction scores before applying the relevance threshold.
+    // This ensures foreign government actions (sanctions, EOs, congressional statements)
+    // are filtered out while contextual evidence (academic studies, NGO reports) passes.
+    const foreignCap = pipelineConfig.foreignJurisdictionRelevanceCap ?? 0.35;
+    const adjustedSources = validated.relevantSources.map((s) => {
+      if (s.jurisdictionMatch === "foreign_reaction") {
+        return { ...s, relevanceScore: Math.min(s.relevanceScore, foreignCap) };
+      }
+      return s;
+    });
+    const relevantSources = adjustedSources.filter((s) => s.relevanceScore >= 0.4);
 
     recordLLMCall({
       taskType: "research",
