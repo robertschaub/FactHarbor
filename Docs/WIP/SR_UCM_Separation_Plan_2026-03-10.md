@@ -823,7 +823,7 @@ evaluationSearch: {
   provider: "auto" | "google-cse" | "serpapi" | "serper" | "brave",
   autoMode: "accumulate" | "first-success",  // SR default: "accumulate"
   maxResultsPerQuery: number,                 // SR default: 3
-  maxEvidenceItems: number,                   // SR default: 12
+  maxEvidenceItems: number,                   // SR default: 30 (raised from 12 when keyword pre-filter replaced by LLM relevance)
   dateRestrict: "y" | "m" | "w" | null,      // SR default: null
   timeoutMs: number,                          // SR default: 15000
   providers: {

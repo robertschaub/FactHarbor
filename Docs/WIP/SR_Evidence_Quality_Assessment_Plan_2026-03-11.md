@@ -167,12 +167,13 @@ Return JSON array: [{id, probativeValue, evidenceCategory}, ...]
 - Render via prompt-loader using SR pipeline key (`source-reliability`)
 - Keep only structural assembly in code (`items`, `domain`, variables), no hardcoded semantic prompt text in route/module
 
-**Model:** Claude Haiku 4.5 (fast, cheap — ~$0.001 per batch of 12 items)
+**Model:** Claude Haiku 4.5 (fast, cheap — ~$0.0025 per batch of 30 items)
 
 **Error handling and severity:**
 - If Haiku call fails, fall back to unenriched evidence pack (flat list) and continue evaluation.
 - This is a **quality-affecting degraded mode** and must be logged/emitted as **warning** (`sr_evidence_quality_assessment_failed`), not info.
 - Rationale: the fallback reintroduces the known quality weakness this feature is intended to reduce.
+- **Warning system note:** SR uses its own caveat system (`ResponsePayload.caveats: string[]`), separate from the pipeline's `AnalysisWarningType` / `WARNING_CLASSIFICATION` registry in `warning-display.ts`. The AGENTS.md rule "All warning types MUST be registered in warning-display.ts" applies to pipeline warnings only. SR caveats are surfaced via `applyEvidenceQualityAssessmentCaveat()` in the SR route. If SR warnings are ever unified with the pipeline system, this warning type must be registered.
 - Observability rule: include only domain, error class, latency, item count, and timeout info (no snippet text in logs).
 
 **Placement in code:** After evidence pack assembly (~line 1253), before primary evaluation call (~line 1370).
@@ -262,17 +263,19 @@ The `evidence_pack` column in SQLite already stores JSON — no schema migration
     "enabled": true,
     "model": "haiku",
     "timeoutMs": 8000,
-    "maxItemsPerAssessment": 12,
+    "maxItemsPerAssessment": 30,
     "minRemainingBudgetMs": 20000
   }
 }
 ```
 
+> **Updated 2026-03-11:** `maxItemsPerAssessment` raised from 12 → 30 when keyword-based pre-filtering (`isRelevantSearchResult`) was replaced with LLM relevance classification. The LLM now classifies a `relevant: boolean` field alongside `probativeValue` and `evidenceCategory`, and irrelevant items are filtered post-assessment. `maxEvidenceItems` also raised from 12 → 30.
+
 **Config behavior:**
 - `enabled: false` → skip quality assessment, use flat evidence pack (current behavior)
 - `model` → which model to use for the batch assessment call
 - `timeoutMs` → timeout for the quality assessment call (separate from main eval timeout)
-- `maxItemsPerAssessment` → independent cap for assessment call cost/latency (can be lower than `evaluationSearch.maxEvidenceItems`)
+- `maxItemsPerAssessment` → batch size for assessment call; also determines relevance filtering batch size
 - `minRemainingBudgetMs` → skip assessment if remaining per-domain budget is too tight
 - Config lives in **Source Reliability profile only** (`sr.default.json` / `SourceReliabilityConfig`)
 - No shared knobs with claimboundary/pipeline config
@@ -325,8 +328,8 @@ The key insight: **we're not telling the LLM what to score — we're telling it 
 | Component | Cost per domain | Notes |
 |-----------|----------------|-------|
 | Current: 2 LLM calls (Claude + GPT) | ~$0.02-0.05 | Unchanged |
-| New: 1 Haiku batch call | ~$0.001 | 12 items, ~500 input tokens, ~200 output tokens |
-| **Total increase** | **~2-5%** | Negligible |
+| New: 1 Haiku batch call | ~$0.0025 | Up to 30 items, ~1200 input tokens, ~500 output tokens |
+| **Total increase** | **~5-12%** | Negligible |
 
 Cost scales approximately linearly with `maxItemsPerAssessment`; this parameter is intentionally independent from evidence retrieval count.
 
