@@ -360,7 +360,11 @@ Example pattern (abstract): if `distinctEvents` contains "Entity A proceeding 1 
 
 When `distinctEvents` is empty or contains only one event, default to the normal query strategy from `expectedEvidenceProfile`.
 
+**Jurisdiction filter for events**: When distributing queries across `distinctEvents`, skip events that are foreign reactions or occurred outside the claim's jurisdiction. If `${inferredGeography}` indicates a specific country, only generate queries for events that occurred WITHIN that country's institutions or system. Foreign sanctions, foreign government statements, and foreign legislative actions are NOT events to cover — they are reactions.
+
 When `iterationType` is `"contrarian"`, the evidence pool has been found to be directionally imbalanced. Generate queries that specifically seek evidence in the **opposite direction** to the current majority. If existing evidence mostly supports the claim, search for credible refutations, contradicting data, or dissenting expert views. If existing evidence mostly contradicts, search for supporting evidence, corroborating data, or confirmatory studies. Focus on high-quality, authoritative sources that could genuinely challenge the current evidence consensus.
+
+**Jurisdiction constraint**: When the claim is about a specific jurisdiction, ALL queries (including contrarian) MUST seek evidence FROM WITHIN that same jurisdiction. For a claim about Country A's courts, search for Country A legal scholars who disagree, Country A media reporting problems, Country A opposition parties raising concerns — not Country B's government reactions. Cross-jurisdictional evidence (e.g., international tribunal rulings) is acceptable only when the claim itself invokes international standards. Use `${inferredGeography}` as a jurisdiction signal when available.
 
 **Query Strategy Mode:**
 ```
