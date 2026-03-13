@@ -774,10 +774,8 @@ export const PipelineConfigSchema = z.object({
     const LEGACY_MAP: Record<string, "budget" | "standard" | "premium"> = { haiku: "budget", sonnet: "standard", opus: "premium" };
     data.tigerScoreStrength = data.tigerScoreTier ? (LEGACY_MAP[data.tigerScoreTier] ?? "standard") : "standard";
   }
-  // Keep legacy field populated for any code that still reads it during transition
-  if (data.tigerScoreTier === undefined) {
-    data.tigerScoreTier = "sonnet";
-  }
+  // Strip legacy field after normalization — no runtime code reads it
+  delete data.tigerScoreTier;
   if (data.tigerScoreTemperature === undefined) {
     data.tigerScoreTemperature = 0.1;
   }
@@ -852,26 +850,9 @@ export const PipelineConfigSchema = z.object({
     data.debateRoles = merged as typeof data.debateRoles;
   }
 
-  // Keep legacy fields populated for backward-compat reads during transition
-  if (data.debateModelTiers === undefined) {
-    data.debateModelTiers = {
-      advocate: "sonnet",
-      selfConsistency: "sonnet",
-      challenger: "sonnet",
-      reconciler: "sonnet",
-      validation: "haiku",
-    };
-  }
-  if (data.debateModelProviders === undefined) {
-    const inheritedProvider = data.llmProvider ?? "anthropic";
-    data.debateModelProviders = {
-      advocate: inheritedProvider,
-      selfConsistency: inheritedProvider,
-      challenger: "openai",
-      reconciler: inheritedProvider,
-      validation: inheritedProvider,
-    };
-  }
+  // Strip legacy fields after normalization — no runtime code reads them
+  delete data.debateModelTiers;
+  delete data.debateModelProviders;
   if (data.calibrationInverseGateAction === undefined) {
     data.calibrationInverseGateAction = "warn";
   }
@@ -989,7 +970,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   enforceBudgets: false,
   claimAnnotationMode: "verifiability_and_misleadingness",
   tigerScoreMode: "off",
-  tigerScoreTier: "sonnet", // Legacy compat — canonical is tigerScoreStrength
   tigerScoreStrength: "standard",
   tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
@@ -1002,21 +982,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
     challenger: { provider: "openai", strength: "standard" },
     reconciler: { provider: "anthropic", strength: "standard" },
     validation: { provider: "anthropic", strength: "budget" },
-  },
-  // Legacy compat — kept populated by transform for transition reads
-  debateModelTiers: {
-    advocate: "sonnet",
-    selfConsistency: "sonnet",
-    challenger: "sonnet",
-    reconciler: "sonnet",
-    validation: "haiku",
-  },
-  debateModelProviders: {
-    advocate: "anthropic",
-    selfConsistency: "anthropic",
-    challenger: "openai",
-    reconciler: "anthropic",
-    validation: "anthropic",
   },
   calibrationInverseGateAction: "warn",
   verdictGroundingPolicy: "disabled",

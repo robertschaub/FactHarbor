@@ -184,7 +184,7 @@ export async function runClaimBoundaryAnalysis(
     };
 
     // B-1: Per-role runtime tracing — captures what actually ran for each debate role
-    const runtimeRoleTraces: Array<{ debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }> = [];
+    const runtimeRoleTraces: Array<{ debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }> = [];
 
     // Stage 1: Extract Claims
     checkAbortSignal(input.jobId);
@@ -391,7 +391,7 @@ export async function runClaimBoundaryAnalysis(
     checkAbortSignal(input.jobId);
     onEvent("Generating verdicts...", 70);
     startPhase("verdict");
-    const roleTraceRecorder = (trace: { debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }) => {
+    const roleTraceRecorder = (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => {
       runtimeRoleTraces.push(trace);
     };
 
@@ -575,7 +575,7 @@ export async function runClaimBoundaryAnalysis(
     recordRuntimeModelUsage(verdictModel.provider, verdictModel.modelName);
 
     // B-1: Aggregate runtime role traces into per-role summary
-    const runtimeRoleModels: Record<string, { provider: string; model: string; tier: string; callCount: number; fallbackUsed: boolean }> = {};
+    const runtimeRoleModels: Record<string, { provider: string; model: string; strength: string; callCount: number; fallbackUsed: boolean }> = {};
     for (const trace of runtimeRoleTraces) {
       const existing = runtimeRoleModels[trace.debateRole];
       if (existing) {
@@ -585,7 +585,7 @@ export async function runClaimBoundaryAnalysis(
         runtimeRoleModels[trace.debateRole] = {
           provider: trace.provider,
           model: trace.model,
-          tier: trace.tier,
+          strength: trace.strength,
           callCount: 1,
           fallbackUsed: trace.fallbackUsed,
         };
@@ -4827,7 +4827,7 @@ export async function generateVerdicts(
   llmCall?: LLMCallFn,
   warnings?: AnalysisWarning[],
   modelUsageRecorder?: (provider: string, modelName: string) => void,
-  roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }) => void,
+  roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void,
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -4954,7 +4954,7 @@ export function createProductionLLMCall(
   pipelineConfig: PipelineConfig,
   warnings?: AnalysisWarning[],
   onModelUsed?: (provider: string, modelName: string) => void,
-  onRoleTrace?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; tier: string; fallbackUsed: boolean }) => void,
+  onRoleTrace?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void,
 ): LLMCallFn {
   return async (
     promptKey: string,
@@ -5100,7 +5100,7 @@ export function createProductionLLMCall(
         promptKey: options.callContext.promptKey,
         provider: model.provider,
         model: model.modelName,
-        tier: tier,
+        strength: tier,
         fallbackUsed,
       });
     }

@@ -379,14 +379,14 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
 }
 
 /**
- * Resolve a model name from debate tier + provider.
+ * Resolve a model name from debate strength + provider.
  *
  * Uses UCM model overrides when the configured model is compatible with the
  * target provider. If the configured model appears to belong to a different
- * provider, falls back to canonical tier resolution for the target provider.
+ * provider, falls back to canonical strength resolution for the target provider.
  */
 function resolveModelName(
-  tier: string,
+  strength: string,
   roleProvider: string,
   tiering: boolean,
   modelUnderstand: string,
@@ -395,7 +395,7 @@ function resolveModelName(
 ): string {
   const provider = normalizeLLMProvider(roleProvider);
   // Normalize strength: accepts both legacy (haiku/sonnet/opus) and canonical (budget/standard/premium)
-  const normalizedStrength = normalizeToStrength(tier);
+  const normalizedStrength = normalizeToStrength(strength);
 
   const detectProviderFromModelName = (
     modelName: string,
