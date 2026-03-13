@@ -1164,10 +1164,8 @@ function PipelineConfigForm({
   const updateField = <K extends keyof PipelineConfig>(key: K, value: PipelineConfig[K]) => {
     onChange({ ...config, [key]: value });
   };
-  const defaultDebateModelTiers = (SHARED_DEFAULT_PIPELINE_CONFIG as PipelineConfig).debateModelTiers!;
-  const defaultDebateModelProviders = (SHARED_DEFAULT_PIPELINE_CONFIG as PipelineConfig).debateModelProviders!;
-  const currentDebateModelTiers = config.debateModelTiers ?? defaultDebateModelTiers;
-  const currentDebateModelProviders = config.debateModelProviders ?? defaultDebateModelProviders;
+  const defaultDebateRoles = (SHARED_DEFAULT_PIPELINE_CONFIG as PipelineConfig).debateRoles!;
+  const currentDebateRoles = config.debateRoles ?? defaultDebateRoles;
   const debateRoles = [
     { key: "advocate", label: "Advocate" },
     { key: "selfConsistency", label: "Self-Consistency" },
@@ -1825,11 +1823,14 @@ function PipelineConfigForm({
                 <select
                   className={styles.formInput}
                   style={{ fontSize: 12 }}
-                  value={currentDebateModelProviders[role.key] ?? defaultDebateModelProviders[role.key]}
+                  value={currentDebateRoles[role.key]?.provider ?? defaultDebateRoles[role.key]?.provider ?? "anthropic"}
                   onChange={(e) =>
-                    updateField("debateModelProviders", {
-                      ...currentDebateModelProviders,
-                      [role.key]: e.target.value as NonNullable<PipelineConfig["debateModelProviders"]>[typeof role.key],
+                    updateField("debateRoles", {
+                      ...currentDebateRoles,
+                      [role.key]: {
+                        ...currentDebateRoles[role.key],
+                        provider: e.target.value as "anthropic" | "openai" | "google" | "mistral",
+                      },
                     })
                   }
                 >
@@ -1840,21 +1841,24 @@ function PipelineConfigForm({
                 </select>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel} style={{ fontSize: 11 }}>Strength Class</label>
+                <label className={styles.formLabel} style={{ fontSize: 11 }}>Strength</label>
                 <select
                   className={styles.formInput}
                   style={{ fontSize: 12 }}
-                  value={currentDebateModelTiers[role.key] ?? defaultDebateModelTiers[role.key]}
+                  value={currentDebateRoles[role.key]?.strength ?? defaultDebateRoles[role.key]?.strength ?? "standard"}
                   onChange={(e) =>
-                    updateField("debateModelTiers", {
-                      ...currentDebateModelTiers,
-                      [role.key]: e.target.value as NonNullable<PipelineConfig["debateModelTiers"]>[typeof role.key],
+                    updateField("debateRoles", {
+                      ...currentDebateRoles,
+                      [role.key]: {
+                        ...currentDebateRoles[role.key],
+                        strength: e.target.value as "budget" | "standard" | "premium",
+                      },
                     })
                   }
                 >
-                  <option value="haiku">Budget (haiku alias)</option>
-                  <option value="sonnet">Standard (sonnet alias)</option>
-                  <option value="opus">Premium (opus alias)</option>
+                  <option value="budget">Budget</option>
+                  <option value="standard">Standard</option>
+                  <option value="premium">Premium</option>
                 </select>
               </div>
             </div>

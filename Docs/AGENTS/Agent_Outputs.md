@@ -2,6 +2,33 @@
 
 
 ---
+### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Debate Role Config Terminology Migration (Phases 1+2)
+**Task:** Implement the approved Debate Role Config Terminology Migration Plan — replace provider-branded capability names (`haiku/sonnet/opus`) with provider-neutral vocabulary (`budget/standard/premium`), unify split `debateModelTiers`/`debateModelProviders` into `debateRoles.<role>.{provider, strength}`, rename `tigerScoreTier` to `tigerScoreStrength`. Legacy fields remain read-compatible via parse-time normalization.
+**Files touched:**
+- `apps/web/src/lib/analyzer/model-resolver.ts` — `ModelStrength` type, `normalizeToStrength()`, re-keyed version maps, deprecated `ModelTier` alias
+- `apps/web/src/lib/config-schemas.ts` — `debateRoles` Zod schema, `tigerScoreStrength` field, `.transform()` normalization block (canonical wins > legacy > defaults), updated `DEFAULT_PIPELINE_CONFIG`
+- `apps/web/configs/pipeline.default.json` — canonical `debateRoles` shape, `tigerScoreStrength`
+- `apps/web/src/lib/analyzer/verdict-stage.ts` — `VerdictStageConfig` interface migrated to `debateRoles`, `DEFAULT_VERDICT_STAGE_CONFIG` updated, all call sites use `config.debateRoles.<role>.strength`
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — `checkDebateTierDiversity`, `checkDebateProviderCredentials`, `buildVerdictStageConfig`, `evaluateTigerScore` all read from canonical fields
+- `apps/web/src/lib/calibration/runner.ts` — `resolveLLMConfig` reads `config.debateRoles`, uses `normalizeToStrength()`
+- `apps/web/src/app/admin/config/page.tsx` — Admin UI reads/writes `debateRoles`, options show `budget/standard/premium`
+- `apps/web/test/unit/lib/config-schemas.test.ts` — legacy normalization tests, canonical-wins-over-legacy tests
+- `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts` — all tier references migrated to strength vocabulary
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — debate diversity and provider credential tests updated
+- `apps/web/test/unit/lib/calibration-runner.test.ts` — strength-based resolver tests
+**Key decisions:**
+- `ModelTier` kept as deprecated type alias (`export type ModelTier = ModelStrength`) — zero breakage for any remaining imports
+- `resolveModel()` accepts `string` (not just `ModelStrength`) and normalizes internally — call sites using "haiku"/"sonnet" model identifiers continue to work
+- Normalization in Zod `.transform()` handles all combos: canonical-only, legacy-only, both (canonical wins), challenger defaults to openai provider
+- Non-debate model fields (`modelUnderstand`, `modelExtractEvidence`, `modelVerdict`) remain free-text — out of scope per plan
+**Open items:**
+- Pre-existing build failure at `claimboundary-pipeline.ts:474` (`ClaimVerdict[]` → `CBClaimVerdict[]` type mismatch) — NOT introduced by this migration, confirmed identical on clean HEAD
+- Legacy fields (`debateModelTiers`, `debateModelProviders`, `tigerScoreTier`) can be removed in a future cleanup pass once no stored configs use them
+**Warnings:**
+- The `LLMCallFn` type's `tier` option was widened from union to `string` to accept both vocabularies during transition — tighten to `ModelStrength` once legacy is fully removed
+**For next agent:** All consumers read canonical `debateRoles` shape. Legacy stored configs auto-normalize on load. Build failure is pre-existing and unrelated. Tests: 1216/1216 passing (64 files).
+
+---
 ### 2026-03-13 | Captain Deputy | Claude Sonnet 4.6 | Three-Plan Review: Contamination Fix, Baseline Test Plan, Debate Role Migration
 **Task:** Review and close all open questions in three WIP planning documents; record decisions; confirm execution readiness.
 **Files touched:**

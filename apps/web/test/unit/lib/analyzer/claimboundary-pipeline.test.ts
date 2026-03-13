@@ -3561,79 +3561,84 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     expect(result.selfConsistencyMode).toBe("disabled");
   });
 
-  it("should wire debateModelProviders from UCM config", () => {
+  it("should wire debateRoles providers from UCM config", () => {
     const pipelineConfig = {
-      debateModelProviders: {
-        challenger: "openai",
-        reconciler: "mistral",
+      debateRoles: {
+        challenger: { provider: "openai", strength: "standard" },
+        reconciler: { provider: "mistral", strength: "standard" },
       },
     } as any;
     const result = buildVerdictStageConfig(pipelineConfig, {} as any);
 
-    expect(result.debateModelProviders.challenger).toBe("openai");
-    expect(result.debateModelProviders.reconciler).toBe("mistral");
-    expect(result.debateModelProviders.advocate).toBeUndefined();
-    expect(result.debateModelProviders.selfConsistency).toBeUndefined();
-    expect(result.debateModelProviders.validation).toBeUndefined();
+    expect(result.debateRoles.challenger.provider).toBe("openai");
+    expect(result.debateRoles.reconciler.provider).toBe("mistral");
+    // Others use defaults
+    expect(result.debateRoles.advocate.provider).toBe("anthropic");
+    expect(result.debateRoles.selfConsistency.provider).toBe("anthropic");
+    expect(result.debateRoles.validation.provider).toBe("anthropic");
   });
 
-  it("should default debateModelProviders to all undefined when not configured", () => {
+  it("should default debateRoles to canonical defaults when not configured", () => {
     const result = buildVerdictStageConfig({} as any, {} as any);
 
-    expect(result.debateModelProviders.advocate).toBeUndefined();
-    expect(result.debateModelProviders.challenger).toBeUndefined();
-    expect(result.debateModelProviders.reconciler).toBeUndefined();
-    expect(result.debateModelProviders.selfConsistency).toBeUndefined();
-    expect(result.debateModelProviders.validation).toBeUndefined();
+    expect(result.debateRoles.advocate.provider).toBe("anthropic");
+    expect(result.debateRoles.challenger.provider).toBe("openai");
+    expect(result.debateRoles.reconciler.provider).toBe("anthropic");
+    expect(result.debateRoles.selfConsistency.provider).toBe("anthropic");
+    expect(result.debateRoles.validation.provider).toBe("anthropic");
   });
 
   // Explicit per-role config tests (debateProfile removed — roles configured directly)
-  it("explicit per-role tiers should override defaults", () => {
+  it("explicit per-role strengths should override defaults", () => {
     const result = buildVerdictStageConfig({
-      debateModelTiers: { challenger: "haiku" as const },
+      debateRoles: { challenger: { strength: "budget" } },
     } as any, {} as any);
 
-    expect(result.debateModelTiers.challenger).toBe("haiku");
+    expect(result.debateRoles.challenger.strength).toBe("budget");
     // Others keep defaults
-    expect(result.debateModelTiers.advocate).toBe("sonnet");
-    expect(result.debateModelTiers.reconciler).toBe("sonnet");
-    expect(result.debateModelTiers.validation).toBe("haiku");
+    expect(result.debateRoles.advocate.strength).toBe("standard");
+    expect(result.debateRoles.reconciler.strength).toBe("standard");
+    expect(result.debateRoles.validation.strength).toBe("budget");
   });
 
   it("explicit per-role providers should be set directly", () => {
     const result = buildVerdictStageConfig({
-      debateModelProviders: { challenger: "openai" as const, selfConsistency: "google" as const },
+      debateRoles: {
+        challenger: { provider: "openai" },
+        selfConsistency: { provider: "google" },
+      },
     } as any, {} as any);
 
-    expect(result.debateModelProviders.challenger).toBe("openai");
-    expect(result.debateModelProviders.selfConsistency).toBe("google");
-    // Others stay undefined (inherit global)
-    expect(result.debateModelProviders.advocate).toBeUndefined();
-    expect(result.debateModelProviders.reconciler).toBeUndefined();
-    expect(result.debateModelProviders.validation).toBeUndefined();
+    expect(result.debateRoles.challenger.provider).toBe("openai");
+    expect(result.debateRoles.selfConsistency.provider).toBe("google");
+    // Others use defaults
+    expect(result.debateRoles.advocate.provider).toBe("anthropic");
+    expect(result.debateRoles.reconciler.provider).toBe("anthropic");
+    expect(result.debateRoles.validation.provider).toBe("anthropic");
   });
 
   it("no config should use hardcoded defaults", () => {
     const result = buildVerdictStageConfig({} as any, {} as any);
 
-    expect(result.debateModelTiers.advocate).toBe("sonnet");
-    expect(result.debateModelTiers.challenger).toBe("sonnet");
-    expect(result.debateModelTiers.validation).toBe("haiku");
-    expect(result.debateModelProviders.challenger).toBeUndefined();
-    expect(result.debateModelProviders.advocate).toBeUndefined();
+    expect(result.debateRoles.advocate.strength).toBe("standard");
+    expect(result.debateRoles.challenger.strength).toBe("standard");
+    expect(result.debateRoles.validation.strength).toBe("budget");
+    expect(result.debateRoles.challenger.provider).toBe("openai");
+    expect(result.debateRoles.advocate.provider).toBe("anthropic");
   });
 
-  it("combined tier and provider overrides should apply independently", () => {
+  it("combined strength and provider overrides should apply via debateRoles", () => {
     const result = buildVerdictStageConfig({
-      debateModelTiers: { challenger: "haiku" as const },
-      debateModelProviders: { challenger: "mistral" as const },
+      debateRoles: {
+        challenger: { strength: "budget", provider: "mistral" },
+      },
     } as any, {} as any);
 
-    expect(result.debateModelTiers.challenger).toBe("haiku");
-    expect(result.debateModelProviders.challenger).toBe("mistral");
+    expect(result.debateRoles.challenger.strength).toBe("budget");
+    expect(result.debateRoles.challenger.provider).toBe("mistral");
     // Others use defaults
-    expect(result.debateModelTiers.advocate).toBe("sonnet");
-    expect(result.debateModelProviders.advocate).toBeUndefined();
+    expect(result.debateRoles.advocate.strength).toBe("standard");
+    expect(result.debateRoles.advocate.provider).toBe("anthropic");
   });
 });
 
@@ -4745,61 +4750,73 @@ describe("checkDebateTierDiversity", () => {
     spreadMultipliers: { stable: 1.0, moderate: 0.95, unstable: 0.85 },
     mixedConfidenceThreshold: 40,
     highHarmMinConfidence: 50,
-    debateModelTiers: {
-      advocate: "sonnet" as const,
-      selfConsistency: "sonnet" as const,
-      challenger: "sonnet" as const,
-      reconciler: "sonnet" as const,
-      validation: "haiku" as const,
+    debateRoles: {
+      advocate: { provider: "anthropic" as const, strength: "standard" as const },
+      selfConsistency: { provider: "anthropic" as const, strength: "standard" as const },
+      challenger: { provider: "anthropic" as const, strength: "standard" as const },
+      reconciler: { provider: "anthropic" as const, strength: "standard" as const },
+      validation: { provider: "anthropic" as const, strength: "budget" as const },
     },
-    debateModelProviders: {},
     highHarmFloorLevels: ["critical", "high"] as string[],
     ...overrides,
   });
 
-  it("should return warning when all 4 debate roles use same tier and no provider diversity", () => {
-    // All sonnet, no provider overrides → degenerate
+  it("should return warning when all 4 debate roles use same strength and no provider diversity", () => {
+    // All standard, same provider → degenerate
     const warning = checkDebateTierDiversity(makeConfig());
     expect(warning).not.toBeNull();
     expect(warning!.type).toBe("all_same_debate_tier");
-    expect(warning!.message).toContain("sonnet");
+    expect(warning!.message).toContain("standard");
   });
 
-  it("should return warning when all 4 debate roles are haiku", () => {
+  it("should return warning when all 4 debate roles are budget", () => {
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelTiers: {
-        advocate: "haiku", selfConsistency: "haiku", challenger: "haiku", reconciler: "haiku", validation: "sonnet",
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "budget" },
+        selfConsistency: { provider: "anthropic", strength: "budget" },
+        challenger: { provider: "anthropic", strength: "budget" },
+        reconciler: { provider: "anthropic", strength: "budget" },
+        validation: { provider: "anthropic", strength: "standard" },
       },
     }));
     expect(warning).not.toBeNull();
-    expect(warning!.message).toContain("haiku");
+    expect(warning!.message).toContain("budget");
   });
 
-  it("should return null when debate roles have mixed tiers", () => {
+  it("should return null when debate roles have mixed strengths", () => {
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelTiers: {
-        advocate: "sonnet", selfConsistency: "sonnet", challenger: "haiku", reconciler: "sonnet", validation: "haiku",
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "anthropic", strength: "budget" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       },
     }));
     expect(warning).toBeNull();
   });
 
-  it("should ignore validation tier — all debate sonnet + validation sonnet still triggers", () => {
+  it("should ignore validation strength — all debate standard + validation standard still triggers", () => {
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelTiers: {
-        advocate: "sonnet", selfConsistency: "sonnet", challenger: "sonnet", reconciler: "sonnet", validation: "sonnet",
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "anthropic", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "standard" },
       },
     }));
     expect(warning).not.toBeNull();
   });
 
-  it("should suppress warning when same tier but different explicit providers", () => {
+  it("should suppress warning when same strength but different explicit providers", () => {
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelProviders: {
-        advocate: "anthropic",
-        selfConsistency: "anthropic",
-        challenger: "openai",
-        reconciler: "anthropic",
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "openai", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       },
     }));
     expect(warning).toBeNull(); // Provider diversity provides structural independence
@@ -4807,52 +4824,64 @@ describe("checkDebateTierDiversity", () => {
 
   it("should still warn when all roles have the same explicit provider", () => {
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelProviders: {
-        advocate: "anthropic",
-        selfConsistency: "anthropic",
-        challenger: "anthropic",
-        reconciler: "anthropic",
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "anthropic", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       },
     }));
     expect(warning).not.toBeNull(); // All same provider — no diversity
   });
 
-  it("should suppress warning when some roles have explicit provider and others inherit global", () => {
-    // One role has "openai", others have undefined (= inherit global)
-    // "openai" vs "__inherit_global__" = different → diversity exists
+  it("should suppress warning when some roles have different providers", () => {
+    // One role has "openai", others have "anthropic"
+    // "openai" vs "anthropic" = different → diversity exists
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelProviders: {
-        challenger: "openai",
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "openai", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       },
     }));
     expect(warning).toBeNull();
   });
 
-  it("should warn when no provider overrides and all same tier (no profile)", () => {
-    // No profile applied → all providers undefined (= all inherit global)
+  it("should warn when all same provider and all same strength (no profile)", () => {
+    // All same provider + same strength → no diversity
     const warning = checkDebateTierDiversity(makeConfig({
-      debateModelProviders: {},
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "anthropic", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
+      },
     }));
     expect(warning).not.toBeNull();
   });
 
   it("cross-provider config should have provider diversity", () => {
     const resolved = buildVerdictStageConfig({
-      debateModelProviders: { challenger: "openai" },
+      debateRoles: { challenger: { provider: "openai" } },
     } as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
-    expect(warning).toBeNull(); // challenger=openai vs others=undefined
+    expect(warning).toBeNull(); // challenger=openai vs others=anthropic
   });
 
-  it("no overrides should warn (all same tier, no provider diversity)", () => {
+  it("no overrides should not warn (defaults have cross-provider diversity)", () => {
+    // Default config has challenger=openai vs others=anthropic → provider diversity
     const resolved = buildVerdictStageConfig({} as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
-    expect(warning).not.toBeNull();
+    expect(warning).toBeNull();
   });
 
-  it("tier-split config should not warn (mixed tiers)", () => {
+  it("strength-split config should not warn (mixed strengths)", () => {
     const resolved = buildVerdictStageConfig({
-      debateModelTiers: { challenger: "haiku" },
+      debateRoles: { challenger: { strength: "budget" } },
     } as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
     expect(warning).toBeNull();
@@ -4860,7 +4889,10 @@ describe("checkDebateTierDiversity", () => {
 
   it("max-diversity config should not warn (multiple provider overrides)", () => {
     const resolved = buildVerdictStageConfig({
-      debateModelProviders: { challenger: "openai", selfConsistency: "google" },
+      debateRoles: {
+        challenger: { provider: "openai" },
+        selfConsistency: { provider: "google" },
+      },
     } as any, {} as any);
     const warning = checkDebateTierDiversity(resolved);
     expect(warning).toBeNull();
@@ -4872,29 +4904,43 @@ describe("checkDebateTierDiversity", () => {
 // ============================================================================
 
 describe("checkDebateProviderCredentials", () => {
-  it("should return empty array when no provider overrides configured", () => {
-    const config = {
-      debateModelTiers: {
-        advocate: "sonnet" as const, selfConsistency: "sonnet" as const,
-        challenger: "sonnet" as const, reconciler: "sonnet" as const, validation: "haiku" as const,
-      },
-      debateModelProviders: {},
-    } as any;
-    const warnings = checkDebateProviderCredentials(config);
-    expect(warnings).toHaveLength(0);
-  });
-
-  it("should return warning for provider override without credentials", () => {
-    const savedKey = process.env.OPENAI_API_KEY;
-    delete process.env.OPENAI_API_KEY;
+  it("should return empty array when all roles have providers with credentials", () => {
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test-key-for-anthropic";
     try {
       const config = {
-        debateModelTiers: {
-          advocate: "sonnet" as const, selfConsistency: "sonnet" as const,
-          challenger: "sonnet" as const, reconciler: "sonnet" as const, validation: "haiku" as const,
+        debateRoles: {
+          advocate: { provider: "anthropic", strength: "standard" },
+          selfConsistency: { provider: "anthropic", strength: "standard" },
+          challenger: { provider: "anthropic", strength: "standard" },
+          reconciler: { provider: "anthropic", strength: "standard" },
+          validation: { provider: "anthropic", strength: "budget" },
         },
-        debateModelProviders: {
-          challenger: "openai" as const,
+      } as any;
+      const warnings = checkDebateProviderCredentials(config);
+      expect(warnings).toHaveLength(0);
+    } finally {
+      if (savedAnthropic !== undefined) {
+        process.env.ANTHROPIC_API_KEY = savedAnthropic;
+      } else {
+        delete process.env.ANTHROPIC_API_KEY;
+      }
+    }
+  });
+
+  it("should return warning for provider without credentials", () => {
+    const savedKey = process.env.OPENAI_API_KEY;
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test-key-for-anthropic";
+    try {
+      const config = {
+        debateRoles: {
+          advocate: { provider: "anthropic", strength: "standard" },
+          selfConsistency: { provider: "anthropic", strength: "standard" },
+          challenger: { provider: "openai", strength: "standard" },
+          reconciler: { provider: "anthropic", strength: "standard" },
+          validation: { provider: "anthropic", strength: "budget" },
         },
       } as any;
       const warnings = checkDebateProviderCredentials(config);
@@ -4904,20 +4950,27 @@ describe("checkDebateProviderCredentials", () => {
       expect(warnings[0].message).toContain("openai");
     } finally {
       if (savedKey !== undefined) process.env.OPENAI_API_KEY = savedKey;
+      if (savedAnthropic !== undefined) {
+        process.env.ANTHROPIC_API_KEY = savedAnthropic;
+      } else {
+        delete process.env.ANTHROPIC_API_KEY;
+      }
     }
   });
 
   it("should return no warning when provider credentials exist", () => {
     const savedKey = process.env.OPENAI_API_KEY;
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
     process.env.OPENAI_API_KEY = "test-key-for-credential-check";
+    process.env.ANTHROPIC_API_KEY = "test-key-for-anthropic";
     try {
       const config = {
-        debateModelTiers: {
-          advocate: "sonnet" as const, selfConsistency: "sonnet" as const,
-          challenger: "sonnet" as const, reconciler: "sonnet" as const, validation: "haiku" as const,
-        },
-        debateModelProviders: {
-          challenger: "openai" as const,
+        debateRoles: {
+          advocate: { provider: "anthropic", strength: "standard" },
+          selfConsistency: { provider: "anthropic", strength: "standard" },
+          challenger: { provider: "openai", strength: "standard" },
+          reconciler: { provider: "anthropic", strength: "standard" },
+          validation: { provider: "anthropic", strength: "budget" },
         },
       } as any;
       const warnings = checkDebateProviderCredentials(config);
@@ -4928,23 +4981,29 @@ describe("checkDebateProviderCredentials", () => {
       } else {
         delete process.env.OPENAI_API_KEY;
       }
+      if (savedAnthropic !== undefined) {
+        process.env.ANTHROPIC_API_KEY = savedAnthropic;
+      } else {
+        delete process.env.ANTHROPIC_API_KEY;
+      }
     }
   });
 
   it("should return warnings for multiple roles with missing credentials", () => {
     const savedOpenAI = process.env.OPENAI_API_KEY;
     const savedMistral = process.env.MISTRAL_API_KEY;
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.MISTRAL_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test-key-for-anthropic";
     try {
       const config = {
-        debateModelTiers: {
-          advocate: "sonnet" as const, selfConsistency: "sonnet" as const,
-          challenger: "sonnet" as const, reconciler: "sonnet" as const, validation: "haiku" as const,
-        },
-        debateModelProviders: {
-          challenger: "openai" as const,
-          reconciler: "mistral" as const,
+        debateRoles: {
+          advocate: { provider: "anthropic", strength: "standard" },
+          selfConsistency: { provider: "anthropic", strength: "standard" },
+          challenger: { provider: "openai", strength: "standard" },
+          reconciler: { provider: "mistral", strength: "standard" },
+          validation: { provider: "anthropic", strength: "budget" },
         },
       } as any;
       const warnings = checkDebateProviderCredentials(config);
@@ -4954,6 +5013,11 @@ describe("checkDebateProviderCredentials", () => {
     } finally {
       if (savedOpenAI !== undefined) process.env.OPENAI_API_KEY = savedOpenAI;
       if (savedMistral !== undefined) process.env.MISTRAL_API_KEY = savedMistral;
+      if (savedAnthropic !== undefined) {
+        process.env.ANTHROPIC_API_KEY = savedAnthropic;
+      } else {
+        delete process.env.ANTHROPIC_API_KEY;
+      }
     }
   });
 
@@ -4961,13 +5025,18 @@ describe("checkDebateProviderCredentials", () => {
     const savedOpenAI = process.env.OPENAI_API_KEY;
     const savedGoogle = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     const savedGoogleAlt = process.env.GOOGLE_API_KEY;
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     delete process.env.GOOGLE_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test-key-for-anthropic";
     try {
       // Max-diversity equivalent: challenger=openai, selfConsistency=google
       const resolved = buildVerdictStageConfig({
-        debateModelProviders: { challenger: "openai", selfConsistency: "google" },
+        debateRoles: {
+          challenger: { provider: "openai" },
+          selfConsistency: { provider: "google" },
+        },
       } as any, {} as any);
       const warnings = checkDebateProviderCredentials(resolved);
       const flaggedRoles = warnings.map(w => w.details?.role);
@@ -4977,6 +5046,11 @@ describe("checkDebateProviderCredentials", () => {
       if (savedOpenAI !== undefined) process.env.OPENAI_API_KEY = savedOpenAI;
       if (savedGoogle !== undefined) process.env.GOOGLE_GENERATIVE_AI_API_KEY = savedGoogle;
       if (savedGoogleAlt !== undefined) process.env.GOOGLE_API_KEY = savedGoogleAlt;
+      if (savedAnthropic !== undefined) {
+        process.env.ANTHROPIC_API_KEY = savedAnthropic;
+      } else {
+        delete process.env.ANTHROPIC_API_KEY;
+      }
     }
   });
 });

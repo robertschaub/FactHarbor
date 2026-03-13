@@ -17,8 +17,9 @@ import type { PipelineConfig } from "@/lib/config-schemas";
 import {
   isModelTier,
   normalizeLLMProvider,
+  normalizeToStrength,
   resolveModel,
-  type ModelTier,
+  type ModelStrength,
 } from "@/lib/analyzer/model-resolver";
 import type { LLMProviderType } from "@/lib/analyzer/types";
 import { getActiveSearchProviders } from "@/lib/web-search";
@@ -338,9 +339,8 @@ async function captureConfigSnapshot(): Promise<
 
 /**
  * Resolve the full LLM configuration including per-role debate models.
- * Applies the same resolution logic as the pipeline:
- *   1. Explicit debateModelTiers / debateModelProviders
- *   2. Hardcoded defaults (sonnet for debate, haiku for validation)
+ * Reads canonical debateRoles from config (already normalized from
+ * legacy fields by config-schemas.ts transform).
  *
  * Exported for use by the backfill script.
  */
@@ -352,20 +352,22 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
   const modelVerdict = config.modelVerdict ?? "sonnet";
   const modelOpus = config.modelOpus ?? modelVerdict; // B-5b: fallback to modelVerdict
 
-  const explicitTiers = config.debateModelTiers;
-  const explicitProviders = config.debateModelProviders;
+  const canonicalRoles = config.debateRoles;
 
   const roles = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"] as const;
-  const defaultTiers: Record<string, string> = {
-    advocate: "sonnet", selfConsistency: "sonnet", challenger: "sonnet", reconciler: "sonnet", validation: "haiku",
+  const defaultStrengths: Record<string, string> = {
+    advocate: "standard", selfConsistency: "standard", challenger: "standard", reconciler: "standard", validation: "budget",
+  };
+  const defaultProviders: Record<string, string> = {
+    advocate: provider, selfConsistency: provider, challenger: "openai", reconciler: provider, validation: provider,
   };
   const debateRoles: Record<string, { tier: string; provider: string; model: string }> = {};
 
   for (const role of roles) {
-    const tier = explicitTiers?.[role] ?? defaultTiers[role];
-    const roleProvider = explicitProviders?.[role] ?? provider;
-    const model = resolveModelName(tier, roleProvider, tiering, modelUnderstand, modelVerdict, modelOpus);
-    debateRoles[role] = { tier, provider: roleProvider, model };
+    const strength = canonicalRoles?.[role]?.strength ?? defaultStrengths[role];
+    const roleProvider = canonicalRoles?.[role]?.provider ?? defaultProviders[role];
+    const model = resolveModelName(strength, roleProvider, tiering, modelUnderstand, modelVerdict, modelOpus);
+    debateRoles[role] = { tier: strength, provider: roleProvider, model };
   }
 
   return {
@@ -392,8 +394,8 @@ function resolveModelName(
   modelOpus?: string,
 ): string {
   const provider = normalizeLLMProvider(roleProvider);
-  const normalizedTier: ModelTier =
-    tier === "sonnet" || tier === "opus" ? tier : "haiku";
+  // Normalize strength: accepts both legacy (haiku/sonnet/opus) and canonical (budget/standard/premium)
+  const normalizedStrength = normalizeToStrength(tier);
 
   const detectProviderFromModelName = (
     modelName: string,
@@ -408,11 +410,11 @@ function resolveModelName(
 
   const resolveConfiguredModel = (
     configuredValue: string | undefined,
-    fallbackTier: ModelTier,
+    fallbackStrength: ModelStrength,
     targetProvider: LLMProviderType,
   ): string => {
     if (!configuredValue || configuredValue.trim().length === 0) {
-      return resolveModel(fallbackTier, targetProvider).modelName;
+      return resolveModel(fallbackStrength, targetProvider).modelName;
     }
 
     const trimmed = configuredValue.trim();
@@ -422,7 +424,7 @@ function resolveModelName(
 
     const inferredProvider = detectProviderFromModelName(trimmed);
     if (inferredProvider && inferredProvider !== targetProvider) {
-      return resolveModel(fallbackTier, targetProvider).modelName;
+      return resolveModel(fallbackStrength, targetProvider).modelName;
     }
 
     return trimmed;
@@ -430,39 +432,39 @@ function resolveModelName(
 
   if (provider === "anthropic") {
     if (!tiering) {
-      return resolveConfiguredModel(modelVerdict, "sonnet", "anthropic");
+      return resolveConfiguredModel(modelVerdict, "standard", "anthropic");
     }
 
-    if (normalizedTier === "haiku") {
-      return resolveConfiguredModel(modelUnderstand, "haiku", "anthropic");
+    if (normalizedStrength === "budget") {
+      return resolveConfiguredModel(modelUnderstand, "budget", "anthropic");
     }
-    if (normalizedTier === "opus") {
-      return resolveConfiguredModel(modelOpus ?? modelVerdict, "opus", "anthropic");
+    if (normalizedStrength === "premium") {
+      return resolveConfiguredModel(modelOpus ?? modelVerdict, "premium", "anthropic");
     }
-    return resolveConfiguredModel(modelVerdict, "sonnet", "anthropic");
+    return resolveConfiguredModel(modelVerdict, "standard", "anthropic");
   }
 
   if (provider === "openai" || provider === "google" || provider === "mistral") {
     if (!tiering) {
-      return resolveConfiguredModel(modelVerdict, "sonnet", provider);
+      return resolveConfiguredModel(modelVerdict, "standard", provider);
     }
-    if (normalizedTier === "haiku") {
-      return resolveConfiguredModel(modelUnderstand, "haiku", provider);
+    if (normalizedStrength === "budget") {
+      return resolveConfiguredModel(modelUnderstand, "budget", provider);
     }
-    if (normalizedTier === "opus") {
-      return resolveConfiguredModel(modelOpus ?? modelVerdict, "opus", provider);
+    if (normalizedStrength === "premium") {
+      return resolveConfiguredModel(modelOpus ?? modelVerdict, "premium", provider);
     }
-    return resolveConfiguredModel(modelVerdict, "sonnet", provider);
+    return resolveConfiguredModel(modelVerdict, "standard", provider);
   }
 
   // Unknown provider fallback: preserve Anthropic UCM overrides.
-  if (normalizedTier === "haiku") {
-    return resolveConfiguredModel(modelUnderstand, "haiku", "anthropic");
+  if (normalizedStrength === "budget") {
+    return resolveConfiguredModel(modelUnderstand, "budget", "anthropic");
   }
-  if (normalizedTier === "opus") {
-    return resolveConfiguredModel(modelOpus ?? modelVerdict, "opus", "anthropic");
+  if (normalizedStrength === "premium") {
+    return resolveConfiguredModel(modelOpus ?? modelVerdict, "premium", "anthropic");
   }
-  return resolveConfiguredModel(modelVerdict, "sonnet", "anthropic");
+  return resolveConfiguredModel(modelVerdict, "standard", "anthropic");
 }
 
 /**

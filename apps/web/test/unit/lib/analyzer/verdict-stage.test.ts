@@ -232,7 +232,7 @@ describe("advocateVerdict (Step 1)", () => {
     expect(mockLLM).toHaveBeenCalledWith(
       "VERDICT_ADVOCATE",
       expect.objectContaining({ atomicClaims: claims }),
-      expect.objectContaining({ tier: "sonnet" }),
+      expect.objectContaining({ tier: "standard" }),
     );
   });
 
@@ -735,10 +735,10 @@ describe("validateVerdicts (Step 5)", () => {
 
     expect(mockLLM).toHaveBeenCalledTimes(2);
     expect(mockLLM).toHaveBeenCalledWith(
-      "VERDICT_GROUNDING_VALIDATION", expect.any(Object), expect.objectContaining({ tier: "haiku" }),
+      "VERDICT_GROUNDING_VALIDATION", expect.any(Object), expect.objectContaining({ tier: "budget" }),
     );
     expect(mockLLM).toHaveBeenCalledWith(
-      "VERDICT_DIRECTION_VALIDATION", expect.any(Object), expect.objectContaining({ tier: "haiku" }),
+      "VERDICT_DIRECTION_VALIDATION", expect.any(Object), expect.objectContaining({ tier: "budget" }),
     );
     // Verdicts returned unchanged
     expect(result).toEqual(verdicts);
@@ -1470,21 +1470,21 @@ describe("Configurable debate model tiers", () => {
   const boundaries = [createClaimBoundary()];
   const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
 
-  it("advocateVerdict should use config.debateModelTiers.advocate", async () => {
+  it("advocateVerdict should use config.debateRoles.advocate.strength", async () => {
     const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, advocate: "haiku" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, advocate: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.advocate, strength: "budget" } },
     };
 
     await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, config);
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions).toMatchObject({ tier: "haiku" });
+    expect(callOptions).toMatchObject({ tier: "budget" });
   });
 
-  it("selfConsistencyCheck should use config.debateModelTiers.selfConsistency", async () => {
+  it("selfConsistencyCheck should use config.debateRoles.selfConsistency.strength", async () => {
     const advocateVerdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
@@ -1498,7 +1498,7 @@ describe("Configurable debate model tiers", () => {
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
       selfConsistencyMode: "full",
-      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, selfConsistency: "haiku" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, selfConsistency: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.selfConsistency, strength: "budget" } },
     };
 
     await selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, mockLLM, config);
@@ -1507,11 +1507,11 @@ describe("Configurable debate model tiers", () => {
     expect(mockLLM).toHaveBeenCalledTimes(2);
     const call1Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
     const call2Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2];
-    expect(call1Options.tier).toBe("haiku");
-    expect(call2Options.tier).toBe("haiku");
+    expect(call1Options.tier).toBe("budget");
+    expect(call2Options.tier).toBe("budget");
   });
 
-  it("adversarialChallenge should use config.debateModelTiers.challenger", async () => {
+  it("adversarialChallenge should use config.debateRoles.challenger.strength", async () => {
     const verdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
@@ -1524,14 +1524,14 @@ describe("Configurable debate model tiers", () => {
     const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, challenger: "haiku" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, challenger: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.challenger, strength: "budget" } },
     };
 
     await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, config);
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions).toMatchObject({ tier: "haiku" });
+    expect(callOptions).toMatchObject({ tier: "budget" });
   });
 
   it("adversarialChallenge should pass challengerTemperature clamped to [0.1, 0.7]", async () => {
@@ -1578,7 +1578,7 @@ describe("Configurable debate model tiers", () => {
     expect(callOptions.temperature).toBe(0.1);
   });
 
-  it("reconcileVerdicts should use config.debateModelTiers.reconciler", async () => {
+  it("reconcileVerdicts should use config.debateRoles.reconciler.strength", async () => {
     const advocateVerdictsList: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
@@ -1597,27 +1597,27 @@ describe("Configurable debate model tiers", () => {
     });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, reconciler: "haiku" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, reconciler: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.reconciler, strength: "budget" } },
     };
 
     await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, [], mockLLM, config);
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions).toMatchObject({ tier: "haiku" });
+    expect(callOptions).toMatchObject({ tier: "budget" });
   });
 
-  it("default config should use sonnet for debate roles and haiku for validation", () => {
-    expect(DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers).toEqual({
-      advocate: "sonnet",
-      selfConsistency: "sonnet",
-      challenger: "sonnet",
-      reconciler: "sonnet",
-      validation: "haiku",
+  it("default config should use standard for debate roles and budget for validation", () => {
+    expect(DEFAULT_VERDICT_STAGE_CONFIG.debateRoles).toEqual({
+      advocate: { provider: "anthropic", strength: "standard" },
+      selfConsistency: { provider: "anthropic", strength: "standard" },
+      challenger: { provider: "openai", strength: "standard" },
+      reconciler: { provider: "anthropic", strength: "standard" },
+      validation: { provider: "anthropic", strength: "budget" },
     });
   });
 
-  it("validateVerdicts should use config.debateModelTiers.validation", async () => {
+  it("validateVerdicts should use config.debateRoles.validation.strength", async () => {
     const verdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
@@ -1633,7 +1633,7 @@ describe("Configurable debate model tiers", () => {
     });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, validation: "sonnet" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, validation: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.validation, strength: "standard" } },
     };
 
     await validateVerdicts(verdicts, [createEvidenceItem()], mockLLM, config);
@@ -1641,11 +1641,11 @@ describe("Configurable debate model tiers", () => {
     expect(mockLLM).toHaveBeenCalledTimes(2);
     const call1Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
     const call2Options = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[1][2];
-    expect(call1Options.tier).toBe("sonnet");
-    expect(call2Options.tier).toBe("sonnet");
+    expect(call1Options.tier).toBe("standard");
+    expect(call2Options.tier).toBe("standard");
   });
 
-  it("reconcileVerdicts should accept opus tier for reconciler (B-5b)", async () => {
+  it("reconcileVerdicts should accept premium strength for reconciler (B-5b)", async () => {
     const advocateVerdictsList: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
@@ -1657,14 +1657,14 @@ describe("Configurable debate model tiers", () => {
     const mockLLM = createMockLLM({ VERDICT_RECONCILIATION: reconciliationResponse() });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelTiers: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateModelTiers, reconciler: "opus" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, reconciler: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.reconciler, strength: "premium" } },
     };
 
     await reconcileVerdicts(advocateVerdictsList, { challenges: [] }, [], [], mockLLM, config);
 
     expect(mockLLM).toHaveBeenCalledTimes(1);
     const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions.tier).toBe("opus");
+    expect(callOptions.tier).toBe("premium");
   });
 });
 
@@ -1917,11 +1917,11 @@ describe("Cross-provider debate model providers", () => {
   const boundaries = [createClaimBoundary()];
   const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
 
-  it("advocateVerdict should pass providerOverride from config.debateModelProviders.advocate", async () => {
+  it("advocateVerdict should pass providerOverride from config.debateRoles.advocate.provider", async () => {
     const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelProviders: { advocate: "openai" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, advocate: { provider: "openai", strength: "standard" } },
     };
 
     await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, config);
@@ -1931,7 +1931,7 @@ describe("Cross-provider debate model providers", () => {
     expect(callOptions.providerOverride).toBe("openai");
   });
 
-  it("adversarialChallenge should pass providerOverride from config.debateModelProviders.challenger", async () => {
+  it("adversarialChallenge should pass providerOverride from config.debateRoles.challenger.provider", async () => {
     const verdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
@@ -1944,7 +1944,7 @@ describe("Cross-provider debate model providers", () => {
     const mockLLM = createMockLLM({ VERDICT_CHALLENGER: challengeResponse() });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelProviders: { challenger: "openai" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, challenger: { provider: "openai", strength: "standard" } },
     };
 
     await adversarialChallenge(verdicts, evidence, boundaries, mockLLM, config);
@@ -1954,7 +1954,7 @@ describe("Cross-provider debate model providers", () => {
     expect(callOptions.providerOverride).toBe("openai");
   });
 
-  it("selfConsistencyCheck should pass providerOverride from config.debateModelProviders.selfConsistency", async () => {
+  it("selfConsistencyCheck should pass providerOverride from config.debateRoles.selfConsistency.provider", async () => {
     const advocateVerdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
@@ -1968,7 +1968,7 @@ describe("Cross-provider debate model providers", () => {
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
       selfConsistencyMode: "full",
-      debateModelProviders: { selfConsistency: "google" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, selfConsistency: { provider: "google", strength: "standard" } },
     };
 
     await selfConsistencyCheck(claims, evidence, boundaries, coverageMatrix, advocateVerdicts, mockLLM, config);
@@ -1980,7 +1980,7 @@ describe("Cross-provider debate model providers", () => {
     expect(call2Options.providerOverride).toBe("google");
   });
 
-  it("reconcileVerdicts should pass providerOverride from config.debateModelProviders.reconciler", async () => {
+  it("reconcileVerdicts should pass providerOverride from config.debateRoles.reconciler.provider", async () => {
     const advocateVerdictsList: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "Original", harmPotential: "medium", isContested: false,
@@ -1999,7 +1999,7 @@ describe("Cross-provider debate model providers", () => {
     });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelProviders: { reconciler: "mistral" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, reconciler: { provider: "mistral", strength: "standard" } },
     };
 
     await reconcileVerdicts(advocateVerdictsList, challengeDoc, consistencyResults, [], mockLLM, config);
@@ -2009,7 +2009,7 @@ describe("Cross-provider debate model providers", () => {
     expect(callOptions.providerOverride).toBe("mistral");
   });
 
-  it("validateVerdicts should pass providerOverride from config.debateModelProviders.validation", async () => {
+  it("validateVerdicts should pass providerOverride from config.debateRoles.validation.provider", async () => {
     const verdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
       confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
@@ -2025,7 +2025,7 @@ describe("Cross-provider debate model providers", () => {
     });
     const config: VerdictStageConfig = {
       ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelProviders: { validation: "openai" },
+      debateRoles: { ...DEFAULT_VERDICT_STAGE_CONFIG.debateRoles, validation: { provider: "openai", strength: "budget" } },
     };
 
     await validateVerdicts(verdicts, [createEvidenceItem()], mockLLM, config);
@@ -2037,22 +2037,8 @@ describe("Cross-provider debate model providers", () => {
     expect(call2Options.providerOverride).toBe("openai");
   });
 
-  it("should not pass providerOverride when debateModelProviders is empty", async () => {
-    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
-    const config: VerdictStageConfig = {
-      ...DEFAULT_VERDICT_STAGE_CONFIG,
-      debateModelProviders: {},
-    };
-
-    await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLLM, config);
-
-    expect(mockLLM).toHaveBeenCalledTimes(1);
-    const callOptions = (mockLLM as ReturnType<typeof vi.fn>).mock.calls[0][2];
-    expect(callOptions.providerOverride).toBeUndefined();
-  });
-
-  it("default config should have empty debateModelProviders", () => {
-    expect(DEFAULT_VERDICT_STAGE_CONFIG.debateModelProviders).toEqual({});
+  it("default config should have cross-provider challenger (openai)", () => {
+    expect(DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.challenger.provider).toBe("openai");
   });
 });
 

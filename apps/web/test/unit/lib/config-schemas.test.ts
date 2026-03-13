@@ -259,16 +259,31 @@ describe("PipelineConfigSchema", () => {
     }
   });
 
-  it("validates debateModelTiers with opus tier (B-5b)", () => {
+  it("validates debateRoles with premium strength", () => {
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      debateRoles: { reconciler: { provider: "anthropic", strength: "premium" } },
+    }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      debateRoles: {
+        advocate: { provider: "anthropic", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "premium" },
+        challenger: { provider: "openai", strength: "budget" },
+      },
+    }).success).toBe(true);
+    // Invalid strength value
+    expect(PipelineConfigSchema.safeParse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      debateRoles: { reconciler: { strength: "invalid" } },
+    }).success).toBe(false);
+  });
+
+  it("validates legacy debateModelTiers still parse (backward compatibility)", () => {
     expect(PipelineConfigSchema.safeParse({
       ...DEFAULT_PIPELINE_CONFIG,
       debateModelTiers: { reconciler: "opus" },
     }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({
-      ...DEFAULT_PIPELINE_CONFIG,
-      debateModelTiers: { advocate: "sonnet", reconciler: "opus", challenger: "haiku" },
-    }).success).toBe(true);
-    // Invalid tier value
     expect(PipelineConfigSchema.safeParse({
       ...DEFAULT_PIPELINE_CONFIG,
       debateModelTiers: { reconciler: "invalid" },
@@ -680,54 +695,93 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
       expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("verifiability_and_misleadingness");
       expect(DEFAULT_PIPELINE_CONFIG.tigerScoreMode).toBe("off");
-      expect(DEFAULT_PIPELINE_CONFIG.tigerScoreTier).toBe("sonnet");
+      expect(DEFAULT_PIPELINE_CONFIG.tigerScoreStrength).toBe("standard");
       expect(DEFAULT_PIPELINE_CONFIG.tigerScoreTemperature).toBe(0.1);
       expect(DEFAULT_PIPELINE_CONFIG.explanationQualityMode).toBe("rubric");
       expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("pro_con");
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
     });
 
-    it("surfaces explicit debate role tier defaults", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.debateModelTiers).toEqual({
-        advocate: "sonnet",
-        selfConsistency: "sonnet",
-        challenger: "sonnet",
-        reconciler: "sonnet",
-        validation: "haiku",
+    it("surfaces canonical debateRoles defaults", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateRoles).toEqual({
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "openai", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       });
     });
 
-    it("uses cross-provider challenger by default with explicit seeded role providers", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual({
-        advocate: "anthropic",
-        selfConsistency: "anthropic",
-        challenger: "openai",
-        reconciler: "anthropic",
-        validation: "anthropic",
-      });
-    });
-
-    it("expands debate role defaults during schema parsing when omitted", () => {
+    it("normalizes legacy debateModelTiers/Providers into debateRoles during parsing", () => {
       const parsed = PipelineConfigSchema.parse({
         ...DEFAULT_PIPELINE_CONFIG,
+        debateRoles: undefined,
+        debateModelTiers: {
+          advocate: "sonnet",
+          selfConsistency: "sonnet",
+          challenger: "haiku",
+          reconciler: "opus",
+          validation: "haiku",
+        },
+        debateModelProviders: {
+          advocate: "anthropic",
+          selfConsistency: "anthropic",
+          challenger: "openai",
+          reconciler: "anthropic",
+          validation: "anthropic",
+        },
+      });
+
+      expect(parsed.debateRoles).toEqual({
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "openai", strength: "budget" },
+        reconciler: { provider: "anthropic", strength: "premium" },
+        validation: { provider: "anthropic", strength: "budget" },
+      });
+    });
+
+    it("canonical debateRoles wins when both legacy and new fields are present", () => {
+      const parsed = PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        debateRoles: {
+          challenger: { provider: "google", strength: "premium" },
+        },
+        debateModelTiers: { challenger: "haiku" },
+        debateModelProviders: { challenger: "openai" },
+      });
+
+      // Canonical wins for challenger
+      expect(parsed.debateRoles!.challenger).toEqual({
+        provider: "google",
+        strength: "premium",
+      });
+    });
+
+    it("expands debateRoles defaults when all debate fields are omitted", () => {
+      const parsed = PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        debateRoles: undefined,
         debateModelTiers: undefined,
         debateModelProviders: undefined,
       });
 
-      expect(parsed.debateModelTiers).toEqual({
-        advocate: "sonnet",
-        selfConsistency: "sonnet",
-        challenger: "sonnet",
-        reconciler: "sonnet",
-        validation: "haiku",
+      expect(parsed.debateRoles).toEqual({
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "openai", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       });
-      expect(parsed.debateModelProviders).toEqual({
-        advocate: "anthropic",
-        selfConsistency: "anthropic",
-        challenger: "openai",
-        reconciler: "anthropic",
-        validation: "anthropic",
+    });
+
+    it("normalizes legacy tigerScoreTier into tigerScoreStrength", () => {
+      const parsed = PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        tigerScoreStrength: undefined,
+        tigerScoreTier: "opus",
       });
+      expect(parsed.tigerScoreStrength).toBe("premium");
     });
 
     it("surfaces schema-backed pipeline defaults in the authoritative default object", () => {
@@ -777,7 +831,7 @@ describe("Default Config Values", () => {
       "modelExtractEvidence",
       "modelVerdict",
       "tigerScoreMode",
-      "tigerScoreTier",
+      "tigerScoreStrength",
       "tigerScoreTemperature",
     ] as const;
 
@@ -799,25 +853,14 @@ describe("Default Config Values", () => {
       expect(effectiveDefaults.challengerTemperature).toBe(seed.challengerTemperature);
     });
 
-    it("debateModelTiers matches seed file", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.debateModelTiers).toEqual(seed.debateModelTiers);
-      expect(seed.debateModelTiers).toEqual({
-        advocate: "sonnet",
-        selfConsistency: "sonnet",
-        challenger: "sonnet",
-        reconciler: "sonnet",
-        validation: "haiku",
-      });
-    });
-
-    it("debateModelProviders matches seed file", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual(seed.debateModelProviders);
-      expect(seed.debateModelProviders).toEqual({
-        advocate: "anthropic",
-        selfConsistency: "anthropic",
-        challenger: "openai",
-        reconciler: "anthropic",
-        validation: "anthropic",
+    it("debateRoles matches seed file", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateRoles).toEqual(seed.debateRoles);
+      expect(seed.debateRoles).toEqual({
+        advocate: { provider: "anthropic", strength: "standard" },
+        selfConsistency: { provider: "anthropic", strength: "standard" },
+        challenger: { provider: "openai", strength: "standard" },
+        reconciler: { provider: "anthropic", strength: "standard" },
+        validation: { provider: "anthropic", strength: "budget" },
       });
     });
 

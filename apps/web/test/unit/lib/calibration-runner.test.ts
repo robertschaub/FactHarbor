@@ -18,8 +18,9 @@ function createPipelineConfig(
 describe("resolveLLMConfig", () => {
   it("maps mistral role provider to mistral model IDs", () => {
     const config = createPipelineConfig({
-      debateModelProviders: { challenger: "mistral" },
-      debateModelTiers: { challenger: "sonnet" },
+      debateRoles: {
+        challenger: { provider: "mistral", strength: "standard" },
+      },
     });
 
     const resolved = resolveLLMConfig(config);
@@ -27,10 +28,11 @@ describe("resolveLLMConfig", () => {
     expect(resolved.debateRoles.challenger.model).toBe("mistral-large-latest");
   });
 
-  it("maps mistral budget tier to mistral-small-latest", () => {
+  it("maps mistral budget strength to mistral-small-latest", () => {
     const config = createPipelineConfig({
-      debateModelProviders: { validation: "mistral" },
-      debateModelTiers: { validation: "haiku" },
+      debateRoles: {
+        validation: { provider: "mistral", strength: "budget" },
+      },
     });
 
     const resolved = resolveLLMConfig(config);
@@ -40,8 +42,9 @@ describe("resolveLLMConfig", () => {
 
   it("falls back to anthropic UCM models for unknown providers", () => {
     const config = createPipelineConfig({
-      debateModelProviders: { advocate: "unknown-provider" as never },
-      debateModelTiers: { advocate: "haiku" },
+      debateRoles: {
+        advocate: { provider: "unknown-provider" as never, strength: "budget" },
+      },
     });
 
     const resolved = resolveLLMConfig(config);
@@ -50,41 +53,46 @@ describe("resolveLLMConfig", () => {
     );
   });
 
-  it("resolves opus tier to modelOpus for Anthropic (B-5b)", () => {
+  it("resolves premium strength to modelOpus for Anthropic (B-5b)", () => {
     const config = createPipelineConfig({
-      debateModelTiers: { reconciler: "opus" },
+      debateRoles: {
+        reconciler: { provider: "anthropic", strength: "premium" },
+      },
       modelOpus: "claude-opus-4-6",
     });
 
     const resolved = resolveLLMConfig(config);
-    expect(resolved.debateRoles.reconciler.tier).toBe("opus");
+    expect(resolved.debateRoles.reconciler.tier).toBe("premium");
     expect(resolved.debateRoles.reconciler.model).toBe("claude-opus-4-6");
-    // Other roles remain at default sonnet
-    expect(resolved.debateRoles.advocate.tier).toBe("sonnet");
+    // Other roles remain at default standard
+    expect(resolved.debateRoles.advocate.tier).toBe("standard");
     expect(resolved.debateRoles.advocate.model).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("falls back to modelVerdict when modelOpus is not set (B-5b)", () => {
     const config = createPipelineConfig({
-      debateModelTiers: { reconciler: "opus" },
+      debateRoles: {
+        reconciler: { provider: "anthropic", strength: "premium" },
+      },
       // No modelOpus set
     });
 
     const resolved = resolveLLMConfig(config);
-    // Opus falls back to modelVerdict
+    // Premium falls back to modelVerdict
     expect(resolved.debateRoles.reconciler.model).toBe("claude-sonnet-4-5-20250929");
   });
 
-  it("resolves opus tier for non-Anthropic providers to premium model (B-5b)", () => {
+  it("resolves premium strength for non-Anthropic providers to premium model (B-5b)", () => {
     const config = createPipelineConfig({
-      debateModelProviders: { reconciler: "openai" },
-      debateModelTiers: { reconciler: "opus" },
+      debateRoles: {
+        reconciler: { provider: "openai", strength: "premium" },
+      },
       modelOpus: "claude-opus-4-6",
     });
 
     const resolved = resolveLLMConfig(config);
     expect(resolved.debateRoles.reconciler.provider).toBe("openai");
-    // OpenAI doesn't have Opus — maps to premium model
+    // OpenAI maps premium → gpt-4.1
     expect(resolved.debateRoles.reconciler.model).toBe("gpt-4.1");
   });
 
@@ -92,8 +100,9 @@ describe("resolveLLMConfig", () => {
     const config = createPipelineConfig({
       llmProvider: "openai",
       modelVerdict: "gpt-4.1-mini",
-      debateModelProviders: { challenger: "openai" },
-      debateModelTiers: { challenger: "sonnet" },
+      debateRoles: {
+        challenger: { provider: "openai", strength: "standard" },
+      },
     });
 
     const resolved = resolveLLMConfig(config);
@@ -105,8 +114,9 @@ describe("resolveLLMConfig", () => {
     const config = createPipelineConfig({
       llmProvider: "openai",
       modelVerdict: "claude-sonnet-4-5-20250929",
-      debateModelProviders: { challenger: "openai" },
-      debateModelTiers: { challenger: "sonnet" },
+      debateRoles: {
+        challenger: { provider: "openai", strength: "standard" },
+      },
     });
 
     const resolved = resolveLLMConfig(config);

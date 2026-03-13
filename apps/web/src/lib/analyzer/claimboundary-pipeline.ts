@@ -4129,40 +4129,37 @@ export function assessEvidenceBalance(
 export function checkDebateTierDiversity(
   verdictConfig: VerdictStageConfig,
 ): AnalysisWarning | null {
-  const tiers = verdictConfig.debateModelTiers;
+  const roles = verdictConfig.debateRoles;
 
-  const debateRoleTiers = [
-    tiers.advocate ?? "sonnet",
-    tiers.selfConsistency ?? "sonnet",
-    tiers.challenger ?? "sonnet",
-    tiers.reconciler ?? "sonnet",
+  const debateRoleStrengths = [
+    roles.advocate.strength,
+    roles.selfConsistency.strength,
+    roles.challenger.strength,
+    roles.reconciler.strength,
   ];
-  const allSameTier = debateRoleTiers.every((t) => t === debateRoleTiers[0]);
-  if (!allSameTier) return null;
+  const allSameStrength = debateRoleStrengths.every((s) => s === debateRoleStrengths[0]);
+  if (!allSameStrength) return null;
 
-  // Check provider diversity. Uses a sentinel for undefined (= "inherit global")
-  // so that two undefined values are treated as equal but distinct from named providers.
-  const providers = verdictConfig.debateModelProviders;
-  const INHERIT_GLOBAL = "__inherit_global__";
+  // Check provider diversity
   const roleProviders = [
-    providers?.advocate ?? INHERIT_GLOBAL,
-    providers?.selfConsistency ?? INHERIT_GLOBAL,
-    providers?.challenger ?? INHERIT_GLOBAL,
-    providers?.reconciler ?? INHERIT_GLOBAL,
+    roles.advocate.provider,
+    roles.selfConsistency.provider,
+    roles.challenger.provider,
+    roles.reconciler.provider,
   ];
   const hasProviderDiversity = !roleProviders.every((p) => p === roleProviders[0]);
   if (hasProviderDiversity) return null;
 
-  const tier = debateRoleTiers[0];
+  const strength = debateRoleStrengths[0];
   console.warn(
-    `[Pipeline] All 4 debate roles configured to same tier "${tier}" — ` +
+    `[Pipeline] All 4 debate roles configured to same strength "${strength}" — ` +
     `adversarial challenge may not produce structurally independent perspectives (C1/C16)`
   );
   return {
     type: "all_same_debate_tier",
     severity: "warning",
-    message: `All 4 debate roles (advocate, selfConsistency, challenger, reconciler) use the same model tier "${tier}". ` +
-      `Structurally independent models improve debate quality — consider mixing tiers for challenger or reconciler.`,
+    message: `All 4 debate roles (advocate, selfConsistency, challenger, reconciler) use the same model strength "${strength}". ` +
+      `Structurally independent models improve debate quality — consider mixing strengths for challenger or reconciler.`,
   };
 }
 
@@ -4175,15 +4172,12 @@ export function checkDebateProviderCredentials(
   verdictConfig: VerdictStageConfig,
 ): AnalysisWarning[] {
   const warnings: AnalysisWarning[] = [];
-  const providers = verdictConfig.debateModelProviders;
-  if (!providers) return warnings;
+  const roles = verdictConfig.debateRoles;
 
-  const roleNames: (keyof typeof providers)[] = [
-    "advocate", "selfConsistency", "challenger", "reconciler", "validation",
-  ];
+  const roleNames = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"] as const;
 
   for (const role of roleNames) {
-    const provider = providers[role];
+    const provider = roles[role].provider;
     if (provider && !hasProviderCredentials(provider)) {
       warnings.push({
         type: "debate_provider_fallback",
@@ -4869,9 +4863,8 @@ export async function generateVerdicts(
  * Build VerdictStageConfig from UCM pipeline and calculation configs.
  * Maps UCM config field names to VerdictStageConfig structure.
  *
- * Resolution order for tiers and providers:
- *   1. Explicit debateModelTiers / debateModelProviders (per-field)
- *   2. Hardcoded defaults (sonnet for debate, haiku for validation, no provider override)
+ * Resolution: reads canonical debateRoles from pipelineConfig (already
+ * normalized from legacy fields by config-schemas.ts transform).
  */
 export function buildVerdictStageConfig(
   pipelineConfig: PipelineConfig,
@@ -4883,8 +4876,8 @@ export function buildVerdictStageConfig(
     unstable: 20,
   };
 
-  const explicitTiers = pipelineConfig.debateModelTiers;
-  const explicitProviders = pipelineConfig.debateModelProviders;
+  // debateRoles is always populated by config-schemas.ts canonicalization
+  const canonicalRoles = pipelineConfig.debateRoles ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles;
 
   return {
     selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "disabled",
@@ -4904,19 +4897,12 @@ export function buildVerdictStageConfig(
     generalSourceTypes: calcConfig.verdictStage?.generalSourceTypes,
     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
     highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
-    debateModelTiers: {
-      advocate: explicitTiers?.advocate ?? "sonnet",
-      selfConsistency: explicitTiers?.selfConsistency ?? "sonnet",
-      challenger: explicitTiers?.challenger ?? "sonnet",
-      reconciler: explicitTiers?.reconciler ?? "sonnet",
-      validation: explicitTiers?.validation ?? "haiku",
-    },
-    debateModelProviders: {
-      advocate: explicitProviders?.advocate,
-      selfConsistency: explicitProviders?.selfConsistency,
-      challenger: explicitProviders?.challenger,
-      reconciler: explicitProviders?.reconciler,
-      validation: explicitProviders?.validation,
+    debateRoles: {
+      advocate: canonicalRoles.advocate ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.advocate,
+      selfConsistency: canonicalRoles.selfConsistency ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.selfConsistency,
+      challenger: canonicalRoles.challenger ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.challenger,
+      reconciler: canonicalRoles.reconciler ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.reconciler,
+      validation: canonicalRoles.validation ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.validation,
     },
     highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
     evidencePartitioningEnabled: calcConfig.evidencePartitioningEnabled ?? true,
@@ -5817,7 +5803,7 @@ async function evaluateTigerScore(
     }
   });
 
-  const tigerScoreTier = pipelineConfig.tigerScoreTier ?? "sonnet";
+  const tigerScoreTier = pipelineConfig.tigerScoreStrength ?? "standard";
   const tigerScoreTemperature = pipelineConfig.tigerScoreTemperature ?? 0.1;
 
   const raw = await llmCall(
