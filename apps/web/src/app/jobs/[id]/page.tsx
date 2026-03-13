@@ -37,6 +37,7 @@ import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { generateHtmlReport } from "./utils/generateHtmlReport";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
+import { buildErrorId } from "@/lib/error-classification";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
@@ -1323,21 +1324,7 @@ export default function JobPage() {
                   </div>
                 );
               }
-              // Build error ID: error class name + up to 2 significant words after the colon
-              // e.g. "AI_APICallError: Your credit balance..." → "AI_APICALL_ERROR_CREDIT_BALANCE"
-              const typeMatch = errorEvent.message.match(/\b([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception|Failure|Timeout))\b/);
-              let errorId = "UNKNOWN";
-              if (typeMatch) {
-                const typePart = typeMatch[1].replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase();
-                const afterType = errorEvent.message.slice((typeMatch.index ?? 0) + typeMatch[1].length);
-                const colonContent = afterType.match(/^:\s*(.+)/)?.[1] ?? "";
-                const stopWords = new Set(["a","an","the","your","my","is","are","was","to","of","in","at","on","for","with","from","by","too","not","and","or","be","has","have","its","this","that"]);
-                const detail = colonContent.split(/\s+/)
-                  .filter(w => { const l = w.toLowerCase().replace(/[^a-z]/g, ""); return l.length >= 2 && !stopWords.has(l); })
-                  .slice(0, 2)
-                  .map(w => w.replace(/[^a-zA-Z0-9]/g, "").toUpperCase());
-                errorId = (typePart + (detail.length ? "_" + detail.join("_") : "")).slice(0, 36);
-              }
+              const errorId = buildErrorId(errorEvent.message);
               return (
                 <div style={{ marginTop: 12, padding: "8px 12px", background: "#fff3f3", border: "1px solid #f5c6cb", borderRadius: 6, fontSize: 14, color: "#842029", lineHeight: 1.5 }}>
                   <strong>Analysis failed.</strong> Try submitting your request again. If the problem persists, contact support and quote error ID <code style={{ fontFamily: "monospace", background: "#fce8e8", padding: "1px 5px", borderRadius: 3 }}>{errorId}</code>.

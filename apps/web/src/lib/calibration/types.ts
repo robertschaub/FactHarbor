@@ -353,7 +353,7 @@ export interface CalibrationRunResult {
         verdict: string;
       };
       debateProfile?: string; // Legacy: kept optional for backward compat with older JSON reports
-      debateRoles: Record<string, { tier: string; provider: string; model: string }>;
+      debateRoles: Record<string, { strength: string; provider: string; model: string }>;
     };
     /** Resolved search configuration — provider mode and available providers. */
     resolvedSearch: {

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { classifyError } from "@/lib/error-classification";
+import { classifyError, buildErrorId } from "@/lib/error-classification";
 import { SearchProviderError } from "@/lib/web-search";
 
 describe("error-classification", () => {
@@ -166,5 +166,35 @@ describe("error-classification", () => {
       const result = classifyError(null);
       expect(result.category).toBe("unknown");
     });
+  });
+});
+
+describe("buildErrorId", () => {
+  it("extracts error class and detail words", () => {
+    expect(buildErrorId("AI_APICallError: Your credit balance is too low"))
+      .toBe("AI_APICALL_ERROR_CREDIT_BALANCE");
+  });
+
+  it("returns UNKNOWN when no error class is detected", () => {
+    expect(buildErrorId("Something went wrong")).toBe("UNKNOWN");
+  });
+
+  it("truncates to 36 characters", () => {
+    expect(buildErrorId("VeryLongClassNameThatKeepsGoingError: extraordinarily complicated situation"))
+      .toHaveLength(36);
+  });
+
+  it("filters stop words from detail", () => {
+    expect(buildErrorId("ConnectionTimeout: the request was not completed"))
+      .toBe("CONNECTION_TIMEOUT_REQUEST_COMPLETED");
+  });
+
+  it("handles error class with no colon detail", () => {
+    expect(buildErrorId("SyntaxError")).toBe("SYNTAX_ERROR");
+  });
+
+  it("handles Exception and Failure suffixes", () => {
+    expect(buildErrorId("NullPointerException: ref is null")).toBe("NULL_POINTER_EXCEPTION_REF_NULL");
+    expect(buildErrorId("AuthFailure: invalid key")).toBe("AUTH_FAILURE_INVALID_KEY");
   });
 });

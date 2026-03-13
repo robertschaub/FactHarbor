@@ -239,7 +239,7 @@ function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
     const providerCell = isExternal
       ? `<strong class="external-provider">${esc(info.provider)}</strong>`
       : esc(info.provider);
-    debateRoleRows += `<tr><td>${esc(role)}</td><td>${esc(info.tier)}</td><td>${providerCell}</td><td class="mono">${esc(info.model)}</td></tr>`;
+    debateRoleRows += `<tr><td>${esc(role)}</td><td>${esc(info.strength)}</td><td>${providerCell}</td><td class="mono">${esc(info.model)}</td></tr>`;
   }
   const roleProviderMode = new Set(roleProviders).size > 1 ? "mixed" : "single";
 
@@ -270,7 +270,7 @@ function renderLLMAndSearchConfig(r: CalibrationRunResult): string {
     <div class="breakdown-table">
       <h3>Debate Roles</h3>
       <table>
-        <thead><tr><th>Role</th><th>Tier</th><th>Provider</th><th>Model</th></tr></thead>
+        <thead><tr><th>Role</th><th>Strength</th><th>Provider</th><th>Model</th></tr></thead>
         <tbody>${debateRoleRows}</tbody>
       </table>
       <p class="text-muted">Resolved role config at run start. Runtime fallbacks and degraded paths are reported in warnings and failed-pair diagnostics.</p>

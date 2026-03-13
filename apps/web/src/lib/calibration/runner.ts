@@ -361,13 +361,13 @@ export function resolveLLMConfig(config: PipelineConfig): CalibrationRunResult["
   const defaultProviders: Record<string, string> = {
     advocate: provider, selfConsistency: provider, challenger: "openai", reconciler: provider, validation: provider,
   };
-  const debateRoles: Record<string, { tier: string; provider: string; model: string }> = {};
+  const debateRoles: Record<string, { strength: string; provider: string; model: string }> = {};
 
   for (const role of roles) {
     const strength = canonicalRoles?.[role]?.strength ?? defaultStrengths[role];
     const roleProvider = canonicalRoles?.[role]?.provider ?? defaultProviders[role];
     const model = resolveModelName(strength, roleProvider, tiering, modelUnderstand, modelVerdict, modelOpus);
-    debateRoles[role] = { tier: strength, provider: roleProvider, model };
+    debateRoles[role] = { strength, provider: roleProvider, model };
   }
 
   return {

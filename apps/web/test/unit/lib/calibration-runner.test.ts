@@ -62,10 +62,10 @@ describe("resolveLLMConfig", () => {
     });
 
     const resolved = resolveLLMConfig(config);
-    expect(resolved.debateRoles.reconciler.tier).toBe("premium");
+    expect(resolved.debateRoles.reconciler.strength).toBe("premium");
     expect(resolved.debateRoles.reconciler.model).toBe("claude-opus-4-6");
     // Other roles remain at default standard
-    expect(resolved.debateRoles.advocate.tier).toBe("standard");
+    expect(resolved.debateRoles.advocate.strength).toBe("standard");
     expect(resolved.debateRoles.advocate.model).toBe("claude-sonnet-4-5-20250929");
   });
 
