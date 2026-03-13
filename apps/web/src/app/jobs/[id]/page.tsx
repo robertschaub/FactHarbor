@@ -1323,7 +1323,12 @@ export default function JobPage() {
                   </div>
                 );
               }
-              const errorId = (job.id ?? "").slice(0, 8).toUpperCase() || "UNKNOWN";
+              // Extract a short error type from the message, e.g. "AI_APICallError: ..." → "AI_APICALL_ERROR"
+              const typeMatch = errorEvent.message.match(/\b([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception|Failure|Timeout))\b/)
+                ?? errorEvent.message.match(/([A-Za-z_][A-Za-z0-9_]{2,})\s*:/);
+              const errorId = typeMatch
+                ? typeMatch[1].replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase().slice(0, 24)
+                : "UNKNOWN";
               return (
                 <div style={{ marginTop: 12, padding: "8px 12px", background: "#fff3f3", border: "1px solid #f5c6cb", borderRadius: 6, fontSize: 14, color: "#842029", lineHeight: 1.5 }}>
                   <strong>Analysis failed.</strong> Try submitting your request again. If the problem persists, contact support and quote error ID <code style={{ fontFamily: "monospace", background: "#fce8e8", padding: "1px 5px", borderRadius: 3 }}>{errorId}</code>.
