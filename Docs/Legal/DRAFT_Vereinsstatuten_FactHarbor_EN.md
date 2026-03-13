@@ -54,11 +54,11 @@ The association has the following categories of members:
 Membership ends by:
 1. **Voluntary resignation** — A member may resign at any time by written notice (including electronic form) to the Governing Team, effective at the end of the quarter following the notice. Outstanding membership fees remain due.
 2. **Non-payment** — If a member fails to pay the membership fee within 60 days of a written reminder, the Governing Team may terminate the membership.
-3. **Exclusion** — The General Assembly may exclude a member by a two-thirds (2/3) majority vote if the member:
+3. **Exclusion** — The Governing Team may exclude a member by majority vote if the member:
    a. seriously violates these statutes or the policies of the association;
    b. acts contrary to the purpose of the association; or
    c. causes serious harm to the reputation or interests of the association.
-   The affected member shall be given the opportunity to be heard before the vote.
+   The affected member shall be given the opportunity to be heard before the decision. The excluded member may appeal the exclusion in writing to the General Assembly within thirty (30) days; the General Assembly decides with finality.
 4. **Death** (natural persons) or **dissolution** (legal entities).
 
 ---
@@ -77,12 +77,12 @@ The governing bodies of the association are:
 The General Assembly is the supreme governing body of the association. It has the following non-transferable powers:
 1. Adoption and amendment of the statutes;
 2. Election and removal of members of the Governing Team;
-3. Election and removal of the Auditor (if applicable);
-4. Approval of the annual report and annual financial statements;
-5. Approval of the annual budget;
-6. Determination of the annual membership fee;
-7. Discharge of the Governing Team (Décharge);
-8. Decision on the exclusion of members;
+3. Election and removal of the President;
+4. Election and removal of the Auditor (if applicable);
+5. Approval of the annual report and annual financial statements;
+6. Approval of the annual budget;
+7. Determination of the annual membership fee;
+8. Discharge of the Governing Team (Décharge);
 9. Decision on major strategic changes, partnerships, and mergers;
 10. Dissolution of the association and decision on the use of remaining assets;
 11. Any other matters reserved to the General Assembly by law or these statutes.
@@ -100,8 +100,7 @@ The General Assembly is the supreme governing body of the association. It has th
 2. The General Assembly passes resolutions by a **simple majority** of the votes cast, unless these statutes or the law require a qualified majority.
 3. The following decisions require a **two-thirds (2/3) majority** of the votes cast:
    a. Amendment of the statutes;
-   b. Exclusion of a member;
-   c. Dissolution of the association.
+   b. Dissolution of the association.
 4. A quorum is met when the General Assembly has been duly convened and at least **two (2) members or one quarter (1/4) of the members** — whichever is greater — are present or represented.
 5. Voting may be conducted by **show of hands, ballot, or electronic means**, as determined by the chairperson.
 6. In the event of a tie, the chairperson has the casting vote.

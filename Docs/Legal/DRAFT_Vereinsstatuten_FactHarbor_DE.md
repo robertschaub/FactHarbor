@@ -53,11 +53,11 @@ Der Verein kennt folgende Mitgliederkategorien:
 Die Mitgliedschaft erlischt durch:
 1. **Freiwilligen Austritt** — Ein Mitglied kann jederzeit durch schriftliche Erklärung (einschliesslich elektronischer Form) an den Vorstand austreten, wirksam per Ende des auf die Erklärung folgenden Quartals. Ausstehende Mitgliederbeiträge bleiben geschuldet.
 2. **Nichtbezahlung** — Bezahlt ein Mitglied den Mitgliederbeitrag trotz schriftlicher Mahnung nicht innert 60 Tagen, kann der Vorstand die Mitgliedschaft beenden.
-3. **Ausschluss** — Die Mitgliederversammlung kann ein Mitglied mit einer Zweidrittelmehrheit (2/3) der abgegebenen Stimmen ausschliessen, wenn das Mitglied:
+3. **Ausschluss** — Der Vorstand kann ein Mitglied mit Mehrheitsbeschluss ausschliessen, wenn das Mitglied:
    a. diese Statuten oder die Vereinsreglemente schwerwiegend verletzt;
    b. dem Vereinszweck zuwiderhandelt; oder
    c. dem Ansehen oder den Interessen des Vereins erheblichen Schaden zufügt.
-   Dem betroffenen Mitglied ist vor der Abstimmung Gelegenheit zur Stellungnahme zu geben.
+   Dem betroffenen Mitglied ist vor dem Entscheid Gelegenheit zur Stellungnahme zu geben. Das ausgeschlossene Mitglied kann den Ausschlussentscheid innert dreissig (30) Tagen schriftlich an die Mitgliederversammlung weiterziehen; diese entscheidet endgültig.
 4. **Tod** (natürliche Personen) oder **Auflösung** (juristische Personen).
 
 ---
@@ -76,12 +76,12 @@ Die Organe des Vereins sind:
 Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende unübertragbare Befugnisse zu:
 1. Annahme und Änderung der Statuten;
 2. Wahl und Abberufung der Vorstandsmitglieder;
-3. Wahl und Abberufung der Revisionsstelle (falls anwendbar);
-4. Genehmigung des Jahresberichts und der Jahresrechnung;
-5. Genehmigung des Jahresbudgets;
-6. Festsetzung des jährlichen Mitgliederbeitrags;
-7. Entlastung des Vorstands (Décharge);
-8. Beschluss über den Ausschluss von Mitgliedern;
+3. Wahl und Abberufung des Präsidenten;
+4. Wahl und Abberufung der Revisionsstelle (falls anwendbar);
+5. Genehmigung des Jahresberichts und der Jahresrechnung;
+6. Genehmigung des Jahresbudgets;
+7. Festsetzung des jährlichen Mitgliederbeitrags;
+8. Entlastung des Vorstands (Décharge);
 9. Beschluss über wesentliche strategische Änderungen, Partnerschaften und Zusammenschlüsse;
 10. Auflösung des Vereins und Beschluss über die Verwendung des Restvermögens;
 11. Weitere Geschäfte, die der Mitgliederversammlung durch Gesetz oder diese Statuten vorbehalten sind.
@@ -99,8 +99,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 2. Die Mitgliederversammlung fasst ihre Beschlüsse mit **einfacher Mehrheit** der abgegebenen Stimmen, sofern diese Statuten oder das Gesetz keine qualifizierte Mehrheit verlangen.
 3. Folgende Beschlüsse bedürfen einer **Zweidrittelmehrheit (2/3)** der abgegebenen Stimmen:
    a. Statutenänderung;
-   b. Ausschluss eines Mitglieds;
-   c. Auflösung des Vereins.
+   b. Auflösung des Vereins.
 4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde und mindestens **zwei (2) Mitglieder oder ein Viertel (1/4) der Mitglieder** — massgebend ist die grössere Zahl — anwesend oder vertreten sind.
 5. Abstimmungen können durch **Handerheben, schriftliche Stimmabgabe oder elektronische Mittel** erfolgen, wie von der Versammlungsleitung bestimmt.
 6. Bei Stimmengleichheit hat die Versammlungsleitung den Stichentscheid.
