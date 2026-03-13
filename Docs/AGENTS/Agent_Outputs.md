@@ -1,6 +1,26 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Task 2 — Post-fix quality rerun (geography_fix vs window_start)
+**Task:** Run clean 2-checkpoint comparison after geography fix (f6e04ce3): window_start (9cdc8889) vs current main. 3 claims: EN Bolsonaro, PT Bolsonaro, new DE mental health claim (Kanton Zürich school mental health burden). Answer 3 questions: (1) materially closer to window_start? (2) Swiss jurisdiction regression fixed? (3) SR weighting the main remaining gap?
+**Files touched:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` (appended POST-FIX RERUN section), `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Documented WS_PT systematic failure: 3/3 attempts fail at Pass2 with schema parse error at window_start (9cdc8889) — no data obtainable
+- HD_PT damaged: `analysis_generation_failed` (error) returned fallback UNVERIFIED + 0% confidence; retry blocked by Anthropic API credit exhaustion
+- HD_DE `inferredGeography: CH` confirmed — geography regression conclusively fixed
+- SR weighting identified as dominant quality gap: 24-31pp confidence drops across both comparable claim pairs
+**Open items:**
+- HD_PT rerun needed once Anthropic API credits replenished — current result is damaged
+- `all_same_debate_tier` warning on 3/3 HEAD runs — consider mixing model tiers for debate roles
+- Residual EN contamination: Fix 3 reduced 3/6→1/6 boundaries but B4 "Trump administration communications" survives
+**Warnings:**
+- **API credit exhausted** at end of session — no further LLM jobs can run until credits are topped up
+- WS_PT systematic Pass2 failure at window_start is reproducible — not a transient error. The old schema at 9cdc8889 fails for this specific Portuguese claim every time.
+- HD_PT `analysis_generation_failed` may be related to model safety/refusal for politically sensitive Portuguese content (same claim fails via schema at window_start; fails via verdict generation at current main). Treat PT Bolsonaro results as unreliable until root cause identified.
+**For next agent:** Full run data in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` §POST-FIX RERUN. Three questions answered: (1) NO — main is 23-31pp worse on TP/conf; (2) YES — CH geography works; (3) YES — SR weighting is primary gap. Next priority: fix SR weighting calibration (sourceId reconciliation bug identified by prior Codex agent in entry below).
+**Learnings:** No — role handoff not required.
+
+---
 ### 2026-03-13 | Senior Developer | Codex (GPT-5) | Fix — Evidence sourceId reconciliation for SR weighting
 **Task:** Investigate why job `507f84f318144a2ba2e975107bf873a8` produced `UNVERIFIED`, identify the concrete code cause, and implement the minimal pipeline fix.
 **Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
@@ -4931,4 +4951,16 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** None.
 **Warnings:** This is intentionally conservative; under tight budgets you may see more skipped enrichment and thus flatter evidence weighting in SR eval.
 **For next agent:** If tuning is needed, adjust only `sr.evidenceQualityAssessment.minRemainingBudgetMs` in UCM first before changing code.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Fix SR Weighting Verdict Contract
+**Task:** Fix `applyEvidenceWeighting()` so weighted claim verdicts keep a label contract instead of writing numeric truth into the `verdict` field.
+**Files touched:** `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/test/unit/lib/analyzer/source-reliability.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Recomputed weighted verdict labels with `percentageToClaimVerdict(weightedTruth, weightedConfidence)` inside `applyEvidenceWeighting()`.
+- Added assertions that weighted verdict labels stay aligned for fallback, high-reliability, low-reliability, and mixed-band/low-confidence cases.
+- Left warning classification unchanged; debate-tier homogeneity remains visible pending separate product/quality review.
+**Open items:** The `structural_consistency` warning can still become stale because verdict consistency is checked before later post-processing mutates claim verdicts.
+**Warnings:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` had unrelated in-progress changes and was intentionally left out of this fix.
+**For next agent:** If the stale `structural_consistency` warning is addressed next, do it after all verdict post-processing (harm floor + SR weighting), not by weakening the warning itself.
 **Learnings:** no

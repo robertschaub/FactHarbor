@@ -10,7 +10,7 @@
  */
 
 import { CONFIG } from "./config";
-import { getHighlightColor7Point, normalizeHighlightColor } from "./truth-scale";
+import { getHighlightColor7Point, normalizeHighlightColor, percentageToClaimVerdict } from "./truth-scale";
 import type { ClaimVerdict, EvidenceItem, FetchedSource } from "./types";
 import { assertValidTruthPercentage } from "./types";
 import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
@@ -664,7 +664,7 @@ export function applyEvidenceWeighting(
       },
       truthPercentage: clampedTruth,
       confidence: clampedConfidence,
-      verdict: clampedTruth,
+      verdict: percentageToClaimVerdict(clampedTruth, clampedConfidence),
       highlightColor: normalizeHighlightColor(
         getHighlightColor7Point(clampedTruth)
       ),

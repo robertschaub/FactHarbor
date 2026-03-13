@@ -354,6 +354,7 @@ describe("applyEvidenceWeighting", () => {
     });
     expect(result[0].truthPercentage).toBe(60);
     expect(result[0].evidenceWeight).toBeCloseTo(0.4, 2);
+    expect(result[0].verdict).toBe("LEANING-TRUE");
   });
 
   it("adjusts truth percentage based on high reliability source", () => {
@@ -368,6 +369,7 @@ describe("applyEvidenceWeighting", () => {
     // adjustedTruth = 50 + (80 - 50) × 0.95 = 50 + 28.5 ≈ 79
     expect(result[0].truthPercentage).toBeCloseTo(79, 0);
     expect(result[0].evidenceWeight).toBeCloseTo(0.95, 2);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
   });
 
   it("pulls truth toward neutral for low reliability source", () => {
@@ -382,6 +384,7 @@ describe("applyEvidenceWeighting", () => {
     // adjustedTruth = 50 + (80 - 50) × 0.3 = 50 + 9 = 59
     expect(result[0].truthPercentage).toBe(59);
     expect(result[0].evidenceWeight).toBeCloseTo(0.3, 2);
+    expect(result[0].verdict).toBe("LEANING-TRUE");
   });
 
   it("averages effective weights from multiple supporting evidence items", () => {
@@ -405,6 +408,7 @@ describe("applyEvidenceWeighting", () => {
     // adjustedTruth = 50 + (80 - 50) × 0.7 = 50 + 21 = 71
     expect(result[0].truthPercentage).toBe(71);
     expect(result[0].evidenceWeight).toBeCloseTo(0.7, 2);
+    expect(result[0].verdict).toBe("LEANING-TRUE");
   });
 
   it("validates truth percentage range (fail-fast)", () => {
@@ -434,6 +438,21 @@ describe("applyEvidenceWeighting", () => {
     // Simple: effectiveWeight = score = 0.9
     // Confidence formula: confidence × (0.5 + avgWeight/2) = 80 × (0.5 + 0.45) = 80 × 0.95 = 76
     expect(result[0].confidence).toBe(76);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
+  });
+
+  it("recomputes verdict label when confidence drops a mixed-band truth percentage below threshold", () => {
+    const verdicts = [
+      { id: "v1", truthPercentage: 60, confidence: 50, verdict: "LEANING-TRUE", supportingEvidenceIds: ["E1"] },
+    ];
+    const evidenceItems = [{ id: "E1", sourceId: "s1" }];
+    const sources = [{ id: "s1", trackRecordScore: 0.1 }];
+
+    const result = applyEvidenceWeighting(verdicts as any, evidenceItems as any, sources as any);
+
+    expect(result[0].truthPercentage).toBe(51);
+    expect(result[0].confidence).toBe(28);
+    expect(result[0].verdict).toBe("UNVERIFIED");
   });
 });
 
