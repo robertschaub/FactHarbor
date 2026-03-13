@@ -468,7 +468,9 @@ export const PipelineConfigSchema = z.object({
   tigerScoreMode: z.enum(["off", "on"]).optional()
     .describe("Holistic TIGERScore evaluation mode: off (default) | on (performs a final holistic quality pass cross-referencing input, evidence, and assessment)"),
   tigerScoreTier: z.enum(["haiku", "sonnet", "opus"]).optional()
-    .describe("Model tier for Stage 6 TIGERScore evaluation (default: sonnet)"),
+    .describe("LEGACY — use tigerScoreStrength instead. Accepted for backward compatibility; normalized to tigerScoreStrength during parsing."),
+  tigerScoreStrength: z.enum(["budget", "standard", "premium"]).optional()
+    .describe("Model strength for Stage 6 TIGERScore evaluation (default: standard)"),
   tigerScoreTemperature: z.number().min(0).max(1).optional()
     .describe("Temperature for Stage 6 TIGERScore evaluation (default: 0.1)"),
   gate1GroundingRetryThreshold: z.number().min(0).max(1).optional()
@@ -518,6 +520,31 @@ export const PipelineConfigSchema = z.object({
   verdictDirectionPolicy: z.enum(["disabled", "retry_once_then_safe_downgrade"]).optional()
     .describe("Integrity policy for direction failures in verdict validation (default: disabled). " +
       "Disabled for same reason as verdictGroundingPolicy — safe_downgrade degrades verdicts on false positives."),
+  // === Canonical debate role configuration ===
+  debateRoles: z.object({
+    advocate: z.object({
+      provider: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+      strength: z.enum(["budget", "standard", "premium"]).optional(),
+    }).optional(),
+    selfConsistency: z.object({
+      provider: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+      strength: z.enum(["budget", "standard", "premium"]).optional(),
+    }).optional(),
+    challenger: z.object({
+      provider: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+      strength: z.enum(["budget", "standard", "premium"]).optional(),
+    }).optional(),
+    reconciler: z.object({
+      provider: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+      strength: z.enum(["budget", "standard", "premium"]).optional(),
+    }).optional(),
+    validation: z.object({
+      provider: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
+      strength: z.enum(["budget", "standard", "premium"]).optional(),
+    }).optional(),
+  }).optional()
+    .describe("Per-role LLM configuration for cross-provider debate. Each role specifies a provider (vendor) and strength (capability class: budget/standard/premium). Canonical config shape — supersedes debateModelTiers/debateModelProviders."),
+  // === Legacy debate role fields (read-compat only — normalized into debateRoles during parsing) ===
   debateModelTiers: z.object({
     advocate: z.enum(["haiku", "sonnet", "opus"]).optional(),
     selfConsistency: z.enum(["haiku", "sonnet", "opus"]).optional(),
@@ -525,7 +552,7 @@ export const PipelineConfigSchema = z.object({
     reconciler: z.enum(["haiku", "sonnet", "opus"]).optional(),
     validation: z.enum(["haiku", "sonnet", "opus"]).optional(),
   }).optional()
-    .describe("Model tier per debate role (default: debate roles sonnet, validation haiku). B-5b: opus tier available for premium reasoning."),
+    .describe("LEGACY — use debateRoles instead. Accepted for backward compatibility; normalized into debateRoles during parsing."),
   debateModelProviders: z.object({
     advocate: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
     selfConsistency: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
@@ -533,7 +560,7 @@ export const PipelineConfigSchema = z.object({
     reconciler: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
     validation: z.enum(["anthropic", "openai", "google", "mistral"]).optional(),
   }).optional()
-    .describe("Per-role LLM provider for cross-provider debate (default: inherit global llmProvider)."),
+    .describe("LEGACY — use debateRoles instead. Accepted for backward compatibility; normalized into debateRoles during parsing."),
   openaiTpmGuardEnabled: z.boolean().optional()
     .describe("Enable OpenAI TPM guard for Stage 4 debate calls (default: true)."),
   openaiTpmGuardInputTokenThreshold: z.number().int().min(1000).max(200000).optional()
@@ -742,6 +769,12 @@ export const PipelineConfigSchema = z.object({
   if (data.tigerScoreMode === undefined) {
     data.tigerScoreMode = "off";
   }
+  // tigerScoreTier → tigerScoreStrength normalization (legacy → canonical)
+  if (data.tigerScoreStrength === undefined) {
+    const LEGACY_MAP: Record<string, "budget" | "standard" | "premium"> = { haiku: "budget", sonnet: "standard", opus: "premium" };
+    data.tigerScoreStrength = data.tigerScoreTier ? (LEGACY_MAP[data.tigerScoreTier] ?? "standard") : "standard";
+  }
+  // Keep legacy field populated for any code that still reads it during transition
   if (data.tigerScoreTier === undefined) {
     data.tigerScoreTier = "sonnet";
   }
@@ -784,6 +817,60 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.challengerTemperature === undefined) {
     data.challengerTemperature = 0.3;
+  }
+  // === debateRoles canonical normalization ===
+  // Merge legacy debateModelTiers + debateModelProviders into canonical debateRoles.
+  // Canonical debateRoles fields win when both old and new are present.
+  {
+    const LEGACY_STRENGTH_MAP: Record<string, "budget" | "standard" | "premium"> = { haiku: "budget", sonnet: "standard", opus: "premium" };
+    const inheritedProvider = data.llmProvider ?? "anthropic";
+    const ROLE_KEYS = ["advocate", "selfConsistency", "challenger", "reconciler", "validation"] as const;
+    const DEFAULT_STRENGTHS: Record<string, "budget" | "standard" | "premium"> = {
+      advocate: "standard", selfConsistency: "standard", challenger: "standard", reconciler: "standard", validation: "budget",
+    };
+    const DEFAULT_PROVIDERS: Record<string, string> = {
+      advocate: inheritedProvider, selfConsistency: inheritedProvider, challenger: "openai", reconciler: inheritedProvider, validation: inheritedProvider,
+    };
+
+    const legacyTiers = data.debateModelTiers;
+    const legacyProviders = data.debateModelProviders;
+    const canonical = data.debateRoles ?? {} as NonNullable<typeof data.debateRoles>;
+
+    const merged: Record<string, { provider: "anthropic" | "openai" | "google" | "mistral"; strength: "budget" | "standard" | "premium" }> = {};
+    for (const role of ROLE_KEYS) {
+      const canonicalRole = canonical?.[role];
+      // Strength: canonical wins > legacy tier mapped > default
+      const strength = canonicalRole?.strength
+        ?? (legacyTiers?.[role] ? LEGACY_STRENGTH_MAP[legacyTiers[role]!] ?? "standard" : undefined)
+        ?? DEFAULT_STRENGTHS[role];
+      // Provider: canonical wins > legacy provider > default
+      const provider = canonicalRole?.provider
+        ?? legacyProviders?.[role]
+        ?? DEFAULT_PROVIDERS[role];
+      merged[role] = { provider: provider as "anthropic" | "openai" | "google" | "mistral", strength };
+    }
+    data.debateRoles = merged as typeof data.debateRoles;
+  }
+
+  // Keep legacy fields populated for backward-compat reads during transition
+  if (data.debateModelTiers === undefined) {
+    data.debateModelTiers = {
+      advocate: "sonnet",
+      selfConsistency: "sonnet",
+      challenger: "sonnet",
+      reconciler: "sonnet",
+      validation: "haiku",
+    };
+  }
+  if (data.debateModelProviders === undefined) {
+    const inheritedProvider = data.llmProvider ?? "anthropic";
+    data.debateModelProviders = {
+      advocate: inheritedProvider,
+      selfConsistency: inheritedProvider,
+      challenger: "openai",
+      reconciler: inheritedProvider,
+      validation: inheritedProvider,
+    };
   }
   if (data.calibrationInverseGateAction === undefined) {
     data.calibrationInverseGateAction = "warn";
@@ -902,12 +989,35 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   enforceBudgets: false,
   claimAnnotationMode: "verifiability_and_misleadingness",
   tigerScoreMode: "off",
-  tigerScoreTier: "sonnet",
+  tigerScoreTier: "sonnet", // Legacy compat — canonical is tigerScoreStrength
+  tigerScoreStrength: "standard",
   tigerScoreTemperature: 0.1,
   explanationQualityMode: "rubric",
   selfConsistencyTemperature: 0.4,
   challengerTemperature: 0.3,
-  debateModelProviders: { challenger: "openai" },
+  // Canonical debate role configuration
+  debateRoles: {
+    advocate: { provider: "anthropic", strength: "standard" },
+    selfConsistency: { provider: "anthropic", strength: "standard" },
+    challenger: { provider: "openai", strength: "standard" },
+    reconciler: { provider: "anthropic", strength: "standard" },
+    validation: { provider: "anthropic", strength: "budget" },
+  },
+  // Legacy compat — kept populated by transform for transition reads
+  debateModelTiers: {
+    advocate: "sonnet",
+    selfConsistency: "sonnet",
+    challenger: "sonnet",
+    reconciler: "sonnet",
+    validation: "haiku",
+  },
+  debateModelProviders: {
+    advocate: "anthropic",
+    selfConsistency: "anthropic",
+    challenger: "openai",
+    reconciler: "anthropic",
+    validation: "anthropic",
+  },
   calibrationInverseGateAction: "warn",
   verdictGroundingPolicy: "disabled",
   verdictDirectionPolicy: "disabled",

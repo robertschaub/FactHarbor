@@ -94,11 +94,32 @@
   "claimAnnotationMode": "verifiability_and_misleadingness",
   "tigerScoreMode": "off",
   "tigerScoreTier": "sonnet",
+  "tigerScoreStrength": "standard",
   "tigerScoreTemperature": 0.1,
   "explanationQualityMode": "rubric",
   "selfConsistencyTemperature": 0.4,
   "challengerTemperature": 0.3,
-  "debateModelProviders": { "challenger": "openai" },
+  "debateRoles": {
+    "advocate": { "provider": "anthropic", "strength": "standard" },
+    "selfConsistency": { "provider": "anthropic", "strength": "standard" },
+    "challenger": { "provider": "openai", "strength": "standard" },
+    "reconciler": { "provider": "anthropic", "strength": "standard" },
+    "validation": { "provider": "anthropic", "strength": "budget" }
+  },
+  "debateModelTiers": {
+    "advocate": "sonnet",
+    "selfConsistency": "sonnet",
+    "challenger": "sonnet",
+    "reconciler": "sonnet",
+    "validation": "haiku"
+  },
+  "debateModelProviders": {
+    "advocate": "anthropic",
+    "selfConsistency": "anthropic",
+    "challenger": "openai",
+    "reconciler": "anthropic",
+    "validation": "anthropic"
+  },
   "calibrationInverseGateAction": "warn",
   "verdictGroundingPolicy": "disabled",
   "verdictDirectionPolicy": "disabled",

@@ -687,8 +687,47 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
     });
 
-    it("uses cross-provider challenger by default", () => {
-      expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual({ challenger: "openai" });
+    it("surfaces explicit debate role tier defaults", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateModelTiers).toEqual({
+        advocate: "sonnet",
+        selfConsistency: "sonnet",
+        challenger: "sonnet",
+        reconciler: "sonnet",
+        validation: "haiku",
+      });
+    });
+
+    it("uses cross-provider challenger by default with explicit seeded role providers", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual({
+        advocate: "anthropic",
+        selfConsistency: "anthropic",
+        challenger: "openai",
+        reconciler: "anthropic",
+        validation: "anthropic",
+      });
+    });
+
+    it("expands debate role defaults during schema parsing when omitted", () => {
+      const parsed = PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        debateModelTiers: undefined,
+        debateModelProviders: undefined,
+      });
+
+      expect(parsed.debateModelTiers).toEqual({
+        advocate: "sonnet",
+        selfConsistency: "sonnet",
+        challenger: "sonnet",
+        reconciler: "sonnet",
+        validation: "haiku",
+      });
+      expect(parsed.debateModelProviders).toEqual({
+        advocate: "anthropic",
+        selfConsistency: "anthropic",
+        challenger: "openai",
+        reconciler: "anthropic",
+        validation: "anthropic",
+      });
     });
 
     it("surfaces schema-backed pipeline defaults in the authoritative default object", () => {
@@ -760,9 +799,26 @@ describe("Default Config Values", () => {
       expect(effectiveDefaults.challengerTemperature).toBe(seed.challengerTemperature);
     });
 
+    it("debateModelTiers matches seed file", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateModelTiers).toEqual(seed.debateModelTiers);
+      expect(seed.debateModelTiers).toEqual({
+        advocate: "sonnet",
+        selfConsistency: "sonnet",
+        challenger: "sonnet",
+        reconciler: "sonnet",
+        validation: "haiku",
+      });
+    });
+
     it("debateModelProviders matches seed file", () => {
       expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual(seed.debateModelProviders);
-      expect(seed.debateModelProviders).toEqual({ challenger: "openai" });
+      expect(seed.debateModelProviders).toEqual({
+        advocate: "anthropic",
+        selfConsistency: "anthropic",
+        challenger: "openai",
+        reconciler: "anthropic",
+        validation: "anthropic",
+      });
     });
 
     it("restored runtime defaults are present in the seed file", () => {

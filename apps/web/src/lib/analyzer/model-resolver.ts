@@ -2,11 +2,14 @@
  * FactHarbor Model Resolver
  *
  * Eliminates hardcoded model version strings from the codebase by resolving
- * logical tiers (haiku, sonnet, opus) to provider-specific model IDs.
+ * logical strengths (budget, standard, premium) to provider-specific model IDs.
  *
  * Supports:
  *  - Version-lock (default): Uses specific, tested model versions.
  *  - Latest aliases (opt-in): Uses provider-managed -latest aliases.
+ *
+ * Legacy aliases (haiku, sonnet, opus) are accepted and mapped automatically:
+ *   haiku -> budget, sonnet -> standard, opus -> premium
  */
 
 import { anthropic } from "@ai-sdk/anthropic";
@@ -15,7 +18,10 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import type { LLMProviderType } from "./types";
 
-export type ModelTier = "haiku" | "sonnet" | "opus";
+export type ModelStrength = "budget" | "standard" | "premium";
+
+/** @deprecated Use ModelStrength instead. Kept as alias for migration compatibility. */
+export type ModelTier = ModelStrength;
 
 export interface ResolvedModel {
   provider: LLMProviderType;
@@ -28,84 +34,109 @@ export interface ResolvedModel {
 // ============================================================================
 
 const ANTHROPIC_VERSIONS = {
-  haiku: "claude-haiku-4-5-20251001",
-  sonnet: "claude-sonnet-4-5-20250929",
-  opus: "claude-opus-4-6",
+  budget: "claude-haiku-4-5-20251001",
+  standard: "claude-sonnet-4-5-20250929",
+  premium: "claude-opus-4-6",
   latest: {
-    haiku: "claude-haiku-4-5-latest",
-    sonnet: "claude-sonnet-4-5-latest",
-    opus: "claude-opus-4-6",
+    budget: "claude-haiku-4-5-latest",
+    standard: "claude-sonnet-4-5-latest",
+    premium: "claude-opus-4-6",
   }
 };
 
 const OPENAI_VERSIONS = {
-  haiku: "gpt-4.1-mini", // No direct haiku equivalent, use budget tier
-  sonnet: "gpt-4.1",
-  opus: "gpt-4.1", // No direct opus equivalent
+  budget: "gpt-4.1-mini",
+  standard: "gpt-4.1",
+  premium: "gpt-4.1", // No direct premium equivalent
   latest: {
-    haiku: "gpt-4.1-mini",
-    sonnet: "gpt-4.1",
-    opus: "gpt-4.1",
+    budget: "gpt-4.1-mini",
+    standard: "gpt-4.1",
+    premium: "gpt-4.1",
   }
 };
 
 const GOOGLE_VERSIONS = {
-  haiku: "gemini-2.5-flash",
-  sonnet: "gemini-2.5-pro",
-  opus: "gemini-2.5-pro", // No direct opus equivalent
+  budget: "gemini-2.5-flash",
+  standard: "gemini-2.5-pro",
+  premium: "gemini-2.5-pro", // No direct premium equivalent
   latest: {
-    haiku: "gemini-2.5-flash",
-    sonnet: "gemini-2.5-pro",
-    opus: "gemini-2.5-pro",
+    budget: "gemini-2.5-flash",
+    standard: "gemini-2.5-pro",
+    premium: "gemini-2.5-pro",
   }
 };
 
 const MISTRAL_VERSIONS = {
-  haiku: "mistral-small-latest",
-  sonnet: "mistral-large-latest",
-  opus: "mistral-large-latest",
+  budget: "mistral-small-latest",
+  standard: "mistral-large-latest",
+  premium: "mistral-large-latest",
   latest: {
-    haiku: "mistral-small-latest",
-    sonnet: "mistral-large-latest",
-    opus: "mistral-large-latest",
+    budget: "mistral-small-latest",
+    standard: "mistral-large-latest",
+    premium: "mistral-large-latest",
   }
 };
+
+// ============================================================================
+// LEGACY ALIAS MAPPING
+// ============================================================================
+
+/** Map legacy tier names to canonical strength names. */
+const LEGACY_TIER_TO_STRENGTH: Record<string, ModelStrength> = {
+  haiku: "budget",
+  sonnet: "standard",
+  opus: "premium",
+};
+
+/**
+ * Normalize a legacy tier name or canonical strength to ModelStrength.
+ * Accepts both old (haiku/sonnet/opus) and new (budget/standard/premium) values.
+ */
+export function normalizeToStrength(value: string): ModelStrength {
+  if (value === "budget" || value === "standard" || value === "premium") {
+    return value;
+  }
+  return LEGACY_TIER_TO_STRENGTH[value] ?? "standard";
+}
 
 // ============================================================================
 // RESOLVER
 // ============================================================================
 
 /**
- * Resolve a logical tier to a concrete model ID and instance.
+ * Resolve a logical strength to a concrete model ID and instance.
+ * Accepts both canonical strengths (budget/standard/premium) and
+ * legacy tier names (haiku/sonnet/opus).
  */
 export function resolveModel(
-  tier: ModelTier,
+  strength: ModelStrength | string,
   provider: LLMProviderType = "anthropic",
   useLatest: boolean = false
 ): ResolvedModel {
   const p = normalizeLLMProvider(provider);
+  const s = normalizeToStrength(strength as string);
   let modelName: string;
 
   switch (p) {
     case "anthropic":
-      modelName = useLatest ? ANTHROPIC_VERSIONS.latest[tier] : ANTHROPIC_VERSIONS[tier];
+      modelName = useLatest ? ANTHROPIC_VERSIONS.latest[s] : ANTHROPIC_VERSIONS[s];
       return { provider: p, modelName, model: anthropic(modelName) };
-    
+
     case "openai":
-      modelName = useLatest ? OPENAI_VERSIONS.latest[tier] : OPENAI_VERSIONS[tier];
+      modelName = useLatest ? OPENAI_VERSIONS.latest[s] : OPENAI_VERSIONS[s];
       return { provider: p, modelName, model: openai(modelName) };
 
     case "google":
-      modelName = useLatest ? GOOGLE_VERSIONS.latest[tier] : GOOGLE_VERSIONS[tier];
+      modelName = useLatest ? GOOGLE_VERSIONS.latest[s] : GOOGLE_VERSIONS[s];
       return { provider: p, modelName, model: google(modelName) };
 
     case "mistral":
-      modelName = useLatest ? MISTRAL_VERSIONS.latest[tier] : MISTRAL_VERSIONS[tier];
+      modelName = useLatest ? MISTRAL_VERSIONS.latest[s] : MISTRAL_VERSIONS[s];
       return { provider: p, modelName, model: mistral(modelName) };
 
     default:
-      // Fallback to Anthropic sonnet
-      modelName = ANTHROPIC_VERSIONS.sonnet;
+      // Fallback to Anthropic standard
+      modelName = ANTHROPIC_VERSIONS.standard;
       return { provider: "anthropic", modelName, model: anthropic(modelName) };
   }
 }
@@ -119,6 +150,17 @@ export function normalizeLLMProvider(raw: string): LLMProviderType {
   return "anthropic";
 }
 
-export function isModelTier(value: string): value is ModelTier {
-  return value === "haiku" || value === "sonnet" || value === "opus";
+/**
+ * Check if a value is a valid ModelStrength (canonical or legacy).
+ */
+export function isModelStrength(value: string): value is ModelStrength {
+  return value === "budget" || value === "standard" || value === "premium";
+}
+
+/**
+ * @deprecated Use isModelStrength instead. Accepts both legacy and canonical values.
+ */
+export function isModelTier(value: string): boolean {
+  return value === "budget" || value === "standard" || value === "premium" ||
+    value === "haiku" || value === "sonnet" || value === "opus";
 }
