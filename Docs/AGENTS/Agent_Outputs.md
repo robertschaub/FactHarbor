@@ -1,23 +1,54 @@
 # Agent Outputs Log
 
+
 ---
-### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Task 2 — Post-fix quality rerun (geography_fix vs window_start)
-**Task:** Run clean 2-checkpoint comparison after geography fix (f6e04ce3): window_start (9cdc8889) vs current main. 3 claims: EN Bolsonaro, PT Bolsonaro, new DE mental health claim (Kanton Zürich school mental health burden). Answer 3 questions: (1) materially closer to window_start? (2) Swiss jurisdiction regression fixed? (3) SR weighting the main remaining gap?
-**Files touched:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` (appended POST-FIX RERUN section), `Docs/AGENTS/Agent_Outputs.md`
+### 2026-03-13 | Captain Deputy | Claude Sonnet 4.6 | Three-Plan Review: Contamination Fix, Baseline Test Plan, Debate Role Migration
+**Task:** Review and close all open questions in three WIP planning documents; record decisions; confirm execution readiness.
+**Files touched:**
+- `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — removed stale `pass1Result.inferredGeography` snippet from Fix 1; closed Open Q2 (keep 0.4 threshold); added review log entry
+- `Docs/WIP/Report_Quality_Baseline_Test_Plan_2026-03-12.md` — corrected SQL table name `sr_cache` → `source_reliability`; status `DRAFT v2` → `APPROVED`; added review log entry with Phase 1 gate analysis
+- `Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md` — added review log entry with all 5 decisions closed
 **Key decisions:**
-- Documented WS_PT systematic failure: 3/3 attempts fail at Pass2 with schema parse error at window_start (9cdc8889) — no data obtainable
-- HD_PT damaged: `analysis_generation_failed` (error) returned fallback UNVERIFIED + 0% confidence; retry blocked by Anthropic API credit exhaustion
-- HD_DE `inferredGeography: CH` confirmed — geography regression conclusively fixed
-- SR weighting identified as dominant quality gap: 24-31pp confidence drops across both comparable claim pairs
+- **Contamination Fix Plan**: APPROVED, ready for Act Mode. Open Q2 closed: keep 0.4 threshold. Open Q4 deferred (per-source extraction cap = separate backlog item).
+- **Baseline Test Plan**: APPROVED (after SQL fix). Phase 1 gate: H1 mean = 56% → 50-74% range → **Phase 2 IS triggered**. H1a/H1b spread = 8pp (≤15pp, not inconclusive). Sequencing: Phase 2 worktree (W1+W2 at `523ee2aa`) BEFORE Fix 0 — PT runs are already jurisdiction-clean.
+- **Debate Migration Plan**: APPROVED, all 5 questions resolved. (1) `tigerScoreTier` → IN SCOPE, rename to `tigerScoreStrength`, enum `budget/standard/premium`. (2) Strip legacy fields immediately on save. (3) No stored-config rewrite script. (4) `model-resolver.ts` rename (`ModelTier → ModelStrength`, version-map keys) moves to Phase 1. (5) Non-debate model fields stay as free-text — compatibility-only behind resolver type rename.
+- Normalization: add to `superRefine()` block — if `debateRoles` undefined, build from legacy maps with `{ haiku: "budget", sonnet: "standard", opus: "premium" }`; canonical wins when both present.
 **Open items:**
-- HD_PT rerun needed once Anthropic API credits replenished — current result is damaged
+- Phase 2 worktree run (W1 PT + W2 EN Bolsonaro at `523ee2aa`) — pending. Config diff prerequisite first.
+- Fix 0 implementation (contamination Phase A) — pending Phase 2 results.
+- Debate Role Config Terminology Migration (4-phase) — pending.
+**Warnings:**
+- Debate migration Phase 1 and Phase 2 must ship in the **same PR**. Split deployment causes `verdict-stage.ts` to read absent `debateModelTiers` and silently fall back to defaults.
+- `checkDebateTierDiversity()` in `claimboundary-pipeline.ts` must be rewritten to read `debateRoles.<role>.provider + strength` — current `all_same_debate_tier` warning on 3/3 HEAD runs is caused by this broken diversity check.
+**For next agent:** All three plans are execution-ready. Recommended next: Phase 2 worktree → Fix 0 → Debate migration (independent, can be parallelized). Full decisions and normalization pseudocode in the Debate Migration Plan Captain Deputy review log section.
+**Learnings:** No new role learnings — decisions recorded directly in plan docs.
+
+---
+### 2026-03-13 | Lead Architect | Gemini CLI | Review Debate Role Config Terminology Migration Plan
+**Task:** Approved the plan with mandatory inclusion of tigerScoreTier and model-resolver refactor
+**Files touched:** Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md
+**Key decisions:** Mandated transition from vendor-specific branding (haiku/sonnet/opus) to capability-based tiers (budget/standard/premium). Expanded scope to include tigerScoreTier. Confirmed 'migrate-on-save' policy for configuration rot prevention.
+**Open items:** None
+**Warnings:** Implementation should proceed following the approved plan + architectural amendments.
+**For next agent:** Verify updated diversity checks in claimboundary-pipeline.ts
+**Learnings:** None
+
+---
+### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Task 2 — Post-fix quality rerun (geography_fix vs window_start) + HD_PT rerun
+**Task:** Run clean 2-checkpoint comparison after geography fix (f6e04ce3): window_start (9cdc8889) vs current main. 3 claims: EN Bolsonaro, PT Bolsonaro, new DE mental health claim (Kanton Zürich school mental health burden). Answer 3 questions: (1) materially closer to window_start? (2) Swiss jurisdiction regression fixed? (3) SR weighting the main remaining gap? HD_PT was subsequently rerun once API credits were replenished.
+**Files touched:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` (appended POST-FIX RERUN section, updated HD_PT row), `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- WS_PT systematic failure: 3/3 attempts fail at Pass2 with schema parse error at window_start (9cdc8889) — no data obtainable
+- HD_PT rerun (job `c25702f816ab4d7389923794d2b89754`): MIXED, 49.2% TP, 50.2% conf, `inferredGeography: BR` ✅, CSE ✅, valid result. Applicability filter removed 4 foreign-jurisdiction items; all_same_debate_tier warning.
+- HD_DE `inferredGeography: CH` confirmed — geography regression conclusively fixed
+- SR weighting identified as dominant quality gap: 24-31pp confidence drops across all comparable claim pairs
+**Open items:**
 - `all_same_debate_tier` warning on 3/3 HEAD runs — consider mixing model tiers for debate roles
 - Residual EN contamination: Fix 3 reduced 3/6→1/6 boundaries but B4 "Trump administration communications" survives
+- PT quality gap: MIXED (49.2%) at HEAD vs 90.1% at Task 1 window_start — partly SR weighting, partly claim decomposition differences
 **Warnings:**
-- **API credit exhausted** at end of session — no further LLM jobs can run until credits are topped up
 - WS_PT systematic Pass2 failure at window_start is reproducible — not a transient error. The old schema at 9cdc8889 fails for this specific Portuguese claim every time.
-- HD_PT `analysis_generation_failed` may be related to model safety/refusal for politically sensitive Portuguese content (same claim fails via schema at window_start; fails via verdict generation at current main). Treat PT Bolsonaro results as unreliable until root cause identified.
-**For next agent:** Full run data in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` §POST-FIX RERUN. Three questions answered: (1) NO — main is 23-31pp worse on TP/conf; (2) YES — CH geography works; (3) YES — SR weighting is primary gap. Next priority: fix SR weighting calibration (sourceId reconciliation bug identified by prior Codex agent in entry below).
+**For next agent:** Full run data in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` §POST-FIX RERUN. Three questions answered: (1) NO — main is 23-31pp worse on EN/DE TP/conf; (2) YES — CH geography works; (3) YES — SR weighting is primary gap. All 5 runs now valid (WS_PT still has no data). Next priority: fix SR weighting calibration (sourceId reconciliation bug identified by prior Codex agent in entry below).
 **Learnings:** No — role handoff not required.
 
 ---
@@ -4987,4 +5018,77 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** Existing active DB pipeline profiles may still omit these keys historically; runtime parsing fills them, but an explicit reseed/reset is still useful if you want the admin UI default comparison to show them directly from stored content.
 **Warnings:** This patch does not change runtime behavior for profiles already relying on schema-transform defaults; it mainly restores authoritative visibility, drift protection, and reseed correctness.
 **For next agent:** If you want the local active default profile to surface these restored keys in `config.db`, run the normal config reseed path for `pipeline` after this commit.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Make Debate Role Defaults Explicit in Seeded UCM
+**Task:** Make the pipeline debate-role defaults explicit in authoritative TS/JSON defaults so UCM/reset/reseed surfaces all role tiers/providers, with `challenger` explicitly pinned to OpenAI.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/test/unit/lib/config-schemas.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added explicit `debateModelTiers` defaults for all debate roles: `advocate/selfConsistency/challenger/reconciler=sonnet`, `validation=haiku`.
+- Expanded `debateModelProviders` to the full effective seeded map: `advocate/selfConsistency/reconciler/validation=anthropic`, `challenger=openai`.
+- Added schema-parse regression coverage so omitted role maps are re-expanded correctly at runtime and cannot silently disappear from seeded/default surfaces again.
+**Open items:** `filter` and `organize` are still stage-level pipeline settings rather than first-class role maps; they remain UCM-controlled via existing stage fields, but not via symmetric per-role provider blocks.
+**Warnings:** To make the stored active pipeline profile show these explicit role defaults in `config.db`, you still need the usual pipeline reseed/reset path after this patch.
+**For next agent:** If a follow-up is desired, the next clean extension is to decide whether `filter` and `organize` should become true first-class role configs or remain stage-driven UCM settings.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Clarify Debate Role Provider vs Strength-Class Terminology
+**Task:** Reduce confusion around debate-role routing by making the UCM/admin UI explicitly distinguish vendor/provider from internal model strength class, without breaking existing stored config values.
+**Files touched:** `apps/web/src/app/admin/config/page.tsx`, `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Kept stored config keys and values (`debateModelTiers`, `haiku/sonnet/opus`) for backward compatibility.
+- Clarified in schema/runtime comments that `haiku/sonnet/opus` are internal capability-class aliases (`budget/standard/premium`), not literal provider model families.
+- Added an explicit `Debate Role Routing` section to the Pipeline admin form so each role now shows both `Provider` and `Strength Class`, with labels like `Budget (haiku alias)` and `Standard (sonnet alias)`.
+**Open items:** The underlying key name `debateModelTiers` is still legacy terminology; a true rename to provider-neutral config names would need a planned migration to avoid breaking stored configs and historical tooling.
+**Warnings:** `npm -w apps/web run build` is still blocked by an unrelated pre-existing TypeScript error in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts:474` (`ClaimVerdict[]` vs `CBClaimVerdict[]` cast issue). This patch itself passed config-targeted tests and full safe `npm test`.
+**For next agent:** If terminology is revisited further, prefer a migration plan that introduces provider-neutral aliases (e.g. `budget/standard/premium`) while preserving backward compatibility for existing `haiku/sonnet/opus` values.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Debate Role Terminology Migration WIP Plan
+**Task:** Produce a WIP plan for replacing confusing debate-role config terminology (`debateModelTiers` + `haiku/sonnet/opus`) with a generic role-centric provider/strength model.
+**Files touched:** `Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Recommended a full end-to-end migration, not a UI-only wording fix.
+- Proposed canonical config shape: `debateRoles.<role>.provider` + `debateRoles.<role>.strength`.
+- Proposed canonical values: `budget | standard | premium`, with legacy `haiku | sonnet | opus` accepted only as read-compat input.
+**Open items:** Captain/reviewer decision needed on migration scope details: whether to rename adjacent fields like `tigerScoreTier`, and whether stored configs should be rewritten eagerly or only normalized on read/save.
+**Warnings:** The plan deliberately avoids another half-migration; if implemented, runtime consumers should be migrated to the new canonical shape in the same change set to avoid dual-vocabulary confusion.
+**For next agent:** Start with the new WIP doc; the highest-risk runtime touchpoints called out there are `config-schemas.ts`, `verdict-stage.ts`, `claimboundary-pipeline.ts`, and `calibration/runner.ts`.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Incorporate Lead Architect Review into Debate Role Migration Plan
+**Task:** Update the WIP migration plan with Lead Architect review amendments and explicitly keep implementation paused.
+**Files touched:** `Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Expanded scope to include `tigerScoreTier -> tigerScoreStrength` so capability terminology stays consistent across pipeline config.
+- Made the `model-resolver.ts` refactor explicit: `ModelTier -> ModelStrength` and provider lookup tables keyed by `budget | standard | premium`.
+- Tightened write policy so legacy fields are stripped on save, and called out diversity-check migration in `claimboundary-pipeline.ts` as mandatory runtime work.
+**Open items:** Further reviews are still expected; no implementation should start until the plan is finalized.
+**Warnings:** This is still a planning/documentation step only. The plan now assumes a larger migration surface because `tigerScoreTier` is included; implementation should be scoped and reviewed accordingly.
+**For next agent:** If another review arrives, update the same WIP plan rather than starting a parallel draft. The current canonical target is `provider + strength` everywhere relevant, including TIGERScore.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Incorporate Additional Review into Debate Role Migration Plan
+**Task:** Update the WIP plan with another architecture/runtime review while keeping implementation paused.
+**Files touched:** `Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Made the `ModelTier -> ModelStrength` cascade explicit and atomic in Phase 3, including resolver tables, signatures, and all call sites.
+- Locked in the requirement that schema canonicalization and runtime conversion ship in the same PR/deployment unit.
+- Added the open decision on whether non-debate model fields should join the provider-neutral vocabulary migration or only be adapted for compatibility.
+**Open items:** Still waiting for more reviews. No implementation should start yet.
+**Warnings:** The plan now assumes a broader shared-type migration surface than the first draft. This increases clarity but also raises the importance of atomic rollout and full test coverage.
+**For next agent:** Continue updating the same WIP plan with subsequent reviews. The two current high-sensitivity points are the shared resolver type cascade and the explicit decision on non-debate model fields.
+**Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Finalize Approved Debate Role Migration Plan
+**Task:** Align the WIP plan body with the now-approved review outcome, without starting implementation.
+**Files touched:** `Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Marked the plan `APPROVED`.
+- Moved the shared `model-resolver.ts` type/vocabulary migration into Phase 1 alongside schema canonicalization.
+- Added the concrete normalization mechanism/precedence rule: legacy→canonical merge in the existing `config-schemas.ts` canonicalization path, with canonical fields winning.
+- Replaced open review questions with resolved review decisions; only the future `filter/organize` question remains open.
+**Open items:** No further plan edits are needed unless a new review arrives. Implementation has still not been started in this task.
+**Warnings:** The approved plan now assumes a single coordinated migration across schema, resolver, runtime consumers, and seed defaults. Starting implementation piecemeal would undermine the review decisions.
+**For next agent:** Use the approved WIP doc as the implementation source of truth. The first implementation checkpoint should be Phase 1 canonicalization + resolver alignment, not UI work.
 **Learnings:** no
