@@ -1,6 +1,44 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-13 | Senior Developer | Claude Code (claude-sonnet-4-6) | Pre-rerun hardening: inferredGeography, regression tests, Fix 3 logging
+**Task:** Three low-risk fixes before next quality rerun: (1) strengthen geography inference so named sub-national entities override language, (2) add GEO-REG regression tests for German-language Swiss claims, (3) harden Fix 3 applicability logging against malformed URLs.
+**Files touched:**
+- `apps/web/prompts/claimboundary.prompt.md` — CLAIM_EXTRACTION_PASS1 geography inference rule: added priority rule stating explicit sub-national entities (city/canton/district) determine country regardless of input language
+- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 3 new GEO-REG tests in `describe("Stage 1: runPass1")`: GEO-REG-1 (Kanton Zürich → CH not DE), GEO-REG-2 (Zürich explicit city → CH ≠ DE), GEO-REG-3 (German language with no entity → null, not DE)
+- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Fix 3 domain logging: replaced `new URL(item.sourceUrl).hostname` (throws on malformed URLs) with `item.sourceUrl?.match(/^https?:\/\/([^/?#]+)/)?.[1] ?? "unknown"` (never throws)
+**Key decisions:**
+- Prompt change is generic (no hardcoded country names) — uses abstract "sub-national geographic entity" language per AGENTS.md analysis prompt rules
+- Tests use the real claim text ("Immer mehr Kinder im Kanton Zürich...") as input to `runPass1` but mock the LLM response — they test that code propagates the LLM's geography correctly and doesn't override "CH" with "DE" due to `detectedLanguage: "de"`
+- No SR weighting, search, or verdict changes
+**Open items:** None — all three fixes are self-contained. Geography inference quality depends on LLM compliance with the updated prompt; a live H3 run with a Swiss claim will confirm.
+**Warnings:** None — changes are additive and localized.
+**For next agent:** All 1204 tests pass. Ready to rerun quality tests. The prompt change will only take effect on new analysis runs (after server restart if cached).
+
+---
+### 2026-03-13 | Senior Developer | Claude Code (claude-sonnet-4-6) | Report Quality Worktree Comparison — All 4 Checkpoints Executed
+**Task:** Execute the worktree comparison runbook across quality_window_start, quality_post_window_first_code, quality_deployed_proxy, and quality_head; identify where report quality degraded.
+**Files touched:**
+- `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` — full results document (created)
+- Worktrees created: `C:/DEV/FH-quality_window_start`, `C:/DEV/FH-quality_post_window_first_code`, `C:/DEV/FH-quality_deployed_proxy`
+**Key decisions:**
+- Ran all 3 claims (PT/EN/DE) on all 4 checkpoints sequentially (one checkpoint at a time, one API+web pair per checkpoint)
+- Fixed infrastructure issues at each checkpoint without modifying analysis code: deployed_proxy needed manual `IsHidden` column; older checkpoints needed `npm install sqlite@5 sqlite3`
+- Recorded Google CSE quota status, fallback provider usage, and warning counts per run as requested
+**Open items:**
+- Fix 1 jurisdiction regression for DE (German language → incorrectly infers Germany not Switzerland)
+- SR weighting calibration (34pp confidence collapse on PT at HEAD is excessive)
+- verdict-stage.ts code bug at post_window_first_code (historical, but indicates fragile self-consistency path)
+- Re-run with fresh Google CSE quota for clean comparison (runs 1–9 all had CSE 429)
+**Warnings:**
+- `quality_post_window_first_code` EN FAILED due to `TypeError: run2Verdicts.find is not a function` in verdict-stage.ts:251 — self-consistency path receives non-array at this checkpoint
+- Google CSE quota was exhausted during window_start and post_window runs; HEAD runs had fresh quota, giving HEAD a search-quality advantage that partially offsets the SR weighting confidence drag
+- deployed_proxy API had a pre-existing schema bug (IsHidden column absent from migrations) requiring a manual DB ALTER
+- All confidence values at quality_head are 10–34pp lower than other checkpoints due to SR weighting — do not compare confidence across SR-weighting boundary without adjustment
+**For next agent:** Full data in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md`. Key conclusions: (1) degradation first appears at post_window_first_code (code bug); (2) window_start is best performer (PT 90.1%, EN 75.4%, DE 84%); (3) Fix 1 successfully eliminated EN US contamination but caused DE jurisdiction regression (Germany vs Switzerland); (4) SR weighting is the primary cause of confidence collapse at HEAD (not a contamination issue). Next fix: `inferredGeography` disambiguation for non-English European claims containing explicit place names.
+**Learnings:** No role_learnings update — execution task, no novel patterns.
+
+---
 ### 2026-03-12 | Senior Developer | Claude Code (claude-opus-4-6) | Fix 3: Post-extraction applicability assessment — VALIDATED ✅
 **Task:** Implement Fix 3 from `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — post-extraction applicability assessment as safety net for jurisdiction contamination.
 **Files touched:**
