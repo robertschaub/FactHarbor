@@ -1301,7 +1301,7 @@ export default function JobPage() {
           <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard}`}>
             {jobMetaContent}
             {/* Input text — shown for in-progress jobs so the user knows what was submitted */}
-            {(job.status === "QUEUED" || job.status === "RUNNING") && (job.inputValue || job.inputPreview) && (
+            {(job.inputValue || job.inputPreview) && (
               <div style={{ marginTop: 12 }}>
                 <InputBanner
                   inputType={job.inputType || "text"}
