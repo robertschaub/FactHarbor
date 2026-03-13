@@ -1300,6 +1300,18 @@ export default function JobPage() {
         job.status !== "SUCCEEDED" && (
           <div className={`${styles.jobInfoCard} ${styles.reportSurfaceCard}`}>
             {jobMetaContent}
+            {/* Input text — shown for in-progress jobs so the user knows what was submitted */}
+            {(job.status === "QUEUED" || job.status === "RUNNING") && (job.inputValue || job.inputPreview) && (
+              <div style={{ marginTop: 12 }}>
+                <InputBanner
+                  inputType={job.inputType || "text"}
+                  inputValue={job.inputValue || job.inputPreview || ""}
+                  textColor="#1565c0"
+                  textBackgroundColor="#e3f2fd"
+                  textBorderColor="#90caf9"
+                />
+              </div>
+            )}
             {/* Job Action Buttons */}
             {(job.status === "QUEUED" || job.status === "RUNNING") && (
               <div style={{ marginTop: 16 }}>
