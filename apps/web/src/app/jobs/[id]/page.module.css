@@ -62,14 +62,6 @@
   color: var(--text-primary);
 }
 
-.jobInfoCard code {
-  color: var(--text-primary);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
 .reportSurfaceCard {
   --bg-card: var(--report-card);
   --bg-surface: var(--report-surface);
@@ -3361,7 +3353,8 @@ details[open] > .devWarningSummary::before {
   border-radius: 4px;
 }
 
-.reportSurfaceCard.reportMetaCard code {
+.reportSurfaceCard.reportMetaCard code,
+.reportSurfaceCard.jobInfoCard code {
   color: var(--text-primary);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
