@@ -2297,6 +2297,40 @@ details[open] > .devWarningSummary::before {
   color: var(--link);
 }
 
+.claimVerdictRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.claimVerdictMain {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.claimVerdictPct {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.claimVerdictConf {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.claimVerdictRange {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.65;
+  margin-left: auto;
+}
+
 .claimCardHeader {
   display: flex;
   align-items: center;

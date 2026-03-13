@@ -3118,6 +3118,16 @@ function ClaimCard({
       <div className={styles.claimText}>
         {claim.claimText}
       </div>
+      <div className={styles.claimVerdictRow} style={{ backgroundColor: color.bg, borderColor: color.border, color: color.text }}>
+        <span className={styles.claimVerdictMain}>{color.icon} {getVerdictLabel(claimVerdictLabel)}</span>
+        <span className={styles.claimVerdictPct}>{formatVerdictText(displayClaimPct, claimVerdictLabel)}</span>
+        <span className={styles.claimVerdictConf}>{getConfidenceTierLabel(claim.confidence)}</span>
+        {claim.truthPercentageRange && (
+          <span className={styles.claimVerdictRange}>
+            range: {isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–{isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%
+          </span>
+        )}
+      </div>
       <div className={styles.claimCardHeader}>
         {claim.category && <Badge bg="#f3f4f6" color="#4b5563">{claim.category.toUpperCase()}</Badge>}
         {claim.isCentral && <Badge bg="#e8f4fd" color="#0056b3">🔑 Central</Badge>}
@@ -3125,9 +3135,6 @@ function ClaimCard({
         {claim.verifiability && <Badge bg="#f3e5f5" color="#6a1b9a">🔍 Verifiability: {claim.verifiability.toUpperCase()}</Badge>}
         {isTangential && <Badge bg="#f5f5f5" color="#616161">📎 Tangential</Badge>}
         {claim.isCounterClaim && <Badge bg="#fff3e0" color="#e65100">↔️ Counter</Badge>}
-        <Badge bg={color.bg} color={color.text}>
-          {color.icon} {getVerdictLabel(claimVerdictLabel)} <span style={{ fontWeight: 400 }}>· {formatVerdictText(displayClaimPct, claimVerdictLabel)} · {getConfidenceTierLabel(claim.confidence)}{claim.truthPercentageRange ? ` (range: ${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–${isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%)` : ""}</span>
-        </Badge>
         {isTangential && (
           <Badge bg="#eeeeee" color="#757575">Not in verdict</Badge>
         )}
