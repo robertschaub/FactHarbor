@@ -743,6 +743,78 @@ describe("Stage 1: runPass1", () => {
       "LLM returned no structured output"
     );
   });
+
+  // Regression: German-language Swiss claims must resolve to CH, not DE
+  // The prompt's priority rule: explicit sub-national geographic entity → country from entity, not from input language.
+  it("GEO-REG-1: should propagate inferredGeography CH for German-language claim naming a Swiss administrative entity", async () => {
+    // "Immer mehr Kinder im Kanton Zürich sind von Migration betroffen"
+    // detectedLanguage=de (German), but inferredGeography=CH (Switzerland) — not DE
+    const pass1Fixture = {
+      impliedClaim: "Children in a specific Swiss administrative region are increasingly affected by migration",
+      backgroundDetails: "Regional migration trend in a Swiss administrative unit",
+      roughClaims: [
+        { statement: "Migration is affecting an increasing number of children in a Swiss regional area", searchHint: "migration children Swiss region trend" },
+      ],
+      detectedLanguage: "de",
+      inferredGeography: "CH",
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass1Fixture);
+
+    const result = await runPass1(
+      "Immer mehr Kinder im Kanton Zürich sind von Migration betroffen",
+      mockPipelineConfig,
+      "2026-03-13",
+    );
+
+    expect(result.detectedLanguage).toBe("de");       // German input language
+    expect(result.inferredGeography).toBe("CH");      // Swiss geography from explicit entity, not DE from language
+  });
+
+  it("GEO-REG-2: should propagate inferredGeography CH when claim explicitly names Swiss city/canton in German", async () => {
+    const pass1Fixture = {
+      impliedClaim: "A metric changed in Zürich",
+      backgroundDetails: "Zürich is a canton and city in Switzerland",
+      roughClaims: [
+        { statement: "Metric X changed in Zürich region", searchHint: "metric X Zürich" },
+      ],
+      detectedLanguage: "de",
+      inferredGeography: "CH",
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass1Fixture);
+
+    const result = await runPass1("Zürich hat im Jahr 2024 mehr X als Y gemessen", mockPipelineConfig, "2026-03-13");
+
+    expect(result.inferredGeography).toBe("CH");
+    expect(result.inferredGeography).not.toBe("DE"); // language=de must not override explicit geographic entity
+  });
+
+  it("GEO-REG-3: should not promote detectedLanguage to inferredGeography — German input with no geographic entity stays null", async () => {
+    // A generic German claim with no specific geographic reference → inferredGeography must be null
+    const pass1Fixture = {
+      impliedClaim: "A general assertion in German with no specific location",
+      backgroundDetails: "",
+      roughClaims: [
+        { statement: "General assertion about topic X", searchHint: "topic X general" },
+      ],
+      detectedLanguage: "de",
+      inferredGeography: null, // LLM correctly returns null — no geographic entity present
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass1Fixture);
+
+    const result = await runPass1("Die Wirtschaft wächst schneller als erwartet", mockPipelineConfig, "2026-03-13");
+
+    expect(result.detectedLanguage).toBe("de");
+    expect(result.inferredGeography).toBeNull(); // German language must NOT be promoted to "DE"
+  });
 });
 
 describe("Stage 1: runPass2", () => {

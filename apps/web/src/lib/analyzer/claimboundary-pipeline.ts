@@ -3502,7 +3502,8 @@ export async function assessEvidenceApplicability(
       const applicability = classificationMap.get(index) ?? "direct";
       counts[applicability]++;
       if (applicability === "foreign_reaction") {
-        foreignDomains.push(item.sourceUrl ? new URL(item.sourceUrl).hostname : "unknown");
+        const domain = item.sourceUrl?.match(/^https?:\/\/([^/?#]+)/)?.[1] ?? "unknown";
+        foreignDomains.push(domain);
       }
       return { ...item, applicability };
     });
