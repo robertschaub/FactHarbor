@@ -2,11 +2,11 @@
  * ClaimBoundary Pipeline — Verdict Stage Module (§8.4)
  *
  * 5-step LLM debate pattern for generating claim verdicts:
- *   Step 1: Advocate Verdict (Sonnet) — initial verdicts for all claims
- *   Step 2: Self-Consistency Check (Sonnet × 2) — verdict stability measurement
- *   Step 3: Adversarial Challenge (Sonnet) — argue against emerging verdicts
- *   Step 4: Reconciliation (Sonnet) — final verdicts incorporating challenges
- *   Step 5: Verdict Validation (Haiku × 2) — grounding + direction checks
+ *   Step 1: Advocate Verdict (standard) — initial verdicts for all claims
+ *   Step 2: Self-Consistency Check (standard × 2) — verdict stability measurement
+ *   Step 3: Adversarial Challenge (standard) — argue against emerging verdicts
+ *   Step 4: Reconciliation (standard) — final verdicts incorporating challenges
+ *   Step 5: Verdict Validation (budget × 2) — grounding + direction checks
  *   THEN: Structural Consistency Check (deterministic) — invariant validation
  *   Gate 4: Confidence classification
  *
@@ -177,41 +177,24 @@ export interface VerdictStageConfig {
   highHarmMinConfidence: number;
 
   /**
-   * Per-role model tier for the verdict debate pattern.
-   * Allows using different models for different debate roles to reduce
-   * single-model bias (C1/C16 from Stammbach/Ash political bias analysis).
+   * Per-role LLM configuration for cross-provider debate.
+   * Each role specifies a provider (vendor) and strength (capability class).
    *
-   * The Climinator paper (Ash group) shows structurally independent advocates
-   * surface genuine controversy. Using different models for challenger vs
-   * advocate tests whether "performative adversarialism" is a real concern.
+   * Allows using different model strengths and providers for different debate
+   * roles to reduce single-model bias (C1/C16 from Stammbach/Ash political
+   * bias analysis). Cross-provider separation follows Climinator's
+   * structurally independent advocate pattern.
    *
-   * Default: debate roles "sonnet", validation "haiku".
+   * Strength values: "budget" | "standard" | "premium"
+   * Provider values: "anthropic" | "openai" | "google" | "mistral"
+   * Default: debate roles standard, validation budget; challenger on openai.
    */
-  debateModelTiers: {
-    advocate: "haiku" | "sonnet" | "opus";
-    selfConsistency: "haiku" | "sonnet" | "opus";
-    challenger: "haiku" | "sonnet" | "opus";
-    reconciler: "haiku" | "sonnet" | "opus";
-    validation: "haiku" | "sonnet" | "opus";
-  };
-
-  /**
-   * Per-role LLM provider overrides for cross-provider debate.
-   * Enables structurally independent debate by routing different roles
-   * to different providers (e.g., advocate on Anthropic, challenger on OpenAI).
-   *
-   * Addresses C1/C16 from Stammbach/Ash: same-model debate can become
-   * performative adversarialism. Cross-provider separation follows
-   * Climinator's structurally independent advocate pattern.
-   *
-   * Default: all undefined (inherit global llmProvider).
-   */
-  debateModelProviders: {
-    advocate?: LLMProviderType;
-    selfConsistency?: LLMProviderType;
-    challenger?: LLMProviderType;
-    reconciler?: LLMProviderType;
-    validation?: LLMProviderType;
+  debateRoles: {
+    advocate: { provider: LLMProviderType; strength: "budget" | "standard" | "premium" };
+    selfConsistency: { provider: LLMProviderType; strength: "budget" | "standard" | "premium" };
+    challenger: { provider: LLMProviderType; strength: "budget" | "standard" | "premium" };
+    reconciler: { provider: LLMProviderType; strength: "budget" | "standard" | "premium" };
+    validation: { provider: LLMProviderType; strength: "budget" | "standard" | "premium" };
   };
 
   /** Harm levels that trigger the confidence floor. Default: ["critical", "high"]. */
@@ -255,14 +238,13 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
   },
   mixedConfidenceThreshold: 40,
   highHarmMinConfidence: 50,
-  debateModelTiers: {
-    advocate: "sonnet",
-    selfConsistency: "sonnet",
-    challenger: "sonnet",
-    reconciler: "sonnet",
-    validation: "haiku",
+  debateRoles: {
+    advocate: { provider: "anthropic", strength: "standard" },
+    selfConsistency: { provider: "anthropic", strength: "standard" },
+    challenger: { provider: "openai", strength: "standard" },
+    reconciler: { provider: "anthropic", strength: "standard" },
+    validation: { provider: "anthropic", strength: "budget" },
   },
-  debateModelProviders: {},
   highHarmFloorLevels: ["critical", "high"],
   evidencePartitioningEnabled: true,
 };
@@ -284,7 +266,8 @@ export type LLMCallFn = (
   promptKey: string,
   input: Record<string, unknown>,
   options?: {
-    tier?: "sonnet" | "haiku" | "opus";
+    /** Model strength: budget | standard | premium (also accepts legacy haiku/sonnet/opus). */
+    tier?: string;
     temperature?: number;
     /** Override the LLM provider for this call (e.g., "openai" when global is "anthropic"). */
     providerOverride?: LLMProviderType;
@@ -483,7 +466,7 @@ export async function advocateVerdict(
       boundaries: coverageMatrix.boundaries,
       counts: coverageMatrix.counts,
     },
-  }, { tier: config.debateModelTiers.advocate, providerOverride: config.debateModelProviders.advocate, callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" } });
+  }, { tier: config.debateRoles.advocate.strength, providerOverride: config.debateRoles.advocate.provider, callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
   if (result == null) {
@@ -662,9 +645,9 @@ async function runSelfConsistencyAdvocateOnce(
   warnings?: AnalysisWarning[],
 ): Promise<Array<Record<string, unknown>> | null> {
   const options = {
-    tier: config.debateModelTiers.selfConsistency,
+    tier: config.debateRoles.selfConsistency.strength,
     temperature,
-    providerOverride: config.debateModelProviders.selfConsistency,
+    providerOverride: config.debateRoles.selfConsistency.provider,
     callContext: { debateRole: "selfConsistency" as const, promptKey: "VERDICT_ADVOCATE" as const },
   };
 
@@ -742,7 +725,7 @@ export async function adversarialChallenge(
     })),
     evidenceItems: promptEvidenceItems,
     claimBoundaries: boundaries,
-  }, { tier: config.debateModelTiers.challenger, temperature, providerOverride: config.debateModelProviders.challenger, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
+  }, { tier: config.debateRoles.challenger.strength, temperature, providerOverride: config.debateRoles.challenger.provider, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
   if (result == null) {
@@ -793,7 +776,7 @@ export async function reconcileVerdicts(
     })),
     challenges: validatedChallengeDoc.challenges,
     consistencyResults,
-  }, { tier: config.debateModelTiers.reconciler, providerOverride: config.debateModelProviders.reconciler, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
+  }, { tier: config.debateRoles.reconciler.strength, providerOverride: config.debateRoles.reconciler.provider, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
   if (result == null) {
@@ -921,8 +904,8 @@ export async function validateVerdicts(
   warnings?: AnalysisWarning[],
   repairContext?: VerdictValidationRepairContext,
 ): Promise<CBClaimVerdict[]> {
-  const validationTier = config.debateModelTiers.validation;
-  const validationProvider = config.debateModelProviders.validation;
+  const validationTier = config.debateRoles.validation.strength;
+  const validationProvider = config.debateRoles.validation.provider;
 
   // Check A + B: Grounding and direction validation (parallel — independent checks)
   const [groundingResults, directionResults] = await Promise.all([
@@ -1192,8 +1175,8 @@ async function defaultRepairExecutor(
   llmCall: LLMCallFn,
   config: VerdictStageConfig,
 ): Promise<CBClaimVerdict | null> {
-  const validationTier = config.debateModelTiers.validation;
-  const validationProvider = config.debateModelProviders.validation;
+  const validationTier = config.debateRoles.validation.strength;
+  const validationProvider = config.debateRoles.validation.provider;
   const repairTemperature = Math.min(config.selfConsistencyTemperature + 0.1, 0.7);
   const repairResult = await llmCall(
     "VERDICT_DIRECTION_REPAIR",

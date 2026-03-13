@@ -1164,6 +1164,17 @@ function PipelineConfigForm({
   const updateField = <K extends keyof PipelineConfig>(key: K, value: PipelineConfig[K]) => {
     onChange({ ...config, [key]: value });
   };
+  const defaultDebateModelTiers = (SHARED_DEFAULT_PIPELINE_CONFIG as PipelineConfig).debateModelTiers!;
+  const defaultDebateModelProviders = (SHARED_DEFAULT_PIPELINE_CONFIG as PipelineConfig).debateModelProviders!;
+  const currentDebateModelTiers = config.debateModelTiers ?? defaultDebateModelTiers;
+  const currentDebateModelProviders = config.debateModelProviders ?? defaultDebateModelProviders;
+  const debateRoles = [
+    { key: "advocate", label: "Advocate" },
+    { key: "selfConsistency", label: "Self-Consistency" },
+    { key: "challenger", label: "Challenger" },
+    { key: "reconciler", label: "Reconciler" },
+    { key: "validation", label: "Validation" },
+  ] as const;
 
   return (
     <div className={styles.formSection}>
@@ -1171,7 +1182,7 @@ function PipelineConfigForm({
       <h3 className={styles.formSectionTitle}>Model Selection</h3>
       <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
         Choose LLM models for each analysis phase. Better models = higher quality but more cost.
-        Examples: claude-sonnet-4, claude-haiku-3.5, gpt-4o, gpt-4o-mini
+        Phase models below accept concrete model IDs or compatibility aliases like <code>haiku</code>, <code>sonnet</code>, and <code>opus</code>.
       </p>
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>LLM Provider</label>
@@ -1185,7 +1196,7 @@ function PipelineConfigForm({
           <option value="google">Google (Gemini)</option>
           <option value="mistral">Mistral</option>
         </select>
-        <div className={styles.formHelp}>Primary provider used for analysis LLM calls</div>
+        <div className={styles.formHelp}>Default vendor used for analysis LLM calls unless a role-specific provider override is set below.</div>
       </div>
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>
@@ -1798,6 +1809,58 @@ function PipelineConfigForm({
       <h4 style={{ fontSize: 14, fontWeight: 600, marginTop: 16, marginBottom: 12, color: "#374151" }}>
         Stage 4: Generate Verdicts
       </h4>
+      <div style={{ marginBottom: 16, padding: "12px 14px", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Debate Role Routing</div>
+        <div style={{ fontSize: 12, color: "#4b5563", marginBottom: 10 }}>
+          <strong>Provider</strong> means the vendor/API (<code>anthropic</code>, <code>openai</code>, etc.).
+          <strong> Strength class</strong> means the internal capability bucket used by FactHarbor.
+          The current compatibility aliases are: <code>haiku = budget</code>, <code>sonnet = standard</code>, <code>opus = premium</code>.
+        </div>
+        <div className={styles.providerGrid}>
+          {debateRoles.map((role) => (
+            <div key={role.key} className={styles.providerCard}>
+              <strong className={styles.providerTitle}>{role.label}</strong>
+              <div className={styles.formGroup} style={{ marginBottom: 8 }}>
+                <label className={styles.formLabel} style={{ fontSize: 11 }}>Provider</label>
+                <select
+                  className={styles.formInput}
+                  style={{ fontSize: 12 }}
+                  value={currentDebateModelProviders[role.key] ?? defaultDebateModelProviders[role.key]}
+                  onChange={(e) =>
+                    updateField("debateModelProviders", {
+                      ...currentDebateModelProviders,
+                      [role.key]: e.target.value as NonNullable<PipelineConfig["debateModelProviders"]>[typeof role.key],
+                    })
+                  }
+                >
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="google">Google</option>
+                  <option value="mistral">Mistral</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel} style={{ fontSize: 11 }}>Strength Class</label>
+                <select
+                  className={styles.formInput}
+                  style={{ fontSize: 12 }}
+                  value={currentDebateModelTiers[role.key] ?? defaultDebateModelTiers[role.key]}
+                  onChange={(e) =>
+                    updateField("debateModelTiers", {
+                      ...currentDebateModelTiers,
+                      [role.key]: e.target.value as NonNullable<PipelineConfig["debateModelTiers"]>[typeof role.key],
+                    })
+                  }
+                >
+                  <option value="haiku">Budget (haiku alias)</option>
+                  <option value="sonnet">Standard (sonnet alias)</option>
+                  <option value="opus">Premium (opus alias)</option>
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Self-Consistency Mode</label>
