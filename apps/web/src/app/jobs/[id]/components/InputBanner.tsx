@@ -28,7 +28,7 @@ export function InputBanner({ inputType, inputValue, textColor, textBackgroundCo
     <div className={styles.banner} role="note" aria-label="Input">
       {showTypeLabel ? <div className={styles.sectionLabel}>Type: {typeLabel}</div> : null}
       <div
-        className={`${styles.text} ${isLongInput ? styles.textCompact : ""} ${isLongInput && !expanded ? styles.textClamped : ""}`}
+        className={`${styles.text} ${isLongInput && !expanded ? styles.textClamped : ""}`}
         style={{
           ...(textColor ? { color: textColor } : {}),
           ...(textBackgroundColor ? { backgroundColor: textBackgroundColor } : {}),
