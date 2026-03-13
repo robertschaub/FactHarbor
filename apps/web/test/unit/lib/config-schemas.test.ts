@@ -690,6 +690,28 @@ describe("Default Config Values", () => {
     it("uses cross-provider challenger by default", () => {
       expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual({ challenger: "openai" });
     });
+
+    it("surfaces schema-backed pipeline defaults in the authoritative default object", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.centralityThreshold).toBe("medium");
+      expect(DEFAULT_PIPELINE_CONFIG.claimSpecificityMinimum).toBe(0.6);
+      expect(DEFAULT_PIPELINE_CONFIG.maxAtomicClaims).toBe(5);
+      expect(DEFAULT_PIPELINE_CONFIG.maxAtomicClaimsBase).toBe(3);
+      expect(DEFAULT_PIPELINE_CONFIG.atomicClaimsInputCharsPerClaim).toBe(500);
+      expect(DEFAULT_PIPELINE_CONFIG.claimAtomicityLevel).toBe(3);
+      expect(DEFAULT_PIPELINE_CONFIG.preliminarySearchQueriesPerClaim).toBe(2);
+      expect(DEFAULT_PIPELINE_CONFIG.preliminaryMaxSources).toBe(5);
+      expect(DEFAULT_PIPELINE_CONFIG.gate1GroundingRetryThreshold).toBe(0.5);
+      expect(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold).toBe(3);
+      expect(DEFAULT_PIPELINE_CONFIG.sufficiencyMinMainIterations).toBe(1);
+      expect(DEFAULT_PIPELINE_CONFIG.contradictionReservedIterations).toBe(1);
+      expect(DEFAULT_PIPELINE_CONFIG.researchTimeBudgetMs).toBe(600000);
+      expect(DEFAULT_PIPELINE_CONFIG.researchZeroYieldBreakThreshold).toBe(2);
+      expect(DEFAULT_PIPELINE_CONFIG.maxClaimBoundaries).toBe(6);
+      expect(DEFAULT_PIPELINE_CONFIG.boundaryCoherenceMinimum).toBe(0.3);
+      expect(DEFAULT_PIPELINE_CONFIG.scopeNormalizationEnabled).toBe(true);
+      expect(DEFAULT_PIPELINE_CONFIG.scopeNormalizationMinScopes).toBe(5);
+      expect(DEFAULT_PIPELINE_CONFIG.selfConsistencyMode).toBe("full");
+    });
   });
 
   describe("DEFAULT_SR_CONFIG", () => {
@@ -741,6 +763,19 @@ describe("Default Config Values", () => {
     it("debateModelProviders matches seed file", () => {
       expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual(seed.debateModelProviders);
       expect(seed.debateModelProviders).toEqual({ challenger: "openai" });
+    });
+
+    it("restored runtime defaults are present in the seed file", () => {
+      expect(seed.centralityThreshold).toBe(DEFAULT_PIPELINE_CONFIG.centralityThreshold);
+      expect(seed.claimSpecificityMinimum).toBe(DEFAULT_PIPELINE_CONFIG.claimSpecificityMinimum);
+      expect(seed.maxAtomicClaims).toBe(DEFAULT_PIPELINE_CONFIG.maxAtomicClaims);
+      expect(seed.preliminarySearchQueriesPerClaim).toBe(DEFAULT_PIPELINE_CONFIG.preliminarySearchQueriesPerClaim);
+      expect(seed.claimSufficiencyThreshold).toBe(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold);
+      expect(seed.researchTimeBudgetMs).toBe(DEFAULT_PIPELINE_CONFIG.researchTimeBudgetMs);
+      expect(seed.maxClaimBoundaries).toBe(DEFAULT_PIPELINE_CONFIG.maxClaimBoundaries);
+      expect(seed.boundaryCoherenceMinimum).toBe(DEFAULT_PIPELINE_CONFIG.boundaryCoherenceMinimum);
+      expect(seed.scopeNormalizationEnabled).toBe(DEFAULT_PIPELINE_CONFIG.scopeNormalizationEnabled);
+      expect(seed.selfConsistencyMode).toBe(DEFAULT_PIPELINE_CONFIG.selfConsistencyMode);
     });
   });
 });

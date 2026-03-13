@@ -920,6 +920,33 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   gapResearchMaxIterations: 2,
   gapResearchMaxQueries: 8,
 
+  // ClaimBoundary Stage 1 defaults
+  centralityThreshold: "medium",
+  claimSpecificityMinimum: 0.6,
+  maxAtomicClaims: 5,
+  maxAtomicClaimsBase: 3,
+  atomicClaimsInputCharsPerClaim: 500,
+  claimAtomicityLevel: 3,
+  preliminarySearchQueriesPerClaim: 2,
+  preliminaryMaxSources: 5,
+  gate1GroundingRetryThreshold: 0.5,
+
+  // ClaimBoundary Stage 2 defaults
+  claimSufficiencyThreshold: 3,
+  sufficiencyMinMainIterations: 1,
+  contradictionReservedIterations: 1,
+  researchTimeBudgetMs: 10 * 60 * 1000,
+  researchZeroYieldBreakThreshold: 2,
+
+  // ClaimBoundary Stage 3 defaults
+  maxClaimBoundaries: 6,
+  boundaryCoherenceMinimum: 0.3,
+  scopeNormalizationEnabled: true,
+  scopeNormalizationMinScopes: 5,
+
+  // ClaimBoundary Stage 4 defaults
+  selfConsistencyMode: "full",
+
   openaiTpmGuardEnabled: true,
   openaiTpmGuardInputTokenThreshold: 24000,
   openaiTpmGuardFallbackModel: "gpt-4.1-mini",

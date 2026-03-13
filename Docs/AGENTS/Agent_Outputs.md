@@ -4976,3 +4976,15 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Local workspace had unrelated changes in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` and untracked `scripts/hd_pt_body.json`; neither was included in this work.
 **For next agent:** If you address the collateral drift next, prioritize `selfConsistencyMode`, `maxClaimBoundaries`, `boundaryCoherenceMinimum`, `researchTimeBudgetMs`, and `researchZeroYieldBreakThreshold` first; those are both runtime-relevant and already surfaced as plausible quality factors in the March 13 comparison notes.
 **Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Restore Schema-Backed Pipeline Defaults to Authoritative Sources
+**Task:** Restore runtime-supported pipeline defaults that had drifted out of `DEFAULT_PIPELINE_CONFIG` and `pipeline.default.json`, so authoritative defaults match schema-transform behavior and remain visible in admin/default comparison flows.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/test/unit/lib/config-schemas.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Restored supported Stage 1/2/3/4 pipeline defaults to both TS and JSON: decomposition, preliminary search, sufficiency, research budget, boundary, scope-normalization, and `selfConsistencyMode`.
+- Kept the scope limited to fields that are still active in schema + runtime code; did not resurrect removed/obsolete legacy keys.
+- Added regression assertions that these restored defaults remain present in both the authoritative TS default object and the seed JSON.
+**Open items:** Existing active DB pipeline profiles may still omit these keys historically; runtime parsing fills them, but an explicit reseed/reset is still useful if you want the admin UI default comparison to show them directly from stored content.
+**Warnings:** This patch does not change runtime behavior for profiles already relying on schema-transform defaults; it mainly restores authoritative visibility, drift protection, and reseed correctness.
+**For next agent:** If you want the local active default profile to surface these restored keys in `config.db`, run the normal config reseed path for `pipeline` after this commit.
+**Learnings:** no
