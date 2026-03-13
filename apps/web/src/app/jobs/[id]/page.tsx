@@ -37,7 +37,7 @@ import { groupEvidenceByMethodology } from "./utils/methodologyGrouping";
 import { generateHtmlReport } from "./utils/generateHtmlReport";
 import { PromptViewer } from "./components/PromptViewer";
 import { ConfigViewer } from "./components/ConfigViewer";
-import { buildErrorId } from "@/lib/error-classification";
+import { buildErrorId } from "@/lib/error-id";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import QualityGatesPanel from "@/components/QualityGatesPanel";
 import { CoverageMatrixDisplay } from "./components/CoverageMatrix";
