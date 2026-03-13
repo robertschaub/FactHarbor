@@ -4964,3 +4964,15 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` had unrelated in-progress changes and was intentionally left out of this fix.
 **For next agent:** If the stale `structural_consistency` warning is addressed next, do it after all verdict post-processing (harm floor + SR weighting), not by weakening the warning itself.
 **Learnings:** no
+---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Restore Cross-Provider Challenger Defaults
+**Task:** Restore the intended `challenger=openai` debate default after confirming it was unintentionally dropped from pipeline defaults during later config drift cleanup.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/test/unit/lib/config-schemas.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Restored `debateModelProviders: { challenger: "openai" }` to both authoritative pipeline default sources (TS + JSON).
+- Added regression coverage that asserts the default challenger provider remains OpenAI and that seed-file/default-code stay aligned.
+- Investigated collateral drift: the same cleanup also removed several schema-backed pipeline defaults from surfaced default files (`selfConsistencyMode`, `maxClaimBoundaries`, `boundaryCoherenceMinimum`, `researchTimeBudgetMs`, `researchZeroYieldBreakThreshold`, and multiple Stage 1 decomposition controls). These remain runtime defaults via schema transform, so they were not auto-reverted in this patch.
+**Open items:** Decide in a separate sweep whether the omitted schema-backed pipeline defaults should be restored to authoritative TS/JSON default surfaces for admin visibility and drift safety.
+**Warnings:** Local workspace had unrelated changes in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` and untracked `scripts/hd_pt_body.json`; neither was included in this work.
+**For next agent:** If you address the collateral drift next, prioritize `selfConsistencyMode`, `maxClaimBoundaries`, `boundaryCoherenceMinimum`, `researchTimeBudgetMs`, and `researchZeroYieldBreakThreshold` first; those are both runtime-relevant and already surfaced as plausible quality factors in the March 13 comparison notes.
+**Learnings:** no

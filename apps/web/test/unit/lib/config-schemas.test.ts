@@ -686,6 +686,10 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("pro_con");
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
     });
+
+    it("uses cross-provider challenger by default", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual({ challenger: "openai" });
+    });
   });
 
   describe("DEFAULT_SR_CONFIG", () => {
@@ -732,6 +736,11 @@ describe("Default Config Values", () => {
     it("effective challengerTemperature default matches seed file", () => {
       const effectiveDefaults = PipelineConfigSchema.parse({ ...DEFAULT_PIPELINE_CONFIG });
       expect(effectiveDefaults.challengerTemperature).toBe(seed.challengerTemperature);
+    });
+
+    it("debateModelProviders matches seed file", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.debateModelProviders).toEqual(seed.debateModelProviders);
+      expect(seed.debateModelProviders).toEqual({ challenger: "openai" });
     });
   });
 });

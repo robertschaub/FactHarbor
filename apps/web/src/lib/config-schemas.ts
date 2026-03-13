@@ -907,6 +907,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   explanationQualityMode: "rubric",
   selfConsistencyTemperature: 0.4,
   challengerTemperature: 0.3,
+  debateModelProviders: { challenger: "openai" },
   calibrationInverseGateAction: "warn",
   verdictGroundingPolicy: "disabled",
   verdictDirectionPolicy: "disabled",
