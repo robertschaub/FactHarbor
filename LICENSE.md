@@ -178,7 +178,7 @@ License terms may be updated with:
 
 ## Contact
 
-- **Project Website**: [https://factharbor.org](https://factharbor.org)
+- **Project Website**: [https://factharbor.ch](https://factharbor.ch)
 - **Licensing Questions**: [To be established]
 
 ---

@@ -702,7 +702,7 @@ jobs:
 
 If you discover a security vulnerability in FactHarbor, please report it to:
 
-**Email:** security@factharbor.org (or your preferred contact)
+**Email:** security@factharbor.ch (or your preferred contact)
 
 **Please include:**
 - Description of the vulnerability

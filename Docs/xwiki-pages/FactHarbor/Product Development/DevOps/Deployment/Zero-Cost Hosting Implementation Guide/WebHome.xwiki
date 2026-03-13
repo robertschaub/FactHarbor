@@ -567,7 +567,7 @@ export async function betaSignup(req, res) {
 
   // Notify admin
   await sendEmail({
-    to: 'admin@factharbor.org',
+    to: 'admin@factharbor.ch',
     subject: 'New beta signup request',
     body: `${name} (${email}) requested beta access: ${reason}`
   });
@@ -685,7 +685,7 @@ export async function sendDailyReport() {
   `);
 
   await sendEmail({
-    to: 'admin@factharbor.org',
+    to: 'admin@factharbor.ch',
     subject: `FactHarbor Daily Report - ${new Date().toLocaleDateString()}`,
     body: `
       Total Analyses: ${stats.rows[0].total_analyses}
@@ -722,7 +722,7 @@ fly dashboard
 | **Fly.io Postgres** | 3GB storage | 1GB used | **$0**
 | **Upstash Redis** | 10k cmds/day | ~5k/day | **$0**
 | **Cloudflare Pages** | Unlimited | Frontend hosting | **$0**
-| **Domain (optional)** | N/A | factharbor.org | ~$12/year
+| **Domain (optional)** | N/A | factharbor.ch | ~$12/year
 
 **Total Infrastructure: $0/month** (or $1/month if you count domain)
 
@@ -938,7 +938,7 @@ import cors from 'cors';
 app.use(cors({
   origin: [
     'https://factharbor.pages.dev',
-    'https://factharbor.org'
+    'https://factharbor.ch'
   ],
   credentials: true
 }));

@@ -891,7 +891,7 @@ Per specification "Start Simple" philosophy, these features are deferred:
 ## Demo Strategy
 
 ### Public Demo Instance
-- **URL**: demo.factharbor.org (target)
+- **URL**: demo.factharbor.ch (target)
 - **Rate Limit**: 10 analyses/day/IP (free tier)
 - **Pre-loaded Examples**:
   - Health claim analysis (COVID vaccine efficacy)
@@ -974,7 +974,7 @@ Level 4: Maintainer (governance)
 ```yaml
 github: [factharbor]
 open_collective: factharbor
-custom: ["https://factharbor.org/sponsor"]
+custom: ["https://factharbor.ch/sponsor"]
 ```
 
 ### Sponsorship Tiers
