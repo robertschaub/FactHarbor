@@ -116,11 +116,11 @@ export function validateVerdictGate4(
 ): VerdictValidationResult {
   const minSourcesHigh = gateConfig?.gate4MinSourcesHigh ?? 3;
   const minSourcesMedium = gateConfig?.gate4MinSourcesMedium ?? 2;
-  const qualityHigh = gateConfig?.gate4QualityThresholdHigh ?? 0.7;
+  const qualityHigh = gateConfig?.gate4QualityThresholdHigh ?? 0.75;
   const qualityMedium = gateConfig?.gate4QualityThresholdMedium ?? 0.5;
   const agreementHigh = gateConfig?.gate4AgreementThresholdHigh ?? 0.7;
   const agreementMedium = gateConfig?.gate4AgreementThresholdMedium ?? 0.5;
-  const defaultScore = gateConfig?.defaultTrackRecordScore ?? 0.4;
+  const defaultScore = gateConfig?.defaultTrackRecordScore ?? 0.45;
 
   // 1. Count evidence sources
   const evidenceCount = sources.length;

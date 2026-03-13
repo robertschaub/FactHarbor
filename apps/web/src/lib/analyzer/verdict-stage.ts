@@ -236,7 +236,7 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
     unstable: 0.7,
     highlyUnstable: 0.4,
   },
-  mixedConfidenceThreshold: 40,
+  mixedConfidenceThreshold: 45,
   highHarmMinConfidence: 50,
   debateRoles: {
     advocate: { provider: "anthropic", strength: "standard" },

@@ -68,7 +68,7 @@ export interface BudgetTracker {
 export const DEFAULT_BUDGET: ResearchBudget = {
   maxIterationsPerContext: 3, // v2.11.1: was 5 (v2.8.2: was 3) - reduced for cost optimization
   maxTotalIterations: 10, // v2.11.1: was 20 (v2.8.2: was 12) - reduced for cost optimization
-  maxTotalTokens: 500_000, // v2.11.1: was 750_000 (v2.8.2: was 500_000) - ~$1.50 max cost at Claude rates
+  maxTotalTokens: 1_000_000, // Aligned with UCM pipeline.default.json
   maxTokensPerCall: 100_000, // Prevent single runaway calls
   enforceHard: false, // v2.8.2: was true - warn but don't hard-stop
 };

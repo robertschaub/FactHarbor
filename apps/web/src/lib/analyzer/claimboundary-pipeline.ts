@@ -2440,7 +2440,7 @@ export async function researchEvidence(
   // Step 2: Claim-driven main iteration loop
   // ------------------------------------------------------------------
   const maxIterations = pipelineConfig.maxTotalIterations ?? 10;
-  const reservedContradiction = pipelineConfig.contradictionReservedIterations ?? 2;
+  const reservedContradiction = pipelineConfig.contradictionReservedIterations ?? 1;
   const maxMainIterations = maxIterations - reservedContradiction;
   const sufficiencyThreshold = pipelineConfig.claimSufficiencyThreshold ?? 3;
   // MT-1: minimum main iterations before sufficiency check can fire (default: 1)
@@ -4880,7 +4880,7 @@ export function buildVerdictStageConfig(
   const canonicalRoles = pipelineConfig.debateRoles ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles;
 
   return {
-    selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "disabled",
+    selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "full",
     selfConsistencyTemperature:
       pipelineConfig.selfConsistencyTemperature ?? 0.4,
     challengerTemperature:
@@ -4895,7 +4895,7 @@ export function buildVerdictStageConfig(
     spreadMultipliers: calcConfig.verdictStage?.spreadMultipliers ?? DEFAULT_VERDICT_STAGE_CONFIG.spreadMultipliers,
     institutionalSourceTypes: calcConfig.verdictStage?.institutionalSourceTypes,
     generalSourceTypes: calcConfig.verdictStage?.generalSourceTypes,
-    mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 40,
+    mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 45,
     highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
     debateRoles: {
       advocate: canonicalRoles.advocate ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.advocate,

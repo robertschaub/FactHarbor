@@ -723,7 +723,7 @@ function CalcConfigForm({
               const v = parseInt(e.target.value, 10);
               onChange({
                 ...config,
-                mixedConfidenceThreshold: isNaN(v) ? 40 : v,
+                mixedConfidenceThreshold: isNaN(v) ? 45 : v,
               });
             }}
           />
@@ -1753,12 +1753,12 @@ function PipelineConfigForm({
           <input
             type="number"
             className={styles.formInput}
-            value={config.contradictionReservedIterations ?? 2}
+            value={config.contradictionReservedIterations ?? 1}
             min={0}
             max={5}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              updateField("contradictionReservedIterations", isNaN(v) ? 2 : v);
+              updateField("contradictionReservedIterations", isNaN(v) ? 1 : v);
             }}
           />
           <div className={styles.formHelp}>Iterations reserved for contradiction search</div>

@@ -63,7 +63,7 @@ export const CONFIG = {
   },
 
   minCategories: 2,
-  fetchTimeoutMs: 30000, // 30 seconds for large PDFs
+  fetchTimeoutMs: 20000, // Aligned with UCM sourceFetchTimeoutMs
 };
 
 // ============================================================================

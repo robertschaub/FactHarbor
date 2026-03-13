@@ -3544,7 +3544,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
   it("should use defaults when UCM fields are missing", () => {
     const result = buildVerdictStageConfig({} as any, {} as any);
 
-    expect(result.selfConsistencyMode).toBe("disabled");
+    expect(result.selfConsistencyMode).toBe("full");
     expect(result.selfConsistencyTemperature).toBe(0.4);
     expect(result.challengerTemperature).toBe(0.3);
     expect(result.verdictGroundingPolicy).toBe("disabled");
@@ -3552,7 +3552,7 @@ describe("Stage 4: buildVerdictStageConfig", () => {
     expect(result.stableThreshold).toBe(5);
     expect(result.moderateThreshold).toBe(12);
     expect(result.unstableThreshold).toBe(20);
-    expect(result.mixedConfidenceThreshold).toBe(40);
+    expect(result.mixedConfidenceThreshold).toBe(45);
   });
 
   it("should set selfConsistencyMode to disabled when UCM says disabled", () => {
