@@ -1316,10 +1316,17 @@ export default function JobPage() {
             {job.status === "FAILED" && (() => {
               const errorEvent = [...events].reverse().find(e => e.level === "error");
               if (!errorEvent) return null;
-              const shortMessage = "The analysis could not be completed. Please try again.";
+              if (hasAdminKey) {
+                return (
+                  <div style={{ marginTop: 12, padding: "8px 12px", background: "#fff3f3", border: "1px solid #f5c6cb", borderRadius: 6, fontSize: 14, color: "#842029" }}>
+                    <strong>Error:</strong> {errorEvent.message}
+                  </div>
+                );
+              }
+              const errorId = job.id.slice(0, 8).toUpperCase();
               return (
-                <div style={{ marginTop: 12, padding: "8px 12px", background: "#fff3f3", border: "1px solid #f5c6cb", borderRadius: 6, fontSize: 14, color: "#842029" }}>
-                  <strong>Error:</strong> {hasAdminKey ? errorEvent.message : shortMessage}
+                <div style={{ marginTop: 12, padding: "8px 12px", background: "#fff3f3", border: "1px solid #f5c6cb", borderRadius: 6, fontSize: 14, color: "#842029", lineHeight: 1.5 }}>
+                  <strong>Analysis failed.</strong> Try submitting your request again. If the problem persists, contact support and quote error ID <code style={{ fontFamily: "monospace", background: "#fce8e8", padding: "1px 5px", borderRadius: 3 }}>{errorId}</code>.
                 </div>
               );
             })()}
