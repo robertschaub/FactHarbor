@@ -41,6 +41,37 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 
 ---
 
+## UCM Configuration Completeness — Remaining Gaps
+
+Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be UCM-configurable per AGENTS.md rules. Inline fallback conflicts with UCM values were fixed in commit `f380eaab`. The items below are **not yet in UCM at all** — they are hardcoded in code with no admin-tunable counterpart.
+
+**Context:** AGENTS.md rule: "Default to UCM. If a parameter influences analysis output and you're unsure where it belongs — make it UCM-configurable."
+
+| Item | Description | Current location | Impact | Urgency | Status |
+|------|-------------|-----------------|--------|---------|--------|
+| **UCM-1** | **Research depth params** (`config.ts`): `maxResearchIterations` (4/5), `maxSourcesPerIteration` (8), `maxTotalSources` (24/30), `articleMaxChars` (4000/8000), `minEvidenceItemsRequired` (6/12), `minCategories` (2). Controls entire research phase — quick vs deep mode. | `apps/web/src/lib/analyzer/config.ts:50-67` | HIGH — determines evidence volume and coverage | med | NOT STARTED |
+| **UCM-2** | **Source content extraction limit**: `maxLength: 15000` chars extracted per URL. Controls how much evidence can be extracted from each source. | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (lines 1324, 3619, 3632) | HIGH — limits evidence extraction per source | med | NOT STARTED |
+| **UCM-3** | **Pipeline-stage LLM temperatures**: 8+ hardcoded `temperature: 0.1`/`0.2` values across claim extraction, query generation, evidence extraction, claim-evidence mapping, quality assessment, narrative generation. Verdict-stage temps are already UCM-configurable, but all other stages are not. | `claimboundary-pipeline.ts`, `grounding-check.ts`, `text-analysis-llm.ts` | MEDIUM — affects output stability and variation | low | NOT STARTED |
+| **UCM-4** | **Recency penalty internals**: Volatility multiplier map (`week:1.0, month:0.8, year:0.4, none:0.2`) and volume attenuation brackets in evidence-recency.ts. The outer `maxPenalty`/`windowMonths` are UCM, but these inner scaling factors are not. | `apps/web/src/lib/analyzer/evidence-recency.ts:211-228` | MEDIUM — affects graduated recency penalty severity | low | NOT STARTED |
+| **UCM-5** | **Temporal guard confidence ceiling**: Default `confidenceCeiling: 45` for ungrounded recency-sensitive claims. | `apps/web/src/lib/analyzer/temporal-guard.ts:122` | MEDIUM — caps confidence for specific claim types | low | NOT STARTED |
+
+**Implementation notes:**
+- UCM-1 requires a design decision: should quick/deep mode params be two separate UCM profile sets, or individual fields with mode as a selector?
+- UCM-2 is a single field addition to pipeline config schema
+- UCM-3 could be a single `pipelineTemperature` field (applied to all non-verdict LLM calls) or per-stage fields
+- UCM-4 and UCM-5 are straightforward field additions to calculation config
+
+---
+
+## Recently Completed (March 13, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Debate role config terminology migration**: Provider-branded names (`haiku/sonnet/opus`) → provider-neutral (`budget/standard/premium`). Split `debateModelTiers`/`debateModelProviders` → unified `debateRoles.<role>.{provider, strength}`. `tigerScoreTier` → `tigerScoreStrength`. Legacy fields auto-normalize on load. | Config / Architecture | 2026-03-13 | Commit `84fa644e` |
+| ✅ **UCM inline fallback alignment (10 conflicts)**: All inline `??` fallback defaults in analysis code aligned to UCM authoritative values. Key fixes: `mixedConfidenceThreshold` 40→45, `defaultTrackRecordScore` 0.4→0.45, `gate4QualityThresholdHigh` 0.7→0.75, `selfConsistencyMode` "disabled"→"full", `maxTotalTokens` 500K→1M. | Config / Quality | 2026-03-13 | Commit `f380eaab` |
+
+---
+
 ## Recently Completed (March 3, 2026)
 
 | Description | Domain | Completed | Reference |
