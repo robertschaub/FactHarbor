@@ -1312,6 +1312,15 @@ export default function JobPage() {
                 />
               </div>
             )}
+            {/* Failure reason — last error event */}
+            {job.status === "FAILED" && (() => {
+              const errorEvent = [...events].reverse().find(e => e.level === "error");
+              return errorEvent ? (
+                <div style={{ marginTop: 12, padding: "8px 12px", background: "#fff3f3", border: "1px solid #f5c6cb", borderRadius: 6, fontSize: 14, color: "#842029" }}>
+                  <strong>Error:</strong> {errorEvent.message}
+                </div>
+              ) : null;
+            })()}
             {/* Job Action Buttons */}
             {(job.status === "QUEUED" || job.status === "RUNNING") && (
               <div style={{ marginTop: 16 }}>
