@@ -1,6 +1,26 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-13 | Senior Developer | Codex (GPT-5) | Fix — Evidence sourceId reconciliation for SR weighting
+**Task:** Investigate why job `507f84f318144a2ba2e975107bf873a8` produced `UNVERIFIED`, identify the concrete code cause, and implement the minimal pipeline fix.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the stored job result was `56.1% true / 40.2% confidence`, which maps to `UNVERIFIED` by design in `JobService.MapPercentageToVerdict()` for the `43–57%` band when confidence is below `45`.
+- Identified the concrete bug: Stage 2 evidence extraction was emitting `sourceId: ""`, and seeded preliminary evidence also carried empty `sourceId`. This caused `applyEvidenceWeighting()` to treat all supporting evidence as unknown-source and apply the default SR weight `0.45`.
+- Fixed the direct extraction path to retain the matched fetched-source ID.
+- Added `reconcileEvidenceSourceIds()` to backfill missing evidence `sourceId` values from `sourceUrl` after research has collected and scored sources, so seeded evidence also links correctly.
+- Added unit tests for both the reconciliation helper and the extraction-time `sourceId` mapping.
+**Open items:**
+- Changes are local and verified with `npm test`, but not yet committed.
+- The exact job should be re-run to measure post-fix impact on the final label.
+- The “international due process standards” atomic claim still appears intrinsically low-confidence because the evidence pool lacks direct international verification; this may still keep the overall result below `MIXED` even after the wiring bug is fixed.
+**Warnings:**
+- This fix removes an artificial confidence penalty, but it does not guarantee the job becomes `MIXED`. The second claim (`AC_02`) may still legitimately remain weak.
+- SR weighting behavior for unknown or mid-reliability sources remains a separate calibration issue.
+**For next agent:** Re-run the exact Bolsonaro input after this fix. If the result is still `UNVERIFIED`, investigate the international-standards sub-claim separately from SR weighting: search/query coverage for international evaluators, and whether current confidence calibration is too punitive for mixed-context evidence.
+**Learnings:** no
+
+---
 ### 2026-03-13 | Senior Developer | Claude Code (claude-sonnet-4-6) | Pre-rerun hardening: inferredGeography, regression tests, Fix 3 logging
 **Task:** Three low-risk fixes before next quality rerun: (1) strengthen geography inference so named sub-national entities override language, (2) add GEO-REG regression tests for German-language Swiss claims, (3) harden Fix 3 applicability logging against malformed URLs.
 **Files touched:**

@@ -2639,6 +2639,13 @@ export async function researchEvidence(
         source.trackRecordConsensus = srData.consensusAchieved;
       }
     }
+
+    const reconciledSourceIds = reconcileEvidenceSourceIds(state.evidenceItems, state.sources);
+    if (reconciledSourceIds > 0) {
+      debugLog(
+        `[Stage2] Reconciled sourceId on ${reconciledSourceIds}/${state.evidenceItems.length} evidence items after source fetch`,
+      );
+    }
   }
 
   // ------------------------------------------------------------------
@@ -2784,6 +2791,34 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
     const target = fallbackClaimId ?? "matched AC IDs";
     debugLog(`[Stage2] Remapped ${remappedCount}/${preliminary.length} preliminary evidence claim IDs to ${target}`);
   }
+}
+
+/**
+ * Backfill missing EvidenceItem.sourceId values by matching sourceUrl against fetched sources.
+ * Some evidence items are created before their canonical FetchedSource exists.
+ *
+ * Returns the number of evidence items updated.
+ */
+export function reconcileEvidenceSourceIds(
+  evidenceItems: EvidenceItem[],
+  sources: FetchedSource[],
+): number {
+  if (evidenceItems.length === 0 || sources.length === 0) return 0;
+
+  const sourceIdByUrl = new Map(
+    sources.map((source) => [source.url, source.id] as const),
+  );
+
+  let updatedCount = 0;
+  for (const item of evidenceItems) {
+    if (item.sourceId) continue;
+    const matchedSourceId = sourceIdByUrl.get(item.sourceUrl);
+    if (!matchedSourceId) continue;
+    item.sourceId = matchedSourceId;
+    updatedCount++;
+  }
+
+  return updatedCount;
 }
 
 /**
@@ -3828,7 +3863,7 @@ export async function extractResearchEvidence(
         statement: ei.statement,
         category: mapCategory(ei.category),
         specificity: ei.probativeValue === "high" ? "high" as const : "medium" as const,
-        sourceId: "",
+        sourceId: matchedSource?.id ?? "",
         sourceUrl: matchedSource?.url ?? "",
         sourceTitle: matchedSource?.title ?? "",
         sourceExcerpt: ei.statement,

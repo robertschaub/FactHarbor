@@ -20,6 +20,7 @@ import {
   runGate1Validation,
   runPreliminarySearch,
   seedEvidenceFromPreliminarySearch,
+  reconcileEvidenceSourceIds,
   findLeastResearchedClaim,
   findLeastContradictedClaim,
   allClaimsSufficient,
@@ -1526,6 +1527,32 @@ describe("seedEvidenceFromPreliminarySearch", () => {
   });
 });
 
+describe("reconcileEvidenceSourceIds", () => {
+  it("should backfill missing sourceId values by matching sourceUrl", () => {
+    const evidenceItems = [
+      createEvidenceItem({ sourceId: "", sourceUrl: "https://example.com/a" }),
+      createEvidenceItem({ id: "EV_002", sourceId: "S_999", sourceUrl: "https://example.com/b" }),
+      createEvidenceItem({ id: "EV_003", sourceId: "", sourceUrl: "https://example.com/missing" }),
+    ];
+    const sources = [
+      { id: "S_001", url: "https://example.com/a" },
+      { id: "S_002", url: "https://example.com/b" },
+    ] as any;
+
+    const updatedCount = reconcileEvidenceSourceIds(evidenceItems, sources);
+
+    expect(updatedCount).toBe(1);
+    expect(evidenceItems[0].sourceId).toBe("S_001");
+    expect(evidenceItems[1].sourceId).toBe("S_999");
+    expect(evidenceItems[2].sourceId).toBe("");
+  });
+
+  it("should return zero when there is nothing to reconcile", () => {
+    const updatedCount = reconcileEvidenceSourceIds([], []);
+    expect(updatedCount).toBe(0);
+  });
+});
+
 describe("findLeastResearchedClaim", () => {
   it("should return claim with fewest evidence items", () => {
     const claims = [
@@ -2379,6 +2406,37 @@ describe("Stage 2: extractResearchEvidence", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].sourceType).toBe("other");
+  });
+
+  it("should keep the matched sourceId when mapping extracted evidence", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const sources = [
+      { id: "S_001", url: "https://example.com/1", title: "Source 1", text: "text" },
+      { id: "S_002", url: "https://example.com/2", title: "Source 2", text: "text" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "extract prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Evidence item from second source",
+          category: "evidence",
+          claimDirection: "supports",
+          evidenceScope: { methodology: "Analysis", temporal: "2025" },
+          probativeValue: "high",
+          sourceType: "news_primary",
+          sourceUrl: "https://example.com/2",
+          relevantClaimIds: ["AC_01"],
+        },
+      ],
+    });
+
+    const result = await extractResearchEvidence(claim, sources as any, mockPipelineConfig, "2026-02-17");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].sourceId).toBe("S_002");
+    expect(result[0].sourceUrl).toBe("https://example.com/2");
   });
 });
 
