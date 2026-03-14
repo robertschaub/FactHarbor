@@ -1,5 +1,54 @@
 # Agent Outputs Log
 
+---
+### 2026-03-14 | Senior Developer | Claude Sonnet 4.6 | Phase A: Search-Stack Drift Investigation
+**Task:** Execute Phase A of the approved quality-restoration investigation: determine whether search-stack drift is the primary remaining cause of report-quality degradation vs `quality_window_start` (`9cdc8889`). Design and run experiments covering provider-mix (UCM on main) and AUTO accumulation behavior (worktree).
+**Files touched:**
+- `scripts/phaseA_search_experiment.py` (NEW — experiment runner, 4 conditions)
+- `scripts/phaseA_live_tracking.md` (NEW — live run log, in progress)
+- `scripts/phaseA_results.json` (NEW — results output, in progress)
+- `Docs/WIP/Report_Quality_PhaseA_Search_Stack_Results_2026-03-14.md` (NEW — analysis + WIP container)
+- `C:/DEV/FH-phaseA-accumulation/apps/web/src/lib/web-search.ts` (worktree — removed stop-on-first-success break)
+
+**Key decisions:**
+- 4 conditions: C0 (control auto), C1 (Serper-only), C2 (SerpAPI-only), C3 (accumulation worktree)
+- Cache disabled during all runs — cache key excludes provider so must disable to get clean per-provider measurements
+- Worktree `phaseA-accumulation` started on port 3001 (webpack mode, node_modules junction from main)
+- 2 runs per benchmark per condition; 3 benchmarks = 24 total jobs (~8-10 hours estimated)
+
+**Structural findings (confirmed before results):**
+1. **PRIMARY DRIFT confirmed**: Commit `8bef6a91` (2026-03-09) introduced `stop-on-first-success` in AUTO dispatcher. At `quality_window_start`, AUTO mode was true accumulation — CSE filled slots, SerpAPI filled remainder to maxResults. Current main stops the loop as soon as any provider returns results. Practical effect: each query gets 5-8 results instead of up to 10.
+2. **Provider change**: SerpAPI → Serper as P2. SerpAPI still has credentials but is UCM-disabled.
+3. **Cache key excludes provider**: Required disabling cache to prevent contaminated provider comparisons.
+
+**Open items:**
+- Experiment runs in background — full results available in `scripts/phaseA_live_tracking.md` / `phaseA_results.json` when complete (~6-8 hours remaining)
+- WIP doc sections 4 (Results) and 5 (Conclusions) to be filled from results JSON when done
+- If C3_ACCUM wins: accumulation fix needs code-level PR to main from `phaseA-accumulation` branch
+- If C2_SERPAPI wins: UCM-only fix (re-enable SerpAPI, set as P2, disable Serper)
+- Worktree cleanup after experiment: `git worktree remove C:/DEV/FH-phaseA-accumulation`
+
+**Warnings:**
+- The stop-on-first-success was introduced deliberately (commit comment: "prevents inconsistent evidence pools"). If accumulation is restored, the variance concern should be re-evaluated. The trade-off is: lower variance vs. lower evidence depth. Phase 1 showed variance is already large; evidence depth may matter more.
+- Worktree uses junction to main's node_modules — this is not a clean isolation. But since the only change is the single break removal in web-search.ts, contamination risk is negligible.
+
+**For next agent:** Read `Docs/WIP/Report_Quality_PhaseA_Search_Stack_Results_2026-03-14.md` for full structural analysis. Check `scripts/phaseA_results.json` for completed experiment results. The key structural finding is already documented and actionable — regardless of the exact numbers, CSE stop-on-first-success is the most likely search-stack regression. Section 5 (conclusions) needs to be filled from results.
+**Learnings:** no
+
+---
+### 2026-03-14 | Lead Architect | Cline | Review: Report Quality Next Investigation Recommendations
+**Task:** Review Docs/WIP/Report_Quality_Next_Investigation_Recommendations_2026-03-14.md for architectural interpretation, sequencing, and self-consistency strategy.
+**Files touched:** `Docs/WIP/Report_Quality_Next_Investigation_Recommendations_2026-03-14.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Approved the proposed investigation priorities. Searching for upstream structural causes (search drift, prompt quality) before tuning downstream controls (temperature, self-consistency) correctly avoids overfitting.
+- Concurred that stronger self-consistency should remain a diagnostic lever rather than an immediate default change to avoid expensive agreement on poor data.
+- Open Q1: Test provider mix via `main`/UCM; test code drift (AUTO behavior) via worktree.
+- Open Q2: Prompt quality and search stack investigations should run in parallel as they are largely orthogonal.
+- Open Q3: Start temperature test at 0.3 only; do not matrix with 0.2 yet.
+**Open items:** None. The plan is APPROVED and execution can proceed with Phase A and B in parallel.
+**Warnings:** Prompt investigations must strictly adhere to AGENTS.md input neutrality and genericity mandates (no hardcoded keywords or language-specific heuristics).
+**For next agent:** Proceed with Phase A and Phase B in parallel according to the approved plan.
+**Learnings:** no
 
 ---
 ### 2026-03-14 | Unassigned | Claude Opus 4.6 | Cross-Pipeline Report Quality Deep Analysis

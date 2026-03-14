@@ -3362,6 +3362,11 @@ details[open] > .devWarningSummary::before {
   border-radius: 6px;
 }
 
+.reportSurfaceCard .searchQueryText {
+  color: var(--text-primary);
+  background: transparent;
+}
+
 .reportSurfaceCard .devWarningType,
 .reportSurfaceCard .devWarningType code,
 .reportSurfaceCard .devWarningMeta code {
