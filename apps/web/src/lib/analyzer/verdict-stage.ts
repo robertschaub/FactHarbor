@@ -1063,7 +1063,7 @@ async function runValidationCheckWithRetry(
   promptKey: "VERDICT_GROUNDING_VALIDATION" | "VERDICT_DIRECTION_VALIDATION",
   input: Record<string, unknown>,
   validField: "groundingValid" | "directionValid",
-  validationTier: "haiku" | "sonnet" | "opus",
+  validationTier: string,
   validationProvider: LLMProviderType | undefined,
   llmCall: LLMCallFn,
   warnings: AnalysisWarning[] | undefined,
@@ -1283,7 +1283,7 @@ async function validateDirectionOnly(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
   llmCall: LLMCallFn,
-  validationTier: "haiku" | "sonnet" | "opus",
+  validationTier: string,
   validationProvider?: LLMProviderType,
 ): Promise<NormalizedValidationEntry> {
   const directionResult = await llmCall(

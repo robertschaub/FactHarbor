@@ -101,7 +101,7 @@ function modelOverrideForTask(task: ModelTask, config?: PipelineConfig): string 
 function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | "openai", task: ModelTask): string {
   // Defaults are task-tiered (cheap/fast for extraction-ish steps, higher-quality for synthesis).
   const isPremiumTask = task === "verdict" || task === "report" || task === "context_refinement";
-  const tier: ModelTier = isPremiumTask ? "sonnet" : "haiku";
+  const tier: ModelTier = isPremiumTask ? "standard" : "budget";
   return resolveModel(tier, provider).modelName;
 }
 
