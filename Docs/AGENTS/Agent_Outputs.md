@@ -2,6 +2,33 @@
 
 
 ---
+### 2026-03-14 | Unassigned | Claude Opus 4.6 | Cross-Pipeline Report Quality Deep Analysis
+**Task:** Comprehensive historical analysis of report quality across 933 jobs in 11 databases, identifying peak quality timeframes, mapping to git commits, and diagnosing the Mar 12+ regression.
+**Files touched:** `Docs/WIP/Report_Quality_Deep_Analysis_2026-03-14.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- CB pipeline peaked Mar 8-9 (avg score 187, best individual 279). Orchestrated peaked Jan 11-13 (avg score 108, best individual ~200).
+- Quality regression starting Mar 12 afternoon traced to two commit clusters: SR weighting integration (`9550eb26`) and jurisdiction filtering (Fixes 0-3).
+- Established `9c165f29` (Mar 9) as the last commit before quality decline began.
+**Open items:** Regression requires targeted investigation — `applyEvidenceWeighting` impact analysis and jurisdiction filter threshold tuning. Warning system not detecting quality degradation (0 warnings during C=0 failures).
+**For next agent:** Full analysis in `Docs/WIP/Report_Quality_Deep_Analysis_2026-03-14.md`. Cross-reference with `Docs/WIP/Report_Quality_Restoration_Plan_2026-03-14.md` for the restoration approach. Key boundary commit: `9c165f29`.
+
+---
+### 2026-03-14 | Senior Developer | Codex (GPT-5) | Report Quality Restoration Plan
+**Task:** Reassess the worktree comparison findings and produce a review-ready plan for restoring the best possible report quality using `quality_window_start` as the baseline.
+**Files touched:** `Docs/WIP/Report_Quality_Restoration_Plan_2026-03-14.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Established `quality_window_start` (`9cdc8889`) as the standing historical quality baseline.
+- Proposed a phased restoration plan that preserves contamination and geography fixes while prioritizing the strongest current degradation suspects:
+  1. SR weighting / confidence conservatism
+  2. shared search-stack drift
+  3. reduced research depth
+- Recommended starting with UCM-level A/B experiments on `main` before broader code rollback, and using a temporary integrated quality profile only after isolated winners are identified.
+**Open items:** Plan requires review and approval before implementation. The largest open review choice is whether the first SR experiment should fully disable weighting or only soften it.
+**Warnings:** Search behavior is shared infrastructure, so any AUTO accumulation restoration affects more than one subsystem. Google CSE availability must be recorded for comparison runs to keep conclusions valid.
+**For next agent:** Use the new WIP plan as the source of truth for the next review round. Benchmark claims and the `main` vs `quality_window_start` port mapping are already documented in the worktree results doc.
+**Learnings:** no
+
+---
 ### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Debate Role Config Terminology Migration (Phases 1+2)
 **Task:** Implement the approved Debate Role Config Terminology Migration Plan — replace provider-branded capability names (`haiku/sonnet/opus`) with provider-neutral vocabulary (`budget/standard/premium`), unify split `debateModelTiers`/`debateModelProviders` into `debateRoles.<role>.{provider, strength}`, rename `tigerScoreTier` to `tigerScoreStrength`. Legacy fields remain read-compatible via parse-time normalization.
 **Files touched:**
@@ -5118,4 +5145,42 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Open items:** No further plan edits are needed unless a new review arrives. Implementation has still not been started in this task.
 **Warnings:** The approved plan now assumes a single coordinated migration across schema, resolver, runtime consumers, and seed defaults. Starting implementation piecemeal would undermine the review decisions.
 **For next agent:** Use the approved WIP doc as the implementation source of truth. The first implementation checkpoint should be Phase 1 canonicalization + resolver alignment, not UI work.
+**Learnings:** no
+
+---
+### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Report Quality — Task 5 HD6 Batch (commit 7c207d18)
+**Task:** Complete HD6 batch (EN/DE/PT) on commit 7c207d18, extract results, write Task 5 section to WIP report.
+**Files touched:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md`, `scripts/hd6_de_result.json`, `scripts/hd6_pt_result.json`, `scripts/hd6_en_result.json`
+**Key decisions:**
+- HD6_DE: LEANING-TRUE TP=58.7 conf=50.6 geo=CH ✅ (3 claims, 6 boundaries, no non-info warnings)
+- HD6_PT: MIXED TP=56.0 conf=49.0 geo=BR ✅ (2 claims, 6 boundaries; AC_02 UNVERIFIED with `insufficient_evidence` warning — valid result)
+- HD6_EN: LEANING-TRUE TP=58.8 conf=55.2 geo=BR ✅ (3 claims, 6 boundaries, no non-info warnings)
+- EN verdict changed MIXED→LEANING-TRUE vs Task 4: attributable to claim-decomposition non-determinism (HD5 had AC_02=LEANING-FALSE; HD6 decomposed differently with 3 claims all ≥MIXED)
+- U.S. State Dept Human Rights Report (HD6_EN boundary CB_15) is a legitimate international reference — not jurisdiction contamination
+**Open items:** None — full 3-run variance baseline (Tasks 3–5) on commit 7c207d18 is complete.
+**Warnings:** EN claim-decomposition varies run-to-run, affecting verdict direction. 3-run range: EN TP 6.1pp, EN conf 7.9pp. PT and DE are much more stable.
+**For next agent:** Full comparison table now in report §"3-Run Variance Summary". All HD4/HD5/HD6 result JSONs in `scripts/`. Commit used: 7c207d18 (Fix 1 + geography fix active).
+**Learnings:** no
+
+---
+### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Report Quality Analysis Findings Document
+**Task:** Document findings from the full quality comparison session (worktree comparison + Task 2–5 reruns).
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-13_Senior_Developer_Report_Quality_Analysis_Findings.md`
+**Key decisions:** Significant-tier output (9 findings, recommendations, production readiness assessment). See handoff file for full detail.
+**Open items:** SR weighting recalibration (Priority 1); EN decomposition stability (Priority 2); restored config params investigation (Priority 3); controlled CSE re-run (Priority 4).
+**Warnings:** window_start scores (90% PT, 75% EN) are confounded by CSE quota + stronger config params — do not treat as true quality ceiling without controlled re-test.
+**For next agent:** Findings file at `Docs/AGENTS/Handoffs/2026-03-13_Senior_Developer_Report_Quality_Analysis_Findings.md`. Source data at `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md`. Current best HEAD commit: 7c207d18.
+**Learnings:** no
+
+---
+### 2026-03-14 | Code Reviewer | Codex (GPT-5) | Quality Restoration Diagnostic Toggle Review
+**Task:** Review the quality-restoration diagnostic toggle implementation and the proposed A/B restoration experiment plan.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Verified the new runtime toggles are wired and active: `evidenceWeightingEnabled`, `applicabilityFilterEnabled`, `foreignJurisdictionRelevanceCap`, `contradictionReservedIterations`, and `mixedConfidenceThreshold`.
+- Verified pipeline and calculation defaults are aligned between `config-schemas.ts` and `pipeline.default.json`; targeted config/SR tests passed.
+- Identified plan-level issues: the restoration docs still reference deprecated `maxIterationsPerContext`, the proposed Phase 1 experiment changes too many variables at once, and search-stack drift still needs a later explicit experiment phase.
+**Open items:** Update the restoration experiment design before execution: add same-window control reruns/replicates, remove `maxIterationsPerContext` as a live suspect, and treat search-stack drift as a separate follow-up phase.
+**Warnings:** `applyEvidenceWeighting()` is safer than before but still ends with `as T`; that is acceptable at the current single call site but not a truly generic-safe contract.
+**For next agent:** Use the review findings in chat as the authoritative recommendation set. The code changes look close to ready; the main adjustments needed are in the experiment plan, not the toggle implementation.
 **Learnings:** no
