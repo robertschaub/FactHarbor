@@ -3885,7 +3885,7 @@ export async function extractResearchEvidence(
         statement: ei.statement,
         category: mapCategory(ei.category),
         specificity: ei.probativeValue === "high" ? "high" as const : "medium" as const,
-        sourceId: matchedSource?.id ?? "",
+        sourceId: "",
         sourceUrl: matchedSource?.url ?? "",
         sourceTitle: matchedSource?.title ?? "",
         sourceExcerpt: ei.statement,
