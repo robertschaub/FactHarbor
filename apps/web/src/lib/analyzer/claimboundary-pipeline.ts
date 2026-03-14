@@ -156,10 +156,28 @@ export async function runClaimBoundaryAnalysis(
   }
 
   try {
+    // --- URL content pre-fetch (restored from v2.x pipeline) ---
+    let analysisText = input.inputValue;
+    if (input.inputType === "url") {
+      onEvent("Fetching URL content...", 3);
+      try {
+        const fetched = await extractTextFromUrl(input.inputValue, {
+          pdfParseTimeoutMs: initialPipelineConfig.pdfParseTimeoutMs ?? 60000,
+        });
+        if (!fetched.text || fetched.text.trim().length === 0) {
+          throw new Error("URL returned no extractable text content");
+        }
+        analysisText = fetched.text;
+        console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
+      } catch (fetchError) {
+        const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        throw new Error(`Failed to fetch URL content: ${msg}`);
+      }
+    }
+
     // Initialize research state
     const state: CBResearchState = {
-      originalInput: input.inputValue,
-      originalText: "",
+      originalInput: analysisText,
       inputType: input.inputType,
       pipelineStartMs: Date.now(),
       understanding: null,
@@ -614,6 +632,7 @@ export async function runClaimBoundaryAnalysis(
         searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
         inputType: input.inputType,
         detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
+        sourceUrl: input.inputType === "url" ? input.inputValue : undefined,
         hasMultipleBoundaries: assessment.hasMultipleBoundaries,
         boundaryCount: boundaries.length,
         claimCount: understanding.atomicClaims.length,

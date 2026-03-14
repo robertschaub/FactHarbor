@@ -2780,7 +2780,7 @@ describe("Stage 2: researchEvidence", () => {
 
     const state = {
       originalInput: "input",
-      originalText: "input",
+
       inputType: "text",
       understanding: {
         atomicClaims: [
@@ -2888,7 +2888,7 @@ describe("Stage 2: researchEvidence", () => {
 
     const state = {
       originalInput: "Were multiple proceedings lawful?",
-      originalText: "Were multiple proceedings lawful?",
+
       inputType: "text",
       understanding: {
         atomicClaims: [createAtomicClaim({ id: "AC_01", statement: "Proceedings complied with law" })],
@@ -5400,7 +5400,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const state: any = {
       originalInput: "Test input text for reprompt no-trigger",
-      originalText: "",
+
       inputType: "claim",
       understanding: null,
       evidenceItems: [],
@@ -5467,7 +5467,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const state: any = {
       originalInput: "Test input for reprompt recovery",
-      originalText: "",
+
       inputType: "claim",
       understanding: null,
       evidenceItems: [],
@@ -5537,7 +5537,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const state: any = {
       originalInput: "Test input for reprompt fallback",
-      originalText: "",
+
       inputType: "claim",
       understanding: null,
       evidenceItems: [],
@@ -5633,7 +5633,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const state: any = {
       originalInput: "Test input for MT-5(C) multi-event reprompt",
-      originalText: "",
+
       inputType: "claim",
       understanding: null,
       evidenceItems: [],
@@ -5695,7 +5695,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const state: any = {
       originalInput: "Test input for MT-5(C) no-trigger",
-      originalText: "",
+
       inputType: "claim",
       understanding: null,
       evidenceItems: [],
@@ -5757,7 +5757,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const state: any = {
       originalInput: "Test input for MT-5(C) single-event no-trigger",
-      originalText: "",
+
       inputType: "claim",
       understanding: null,
       evidenceItems: [],
@@ -5942,5 +5942,112 @@ describe("M2: evaluateExplanationRubric error handling", () => {
     expect(scores.appropriateHedging).toBe(3);
     expect(scores.overallScore).toBeGreaterThan(0);
     expect(scores.flags).toContain("minor_hedging_gap");
+  });
+});
+
+// ============================================================================
+// URL PRE-FETCH — Unit Tests
+// ============================================================================
+
+describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should fetch URL content and pass it to extractTextFromUrl", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { pdfParseTimeoutMs: 60000 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockFetchUrl.mockResolvedValue({
+      text: "Document content about algorithms and elections",
+      title: "Test Doc",
+      contentType: "application/pdf",
+    });
+
+    // The pipeline will fail on Stage 1 (no LLM mocks set up), but we can verify
+    // that extractTextFromUrl was called with the URL before it fails.
+    try {
+      await runClaimBoundaryAnalysis({
+        inputValue: "https://example.com/thesis.pdf",
+        inputType: "url",
+      });
+    } catch {
+      // Expected to fail on a later stage — we only care about the URL fetch
+    }
+
+    expect(mockFetchUrl).toHaveBeenCalledWith("https://example.com/thesis.pdf", {
+      pdfParseTimeoutMs: 60000,
+    });
+  });
+
+  it("should throw 'Failed to fetch URL content' when extractTextFromUrl fails", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { pdfParseTimeoutMs: 60000 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockFetchUrl.mockRejectedValue(new Error("Network timeout"));
+
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputValue: "https://example.com/thesis.pdf",
+        inputType: "url",
+      })
+    ).rejects.toThrow("Failed to fetch URL content");
+  });
+
+  it("should throw when URL content is empty", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { pdfParseTimeoutMs: 60000 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockFetchUrl.mockResolvedValue({
+      text: "",
+      title: "Empty",
+      contentType: "text/html",
+    });
+
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputValue: "https://example.com/empty.html",
+        inputType: "url",
+      })
+    ).rejects.toThrow("URL returned no extractable text content");
   });
 });

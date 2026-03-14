@@ -1029,7 +1029,6 @@ export interface CBClaimUnderstanding {
  */
 export interface CBResearchState {
   originalInput: string;
-  originalText: string;
   inputType: "text" | "url";
   // Pipeline-start timestamp for runtime budget checks (e.g., D5 contrarian ceiling)
   pipelineStartMs?: number;
