@@ -160,19 +160,20 @@ export async function runClaimBoundaryAnalysis(
     let analysisText = input.inputValue;
     if (input.inputType === "url") {
       onEvent("Fetching URL content...", 3);
+      let fetched: { text: string; title: string; contentType: string };
       try {
-        const fetched = await extractTextFromUrl(input.inputValue, {
+        fetched = await extractTextFromUrl(input.inputValue, {
           pdfParseTimeoutMs: initialPipelineConfig.pdfParseTimeoutMs ?? 60000,
         });
-        if (!fetched.text || fetched.text.trim().length === 0) {
-          throw new Error("URL returned no extractable text content");
-        }
-        analysisText = fetched.text;
-        console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
       } catch (fetchError) {
         const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
         throw new Error(`Failed to fetch URL content: ${msg}`);
       }
+      if (!fetched.text || fetched.text.trim().length === 0) {
+        throw new Error("URL returned no extractable text content");
+      }
+      analysisText = fetched.text;
+      console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
     }
 
     // Initialize research state

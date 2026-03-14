@@ -5954,7 +5954,7 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
     vi.clearAllMocks();
   });
 
-  it("should fetch URL content and pass it to extractTextFromUrl", async () => {
+  it("should fetch URL content and pass extracted text (not the URL) to the LLM", async () => {
     const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
 
@@ -5971,14 +5971,16 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
     } as any);
 
+    const fetchedText = "Document content about algorithms and elections";
     mockFetchUrl.mockResolvedValue({
-      text: "Document content about algorithms and elections",
+      text: fetchedText,
       title: "Test Doc",
       contentType: "application/pdf",
     });
 
     // The pipeline will fail on Stage 1 (no LLM mocks set up), but we can verify
-    // that extractTextFromUrl was called with the URL before it fails.
+    // that extractTextFromUrl was called with the URL and the LLM received the
+    // fetched text content — not the raw URL string.
     try {
       await runClaimBoundaryAnalysis({
         inputValue: "https://example.com/thesis.pdf",
@@ -5988,9 +5990,18 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
       // Expected to fail on a later stage — we only care about the URL fetch
     }
 
+    // Verify extractTextFromUrl was called with the URL and correct config
     expect(mockFetchUrl).toHaveBeenCalledWith("https://example.com/thesis.pdf", {
       pdfParseTimeoutMs: 60000,
     });
+
+    // Verify the LLM received the fetched document text, not the raw URL
+    if (mockGenerateText.mock.calls.length > 0) {
+      const firstCall = mockGenerateText.mock.calls[0][0] as any;
+      const userMessage = firstCall.messages?.find((m: any) => m.role === "user");
+      expect(userMessage?.content).toBe(fetchedText);
+      expect(userMessage?.content).not.toContain("https://example.com");
+    }
   });
 
   it("should throw 'Failed to fetch URL content' when extractTextFromUrl fails", async () => {
@@ -6043,11 +6054,13 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
       contentType: "text/html",
     });
 
+    // Empty content throws directly (not wrapped by "Failed to fetch URL content")
+    // because the fetch itself succeeded — the content is just empty.
     await expect(
       runClaimBoundaryAnalysis({
         inputValue: "https://example.com/empty.html",
         inputType: "url",
       })
-    ).rejects.toThrow("URL returned no extractable text content");
+    ).rejects.toThrow(/^URL returned no extractable text content$/);
   });
 });
