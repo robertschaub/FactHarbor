@@ -624,7 +624,7 @@ export function applyEvidenceWeighting<T extends WeightableVerdict>(
         ? verdict.supportingEvidenceIds
         : [];
     const reliabilityData = supportingEvidenceIds
-      .map((id) => evidenceDataById.get(id))
+      .map((id) => evidenceDataById.get(id) ?? null)
       .filter((data): data is SourceReliabilityData | null => true);
 
     // Calculate effective weights for each source
