@@ -587,12 +587,18 @@ export function calculateEffectiveWeight(data: SourceReliabilityData): number {
  * Unknown-source handling is consumer-defined via `options.unknownSourceScore`.
  * If omitted/null, unknown sources are excluded from weighting.
  */
-export function applyEvidenceWeighting(
-  claimVerdicts: ClaimVerdict[],
+interface WeightableVerdict {
+  truthPercentage: number;
+  confidence: number;
+  supportingEvidenceIds: string[];
+}
+
+export function applyEvidenceWeighting<T extends WeightableVerdict>(
+  claimVerdicts: T[],
   evidenceItems: EvidenceItem[],
   sources: FetchedSource[],
   options: EvidenceWeightingOptions = {}
-): ClaimVerdict[] {
+): T[] {
   // Build source reliability data map
   const sourceDataById = new Map<string, SourceReliabilityData | null>(
     sources.map((s) => [
@@ -668,7 +674,7 @@ export function applyEvidenceWeighting(
       highlightColor: normalizeHighlightColor(
         getHighlightColor7Point(clampedTruth)
       ),
-    };
+    } as T; // Safe: spread preserves all T properties, we only override shared fields
   });
 }
 

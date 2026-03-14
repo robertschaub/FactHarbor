@@ -1533,6 +1533,51 @@ function PipelineConfigForm({
         </div>
       </div>
 
+      {/* Quality Diagnostics */}
+      <h3 className={styles.formSectionTitle}>Quality Diagnostics</h3>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.evidenceWeightingEnabled ?? true}
+            onChange={(e) => updateField("evidenceWeightingEnabled", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enable SR Evidence Weighting
+        </label>
+        <div className={styles.formHelp}>Adjusts truth% and confidence based on source track-record scores. Disable to diagnose SR-related quality regressions.</div>
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>
+          <input
+            type="checkbox"
+            checked={config.applicabilityFilterEnabled ?? true}
+            onChange={(e) => updateField("applicabilityFilterEnabled", e.target.checked)}
+            style={{ marginRight: 8 }}
+          />
+          Enable Applicability Filter
+        </label>
+        <div className={styles.formHelp}>Post-extraction filter that removes foreign-jurisdiction evidence. Disable to diagnose evidence pool reduction.</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Foreign Jurisdiction Relevance Cap</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.foreignJurisdictionRelevanceCap ?? 0.35}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("foreignJurisdictionRelevanceCap", isNaN(v) ? 0.35 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max relevance score for foreign-reaction sources (below 0.4 = auto-reject). Set to 1.0 to disable.</div>
+        </div>
+      </div>
+
       {/* Retrieval */}
       <h3 className={styles.formSectionTitle}>Retrieval</h3>
       <div className={styles.formGroup}>

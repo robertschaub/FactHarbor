@@ -467,16 +467,18 @@ export async function runClaimBoundaryAnalysis(
     recordGate4Stats(claimVerdicts);
 
     // Apply SR evidence weighting: adjust truthPercentage and confidence based on the
-    // track record scores of each verdict's supporting sources. Only runs when at least
-    // one source has a score (i.e. SR prefetch succeeded for at least one domain).
-    if (state.sources.some((s) => s.trackRecordScore !== null)) {
+    // track record scores of each verdict's supporting sources. Only runs when UCM flag
+    // evidenceWeightingEnabled is true (default) AND at least one source has a score
+    // (i.e. SR prefetch succeeded for at least one domain).
+    if ((initialPipelineConfig.evidenceWeightingEnabled ?? true) &&
+        state.sources.some((s) => s.trackRecordScore !== null)) {
       const unknownSourceScore = initialCalcConfig.sourceReliability?.defaultScore ?? null;
       claimVerdicts = applyEvidenceWeighting(
         claimVerdicts,
         state.evidenceItems,
         state.sources,
         { unknownSourceScore }
-      ) as CBClaimVerdict[];
+      );
     }
 
     // Stage 5: Aggregate
