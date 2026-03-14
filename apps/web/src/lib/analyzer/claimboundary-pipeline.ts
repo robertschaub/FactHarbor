@@ -4920,11 +4920,26 @@ export function buildVerdictStageConfig(
     mixedConfidenceThreshold: calcConfig.mixedConfidenceThreshold ?? 45,
     highHarmMinConfidence: calcConfig.highHarmMinConfidence ?? 50,
     debateRoles: {
-      advocate: canonicalRoles.advocate ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.advocate,
-      selfConsistency: canonicalRoles.selfConsistency ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.selfConsistency,
-      challenger: canonicalRoles.challenger ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.challenger,
-      reconciler: canonicalRoles.reconciler ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.reconciler,
-      validation: canonicalRoles.validation ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.validation,
+      advocate: {
+        provider: (canonicalRoles.advocate?.provider ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.advocate.provider) as LLMProviderType,
+        strength: canonicalRoles.advocate?.strength ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.advocate.strength,
+      },
+      selfConsistency: {
+        provider: (canonicalRoles.selfConsistency?.provider ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.selfConsistency.provider) as LLMProviderType,
+        strength: canonicalRoles.selfConsistency?.strength ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.selfConsistency.strength,
+      },
+      challenger: {
+        provider: (canonicalRoles.challenger?.provider ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.challenger.provider) as LLMProviderType,
+        strength: canonicalRoles.challenger?.strength ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.challenger.strength,
+      },
+      reconciler: {
+        provider: (canonicalRoles.reconciler?.provider ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.reconciler.provider) as LLMProviderType,
+        strength: canonicalRoles.reconciler?.strength ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.reconciler.strength,
+      },
+      validation: {
+        provider: (canonicalRoles.validation?.provider ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.validation.provider) as LLMProviderType,
+        strength: canonicalRoles.validation?.strength ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles.validation.strength,
+      },
     },
     highHarmFloorLevels: calcConfig.highHarmFloorLevels ?? ["critical", "high"],
     evidencePartitioningEnabled: calcConfig.evidencePartitioningEnabled ?? true,
