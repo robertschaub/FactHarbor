@@ -108,7 +108,7 @@ function scrollToAndHighlight(elementId: string): boolean {
     };
     el.addEventListener("animationend", onEnd);
     // Fallback cleanup if animation doesn't fire
-    setTimeout(() => el.classList.remove("nav-highlight"), 2000);
+    setTimeout(() => el.classList.remove("nav-highlight"), 3000);
   };
 
   // If we opened any <details>, defer scroll by double-rAF to let the browser

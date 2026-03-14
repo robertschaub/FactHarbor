@@ -12,7 +12,7 @@
   --text-secondary: #4b5563;
   --text-muted: #9ca3af;
   --link: #1565c0;
-  --nav-highlight-start: #fff9c4;
+  --nav-highlight-start: #ffed47;
   --shadow-card: 0 1px 4px rgba(0,0,0,0.06);
   --color-text-muted: #888;
   --radius-card: 12px;
@@ -54,7 +54,7 @@
     --text-secondary: #d1d5db;
     --text-muted: #9ca3af;
     --link: #60a5fa;
-    --nav-highlight-start: #713f12;
+    --nav-highlight-start: #92400e;
     --shadow-card: 0 1px 4px rgba(0,0,0,0.3);
     --color-text-muted: #9ca3af;
     --color-accent-amber: #fbbf24;
@@ -79,7 +79,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libe
 
 /* Cross-navigation highlight animation (global — used by useReportNavigation hook) */
 .nav-highlight {
-  animation: navFlash 1.5s ease-out;
+  animation: navFlash 2.5s ease-out;
 }
 @keyframes navFlash {
   0% { background-color: var(--nav-highlight-start); }
