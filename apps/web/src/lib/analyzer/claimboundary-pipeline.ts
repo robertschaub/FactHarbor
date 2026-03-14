@@ -4996,7 +4996,7 @@ export function createProductionLLMCall(
   return async (
     promptKey: string,
     input: Record<string, unknown>,
-    options?: { tier?: "sonnet" | "haiku" | "opus"; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string; callContext?: { debateRole: string; promptKey: string } },
+    options?: { tier?: string; temperature?: number; providerOverride?: LLMProviderType; modelOverride?: string; callContext?: { debateRole: string; promptKey: string } },
   ): Promise<unknown> => {
     const startTime = Date.now();
     const stage = "stage4_verdict";
@@ -5065,12 +5065,13 @@ export function createProductionLLMCall(
     }
 
     // 3. Select model based on tier + resolved provider
+    // Accepts both legacy values (haiku/sonnet/opus) and canonical values (budget/standard/premium).
     const tier = options?.tier ?? "sonnet";
-    const isPremium = tier === "sonnet" || tier === "opus";
+    const isPremium = tier === "sonnet" || tier === "opus" || tier === "standard" || tier === "premium";
     const taskKey: ModelTask = isPremium ? "verdict" : "understand";
-    // B-5b: For "opus" tier, temporarily override modelVerdict with modelOpus so
+    // B-5b: For "opus"/"premium" tier, temporarily override modelVerdict with modelOpus so
     // getModelForTask resolves the correct model ID through the standard path.
-    const effectiveConfig = tier === "opus" && pipelineConfig.modelOpus
+    const effectiveConfig = (tier === "opus" || tier === "premium") && pipelineConfig.modelOpus
       ? { ...pipelineConfig, modelVerdict: pipelineConfig.modelOpus }
       : pipelineConfig;
     let model = getModelForTask(taskKey, effectiveProviderOverride, effectiveConfig);
