@@ -3,6 +3,7 @@
   "enabled": true,
   "provider": "auto",
   "mode": "standard",
+  "autoMode": "accumulate",
   "maxResults": 10,
   "maxSourcesPerIteration": 8,
   "timeoutMs": 12000,
@@ -36,7 +37,7 @@
       "dailyQuotaLimit": 8000
     },
     "serpapi": {
-      "enabled": false,
+      "enabled": true,
       "priority": 2,
       "dailyQuotaLimit": 0
     },
@@ -47,7 +48,7 @@
     },
     "serper": {
       "enabled": true,
-      "priority": 2,
+      "priority": 3,
       "dailyQuotaLimit": 0
     },
     "wikipedia": {

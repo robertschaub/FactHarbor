@@ -54,6 +54,8 @@ export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
   provider: z.enum(["auto", "google-cse", "serpapi", "brave", "serper"]),
   mode: z.enum(["standard", "grounded"]),
+  autoMode: z.enum(["accumulate", "first-success"]).optional()
+    .describe("AUTO provider dispatch: 'accumulate' fills slots from multiple providers until maxResults; 'first-success' stops after first provider with results (default: accumulate)"),
   searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),
   maxSourcesPerIteration: z.number().int().min(1).max(20),
@@ -145,6 +147,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   enabled: true,
   provider: "auto",
   mode: "standard",
+  autoMode: "accumulate",
   maxResults: 10,
   maxSourcesPerIteration: 8,
   timeoutMs: 12000,
@@ -178,7 +181,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       dailyQuotaLimit: 8000, // Leave buffer below 10k limit
     },
     serpapi: {
-      enabled: false,
+      enabled: true,
       priority: 2,
       dailyQuotaLimit: 0, // Unlimited (paid tier)
     },
@@ -189,7 +192,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     },
     serper: {
       enabled: true,
-      priority: 2,
+      priority: 3,
       dailyQuotaLimit: 0, // Paid per search
     },
     wikipedia: {

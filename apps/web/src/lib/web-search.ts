@@ -270,8 +270,9 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       results.push(...primaryResponse.results);
       providersUsed.push(...primaryResponse.providersUsed);
     } else if (primaryProviderKey === "auto") {
-      console.log("[Search] Using AUTO mode for primary providers...");
-      
+      const autoMode = config.autoMode ?? "accumulate";
+      console.log(`[Search] Using AUTO mode (${autoMode}) for primary providers...`);
+
       // Filter to only primary providers for the auto-loop
       const primaryCandidates = buildAutoProviderInfos(config, cbConfig)
         .filter(p => !isSupplementaryProvider(p.provider.key));
@@ -296,9 +297,9 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
           results.push(...providerResults);
           // 0 results is a valid response (not a failure); reset consecutive failures
           recordSuccess(providerInfo.provider.name, cbConfig);
-          // Stop after first provider that returns ANY results.
-          // Prevents inconsistent evidence pools (provider-mix variance).
-          if (providerResults.length > 0) break;
+          // In "first-success" mode, stop after first provider with results (legacy behavior).
+          // In "accumulate" mode (default), continue to fill remaining slots from next providers.
+          if (autoMode === "first-success" && providerResults.length > 0) break;
         } catch (err) {
           if (err instanceof SearchProviderError) {
             recordFailure(providerInfo.provider.name, err.message, cbConfig);
