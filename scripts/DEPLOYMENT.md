@@ -40,6 +40,7 @@ bash /opt/factharbor/scripts/deploy-test.sh     # Restart test instance (after d
 ```bash
 ssh -i ~/.ssh/fh ubuntu@83.228.221.114
 cd /opt/factharbor
+node -v   # Must be v20.19.0 or newer
 git pull
 cd apps/api && dotnet publish -c Release -o /opt/factharbor/deploy/api
 cd /opt/factharbor && npm ci && npm -w apps/web run build
@@ -165,12 +166,14 @@ dotnet publish -c Release -o /opt/factharbor/deploy/api
 
 ```bash
 cd /opt/factharbor
+node -v   # Require v20.19.0+
 npm ci
 npm -w apps/web run build
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 ```
 
 > **Note:** The `postbuild` script automatically reseeds prompts and configs into the UCM database.
+> **Node requirement:** Current dependencies require Node.js `v20.19.0+`. Older Node 20 patch versions can fail during `npm ci`.
 
 ### 6. Restart services
 
@@ -231,6 +234,7 @@ cp /opt/factharbor/backups/source-reliability_${BACKUP_DATE}.db /opt/factharbor/
 
 ```bash
 cd /opt/factharbor/apps/api && dotnet publish -c Release -o /opt/factharbor/deploy/api
+cd /opt/factharbor && node -v   # Require v20.19.0+
 cd /opt/factharbor && npm ci && npm -w apps/web run build
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 sudo systemctl start factharbor-api factharbor-web
@@ -643,6 +647,7 @@ sudo apt install -y aspnetcore-runtime-8.0 dotnet-sdk-8.0
 # Node.js 20 LTS
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
+node -v   # Require v20.19.0 or newer
 
 # Caddy
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https

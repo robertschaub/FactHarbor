@@ -1,6 +1,9 @@
 {
   "name": "factharbor-poc1",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"

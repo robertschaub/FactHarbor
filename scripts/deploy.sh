@@ -18,6 +18,7 @@ DEPLOY_DIR="/opt/factharbor"
 API_PUBLISH_DIR="$DEPLOY_DIR/deploy/api"
 HEALTH_WAIT=5
 HEALTH_RETRIES=3
+REQUIRED_NODE_VERSION="20.19.0"
 
 # Colors
 RED='\033[0;31m'
@@ -30,6 +31,24 @@ log()  { echo -e "${CYAN}[deploy]${NC} $*"; }
 warn() { echo -e "${YELLOW}[deploy]${NC} $*"; }
 err()  { echo -e "${RED}[deploy]${NC} $*" >&2; }
 ok()   { echo -e "${GREEN}[deploy]${NC} $*"; }
+
+check_min_node_version() {
+    local current
+    current="$(node -p "process.versions.node" 2>/dev/null || true)"
+
+    if [ -z "$current" ]; then
+        err "Node.js is not installed or not on PATH. Require >= ${REQUIRED_NODE_VERSION}."
+        exit 1
+    fi
+
+    if ! node -e "const cur=process.versions.node.split('.').map(Number); const min='${REQUIRED_NODE_VERSION}'.split('.').map(Number); const ok=cur[0]>min[0] || (cur[0]===min[0] && (cur[1]>min[1] || (cur[1]===min[1] && cur[2]>=min[2]))); process.exit(ok ? 0 : 1)"; then
+        err "Node.js ${REQUIRED_NODE_VERSION}+ required for current dependencies, found ${current}."
+        err "Upgrade Node before running deploy (sqlite3/undici transitive requirements)."
+        exit 1
+    fi
+
+    ok "Node.js version ${current} satisfies minimum ${REQUIRED_NODE_VERSION}."
+}
 
 TAG=""
 FORCE_CONFIGS=""
@@ -49,6 +68,8 @@ echo -e "${CYAN}========================================${NC}"
 echo ""
 
 cd "$DEPLOY_DIR"
+
+check_min_node_version
 
 # --- Step 1: Backup databases ---
 log "Backing up databases..."
