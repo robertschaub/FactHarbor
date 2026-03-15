@@ -887,10 +887,10 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
   llmProvider: "anthropic",
   llmTiering: true,
-  modelUnderstand: "haiku",
-  modelExtractEvidence: "haiku",
-  modelVerdict: "sonnet",
-  modelOpus: "opus",
+  modelUnderstand: "budget",
+  modelExtractEvidence: "budget",
+  modelVerdict: "standard",
+  modelOpus: "premium",
 
   // LLM text analysis (all enabled by default per v2.8.3)
   llmInputClassification: true,
