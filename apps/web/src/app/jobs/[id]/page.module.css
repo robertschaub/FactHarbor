@@ -118,30 +118,78 @@
   list-style: none;
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 .reportSectionToggle::-webkit-details-marker {
   display: none;
 }
 
-.reportSectionToggle::before {
+.reportSectionToggle::after {
   content: "▸";
   color: var(--text-muted);
   font-size: 12px;
+  margin-left: auto;
+  padding-left: 8px;
 }
 
-.reportSection[open] > .reportSectionToggle::before {
+.reportSection[open] > .reportSectionToggle::after {
   content: "▾";
+}
+
+.reportSectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .reportSectionTitle {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-primary);
+}
+
+/* ⓘ tooltip on section headers */
+.infoTooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.infoTrigger {
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
+  user-select: none;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.infoTrigger::-webkit-details-marker { display: none; }
+
+.infoTrigger:hover {
+  color: var(--text-primary, #0f172a);
+  background: var(--bg-surface, #f1f5f9);
+}
+
+.infoPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 340px;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary, #475569);
 }
 
 .reportSectionBody {
@@ -3160,7 +3208,8 @@ details[open] > .devWarningSummary::before {
   overflow: visible;
 }
 
-.inputSection .reportSectionHeader {
+.inputSection .reportSectionHeader,
+.inputSection .reportSectionToggle {
   padding: 0 0 8px;
   border: 0;
   background: transparent;

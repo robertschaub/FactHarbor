@@ -384,9 +384,10 @@ export class MetricsCollector {
    * Get cost per 1M tokens for a model
    */
   private getCostPer1MTokens(provider: string, modelName: string): { input: number; output: number } {
-    // Pricing as of Jan 2026 (approximate)
+    // Pricing per 1M tokens (updated 2026-03)
     const pricing: Record<string, { input: number; output: number }> = {
       // Anthropic
+      'claude-opus-4-6': { input: 15, output: 75 },
       'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
       'claude-sonnet-4-20250514': { input: 3, output: 15 },
       'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
@@ -395,11 +396,16 @@ export class MetricsCollector {
       'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
       
       // OpenAI
+      'gpt-4.1': { input: 2, output: 8 },
+      'gpt-4.1-mini': { input: 0.4, output: 1.6 },
+      'gpt-4.1-nano': { input: 0.1, output: 0.4 },
       'gpt-4o': { input: 2.5, output: 10 },
       'gpt-4o-mini': { input: 0.15, output: 0.6 },
       'gpt-4-turbo': { input: 10, output: 30 },
-      
+
       // Google
+      'gemini-2.5-pro': { input: 1.25, output: 10 },
+      'gemini-2.5-flash': { input: 0.15, output: 0.6 },
       'gemini-1.5-pro': { input: 1.25, output: 5 },
       'gemini-1.5-flash': { input: 0.075, output: 0.3 },
       

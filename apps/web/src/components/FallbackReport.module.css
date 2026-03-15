@@ -10,6 +10,27 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.header::-webkit-details-marker {
+  display: none;
+}
+
+.header::after {
+  content: '▾';
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #92400e;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+details:not([open]) > .header::after {
+  transform: rotate(-90deg);
 }
 
 .icon {
@@ -17,10 +38,11 @@
   width: 1.25rem;
   height: 1.25rem;
   color: #f59e0b;
+  margin-top: 0.125rem;
 }
 
-.content {
-  flex: 1;
+.body {
+  margin-top: 0.75rem;
 }
 
 .title {
@@ -118,14 +140,15 @@
   font-family: monospace;
 }
 
-.note {
-  margin-top: 1rem;
-  font-size: 0.75rem;
-  color: #a16207;
+.titleGroup {
+  flex: 1;
+  min-width: 0;
 }
 
-.note strong {
-  color: #92400e;
+.noteInline {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.75rem;
+  color: #a16207;
 }
 
 /* Error severity styling */

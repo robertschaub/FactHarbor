@@ -375,17 +375,32 @@ function VerdictMetricBlock({
 
 function ReportSection({
   title,
+  tooltip,
   children,
   className = "",
   collapsible = false,
   defaultOpen = true,
 }: {
   title: string;
+  tooltip?: ReactNode;
   children: ReactNode;
   className?: string;
   collapsible?: boolean;
   defaultOpen?: boolean;
 }) {
+  const tooltipRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    if (!tooltip) return;
+    function handleOutsideClick(e: MouseEvent) {
+      if (tooltipRef.current?.open && !tooltipRef.current.contains(e.target as Node)) {
+        tooltipRef.current.open = false;
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [tooltip]);
+
   const classes = className ? `${styles.reportSection} ${className}` : styles.reportSection;
   if (collapsible) {
     return (
@@ -402,7 +417,15 @@ function ReportSection({
   return (
     <section className={classes}>
       <div className={styles.reportSectionHeader}>
-        <h2 className={styles.reportSectionTitle}>{title}</h2>
+        <div className={styles.reportSectionTitleRow}>
+          <h2 className={styles.reportSectionTitle}>{title}</h2>
+          {tooltip && (
+            <details ref={tooltipRef} className={styles.infoTooltip}>
+              <summary className={styles.infoTrigger}>ⓘ</summary>
+              <div className={styles.infoPanel}>{tooltip}</div>
+            </details>
+          )}
+        </div>
       </div>
       <div className={styles.reportSectionBody}>
         {children}
@@ -1558,44 +1581,19 @@ export default function JobPage() {
                 </ReportSection>
               )}
 
-              {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
-                <section className={styles.claimsSectionList}>
-                  {/* CB pipeline: flat list with inline BoundaryFindings */}
-                  {claimVerdicts.map((cv: any) => {
-                    const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
-                    const matched = atomicClaims.find((ac: any) => ac.id === cv.claimId);
-                    const enrichedCv = matched
-                      ? { ...matched, ...cv, claimText: matched.statement || cv.claimText }
-                      : cv;
-                    return (
-                      <ClaimCard
-                        key={cv.claimId}
-                        claim={enrichedCv}
-                        claimBoundaries={claimBoundaries}
-                        totalBoundaryCount={claimBoundaries.length}
-                        onNavigate={navigateTo}
-                      />
-                    );
-                  })}
-                  {tangentialSubClaims.length > 0 && (
-                    <details className={styles.tangentialDetails}>
-                      <summary className={styles.tangentialSummary}>
-                        📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
-                      </summary>
-                      <ul className={styles.tangentialList}>
-                        {tangentialSubClaims.map((c: any) => (
-                          <li key={c.id} className={styles.tangentialItem}>
-                            <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </section>
-              )}
-
               {isCBSchema && claimBoundaries.length > 0 && (
-              <ReportSection title="Claim Assessment Boundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection} ${styles.inputSection}`}>
+              <ReportSection
+                title="Evidences by Claim Assessment Boundaries and Atomic Claims"
+                className={`${styles.reportSurfaceCard} ${styles.cbSection} ${styles.inputSection}`}
+                tooltip={
+                  <div>
+                    <p style={{margin: "0 0 10px", fontWeight: 600, fontSize: "13px", color: "var(--text-primary, #0f172a)"}}>Glossary</p>
+                    <p style={{margin: "0 0 8px"}}><strong>Evidence Item</strong> — A piece of evidence extracted from a source that is relevant to one or more Atomic Claims. Each evidence item carries a direction (supporting or opposing) and a quality score (probative value).</p>
+                    <p style={{margin: "0 0 8px"}}><strong>Atomic Claim</strong> — A single, independently verifiable assertion extracted from your input. The matrix columns correspond to Atomic Claims.</p>
+                    <p style={{margin: "0"}}><strong>Claim Assessment Boundary</strong> — An evidence-emergent grouping of compatible evidence scopes (methodology, geography, time period). The matrix rows show how many evidence items each boundary contributes toward each claim. Boundaries are discovered from the research; they are not predefined.</p>
+                  </div>
+                }
+              >
                   {result?.coverageMatrix && claimVerdicts.length > 0 && (
                     <CoverageMatrixDisplay
                       matrix={result.coverageMatrix}
@@ -1611,7 +1609,49 @@ export default function JobPage() {
                       onNavigate={navigateTo}
                     />
                   )}
+              </ReportSection>
+              )}
 
+              {(claimVerdicts.length > 0 || tangentialSubClaims.length > 0) && (
+                <ReportSection title={isCBSchema ? "Atomic Claims" : "Claims"} className={`${styles.reportSurfaceCard} ${styles.inputSection}`}>
+                  <section className={styles.claimsSectionList}>
+                    {/* CB pipeline: flat list with inline BoundaryFindings */}
+                    {claimVerdicts.map((cv: any) => {
+                      const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
+                      const matched = atomicClaims.find((ac: any) => ac.id === cv.claimId);
+                      const enrichedCv = matched
+                        ? { ...matched, ...cv, claimText: matched.statement || cv.claimText }
+                        : cv;
+                      return (
+                        <ClaimCard
+                          key={cv.claimId}
+                          claim={enrichedCv}
+                          claimBoundaries={claimBoundaries}
+                          totalBoundaryCount={claimBoundaries.length}
+                          onNavigate={navigateTo}
+                        />
+                      );
+                    })}
+                    {tangentialSubClaims.length > 0 && (
+                      <details className={styles.tangentialDetails}>
+                        <summary className={styles.tangentialSummary}>
+                          📎 Related context (tangential; excluded from verdict) ({tangentialSubClaims.length})
+                        </summary>
+                        <ul className={styles.tangentialList}>
+                          {tangentialSubClaims.map((c: any) => (
+                            <li key={c.id} className={styles.tangentialItem}>
+                              <code className={styles.tangentialClaimId}>{c.id}</code> {c.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </section>
+                </ReportSection>
+              )}
+
+              {isCBSchema && claimBoundaries.length > 0 && (
+                <ReportSection title="Claim Assessment Boundaries" className={`${styles.reportSurfaceCard} ${styles.cbSection} ${styles.inputSection}`}>
                   <div className={styles.boundaryDirectory}>
                     {claimBoundaries.map((boundary: any) => (
                       <details
@@ -1735,6 +1775,7 @@ export default function JobPage() {
                   </div>
                 </ReportSection>
               )}
+
             </>
           )}
 

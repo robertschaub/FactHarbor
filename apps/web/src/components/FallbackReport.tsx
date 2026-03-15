@@ -214,10 +214,11 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
   }
 
   return (
-    <div
+    <details
       className={`${styles.fallbackReport} ${hasErrors ? styles.hasErrors : ''}`}
+      open
     >
-      <div className={styles.header}>
+      <summary className={styles.header}>
         <svg
           className={styles.icon}
           viewBox="0 0 20 20"
@@ -230,99 +231,101 @@ export function FallbackReport({ summary, analysisWarnings = [], isAdmin = false
             clipRule="evenodd"
           />
         </svg>
-        <div className={styles.content}>
+        <div className={styles.titleGroup}>
           <h3 className={styles.title}>
             Analysis Quality Issues ({qualityIssueCount})
           </h3>
+          <p className={styles.noteInline}>
+            May affect result accuracy.
+            {hasFallbacks && " Classification fallbacks used safe defaults."}
+          </p>
+        </div>
+      </summary>
 
-          {/* Quality-affecting warnings — always visible */}
-          {qualityWarnings.length > 0 && (
+      <div className={styles.body}>
+        {/* Quality-affecting warnings — always visible */}
+        {qualityWarnings.length > 0 && (
+          <div className={styles.warningsSection}>
+            {qualityWarnings.map((warning, index) => (
+              <WarningCard key={`q-${index}`} warning={warning} />
+            ))}
+          </div>
+        )}
+
+        {/* Operational/informational warnings — admin only, expandable */}
+        {isAdmin && operationalWarnings.length > 0 && (
+          <details className={styles.operationalDetails}>
+            <summary className={styles.operationalSummary}>
+              {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''} (informational)
+            </summary>
             <div className={styles.warningsSection}>
-              {qualityWarnings.map((warning, index) => (
-                <WarningCard key={`q-${index}`} warning={warning} />
+              {operationalWarnings.map((warning, index) => (
+                <WarningCard key={`o-${index}`} warning={warning} />
               ))}
             </div>
-          )}
+          </details>
+        )}
 
-          {/* Operational/informational warnings — admin only, expandable */}
-          {isAdmin && operationalWarnings.length > 0 && (
-            <details className={styles.operationalDetails}>
-              <summary className={styles.operationalSummary}>
-                {operationalWarnings.length} operational note{operationalWarnings.length !== 1 ? 's' : ''} (informational)
-              </summary>
-              <div className={styles.warningsSection}>
-                {operationalWarnings.map((warning, index) => (
-                  <WarningCard key={`o-${index}`} warning={warning} />
-                ))}
+        {/* Classification Fallbacks Section */}
+        {hasFallbacks && (
+          <>
+            <div className={styles.fallbacksSection}>
+              <h4 className={styles.sectionTitle}>Classification Fallbacks</h4>
+              <p className={styles.description}>
+                The LLM failed to classify {summary.totalFallbacks} field(s).
+                Safe defaults were used.
+              </p>
+
+              {/* Fallbacks by field */}
+              <div className={styles.fieldSummary}>
+                <ul className={styles.fieldList}>
+                  {fieldsWithFallbacks.map(([field, count]) => (
+                    <li key={field}>
+                      <strong>{field}:</strong> {count} fallback{count > 1 ? 's' : ''} (default: <code>{fieldDefaults[field]}</code>)
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </details>
-          )}
 
-          {/* Classification Fallbacks Section */}
-          {hasFallbacks && (
-            <>
-              <div className={styles.fallbacksSection}>
-                <h4 className={styles.sectionTitle}>Classification Fallbacks</h4>
-                <p className={styles.description}>
-                  The LLM failed to classify {summary.totalFallbacks} field(s).
-                  Safe defaults were used.
-                </p>
-
-                {/* Fallbacks by field */}
-                <div className={styles.fieldSummary}>
-                  <ul className={styles.fieldList}>
-                    {fieldsWithFallbacks.map(([field, count]) => (
-                      <li key={field}>
-                        <strong>{field}:</strong> {count} fallback{count > 1 ? 's' : ''} (default: <code>{fieldDefaults[field]}</code>)
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Details accordion */}
-                {summary.fallbackDetails.length > 0 && (
-                  <details className={styles.details}>
-                    <summary className={styles.detailsSummary}>
-                      View Details ({summary.fallbackDetails.length} items)
-                    </summary>
-                    <div className={styles.detailsContent}>
-                      {summary.fallbackDetails.map((fb, index) => (
-                        <div key={index} className={styles.detailItem}>
-                          <div>
-                            <span className={styles.detailField}>{fb.field}</span>
-                            {' at '}
-                            <span className={styles.detailLocation}>{fb.location}</span>
-                          </div>
-                          <div className={styles.detailText}>
-                            &quot;{fb.text.substring(0, 80)}{fb.text.length > 80 ? '...' : ''}&quot;
-                          </div>
-                          <div className={styles.detailMeta}>
-                            <span>
-                              Reason: {fb.reason === 'missing'
-                                ? 'LLM did not provide value'
-                                : fb.reason === 'llm_error'
-                                  ? 'LLM error during classification'
-                                  : 'Invalid value'}
-                            </span>
-                            {' | '}
-                            <span>Default: <code>{fb.defaultUsed}</code></span>
-                          </div>
+              {/* Details accordion */}
+              {summary.fallbackDetails.length > 0 && (
+                <details className={styles.details}>
+                  <summary className={styles.detailsSummary}>
+                    View Details ({summary.fallbackDetails.length} items)
+                  </summary>
+                  <div className={styles.detailsContent}>
+                    {summary.fallbackDetails.map((fb, index) => (
+                      <div key={index} className={styles.detailItem}>
+                        <div>
+                          <span className={styles.detailField}>{fb.field}</span>
+                          {' at '}
+                          <span className={styles.detailLocation}>{fb.location}</span>
                         </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
-              </div>
-            </>
-          )}
+                        <div className={styles.detailText}>
+                          &quot;{fb.text.substring(0, 80)}{fb.text.length > 80 ? '...' : ''}&quot;
+                        </div>
+                        <div className={styles.detailMeta}>
+                          <span>
+                            Reason: {fb.reason === 'missing'
+                              ? 'LLM did not provide value'
+                              : fb.reason === 'llm_error'
+                                ? 'LLM error during classification'
+                                : 'Invalid value'}
+                          </span>
+                          {' | '}
+                          <span>Default: <code>{fb.defaultUsed}</code></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          </>
+        )}
 
-          <div className={styles.note}>
-            <strong>Note:</strong> Quality issues above may affect result accuracy.
-            {hasFallbacks && " Classification fallbacks used safe defaults."}
-          </div>
-        </div>
       </div>
-    </div>
+    </details>
   );
 }
 

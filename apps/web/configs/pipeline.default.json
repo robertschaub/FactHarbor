@@ -127,6 +127,7 @@
   "claimSufficiencyThreshold": 3,
   "sufficiencyMinMainIterations": 1,
   "contradictionReservedIterations": 1,
+  "contradictionReservedQueries": 2,
   "researchTimeBudgetMs": 600000,
   "researchZeroYieldBreakThreshold": 2,
   "maxClaimBoundaries": 6,

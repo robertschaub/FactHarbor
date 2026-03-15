@@ -94,7 +94,7 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
         <table className={styles.matrix}>
           <thead>
             <tr>
-              <th className={styles.cornerCell}>Boundary</th>
+              <th className={styles.cornerCell}>Boundary \ Atomic Claim</th>
               {claimDisplayLabels.map((label, i) => (
                 <th
                   key={claims[i]}
