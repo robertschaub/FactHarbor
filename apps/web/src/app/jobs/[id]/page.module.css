@@ -196,12 +196,14 @@
 @media (max-width: 900px) {
   .infoPanel {
     position: fixed;
-    top: auto;
-    bottom: 1rem;
+    top: 1rem;
+    bottom: auto;
     left: 1rem;
     right: 1rem;
     width: auto;
     max-width: none;
+    max-height: 80vh;
+    overflow-y: auto;
   }
 }
 
