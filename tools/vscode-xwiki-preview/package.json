@@ -107,5 +107,8 @@
     "@vscode/vsce": "^2.22.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.3.0"
+  },
+  "overrides": {
+    "yauzl": ">=3.2.1"
   }
 }
