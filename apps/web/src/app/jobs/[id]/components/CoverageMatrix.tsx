@@ -99,10 +99,10 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
                 <th
                   key={claims[i]}
                   className={`${styles.headerCell} ${onNavigate ? styles.clickableHeader : ""}`}
-                  title={claims[i]}
+                  title={label}
                   onClick={onNavigate ? () => onNavigate(claims[i]) : undefined}
                 >
-                  {label}
+                  <div className={styles.headerCellContent}>{label}</div>
                 </th>
               ))}
               <th className={styles.totalHeader}>Total</th>

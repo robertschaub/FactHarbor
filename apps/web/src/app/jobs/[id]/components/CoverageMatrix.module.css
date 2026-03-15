@@ -87,6 +87,19 @@
   word-break: break-word;
 }
 
+.headerCellContent {
+  /* full text on desktop */
+}
+
+@media (max-width: 768px) {
+  .headerCellContent {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
 .rowHeader {
   background: var(--cm-row-header-bg);
   color: var(--cm-header-text);
