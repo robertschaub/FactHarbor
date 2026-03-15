@@ -1783,7 +1783,10 @@ export async function runPass2(
     inferredGeography: inferredGeography ?? "not geographically specific",
   }) ?? renderedWithEvidence;
 
-  const model = getModelForTask("verdict", undefined, pipelineConfig);
+  // Rec-A: Pass 2 is extraction/understanding, not verdict reasoning.
+  // Using "extract_evidence" routes to Haiku (budget) and makes UCM modelExtractEvidence
+  // effective for this step. Was "verdict" (Sonnet) which bypassed modelUnderstand.
+  const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
 
   // Retry logic with quality validation and Zod-aware feedback.
   // Schema uses .catch() defaults so AI SDK never throws NoObjectGeneratedError.
