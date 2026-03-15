@@ -1583,14 +1583,15 @@ export default function JobPage() {
 
               {isCBSchema && claimBoundaries.length > 0 && (
               <ReportSection
-                title="Evidences by Claim Assessment Boundaries and Atomic Claims"
+                title="Evidences by Atomic Claims and Claim Assessment Boundaries"
                 className={`${styles.reportSurfaceCard} ${styles.cbSection} ${styles.inputSection}`}
                 tooltip={
                   <div>
                     <p style={{margin: "0 0 10px", fontWeight: 600, fontSize: "13px", color: "var(--text-primary, #0f172a)"}}>Glossary</p>
                     <p style={{margin: "0 0 8px"}}><strong>Evidence Item</strong> — A piece of evidence extracted from a source that is relevant to one or more Atomic Claims. Each evidence item carries a direction (supporting or opposing) and a quality score (probative value).</p>
                     <p style={{margin: "0 0 8px"}}><strong>Atomic Claim</strong> — A single, independently verifiable assertion extracted from your input. The matrix columns correspond to Atomic Claims.</p>
-                    <p style={{margin: "0"}}><strong>Claim Assessment Boundary</strong> — An evidence-emergent grouping of compatible evidence scopes (methodology, geography, time period). The matrix rows show how many evidence items each boundary contributes toward each claim. Boundaries are discovered from the research; they are not predefined.</p>
+                    <p style={{margin: "0 0 8px"}}><strong>Evidence Scope</strong> — The metadata attached to a source describing its methodology, geographic coverage, and time period. Compatible evidence scopes are grouped into a Claim Assessment Boundary.</p>
+                    <p style={{margin: "0"}}><strong>Claim Assessment Boundary</strong> — A group of compatible evidence scopes (methodology, geography, time period).<br/><br/>The matrix columns show how many evidence items each assessment boundary contributes toward each atomic claim.</p>
                   </div>
                 }
               >
