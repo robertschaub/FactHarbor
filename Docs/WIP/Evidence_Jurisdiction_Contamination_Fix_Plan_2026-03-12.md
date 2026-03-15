@@ -2,7 +2,7 @@
 
 **Created:** 2026-03-12
 **Author:** Senior Developer (Claude Opus 4.6)
-**Status:** APPROVED — ready for Act Mode
+**Status:** APPROVED — updated 2026-03-15 with Fix 0-A, Fix 4, Fix 5 (post-review findings)
 **Baseline:** `Baseline_Test_Results_Phase1_2026-03-12.md`
 **Priority:** #1 quality blocker (per baseline §11)
 
@@ -209,6 +209,143 @@ Update the Pass 2 prompt to reference `${inferredGeography}` in the Distinct Eve
 **Why this is Fix 0:** This is the root cause. If foreign events don't enter `distinctEvents`, the multi-event coverage rule (line 333) won't force queries for them. This single change would have prevented most of the H3 contamination.
 
 **Risk:** Very low. The instruction is generic (uses "Country A/B" pattern, `inferredGeography` anchor). Claims without clear jurisdiction will have `inferredGeography = null` → "not geographically specific" → `distinctEvents` rules don't activate.
+
+---
+
+### Fix 0-A: Fallback Language Preservation Directive (CODE CHANGE — HAIKU DRIFT)
+
+**Added:** 2026-03-15
+**Trigger:** Job `21316c9e` (German mental health claim) ran on current HEAD with Fix 0's `inferredGeography` already deployed in both Pass 2 system prompts (lines 1765, 1779). Sonnet soft-refused, Haiku fallback produced **English** boundaries for German input. Fix 0's system-prompt geography anchor is necessary but **insufficient** for budget-tier models.
+
+**Root cause:** When Sonnet soft-refuses, the fallback path at `claimboundary-pipeline.ts:1981` constructs a user message from:
+- `inputText` (~15 German words)
+- `FACT_CHECK_CONTEXT` (line 1798, ~60 English words)
+- `retryGuidance` (line 1893, ~100 English words)
+
+The user message is **~80% English**. Budget models (Haiku) follow the dominant language of user-facing instructions, overriding the system-prompt `inferredGeography`. The system prompt says "geography: Switzerland" but the user message speaks English — Haiku outputs English.
+
+**Evidence:** Comparing job `21316c9e` (problematic, boundaries in English: "Swiss national health surveys") vs `d9bb60d4` (clean, boundaries in German: "Standardisierte schriftliche Befragung"). Same input, same code. Only difference: Sonnet succeeded in the clean run, soft-refused in the problematic run.
+
+**Code change** — add a language preservation directive to the fallback user message at `claimboundary-pipeline.ts:1981`:
+
+```typescript
+// At ~line 1976, before the fallback attempt:
+const detectedLanguage = state?.understanding?.detectedLanguage;
+const languageDirective = detectedLanguage
+  ? `\n\nCRITICAL: Output ALL claim text, distinctEvents names, and backgroundDetails in ${detectedLanguage}. Do not switch to English.`
+  : "";
+
+// Line 1981 — updated fallbackUserContent:
+const fallbackUserContent = retryGuidance
+  ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}${languageDirective}`
+  : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}${languageDirective}`;
+```
+
+**Also apply to the normal retry path** at line 1829-1836. When `attempt > 0` and `retryGuidance` is appended, the same English-dominant user message is sent to Sonnet. While Sonnet is more robust to language drift, the directive costs nothing and prevents regression:
+
+```typescript
+// Line 1829 — add languageDirective to guidanceParts:
+const guidanceParts: string[] = [inputText, "---", FACT_CHECK_CONTEXT];
+if (repromptGuidance && attempt === 0) {
+  guidanceParts.push(repromptGuidance);
+}
+if (attempt > 0 && retryGuidance) {
+  guidanceParts.push(retryGuidance);
+}
+if (detectedLanguage) {
+  guidanceParts.push(`CRITICAL: Output ALL claim text, distinctEvents names, and backgroundDetails in ${detectedLanguage}. Do not switch to English.`);
+}
+const userContent = guidanceParts.join("\n\n");
+```
+
+**Note:** `detectedLanguage` is available from `state.understanding` which is populated by Pass 1 before `runPass2` is called. The `runPass2` signature already accepts `state?: Pick<CBResearchState, "warnings" | "onEvent">` — this must be widened to include `understanding` (or `detectedLanguage` passed as a separate parameter).
+
+**Risk:** Very low. The directive is a no-op for English input (language = "English" → "Output in English" is redundant). For non-English input, it provides the signal that budget models need.
+
+**Why this is a separate fix from Fix 0:** Fix 0 addresses the system prompt (template variables, `distinctEvents` rules). Fix 0-A addresses the user message in the fallback/retry path. Both are needed — the system prompt sets the analytical frame, the user message sets the output language for budget models.
+
+---
+
+### Fix 4: Contradiction Budget Reservation (CODE + UCM — STRUCTURAL)
+
+**Added:** 2026-03-15
+**Trigger:** Job `21316c9e` had `contradictionIterationsUsed: 0` because all 3 claims exhausted `perClaimQueryBudget: 8` during the main loop (9 iterations). The contradiction loop at `claimboundary-pipeline.ts:2586` is structurally starved: with `maxMainIterations: 9` and `perClaimQueryBudget: 8`, a low-yield main loop will always consume the entire budget before contradiction runs.
+
+**Problem:** The main research loop and contradiction loop share a single `perClaimQueryBudget` pool. The `contradictionReservedIterations: 1` config parameter reserves *iterations* but not *queries*. When the main loop uses all 8 queries per claim across 9 iterations, the contradiction iteration has no queries left to spend — making `contradictionReservedIterations` dead configuration.
+
+**Code change** — add a `contradictionReservedQueries` UCM parameter that caps the main loop's per-claim budget consumption:
+
+```typescript
+// In researchEvidence(), before the main loop:
+const contradictionReservedQueries = pipelineConfig.contradictionReservedQueries ?? 2;
+const mainLoopBudgetCap = perClaimQueryBudget - contradictionReservedQueries;
+
+// In the main loop's budget check (line ~2524):
+const budgetEligibleClaims = claims.filter(
+  (claim) => getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > contradictionReservedQueries,
+);
+```
+
+**UCM config** — must be added in **three locations** or `config-drift.test.ts` will fail:
+
+1. `apps/web/configs/pipeline.default.json`:
+```json
+"contradictionReservedQueries": 2
+```
+2. `PipelineConfigSchema` in `config-schemas.ts`:
+```typescript
+contradictionReservedQueries: z.number().int().min(0).max(8).optional()
+  .describe("Queries reserved per claim for contradiction search. Main loop stops when remaining budget equals this value."),
+```
+3. `DEFAULT_PIPELINE_CONFIG` in `config-schemas.ts`:
+```typescript
+contradictionReservedQueries: 2,
+```
+
+**Risk:** Low. With default 2, the main loop cap drops from 8 to 6 queries per claim. For typical runs this is sufficient (clean run `d9bb60d4` reached sufficiency in 7 iterations). For low-yield runs (the exact scenario where contradiction matters most), the reserved queries ensure at least one contradiction iteration can execute.
+
+---
+
+### Fix 5: Post-Verdict Phantom Evidence ID Filter (CODE — METADATA HYGIENE)
+
+**Added:** 2026-03-15
+**Trigger:** Job `21316c9e` verdict for AC_01 cited `EV_1773586481181` as supporting evidence — an ID that does not exist in the evidence pool (39 items, none matching). The `structural_consistency` check caught it as an error, but the phantom ID was already written to the verdict output.
+
+**Root cause:** The LLM hallucinated an evidence ID during the verdict debate. With only 17 evidence items for AC_01 (vs 29 in the clean run), the model was more likely to confabulate. The grounding check at `verdict-stage.ts:912` detects phantom IDs post-hoc but doesn't strip them — it only emits a warning/error.
+
+**Code change** — add a deterministic filter in `verdict-stage.ts` after the reconciler produces the verdict and before writing to state. This is structural plumbing (ID validation), not analytical logic — no LLM call needed:
+
+```typescript
+// After reconciler verdict, before final state write (in validateVerdicts or equivalent):
+function stripPhantomEvidenceIds(
+  verdict: CBClaimVerdict,
+  evidencePool: Set<string>,
+): { stripped: string[]; verdict: CBClaimVerdict } {
+  const stripped: string[] = [];
+  const filterIds = (ids: string[] | undefined): string[] => {
+    if (!ids) return [];
+    return ids.filter(id => {
+      if (evidencePool.has(id)) return true;
+      stripped.push(id);
+      return false;
+    });
+  };
+  return {
+    stripped,
+    verdict: {
+      ...verdict,
+      supportingEvidenceIds: filterIds(verdict.supportingEvidenceIds),
+      opposingEvidenceIds: filterIds(verdict.opposingEvidenceIds),
+    },
+  };
+}
+```
+
+If any IDs are stripped, emit an `info`-level warning (not `error`) since the issue is resolved by the filter. The existing `structural_consistency` error should be downgraded or removed for this specific case since the phantom IDs are no longer in the output.
+
+**Caution (reviewer flag):** When stripping a supporting evidence ID, verify that `directionResults` (if present) are still consistent. Removing the only supporting evidence ID without updating the truth percentage would create a different inconsistency. If all supporting IDs are phantom, the verdict should be flagged for re-evaluation rather than silently stripped.
+
+**Risk:** Very low. This is a deterministic cleanup of metadata the LLM should not have produced. No analytical decisions are made — only invalid references are removed.
 
 ---
 
@@ -500,20 +637,29 @@ applicabilityFilterEnabled: true,
 
 | Order | Fix | What | Effort | Impact | Code Changes |
 |-------|-----|------|--------|--------|-------------|
-| **0** | distinctEvents instructions | Prompt + 1-line code | Small | Critical | 1 file (pipeline) |
+| **0** | distinctEvents instructions | Prompt + 1-line code | Small | Critical | 1 file (pipeline) + prompt |
+| **0-A** | Fallback language preservation | Code change | Small | Critical | 1 file (pipeline) |
+| **4** | Contradiction budget reservation | Code + UCM | Small | Medium | 3 files (pipeline, config-schemas, pipeline.default.json) |
+| **5** | Phantom evidence ID filter | Code | Small | Low | 1 file (verdict-stage) |
 | **2** | Query generation constraints | Prompt only | Small | Medium | 0 files |
 | **1** | Jurisdiction-aware relevance | Prompt + code | Small-Med | High | 3 files (prompt, pipeline, schema) |
 | **3** | Post-extraction assessment | New step | Medium | High (safety net) | 4 files (prompt, pipeline, types, filter) |
 
-**Approved phased approach (Captain decision 2026-03-12):**
+**Updated phased approach (revised 2026-03-15 after Job `21316c9e` findings):**
 
-**Phase A — Fix 0 alone (root cause first):** Implement Fix 0 prompt instructions + pass `inferredGeography` to Pass 2. Then immediately validate (re-run H3). This isolates whether the root cause fix is sufficient before adding any further changes.
+**Phase A — Fix 0 + Fix 0-A + Fix 4 + Fix 5 (all small, all required):**
+- Fix 0: `distinctEvents` prompt instructions + `inferredGeography` in system prompt (already partially deployed; prompt rules still needed)
+- Fix 0-A: Language preservation directive in fallback/retry user messages — **must ship with Fix 0** (Fix 0 without 0-A is proven insufficient by Job `21316c9e`)
+- Fix 4: `contradictionReservedQueries` UCM parameter — structural budget protection
+- Fix 5: Post-verdict phantom evidence ID filter — metadata hygiene
 
-**Phase A validation:** If H3 has 0 foreign-contaminated boundaries → Fix 0 was sufficient; proceed to Phase A+ only if regression checks fail. If residual contamination remains → add Fix 2 in Phase A+.
+Then validate (re-run H3 + German mental health claim).
 
-**Phase A+ (if needed):** Add Fix 2 (query constraints, prompt-only). Re-validate H3.
+**Phase A validation:** If H3 has 0 foreign-contaminated boundaries AND German claim produces German boundaries → proceed. If residual contamination → add Fix 2 in Phase A+.
 
-**Phase B (if A+A+ still shows residual):** Implement Fix 1 (jurisdiction-aware relevance). Requires `inferredGeography` passed to `classifyRelevance()`, schema change, and caller updates. Note: Fix 1's `jurisdictionMatch` field must default to `.catch("contextual")` — not `"direct"` — to avoid silently passing all sources through when the field is absent.
+**Phase A+ (if needed):** Add Fix 2 (query constraints, prompt-only). Re-validate.
+
+**Phase B (if A+ still shows residual):** Implement Fix 1 (jurisdiction-aware relevance). Requires `inferredGeography` passed to `classifyRelevance()`, schema change, and caller updates. Note: Fix 1's `jurisdictionMatch` field must default to `.catch("contextual")` — not `"direct"` — to avoid silently passing all sources through when the field is absent.
 
 **Phase C (if needed):** Implement Fix 3 only if Phase A+B validation shows residual contamination. Fix 3 uses a dedicated `applicability` field (not `probativeValue` override) — see §4 Fix 3 for schema details.
 
@@ -538,6 +684,9 @@ After each phase, re-run the H3 baseline claim:
 
 **Note on validation metric:** The target is zero `foreign_reaction` items, not zero "U.S." items. U.S.-based academic papers, law school analyses, and NGO reports on Brazilian proceedings are `contextual` evidence — they should pass through and their presence is a quality signal, not contamination. Only foreign *government* actors (state.gov, federalregister.gov, congressional statements, executive orders) are `foreign_reaction`.
 
+**Additional validation for Fix 0-A (language drift):**
+- Re-run German mental health claim ("Die Schülerinnen und Schüler im Kanton Zürich..."): boundary names must be in German, not English. Compare against clean run `d9bb60d4` (German boundaries) and problematic run `21316c9e` (English boundaries after Haiku drift).
+
 **Regression checks (end-to-end):**
 - Re-run H1a (PT Bolsonaro): B-score ≥55% (currently 55%)
 - Re-run H4 (DE Kinder Migration): TP within 68-76% (currently 72%)
@@ -549,7 +698,10 @@ After each phase, re-run the H3 baseline claim:
 | `test/unit/lib/analyzer/claimboundary-pipeline.test.ts` | Both Pass 2 render calls (line 1683 and line 1696) receive `inferredGeography` as a template variable. Use existing `distinctEvents` wiring pattern (line 1676) as the test model. |
 | `test/unit/lib/analyzer/claimboundary-pipeline.test.ts` | Fix 1: `classifyRelevance()` output with missing `jurisdictionMatch` field defaults to `"contextual"` (not `"direct"`) via `.catch("contextual")` on the schema. Verify a response missing the field does not block foreign-reaction filtering. |
 | `test/unit/lib/analyzer/claimboundary-pipeline.test.ts` | Fix 3: after `assessEvidenceApplicability()` runs, an item with `applicability: "foreign_reaction"` is absent from `state.evidenceItems`. An item with `applicability: "contextual"` is retained. An item with no `applicability` field is retained (backwards compatible). Test the integration point, not evidence-filter.ts in isolation — the filter is inline post-loop, not inside `filterByProbativeValue`. |
-| `test/unit/lib/config-drift.test.ts` | Will pass automatically once all three locations per UCM key are updated (`pipeline.default.json`, `PipelineConfigSchema`, `DEFAULT_PIPELINE_CONFIG`). Run after any UCM config change to confirm. |
+| `test/unit/lib/analyzer/claimboundary-pipeline.test.ts` | Fix 0-A: when `runPass2` falls back to Haiku after soft refusal, the fallback user message includes a language directive containing `detectedLanguage`. Test both: (a) fallback path at line 1981, (b) normal retry path at line 1829. When `detectedLanguage` is null/undefined, no directive is appended. |
+| `test/unit/lib/analyzer/claimboundary-pipeline.test.ts` | Fix 4: when `contradictionReservedQueries: 2` and `perClaimQueryBudget: 8`, the main loop stops considering a claim budget-eligible when its remaining budget equals 2 (not 0). Contradiction loop can then spend the reserved 2 queries. |
+| `test/unit/lib/analyzer/verdict-stage.test.ts` | Fix 5: `stripPhantomEvidenceIds()` removes IDs not in the evidence pool from `supportingEvidenceIds` and `opposingEvidenceIds`. Returns the list of stripped IDs. Does NOT strip IDs that ARE in the pool. When ALL supporting IDs are phantom, emits a warning (not silent strip). |
+| `test/unit/lib/config-drift.test.ts` | Will pass automatically once all three locations per UCM key are updated (`pipeline.default.json`, `PipelineConfigSchema`, `DEFAULT_PIPELINE_CONFIG`). Run after any UCM config change to confirm. Applies to Fix 4's `contradictionReservedQueries`. |
 
 ---
 
@@ -585,6 +737,7 @@ After each phase, re-run the H3 baseline claim:
 | 2026-03-12 | Lead Developer | ~~REQUEST_CHANGES~~ → RESOLVED | All 3 objections resolved in plan body. See resolution note appended to that review. |
 | 2026-03-12 | Lead Developer | APPROVED with inline fixes | Caught 2 out-of-scope variable references (`pass1Result`) in Fix 0 and Fix 1 implementation snippets. Corrected the code snippets and `runPass2` signature directly in the plan body and approved. |
 | 2026-03-12 | Captain Deputy (Claude Sonnet 4.6) | APPROVED — doc cleanup applied | Confirmed plan execution-ready. Closed Open Q2 (keep 0.4 threshold, Architect recommendation accepted). Confirmed Open Q4 deferred. Found one remaining stale `pass1Result` snippet in Fix 1 (missed by prior inline fix) — removed directly. Two implementation flags noted for executor (Fix A touches 2 files, not 1; Phase A = Fix 0 alone per D3). Sequencing decision: Phase 2 worktree runs before Fix 0 implementation. |
+| 2026-03-15 | Lead Architect + Code Reviewer | ADDENDUM — 3 new fixes | Job `21316c9e` proved Fix 0's system-prompt geography insufficient for Haiku fallback. English user-message framing causes language drift. Added Fix 0-A (language directive), Fix 4 (contradiction budget reservation), Fix 5 (phantom evidence ID filter). Phase A expanded from Fix 0 alone to Fix 0 + 0-A + 4 + 5. See D5-D7. |
 
 ---
 
@@ -596,6 +749,9 @@ After each phase, re-run the H3 baseline claim:
 | D2 | **Fix 3: use dedicated `applicability` field on `EvidenceItem`, not `probativeValue` override.** | `probativeValue` is a quality dimension; `applicability` is a jurisdiction dimension. Conflating them couples the jurisdiction filter to the quality threshold and obscures intent. The `applicability` field is explicit, backwards-compatible (optional field), and immune to threshold changes. |
 | D3 | **Phasing: Fix 0 alone → validate → add fixes incrementally.** | Root cause should be isolated before adding further changes. Fix 0 may be sufficient. The original Phase A (0+2 together) makes it impossible to know which fix did the work. |
 | D4 | **`contextual` evidence keeps full weight. No downweighting.** | International NGO and academic analysis is legitimate evidence. Blanket downweighting of external observers is not grounded in pipeline rules. |
+| D5 | **Fix 0-A: Language directive in fallback/retry user messages is REQUIRED with Fix 0.** Fix 0 alone is proven insufficient by Job `21316c9e`. | System-prompt `inferredGeography` is overridden by English-dominant user message for budget models. The language signal must be in the user message, not just the system prompt. |
+| D6 | **Fix 4: `contradictionReservedQueries` elevated from nice-to-have to Phase A requirement.** | 9 max main iterations with budget 8 structurally starves the contradiction loop. `contradictionReservedIterations` is dead config without query reservation. |
+| D7 | **Fix 5: Post-verdict phantom ID filter ships in Phase A.** | Deterministic metadata cleanup. Existing `safe_downgrade` is too aggressive (drops TP to 50%) for an ID hallucination. Strip-and-warn is the right response. |
 
 ---
 
