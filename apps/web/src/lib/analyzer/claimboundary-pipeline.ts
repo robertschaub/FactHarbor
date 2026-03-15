@@ -176,6 +176,26 @@ export async function runClaimBoundaryAnalysis(
       console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
     }
 
+    // Guard: bare URL submitted as text type — auto-fetch so PDFs and web pages are analysed
+    // correctly instead of sending the raw URL string to Stage 1 where impliedClaim would be empty.
+    // Structural format check (not semantic analysis) — allowed per AGENTS.md.
+    if (input.inputType !== "url" && /^https?:\/\/\S+$/.test(analysisText.trim())) {
+      onEvent("Detected URL input — fetching content...", 3);
+      try {
+        const fetched = await extractTextFromUrl(analysisText.trim(), {
+          pdfParseTimeoutMs: initialPipelineConfig.pdfParseTimeoutMs ?? 60000,
+        });
+        if (!fetched.text || fetched.text.trim().length === 0) {
+          throw new Error("URL returned no extractable text content");
+        }
+        analysisText = fetched.text;
+        console.log(`[Pipeline] Auto-fetched URL (text input): ${analysisText.length} chars, type: ${fetched.contentType}`);
+      } catch (fetchError) {
+        const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        throw new Error(`Failed to fetch URL content: ${msg}`);
+      }
+    }
+
     // Initialize research state
     const state: CBResearchState = {
       originalInput: analysisText,
