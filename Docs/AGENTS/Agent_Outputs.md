@@ -1,6 +1,35 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-15 | Senior Developer | Codex (GPT-5) | Verify Dependency Fixes Across Local, CI, and Deploy Paths
+**Task:** Re-verify the dependency/remediation changes as Senior Developer and confirm whether the repo is now clean for local development, CI, and deployed-system prerequisites.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Repaired the active local workspace by stopping the repo's running Next.js dev processes, which were locking `next-swc.win32-x64-msvc.node` and blocking `npm ci`.
+- Confirmed the active local workspace now passes `npm ci`, `npm audit`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -c Release`.
+- Confirmed a clean-room CI-equivalent path in detached worktree `C:\DEV\FactHarbor-sd-verify` also passes `npm ci`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -c Release`.
+- Confirmed the standalone tool package audit is clean and resolves `@vscode/vsce@3.7.1`, `undici@7.24.3`, and `yauzl@3.2.1`.
+- Confirmed `scripts/deploy.sh` parses successfully under Git Bash after the added Node version preflight.
+**Open items:** None in code. Operationally, the deployed VPS still needs to actually be on Node `v20.19.0+` for the new guard to pass.
+**Warnings:** The active local `next build` emitted a non-fatal standalone trace warning about copying `search-cache.db-shm`; the build still succeeded, and the warning did not reproduce in the clean verification worktree. This appears environment-local rather than a code regression.
+**For next agent:** The dependency fix set is now verified end-to-end. If a deployment fails next, the first thing to check is the VPS Node version, because `scripts/deploy.sh` will now reject anything below `20.19.0`.
+**Learnings:** no
+
+---
+### 2026-03-15 | Senior Developer | Codex (GPT-5) | Enforce Node Patch Level and Fix VS Code Tool Audit
+**Task:** Implement the follow-up to the dependency review: enforce a safe minimum Node 20 patch level for CI/deploy, and repair the standalone `tools/vscode-xwiki-preview` dependency graph so its security override actually resolves.
+**Files touched:** `package.json`, `apps/web/package.json`, `.github/workflows/ci.yml`, `scripts/deploy.sh`, `scripts/DEPLOYMENT.md`, `tools/vscode-xwiki-preview/package.json`, `tools/vscode-xwiki-preview/package-lock.json`
+**Key decisions:**
+- Pinned CI to `20.19.0` instead of floating major `20`, matching the stricter transitive engine floor introduced by current `sqlite3`/`undici` dependency resolution.
+- Added `engines.node >=20.19.0` at the repo root and web workspace to make the runtime requirement explicit in package metadata.
+- Added a deploy preflight in `scripts/deploy.sh` that aborts early if the VPS is on an older Node patch.
+- Fixed the standalone VS Code tool by upgrading `@vscode/vsce` to `3.7.1`, overriding `yauzl` to exact `3.2.1`, and overriding `undici` to `7.24.3`; regenerated that package's lockfile.
+**Open items:** None for the implemented fix set.
+**Warnings:** Could not syntax-check `scripts/deploy.sh` with `bash -n` on this Windows machine because WSL/bash is not installed. The function is simple and localized, but shell syntax was not machine-validated here.
+**For next agent:** Main app path was previously validated in a clean worktree (`npm ci`, `npm test`, `npm -w apps/web run build`, `dotnet build apps/api -c Release`). The new work here is infra-only plus the standalone tool package. If deploy issues occur next, first confirm the VPS is actually on Node `v20.19.0+`.
+**Learnings:** no
+
+---
 ### 2026-03-14 | Senior Developer | Claude Sonnet 4.6 | Phase A: Search-Stack Drift Investigation
 **Task:** Execute Phase A of the approved quality-restoration investigation: determine whether search-stack drift is the primary remaining cause of report-quality degradation vs `quality_window_start` (`9cdc8889`). Design and run experiments covering provider-mix (UCM on main) and AUTO accumulation behavior (worktree).
 **Files touched:**
