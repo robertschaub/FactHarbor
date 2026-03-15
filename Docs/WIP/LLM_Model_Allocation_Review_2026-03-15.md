@@ -255,7 +255,7 @@ This is a labeling error with a cost consequence. The `modelUnderstand` UCM fiel
 
 | Decision | Options | Recommendation |
 |----------|---------|----------------|
-| Pass 2 model (Rec-A) | Test on Haiku; measure retry rate + quality | ✅ Proceed with test — widen criteria per Architect note |
+| Pass 2 model (Rec-A) | Test on Haiku; measure retry rate + quality | ✅ Shipped in commit `fix(pipeline): Rec-A — Pass 2 uses extract_evidence tier` |
 | Challenger provider (Rec-B) | Keep OpenAI / B1 simplify / B2 budget | Keep current; evaluate empirically via Phase A |
 | `getModel()` fix (Rec-C) | Fix now | ✅ Shipped in commit `fix(llm): use "standard" in getModel()` |
 | Self-consistency rounds (Rec-D) | Evaluate after Phase A | 🔁 Defer |
@@ -264,8 +264,8 @@ This is a labeling error with a cost consequence. The `modelUnderstand` UCM fiel
 
 ## 9. Open Items
 
-- [ ] **Rec-A:** Test Pass 2 on Haiku with Phase A benchmark inputs. Measure: (a) `impliedClaim` quality, (b) retry count distribution per input, (c) total Pass 2 step cost. Do not merge until all three are verified.
-- [ ] **Rec-A (footnote):** Add inline comment to `runPass2` call site explaining why task key is `extract_evidence`, not `verdict`.
+- [x] **Rec-A:** ~~Test Pass 2 on Haiku~~ — shipped. 4 diverse validation runs (PT Bolsonaro, EN Iran, DE Plastik, DE Muslime): zero quality degradation, zero soft refusals, higher evidence counts (faster Pass 2 → more research time). Also eliminates Sonnet→Haiku fallback cascade.
+- [x] **Rec-A (footnote):** ~~Add inline comment~~ — done in implementation (3-line comment at call site).
 - [ ] **Rec-B:** After Phase A, measure challenger effectiveness (how often does reconciler incorporate a challenger counter-argument?). Only change default if data shows challenger is ceremonial.
 - [x] **Rec-C:** ~~Fix `getModel()` literal~~ — shipped. `resolveModel("sonnet")` → `resolveModel("standard")`, comment corrected.
 - [ ] **Rec-D:** Revisit self-consistency rounds after Phase A baseline is available.
