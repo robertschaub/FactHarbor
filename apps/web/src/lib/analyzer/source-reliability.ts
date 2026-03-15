@@ -16,6 +16,7 @@ import { assertValidTruthPercentage } from "./types";
 import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
+import { extractNormalizedHostname, getDomainLookupChain } from "../domain-utils";
 
 // ============================================================================
 // CONFIGURATION (using shared config for unified defaults)
@@ -97,13 +98,7 @@ export function clearPrefetchedScores(): void {
  * Extract and normalize domain from URL
  */
 export function extractDomain(url: string): string | null {
-  try {
-    const hostname = new URL(url).hostname.toLowerCase();
-    // Strip www. prefix and trailing dots
-    return hostname.replace(/^www\./, "").replace(/\.+$/, "");
-  } catch {
-    return null;
-  }
+  return extractNormalizedHostname(url);
 }
 
 /**
@@ -228,13 +223,23 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
 
   console.log(`[SR] Prefetching ${newDomains.length} new domains (${result.alreadyPrefetched} already done)`);
 
-  // Batch cache lookup - now returns full data
-  const cached = await batchGetCachedData(newDomains);
-  result.cacheHits = cached.size;
-  console.log(`[SR] Cache hits: ${cached.size}/${newDomains.length}`);
+  const cacheLookupDomains = [...new Set(newDomains.flatMap((domain) => getDomainLookupChain(domain)))];
 
-  // Populate map with cached values (full data)
+  // Batch cache lookup - exact host first, then parent domain fallback
+  const cached = await batchGetCachedData(cacheLookupDomains);
+  const cachedHits = newDomains.reduce((count, domain) => {
+    const resolved = resolveCachedReliability(domain, cached);
+    if (!resolved) return count;
+
+    prefetchedData.set(domain, resolved);
+    return count + 1;
+  }, 0);
+  result.cacheHits = cachedHits;
+  console.log(`[SR] Cache hits: ${cachedHits}/${newDomains.length}`);
+
+  // Preserve exact cached entries as direct lookup keys too
   for (const [domain, data] of cached) {
+    if (prefetchedData.has(domain)) continue;
     prefetchedData.set(domain, {
       score: data.score,
       confidence: data.confidence,
@@ -243,7 +248,7 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
   }
 
   // Find cache misses that need evaluation
-  const misses = newDomains.filter((d) => !cached.has(d));
+  const misses = newDomains.filter((d) => !prefetchedData.has(d));
 
   // **PERFORMANCE FIX**: Parallelize SR evaluations with concurrency limit
   // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
@@ -366,8 +371,7 @@ export function getTrackRecordScore(url: string): number | null {
   const domain = extractDomain(url);
   if (!domain) return null;
 
-  // Sync lookup from prefetched map
-  const data = prefetchedData.get(domain);
+  const data = getPrefetchedReliability(domain);
   return data?.score ?? null;
 }
 
@@ -383,9 +387,34 @@ export function getTrackRecordData(url: string): CachedReliabilityData | null {
   const domain = extractDomain(url);
   if (!domain) return null;
 
-  // Sync lookup from prefetched map
-  const data = prefetchedData.get(domain);
+  const data = getPrefetchedReliability(domain);
   return data ?? null;
+}
+
+function resolveCachedReliability(
+  domain: string,
+  cached: Map<string, CachedReliabilityDataFromCache>,
+): CachedReliabilityData | null {
+  for (const candidate of getDomainLookupChain(domain)) {
+    const data = cached.get(candidate);
+    if (!data) continue;
+    return {
+      score: data.score,
+      confidence: data.confidence,
+      consensusAchieved: data.consensusAchieved,
+    };
+  }
+
+  return null;
+}
+
+function getPrefetchedReliability(domain: string): CachedReliabilityData | null {
+  for (const candidate of getDomainLookupChain(domain)) {
+    const data = prefetchedData.get(candidate);
+    if (data) return data;
+  }
+
+  return null;
 }
 
 // ============================================================================

@@ -157,9 +157,78 @@
   background: var(--bg-surface);
 }
 
+.familyRow {
+  background: #f8fafc;
+}
+
+.familyRow:hover {
+  background: #f8fafc !important;
+}
+
+.familyCell {
+  padding: 10px !important;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.familyLabel {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.familyDomain {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.familyCount {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.domainCell {
+  min-width: 220px;
+}
+
 .domain {
   font-family: monospace;
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.domainMeta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.domainTag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 10px;
+}
+
+.domainFamilyRef {
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 

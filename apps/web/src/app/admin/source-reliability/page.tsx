@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import styles from "./source-reliability.module.css";
 import toast from "react-hot-toast";
 
 interface CachedScore {
   domain: string;
+  familyDomain: string;
   score: number | null;
   confidence: number;
   evaluatedAt: string;
@@ -85,6 +86,11 @@ interface CacheData {
   config?: WeightConfig;
 }
 
+type CachedScoreGroup = {
+  familyDomain: string;
+  entries: CachedScore[];
+};
+
 // Get admin key from sessionStorage or environment
 function getAdminKey(): string | null {
   if (typeof window !== "undefined") {
@@ -118,6 +124,24 @@ async function verifyAdminKey(key: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function groupEntriesByFamily(entries: CachedScore[]): CachedScoreGroup[] {
+  const groups = new Map<string, CachedScore[]>();
+
+  for (const entry of entries) {
+    const existing = groups.get(entry.familyDomain);
+    if (existing) {
+      existing.push(entry);
+      continue;
+    }
+    groups.set(entry.familyDomain, [entry]);
+  }
+
+  return Array.from(groups, ([familyDomain, groupedEntries]) => ({
+    familyDomain,
+    entries: groupedEntries,
+  }));
 }
 
 export default function SourceReliabilityPage() {
@@ -156,6 +180,8 @@ export default function SourceReliabilityPage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const groupedEntries = data ? groupEntriesByFamily(data.entries) : [];
+  const tableColumnCount = isAdminAuthenticated ? 9 : 8;
 
   useEffect(() => {
     const checkStoredAdminKey = async () => {
@@ -1351,85 +1377,108 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                 </tr>
               </thead>
               <tbody>
-                {data.entries.map((entry) => (
-                  <tr key={entry.domain} className={selectedDomains.has(entry.domain) ? styles.selectedRow : ""}>
-                    {isAdminAuthenticated && (
-                      <td className={styles.checkboxCol}>
-                        <input
-                          type="checkbox"
-                          checked={selectedDomains.has(entry.domain)}
-                          onChange={() => toggleSelect(entry.domain)}
-                        />
+                {groupedEntries.map((group) => (
+                  <Fragment key={group.familyDomain}>
+                    <tr key={`${group.familyDomain}-family`} className={styles.familyRow}>
+                      <td colSpan={tableColumnCount} className={styles.familyCell}>
+                        <span className={styles.familyLabel}>Family</span>
+                        <span className={styles.familyDomain}>{group.familyDomain}</span>
+                        <span className={styles.familyCount}>
+                          {group.entries.length} entr{group.entries.length === 1 ? "y" : "ies"} on this page
+                        </span>
                       </td>
-                    )}
-                    <td>
-                      <div className={styles.actionButtons}>
-                        <button
-                          onClick={() => setSelectedEntry(entry)}
-                          className={styles.viewButton}
-                          title="View detailed evaluation"
-                        >
-                          👁
-                        </button>
+                    </tr>
+                    {group.entries.map((entry) => (
+                      <tr key={entry.domain} className={selectedDomains.has(entry.domain) ? styles.selectedRow : ""}>
                         {isAdminAuthenticated && (
-                          <button
-                            onClick={() => handleDelete(entry.domain)}
-                            className={styles.deleteButton}
-                            title="Delete this entry"
-                          >
-                            🗑
-                          </button>
+                          <td className={styles.checkboxCol}>
+                            <input
+                              type="checkbox"
+                              checked={selectedDomains.has(entry.domain)}
+                              onChange={() => toggleSelect(entry.domain)}
+                            />
+                          </td>
                         )}
-                      </div>
-                    </td>
-                    <td className={styles.domain}>{entry.domain}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <span
-                        className={styles.scoreBadge}
-                        style={{ backgroundColor: getScoreColor(entry.score) }}
-                        title={getScoreLabel(entry.score)}
-                      >
-                        {formatScore(entry.score)}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <span 
-                        className={styles.confidence}
-                        title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'} (${formatScore(entry.confidence)})`}
-                      >
-                        {formatScore(entry.confidence)}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {entry.score === null ? (
-                        <span className={styles.consensusNo} title={`Insufficient data / low confidence\n${getModelsTooltip(entry)}`}>—</span>
-                      ) : entry.consensusAchieved ? (
-                        <span
-                          className={styles.consensusYes}
-                          title={`${entry.modelSecondary ? "Sequential refinement: Cross-checked and refined by secondary model" : "Single-model evaluation completed"}\n${getModelsTooltip(entry)}`}
-                        >
-                          ✓
-                        </span>
-                      ) : entry.fallbackUsed ? (
-                        <span 
-                          className={styles.consensusFallback} 
-                          title={`${entry.fallbackReason || "Fallback: Models disagreed, used lower score"}\n${getModelsTooltip(entry)}`}
-                          style={{ cursor: "help" }}
-                        >
-                          ⚠️
-                        </span>
-                      ) : entry.modelSecondary ? (
-                        <span className={styles.consensusNo} title={`Refinement failed or not recorded\n${getModelsTooltip(entry)}`}>✗</span>
-                      ) : (
-                        <span className={styles.consensusNo} title={`Single-model result\n${getModelsTooltip(entry)}`}>—</span>
-                      )}
-                    </td>
-                    <td className={styles.entity} title={entry.identifiedEntity || ""}>
-                      {entry.identifiedEntity || "—"}
-                    </td>
-                    <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
-                    <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
-                  </tr>
+                        <td>
+                          <div className={styles.actionButtons}>
+                            <button
+                              onClick={() => setSelectedEntry(entry)}
+                              className={styles.viewButton}
+                              title="View detailed evaluation"
+                            >
+                              👁
+                            </button>
+                            {isAdminAuthenticated && (
+                              <button
+                                onClick={() => handleDelete(entry.domain)}
+                                className={styles.deleteButton}
+                                title="Delete this entry"
+                              >
+                                🗑
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className={styles.domainCell}>
+                          <div className={styles.domain}>{entry.domain}</div>
+                          <div className={styles.domainMeta}>
+                            <span className={styles.domainTag}>
+                              {entry.domain === entry.familyDomain ? "root host" : "subdomain"}
+                            </span>
+                            {entry.domain !== entry.familyDomain && (
+                              <span className={styles.domainFamilyRef}>via {entry.familyDomain}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <span
+                            className={styles.scoreBadge}
+                            style={{ backgroundColor: getScoreColor(entry.score) }}
+                            title={getScoreLabel(entry.score)}
+                          >
+                            {formatScore(entry.score)}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <span 
+                            className={styles.confidence}
+                            title={`LLM confidence: ${entry.confidence >= 0.8 ? 'High' : entry.confidence >= 0.6 ? 'Medium' : 'Low'} (${formatScore(entry.confidence)})`}
+                          >
+                            {formatScore(entry.confidence)}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          {entry.score === null ? (
+                            <span className={styles.consensusNo} title={`Insufficient data / low confidence\n${getModelsTooltip(entry)}`}>—</span>
+                          ) : entry.consensusAchieved ? (
+                            <span
+                              className={styles.consensusYes}
+                              title={`${entry.modelSecondary ? "Sequential refinement: Cross-checked and refined by secondary model" : "Single-model evaluation completed"}\n${getModelsTooltip(entry)}`}
+                            >
+                              ✓
+                            </span>
+                          ) : entry.fallbackUsed ? (
+                            <span 
+                              className={styles.consensusFallback} 
+                              title={`${entry.fallbackReason || "Fallback: Models disagreed, used lower score"}\n${getModelsTooltip(entry)}`}
+                              style={{ cursor: "help" }}
+                            >
+                              ⚠️
+                            </span>
+                          ) : entry.modelSecondary ? (
+                            <span className={styles.consensusNo} title={`Refinement failed or not recorded\n${getModelsTooltip(entry)}`}>✗</span>
+                          ) : (
+                            <span className={styles.consensusNo} title={`Single-model result\n${getModelsTooltip(entry)}`}>—</span>
+                          )}
+                        </td>
+                        <td className={styles.entity} title={entry.identifiedEntity || ""}>
+                          {entry.identifiedEntity || "—"}
+                        </td>
+                        <td className={styles.date}>{formatDate(entry.evaluatedAt)}</td>
+                        <td className={styles.date}>{formatDate(entry.expiresAt)}</td>
+                      </tr>
+                    ))}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { getCacheStats, getAllCachedScores, cleanupExpired, deleteCachedScore, setCachedScore, batchGetCachedData } from "@/lib/source-reliability-cache";
 import { getConfig } from "@/lib/config-storage";
 import { checkAdminKey, getEnv } from "@/lib/auth";
+import { getFamilyDomain } from "@/lib/domain-utils";
 
 export const runtime = "nodejs";
 
@@ -54,6 +55,10 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       ...data,
+      entries: data.entries.map((entry) => ({
+        ...entry,
+        familyDomain: getFamilyDomain(entry.domain),
+      })),
       stats,
       config,
     });

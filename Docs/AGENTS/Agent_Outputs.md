@@ -5262,3 +5262,31 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** `applyEvidenceWeighting()` is safer than before but still ends with `as T`; that is acceptable at the current single call site but not a truly generic-safe contract.
 **For next agent:** Use the review findings in chat as the authoritative recommendation set. The code changes look close to ready; the main adjustments needed are in the experiment plan, not the toggle implementation.
 **Learnings:** no
+
+---
+### 2026-03-15 | Senior Developer | Codex (GPT-5) | Source Reliability Subdomain Policy Investigation
+**Task:** Investigate how source-reliability currently handles subdomains and recommend the safest policy for admin UX and runtime behavior.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed current SR cache and runtime lookups are exact-host only: `de.wikipedia.org`, `en.wikipedia.org`, and `wikipedia.org` are stored and evaluated as separate entries.
+- Confirmed this is partly intentional in tests and historical design notes, but the approved design also expected optional parent-domain fallback when no exact-host entry exists; the shipped code does not implement that fallback.
+- Recommended policy: keep exact-host entries authoritative for runtime, add registrable-domain family grouping in the admin UI, and add exact-host-first plus parent-domain fallback for runtime/cache lookup. Do not blindly collapse sibling subdomains into one canonical score.
+- Recommended using a public-suffix-aware registrable-domain helper for grouping/fallback; do not implement parent extraction with naive `split('.')` because `bbc.co.uk`-style domains will break.
+**Open items:** If implemented, decide whether family-level grouping remains UI-only or whether a later manual alias/canonical-entity layer is needed for special cases like Wikipedia language editions.
+**Warnings:** Manual cleanup of duplicate subdomain rows alone will not fix analyzer behavior; the search stack intentionally emits language-specific Wikipedia hosts, so exact-host-only SR lookups will continue recreating fragmented entries.
+**For next agent:** Start with a low-risk pass: add registrable-domain helper, exact-host-first/parent fallback lookup path, and admin grouping without changing cache schema. Add tests for `news.bbc.co.uk -> bbc.co.uk`, `fr.wikipedia.org -> wikipedia.org`, and “exact host overrides parent” behavior.
+**Learnings:** no
+
+---
+### 2026-03-15 | Senior Developer | Codex (GPT-5) | Implement SR Subdomain Family Fallback and Admin Grouping
+**Task:** Implement the approved low-risk handling for subdomains in source reliability: exact-host authority, parent-domain fallback, and admin family grouping.
+**Files touched:** `apps/web/package.json`, `package-lock.json`, `apps/web/src/lib/domain-utils.ts`, `apps/web/src/lib/analyzer/source-reliability.ts`, `apps/web/src/app/api/admin/source-reliability/route.ts`, `apps/web/src/app/admin/source-reliability/page.tsx`, `apps/web/src/app/admin/source-reliability/source-reliability.module.css`, `apps/web/test/unit/lib/domain-utils.test.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-subdomain.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `tldts` as a direct web dependency and centralized hostname/family parsing in `domain-utils.ts` so `bbc.co.uk`-style families resolve correctly.
+- Changed SR prefetch and sync lookup to use `exact host -> family domain` fallback without altering the cache schema or overwriting exact-host entries.
+- Added `familyDomain` to the admin SR API response and grouped the admin table by family while preserving exact host rows and per-row actions.
+- Added focused tests for family-domain extraction plus fallback behavior, including “exact host beats family fallback”.
+**Open items:** Current admin grouping is page-local and display-oriented; if the Captain wants family-aware sorting/filtering across the full dataset, that should be a separate follow-up in the API/query layer.
+**Warnings:** Existing cached duplicate rows are still present until they expire or are deleted manually; this change prevents unnecessary re-evaluation when a family-level cache entry already exists, but it does not merge or rewrite old cache records.
+**For next agent:** If further refinement is needed, the next safe increment is family-aware search/sort in `/api/admin/source-reliability`, not schema-level canonicalization. Avoid collapsing sibling subdomains into one stored row unless there is an explicit product decision.
+**Learnings:** no

@@ -54,6 +54,7 @@
     "react-markdown": "^9.0.1",
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
+    "tldts": "^7.0.25",
     "zod": "^3.23.8"
   },
   "devDependencies": {
