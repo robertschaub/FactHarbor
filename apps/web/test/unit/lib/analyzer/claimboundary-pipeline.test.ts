@@ -2435,7 +2435,8 @@ describe("Stage 2: extractResearchEvidence", () => {
     const result = await extractResearchEvidence(claim, sources as any, mockPipelineConfig, "2026-02-17");
 
     expect(result).toHaveLength(1);
-    expect(result[0].sourceId).toBe("S_002");
+    // sourceId is intentionally empty at extraction time; backfillMissingSourceIds populates it later
+    expect(result[0].sourceId).toBe("");
     expect(result[0].sourceUrl).toBe("https://example.com/2");
   });
 });
@@ -6062,5 +6063,101 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
         inputType: "url",
       })
     ).rejects.toThrow(/^URL returned no extractable text content$/);
+  });
+
+  // --- Auto-detect path: inputType "text" containing a bare URL ---
+
+  it("should auto-fetch when inputType is 'text' but value is a bare URL", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { pdfParseTimeoutMs: 60000 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockFetchUrl.mockResolvedValue({
+      text: "PDF text content about the topic",
+      title: "Test PDF",
+      contentType: "application/pdf",
+    });
+
+    try {
+      await runClaimBoundaryAnalysis({
+        inputValue: "https://example.com/doc.pdf",
+        inputType: "text",
+      });
+    } catch {
+      // Expected to fail on a later stage
+    }
+
+    expect(mockFetchUrl).toHaveBeenCalledWith("https://example.com/doc.pdf", {
+      pdfParseTimeoutMs: 60000,
+    });
+  });
+
+  it("should NOT auto-fetch when inputType is 'text' and value is a plain claim (not a URL)", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    try {
+      await runClaimBoundaryAnalysis({
+        inputValue: "Entity A increased output by 15% in 2024",
+        inputType: "text",
+      });
+    } catch {
+      // Expected to fail on a later stage
+    }
+
+    // extractTextFromUrl must NOT have been called — plain text is not a URL
+    expect(mockFetchUrl).not.toHaveBeenCalled();
+  });
+
+  it("should throw 'Failed to fetch URL content' when auto-detected URL fetch fails", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { pdfParseTimeoutMs: 60000 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockFetchUrl.mockRejectedValue(new Error("Connection refused"));
+
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputValue: "https://example.com/report.pdf",
+        inputType: "text",
+      })
+    ).rejects.toThrow("Failed to fetch URL content");
   });
 });

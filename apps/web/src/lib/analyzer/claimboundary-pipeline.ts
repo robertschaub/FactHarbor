@@ -158,6 +158,7 @@ export async function runClaimBoundaryAnalysis(
   try {
     // --- URL content pre-fetch (restored from v2.x pipeline) ---
     let analysisText = input.inputValue;
+    let detectedUrl: string | undefined; // populated when auto-fetch fires on a URL-looking text input
     if (input.inputType === "url") {
       onEvent("Fetching URL content...", 3);
       let fetched: { text: string; title: string; contentType: string };
@@ -180,9 +181,10 @@ export async function runClaimBoundaryAnalysis(
     // correctly instead of sending the raw URL string to Stage 1 where impliedClaim would be empty.
     // Structural format check (not semantic analysis) — allowed per AGENTS.md.
     if (input.inputType !== "url" && /^https?:\/\/\S+$/.test(analysisText.trim())) {
+      detectedUrl = analysisText.trim();
       onEvent("Detected URL input — fetching content...", 3);
       try {
-        const fetched = await extractTextFromUrl(analysisText.trim(), {
+        const fetched = await extractTextFromUrl(detectedUrl, {
           pdfParseTimeoutMs: initialPipelineConfig.pdfParseTimeoutMs ?? 60000,
         });
         if (!fetched.text || fetched.text.trim().length === 0) {
@@ -653,7 +655,7 @@ export async function runClaimBoundaryAnalysis(
         searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
         inputType: input.inputType,
         detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
-        sourceUrl: input.inputType === "url" ? input.inputValue : undefined,
+        sourceUrl: input.inputType === "url" ? input.inputValue : detectedUrl,
         hasMultipleBoundaries: assessment.hasMultipleBoundaries,
         boundaryCount: boundaries.length,
         claimCount: understanding.atomicClaims.length,
@@ -5086,7 +5088,7 @@ export function createProductionLLMCall(
 
     // 3. Select model based on tier + resolved provider
     // Accepts both legacy values (haiku/sonnet/opus) and canonical values (budget/standard/premium).
-    const tier = options?.tier ?? "sonnet";
+    const tier = options?.tier ?? "standard";
     const isPremium = tier === "sonnet" || tier === "opus" || tier === "standard" || tier === "premium";
     const taskKey: ModelTask = isPremium ? "verdict" : "understand";
     // B-5b: For "opus"/"premium" tier, temporarily override modelVerdict with modelOpus so
