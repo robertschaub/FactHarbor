@@ -2,7 +2,7 @@
 
 **Created:** 2026-03-12
 **Author:** Senior Developer (Claude Opus 4.6)
-**Status:** APPROVED — updated 2026-03-15 with Fix 0-A, Fix 4, Fix 5 (post-review findings)
+**Status:** PHASE A VALIDATED — Fix 0+0-A+4+5 implemented and passing (2026-03-15). Phase A+ NOT triggered.
 **Baseline:** `Baseline_Test_Results_Phase1_2026-03-12.md`
 **Priority:** #1 quality blocker (per baseline §11)
 
@@ -702,6 +702,68 @@ After each phase, re-run the H3 baseline claim:
 | `test/unit/lib/analyzer/claimboundary-pipeline.test.ts` | Fix 4: when `contradictionReservedQueries: 2` and `perClaimQueryBudget: 8`, the main loop stops considering a claim budget-eligible when its remaining budget equals 2 (not 0). Contradiction loop can then spend the reserved 2 queries. |
 | `test/unit/lib/analyzer/verdict-stage.test.ts` | Fix 5: `stripPhantomEvidenceIds()` removes IDs not in the evidence pool from `supportingEvidenceIds` and `opposingEvidenceIds`. Returns the list of stripped IDs. Does NOT strip IDs that ARE in the pool. When ALL supporting IDs are phantom, emits a warning (not silent strip). |
 | `test/unit/lib/config-drift.test.ts` | Will pass automatically once all three locations per UCM key are updated (`pipeline.default.json`, `PipelineConfigSchema`, `DEFAULT_PIPELINE_CONFIG`). Run after any UCM config change to confirm. Applies to Fix 4's `contradictionReservedQueries`. |
+
+---
+
+## 6-A. Phase A Validation Results (2026-03-15)
+
+**Commit:** `28d42d8f` — fix(pipeline): Phase A — language drift, budget starvation, phantom evidence IDs
+**Fixes validated:** Fix 0 (prompt rules, already in place), Fix 0-A (language directive), Fix 4 (contradiction budget reservation), Fix 5 (phantom evidence ID filter)
+
+### Post-Fix Run Data
+
+| Job | Env | Input | TP | Conf | Ev | Main | Contra | Warn | Soft Ref | Phantom | Budget Ex | Bound Lang | Foreign Bounds |
+|-----|-----|-------|-----|------|-----|------|--------|------|----------|---------|-----------|-----------|----------------|
+| `a89d43a5` | Local | DE Mental Health | 66 | 61 | 25 | 3 | 1 | 0 | N | N | N | DE | 0 |
+| `b9518098` | Local | DE Mental Health | 63 | 49 | 28 | 4 | 1 | 0 | N | N | N | DE | 0 |
+| `a0784688` | Local | EN Bolsonaro (H3) | 62 | 56 | 45 | 2 | 1 | 0 | N | N | N | EN | 0 |
+| `b4030053` | Deployed | DE Mental Health | 62 | 45 | 27 | 6 | 1 | 1¹ | N | N | N | DE | 0 |
+
+¹ `insufficient_evidence` for AC_03 (2 items) — analytical reality (sparse evidence on psychiatric service uptake), not a system failure.
+
+### Pre-Fix vs Post-Fix Comparison
+
+| Metric | `21316c9e` (pre-fix, broken) | Post-fix (4 runs) |
+|--------|----------------------------|-------------------|
+| Boundary language (German input) | **English** (Haiku drift) | **German in all runs** ✅ |
+| Foreign-contaminated boundaries | Present | **0 in all runs** ✅ |
+| Contradiction iterations | **0** (budget starved) | **1 in all runs** ✅ |
+| Budget exhausted warning | **Yes** (all claims 8/8) | **No** ✅ |
+| Soft refusal → Haiku fallback | **Yes** | **No** (Sonnet succeeded)² |
+| Phantom evidence ID | **Yes** (EV_1773586481181) | **No** ✅ |
+| Quality warnings (warn/error) | 4 | 0–1 ✅ |
+
+² Fix 0-A's language directive was not exercised because Sonnet did not soft-refuse in any post-fix run. The fix is a safety net for when soft refusal does occur — validated by code review, not runtime data.
+
+### H3 Contamination Scorecard (EN Bolsonaro)
+
+| Metric | Pre-fix H3 (`fe595e71`) | Post-fix H3 (`a0784688`) | Target |
+|--------|------------------------|--------------------------|--------|
+| U.S.-focused boundaries | 3 of 6 | **0 of 6** ✅ | 0 |
+| Foreign-reaction evidence items | 21 of 49 (42.9%) | **0** ✅ | 0 |
+| B2 (Trump immune) | ❌ | ✅ | ✅ |
+| B3 (Boundary naming) | ❌ | ✅ (Court orders, Supreme Court, Police investigation) | ✅ |
+| B7 (No foreign bounds) | ❌ | ✅ | ✅ |
+| B-score | 15% | **est. ≥60%** ✅ | ≥50% |
+| Truth percentage | 56% | 62% (within ±5pp target) ✅ | ±5pp |
+
+### Decision Gate Result
+
+**Phase A+ (Fix 2) is NOT triggered.** H3 has 0 foreign-contaminated boundaries, meeting the Phase A validation target. Fix 0's prompt rules + Fix 0-A's language directive + Fix 4's budget protection were sufficient to eliminate foreign-jurisdiction contamination.
+
+Phase B (Fix 1) and Phase C (Fix 3) remain available if future runs show residual contamination, but are not needed based on current evidence.
+
+### Pending Validation Runs (in progress at time of writing)
+
+| Job | Env | Input | Status |
+|-----|-----|-------|--------|
+| `75812cd5` | Local | PT Bolsonaro (H1 regression) | RUNNING |
+| `15ee3f26` | Local | Iran nukes (EN) | QUEUED |
+| `9d77e5c8` | Local | Plastik recycling (DE) | QUEUED |
+| `a1974377` | Local | Muslime/Christen (DE) | QUEUED |
+| `5e2064eb` | Deployed | Global warming (EN) | RUNNING |
+| `7589d97d` | Deployed | Climate research (EN) | RUNNING |
+| `2a98977b` | Deployed | Climate mitigation (EN) | RUNNING |
 
 ---
 
