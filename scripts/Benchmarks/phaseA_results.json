@@ -1,0 +1,579 @@
+{
+  "phase": "A",
+  "timestamp": "2026-03-15T05:07:40Z",
+  "baseline_commit": "9cdc8889",
+  "conditions": {
+    "C0_CONTROL": "AUTO stop-on-first-success (main)",
+    "C1_SERPER": "Serper-only (UCM, main)",
+    "C2_SERPAPI": "SerpAPI-only (UCM, main) \u2014 historical P2",
+    "C3_ACCUM": "AUTO accumulate (worktree, no stop-on-first-success)"
+  },
+  "condition_averages": {
+    "C0_CONTROL": 120.2,
+    "C1_SERPER": 200.25,
+    "C2_SERPAPI": 197.04999999999998,
+    "C3_ACCUM": 191.76666666666665
+  },
+  "results": [
+    {
+      "condition": "C0_CONTROL",
+      "benchmark": "B1_EN",
+      "run": 1,
+      "job_id": "8ff022d5",
+      "status": "OK",
+      "score": 141.9,
+      "truth": 50.1,
+      "conf": 44.4,
+      "ev": 53,
+      "pvh": 29,
+      "pvm": 22,
+      "src": 20,
+      "verdict": "UNVERIFIED",
+      "providers": "Google-CSE",
+      "provider_counts": {
+        "Google-CSE": {
+          "queries": 15,
+          "results": 101
+        }
+      },
+      "queries_total": 15
+    },
+    {
+      "condition": "C0_CONTROL",
+      "benchmark": "B1_EN",
+      "run": 2,
+      "job_id": "bec2ccaf",
+      "status": "OK",
+      "score": 162.4,
+      "truth": 59,
+      "conf": 56.8,
+      "ev": 61,
+      "pvh": 32,
+      "pvm": 28,
+      "src": 25,
+      "verdict": "LEANING-TRUE",
+      "providers": "Google-CSE",
+      "provider_counts": {
+        "Google-CSE": {
+          "queries": 15,
+          "results": 102
+        }
+      },
+      "queries_total": 15
+    },
+    {
+      "condition": "C0_CONTROL",
+      "benchmark": "B2_PT",
+      "run": 1,
+      "job_id": "e4daa41f",
+      "status": "OK",
+      "score": 127.4,
+      "truth": 47,
+      "conf": 57,
+      "ev": 44,
+      "pvh": 33,
+      "pvm": 10,
+      "src": 16,
+      "verdict": "MIXED",
+      "providers": "Google-CSE",
+      "provider_counts": {
+        "Google-CSE": {
+          "queries": 15,
+          "results": 98
+        }
+      },
+      "queries_total": 15
+    },
+    {
+      "condition": "C0_CONTROL",
+      "benchmark": "B2_PT",
+      "run": 2,
+      "job_id": "3c3b1511",
+      "status": "OK",
+      "score": 122.9,
+      "truth": 58.9,
+      "conf": 49.7,
+      "ev": 37,
+      "pvh": 23,
+      "pvm": 14,
+      "src": 18,
+      "verdict": "LEANING-TRUE",
+      "providers": "Google-CSE",
+      "provider_counts": {
+        "Google-CSE": {
+          "queries": 15,
+          "results": 97
+        }
+      },
+      "queries_total": 15
+    },
+    {
+      "condition": "C0_CONTROL",
+      "benchmark": "B3_DE",
+      "run": 1,
+      "job_id": "be9216f9",
+      "status": "OK",
+      "score": 74.0,
+      "truth": 62,
+      "conf": 50,
+      "ev": 14,
+      "pvh": 3,
+      "pvm": 11,
+      "src": 5,
+      "verdict": "LEANING-TRUE",
+      "providers": "Google-CSE, Google-CSE, Serper",
+      "provider_counts": {
+        "Google-CSE": {
+          "queries": 8,
+          "results": 37
+        },
+        "Google-CSE, Serper": {
+          "queries": 2,
+          "results": 16
+        }
+      },
+      "queries_total": 10
+    },
+    {
+      "condition": "C0_CONTROL",
+      "benchmark": "B3_DE",
+      "run": 2,
+      "job_id": "b6c1ba88",
+      "status": "OK",
+      "score": 92.6,
+      "truth": 64,
+      "conf": 48,
+      "ev": 19,
+      "pvh": 6,
+      "pvm": 13,
+      "src": 12,
+      "verdict": "LEANING-TRUE",
+      "providers": "Google-CSE, Google-CSE, Serper",
+      "provider_counts": {
+        "Google-CSE": {
+          "queries": 10,
+          "results": 55
+        },
+        "Google-CSE, Serper": {
+          "queries": 2,
+          "results": 16
+        }
+      },
+      "queries_total": 12
+    },
+    {
+      "condition": "C1_SERPER",
+      "benchmark": "B1_EN",
+      "run": 1,
+      "job_id": "bd3611f3",
+      "status": "OK",
+      "score": 208.8,
+      "truth": 62.7,
+      "conf": 54.1,
+      "ev": 107,
+      "pvh": 61,
+      "pvm": 45,
+      "src": 29,
+      "verdict": "LEANING-TRUE",
+      "providers": "Serper",
+      "provider_counts": {
+        "Serper": {
+          "queries": 20,
+          "results": 110
+        }
+      },
+      "queries_total": 20
+    },
+    {
+      "condition": "C1_SERPER",
+      "benchmark": "B1_EN",
+      "run": 2,
+      "job_id": "9bffe0c7",
+      "status": "OK",
+      "score": 209.3,
+      "truth": 52.5,
+      "conf": 56.5,
+      "ev": 115,
+      "pvh": 56,
+      "pvm": 55,
+      "src": 29,
+      "verdict": "MIXED",
+      "providers": "Serper",
+      "provider_counts": {
+        "Serper": {
+          "queries": 20,
+          "results": 139
+        }
+      },
+      "queries_total": 20
+    },
+    {
+      "condition": "C1_SERPER",
+      "benchmark": "B2_PT",
+      "run": 1,
+      "job_id": "af4901a5",
+      "status": "OK",
+      "score": 234.6,
+      "truth": 67.8,
+      "conf": 63.1,
+      "ev": 144,
+      "pvh": 68,
+      "pvm": 72,
+      "src": 41,
+      "verdict": "LEANING-TRUE",
+      "providers": "Serper",
+      "provider_counts": {
+        "Serper": {
+          "queries": 17,
+          "results": 108
+        }
+      },
+      "queries_total": 17
+    },
+    {
+      "condition": "C1_SERPER",
+      "benchmark": "B2_PT",
+      "run": 2,
+      "job_id": "321ea2e4",
+      "status": "OK",
+      "score": 270.3,
+      "truth": 63.4,
+      "conf": 61.6,
+      "ev": 177,
+      "pvh": 99,
+      "pvm": 74,
+      "src": 59,
+      "verdict": "LEANING-TRUE",
+      "providers": "Serper",
+      "provider_counts": {
+        "Serper": {
+          "queries": 26,
+          "results": 174
+        }
+      },
+      "queries_total": 26
+    },
+    {
+      "condition": "C1_SERPER",
+      "benchmark": "B3_DE",
+      "run": 1,
+      "job_id": "a3507ba7",
+      "status": "OK",
+      "score": 168.1,
+      "truth": 66.5,
+      "conf": 65.5,
+      "ev": 61,
+      "pvh": 32,
+      "pvm": 28,
+      "src": 27,
+      "verdict": "LEANING-TRUE",
+      "providers": "Serper",
+      "provider_counts": {
+        "Serper": {
+          "queries": 18,
+          "results": 130
+        }
+      },
+      "queries_total": 18
+    },
+    {
+      "condition": "C1_SERPER",
+      "benchmark": "B3_DE",
+      "run": 2,
+      "job_id": "13d1e0e2",
+      "status": "OK",
+      "score": 110.4,
+      "truth": 69,
+      "conf": 62,
+      "ev": 34,
+      "pvh": 21,
+      "pvm": 13,
+      "src": 12,
+      "verdict": "LEANING-TRUE",
+      "providers": "Serper",
+      "provider_counts": {
+        "Serper": {
+          "queries": 12,
+          "results": 67
+        }
+      },
+      "queries_total": 12
+    },
+    {
+      "condition": "C2_SERPAPI",
+      "benchmark": "B1_EN",
+      "run": 1,
+      "job_id": "8409a477",
+      "status": "OK",
+      "score": 199.8,
+      "truth": 56.7,
+      "conf": 49.2,
+      "ev": 104,
+      "pvh": 42,
+      "pvm": 59,
+      "src": 25,
+      "verdict": "MIXED",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 18,
+          "results": 121
+        }
+      },
+      "queries_total": 18
+    },
+    {
+      "condition": "C2_SERPAPI",
+      "benchmark": "B1_EN",
+      "run": 2,
+      "job_id": "042019ae",
+      "status": "OK",
+      "score": 191.0,
+      "truth": 62.3,
+      "conf": 59.8,
+      "ev": 95,
+      "pvh": 49,
+      "pvm": 43,
+      "src": 22,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 20,
+          "results": 110
+        }
+      },
+      "queries_total": 20
+    },
+    {
+      "condition": "C2_SERPAPI",
+      "benchmark": "B2_PT",
+      "run": 1,
+      "job_id": "3d8953fc",
+      "status": "OK",
+      "score": 227.7,
+      "truth": 61.9,
+      "conf": 58.6,
+      "ev": 119,
+      "pvh": 75,
+      "pvm": 42,
+      "src": 38,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 18,
+          "results": 112
+        }
+      },
+      "queries_total": 18
+    },
+    {
+      "condition": "C2_SERPAPI",
+      "benchmark": "B2_PT",
+      "run": 2,
+      "job_id": "b0e28f8d",
+      "status": "OK",
+      "score": 177.6,
+      "truth": 60.7,
+      "conf": 57.9,
+      "ev": 82,
+      "pvh": 50,
+      "pvm": 29,
+      "src": 22,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 17,
+          "results": 101
+        }
+      },
+      "queries_total": 17
+    },
+    {
+      "condition": "C2_SERPAPI",
+      "benchmark": "B3_DE",
+      "run": 1,
+      "job_id": "6fd9d398",
+      "status": "OK",
+      "score": 195.1,
+      "truth": 66.8,
+      "conf": 65.7,
+      "ev": 70,
+      "pvh": 36,
+      "pvm": 33,
+      "src": 36,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 19,
+          "results": 127
+        }
+      },
+      "queries_total": 19
+    },
+    {
+      "condition": "C2_SERPAPI",
+      "benchmark": "B3_DE",
+      "run": 2,
+      "job_id": "31c4432d",
+      "status": "OK",
+      "score": 191.1,
+      "truth": 61,
+      "conf": 55.7,
+      "ev": 66,
+      "pvh": 14,
+      "pvm": 51,
+      "src": 37,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 26,
+          "results": 189
+        }
+      },
+      "queries_total": 26
+    },
+    {
+      "condition": "C3_ACCUM",
+      "benchmark": "B1_EN",
+      "run": 1,
+      "job_id": "4569a09c",
+      "status": "OK",
+      "score": 203.6,
+      "truth": 58.3,
+      "conf": 47.9,
+      "ev": 110,
+      "pvh": 60,
+      "pvm": 49,
+      "src": 27,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 15,
+          "results": 101
+        }
+      },
+      "queries_total": 15
+    },
+    {
+      "condition": "C3_ACCUM",
+      "benchmark": "B1_EN",
+      "run": 2,
+      "job_id": "7aa1b016",
+      "status": "OK",
+      "score": 192.4,
+      "truth": 66.1,
+      "conf": 56.8,
+      "ev": 93,
+      "pvh": 43,
+      "pvm": 49,
+      "src": 24,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 18,
+          "results": 118
+        }
+      },
+      "queries_total": 18
+    },
+    {
+      "condition": "C3_ACCUM",
+      "benchmark": "B2_PT",
+      "run": 1,
+      "job_id": "ee0f1701",
+      "status": "OK",
+      "score": 219.0,
+      "truth": 60.8,
+      "conf": 60.2,
+      "ev": 95,
+      "pvh": 65,
+      "pvm": 30,
+      "src": 36,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 13,
+          "results": 83
+        }
+      },
+      "queries_total": 13
+    },
+    {
+      "condition": "C3_ACCUM",
+      "benchmark": "B2_PT",
+      "run": 2,
+      "job_id": "b2c1de63",
+      "status": "OK",
+      "score": 207.1,
+      "truth": 68.5,
+      "conf": 65.6,
+      "ev": 102,
+      "pvh": 55,
+      "pvm": 47,
+      "src": 27,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 18,
+          "results": 110
+        }
+      },
+      "queries_total": 18
+    },
+    {
+      "condition": "C3_ACCUM",
+      "benchmark": "B3_DE",
+      "run": 1,
+      "job_id": "8827506f",
+      "status": "OK",
+      "score": 125.0,
+      "truth": 67,
+      "conf": 65,
+      "ev": 46,
+      "pvh": 22,
+      "pvm": 22,
+      "src": 13,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 12,
+          "results": 72
+        }
+      },
+      "queries_total": 12
+    },
+    {
+      "condition": "C3_ACCUM",
+      "benchmark": "B3_DE",
+      "run": 2,
+      "job_id": "d9bb60d4",
+      "status": "OK",
+      "score": 203.5,
+      "truth": 65.3,
+      "conf": 62.7,
+      "ev": 73,
+      "pvh": 27,
+      "pvm": 46,
+      "src": 39,
+      "verdict": "LEANING-TRUE",
+      "providers": "SerpAPI",
+      "provider_counts": {
+        "SerpAPI": {
+          "queries": 26,
+          "results": 193
+        }
+      },
+      "queries_total": 26
+    }
+  ]
+}

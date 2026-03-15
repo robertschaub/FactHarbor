@@ -1,0 +1,170 @@
+{
+  "timestamp": "2026-03-14 21:05:52",
+  "note": "Reconstructed from DB after script timeout issues",
+  "disabled_results": [
+    {
+      "benchmark": "B1",
+      "run": 1,
+      "job_id": "728a27a4",
+      "status": "OK",
+      "score": 273.1,
+      "truth": 38.4,
+      "conf": 65.4,
+      "ev": 178,
+      "pvh": 99,
+      "pvm": 75,
+      "src": 60,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B1",
+      "run": 2,
+      "job_id": "881ccce0",
+      "status": "OK",
+      "score": 249.1,
+      "truth": 49.4,
+      "conf": 55.4,
+      "ev": 153,
+      "pvh": 87,
+      "pvm": 66,
+      "src": 49,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B2",
+      "run": 1,
+      "job_id": "n/a",
+      "status": "LOST",
+      "score": 0,
+      "note": "Lost to duplicate-script cleanup"
+    },
+    {
+      "benchmark": "B2",
+      "run": 2,
+      "job_id": "n/a",
+      "status": "LOST",
+      "score": 0,
+      "note": "Lost to duplicate-script cleanup"
+    },
+    {
+      "benchmark": "B3",
+      "run": 1,
+      "job_id": "9c3771be",
+      "status": "OK",
+      "score": 186.2,
+      "truth": 58.3,
+      "conf": 51.2,
+      "ev": 80,
+      "pvh": 50,
+      "pvm": 25,
+      "src": 28,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B3",
+      "run": 2,
+      "job_id": "d4659bc5",
+      "status": "OK",
+      "score": 167.6,
+      "truth": 68.6,
+      "conf": 68.1,
+      "ev": 68,
+      "pvh": 42,
+      "pvm": 23,
+      "src": 23,
+      "verdict": "?"
+    }
+  ],
+  "control_results": [
+    {
+      "benchmark": "B1",
+      "run": 1,
+      "job_id": "2136f3dd",
+      "status": "OK",
+      "score": 217.7,
+      "truth": 28.5,
+      "conf": 58.3,
+      "ev": 113,
+      "pvh": 59,
+      "pvm": 54,
+      "src": 33,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B1",
+      "run": 2,
+      "job_id": "3b1eb04c",
+      "status": "OK",
+      "score": 239.7,
+      "truth": 53.1,
+      "conf": 48.4,
+      "ev": 165,
+      "pvh": 97,
+      "pvm": 68,
+      "src": 45,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B2",
+      "run": 1,
+      "job_id": "a6221a3f",
+      "status": "OK",
+      "score": 204.9,
+      "truth": 65.5,
+      "conf": 64.5,
+      "ev": 118,
+      "pvh": 98,
+      "pvm": 20,
+      "src": 26,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B2",
+      "run": 2,
+      "job_id": "3cf25be0",
+      "status": "OK",
+      "score": 229.7,
+      "truth": 68.1,
+      "conf": 68.5,
+      "ev": 165,
+      "pvh": 133,
+      "pvm": 31,
+      "src": 38,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B3",
+      "run": 1,
+      "job_id": "155bc39c",
+      "status": "OK",
+      "score": 166.6,
+      "truth": 68.1,
+      "conf": 68.2,
+      "ev": 61,
+      "pvh": 37,
+      "pvm": 20,
+      "src": 26,
+      "verdict": "?"
+    },
+    {
+      "benchmark": "B3",
+      "run": 2,
+      "job_id": "861c09bd",
+      "status": "OK",
+      "score": 188.2,
+      "truth": 54.3,
+      "conf": 66.2,
+      "ev": 79,
+      "pvh": 48,
+      "pvm": 27,
+      "src": 28,
+      "verdict": "?"
+    }
+  ],
+  "comparison": {
+    "disabled_avg": 219.0,
+    "control_avg": 207.8,
+    "delta": 11.2,
+    "verdict": "NO SIGNIFICANT DIFFERENCE - suspects not primary cause of regression"
+  }
+}
