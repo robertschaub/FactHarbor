@@ -485,6 +485,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Min main loop iterations that must complete before sufficiency check can fire (default: 1). Prevents seeded preliminary evidence from short-circuiting real Stage 2 research."),
   contradictionReservedIterations: z.number().int().min(0).max(5).optional()
     .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
+  contradictionReservedQueries: z.number().int().min(0).max(10).optional()
+    .describe("Query budget reserved per claim for contradiction search (default: 2). Main loop stops when remaining budget equals this value, ensuring contradiction has queries to spend."),
   researchTimeBudgetMs: z.number().int().min(60000).max(3600000).optional()
     .describe("Wall-clock time budget for Stage 2 research loop in ms (default: 600000 = 10 min)"),
   researchZeroYieldBreakThreshold: z.number().int().min(1).max(5).optional()
@@ -759,6 +761,9 @@ export const PipelineConfigSchema = z.object({
   if (data.contradictionReservedIterations === undefined) {
     data.contradictionReservedIterations = 1;
   }
+  if (data.contradictionReservedQueries === undefined) {
+    data.contradictionReservedQueries = 2;
+  }
   if (data.researchTimeBudgetMs === undefined) {
     data.researchTimeBudgetMs = 10 * 60 * 1000; // 10 minutes
   }
@@ -1013,6 +1018,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   claimSufficiencyThreshold: 3,
   sufficiencyMinMainIterations: 1,
   contradictionReservedIterations: 1,
+  contradictionReservedQueries: 2,
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
 

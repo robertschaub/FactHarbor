@@ -370,8 +370,11 @@ export async function runVerdictStage(
     reconciledVerdicts, validatedChallengeDoc, advocateVerdicts, warnings
   );
 
+  // Step 4b-2: Strip phantom evidence IDs (deterministic — Fix 5)
+  const cleanedVerdicts = stripPhantomEvidenceIds(enforcedVerdicts, evidence, warnings);
+
   // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
-  const spreadAdjustedVerdicts = enforcedVerdicts.map((v) => {
+  const spreadAdjustedVerdicts = cleanedVerdicts.map((v) => {
     const adjustedConfidence = applySpreadAdjustment(v.confidence, v.consistencyResult, config);
     return {
       ...v,
@@ -1316,6 +1319,63 @@ async function validateDirectionOnly(
 // ============================================================================
 // STRUCTURAL CONSISTENCY CHECK (§8.4, deterministic)
 // ============================================================================
+
+/**
+ * Fix 5: Strip phantom evidence IDs from verdict arrays.
+ *
+ * LLMs occasionally hallucinate evidence IDs that don't exist in the pool.
+ * This deterministic filter removes them before the structural consistency check,
+ * converting a post-hoc error into a proactive cleanup.
+ *
+ * When ALL supporting IDs for a verdict are phantom, a warning-level alert is
+ * emitted (the verdict now has zero supporting evidence backing).
+ */
+export function stripPhantomEvidenceIds(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  warnings?: AnalysisWarning[],
+): CBClaimVerdict[] {
+  const validIds = new Set(evidence.map((e) => e.id));
+
+  return verdicts.map((v) => {
+    const phantomSupporting = v.supportingEvidenceIds.filter((id) => !validIds.has(id));
+    const phantomContradicting = v.contradictingEvidenceIds.filter((id) => !validIds.has(id));
+
+    if (phantomSupporting.length === 0 && phantomContradicting.length === 0) {
+      return v; // No phantom IDs — no change
+    }
+
+    const cleanedSupporting = v.supportingEvidenceIds.filter((id) => validIds.has(id));
+    const cleanedContradicting = v.contradictingEvidenceIds.filter((id) => validIds.has(id));
+    const allSupportingPhantom = v.supportingEvidenceIds.length > 0 && cleanedSupporting.length === 0;
+
+    if (allSupportingPhantom) {
+      warnings?.push({
+        type: "phantom_evidence_all_supporting",
+        severity: "warning",
+        message: `Verdict ${v.claimId}: ALL ${phantomSupporting.length} supporting evidence IDs were phantom (not in evidence pool). Verdict now has zero supporting evidence.`,
+        details: { claimId: v.claimId, phantomIds: phantomSupporting },
+      });
+    } else if (phantomSupporting.length > 0 || phantomContradicting.length > 0) {
+      warnings?.push({
+        type: "phantom_evidence_stripped",
+        severity: "info",
+        message: `Verdict ${v.claimId}: stripped ${phantomSupporting.length + phantomContradicting.length} phantom evidence ID(s) not found in evidence pool.`,
+        details: {
+          claimId: v.claimId,
+          strippedSupporting: phantomSupporting,
+          strippedContradicting: phantomContradicting,
+        },
+      });
+    }
+
+    return {
+      ...v,
+      supportingEvidenceIds: cleanedSupporting,
+      contradictingEvidenceIds: cleanedContradicting,
+    };
+  });
+}
 
 /**
  * Structural consistency check — deterministic invariant validation.

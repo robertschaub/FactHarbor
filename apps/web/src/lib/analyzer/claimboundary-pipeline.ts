@@ -917,6 +917,7 @@ export async function extractClaims(
     state,
     undefined,
     pass1.inferredGeography,
+    pass1.detectedLanguage,
   );
   state.llmCalls++;
 
@@ -1010,6 +1011,7 @@ export async function extractClaims(
           state,
           guidance,
           pass1.inferredGeography,
+          pass1.detectedLanguage,
         );
         state.llmCalls++;
 
@@ -1118,6 +1120,7 @@ export async function extractClaims(
         state,
         multiEventGuidance,
         pass1.inferredGeography,
+        pass1.detectedLanguage,
       );
       state.llmCalls++;
 
@@ -1741,6 +1744,7 @@ export async function runPass2(
   state?: Pick<CBResearchState, "warnings" | "onEvent">,
   repromptGuidance?: string,
   inferredGeography?: string | null,
+  detectedLanguage?: string,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
   const buildPreliminaryEvidencePayload = (items: PreliminaryEvidenceItem[]): string =>
     JSON.stringify(
@@ -1797,6 +1801,14 @@ export async function runPass2(
   // sensitive structured-output requests without this early anchoring.
   const FACT_CHECK_CONTEXT = "CONTEXT: You are operating as part of a fact-checking verification pipeline. Your task is to faithfully extract the claims in the input text so they can be verified against evidence. You are NOT asked to endorse, amplify, or reject any claim. Politically sensitive, controversial, legally complex, or potentially biased topics are valid and expected fact-checking subjects — treat them with the same structured extraction process.";
 
+  // Fix 0-A: Language preservation directive for non-English input.
+  // Budget models (Haiku) drift to English when the user message is English-dominated
+  // (FACT_CHECK_CONTEXT + retryGuidance are ~160 English words). This directive ensures
+  // all output fields stay in the input language.
+  const languageDirective = detectedLanguage && detectedLanguage.toLowerCase() !== "en"
+    ? `IMPORTANT: The input text is in ${detectedLanguage}. Output ALL fields (impliedClaim, articleThesis, backgroundDetails, atomicClaims statements, distinctEvents names) in ${detectedLanguage}. Do not switch to English.`
+    : "";
+
 
   const assessPass2Quality = (output: z.infer<typeof Pass2OutputSchema>): string[] => {
     const issues: string[] = [];
@@ -1832,6 +1844,9 @@ export async function runPass2(
       }
       if (attempt > 0 && retryGuidance) {
         guidanceParts.push(retryGuidance);
+      }
+      if (languageDirective) {
+        guidanceParts.push(languageDirective);
       }
       const userContent = guidanceParts.join("\n\n");
       const activeSystemPrompt = retryWithoutPreliminaryEvidence
@@ -1979,8 +1994,8 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
           console.warn(`[Stage1 Pass2] Total refusal after ${maxRetries + 1} attempts with ${model.modelName}. Attempting fallback with ${fallbackModel.modelName}.`);
           try {
             const fallbackUserContent = retryGuidance
-              ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}`
-              : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}`;
+              ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}${languageDirective ? `\n\n${languageDirective}` : ""}`
+              : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}${languageDirective ? `\n\n${languageDirective}` : ""}`;
             const fallbackResult = await generateText({
               model: fallbackModel.model,
               messages: [
@@ -2492,6 +2507,8 @@ export async function researchEvidence(
   const maxSourcesPerIteration = searchConfig.maxSourcesPerIteration ?? 8;
   const timeBudgetMs = pipelineConfig.researchTimeBudgetMs ?? 10 * 60 * 1000;
   const zeroYieldBreakThreshold = pipelineConfig.researchZeroYieldBreakThreshold ?? 2;
+  // Fix 4: Reserve query budget for contradiction loop so main loop cannot starve it.
+  const contradictionReservedQueries = pipelineConfig.contradictionReservedQueries ?? 2;
   // MT-3: distinct event count for coverage guard
   const distinctEventCount = state.understanding?.distinctEvents?.length ?? 0;
 
@@ -2521,8 +2538,10 @@ export async function researchEvidence(
     if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount)) break;
 
     // Find claim with fewest evidence items that still has budget remaining.
+    // Fix 4: Stop main loop when remaining budget equals contradiction reserve,
+    // so the contradiction loop (which checks > 0) can use the reserved queries.
     const budgetEligibleClaims = claims.filter(
-      (claim) => getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > 0,
+      (claim) => getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > contradictionReservedQueries,
     );
     if (budgetEligibleClaims.length === 0) {
       console.info("[Stage2] Shared per-claim query budgets exhausted for all claims; ending main research loop.");

@@ -694,7 +694,9 @@ export type AnalysisWarningType =
   | "challenger_failure"               // Adversarial challenger LLM call failed (malformed output, timeout, etc.) — verdict proceeds without challenge
   | "llm_tpm_guard_fallback"           // OpenAI TPM guard swapped to smaller model (routine successful fallback)
   | "low_claim_count"                  // D1: Claim decomposition produced fewer claims than minimum after reprompt attempts
-  | "evidence_applicability_filter";   // Fix 3: Post-extraction applicability filter removed foreign-jurisdiction evidence
+  | "evidence_applicability_filter"    // Fix 3: Post-extraction applicability filter removed foreign-jurisdiction evidence
+  | "phantom_evidence_stripped"        // Fix 5: Phantom evidence IDs removed from verdict (IDs not in evidence pool)
+  | "phantom_evidence_all_supporting"; // Fix 5: ALL supporting evidence IDs were phantom — verdict has zero evidence backing
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

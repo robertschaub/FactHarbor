@@ -57,6 +57,8 @@ const WARNING_CLASSIFICATION = {
   llm_tpm_guard_fallback: { bucket: "provider", impact: "informational" },
   low_claim_count: { bucket: "analysis", impact: "informational" },
   evidence_applicability_filter: { bucket: "analysis", impact: "informational" },
+  phantom_evidence_stripped: { bucket: "analysis", impact: "informational" },
+  phantom_evidence_all_supporting: { bucket: "analysis", impact: "degrading" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 
 export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>(
