@@ -120,8 +120,8 @@ function buildProviderModel(
  */
 export function getModel(providerOverride?: string, config?: PipelineConfig): ModelInfo {
   const provider = resolveProvider(providerOverride, config);
-  // Legacy single-model defaults: premium model for all tasks when tiering is off.
-  const { modelName } = resolveModel("sonnet", provider);
+  // Legacy single-model defaults: standard model for all tasks when tiering is off.
+  const { modelName } = resolveModel("standard", provider);
   const model = buildProviderModel(provider, modelName);
   return { provider, modelName, model };
 }
