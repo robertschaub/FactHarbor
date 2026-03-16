@@ -42,4 +42,26 @@ describe("claim-boundary-display", () => {
       "Hydrogen production stage efficiency analysis + 1 related scope family",
     );
   });
+
+  it("returns subtitle count only when merged names exist but shortName matches the primary label", () => {
+    const boundary = {
+      id: "CB_04",
+      shortName: "",
+      name: "Hydrogen production stage efficiency analysis + Tank-to-Wheel simulation",
+      description: "",
+    };
+
+    expect(getBoundaryDisplaySubtitle(boundary)).toBe("1 related scope family");
+  });
+
+  it("treats case-only label differences as equivalent across the display helper", () => {
+    const boundary = {
+      id: "CB_05",
+      shortName: "hydrogen production stage efficiency analysis",
+      name: "Hydrogen Production Stage Efficiency Analysis + Tank-to-Wheel simulation",
+      description: "",
+    };
+
+    expect(getBoundaryDisplaySubtitle(boundary)).toBe("1 related scope family");
+  });
 });

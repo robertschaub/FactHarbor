@@ -12,12 +12,16 @@ function cleanSegment(text: string): string {
   return normalizeWhitespace(text).replace(MERGED_PREFIX_PATTERN, "").trim();
 }
 
+function labelsEqual(left: string, right: string): boolean {
+  return cleanSegment(left).toLocaleLowerCase() === cleanSegment(right).toLocaleLowerCase();
+}
+
 function dedupeSegments(segments: string[]): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
 
   for (const segment of segments) {
-    const key = segment.toLocaleLowerCase();
+    const key = cleanSegment(segment).toLocaleLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(segment);
@@ -77,7 +81,7 @@ export function getBoundaryDisplaySubtitle(boundary: BoundaryLike): string {
     if (
       shortName &&
       primary &&
-      shortName.localeCompare(primary, undefined, { sensitivity: "accent" }) !== 0
+      !labelsEqual(shortName, primary)
     ) {
       return `${primary} + ${additionalCount} related scope ${additionalCount === 1 ? "family" : "families"}`;
     }
@@ -88,7 +92,7 @@ export function getBoundaryDisplaySubtitle(boundary: BoundaryLike): string {
   if (
     shortName &&
     cleanedName &&
-    shortName.localeCompare(cleanedName, undefined, { sensitivity: "accent" }) !== 0
+    !labelsEqual(shortName, cleanedName)
   ) {
     return cleanedName;
   }
