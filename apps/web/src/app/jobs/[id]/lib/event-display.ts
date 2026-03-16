@@ -55,6 +55,7 @@ export interface EventDisplay {
 const LLM_CALL_PHASE: Partial<Record<string, EventPhase>> = {
   "advocate": "verdict", "self-consistency": "verdict", "challenger": "verdict",
   "reconciler": "verdict", "validation": "verdict", "verdict narrative": "verdict",
+  "auditor": "quality",
   "clustering": "cluster",
   "query generation": "research", "relevance classification": "research",
   "evidence extraction": "research", "preliminary evidence": "understand",
