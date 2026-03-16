@@ -103,15 +103,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check which domains (and their root domains) are already cached
-    // Include root domains in the lookup so we can skip root evaluation when already cached.
-    const allLookupDomains = [...new Set(domains.flatMap(d => {
-      const root = getFamilyDomain(d);
-      return root !== d ? [d, root] : [d];
-    }))];
+    // Check which domains already exist in cache (if not forcing re-evaluation).
+    // Only the requested domains are checked here; root domain cache is checked in Phase 2.
     let existingDomains = new Map<string, { score: number | null; confidence: number; consensusAchieved: boolean; fallbackUsed?: boolean; fallbackReason?: string | null; identifiedEntity?: string | null }>();
     if (!forceReevaluate) {
-      existingDomains = await batchGetCachedData(allLookupDomains);
+      existingDomains = await batchGetCachedData(domains);
     }
 
     // Get config for evaluation (using unified defaults)
@@ -178,27 +174,6 @@ export async function POST(req: Request) {
             models: "(cached)",
           });
           continue;
-        }
-
-        // ── Cache check (root domain fallback) ───────────────────────────────
-        if (hasRootFallback) {
-          const cachedRoot = existingDomains.get(rootDomain);
-          if (cachedRoot && cachedRoot.score !== null) {
-            results.push({
-              domain,
-              resolvedDomain: rootDomain,
-              success: true,
-              cached: true,
-              score: cachedRoot.score,
-              confidence: cachedRoot.confidence,
-              consensus: cachedRoot.consensusAchieved,
-              fallbackUsed: cachedRoot.fallbackUsed || false,
-              fallbackReason: cachedRoot.fallbackReason || null,
-              identifiedEntity: cachedRoot.identifiedEntity || null,
-              models: "(cached)",
-            });
-            continue;
-          }
         }
 
         // ── Phase 1: evaluate the requested domain directly ───────────────────
