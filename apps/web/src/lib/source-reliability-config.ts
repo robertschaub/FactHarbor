@@ -45,6 +45,7 @@ export const SOURCE_TYPE_EXPECTED_CAPS: Record<string, number> = {
   known_disinformation: 0.14,   // highly_unreliable band
   state_controlled_media: 0.42, // leaning_unreliable band
   platform_ugc: 0.42,           // leaning_unreliable band
+  // collaborative_reference: NO CAP — scored on evidence (encyclopedias with editorial governance)
 };
 
 // ============================================================================

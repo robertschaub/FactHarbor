@@ -226,13 +226,44 @@ describe("Problem Case: Editorial Publisher (no cap)", () => {
     // Given: LLM classifies as editorial_publisher with score 0.78
     const llmScore = 0.78;
     const sourceType = "editorial_publisher";
-    
+
     // When: Post-processing checks for cap
     const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
     const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
-    
+
     // Then: Score should NOT be modified
     expect(finalScore).toBe(0.78);
+    expect(scoreToFactualRating(finalScore)).toBe("reliable");
+  });
+});
+
+describe("Problem Case: Collaborative Reference (no cap)", () => {
+  it("collaborative_reference should NOT be capped — scored on evidence alone", () => {
+    // Given: LLM classifies as collaborative_reference (e.g., Wikipedia) with score 0.65
+    const llmScore = 0.65;
+    const sourceType = "collaborative_reference";
+
+    // When: Post-processing checks for cap
+    const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
+    const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
+
+    // Then: Score should NOT be modified — collaborative_reference has no cap
+    expect(cap).toBeUndefined();
+    expect(finalScore).toBe(0.65);
+    expect(scoreToFactualRating(finalScore)).toBe("leaning_reliable");
+  });
+
+  it("collaborative_reference can score higher than former platform_ugc cap of 0.42", () => {
+    // Given: LLM evaluates a well-governed collaborative platform highly
+    const llmScore = 0.72;
+    const sourceType = "collaborative_reference";
+
+    // When: Post-processing checks for cap
+    const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
+    const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
+
+    // Then: Score should remain at 0.72, unrestricted by any cap
+    expect(finalScore).toBe(0.72);
     expect(scoreToFactualRating(finalScore)).toBe("reliable");
   });
 });

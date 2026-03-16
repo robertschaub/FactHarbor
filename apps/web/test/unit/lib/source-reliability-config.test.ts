@@ -42,6 +42,10 @@ describe("SOURCE_TYPE_EXPECTED_CAPS", () => {
     expect(SOURCE_TYPE_EXPECTED_CAPS.platform_ugc).toBe(0.42);
   });
 
+  it("does not cap collaborative_reference", () => {
+    expect(SOURCE_TYPE_EXPECTED_CAPS.collaborative_reference).toBeUndefined();
+  });
+
   it("does not cap editorial_publisher", () => {
     expect(SOURCE_TYPE_EXPECTED_CAPS.editorial_publisher).toBeUndefined();
   });

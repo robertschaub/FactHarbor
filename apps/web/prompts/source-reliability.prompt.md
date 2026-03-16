@@ -78,7 +78,11 @@ ${evidenceSection}
    - sourceType="known_disinformation" -> score MUST be in highly_unreliable band (0.01-0.14)
    - sourceType="state_controlled_media" -> score MUST be in leaning_unreliable band (0.29-0.42)
    - sourceType="platform_ugc" -> score MUST be in leaning_unreliable band (0.29-0.42)
+   - sourceType="collaborative_reference" -> NO CAP (scored purely on evidence quality)
    Note: If evidence suggests a source has reformed, reclassify the sourceType instead.
+   Note: Collaborative reference platforms (encyclopedias with citation requirements,
+   editorial review, vandalism prevention) are NOT capped — use collaborative_reference,
+   not platform_ugc, for these sources.
 
 5. SELF-PUBLISHED PAGES DO NOT COUNT
    - The source's own "about", "editorial standards", or "corrections" pages are NOT independent assessments
@@ -161,7 +165,13 @@ Political bias alone does NOT make a source propaganda or disinformation.
 - state_controlled_media: Government DIRECTLY CONTROLS editorial decisions
   STRICT: Requires evidence of editorial control, not just government funding.
   If evidence is ambiguous -> use state_media instead.
-- platform_ugc: User-generated content platforms
+- collaborative_reference: Collaborative knowledge platforms with structured editorial processes,
+  citation requirements, and systematic quality control (e.g., encyclopedias with mandatory sourcing,
+  editorial review boards, vandalism prevention). USE THIS instead of platform_ugc when the platform
+  enforces verifiability standards and has formal content governance beyond simple user moderation.
+- platform_ugc: User-generated content platforms WITHOUT structured editorial governance
+  (e.g., forums, comment sections, open blogs, social media). Do NOT use for platforms that enforce
+  citation requirements, have formal review processes, or employ systematic quality control.
 - advocacy: Organization promoting specific cause/viewpoint.
   USE THIS for outlets with strong political slant but legitimate editorial operations.
 - aggregator: Republishes content from other sources
@@ -189,7 +199,9 @@ SOURCE TYPE SCORE CAPS (hard limits):
   - known_disinformation:    MAX 0.14 (highly_unreliable)
   - state_controlled_media:  MAX 0.42 (leaning_unreliable)
   - platform_ugc:            MAX 0.42 (leaning_unreliable)
+  - collaborative_reference: NO CAP (scored purely on evidence)
 Note: If evidence suggests a source has reformed, reclassify the sourceType instead.
+Note: collaborative_reference is NOT capped — these platforms are evaluated on evidence alone.
 
 ## RECOGNIZED INDEPENDENT ASSESSORS (any of these count as "fact-checker")
 
@@ -336,7 +348,7 @@ First character MUST be "{" and last character MUST be "}".
 MANDATORY: "sourceType" MUST be populated with the most specific applicable type from the list below. Do NOT leave empty or omit. Use "unknown" ONLY when evidence is truly insufficient to determine any type. If your reasoning identifies the source as state-controlled, propaganda, or disinformation, sourceType MUST reflect that classification — score caps depend on it.
 
 {
-  "sourceType": "REQUIRED — editorial_publisher | wire_service | government | state_media | state_controlled_media | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
+  "sourceType": "REQUIRED — editorial_publisher | wire_service | government | state_media | state_controlled_media | collaborative_reference | platform_ugc | advocacy | aggregator | propaganda_outlet | known_disinformation | unknown",
   "identifiedEntity": "string, the organization name if domain is primary outlet OR null",
   "evidenceQuality": {
     "independentAssessmentsCount": "number 0-10",
@@ -425,7 +437,7 @@ Output:
 - Score falls within correct range for factualRating
 - Every claim in evidenceCited references an evidence ID (E1, E2, etc.)
 - Applied evidence-only rule (no pretrained knowledge used)
-- Applied SOURCE TYPE CAPS if sourceType is propaganda_outlet/known_disinformation/state_controlled_media/platform_ugc
+- Applied SOURCE TYPE CAPS if sourceType is propaganda_outlet/known_disinformation/state_controlled_media/platform_ugc (NOT collaborative_reference)
 - Applied negative evidence caps if applicable
 - If confidence < 0.50 or zero fact-checkers + weak mentions -> considered insufficient_data
 - Recency weighting applied (discounted old evidence appropriately)
