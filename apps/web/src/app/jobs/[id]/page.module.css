@@ -327,6 +327,12 @@
   color: var(--text-primary);
 }
 
+.boundarySummarySubtitle {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
 .boundarySummaryMeta {
   display: flex;
   align-items: center;
@@ -350,6 +356,47 @@
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.6;
+}
+
+.boundaryNarrativeBlock {
+  margin-top: 8px;
+}
+
+.boundarySubsectionLabel {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.boundaryList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+}
+
+.boundaryListItem {
+  margin: 0 0 6px;
+  line-height: 1.55;
+}
+
+.boundaryInlineDetails {
+  margin-top: 6px;
+}
+
+.boundaryInlineSummary {
+  color: var(--link);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  list-style: none;
+}
+
+.boundaryInlineSummary::-webkit-details-marker {
+  display: none;
 }
 
 .boundaryFacts {

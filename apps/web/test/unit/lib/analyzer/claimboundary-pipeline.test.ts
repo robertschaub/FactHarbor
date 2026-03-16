@@ -3235,8 +3235,8 @@ describe("Stage 3: mergeClosestBoundaries", () => {
     const scopeC: EvidenceScope = { name: "TTW", methodology: "EPA test", temporal: "2021" };
 
     const boundaries: ClaimAssessmentBoundary[] = [
-      { id: "CB_01", name: "WTW", shortName: "WTW", description: "Well-to-Wheel", constituentScopes: [shared], internalCoherence: 0.9, evidenceCount: 3 },
-      { id: "CB_02", name: "LCA", shortName: "LCA", description: "Lifecycle", constituentScopes: [shared, scopeB], internalCoherence: 0.85, evidenceCount: 2 },
+      { id: "CB_01", name: "WTW + Shared", shortName: "WTW", description: "Merged: Well-to-Wheel; Lifecycle", constituentScopes: [shared], internalCoherence: 0.9, evidenceCount: 3 },
+      { id: "CB_02", name: "Shared + LCA", shortName: "LCA", description: "Merged: Lifecycle; Tank-to-Wheel", constituentScopes: [shared, scopeB], internalCoherence: 0.85, evidenceCount: 2 },
       { id: "CB_03", name: "TTW", shortName: "TTW", description: "Tank-to-Wheel", constituentScopes: [scopeC], internalCoherence: 0.8, evidenceCount: 1 },
     ];
 
@@ -3245,6 +3245,8 @@ describe("Stage 3: mergeClosestBoundaries", () => {
     // CB_01 and CB_02 share 'shared' scope, so they should be merged
     const mergedBoundary = result.find((b) => b.constituentScopes.length > 1 && b.constituentScopes.some(s => s.name === "LCA"));
     expect(mergedBoundary).toBeTruthy();
+    expect(mergedBoundary?.name).toBe("WTW + Shared + LCA");
+    expect(mergedBoundary?.description).toBe("Well-to-Wheel; Lifecycle; Tank-to-Wheel");
   });
 
   it("should average internalCoherence of merged boundaries", () => {

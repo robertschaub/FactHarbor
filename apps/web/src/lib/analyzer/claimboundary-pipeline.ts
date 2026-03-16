@@ -71,6 +71,10 @@ import {
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 import { normalizeScopeEquivalence, repointEvidenceScopes } from "./scope-normalization";
+import {
+  mergeBoundaryDescriptions,
+  mergeBoundaryNames,
+} from "@/lib/claim-boundary-display";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
@@ -4785,9 +4789,9 @@ export function mergeClosestBoundaries(boundaries: ClaimAssessmentBoundary[]): C
   // Merge b into a
   const merged: ClaimAssessmentBoundary = {
     id: a.id,
-    name: `${a.name} + ${b.name}`,
+    name: mergeBoundaryNames(a.name, b.name),
     shortName: a.shortName,
-    description: `Merged: ${a.description}; ${b.description}`,
+    description: mergeBoundaryDescriptions(a.description, b.description),
     methodology: a.methodology,
     boundaries: a.boundaries,
     geographic: a.geographic,

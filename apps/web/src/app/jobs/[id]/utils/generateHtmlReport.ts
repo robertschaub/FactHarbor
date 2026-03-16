@@ -8,6 +8,12 @@
 
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
 import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
+import {
+  getBoundaryDescriptionSegments,
+  getBoundaryDisplayHeadline,
+  getBoundaryDisplaySubtitle,
+  getBoundaryNameSegments,
+} from "@/lib/claim-boundary-display";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -615,16 +621,22 @@ function buildCoverageMatrix(matrix: any, claimVerdicts: any[], atomicClaims: an
 }
 
 function buildBoundaryAccordion(cb: any): string {
+  const headline = getBoundaryDisplayHeadline(cb);
+  const subtitle = getBoundaryDisplaySubtitle(cb);
+  const scopeFamilies = getBoundaryNameSegments(cb.name);
+  const mergedNotes = getBoundaryDescriptionSegments(cb.description);
+
   return `<details class="boundary-accord">
-      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">${esc(cb.id)}</span><span class="ba-name">${esc(cb.name)}</span><span class="ba-ev-count">${cb.evidenceCount ?? 0} evidence</span></summary>
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">${esc(cb.id)}</span><span class="ba-name">${esc(headline)}</span>${subtitle ? `<span style="display:block;margin-top:4px;font-size:12px;font-weight:400;color:#94a3b8">${esc(subtitle)}</span>` : ""}<span class="ba-ev-count">${cb.evidenceCount ?? 0} evidence</span></summary>
       <div class="boundary-body">
+        ${mergedNotes.length > 0 ? `<div style="margin-bottom:10px"><div class="bm-label" style="margin-bottom:6px">Merged Scope Notes</div><ul style="margin:0;padding-left:18px;color:#cbd5e1;font-size:12px;line-height:1.5">${mergedNotes.map((note) => `<li style="margin-bottom:6px">${esc(note)}</li>`).join("")}</ul></div>` : ""}
+        ${scopeFamilies.length > 1 ? `<div style="margin-bottom:10px"><div class="bm-label" style="margin-bottom:6px">Scope Families</div><ul style="margin:0;padding-left:18px;color:#cbd5e1;font-size:12px;line-height:1.5">${scopeFamilies.map((scopeName) => `<li style="margin-bottom:6px">${esc(scopeName)}</li>`).join("")}</ul></div>` : ""}
         <div class="boundary-meta-grid">
           ${cb.methodology ? `<div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">${esc(cb.methodology)}</div></div>` : ""}
           ${cb.geographic ? `<div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">${esc(cb.geographic)}</div></div>` : ""}
           ${cb.temporal ? `<div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">${esc(cb.temporal)}</div></div>` : ""}
           ${typeof cb.internalCoherence === "number" ? `<div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">${cb.internalCoherence.toFixed(cb.internalCoherence === 1 ? 2 : 3)}</div></div>` : ""}
         </div>
-        ${cb.description ? `<div style="font-size:12px;color:#a0aec0">${esc(cb.description)}</div>` : ""}
       </div>
     </details>`;
 }

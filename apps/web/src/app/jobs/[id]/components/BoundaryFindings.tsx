@@ -17,6 +17,7 @@
 
 import React from "react";
 import { getConfidenceTierLabel } from "@/lib/analyzer/truth-scale";
+import { getBoundaryDescriptionSegments } from "@/lib/claim-boundary-display";
 import styles from "../page.module.css";
 
 type BoundaryFinding = {
@@ -120,10 +121,11 @@ export function BoundaryFindings({
 
           const dirDisplay = getDirectionDisplay(finding.evidenceDirection);
           const temporalRange = formatTemporalRange(boundary);
+          const cleanedDescription = getBoundaryDescriptionSegments(boundary.description).join(" | ");
 
           // Build tooltip text for the row
           const tooltipParts: string[] = [];
-          if (boundary.description) tooltipParts.push(boundary.description);
+          if (cleanedDescription) tooltipParts.push(cleanedDescription);
           if (boundary.methodology) tooltipParts.push(`Methodology: ${boundary.methodology}`);
           if (boundary.geographic) tooltipParts.push(`Geographic: ${boundary.geographic}`);
           if (boundary.temporal) tooltipParts.push(`Temporal: ${boundary.temporal}`);

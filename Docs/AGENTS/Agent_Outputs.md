@@ -5317,3 +5317,18 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Verification also exposed an unrelated `SearchConfig` adapter mismatch in `api/internal/evaluate-source`; that was corrected as part of making the branch buildable.
 **For next agent:** Use the handoff file as the review source of truth. It includes the real-job sample counts (`40/83` missing-title evidence items before the fix path, `0` remaining `Unknown` after the UI fallback) and the exact verification commands.
 **Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Claim Boundary Readability Improvements
+**Task:** Improve readability of oversized Claim Assessment Boundary names/descriptions on the jobs page for real cases such as `457d43c5f3184d9696012b429741a965` and `01674f5d0aaa43de9a250c7cb8b48a98`.
+**Files touched:** `apps/web/src/lib/claim-boundary-display.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/src/app/jobs/[id]/page.module.css`, `apps/web/src/app/jobs/[id]/components/BoundaryFindings.tsx`, `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts`, `apps/web/test/unit/lib/claim-boundary-display.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the main issue was structural string accumulation: Stage 3 boundary merges were concatenating names and descriptions verbatim, including repeated `Merged:` prefixes, and the jobs page rendered those fields almost raw.
+- Added `claim-boundary-display.ts` as a shared formatting layer for display-safe cleanup: deduped scope-family segments, stripped recursive `Merged:` prefixes, and compact headline/subtitle generation.
+- Changed the jobs page to render boundaries as a readable short headline plus subtitle, with structured lists for merged notes and scope families instead of one giant paragraph.
+- Reused the same cleanup in the HTML export and boundary-finding tooltips so exported reports and hover metadata stay aligned with the improved jobs-page presentation.
+- Updated `mergeClosestBoundaries(...)` to use deduped merged names/descriptions, improving readability for newly generated jobs in addition to the UI fix for existing ones.
+**Open items:** Existing stored jobs still contain long raw `name`/`description` fields in their JSON payloads; readability is improved at render time, but old data is not rewritten.
+**Warnings:** This change intentionally stays in the display/plumbing layer. It does not reinterpret or re-cluster boundaries semantically, and it does not change the underlying evidence assignments.
+**For next agent:** If further refinement is requested, the next safe step is presentation only: e.g. sorting scope families, showing counts, or exposing constituent scopes more explicitly. Avoid reworking boundary semantics without a separate architecture decision because `boundary.name` is also passed into verdict-stage boundary context.
+**Learnings:** no

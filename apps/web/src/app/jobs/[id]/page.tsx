@@ -54,6 +54,12 @@ import {
 import { useReportNavigation } from "./hooks/useReportNavigation";
 import type { AnalysisWarning, TIGERScore } from "@/lib/analyzer/types";
 import { resolveEvidenceSourceLabel } from "@/lib/evidence-source-label";
+import {
+  getBoundaryDescriptionSegments,
+  getBoundaryDisplayHeadline,
+  getBoundaryDisplaySubtitle,
+  getBoundaryNameSegments,
+} from "@/lib/claim-boundary-display";
 
 // Module-level helper — browser-safe (client component, only called from event handlers)
 function escapeHtml(str: string): string {
@@ -1662,25 +1668,91 @@ export default function JobPage() {
                         id={`nav-cb-${boundary.id}`}
                         className={styles.boundaryAccordion}
                       >
-                        <summary className={styles.boundarySummary}>
-                          <div className={styles.boundarySummaryMain}>
-                            <span className={styles.boundarySummaryId}>{boundary.id}</span>
-                            <span className={styles.boundarySummaryName}>
-                              {boundary.name || boundary.shortName || boundary.id}
-                            </span>
-                          </div>
-                          <div className={styles.boundarySummaryMeta}>
-                            {typeof boundary.evidenceCount === "number" && (
-                              <span className={styles.boundaryEvidenceCount}>
-                                {boundary.evidenceCount} evidence
-                              </span>
-                            )}
-                          </div>
-                        </summary>
-                        <div className={styles.boundaryBody}>
-                          {boundary.description && (
-                            <p className={styles.boundaryDescription}>{boundary.description}</p>
-                          )}
+                        {(() => {
+                          const scopeFamilies = getBoundaryNameSegments(boundary.name);
+                          const mergedNotes = getBoundaryDescriptionSegments(boundary.description);
+                          const headline = getBoundaryDisplayHeadline(boundary);
+                          const subtitle = getBoundaryDisplaySubtitle(boundary);
+                          const visibleScopeFamilies = scopeFamilies.slice(0, 6);
+                          const hiddenScopeFamilies = scopeFamilies.slice(6);
+                          const visibleMergedNotes = mergedNotes.slice(0, 6);
+                          const hiddenMergedNotes = mergedNotes.slice(6);
+
+                          return (
+                            <>
+                              <summary className={styles.boundarySummary}>
+                                <div className={styles.boundarySummaryMain}>
+                                  <span className={styles.boundarySummaryId}>{boundary.id}</span>
+                                  <span className={styles.boundarySummaryName}>
+                                    {headline}
+                                  </span>
+                                  {subtitle && (
+                                    <span className={styles.boundarySummarySubtitle}>
+                                      {subtitle}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className={styles.boundarySummaryMeta}>
+                                  {typeof boundary.evidenceCount === "number" && (
+                                    <span className={styles.boundaryEvidenceCount}>
+                                      {boundary.evidenceCount} evidence
+                                    </span>
+                                  )}
+                                </div>
+                              </summary>
+                              <div className={styles.boundaryBody}>
+                                {mergedNotes.length > 0 && (
+                                  <div className={styles.boundaryNarrativeBlock}>
+                                    <span className={styles.boundarySubsectionLabel}>Merged scope notes</span>
+                                    <ul className={styles.boundaryList}>
+                                      {visibleMergedNotes.map((note) => (
+                                        <li key={`${boundary.id}-note-${note}`} className={styles.boundaryListItem}>
+                                          {note}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    {hiddenMergedNotes.length > 0 && (
+                                      <details className={styles.boundaryInlineDetails}>
+                                        <summary className={styles.boundaryInlineSummary}>
+                                          Show {hiddenMergedNotes.length} more note{hiddenMergedNotes.length === 1 ? "" : "s"}
+                                        </summary>
+                                        <ul className={styles.boundaryList}>
+                                          {hiddenMergedNotes.map((note) => (
+                                            <li key={`${boundary.id}-note-extra-${note}`} className={styles.boundaryListItem}>
+                                              {note}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </details>
+                                    )}
+                                  </div>
+                                )}
+                                {scopeFamilies.length > 1 && (
+                                  <div className={styles.boundaryNarrativeBlock}>
+                                    <span className={styles.boundarySubsectionLabel}>Scope families</span>
+                                    <ul className={styles.boundaryList}>
+                                      {visibleScopeFamilies.map((scopeName) => (
+                                        <li key={`${boundary.id}-scope-${scopeName}`} className={styles.boundaryListItem}>
+                                          {scopeName}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    {hiddenScopeFamilies.length > 0 && (
+                                      <details className={styles.boundaryInlineDetails}>
+                                        <summary className={styles.boundaryInlineSummary}>
+                                          Show {hiddenScopeFamilies.length} more scope {hiddenScopeFamilies.length === 1 ? "family" : "families"}
+                                        </summary>
+                                        <ul className={styles.boundaryList}>
+                                          {hiddenScopeFamilies.map((scopeName) => (
+                                            <li key={`${boundary.id}-scope-extra-${scopeName}`} className={styles.boundaryListItem}>
+                                              {scopeName}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </details>
+                                    )}
+                                  </div>
+                                )}
                           <div className={styles.boundaryFacts}>
                             {boundary.methodology && (
                               <div className={styles.boundaryFact}>
@@ -1772,7 +1844,10 @@ export default function JobPage() {
                               Open evidence for this boundary
                             </button>
                           )}
-                        </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </details>
                     ))}
                   </div>
