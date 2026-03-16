@@ -975,9 +975,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeDeduplicationThreshold: 0.75,
   foreignJurisdictionRelevanceCap: 0.35,
   applicabilityFilterEnabled: true,
-  // Disabled: SR evaluation is not yet calibrated (Wikipedia scores 38-42%, legitimate
-  // news/legal sources score 0.54-0.74). Re-enable once SR prompts are improved.
-  evidenceWeightingEnabled: false,
+  evidenceWeightingEnabled: true,
 
   // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
   verdictBatchSize: 5,
@@ -1602,9 +1600,10 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     },
   },
   sourceReliability: {
-    // null = exclude unknown sources from weight calculation (no penalty for unevaluated sources).
-    // Previously 0.45 which treated unknown as below-average, compressing TP toward 50%.
-    defaultScore: null,
+    // 0.5 = neutral weight for unknown sources (no directional pull).
+    // Previously 0.45 which biased unknown toward below-average.
+    // null would exclude unknowns entirely.
+    defaultScore: 0.5,
   },
   qualityGates: {
     gate1OpinionThreshold: 0.7,

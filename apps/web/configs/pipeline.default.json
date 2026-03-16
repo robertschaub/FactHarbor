@@ -85,7 +85,7 @@
   "probativeDeduplicationThreshold": 0.75,
   "foreignJurisdictionRelevanceCap": 0.35,
   "applicabilityFilterEnabled": true,
-  "evidenceWeightingEnabled": false,
+  "evidenceWeightingEnabled": true,
   "verdictBatchSize": 5,
   "maxIterationsPerContext": 3,
   "maxTotalIterations": 10,
