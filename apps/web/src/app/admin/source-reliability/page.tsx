@@ -165,6 +165,7 @@ export default function SourceReliabilityPage() {
   const [forceReevaluate, setForceReevaluate] = useState(false);
   const [evalResults, setEvalResults] = useState<Array<{
     domain: string;
+    resolvedDomain?: string;
     success: boolean;
     cached?: boolean;
     score?: number;
@@ -1289,7 +1290,14 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
               <tbody>
                 {evalResults.map((r, i) => (
                   <tr key={i} className={r.success ? (r.cached ? styles.evalCached : styles.evalSuccess) : styles.evalFailed}>
-                    <td>{r.domain}</td>
+                    <td>
+                      {r.domain}
+                      {r.resolvedDomain && (
+                        <span style={{ color: "var(--text-muted, #888)", fontSize: "0.8em", marginLeft: "4px" }}>
+                          → {r.resolvedDomain}
+                        </span>
+                      )}
+                    </td>
                     <td className={styles.entitySmall}>{r.identifiedEntity || "—"}</td>
                     <td>{r.success ? (r.cached ? "✓ (cached)" : "✓") : "✗"}</td>
                     <td>

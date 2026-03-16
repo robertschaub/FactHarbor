@@ -119,6 +119,7 @@ export async function POST(req: Request) {
 
     const results: Array<{
       domain: string;
+      resolvedDomain?: string; // Set when input was a subdomain redirected to the root domain
       success: boolean;
       cached?: boolean;
       score?: number | null;
@@ -144,6 +145,7 @@ export async function POST(req: Request) {
         if (existingData) {
           results.push({
             domain,
+            ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
             success: true,
             cached: true,
             score: existingData.score,
@@ -181,6 +183,7 @@ export async function POST(req: Request) {
             if (cachedFallback) {
               results.push({
                 domain,
+                ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
                 success: true,
                 cached: true,
                 score: cachedFallback.score,
@@ -194,6 +197,7 @@ export async function POST(req: Request) {
             } else {
               results.push({
                 domain,
+                ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
                 success: true,
                 cached: true,
                 models: "(cooldown active — no cached result yet)",
@@ -232,7 +236,8 @@ export async function POST(req: Request) {
         );
 
         results.push({
-          domain: evalTarget,
+          domain,
+          ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
           success: true,
           cached: false,
           score: evalData.score,
@@ -241,7 +246,7 @@ export async function POST(req: Request) {
           fallbackUsed: evalData.fallbackUsed || false,
           fallbackReason: evalData.fallbackReason || null,
           identifiedEntity: evalData.identifiedEntity || null,
-          models: evalData.modelSecondary 
+          models: evalData.modelSecondary
             ? `${evalData.modelPrimary} + ${evalData.modelSecondary}`
             : evalData.modelPrimary,
         });
