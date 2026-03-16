@@ -14,7 +14,7 @@ Der Sitz des Vereins ist in **Dietlikon, Kanton Zürich, Schweiz**.
 
 ### Art. 3 — Zweck
 1. Der Verein bezweckt die Förderung der Allgemeinbildung und der informierten Meinungsbildung, indem er Menschen dabei unterstützt, komplexe, unklare und umstrittene Informationen auf evidenzbasierter Grundlage zu verstehen, einzuordnen und zu bewerten.
-2. Der Verein verfolgt ausschliesslich **gemeinnützige Zwecke** im Sinne von Art. 56 lit. g DBG und ist nicht gewinnorientiert. Er verfolgt keine Erwerbszwecke.
+2. Der Verein verfolgt ausschliesslich **gemeinnützige Zwecke** im Sinne von Art. 56 lit. g DBG.
 3. Zur Verfolgung seines Zwecks kann der Verein insbesondere:
    a. Open-Source-Software und Plattformen für evidenzbasierte Informationsanalyse und verwandte Anwendungen im Bereich der digitalen Allgemeinbildung entwickeln und betreiben;
    b. Forschung zu Informationsqualität, Medienkompetenz, Evidenzbewertung und verwandten Themen durchführen und veröffentlichen;
@@ -27,7 +27,7 @@ Der Sitz des Vereins ist in **Dietlikon, Kanton Zürich, Schweiz**.
 ### Art. 4 — Gemeinnützigkeit und Gewinnverwendung
 1. Der Verein ist gemeinnützig und nicht gewinnorientiert. Er schüttet keine Gewinne an Mitglieder, Gründer, Organe oder Spender aus.
 2. Allfällige Überschüsse werden **unwiderruflich** und vollumfänglich für den Vereinszweck eingesetzt.
-3. Angemessene Aufwandentschädigungen — nicht Lohn oder Gewinnbeteiligung — für im Auftrag des Vereins erbrachte Leistungen sind zulässig, sofern sie im Rahmen der vom Vorstand genehmigten Budgetvorgaben liegen und mit dem gemeinnützigen Status vereinbar sind. Entschädigungen über CHF 5'000 pro Person und Jahr bedürfen der Genehmigung durch die Mitgliederversammlung.
+3. Der Verein kann Angestellten angemessene Löhne und Beauftragten angemessene Honorare entrichten, sofern diese marktüblich oder darunter liegen, im Rahmen des von der Mitgliederversammlung genehmigten Budgets bleiben und mit dem gemeinnützigen Status vereinbar sind. Der Vorstand entscheidet über Anstellungen und Vergütungen innerhalb des genehmigten Budgetrahmens. Gewinnbeteiligungen sind ausgeschlossen. Für die Entschädigung von Vorstandsmitgliedern gilt ausschliesslich Art. 18.
 4. Die Mittel des Vereins dürfen nur für statutengemässe Zwecke verwendet werden. Die Mitglieder haben keinen Anspruch auf Zuwendungen aus dem Vereinsvermögen.
 
 ---
@@ -100,14 +100,16 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 3. Folgende Beschlüsse bedürfen einer **Zweidrittelmehrheit (2/3)** der abgegebenen Stimmen:
    a. Statutenänderung;
    b. Auflösung des Vereins.
-4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde und mindestens **zwei (2) Mitglieder oder ein Viertel (1/4) der Mitglieder** — massgebend ist die grössere Zahl — anwesend oder vertreten sind.
+4. Die Mitgliederversammlung ist beschlussfähig, wenn sie ordnungsgemäss einberufen wurde und mindestens **zwei (2) Mitglieder oder ein Viertel (1/4) der Mitglieder** — massgebend ist die grössere Zahl — anwesend oder vertreten sind. Gemäss Abs. 7 vertretene Mitglieder gelten für die Beschlussfähigkeit als anwesend.
 5. Abstimmungen können durch **Handerheben, schriftliche Stimmabgabe oder elektronische Mittel** erfolgen, wie von der Versammlungsleitung bestimmt.
 6. Bei Stimmengleichheit hat die Versammlungsleitung den Stichentscheid.
+7. Ein Mitglied kann sich an der Mitgliederversammlung durch ein anderes Mitglied vertreten lassen. Jedes Mitglied kann höchstens ein weiteres Mitglied vertreten. Die Vollmacht bedarf der Schriftform (einschliesslich elektronischer Form).
+8. Wird das Quorum gemäss Abs. 4 nicht erreicht, beruft der Vorstand innert dreissig (30) Tagen eine neue Mitgliederversammlung mit gleicher Traktandenliste ein. Diese Wiederholungsversammlung ist unabhängig von der Zahl der anwesenden oder vertretenen Mitglieder beschlussfähig, sofern sie ordnungsgemäss einberufen wurde.
 
 ### B. Vorstand
 
 ### Art. 13 — Zusammensetzung
-1. Der Vorstand besteht aus mindestens **zwei (2)** und höchstens **sieben (7)** Mitgliedern.
+1. Der Vorstand besteht aus mindestens **drei (3)** und höchstens **sieben (7)** Mitgliedern.
 2. Der Vorstand setzt sich mindestens zusammen aus:
    a. einem/einer **Präsident/in**;
    b. einem/einer **Kassier/in** (Schatzmeister/in).
@@ -132,6 +134,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
    i. die Einberufung der Mitgliederversammlungen;
    j. die Erledigung aller von der Mitgliederversammlung delegierten Aufgaben.
 3. Der Vorstand kann einzelne Aufgaben an Vorstandsmitglieder, Kommissionen oder Mitarbeitende delegieren, wobei er die Gesamtverantwortung behält.
+4. Vorstandsmitglieder, die an einem Geschäft ein persönliches Interesse haben, das mit den Interessen des Vereins kollidieren könnte, müssen dies offenlegen und bei der entsprechenden Beratung und Abstimmung in den Ausstand treten.
 
 ### Art. 16 — Sitzungen und Beschlüsse
 1. Der Vorstand tritt mindestens **einmal pro Jahr** zusammen. Weitere Sitzungen werden bei Bedarf einberufen.
@@ -148,7 +151,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 ### Art. 18 — Entschädigung
 1. Die Vorstandsmitglieder üben ihr Amt **ehrenamtlich** aus.
 2. Tatsächlich angefallene Auslagen, die im Zusammenhang mit der Vereinstätigkeit stehen, werden gegen Vorlage von Belegen erstattet.
-3. Sofern es die finanzielle Lage des Vereins erlaubt, kann die Mitgliederversammlung eine bescheidene Aufwandentschädigung — nicht Lohn oder Gewinnbeteiligung — für Vorstandsmitglieder beschliessen. Solche Entschädigungen müssen angemessen, dokumentiert und mit dem gemeinnützigen Status vereinbar sein.
+3. Weitere Entschädigungen an Vorstandsmitglieder über den Spesenersatz gemäss Abs. 2 hinaus sind ausgeschlossen.
 
 ### C. Revisionsstelle
 
@@ -166,7 +169,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
    a. Mitgliederbeiträgen;
    b. Spenden und Zuwendungen;
    c. Beiträgen von Stiftungen, Institutionen und öffentlichen Stellen;
-   d. Einnahmen aus Dienstleistungen (z.B. API-Zugang für kommerzielle Nutzer, Beratung, Schulungen), soweit diese wirtschaftlichen Tätigkeiten dem Vereinszweck unmittelbar dienen und gegenüber der ideellen Tätigkeit untergeordnet bleiben;
+   d. Einnahmen aus Dienstleistungen (z.B. Zugang zu vereinseigenen Plattformen für Dritte, Beratung, Schulungen), soweit diese wirtschaftlichen Tätigkeiten dem Vereinszweck unmittelbar dienen und gegenüber der ideellen Tätigkeit untergeordnet bleiben;
    e. sonstigen Mitteln, die mit dem Vereinszweck und dem gemeinnützigen Status vereinbar sind.
 2. Folgende Einnahmequellen sind **ausgeschlossen**:
    a. Werbeeinnahmen;
@@ -212,6 +215,7 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 2. **Die Verteilung des Restvermögens an die Mitglieder ist ausgeschlossen.**
 3. Bestimmt die Mitgliederversammlung keine Empfängerorganisation, wird das Restvermögen einer von der ESTV oder dem kantonalen Steueramt anerkannten gemeinnützigen Organisation im Bereich digitale Bildung oder Informationsfreiheit übertragen, wie vom Vorstand bestimmt.
 4. Der letzte amtierende Vorstand übernimmt die Liquidation, sofern die Mitgliederversammlung keine andere Person bestellt.
+5. Wird der Vereinszweck dahingehend geändert, dass der Verein nicht mehr ausschliesslich gemeinnützige Zwecke im Sinne von Art. 56 lit. g DBG verfolgt, ist das bis zu diesem Zeitpunkt angesammelte Vermögen an eine oder mehrere steuerbefreite Organisationen mit gleichartigem oder verwandtem Zweck zu übertragen. Die Bestimmungen dieses Artikels (Abs. 1–5) sowie Art. 4 Abs. 1–2 können nur mit Zustimmung der zuständigen Steuerverwaltung geändert werden.
 
 ---
 
@@ -240,23 +244,30 @@ Diese Statuten wurden an der Gründungsversammlung vom **[DATUM]** angenommen un
 **Ort**: [ORT / oder «Per Videokonferenz»]
 
 **Anwesende Gründungsmitglieder**:
-1. Robert Schaub, In Lederäcker 11, 8305 Dietlikon, Schweiz
-2. [VOLLSTÄNDIGER NAME 2], [ADRESSE], [STAATSANGEHÖRIGKEIT]
+1. Robert Schaub, [GEBURTSDATUM], von [HEIMATORT], In Lederäcker 11, 8305 Dietlikon, Schweiz
+2. [VOLLSTÄNDIGER NAME 2], [GEBURTSDATUM], von [HEIMATORT/STAATSANGEHÖRIGKEIT], [ADRESSE]
+3. [VOLLSTÄNDIGER NAME 3], [GEBURTSDATUM], von [HEIMATORT/STAATSANGEHÖRIGKEIT], [ADRESSE]
+
+**Feststellung der Beschlussfähigkeit**: Alle Gründungsmitglieder sind anwesend. Die Versammlung ist beschlussfähig.
+
+**Wahl der Versammlungsleitung**: Robert Schaub wird als Versammlungsleiter gewählt. [NAME] wird als Protokollführer/in gewählt.
 
 **Gefasste Beschlüsse**:
 1. Die vorstehenden Statuten werden einstimmig angenommen.
 2. Folgende Personen werden in den Vorstand gewählt:
-   - **Präsident**: Robert Schaub
+   - **Präsident/in**: Robert Schaub
    - **Kassier/in**: [NAME]
+   - **Beisitzer/in**: [NAME]
 3. Der jährliche Mitgliederbeitrag wird auf **CHF 20** festgesetzt.
 4. Das Geschäftsjahr entspricht dem Kalenderjahr.
 5. Auf die Bestellung einer Revisionsstelle wird zum jetzigen Zeitpunkt verzichtet.
+6. Der Verein wird freiwillig ins Handelsregister des Kantons Zürich eingetragen.
 
 **Unterschriften der Gründungsmitglieder**:
 
 ```
-_________________________          _________________________
-Robert Schaub                      [Name 2]
+_________________________    _________________________    _________________________
+Robert Schaub                [Name 2]                     [Name 3]
 ```
 
 ---
