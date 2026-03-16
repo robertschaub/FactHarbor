@@ -1417,11 +1417,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                         </td>
                         <td className={styles.domainCell}>
                           <div className={styles.domain}>{entry.domain}</div>
-                          <div className={styles.domainMeta}>
-                            <span className={styles.domainTag}>
-                              {entry.domain === entry.familyDomain ? "root domain" : "subdomain"}
-                            </span>
-                          </div>
                         </td>
                         <td style={{ textAlign: "center" }}>
                           <span
