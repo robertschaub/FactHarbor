@@ -318,6 +318,7 @@ export async function drainRunnerQueue() {
       // Fetch all RUNNING jobs from DB (paginated API: { jobs, pagination })
       const runningJobs: Array<{ jobId: string; updatedUtc: string; progress?: number; pipelineVariant?: string }> = [];
       const queuedJobsFromDb: Array<{ jobId: string; createdUtc: string }> = [];
+      const interruptedJobIds = new Set<string>();
       const pageSize = 200;
       let page = 1;
       let totalPages = 1;
@@ -340,6 +341,12 @@ export async function drainRunnerQueue() {
               jobId: String(job.jobId),
               createdUtc: String(job.createdUtc),
             });
+          } else if (status === "INTERRUPTED") {
+            // INTERRUPTED jobs were RUNNING when the API restarted. The API marks
+            // them INTERRUPTED on startup. Re-queue them so they run again from scratch.
+            const jid = String(job.jobId);
+            queuedJobsFromDb.push({ jobId: jid, createdUtc: String(job.createdUtc) });
+            interruptedJobIds.add(jid);
           }
         }
 
@@ -396,8 +403,10 @@ export async function drainRunnerQueue() {
       effectiveRunningCount = nonStaleRunningCount;
       qs.runningCount = nonStaleRunningCount;
 
-      // Recover persisted QUEUED jobs that may be missing from in-memory queue
-      // (e.g., process restart between API enqueue trigger and local queue insertion).
+      // Recover persisted QUEUED and INTERRUPTED jobs that may be missing from in-memory queue.
+      // QUEUED: lost between API trigger and local queue insertion (process restart).
+      // INTERRUPTED: were RUNNING when API restarted; API marked them INTERRUPTED on startup.
+      // Both are re-queued to run from scratch.
       const inMemoryQueuedIds = new Set(qs.queue.map((item) => item.jobId));
       const sortedQueuedJobs = [...queuedJobsFromDb].sort((a, b) => {
         const aMs = parseApiUtcTimestampMs(a.createdUtc) ?? 0;
@@ -408,6 +417,22 @@ export async function drainRunnerQueue() {
       for (const queuedJob of sortedQueuedJobs) {
         if (qs.runningJobIds.has(queuedJob.jobId)) continue;
         if (inMemoryQueuedIds.has(queuedJob.jobId)) continue;
+
+        // INTERRUPTED jobs need their DB status reset to QUEUED so the drain loop accepts them.
+        if (interruptedJobIds.has(queuedJob.jobId)) {
+          try {
+            console.info(`[Runner] Re-queuing INTERRUPTED job ${queuedJob.jobId} for fresh execution`);
+            await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${queuedJob.jobId}/status`, {
+              status: "QUEUED",
+              progress: 0,
+              level: "info",
+              message: "Re-queued after application restart (previous execution interrupted)",
+            });
+          } catch (err) {
+            console.warn(`[Runner] Failed to reset INTERRUPTED job ${queuedJob.jobId} to QUEUED:`, err);
+          }
+        }
+
         const enqueuedAt = parseApiUtcTimestampMs(queuedJob.createdUtc) ?? now;
         qs.queue.push({ jobId: queuedJob.jobId, enqueuedAt });
         inMemoryQueuedIds.add(queuedJob.jobId);

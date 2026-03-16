@@ -143,14 +143,16 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<FhDbContext>();
     db.Database.Migrate();
 
-    // Mark any jobs left in RUNNING or QUEUED as INTERRUPTED (orphaned by a restart)
-    var orphanedJobs = db.Jobs
-        .Where(j => j.Status == "RUNNING" || j.Status == "QUEUED")
+    // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
+    // QUEUED jobs are left as-is — they were never started and the runner will pick
+    // them up after restart via its bootstrap drain + watchdog recovery.
+    var orphanedRunning = db.Jobs
+        .Where(j => j.Status == "RUNNING")
         .ToList();
-    if (orphanedJobs.Count > 0)
+    if (orphanedRunning.Count > 0)
     {
         var now = DateTime.UtcNow;
-        foreach (var orphan in orphanedJobs)
+        foreach (var orphan in orphanedRunning)
         {
             orphan.Status = "INTERRUPTED";
             orphan.UpdatedUtc = now;
