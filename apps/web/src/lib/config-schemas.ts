@@ -975,7 +975,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeDeduplicationThreshold: 0.75,
   foreignJurisdictionRelevanceCap: 0.35,
   applicabilityFilterEnabled: true,
-  evidenceWeightingEnabled: true,
+  // Disabled: SR evaluation is not yet calibrated (Wikipedia scores 38-42%, legitimate
+  // news/legal sources score 0.54-0.74). Re-enable once SR prompts are improved.
+  evidenceWeightingEnabled: false,
 
   // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
   verdictBatchSize: 5,
