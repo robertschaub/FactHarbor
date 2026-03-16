@@ -119,6 +119,10 @@ export function classifyEvent(level: string, message: string): EventDisplay {
   if (msg.startsWith("Extracting claims from input")) return { phase: "understand", label: "Extracting claims" };
   if (msg.startsWith("Extracting claims: Pass 1"))   return { phase: "understand", label: "Scanning input — Pass 1" };
   if (msg.startsWith("Extracting claims: preliminary web search")) return { phase: "understand", label: "Initial web search" };
+  if (msg.startsWith("Preliminary search:")) {
+    const detail = msg.replace(/^Preliminary search:\s*/i, "").trim();
+    return { phase: "understand", label: "Search results", params: detail || undefined };
+  }
   if (msg.startsWith("Extracting claims: Pass 2"))   return { phase: "understand", label: "Refining claims — Pass 2" };
   if (msg.startsWith("Extracting claims: Gate 1"))   return { phase: "understand", label: "Gate 1 validation" };
   if (msg.startsWith("Extracting claims: reprompt attempt")) {

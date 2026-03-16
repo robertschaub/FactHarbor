@@ -35,6 +35,14 @@ describe("classifyEvent", () => {
     expect(d.label).toBe("Initial web search");
   });
 
+  it("classifies preliminary search results with provider", () => {
+    const d = classifyEvent("info", "Preliminary search: Google-CSE, Serper — 5 results");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Search results");
+    expect(d.params).toContain("Google-CSE");
+    expect(d.params).toContain("5 results");
+  });
+
   it("classifies Pass 2", () => {
     const d = classifyEvent("info", "Extracting claims: Pass 2 (evidence-grounded refinement)...");
     expect(d.phase).toBe("understand");

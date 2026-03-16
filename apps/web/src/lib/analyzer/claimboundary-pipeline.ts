@@ -1369,7 +1369,7 @@ export async function runPreliminarySearch(
           searchProvider: response.providersUsed.join(", "),
         });
         if (response.results.length > 0) {
-          state.onEvent?.(`Search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+          state.onEvent?.(`Preliminary search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
         }
 
         // Report search provider errors to warnings
