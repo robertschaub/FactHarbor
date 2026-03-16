@@ -30,7 +30,7 @@ export const PHASE_LABELS: Record<EventPhase, string> = {
   done:       "Complete",
   lifecycle:  "Lifecycle",
   error:      "Error",
-  misc:       "Other",
+  misc:       "Additional",
 };
 
 export interface EventDisplay {
@@ -41,6 +41,11 @@ export interface EventDisplay {
   params?: string;
   /** True for stack-trace events — rendered as collapsible block */
   isStackTrace?: boolean;
+  /**
+   * Override the displayed severity (used when a warn-level event is
+   * actually a fully-recovered fallback, not a real user-facing warning).
+   */
+  overrideLevel?: "info" | "warn";
 }
 
 // ---------------------------------------------------------------------------
@@ -82,6 +87,14 @@ export function classifyEvent(level: string, message: string): EventDisplay {
     const detail = msg.replace(/^Preparing input\s*/i, "").replace(/[()]/g, "").trim();
     return { phase: "setup", label: "Preparing input", params: detail || undefined };
   }
+  if (msg.startsWith("Fetching URL content") || msg.startsWith("Detected URL input")) {
+    return { phase: "setup", label: "Fetching URL content" };
+  }
+  // LLM model selection event emitted at pipeline start
+  if (msg.startsWith("LLM:")) {
+    const detail = msg.replace(/^LLM:\s*/i, "").trim();
+    return { phase: "setup", label: "LLM model", params: detail || undefined };
+  }
 
   // ── Understand ────────────────────────────────────────────────────────────
   if (msg.startsWith("Extracting claims from input")) return { phase: "understand", label: "Extracting claims" };
@@ -98,11 +111,26 @@ export function classifyEvent(level: string, message: string): EventDisplay {
     const detail = msg.replace(/^Extracting claims[:\s]*/i, "").trim();
     return { phase: "understand", label: "Extracting claims", params: detail || undefined };
   }
+  // Fallback model recovery — label as info (fallback succeeded)
+  if (msg.startsWith("Stage 1 Pass 2 recovered via fallback model")) {
+    const m = msg.match(/fallback model \(([^)]+)\)/);
+    return { phase: "understand", label: "Fallback model used", params: m?.[1], overrideLevel: "info" };
+  }
 
   // ── Research ──────────────────────────────────────────────────────────────
-  if (msg.startsWith("Researching evidence"))          return { phase: "research", label: "Searching for evidence" };
-  if (msg.startsWith("Running contrarian evidence"))   return { phase: "research", label: "Contrarian evidence search" };
+  if (msg.startsWith("Researching evidence"))             return { phase: "research", label: "Searching for evidence" };
+  if (msg.startsWith("Running contrarian evidence"))      return { phase: "research", label: "Contrarian evidence search" };
+  if (msg.startsWith("Searching for contradicting evidence")) {
+    const m = msg.match(/\((\d+\/\d+)\)/);
+    return { phase: "research", label: "Contradicting evidence search", params: m?.[1] };
+  }
   if (msg.startsWith("Assessing evidence applicability")) return { phase: "research", label: "Filtering evidence" };
+  if (msg.startsWith("Evaluating source reliability"))    return { phase: "research", label: "Evaluating source reliability" };
+  // Successful search event — info, not a warning
+  if (msg.startsWith("Search:")) {
+    const detail = msg.replace(/^Search:\s*/i, "").trim();
+    return { phase: "research", label: "Search results", params: detail || undefined, overrideLevel: "info" };
+  }
   if (msg.startsWith("Search provider")) {
     const provider = extractSearchProvider(msg);
     const err = extractSearchError(msg);
@@ -112,6 +140,21 @@ export function classifyEvent(level: string, message: string): EventDisplay {
       params: [provider, err].filter(Boolean).join(" — ") || undefined,
     };
   }
+  if (msg.startsWith("Preliminary search error")) {
+    const detail = msg.replace(/^Preliminary search error[:\s]*/i, "").trim().slice(0, 80);
+    return { phase: "research", label: "Search error", params: detail || undefined };
+  }
+  if (msg.startsWith("Research time budget reached during contradiction")) {
+    return { phase: "research", label: "Contradiction search time limit reached" };
+  }
+  if (msg.startsWith("Research time budget reached")) {
+    const m = msg.match(/\((\d+) min\)/);
+    return { phase: "research", label: "Research time limit reached", params: m?.[1] ? `${m[1]} min elapsed` : undefined };
+  }
+  if (msg.startsWith("No new evidence found in")) {
+    const m = msg.match(/in (\d+) consecutive/);
+    return { phase: "research", label: "No new evidence found", params: m?.[1] ? `${m[1]} iterations` : undefined };
+  }
 
   // ── Cluster ───────────────────────────────────────────────────────────────
   if (msg.startsWith("Clustering evidence")) return { phase: "cluster", label: "Grouping evidence into boundaries" };
@@ -119,6 +162,23 @@ export function classifyEvent(level: string, message: string): EventDisplay {
   // ── Verdict ───────────────────────────────────────────────────────────────
   if (msg.startsWith("Generating verdicts"))          return { phase: "verdict", label: "Generating verdicts" };
   if (msg.startsWith("Aggregating final assessment")) return { phase: "verdict", label: "Aggregating assessment" };
+  // Debate step events (emitted by verdict stage)
+  if (msg.startsWith("Verdict debate: advocate")) {
+    const m = msg.match(/(\d+) claim/);
+    return { phase: "verdict", label: "Advocate verdict", params: m ? `${m[1]} claims` : undefined };
+  }
+  if (msg.startsWith("Verdict debate: self-consistency")) {
+    return { phase: "verdict", label: "Self-consistency check" };
+  }
+  if (msg.startsWith("Verdict debate: adversarial challenge")) {
+    return { phase: "verdict", label: "Adversarial challenge" };
+  }
+  if (msg.startsWith("Verdict debate: reconciliation")) {
+    return { phase: "verdict", label: "Reconciling verdicts" };
+  }
+  if (msg.startsWith("Verdict debate: validation")) {
+    return { phase: "verdict", label: "Validating verdicts" };
+  }
 
   // ── Quality ───────────────────────────────────────────────────────────────
   if (msg.startsWith("Performing holistic TIGERScore") || msg.startsWith("TIGERScore")) {
@@ -128,7 +188,9 @@ export function classifyEvent(level: string, message: string): EventDisplay {
   // ── Done ──────────────────────────────────────────────────────────────────
   if (msg.startsWith("Storing result")) return { phase: "done", label: "Storing result" };
   if (msg === "Result stored")          return { phase: "done", label: "Result stored" };
-  if (msg === "Done")                   return { phase: "done", label: "Analysis complete" };
+  if (msg === "Done" || msg === "Analysis complete." || msg.startsWith("Analysis complete")) {
+    return { phase: "done", label: "Analysis complete" };
+  }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   if (msg === "Job cancelled by user")   return { phase: "lifecycle", label: "Job cancelled" };

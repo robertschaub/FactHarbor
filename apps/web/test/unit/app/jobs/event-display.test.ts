@@ -54,6 +54,34 @@ describe("classifyEvent", () => {
     expect(d.params).toBe("2/3");
   });
 
+  it("classifies fallback model recovery as info overrideLevel", () => {
+    const d = classifyEvent("warn", "Stage 1 Pass 2 recovered via fallback model (claude-haiku-4-5-20251001); review claim quality warnings.");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Fallback model used");
+    expect(d.params).toContain("claude-haiku-4-5-20251001");
+    expect(d.overrideLevel).toBe("info");
+  });
+
+  // ── Setup — new messages ──────────────────────────────────────────────────
+  it("classifies URL fetch (url input type)", () => {
+    const d = classifyEvent("info", "Fetching URL content...");
+    expect(d.phase).toBe("setup");
+    expect(d.label).toBe("Fetching URL content");
+  });
+
+  it("classifies URL fetch (auto-detected URL in text)", () => {
+    const d = classifyEvent("info", "Detected URL input — fetching content...");
+    expect(d.phase).toBe("setup");
+    expect(d.label).toBe("Fetching URL content");
+  });
+
+  it("classifies LLM model event", () => {
+    const d = classifyEvent("info", "LLM: claude-haiku-4-5-20251001 — extraction & research");
+    expect(d.phase).toBe("setup");
+    expect(d.label).toBe("LLM model");
+    expect(d.params).toContain("claude-haiku-4-5-20251001");
+  });
+
   // ── Research ─────────────────────────────────────────────────────────────
   it("classifies researching evidence", () => {
     const d = classifyEvent("info", "Researching evidence for claims...");
@@ -67,12 +95,60 @@ describe("classifyEvent", () => {
     expect(d.label).toBe("Contrarian evidence search");
   });
 
+  it("classifies contradicting evidence search iterations", () => {
+    const d = classifyEvent("info", "Searching for contradicting evidence (2/4)...");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Contradicting evidence search");
+    expect(d.params).toBe("2/4");
+  });
+
   it("classifies search provider warn with params", () => {
     const d = classifyEvent("warn", 'Search provider "google-cse" error: quota exceeded');
     expect(d.phase).toBe("research");
     expect(d.label).toBe("Search provider error");
     expect(d.params).toContain("google-cse");
     expect(d.params).toContain("quota exceeded");
+  });
+
+  it("classifies successful search event as info with overrideLevel", () => {
+    const d = classifyEvent("warn", "Search: google-cse, brave — 12 results");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Search results");
+    expect(d.params).toContain("google-cse");
+    expect(d.overrideLevel).toBe("info");
+  });
+
+  it("classifies preliminary search error", () => {
+    const d = classifyEvent("warn", "Preliminary search error: serpapi - rate limited");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Search error");
+    expect(d.params).toContain("serpapi");
+  });
+
+  it("classifies research time budget event", () => {
+    const d = classifyEvent("info", "Research time budget reached (5 min), proceeding to analysis...");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Research time limit reached");
+    expect(d.params).toContain("5 min");
+  });
+
+  it("classifies no new evidence event", () => {
+    const d = classifyEvent("info", "No new evidence found in 3 consecutive iterations, proceeding...");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("No new evidence found");
+    expect(d.params).toContain("3");
+  });
+
+  it("classifies research time budget during contradiction search", () => {
+    const d = classifyEvent("info", "Research time budget reached during contradiction search, proceeding...");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Contradiction search time limit reached");
+  });
+
+  it("classifies source reliability evaluation", () => {
+    const d = classifyEvent("info", "Evaluating source reliability...");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Evaluating source reliability");
   });
 
   // ── Cluster ──────────────────────────────────────────────────────────────
@@ -94,6 +170,37 @@ describe("classifyEvent", () => {
     expect(d.label).toBe("Aggregating assessment");
   });
 
+  it("classifies debate advocate step", () => {
+    const d = classifyEvent("info", "Verdict debate: advocate — 4 claims");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Advocate verdict");
+    expect(d.params).toBe("4 claims");
+  });
+
+  it("classifies debate self-consistency step", () => {
+    const d = classifyEvent("info", "Verdict debate: self-consistency check");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Self-consistency check");
+  });
+
+  it("classifies debate adversarial challenge step", () => {
+    const d = classifyEvent("info", "Verdict debate: adversarial challenge");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Adversarial challenge");
+  });
+
+  it("classifies debate reconciliation step", () => {
+    const d = classifyEvent("info", "Verdict debate: reconciliation");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Reconciling verdicts");
+  });
+
+  it("classifies debate validation step", () => {
+    const d = classifyEvent("info", "Verdict debate: validation");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Validating verdicts");
+  });
+
   // ── Quality ──────────────────────────────────────────────────────────────
   it("classifies TIGERScore", () => {
     const d = classifyEvent("info", "Performing holistic TIGERScore quality evaluation...");
@@ -110,6 +217,12 @@ describe("classifyEvent", () => {
   it("classifies Result stored", () => {
     const d = classifyEvent("info", "Result stored");
     expect(d.phase).toBe("done");
+  });
+
+  it("classifies 'Analysis complete.' (dot variant)", () => {
+    const d = classifyEvent("info", "Analysis complete.");
+    expect(d.phase).toBe("done");
+    expect(d.label).toBe("Analysis complete");
   });
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -167,6 +280,10 @@ describe("PHASE_LABELS", () => {
     for (const p of phases) {
       expect(PHASE_LABELS[p]).toBeTruthy();
     }
+  });
+
+  it("labels misc as 'Additional' (not 'Other')", () => {
+    expect(PHASE_LABELS["misc"]).toBe("Additional");
   });
 });
 

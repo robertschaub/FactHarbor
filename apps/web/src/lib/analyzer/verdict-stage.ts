@@ -303,6 +303,7 @@ export async function runVerdictStage(
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
+  onEvent?: (message: string, progress: number) => void,
 ): Promise<CBClaimVerdict[]> {
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
@@ -338,6 +339,7 @@ export async function runVerdictStage(
   }
 
   // Step 1: Advocate Verdict
+  onEvent?.(`Verdict debate: advocate — ${claims.length} claims`, -1);
   const advocateVerdicts = await advocateVerdict(
     claims, advocateEvidence, boundaries, coverageMatrix, llmCall, config
   );
@@ -346,6 +348,8 @@ export async function runVerdictStage(
   // Challenger is wrapped in try/catch — malformed LLM output (e.g. OpenAI returning
   // invalid JSON) must not crash the entire analysis. An empty ChallengeDocument means
   // the reconciler proceeds with no challenger input (advocate verdict stands).
+  onEvent?.(`Verdict debate: self-consistency check`, -1);
+  onEvent?.(`Verdict debate: adversarial challenge`, -1);
   const [consistencyResults, challengeDoc] = await Promise.all([
     selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config, warnings),
     adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config)
@@ -361,6 +365,7 @@ export async function runVerdictStage(
   ]);
 
   // Step 4: Reconciliation — reconciler sees FULL evidence (needs complete picture)
+  onEvent?.(`Verdict debate: reconciliation`, -1);
   const { verdicts: reconciledVerdicts, validatedChallengeDoc } = await reconcileVerdicts(
     advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config, warnings,
   );
@@ -384,6 +389,7 @@ export async function runVerdictStage(
   });
 
   // Step 5: Verdict Validation
+  onEvent?.(`Verdict debate: validation`, -1);
   const validatedVerdicts = await validateVerdicts(
     spreadAdjustedVerdicts,
     evidence,

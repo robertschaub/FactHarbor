@@ -454,6 +454,7 @@ export async function runClaimBoundaryAnalysis(
           state.warnings,
           recordRuntimeModelUsage,
           roleTraceRecorder,
+          onEvent,
         );
       } catch (verdictError: unknown) {
         const errorMessage = verdictError instanceof Error
@@ -620,6 +621,16 @@ export async function runClaimBoundaryAnalysis(
     recordRuntimeModelUsage(understandModel.provider, understandModel.modelName);
     recordRuntimeModelUsage(extractModel.provider, extractModel.modelName);
     recordRuntimeModelUsage(verdictModel.provider, verdictModel.modelName);
+
+    // Emit LLM model events so users can see which models are being used.
+    // Progress -1 = info with no progress-bar update (not a warning).
+    const extractionModel = understandModel.modelName === extractModel.modelName
+      ? understandModel.modelName
+      : `${understandModel.modelName} (understand), ${extractModel.modelName} (extract)`;
+    onEvent(`LLM: ${extractionModel} — extraction & research`, -1);
+    if (verdictModel.modelName !== understandModel.modelName || verdictModel.provider !== understandModel.provider) {
+      onEvent(`LLM: ${verdictModel.modelName} — verdict`, -1);
+    }
 
     // B-1: Aggregate runtime role traces into per-role summary
     const runtimeRoleModels: Record<string, { provider: string; model: string; strength: string; callCount: number; fallbackUsed: boolean }> = {};
@@ -1348,6 +1359,9 @@ export async function runPreliminarySearch(
           timestamp: new Date().toISOString(),
           searchProvider: response.providersUsed.join(", "),
         });
+        if (response.results.length > 0) {
+          state.onEvent?.(`Search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+        }
 
         // Report search provider errors to warnings
         if (response.errors && response.errors.length > 0) {
@@ -3103,6 +3117,9 @@ export async function runResearchIteration(
         timestamp: new Date().toISOString(),
         searchProvider: response.providersUsed.join(", "),
       });
+      if (response.results.length > 0) {
+        state.onEvent?.(`Search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+      }
 
       // Capture search provider errors as warnings AND report to circuit breaker
       if (response.errors && response.errors.length > 0) {
@@ -4911,6 +4928,7 @@ export async function generateVerdicts(
   warnings?: AnalysisWarning[],
   modelUsageRecorder?: (provider: string, modelName: string) => void,
   roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void,
+  onEvent?: (message: string, progress: number) => void,
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -4935,7 +4953,7 @@ export async function generateVerdicts(
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
   const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder, roleTraceRecorder);
 
-  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings);
+  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings, onEvent);
 }
 
 // ============================================================================

@@ -387,7 +387,7 @@ function VerdictMetricBlock({
 
 interface PhaseGroup {
   phase: EventPhase;
-  entries: Array<{ event: EventItem; label: string; params?: string }>;
+  entries: Array<{ event: EventItem; label: string; params?: string; effectiveLevel: string }>;
   warnCount: number;
   errorCount: number;
 }
@@ -405,6 +405,9 @@ function buildPhaseGroups(events: EventItem[]): {
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
     const d = classifyEvent(e.level, e.message);
+    // Use overrideLevel when the classifier knows better than the raw event level
+    // (e.g. a fully-recovered fallback arrives as "warn" but should display as "info")
+    const effectiveLevel = d.overrideLevel ?? e.level.toLowerCase();
 
     if (d.isStackTrace) {
       // Attach to the last error card
@@ -428,8 +431,8 @@ function buildPhaseGroups(events: EventItem[]): {
       groups.push(currentGroup);
     }
 
-    currentGroup.entries.push({ event: e, label: d.label, params: d.params });
-    if (e.level === "warn") currentGroup.warnCount++;
+    currentGroup.entries.push({ event: e, label: d.label, params: d.params, effectiveLevel });
+    if (effectiveLevel === "warn") currentGroup.warnCount++;
   }
 
   return { groups, errorEvents, lifecycleEvents };
@@ -449,6 +452,8 @@ const PHASE_ICONS: Record<EventPhase, string> = {
 };
 
 function PhaseTimeline({ events }: { events: EventItem[] }) {
+  const [expandAll, setExpandAll] = useState<boolean | null>(null);
+
   if (events.length === 0) {
     return <p className={styles.tlEmpty}>No events yet.</p>;
   }
@@ -458,6 +463,18 @@ function PhaseTimeline({ events }: { events: EventItem[] }) {
 
   return (
     <div className={styles.timeline}>
+      {/* Expand / Collapse all toggle */}
+      {groups.length > 1 && (
+        <div className={styles.tlExpandBar}>
+          <button
+            className={styles.tlExpandBtn}
+            onClick={() => setExpandAll(prev => prev === true ? false : true)}
+          >
+            {expandAll === true ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
+      )}
+
       {/* Always-visible error cards */}
       {errorEvents.map(({ event, stackTrace }) => (
         <div key={event.id} className={styles.errorCard}>
@@ -482,8 +499,15 @@ function PhaseTimeline({ events }: { events: EventItem[] }) {
         const isLast = idx === lastGroupIdx;
         const icon = PHASE_ICONS[group.phase] ?? "•";
         const label = PHASE_LABELS[group.phase];
+        // expandAll overrides default open state; null = default (last group open)
+        const isOpen = expandAll !== null ? expandAll : isLast;
         return (
-          <details key={`${group.phase}-${idx}`} className={styles.phaseGroup} open={isLast}>
+          <details
+            key={`${group.phase}-${idx}-${expandAll}`}
+            className={styles.phaseGroup}
+            open={isOpen}
+            onToggle={() => setExpandAll(null)}
+          >
             <summary className={styles.phaseSummary}>
               <span className={styles.phaseIcon}>{icon}</span>
               <span className={styles.phaseLabel}>{label}</span>
@@ -497,18 +521,18 @@ function PhaseTimeline({ events }: { events: EventItem[] }) {
                   )}
                 </span>
               )}
-              <span className={styles.phaseChevron}>{isLast ? "▾" : "▸"}</span>
+              <span className={styles.phaseChevron}>{isOpen ? "▾" : "▸"}</span>
             </summary>
             <div className={styles.phaseEvents}>
-              {group.entries.map(({ event, label: evLabel, params }) => {
-                const lvl = event.level.toLowerCase();
-                const rowClass = [styles.tlEvent, lvl === "warn" ? styles.tlWarn : ""].filter(Boolean).join(" ");
-                const labelClass = [styles.tlLabel, lvl === "warn" ? styles.tlLabelWarn : ""].filter(Boolean).join(" ");
+              {group.entries.map(({ event, label: evLabel, params, effectiveLevel }) => {
+                const isWarn = effectiveLevel === "warn";
+                const rowClass = [styles.tlEvent, isWarn ? styles.tlWarn : ""].filter(Boolean).join(" ");
+                const labelClass = [styles.tlLabel, isWarn ? styles.tlLabelWarn : ""].filter(Boolean).join(" ");
                 return (
                   <div key={event.id} className={rowClass}>
                     <span className={styles.tlTimestamp}>{formatLocalTime(event.tsUtc)}</span>
                     <div>
-                      <div className={labelClass}>{evLabel}</div>
+                      <div className={labelClass}>{isWarn ? "⚠ " : ""}{evLabel}</div>
                       {params && <div className={styles.tlParams}>{params}</div>}
                     </div>
                   </div>

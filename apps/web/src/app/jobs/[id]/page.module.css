@@ -1329,6 +1329,23 @@ details[open] > .devWarningSummary::before {
   padding: 12px 0;
 }
 
+.tlExpandBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.tlExpandBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-link, #3b82f6);
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.tlExpandBtn:hover { background: var(--bg-hover, #f1f5f9); }
+
 /* Sources Panel */
 .sourcesHeader {
   display: flex;
