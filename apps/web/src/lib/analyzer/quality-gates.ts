@@ -120,18 +120,17 @@ export function validateVerdictGate4(
   const qualityMedium = gateConfig?.gate4QualityThresholdMedium ?? 0.5;
   const agreementHigh = gateConfig?.gate4AgreementThresholdHigh ?? 0.7;
   const agreementMedium = gateConfig?.gate4AgreementThresholdMedium ?? 0.5;
-  const defaultScore = gateConfig?.defaultTrackRecordScore ?? 0.45;
-
   // 1. Count evidence sources
   const evidenceCount = sources.length;
 
-  // 2. Calculate average source quality
+  // 2. Calculate average source quality (only from SR-evaluated sources)
   // Note: trackRecordScore is already 0-1 scale (see Source Reliability Bundle docs)
-  const qualityScores = sources.map(s =>
-    s.trackRecordScore != null ? s.trackRecordScore : defaultScore
-  );
-  const averageSourceQuality = qualityScores.length > 0
-    ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length
+  // Unevaluated sources are excluded — unknown ≠ bad.
+  const evaluatedScores = sources
+    .filter(s => s.trackRecordScore != null)
+    .map(s => s.trackRecordScore!);
+  const averageSourceQuality = evaluatedScores.length > 0
+    ? evaluatedScores.reduce((a, b) => a + b, 0) / evaluatedScores.length
     : 0;
 
   // 3. Calculate evidence agreement

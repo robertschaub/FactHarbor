@@ -27,7 +27,7 @@
     }
   },
   "sourceReliability": {
-    "defaultScore": 0.45
+    "defaultScore": null
   },
   "qualityGates": {
     "gate1OpinionThreshold": 0.7,

@@ -1291,8 +1291,8 @@ export const CalcConfigSchema = z.object({
 
   sourceReliability: z.object({
     // Consumer fallback for unknown/unrated sources (SR module itself returns null).
-    defaultScore: z.number().min(0).max(1)
-      .describe("Fallback score used by consuming pipelines when source reliability is unknown"),
+    defaultScore: z.number().min(0).max(1).nullable()
+      .describe("Fallback score for unknown sources. null = exclude unknown sources from weight calculation (recommended)."),
     // Deprecated (moved to SR config): accepted only for backward compatibility with older stored configs.
     confidenceThreshold: z.number().min(0).max(1).optional(),
     consensusThreshold: z.number().min(0).max(1).optional(),
@@ -1600,8 +1600,9 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     },
   },
   sourceReliability: {
-    // Consumer-owned fallback when SR returns null for unknown/unrated sources.
-    defaultScore: 0.45,
+    // null = exclude unknown sources from weight calculation (no penalty for unevaluated sources).
+    // Previously 0.45 which treated unknown as below-average, compressing TP toward 50%.
+    defaultScore: null,
   },
   qualityGates: {
     gate1OpinionThreshold: 0.7,

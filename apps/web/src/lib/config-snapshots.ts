@@ -74,7 +74,7 @@ export async function captureConfigSnapshot(
   searchConfig: SearchConfig,
   srSummary: {
     enabled: boolean;
-    defaultScore: number;
+    defaultScore: number | null;
     confidenceThreshold: number;
   },
 ): Promise<void> {
@@ -127,7 +127,7 @@ export async function captureConfigSnapshotAsync(
   searchConfig: SearchConfig,
   srSummary: {
     enabled: boolean;
-    defaultScore: number;
+    defaultScore: number | null;
     confidenceThreshold: number;
   },
 ): Promise<void> {
@@ -198,7 +198,7 @@ export function getSRConfigSummary(
   calcConfig: CalcConfig,
 ): {
   enabled: boolean;
-  defaultScore: number;
+  defaultScore: number | null;
   confidenceThreshold: number;
 } {
   return {
