@@ -308,9 +308,11 @@ export async function drainRunnerQueue() {
     const now = Date.now();
     let effectiveRunningCount = qs.runningCount;
 
-    // **P0 FIX**: Detect and recover stale RUNNING jobs
-    // Note: runningJobIds is process-local; in multi-process/runtime scenarios it cannot be used
-    // for immediate orphan failure. We only recover when the job is actually stale.
+    // Detect and recover orphaned/stale RUNNING jobs.
+    // runningJobIds is process-local — after a restart it's empty. Any job that the DB says
+    // is RUNNING but isn't in our local set was orphaned by the restart. These are immediately
+    // re-queued (not failed) so they run again from scratch. Jobs that ARE locally tracked but
+    // haven't updated in 15 minutes are genuinely stale and get failed.
     const STALE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
     try {
       // Fetch all RUNNING jobs from DB (paginated API: { jobs, pagination })
@@ -361,12 +363,23 @@ export async function drainRunnerQueue() {
         const staleDurationMs = now - lastUpdateMs;
         const isStale = staleDurationMs > STALE_THRESHOLD_MS;
 
-        if (isStale) {
-          const reason = !wasLocallyRunning
-            ? `Orphaned stale job (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`
-            : `Stale job (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`;
+        if (!wasLocallyRunning) {
+          // Job is RUNNING in DB but not tracked by this process — orphaned by a restart.
+          // Re-queue immediately instead of waiting for the 15-minute stale threshold.
+          // The job will start from scratch (no intermediate state is persisted).
+          console.warn(`[Runner] Re-queuing orphaned job ${jobId} (was RUNNING but not tracked by this process)`);
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+            status: "QUEUED",
+            progress: 0,
+            level: "info",
+            message: "Re-queued after application restart (previous execution lost)",
+          });
+          // Add to the QUEUED recovery list so it gets picked up below
+          queuedJobsFromDb.push({ jobId, createdUtc: job.updatedUtc });
+        } else if (isStale) {
+          const reason = `Stale job (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`;
 
-          console.warn(`[Runner] Recovering job ${jobId}: ${reason}`);
+          console.warn(`[Runner] Failing stale job ${jobId}: ${reason}`);
 
           await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
             status: "FAILED",
@@ -375,10 +388,7 @@ export async function drainRunnerQueue() {
             message: `Job failed: ${reason}`,
           });
 
-          // Clean up local state only if this process believed the job was running
-          if (wasLocallyRunning) {
-            qs.runningJobIds.delete(jobId);
-          }
+          qs.runningJobIds.delete(jobId);
         } else {
           nonStaleRunningCount++;
         }
