@@ -1379,11 +1379,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
               <tbody>
                 {groupedEntries.map((group) => (
                   <Fragment key={group.familyDomain}>
-                    <tr key={`${group.familyDomain}-family`} className={styles.familyRow}>
-                      <td colSpan={tableColumnCount} className={styles.familyCell}>
-                        <span className={styles.familyDomain}>{group.familyDomain}</span>
-                      </td>
-                    </tr>
                     {group.entries.map((entry) => (
                       <tr key={entry.domain} className={selectedDomains.has(entry.domain) ? styles.selectedRow : ""}>
                         {isAdminAuthenticated && (
