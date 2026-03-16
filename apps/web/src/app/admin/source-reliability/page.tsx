@@ -140,7 +140,11 @@ function groupEntriesByFamily(entries: CachedScore[]): CachedScoreGroup[] {
 
   return Array.from(groups, ([familyDomain, groupedEntries]) => ({
     familyDomain,
-    entries: groupedEntries,
+    entries: groupedEntries.sort((a, b) => {
+      const aIsRoot = a.domain === familyDomain ? 0 : 1;
+      const bIsRoot = b.domain === familyDomain ? 0 : 1;
+      return aIsRoot - bIsRoot;
+    }),
   }));
 }
 
