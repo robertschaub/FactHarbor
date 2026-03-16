@@ -1382,9 +1382,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                     <tr key={`${group.familyDomain}-family`} className={styles.familyRow}>
                       <td colSpan={tableColumnCount} className={styles.familyCell}>
                         <span className={styles.familyDomain}>{group.familyDomain}</span>
-                        <span className={styles.familyCount}>
-                          {group.entries.length} entr{group.entries.length === 1 ? "y" : "ies"} on this page
-                        </span>
                       </td>
                     </tr>
                     {group.entries.map((entry) => (
