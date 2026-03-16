@@ -90,7 +90,9 @@ function buildSrSearchConfigFromEvalSearch(
     enabled: true,
     provider: cfg.provider,
     mode: "standard",
-    autoMode: DEFAULT_SEARCH_CONFIG.autoMode,
+    // SR evaluation always accumulates across enabled providers. Keep this explicit
+    // instead of inheriting the main pipeline default by reference.
+    autoMode: "accumulate",
     maxResults: cfg.maxResultsPerQuery,
     maxSourcesPerIteration: cfg.maxResultsPerQuery,
     timeoutMs: cfg.timeoutMs,
