@@ -251,65 +251,40 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
   // Find cache misses that need evaluation
   const misses = newDomains.filter((d) => !prefetchedData.has(d));
 
-  // With fallback enabled, subdomains evaluate their root domain instead of themselves.
-  // Multiple subdomains may share the same root — deduplicate into evalTarget → [requestedDomains].
-  const targetToRequested = new Map<string, string[]>();
-  for (const domain of misses) {
-    const target = useRootFallback ? getFamilyDomain(domain) : domain;
-    const list = targetToRequested.get(target);
-    if (list) list.push(domain);
-    else targetToRequested.set(target, [domain]);
-  }
-
   // **PERFORMANCE FIX**: Parallelize SR evaluations with concurrency limit
   // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
   // Processing serially caused 10+ minute delays with 39 domains
   // Concurrency=3 reduces SR-Eval time by ~3x
   const SR_EVAL_CONCURRENCY = SR_CONFIG.evalConcurrency;
 
-  // Evaluate a single target domain and map results back to all requesting domains.
-  const evaluateTarget = async (target: string, requestedDomains: string[]) => {
-    const setAll = (data: CachedReliabilityData | null) => {
-      prefetchedData.set(target, data);
-      for (const d of requestedDomains) {
-        if (!prefetchedData.has(d)) prefetchedData.set(d, data);
-      }
-    };
-
-    // Apply importance filter
-    if (!isImportantSource(target)) {
-      console.log(`[SR] Skipping unimportant source: ${target}`);
-      setAll(null);
-      return;
+  // Core evaluation function: evaluate ONE domain, store result in cache and prefetchedData.
+  const evaluateDomain = async (domain: string): Promise<CachedReliabilityData | null> => {
+    if (!isImportantSource(domain)) {
+      console.log(`[SR] Skipping unimportant source: ${domain}`);
+      prefetchedData.set(domain, null);
+      return null;
     }
 
-    // Evaluate via internal API
     try {
       let hadEvalError = false;
-      const evalResult = await evaluateSourceInternal(
-        target,
-        (errInfo) => {
-          hadEvalError = true;
-          result.errorCount++;
-          result.errorByType[errInfo.type] = (result.errorByType[errInfo.type] ?? 0) + 1;
-          if (!result.failedDomains.includes(target)) {
-            result.failedDomains.push(target);
-          }
-          if (result.errorSamples.length < 20) {
-            result.errorSamples.push(errInfo);
-          }
-        },
-      );
+      const evalResult = await evaluateSourceInternal(domain, (errInfo) => {
+        hadEvalError = true;
+        result.errorCount++;
+        result.errorByType[errInfo.type] = (result.errorByType[errInfo.type] ?? 0) + 1;
+        if (!result.failedDomains.includes(domain)) result.failedDomains.push(domain);
+        if (result.errorSamples.length < 20) result.errorSamples.push(errInfo);
+      });
+
       if (evalResult) {
-        setAll({
+        const data: CachedReliabilityData = {
           score: evalResult.score,
           confidence: evalResult.confidence,
           consensusAchieved: evalResult.consensusAchieved,
-        });
+        };
+        prefetchedData.set(domain, data);
         result.evaluated++;
-        // Cache under target (root domain when fallback redirected a subdomain)
         await setCachedScore(
-          target,
+          domain,
           evalResult.score,
           evalResult.confidence,
           evalResult.modelPrimary,
@@ -323,45 +298,102 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
           undefined, // fallbackUsed
           undefined, // fallbackReason
           evalResult.identifiedEntity,
-          evalResult.sourceType
+          evalResult.sourceType,
         );
         const scoreStr = evalResult.score !== null ? evalResult.score.toFixed(2) : "null";
-        console.log(
-          `[SR] Evaluated ${target}: score=${scoreStr}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
-        );
+        console.log(`[SR] Evaluated ${domain}: score=${scoreStr}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`);
+        return data;
       } else {
-        setAll(null);
+        prefetchedData.set(domain, null);
         if (hadEvalError) {
-          console.log(`[SR] Evaluation failed for ${target} — using unknown reliability (null score)`);
+          console.log(`[SR] Evaluation failed for ${domain} — using unknown reliability (null score)`);
         } else {
           result.noConsensusCount++;
-          console.log(`[SR] No consensus for ${target}`);
+          console.log(`[SR] No consensus for ${domain}`);
         }
+        return null;
       }
     } catch (err) {
-      console.error(`[SR] Error evaluating ${target}:`, err);
+      console.error(`[SR] Error evaluating ${domain}:`, err);
       result.errorCount++;
       result.errorByType.unknown = (result.errorByType.unknown ?? 0) + 1;
-      if (!result.failedDomains.includes(target)) {
-        result.failedDomains.push(target);
-      }
+      if (!result.failedDomains.includes(domain)) result.failedDomains.push(domain);
       if (result.errorSamples.length < 20) {
         result.errorSamples.push({
-          domain: target,
+          domain,
           type: "unknown",
           message: err instanceof Error ? err.message : String(err),
         });
       }
-      setAll(null);
+      prefetchedData.set(domain, null);
+      return null;
     }
   };
 
-  // Process in batches of SR_EVAL_CONCURRENCY
-  const evalEntries = [...targetToRequested.entries()];
-  for (let i = 0; i < evalEntries.length; i += SR_EVAL_CONCURRENCY) {
-    const batch = evalEntries.slice(i, i + SR_EVAL_CONCURRENCY);
-    console.log(`[SR] Evaluating batch ${Math.floor(i / SR_EVAL_CONCURRENCY) + 1}/${Math.ceil(evalEntries.length / SR_EVAL_CONCURRENCY)}: ${batch.map(([t]) => t).join(', ')}`);
-    await Promise.all(batch.map(([target, requested]) => evaluateTarget(target, requested)));
+  // Pass 1: evaluate every miss domain directly (no root redirect).
+  // Each domain is evaluated on its own merits and its result stored under its own name.
+  const uniqueMisses = [...new Set(misses)];
+  for (let i = 0; i < uniqueMisses.length; i += SR_EVAL_CONCURRENCY) {
+    const batch = uniqueMisses.slice(i, i + SR_EVAL_CONCURRENCY);
+    console.log(`[SR] Pass 1 batch ${Math.floor(i / SR_EVAL_CONCURRENCY) + 1}/${Math.ceil(uniqueMisses.length / SR_EVAL_CONCURRENCY)}: ${batch.join(", ")}`);
+    await Promise.all(batch.map(d => evaluateDomain(d)));
+  }
+
+  // Pass 2 (fallback enabled only): for domains whose score is still null after Pass 1,
+  // evaluate their root domain. The root domain result is stored under its own name and the
+  // in-memory prefetch map is updated so sync lookups return the root's score for the subdomain.
+  if (useRootFallback) {
+    // Collect unique root domains needed, deduplicated across subdomains
+    const rootsNeeded = new Map<string, string[]>(); // root → [null-score subdomains that need it]
+    for (const domain of uniqueMisses) {
+      const data = prefetchedData.get(domain);
+      if (!data || data.score === null) {
+        const root = getFamilyDomain(domain);
+        if (root !== domain) {
+          const list = rootsNeeded.get(root) ?? [];
+          list.push(domain);
+          rootsNeeded.set(root, list);
+        }
+      }
+    }
+
+    if (rootsNeeded.size > 0) {
+      // Root domains may already be in the persistent cache — check before evaluating
+      const cachedRoots = await batchGetCachedData([...rootsNeeded.keys()]);
+      const rootsToEvaluate: string[] = [];
+      for (const [root, subdomains] of rootsNeeded) {
+        const cachedRoot = cachedRoots.get(root);
+        if (cachedRoot && cachedRoot.score !== null) {
+          const data: CachedReliabilityData = {
+            score: cachedRoot.score,
+            confidence: cachedRoot.confidence,
+            consensusAchieved: cachedRoot.consensusAchieved,
+          };
+          prefetchedData.set(root, data);
+          result.cacheHits++;
+          console.log(`[SR] Root domain ${root} found in cache (score=${cachedRoot.score.toFixed(2)}), applying to: ${subdomains.join(", ")}`);
+          for (const subdomain of subdomains) prefetchedData.set(subdomain, data);
+        } else {
+          rootsToEvaluate.push(root);
+        }
+      }
+
+      // Evaluate root domains not found in cache
+      for (let i = 0; i < rootsToEvaluate.length; i += SR_EVAL_CONCURRENCY) {
+        const batch = rootsToEvaluate.slice(i, i + SR_EVAL_CONCURRENCY);
+        console.log(`[SR] Pass 2 (root fallback) batch: ${batch.join(", ")}`);
+        await Promise.all(batch.map(async root => {
+          await evaluateDomain(root);
+          // Update in-memory map for null-score subdomains so sync lookup returns root's score
+          const rootData = prefetchedData.get(root);
+          if (rootData && rootData.score !== null) {
+            for (const subdomain of rootsNeeded.get(root) ?? []) {
+              prefetchedData.set(subdomain, rootData);
+            }
+          }
+        }));
+      }
+    }
   }
 
   console.log(`[SR] Prefetch complete: ${prefetchedData.size} domains total`);

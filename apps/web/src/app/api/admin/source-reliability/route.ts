@@ -103,10 +103,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check which domains already exist in cache (if not forcing re-evaluation)
+    // Check which domains (and their root domains) are already cached
+    // Include root domains in the lookup so we can skip root evaluation when already cached.
+    const allLookupDomains = [...new Set(domains.flatMap(d => {
+      const root = getFamilyDomain(d);
+      return root !== d ? [d, root] : [d];
+    }))];
     let existingDomains = new Map<string, { score: number | null; confidence: number; consensusAchieved: boolean; fallbackUsed?: boolean; fallbackReason?: string | null; identifiedEntity?: string | null }>();
     if (!forceReevaluate) {
-      existingDomains = await batchGetCachedData(domains);
+      existingDomains = await batchGetCachedData(allLookupDomains);
     }
 
     // Get config for evaluation (using unified defaults)
@@ -119,7 +124,7 @@ export async function POST(req: Request) {
 
     const results: Array<{
       domain: string;
-      resolvedDomain?: string; // Set when input was a subdomain redirected to the root domain
+      resolvedDomain?: string; // Set when the root domain was used as fallback
       success: boolean;
       cached?: boolean;
       score?: number | null;
@@ -132,93 +137,99 @@ export async function POST(req: Request) {
       error?: string;
     }> = [];
 
-    // Evaluate each domain
+    // Helper: call the internal evaluate-source endpoint for one domain.
+    const internalBase = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
+    const evalUrl = new URL("/api/internal/evaluate-source", internalBase);
+
+    const callEvaluateSource = async (targetDomain: string) => {
+      const resp = await fetch(evalUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(runnerKey ? { "x-runner-key": runnerKey } : {}),
+        },
+        body: JSON.stringify({ domain: targetDomain, multiModel, confidenceThreshold, consensusThreshold }),
+      });
+      return resp;
+    };
+
+    // Evaluate each domain using a two-phase approach consistent with prefetchSourceReliability:
+    //   Phase 1 — evaluate the requested domain directly; store its result.
+    //   Phase 2 — if Phase 1 returned null score and domain is a subdomain, evaluate the root
+    //             domain and store that result too; return the root's score to the caller.
     for (const domain of domains) {
       try {
-        // Apply root-domain fallback: evaluate the root domain instead of a subdomain.
-        // Consistent with prefetchSourceReliability behaviour.
         const rootDomain = getFamilyDomain(domain);
-        const evalTarget = rootDomain !== domain ? rootDomain : domain;
+        const hasRootFallback = rootDomain !== domain;
 
-        // Check if already cached (and not forcing re-evaluation)
-        const existingData = existingDomains.get(evalTarget) ?? existingDomains.get(domain);
-        if (existingData) {
+        // ── Cache check (Phase 1 domain) ─────────────────────────────────────
+        const cachedDomain = existingDomains.get(domain);
+        if (cachedDomain && cachedDomain.score !== null) {
           results.push({
             domain,
-            ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
             success: true,
             cached: true,
-            score: existingData.score,
-            confidence: existingData.confidence,
-            consensus: existingData.consensusAchieved,
-            fallbackUsed: existingData.fallbackUsed || false,
-            fallbackReason: existingData.fallbackReason || null,
-            identifiedEntity: existingData.identifiedEntity || null,
+            score: cachedDomain.score,
+            confidence: cachedDomain.confidence,
+            consensus: cachedDomain.consensusAchieved,
+            fallbackUsed: cachedDomain.fallbackUsed || false,
+            fallbackReason: cachedDomain.fallbackReason || null,
+            identifiedEntity: cachedDomain.identifiedEntity || null,
             models: "(cached)",
           });
           continue;
         }
 
-        // Call internal evaluate endpoint — must use localhost (not req.url which may be the public HTTPS hostname)
-        const internalBase = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
-        const evalUrl = new URL("/api/internal/evaluate-source", internalBase);
-        const evalResponse = await fetch(evalUrl.toString(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(runnerKey ? { "x-runner-key": runnerKey } : {}),
-          },
-          body: JSON.stringify({
-            domain: evalTarget,
-            multiModel,
-            confidenceThreshold,
-            consensusThreshold,
-          }),
-        });
+        // ── Cache check (root domain fallback) ───────────────────────────────
+        if (hasRootFallback) {
+          const cachedRoot = existingDomains.get(rootDomain);
+          if (cachedRoot && cachedRoot.score !== null) {
+            results.push({
+              domain,
+              resolvedDomain: rootDomain,
+              success: true,
+              cached: true,
+              score: cachedRoot.score,
+              confidence: cachedRoot.confidence,
+              consensus: cachedRoot.consensusAchieved,
+              fallbackUsed: cachedRoot.fallbackUsed || false,
+              fallbackReason: cachedRoot.fallbackReason || null,
+              identifiedEntity: cachedRoot.identifiedEntity || null,
+              models: "(cached)",
+            });
+            continue;
+          }
+        }
+
+        // ── Phase 1: evaluate the requested domain directly ───────────────────
+        const evalResponse = await callEvaluateSource(domain);
 
         if (!evalResponse.ok) {
-          // On domain cooldown (429), return cached result if available — not a real error
           if (evalResponse.status === 429) {
-            const cachedFallback = await batchGetCachedData([evalTarget]).then(m => m.get(evalTarget));
-            if (cachedFallback) {
-              results.push({
-                domain,
-                ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
-                success: true,
-                cached: true,
-                score: cachedFallback.score,
-                confidence: cachedFallback.confidence,
-                consensus: cachedFallback.consensusAchieved,
-                fallbackUsed: cachedFallback.fallbackUsed || false,
-                fallbackReason: cachedFallback.fallbackReason || null,
-                identifiedEntity: cachedFallback.identifiedEntity || null,
-                models: "(cached - cooldown active)",
-              });
-            } else {
-              results.push({
-                domain,
-                ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
-                success: true,
-                cached: true,
-                models: "(cooldown active — no cached result yet)",
-              });
-            }
+            // Cooldown — return whatever is in cache (null-score included as info)
+            const cachedFallback = await batchGetCachedData([domain]).then(m => m.get(domain));
+            results.push({
+              domain,
+              success: true,
+              cached: true,
+              score: cachedFallback?.score,
+              confidence: cachedFallback?.confidence,
+              consensus: cachedFallback?.consensusAchieved,
+              fallbackUsed: cachedFallback?.fallbackUsed || false,
+              fallbackReason: cachedFallback?.fallbackReason || null,
+              identifiedEntity: cachedFallback?.identifiedEntity || null,
+              models: cachedFallback ? "(cached - cooldown active)" : "(cooldown active — no cached result yet)",
+            });
             continue;
           }
           const errData = await evalResponse.json().catch(() => ({}));
-          results.push({
-            domain,
-            success: false,
-            error: errData.details || errData.error || `HTTP ${evalResponse.status}`,
-          });
+          results.push({ domain, success: false, error: errData.details || errData.error || `HTTP ${evalResponse.status}` });
           continue;
         }
 
         const evalData = await evalResponse.json();
-        
-        // Save to cache under evalTarget (root domain when subdomain was submitted)
         await setCachedScore(
-          evalTarget,
+          domain,
           evalData.score,
           evalData.confidence,
           evalData.modelPrimary,
@@ -232,23 +243,108 @@ export async function POST(req: Request) {
           evalData.fallbackUsed || false,
           evalData.fallbackReason || null,
           evalData.identifiedEntity || null,
-          evalData.sourceType || null
+          evalData.sourceType || null,
+        );
+
+        // If Phase 1 yielded a valid score, we're done
+        if (evalData.score !== null || !hasRootFallback) {
+          results.push({
+            domain,
+            success: true,
+            cached: false,
+            score: evalData.score,
+            confidence: evalData.confidence,
+            consensus: evalData.consensusAchieved,
+            fallbackUsed: evalData.fallbackUsed || false,
+            fallbackReason: evalData.fallbackReason || null,
+            identifiedEntity: evalData.identifiedEntity || null,
+            models: evalData.modelSecondary
+              ? `${evalData.modelPrimary} + ${evalData.modelSecondary}`
+              : evalData.modelPrimary,
+          });
+          continue;
+        }
+
+        // ── Phase 2: subdomain had null score — evaluate the root domain ──────
+        const rootEvalResponse = await callEvaluateSource(rootDomain);
+
+        if (!rootEvalResponse.ok) {
+          if (rootEvalResponse.status === 429) {
+            const cachedRoot = await batchGetCachedData([rootDomain]).then(m => m.get(rootDomain));
+            if (cachedRoot && cachedRoot.score !== null) {
+              results.push({
+                domain,
+                resolvedDomain: rootDomain,
+                success: true,
+                cached: true,
+                score: cachedRoot.score,
+                confidence: cachedRoot.confidence,
+                consensus: cachedRoot.consensusAchieved,
+                fallbackUsed: cachedRoot.fallbackUsed || false,
+                fallbackReason: cachedRoot.fallbackReason || null,
+                identifiedEntity: cachedRoot.identifiedEntity || null,
+                models: "(cached - cooldown active)",
+              });
+            } else {
+              // Root on cooldown and no cache — return the null Phase 1 result
+              results.push({
+                domain,
+                success: true,
+                cached: false,
+                score: evalData.score,
+                confidence: evalData.confidence,
+                consensus: evalData.consensusAchieved,
+                models: evalData.modelPrimary,
+              });
+            }
+            continue;
+          }
+          // Root evaluation failed — return null Phase 1 result
+          results.push({
+            domain,
+            success: true,
+            cached: false,
+            score: evalData.score,
+            confidence: evalData.confidence,
+            consensus: evalData.consensusAchieved,
+            models: evalData.modelPrimary,
+          });
+          continue;
+        }
+
+        const rootEvalData = await rootEvalResponse.json();
+        await setCachedScore(
+          rootDomain,
+          rootEvalData.score,
+          rootEvalData.confidence,
+          rootEvalData.modelPrimary,
+          rootEvalData.modelSecondary,
+          rootEvalData.consensusAchieved,
+          rootEvalData.reasoning,
+          rootEvalData.category,
+          rootEvalData.biasIndicator,
+          rootEvalData.evidenceCited,
+          rootEvalData.evidencePack,
+          rootEvalData.fallbackUsed || false,
+          rootEvalData.fallbackReason || null,
+          rootEvalData.identifiedEntity || null,
+          rootEvalData.sourceType || null,
         );
 
         results.push({
           domain,
-          ...(evalTarget !== domain ? { resolvedDomain: evalTarget } : {}),
+          resolvedDomain: rootDomain,
           success: true,
           cached: false,
-          score: evalData.score,
-          confidence: evalData.confidence,
-          consensus: evalData.consensusAchieved,
-          fallbackUsed: evalData.fallbackUsed || false,
-          fallbackReason: evalData.fallbackReason || null,
-          identifiedEntity: evalData.identifiedEntity || null,
-          models: evalData.modelSecondary
-            ? `${evalData.modelPrimary} + ${evalData.modelSecondary}`
-            : evalData.modelPrimary,
+          score: rootEvalData.score,
+          confidence: rootEvalData.confidence,
+          consensus: rootEvalData.consensusAchieved,
+          fallbackUsed: rootEvalData.fallbackUsed || false,
+          fallbackReason: rootEvalData.fallbackReason || null,
+          identifiedEntity: rootEvalData.identifiedEntity || null,
+          models: rootEvalData.modelSecondary
+            ? `${rootEvalData.modelPrimary} + ${rootEvalData.modelSecondary}`
+            : rootEvalData.modelPrimary,
         });
       } catch (err) {
         results.push({
