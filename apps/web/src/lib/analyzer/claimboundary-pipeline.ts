@@ -911,6 +911,7 @@ export async function extractClaims(
   // Pass 1: Rapid claim scan (Haiku)
   // ------------------------------------------------------------------
   state.onEvent?.("Extracting claims: Pass 1 (rapid scan)...", 12);
+  state.onEvent?.(`LLM call: claim extraction (Pass 1) — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
   const pass1 = await runPass1(state.originalInput, pipelineConfig, currentDate);
   state.llmCalls++;
 
@@ -930,6 +931,7 @@ export async function extractClaims(
   // Pass 2: Evidence-grounded extraction (Sonnet)
   // ------------------------------------------------------------------
   state.onEvent?.("Extracting claims: Pass 2 (evidence-grounded refinement)...", 22);
+  state.onEvent?.(`LLM call: claim extraction (Pass 2) — ${getModelForTask("extract_evidence", undefined, pipelineConfig).modelName}`, -1);
   const pass2 = await runPass2(
     state.originalInput,
     preliminaryEvidence,
@@ -985,6 +987,7 @@ export async function extractClaims(
   // Gate 1: Claim validation (Haiku, batched) — actively filters claims
   // ------------------------------------------------------------------
   state.onEvent?.("Extracting claims: Gate 1 validation...", 26);
+  state.onEvent?.(`LLM call: Gate 1 validation — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
   let gate1Result = await runGate1Validation(
     filteredClaims,
     pipelineConfig,
@@ -4956,7 +4959,7 @@ export async function generateVerdicts(
 
   // Production LLM call wiring — use injected or create from UCM.
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
-  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder, roleTraceRecorder);
+  const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder, roleTraceRecorder, onEvent);
 
   return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings, onEvent);
 }
@@ -5076,6 +5079,7 @@ export function createProductionLLMCall(
   warnings?: AnalysisWarning[],
   onModelUsed?: (provider: string, modelName: string) => void,
   onRoleTrace?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void,
+  onEvent?: (message: string, progress: number) => void,
 ): LLMCallFn {
   return async (
     promptKey: string,
@@ -5225,6 +5229,12 @@ export function createProductionLLMCall(
         strength: tier,
         fallbackUsed,
       });
+    }
+    // Emit LLM call event for per-call visibility in the job event log
+    if (options?.callContext && onEvent) {
+      const rawRole = options.callContext.debateRole;
+      const roleLabel = rawRole.replace(/([A-Z])/g, (c) => `-${c.toLowerCase()}`);
+      onEvent(`LLM call: ${roleLabel} — ${model.modelName}`, -1);
     }
 
     let result: any;

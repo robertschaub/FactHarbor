@@ -82,6 +82,56 @@ describe("classifyEvent", () => {
     expect(d.params).toContain("claude-haiku-4-5-20251001");
   });
 
+  // ── LLM call trace ───────────────────────────────────────────────────────
+  it("classifies LLM call: claim extraction Pass 1 as understand phase", () => {
+    const d = classifyEvent("info", "LLM call: claim extraction (Pass 1) — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Claim extraction (Pass 1)");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies LLM call: Gate 1 validation as understand phase", () => {
+    const d = classifyEvent("info", "LLM call: Gate 1 validation — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Gate 1 validation");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies LLM call: advocate as verdict phase", () => {
+    const d = classifyEvent("info", "LLM call: advocate — claude-sonnet-4-5");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Advocate");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
+  it("classifies LLM call: self-consistency as verdict phase", () => {
+    const d = classifyEvent("info", "LLM call: self-consistency — claude-sonnet-4-5");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Self-consistency");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
+  it("classifies LLM call: challenger as verdict phase", () => {
+    const d = classifyEvent("info", "LLM call: challenger — claude-sonnet-4-5");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Challenger");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
+  it("classifies LLM call: reconciler as verdict phase", () => {
+    const d = classifyEvent("info", "LLM call: reconciler — claude-sonnet-4-5");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Reconciler");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
+  it("classifies LLM call: validation as verdict phase", () => {
+    const d = classifyEvent("info", "LLM call: validation — claude-sonnet-4-5");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Validation");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
   // ── Research ─────────────────────────────────────────────────────────────
   it("classifies researching evidence", () => {
     const d = classifyEvent("info", "Researching evidence for claims...");

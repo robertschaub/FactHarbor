@@ -95,6 +95,17 @@ export function classifyEvent(level: string, message: string): EventDisplay {
     const detail = msg.replace(/^LLM:\s*/i, "").trim();
     return { phase: "setup", label: "LLM model", params: detail || undefined };
   }
+  // Per-call LLM trace: "LLM call: <role> — <model>"
+  if (msg.startsWith("LLM call:")) {
+    const detail = msg.replace(/^LLM call:\s*/i, "").trim();
+    const sepIdx = detail.indexOf(" — ");
+    const role  = sepIdx >= 0 ? detail.slice(0, sepIdx).trim() : detail;
+    const model = sepIdx >= 0 ? detail.slice(sepIdx + 3).trim() : undefined;
+    const verdictRoles = new Set(["advocate", "self-consistency", "challenger", "reconciler", "validation"]);
+    const phase: EventPhase = verdictRoles.has(role) ? "verdict" : "understand";
+    const label = role.charAt(0).toUpperCase() + role.slice(1);
+    return { phase, label, params: model || undefined };
+  }
 
   // ── Understand ────────────────────────────────────────────────────────────
   if (msg.startsWith("Extracting claims from input")) return { phase: "understand", label: "Extracting claims" };
