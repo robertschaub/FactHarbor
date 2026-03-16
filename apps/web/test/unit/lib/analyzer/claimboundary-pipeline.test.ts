@@ -1412,6 +1412,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
         preliminaryEvidence: [
           {
             sourceUrl: "https://example.com/1",
+            sourceTitle: "Example Source",
             snippet: "Evidence A",
             claimId: "AC_01",
             probativeValue: "high",
@@ -1432,6 +1433,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     seedEvidenceFromPreliminarySearch(state);
 
     expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].sourceTitle).toBe("Example Source");
     expect(state.evidenceItems[0].claimDirection).toBe("contradicts");
     expect(state.evidenceItems[0].sourceType).toBe("legal_document");
     expect(state.evidenceItems[0].evidenceScope).toMatchObject({
@@ -1528,22 +1530,24 @@ describe("seedEvidenceFromPreliminarySearch", () => {
 });
 
 describe("reconcileEvidenceSourceIds", () => {
-  it("should backfill missing sourceId values by matching sourceUrl", () => {
+  it("should backfill missing source metadata values by matching sourceUrl", () => {
     const evidenceItems = [
-      createEvidenceItem({ sourceId: "", sourceUrl: "https://example.com/a" }),
-      createEvidenceItem({ id: "EV_002", sourceId: "S_999", sourceUrl: "https://example.com/b" }),
+      createEvidenceItem({ sourceId: "", sourceTitle: "", sourceUrl: "https://example.com/a" }),
+      createEvidenceItem({ id: "EV_002", sourceId: "S_999", sourceTitle: "", sourceUrl: "https://example.com/b" }),
       createEvidenceItem({ id: "EV_003", sourceId: "", sourceUrl: "https://example.com/missing" }),
     ];
     const sources = [
-      { id: "S_001", url: "https://example.com/a" },
-      { id: "S_002", url: "https://example.com/b" },
+      { id: "S_001", url: "https://example.com/a", title: "Source A" },
+      { id: "S_002", url: "https://example.com/b", title: "Source B" },
     ] as any;
 
     const updatedCount = reconcileEvidenceSourceIds(evidenceItems, sources);
 
-    expect(updatedCount).toBe(1);
+    expect(updatedCount).toBe(2);
     expect(evidenceItems[0].sourceId).toBe("S_001");
+    expect(evidenceItems[0].sourceTitle).toBe("Source A");
     expect(evidenceItems[1].sourceId).toBe("S_999");
+    expect(evidenceItems[1].sourceTitle).toBe("Source B");
     expect(evidenceItems[2].sourceId).toBe("");
   });
 

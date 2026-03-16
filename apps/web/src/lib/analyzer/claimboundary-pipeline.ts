@@ -1184,6 +1184,7 @@ export async function extractClaims(
     inferredGeography: pass1.inferredGeography,
     preliminaryEvidence: preliminaryEvidence.map((pe) => ({
       sourceUrl: pe.sourceUrl,
+      sourceTitle: pe.sourceTitle,
       snippet: pe.statement,
       claimId: pe.relevantClaimIds?.[0] ?? "",
       probativeValue: pe.probativeValue,
@@ -2827,7 +2828,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       specificity: "medium",
       sourceId: "",
       sourceUrl: pe.sourceUrl,
-      sourceTitle: "",
+      sourceTitle: pe.sourceTitle ?? "",
       sourceExcerpt: pe.snippet,
       relevantClaimIds: claimIds,
       probativeValue: pe.probativeValue ?? "medium", // Preserve LLM assessment; default "medium" if unavailable
@@ -2860,7 +2861,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
 }
 
 /**
- * Backfill missing EvidenceItem.sourceId values by matching sourceUrl against fetched sources.
+ * Backfill missing EvidenceItem source metadata by matching sourceUrl against fetched sources.
  * Some evidence items are created before their canonical FetchedSource exists.
  *
  * Returns the number of evidence items updated.
@@ -2871,17 +2872,27 @@ export function reconcileEvidenceSourceIds(
 ): number {
   if (evidenceItems.length === 0 || sources.length === 0) return 0;
 
-  const sourceIdByUrl = new Map(
-    sources.map((source) => [source.url, source.id] as const),
+  const sourceByUrl = new Map(
+    sources.map((source) => [source.url, source] as const),
   );
 
   let updatedCount = 0;
   for (const item of evidenceItems) {
-    if (item.sourceId) continue;
-    const matchedSourceId = sourceIdByUrl.get(item.sourceUrl);
-    if (!matchedSourceId) continue;
-    item.sourceId = matchedSourceId;
-    updatedCount++;
+    const matchedSource = sourceByUrl.get(item.sourceUrl);
+    if (!matchedSource) continue;
+
+    let updated = false;
+    if (!item.sourceId) {
+      item.sourceId = matchedSource.id;
+      updated = true;
+    }
+
+    if (!item.sourceTitle && matchedSource.title) {
+      item.sourceTitle = matchedSource.title;
+      updated = true;
+    }
+
+    if (updated) updatedCount++;
   }
 
   return updatedCount;

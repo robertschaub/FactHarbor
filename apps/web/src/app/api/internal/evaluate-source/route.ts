@@ -26,7 +26,12 @@ import { getPromptCachingOptions } from "@/lib/analyzer/llm";
 import { getSection, loadPromptFile, type Pipeline } from "@/lib/analyzer/prompt-loader";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import { getConfig } from "@/lib/config-storage";
-import { DEFAULT_SR_CONFIG, type SearchConfig, type SourceReliabilityConfig } from "@/lib/config-schemas";
+import {
+  DEFAULT_SEARCH_CONFIG,
+  DEFAULT_SR_CONFIG,
+  type SearchConfig,
+  type SourceReliabilityConfig,
+} from "@/lib/config-schemas";
 import {
   computeRefinementConfidenceBoost,
   countUniqueEvidenceIds,
@@ -85,6 +90,7 @@ function buildSrSearchConfigFromEvalSearch(
     enabled: true,
     provider: cfg.provider,
     mode: "standard",
+    autoMode: DEFAULT_SEARCH_CONFIG.autoMode,
     maxResults: cfg.maxResultsPerQuery,
     maxSourcesPerIteration: cfg.maxResultsPerQuery,
     timeoutMs: cfg.timeoutMs,

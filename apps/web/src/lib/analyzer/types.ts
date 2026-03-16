@@ -991,6 +991,7 @@ export interface CBClaimUnderstanding {
   inferredGeography?: string | null;
   preliminaryEvidence: Array<{
     sourceUrl: string;
+    sourceTitle?: string;
     snippet: string;
     claimId: string;
     probativeValue?: "high" | "medium" | "low";

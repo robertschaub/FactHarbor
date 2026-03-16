@@ -53,6 +53,7 @@ import {
 } from "@/lib/analyzer/warning-display";
 import { useReportNavigation } from "./hooks/useReportNavigation";
 import type { AnalysisWarning, TIGERScore } from "@/lib/analyzer/types";
+import { resolveEvidenceSourceLabel } from "@/lib/evidence-source-label";
 
 // Module-level helper — browser-safe (client component, only called from event handlers)
 function escapeHtml(str: string): string {
@@ -896,6 +897,7 @@ export default function JobPage() {
       }))
     : result?.sources || [];
   const sourceUrlToIndex = useMemo(() => new Map<string, number>(sources.map((s: any, i: number) => [s.url as string, i])), [sources]);
+  const sourceUrlToTitle = useMemo(() => new Map<string, string>(sources.map((s: any) => [s.url as string, (s.title as string) || ""])), [sources]);
   const usedModels = collectUsedModels(result);
   const usedModelsLabel = formatUsedModels(usedModels);
   const modelRolesHint = [
@@ -1787,6 +1789,7 @@ export default function JobPage() {
                 disableGrouping={pipelineVariant === "monolithic_dynamic"}
                 onNavigate={navigateTo}
                 sourceUrlToIndex={sourceUrlToIndex}
+                sourceUrlToTitle={sourceUrlToTitle}
                 showHeader={false}
                 showStats={false}
               />
@@ -2273,6 +2276,7 @@ function EvidencePanel({
   disableGrouping = false,
   onNavigate,
   sourceUrlToIndex,
+  sourceUrlToTitle,
   showHeader = true,
   showStats = true,
 }: {
@@ -2280,6 +2284,7 @@ function EvidencePanel({
   disableGrouping?: boolean;
   onNavigate?: (refId: string) => void;
   sourceUrlToIndex?: Map<string, number>;
+  sourceUrlToTitle?: Map<string, string>;
   showHeader?: boolean;
   showStats?: boolean;
 }) {
@@ -2299,6 +2304,11 @@ function EvidencePanel({
   const renderEvidenceCard = (item: any, className: string, extraMeta?: ReactNode) => {
     const isContrarian = item.searchStrategy === "contrarian";
     const finalClassName = isContrarian ? `${styles.evidenceItemContrarian}` : className;
+    const matchedSourceIndex = item.sourceUrl ? sourceUrlToIndex?.get(item.sourceUrl) : undefined;
+    const sourceLabel = resolveEvidenceSourceLabel(
+      item,
+      item.sourceUrl ? sourceUrlToTitle?.get(item.sourceUrl) : undefined,
+    );
 
     return (
       <div key={item.id || item.statement} id={item.id ? `nav-ev-${item.id}` : undefined} className={`${styles.evidenceItem} ${finalClassName}`}>
@@ -2314,10 +2324,14 @@ function EvidencePanel({
           <ExpandableText text={item.statement || ""} modalTitle="Evidence Statement" threshold={400} bare onNavigate={onNavigate} />
         </div>
         <div className={styles.evidenceMeta}>
-          {onNavigate && item.sourceUrl && sourceUrlToIndex?.has(item.sourceUrl) ? (
-            <button className={`${styles.evidenceSource} ${styles.navLink}`} style={{ fontSize: "inherit" }} onClick={() => onNavigate(`SRC_${sourceUrlToIndex!.get(item.sourceUrl)}`)}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</button>
+          {onNavigate && item.sourceUrl && matchedSourceIndex !== undefined ? (
+            <button className={`${styles.evidenceSource} ${styles.navLink}`} style={{ fontSize: "inherit" }} onClick={() => onNavigate(`SRC_${matchedSourceIndex}`)}>{decodeHtmlEntities(sourceLabel)}</button>
+          ) : item.sourceUrl ? (
+            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.evidenceSource}>
+              {decodeHtmlEntities(sourceLabel)}
+            </a>
           ) : (
-            <span className={styles.evidenceSource}>{decodeHtmlEntities(item.sourceTitle || 'Unknown')}</span>
+            <span className={styles.evidenceSource}>{decodeHtmlEntities(sourceLabel)}</span>
           )}
           {onNavigate && item.relevantClaimIds?.length > 0 && (
             <span className={styles.evidenceRefList} style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}>

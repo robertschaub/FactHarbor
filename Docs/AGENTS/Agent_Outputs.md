@@ -5304,3 +5304,16 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** Existing cached duplicate rows are still present until they expire or are deleted manually; this change prevents unnecessary re-evaluation when a family-level cache entry already exists, but it does not merge or rewrite old cache records.
 **For next agent:** If further refinement is needed, the next safe increment is family-aware search/sort in `/api/admin/source-reliability`, not schema-level canonicalization. Avoid collapsing sibling subdomains into one stored row unless there is an explicit product decision.
 **Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Unknown Evidence Source Label Fix
+**Task:** Investigate why many evidence items render as `Unknown` on the job page, implement a fix, and document it for review.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-16_Senior_Developer_Unknown_Evidence_Source_Label_Fix.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the defect was caused by dropped `sourceTitle` metadata on seeded evidence plus a jobs-page fallback of only `item.sourceTitle || 'Unknown'`.
+- Implemented a two-layer fix: preserve/backfill `sourceTitle` in the pipeline and add a UI fallback to matched fetched title or hostname when older jobs still lack stored titles.
+- Recorded the full implementation and verification details in `Docs/AGENTS/Handoffs/2026-03-16_Senior_Developer_Unknown_Evidence_Source_Label_Fix.md`.
+**Open items:** Existing stored jobs still rely on the UI fallback unless rerun; the structural metadata fix only applies to newly generated jobs.
+**Warnings:** Verification also exposed an unrelated `SearchConfig` adapter mismatch in `api/internal/evaluate-source`; that was corrected as part of making the branch buildable.
+**For next agent:** Use the handoff file as the review source of truth. It includes the real-job sample counts (`40/83` missing-title evidence items before the fix path, `0` remaining `Unknown` after the UI fallback) and the exact verification commands.
+**Learnings:** no
