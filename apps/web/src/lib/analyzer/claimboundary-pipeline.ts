@@ -231,6 +231,21 @@ export async function runClaimBoundaryAnalysis(
     // B-1: Per-role runtime tracing — captures what actually ran for each debate role
     const runtimeRoleTraces: Array<{ debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }> = [];
 
+    // Emit LLM model info before any analysis so users can see which models will run.
+    // Progress -1 = info with no progress-bar update.
+    {
+      const previewUnderstand = getModelForTask("understand", undefined, initialPipelineConfig);
+      const previewExtract   = getModelForTask("extract_evidence", undefined, initialPipelineConfig);
+      const previewVerdict   = getModelForTask("verdict", undefined, initialPipelineConfig);
+      const extractName = previewUnderstand.modelName === previewExtract.modelName
+        ? previewUnderstand.modelName
+        : `${previewUnderstand.modelName} / ${previewExtract.modelName}`;
+      onEvent(`LLM: ${extractName} — extraction & research`, -1);
+      if (previewVerdict.modelName !== previewUnderstand.modelName || previewVerdict.provider !== previewUnderstand.provider) {
+        onEvent(`LLM: ${previewVerdict.modelName} — verdict`, -1);
+      }
+    }
+
     // Stage 1: Extract Claims
     checkAbortSignal(input.jobId);
     onEvent("Extracting claims from input...", 10);
@@ -614,23 +629,13 @@ export async function runClaimBoundaryAnalysis(
         .filter(Boolean)
     )].join(", ");
 
-    // Get LLM model information for all task tiers
+    // Get LLM model information for all task tiers (for result metadata)
     const verdictModel = getModelForTask("verdict", undefined, initialPipelineConfig);
     const understandModel = getModelForTask("understand", undefined, initialPipelineConfig);
     const extractModel = getModelForTask("extract_evidence", undefined, initialPipelineConfig);
     recordRuntimeModelUsage(understandModel.provider, understandModel.modelName);
     recordRuntimeModelUsage(extractModel.provider, extractModel.modelName);
     recordRuntimeModelUsage(verdictModel.provider, verdictModel.modelName);
-
-    // Emit LLM model events so users can see which models are being used.
-    // Progress -1 = info with no progress-bar update (not a warning).
-    const extractionModel = understandModel.modelName === extractModel.modelName
-      ? understandModel.modelName
-      : `${understandModel.modelName} (understand), ${extractModel.modelName} (extract)`;
-    onEvent(`LLM: ${extractionModel} — extraction & research`, -1);
-    if (verdictModel.modelName !== understandModel.modelName || verdictModel.provider !== understandModel.provider) {
-      onEvent(`LLM: ${verdictModel.modelName} — verdict`, -1);
-    }
 
     // B-1: Aggregate runtime role traces into per-role summary
     const runtimeRoleModels: Record<string, { provider: string; model: string; strength: string; callCount: number; fallbackUsed: boolean }> = {};

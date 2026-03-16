@@ -499,14 +499,16 @@ function PhaseTimeline({ events }: { events: EventItem[] }) {
         const isLast = idx === lastGroupIdx;
         const icon = PHASE_ICONS[group.phase] ?? "•";
         const label = PHASE_LABELS[group.phase];
-        // expandAll overrides default open state; null = default (last group open)
+        // expandAll overrides default open state; null = default (last group open).
+        // key forces remount when expand-all is toggled so the new open state is applied.
+        // No onToggle: React won't fight user's individual toggles after remount
+        // (it only syncs the DOM when the prop value changes, not on every render).
         const isOpen = expandAll !== null ? expandAll : isLast;
         return (
           <details
             key={`${group.phase}-${idx}-${expandAll}`}
             className={styles.phaseGroup}
             open={isOpen}
-            onToggle={() => setExpandAll(null)}
           >
             <summary className={styles.phaseSummary}>
               <span className={styles.phaseIcon}>{icon}</span>
