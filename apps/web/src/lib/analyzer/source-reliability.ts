@@ -416,7 +416,8 @@ function resolveCachedReliability(
 ): CachedReliabilityData | null {
   for (const candidate of getDomainLookupChain(domain)) {
     const data = cached.get(candidate);
-    if (!data) continue;
+    // Skip null-score entries — fall through to the parent domain which may have a score.
+    if (!data || data.score === null) continue;
     return {
       score: data.score,
       confidence: data.confidence,
@@ -430,7 +431,8 @@ function resolveCachedReliability(
 function getPrefetchedReliability(domain: string): CachedReliabilityData | null {
   for (const candidate of getDomainLookupChain(domain)) {
     const data = prefetchedData.get(candidate);
-    if (data) return data;
+    // Skip null-score entries — fall through to the parent domain which may have a score.
+    if (data && data.score !== null) return data;
   }
 
   return null;
