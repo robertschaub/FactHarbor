@@ -37,7 +37,7 @@
       "dailyQuotaLimit": 8000
     },
     "serpapi": {
-      "enabled": true,
+      "enabled": false,
       "priority": 2,
       "dailyQuotaLimit": 0
     },
@@ -48,7 +48,7 @@
     },
     "serper": {
       "enabled": true,
-      "priority": 3,
+      "priority": 2,
       "dailyQuotaLimit": 0
     },
     "wikipedia": {

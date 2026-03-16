@@ -2,7 +2,7 @@
 
 **Created:** 2026-03-15
 **Author:** Lead Architect (Claude Opus 4.6)
-**Status:** DRAFT — awaiting Captain review
+**Status:** VALIDATED — Fix A shipped (autoMode toggle), Fix B reverted (SerpAPI), Fix C deferred
 **Priority:** #1 remaining quality improvement opportunity (per Next Investigation Recommendations)
 **Prerequisites:** Phase A contamination fixes validated (2026-03-15), Rec-A shipped
 
@@ -277,14 +277,53 @@ Re-run the 3 benchmark claims used in the Search-Stack Investigation:
 
 ---
 
+## 9. Validation Results (2026-03-16)
+
+### Run Data
+
+| Job | Config | Input | TP | Conf | Ev | Duration | Providers | Warn |
+|-----|--------|-------|-----|------|-----|----------|-----------|------|
+| `a0784688` | Phase A baseline (CSE, first-success) | EN Bolsonaro | 62 | 56 | 45 | 11m | CSE:15 | 0 |
+| `a89d43a5` | Phase A baseline (CSE, first-success) | DE Mental Health | 66 | 61 | 25 | 13m | CSE:20 | 0 |
+| `75812cd5` | Phase A + Rec-A (CSE, first-success) | PT Bolsonaro | 64 | 60 | 88 | 26m | CSE:18 | 0 |
+| `7cdfa4d5` | **Accumulate, CSE-only** | EN Bolsonaro | **71** | **64** | **80** | **13m** | CSE:21 | 0 |
+| `44f7955f` | Accumulate + SerpAPI | DE Mental Health | 65 | 50 | 32 | **22m** | CSE:12, Serper:2 | 0 |
+| `6ea3f158` | Accumulate + SerpAPI | PT Bolsonaro | 57 | 52 | 50 | **34m** | CSE:15 | 0 |
+| `56478a2e` | Accumulate + SerpAPI | EN Bolsonaro | 58 | 52 | 51 | **28m** | CSE:18 | 0 |
+
+### Key Findings
+
+**1. SerpAPI circuit breaker is OPEN — not contributing.** Despite being enabled in UCM (P2), SerpAPI appeared in zero provider logs across all 3 Accum+SerpAPI runs. Serper (P3) appeared in only 2 of 45 queries. The accumulated failures from prior experiments have left SerpAPI's circuit breaker permanently open.
+
+**2. Duration nearly doubled with SerpAPI enabled.** Accum+SerpAPI runs took 22-34 min vs 11-13 min baseline (+100-160%). The pipeline wastes time attempting dead providers, plus additional source fetching and relevance classification for marginal results.
+
+**3. TP and confidence dropped with SerpAPI.** The Accum+SerpAPI runs scored TP 57-65 vs 62-71 baseline. More research iterations on low-quality additional results dilute evidence quality rather than improving it.
+
+**4. Best single run was accumulate + CSE-only.** `7cdfa4d5` (TP=71, ev=80, 13m) outperformed all other runs — same duration as baseline but higher TP and evidence count. The accumulation code change helps when CSE returns fewer than maxResults, but doesn't require SerpAPI to do so.
+
+### Outcome
+
+| Fix | Shipped? | Rationale |
+|-----|----------|-----------|
+| **Fix A** (autoMode UCM toggle) | **Yes** — default `"accumulate"` | Code change is sound. CSE-only accumulate run was the best performer. UCM toggle allows reverting without code change. |
+| **Fix B** (SerpAPI re-enablement) | **Reverted** | Circuit breaker OPEN, not contributing, adding latency. Net negative. SerpAPI requires circuit breaker reset + validation before re-enabling. |
+| **Fix C** (SC temperature 0.4→0.3) | **Deferred** | Not needed given current findings. Can be tested independently later. |
+
+---
+
 ## Review Log
 
 | Date | Reviewer | Assessment | Notes |
 |------|----------|------------|-------|
-| | | | |
+| 2026-03-15 | Code Reviewer | APPROVED | Plan structurally sound, fix design correct. See §pre-validation review. |
+| 2026-03-16 | Lead Architect | VALIDATED with partial revert | Fix A shipped (accumulate default). Fix B reverted (SerpAPI circuit-open, +100% duration, -10% TP). Fix C deferred. |
 
 ---
 
 ## Decision Record
 
-*(Decisions made after review, with rationale)*
+| # | Decision | Rationale |
+|---|----------|-----------|
+| D1 | **Ship `autoMode: "accumulate"` as default.** Keep `"first-success"` available via UCM toggle. | CSE-only accumulate run (TP=71, ev=80, 13m) was the best performer. The code change is safe — it only removes the premature break and lets the existing maxResults cap control the loop. |
+| D2 | **Revert SerpAPI to disabled.** Do not re-enable until circuit breaker is reset and SerpAPI health is verified independently. | SerpAPI circuit breaker is OPEN from prior experiment failures. Enabling it adds ~15-20 min latency with zero evidence contribution. Must be fixed at the circuit breaker / provider health level, not via UCM config alone. |
+| D3 | **Defer SC temperature change.** | Not the current bottleneck. Evidence pool quality (upstream) matters more than verdict spread (downstream). Revisit after search provider health is restored. |

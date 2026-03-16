@@ -181,7 +181,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       dailyQuotaLimit: 8000, // Leave buffer below 10k limit
     },
     serpapi: {
-      enabled: true,
+      enabled: false,
       priority: 2,
       dailyQuotaLimit: 0, // Unlimited (paid tier)
     },
@@ -192,7 +192,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     },
     serper: {
       enabled: true,
-      priority: 3,
+      priority: 2,
       dailyQuotaLimit: 0, // Paid per search
     },
     wikipedia: {
