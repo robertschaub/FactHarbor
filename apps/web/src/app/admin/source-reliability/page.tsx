@@ -1381,7 +1381,6 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                   <Fragment key={group.familyDomain}>
                     <tr key={`${group.familyDomain}-family`} className={styles.familyRow}>
                       <td colSpan={tableColumnCount} className={styles.familyCell}>
-                        <span className={styles.familyLabel}>Family</span>
                         <span className={styles.familyDomain}>{group.familyDomain}</span>
                         <span className={styles.familyCount}>
                           {group.entries.length} entr{group.entries.length === 1 ? "y" : "ies"} on this page
@@ -1423,11 +1422,8 @@ ${selectedEntry.fallbackUsed && selectedEntry.fallbackReason ? `| **Fallback Rea
                           <div className={styles.domain}>{entry.domain}</div>
                           <div className={styles.domainMeta}>
                             <span className={styles.domainTag}>
-                              {entry.domain === entry.familyDomain ? "root host" : "subdomain"}
+                              {entry.domain === entry.familyDomain ? "root domain" : "subdomain"}
                             </span>
-                            {entry.domain !== entry.familyDomain && (
-                              <span className={styles.domainFamilyRef}>via {entry.familyDomain}</span>
-                            )}
                           </div>
                         </td>
                         <td style={{ textAlign: "center" }}>

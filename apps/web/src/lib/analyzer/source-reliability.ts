@@ -16,7 +16,7 @@ import { assertValidTruthPercentage } from "./types";
 import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
-import { extractNormalizedHostname, getDomainLookupChain } from "../domain-utils";
+import { extractNormalizedHostname, getDomainLookupChain, getFamilyDomain } from "../domain-utils";
 
 // ============================================================================
 // CONFIGURATION (using shared config for unified defaults)
@@ -182,7 +182,8 @@ function emptySourceReliabilityErrorCounts(): Record<SourceReliabilityErrorType,
   };
 }
 
-export async function prefetchSourceReliability(urls: string[]): Promise<PrefetchResult> {
+export async function prefetchSourceReliability(urls: string[], options?: { fallback?: boolean }): Promise<PrefetchResult> {
+  const useRootFallback = options?.fallback ?? true;
   const result: PrefetchResult = {
     domains: [],
     alreadyPrefetched: 0,
@@ -250,18 +251,35 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
   // Find cache misses that need evaluation
   const misses = newDomains.filter((d) => !prefetchedData.has(d));
 
+  // With fallback enabled, subdomains evaluate their root domain instead of themselves.
+  // Multiple subdomains may share the same root — deduplicate into evalTarget → [requestedDomains].
+  const targetToRequested = new Map<string, string[]>();
+  for (const domain of misses) {
+    const target = useRootFallback ? getFamilyDomain(domain) : domain;
+    const list = targetToRequested.get(target);
+    if (list) list.push(domain);
+    else targetToRequested.set(target, [domain]);
+  }
+
   // **PERFORMANCE FIX**: Parallelize SR evaluations with concurrency limit
   // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
   // Processing serially caused 10+ minute delays with 39 domains
   // Concurrency=3 reduces SR-Eval time by ~3x
   const SR_EVAL_CONCURRENCY = SR_CONFIG.evalConcurrency;
 
-  // Process domains in parallel batches
-  const evaluateDomain = async (domain: string) => {
+  // Evaluate a single target domain and map results back to all requesting domains.
+  const evaluateTarget = async (target: string, requestedDomains: string[]) => {
+    const setAll = (data: CachedReliabilityData | null) => {
+      prefetchedData.set(target, data);
+      for (const d of requestedDomains) {
+        if (!prefetchedData.has(d)) prefetchedData.set(d, data);
+      }
+    };
+
     // Apply importance filter
-    if (!isImportantSource(domain)) {
-      console.log(`[SR] Skipping unimportant source: ${domain}`);
-      prefetchedData.set(domain, null);
+    if (!isImportantSource(target)) {
+      console.log(`[SR] Skipping unimportant source: ${target}`);
+      setAll(null);
       return;
     }
 
@@ -269,13 +287,13 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
     try {
       let hadEvalError = false;
       const evalResult = await evaluateSourceInternal(
-        domain,
+        target,
         (errInfo) => {
           hadEvalError = true;
           result.errorCount++;
           result.errorByType[errInfo.type] = (result.errorByType[errInfo.type] ?? 0) + 1;
-          if (!result.failedDomains.includes(domain)) {
-            result.failedDomains.push(domain);
+          if (!result.failedDomains.includes(target)) {
+            result.failedDomains.push(target);
           }
           if (result.errorSamples.length < 20) {
             result.errorSamples.push(errInfo);
@@ -283,15 +301,15 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
         },
       );
       if (evalResult) {
-        prefetchedData.set(domain, {
+        setAll({
           score: evalResult.score,
           confidence: evalResult.confidence,
           consensusAchieved: evalResult.consensusAchieved,
         });
         result.evaluated++;
-        // Cache the result (sourceType used for per-sourceType TTL)
+        // Cache under target (root domain when fallback redirected a subdomain)
         await setCachedScore(
-          domain,
+          target,
           evalResult.score,
           evalResult.confidence,
           evalResult.modelPrimary,
@@ -309,40 +327,41 @@ export async function prefetchSourceReliability(urls: string[]): Promise<Prefetc
         );
         const scoreStr = evalResult.score !== null ? evalResult.score.toFixed(2) : "null";
         console.log(
-          `[SR] Evaluated ${domain}: score=${scoreStr}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
+          `[SR] Evaluated ${target}: score=${scoreStr}, confidence=${evalResult.confidence.toFixed(2)}, consensus=${evalResult.consensusAchieved}`
         );
       } else {
-        prefetchedData.set(domain, null);
+        setAll(null);
         if (hadEvalError) {
-          console.log(`[SR] Evaluation failed for ${domain} — using unknown reliability (null score)`);
+          console.log(`[SR] Evaluation failed for ${target} — using unknown reliability (null score)`);
         } else {
           result.noConsensusCount++;
-          console.log(`[SR] No consensus for ${domain}`);
+          console.log(`[SR] No consensus for ${target}`);
         }
       }
     } catch (err) {
-      console.error(`[SR] Error evaluating ${domain}:`, err);
+      console.error(`[SR] Error evaluating ${target}:`, err);
       result.errorCount++;
       result.errorByType.unknown = (result.errorByType.unknown ?? 0) + 1;
-      if (!result.failedDomains.includes(domain)) {
-        result.failedDomains.push(domain);
+      if (!result.failedDomains.includes(target)) {
+        result.failedDomains.push(target);
       }
       if (result.errorSamples.length < 20) {
         result.errorSamples.push({
-          domain,
+          domain: target,
           type: "unknown",
           message: err instanceof Error ? err.message : String(err),
         });
       }
-      prefetchedData.set(domain, null);
+      setAll(null);
     }
   };
 
   // Process in batches of SR_EVAL_CONCURRENCY
-  for (let i = 0; i < misses.length; i += SR_EVAL_CONCURRENCY) {
-    const batch = misses.slice(i, i + SR_EVAL_CONCURRENCY);
-    console.log(`[SR] Evaluating batch ${Math.floor(i / SR_EVAL_CONCURRENCY) + 1}/${Math.ceil(misses.length / SR_EVAL_CONCURRENCY)}: ${batch.join(', ')}`);
-    await Promise.all(batch.map(evaluateDomain));
+  const evalEntries = [...targetToRequested.entries()];
+  for (let i = 0; i < evalEntries.length; i += SR_EVAL_CONCURRENCY) {
+    const batch = evalEntries.slice(i, i + SR_EVAL_CONCURRENCY);
+    console.log(`[SR] Evaluating batch ${Math.floor(i / SR_EVAL_CONCURRENCY) + 1}/${Math.ceil(evalEntries.length / SR_EVAL_CONCURRENCY)}: ${batch.map(([t]) => t).join(', ')}`);
+    await Promise.all(batch.map(([target, requested]) => evaluateTarget(target, requested)));
   }
 
   console.log(`[SR] Prefetch complete: ${prefetchedData.size} domains total`);
