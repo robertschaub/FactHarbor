@@ -134,8 +134,13 @@ export async function POST(req: Request) {
     // Evaluate each domain
     for (const domain of domains) {
       try {
+        // Apply root-domain fallback: evaluate the root domain instead of a subdomain.
+        // Consistent with prefetchSourceReliability behaviour.
+        const rootDomain = getFamilyDomain(domain);
+        const evalTarget = rootDomain !== domain ? rootDomain : domain;
+
         // Check if already cached (and not forcing re-evaluation)
-        const existingData = existingDomains.get(domain);
+        const existingData = existingDomains.get(evalTarget) ?? existingDomains.get(domain);
         if (existingData) {
           results.push({
             domain,
@@ -162,7 +167,7 @@ export async function POST(req: Request) {
             ...(runnerKey ? { "x-runner-key": runnerKey } : {}),
           },
           body: JSON.stringify({
-            domain,
+            domain: evalTarget,
             multiModel,
             confidenceThreshold,
             consensusThreshold,
@@ -172,7 +177,7 @@ export async function POST(req: Request) {
         if (!evalResponse.ok) {
           // On domain cooldown (429), return cached result if available — not a real error
           if (evalResponse.status === 429) {
-            const cachedFallback = await batchGetCachedData([domain]).then(m => m.get(domain));
+            const cachedFallback = await batchGetCachedData([evalTarget]).then(m => m.get(evalTarget));
             if (cachedFallback) {
               results.push({
                 domain,
@@ -207,9 +212,9 @@ export async function POST(req: Request) {
 
         const evalData = await evalResponse.json();
         
-        // Save to cache
+        // Save to cache under evalTarget (root domain when subdomain was submitted)
         await setCachedScore(
-          domain,
+          evalTarget,
           evalData.score,
           evalData.confidence,
           evalData.modelPrimary,
@@ -227,7 +232,7 @@ export async function POST(req: Request) {
         );
 
         results.push({
-          domain,
+          domain: evalTarget,
           success: true,
           cached: false,
           score: evalData.score,
