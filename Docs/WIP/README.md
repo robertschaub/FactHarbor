@@ -97,7 +97,7 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [Report_Variability_Consolidated_Plan_2026-03-07.md](Report_Variability_Consolidated_Plan_2026-03-07.md)
 
 #### Report Quality Baseline Test Plan (2026-03-12)
-**Status:** ✅ Phase 1 Complete — Phase 2 paused pending contamination fix
+**Status:** ✅ Phase 1 Complete — Phase 2 available but may be unnecessary given Phase A results
 - **Document:** [Report_Quality_Baseline_Test_Plan_2026-03-12.md](Report_Quality_Baseline_Test_Plan_2026-03-12.md)
 - **Scope:** Phase 1 (HEAD, 4 runs) and Phase 2 (worktree at 523ee2aa, gated). Formal test plan with scoring criteria.
 
@@ -107,10 +107,25 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** 4 runs (H1a, H1b PT; H3 EN; H4 DE). B1-B7 and G1-G6 scoring. SR scores (observational). Key finding: H1 mean=56% (34pp below deployed 90%), H3 has severe U.S. contamination (15% B-score).
 
 #### Evidence Jurisdiction Contamination Fix Plan (2026-03-12)
-**Status:** 📋 PROPOSAL — awaiting Captain review
+**Status:** ✅ PHASE A VALIDATED — Fix 0+0-A+4+5 implemented and passing (2026-03-15)
 - **Document:** [Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md](Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md)
-- **Scope:** 3 fixes (relevance prompt, contrarian constraint, post-extraction filter) to eliminate foreign-jurisdiction evidence contamination in boundaries. #1 quality blocker.
-- **Next Step:** Captain review → approve fix order → implement.
+- **Scope:** 6 fixes total (0, 0-A, 1-3, 4, 5). Phase A (0+0-A+4+5) shipped and validated. Phase A+ NOT triggered. Phases B/C available but not needed.
+- **Key Result:** Zero foreign boundaries, German boundaries preserved, contradiction loop protected, phantom IDs stripped.
+
+#### LLM Model Allocation Review (2026-03-15)
+**Status:** ✅ Rec-A + Rec-C shipped — Rec-B/D deferred
+- **Document:** [LLM_Model_Allocation_Review_2026-03-15.md](LLM_Model_Allocation_Review_2026-03-15.md)
+- **Scope:** 16-slot LLM call inventory, cost analysis ($0.27/analysis corrected), 4 recommendations.
+
+#### Search Accumulation Restoration Plan (2026-03-15)
+**Status:** ✅ Fix A shipped, Fix B reverted, Fix C deferred
+- **Document:** [Search_Accumulation_Restoration_Plan_2026-03-15.md](Search_Accumulation_Restoration_Plan_2026-03-15.md)
+- **Scope:** `autoMode: "accumulate"` UCM toggle restored multi-provider evidence filling. SerpAPI reverted (circuit breaker OPEN). CSE-only accumulate was best performer (TP=71).
+
+#### Next Investigation Recommendations (2026-03-14)
+**Status:** ✅ Phase A (search-stack) executed — Phase B (prompt quality) next
+- **Document:** [Report_Quality_Next_Investigation_Recommendations_2026-03-14.md](Report_Quality_Next_Investigation_Recommendations_2026-03-14.md)
+- **Scope:** Prioritized investigation order: search-stack drift → prompt quality → temperature → self-consistency.
 
 ---
 

@@ -63,6 +63,20 @@ Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be 
 
 ---
 
+## Recently Completed (March 15-16, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Phase A contamination fixes**: Fix 0-A (language drift directive), Fix 4 (contradiction budget reservation), Fix 5 (phantom evidence ID filter). All validated — zero foreign boundaries, German boundaries preserved, contradiction loop protected. | Analyzer / Quality | 2026-03-15 | Commit `28d42d8f`, `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` §6-A |
+| ✅ **Rec-A: Pass 2 → Haiku**: Task key changed from `"verdict"` to `"extract_evidence"`. ~3% LLM cost saving, eliminates soft-refusal fallback cascade. Validated across 4 diverse claims. | Analyzer / Cost | 2026-03-15 | Commit `1a0687c0`, `Docs/WIP/LLM_Model_Allocation_Review_2026-03-15.md` |
+| ✅ **Rec-C: getModel() literal fix**: `resolveModel("sonnet")` → `resolveModel("standard")`. Zero functional change, naming cleanup. | Config / Hygiene | 2026-03-15 | Commit `e65efbe1` |
+| ✅ **Search accumulation restoration**: `autoMode: "accumulate"` UCM toggle. Restores multi-provider evidence filling baseline. CSE-only accumulate TP=71 (best single run). | Search / Quality | 2026-03-16 | Commit `5243d678`, `Docs/WIP/Search_Accumulation_Restoration_Plan_2026-03-15.md` |
+| ⚠️ **SerpAPI re-enablement attempted and reverted**: Circuit breaker OPEN, +100% latency, zero evidence. Remains disabled. | Search / Provider | 2026-03-16 | Commit `b0f3becb` |
+| ✅ **metrics.ts pricing update**: gpt-4.1, gpt-4.1-mini, gemini-2.5-pro/flash, claude-opus-4-6 added. Cost tracking now accurate for all models in model-resolver.ts. | Metrics / Cost | 2026-03-15 | Pre-Phase-A commit |
+| ✅ **Config test fixes**: Legacy tier name tests updated to canonical strength names (budget/standard). | Tests / Hygiene | 2026-03-15 | Pre-Phase-A commit |
+
+---
+
 ## Recently Completed (March 13, 2026)
 
 | Description | Domain | Completed | Reference |

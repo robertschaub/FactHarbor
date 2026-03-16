@@ -1,6 +1,20 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-15/16 | Lead Architect | Claude Opus 4.6 | Phase A + Rec-A + Search Accumulation
+**Task:** Implement and validate contamination fixes, model allocation optimization, and search accumulation restoration.
+**Files touched:** `claimboundary-pipeline.ts` (Fix 0-A, Fix 4, Rec-A), `verdict-stage.ts` (Fix 5), `config-schemas.ts` (Fix 4, search autoMode, SerpAPI/Serper config), `pipeline.default.json` (Fix 4), `search.default.json` (autoMode, provider config), `web-search.ts` (accumulation toggle), `types.ts` (warning types), `warning-display.ts` (warning classifications), `metrics.ts` (pricing table), `config-schemas.test.ts` (legacy name fix), `llm.ts` (Rec-C)
+**Key decisions:**
+- Phase A (Fix 0-A + Fix 4 + Fix 5) shipped and validated: zero foreign boundaries, German boundaries preserved, contradiction loop protected, phantom IDs stripped.
+- Rec-A shipped: Pass 2 → Haiku (~3% LLM cost saving). Zero quality degradation, eliminates soft-refusal cascade.
+- Search accumulation: `autoMode: "accumulate"` shipped as UCM toggle. SerpAPI re-enablement reverted (circuit breaker OPEN, +100% latency, zero contribution).
+- LLM cost model corrected: extraction ~35 calls (not 6-12), total ~$0.27/analysis (not $0.18).
+**Open items:** SerpAPI circuit breaker needs independent health check. Phase B (prompt quality review) is next investigation. SC temperature 0.4→0.3 deferred. Unit tests for Fix 0-A/4/5 still owed.
+**Warnings:** Runtime config.db does not auto-reseed from JSON defaults — deploy/production requires Admin UI config update or DB reseed to pick up new defaults.
+**For next agent:** Search accumulation is active via code default (`config.autoMode ?? "accumulate"`). SerpAPI is disabled in both JSON and runtime config. The best performing configuration is CSE-only with accumulate mode. Next quality lever is prompt quality (Phase B from Next Investigation Recommendations).
+**Learnings:** no
+
+---
 ### 2026-03-15 | Senior Developer | Codex (GPT-5) | Verify Dependency Fixes Across Local, CI, and Deploy Paths
 **Task:** Re-verify the dependency/remediation changes as Senior Developer and confirm whether the repo is now clean for local development, CI, and deployed-system prerequisites.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`
