@@ -14,6 +14,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef, type ReactNode } from "react";
+import { classifyEvent, formatLocalTime, PHASE_LABELS, type EventPhase } from "./lib/event-display";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -376,6 +377,163 @@ function VerdictMetricBlock({
       <div className={styles.verdictMetricValue}>{value}</div>
       <div className={styles.verdictMetricHelper}>{helperText || "\u00A0"}</div>
       <VerdictMeter percentage={percentage} range={range} fillColor={fillColor} showValue={false} />
+    </div>
+  );
+}
+
+// ============================================================================
+// Analysis Timeline — structured display of job events
+// ============================================================================
+
+interface PhaseGroup {
+  phase: EventPhase;
+  entries: Array<{ event: EventItem; label: string; params?: string }>;
+  warnCount: number;
+  errorCount: number;
+}
+
+function buildPhaseGroups(events: EventItem[]): {
+  groups: PhaseGroup[];
+  errorEvents: Array<{ event: EventItem; stackTrace?: EventItem }>;
+  lifecycleEvents: Array<{ event: EventItem; label: string; params?: string }>;
+} {
+  const groups: PhaseGroup[] = [];
+  const errorEvents: Array<{ event: EventItem; stackTrace?: EventItem }> = [];
+  const lifecycleEvents: Array<{ event: EventItem; label: string; params?: string }> = [];
+  let currentGroup: PhaseGroup | null = null;
+
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    const d = classifyEvent(e.level, e.message);
+
+    if (d.isStackTrace) {
+      // Attach to the last error card
+      if (errorEvents.length > 0) errorEvents[errorEvents.length - 1].stackTrace = e;
+      continue;
+    }
+
+    if (d.phase === "error") {
+      errorEvents.push({ event: e });
+      continue;
+    }
+
+    if (d.phase === "lifecycle") {
+      lifecycleEvents.push({ event: e, label: d.label, params: d.params });
+      continue;
+    }
+
+    // Group consecutive same-phase events
+    if (!currentGroup || currentGroup.phase !== d.phase) {
+      currentGroup = { phase: d.phase, entries: [], warnCount: 0, errorCount: 0 };
+      groups.push(currentGroup);
+    }
+
+    currentGroup.entries.push({ event: e, label: d.label, params: d.params });
+    if (e.level === "warn") currentGroup.warnCount++;
+  }
+
+  return { groups, errorEvents, lifecycleEvents };
+}
+
+const PHASE_ICONS: Record<EventPhase, string> = {
+  setup:      "⚙️",
+  understand: "🔍",
+  research:   "📡",
+  cluster:    "🗂️",
+  verdict:    "⚖️",
+  quality:    "✅",
+  done:       "🏁",
+  lifecycle:  "📌",
+  error:      "❌",
+  misc:       "•",
+};
+
+function PhaseTimeline({ events }: { events: EventItem[] }) {
+  if (events.length === 0) {
+    return <p className={styles.tlEmpty}>No events yet.</p>;
+  }
+
+  const { groups, errorEvents, lifecycleEvents } = buildPhaseGroups(events);
+  const lastGroupIdx = groups.length - 1;
+
+  return (
+    <div className={styles.timeline}>
+      {/* Always-visible error cards */}
+      {errorEvents.map(({ event, stackTrace }) => (
+        <div key={event.id} className={styles.errorCard}>
+          <div className={styles.errorCardTitle}>
+            ❌ {classifyEvent(event.level, event.message).label}
+            <span style={{ fontWeight: 400, marginLeft: 6, fontSize: 11, color: "var(--text-muted)" }}>
+              {formatLocalTime(event.tsUtc)}
+            </span>
+          </div>
+          <div className={styles.errorCardMessage}>{event.message.slice(0, 200)}</div>
+          {stackTrace && (
+            <details className={styles.stackTraceDetails}>
+              <summary className={styles.stackTraceSummary}>Stack trace</summary>
+              <pre className={styles.stackTraceBody}>{stackTrace.message.replace(/^Stack \(truncated\):\n?/, "")}</pre>
+            </details>
+          )}
+        </div>
+      ))}
+
+      {/* Phase groups */}
+      {groups.map((group, idx) => {
+        const isLast = idx === lastGroupIdx;
+        const icon = PHASE_ICONS[group.phase] ?? "•";
+        const label = PHASE_LABELS[group.phase];
+        return (
+          <details key={`${group.phase}-${idx}`} className={styles.phaseGroup} open={isLast}>
+            <summary className={styles.phaseSummary}>
+              <span className={styles.phaseIcon}>{icon}</span>
+              <span className={styles.phaseLabel}>{label}</span>
+              {(group.warnCount > 0 || group.errorCount > 0) && (
+                <span className={styles.phaseBadges}>
+                  {group.warnCount > 0 && (
+                    <span className={`${styles.phaseBadge} ${styles.phaseBadgeWarn}`}>⚠ {group.warnCount}</span>
+                  )}
+                  {group.errorCount > 0 && (
+                    <span className={`${styles.phaseBadge} ${styles.phaseBadgeError}`}>✕ {group.errorCount}</span>
+                  )}
+                </span>
+              )}
+              <span className={styles.phaseChevron}>{isLast ? "▾" : "▸"}</span>
+            </summary>
+            <div className={styles.phaseEvents}>
+              {group.entries.map(({ event, label: evLabel, params }) => {
+                const lvl = event.level.toLowerCase();
+                const rowClass = [styles.tlEvent, lvl === "warn" ? styles.tlWarn : ""].filter(Boolean).join(" ");
+                const labelClass = [styles.tlLabel, lvl === "warn" ? styles.tlLabelWarn : ""].filter(Boolean).join(" ");
+                return (
+                  <div key={event.id} className={rowClass}>
+                    <span className={styles.tlTimestamp}>{formatLocalTime(event.tsUtc)}</span>
+                    <div>
+                      <div className={labelClass}>{evLabel}</div>
+                      {params && <div className={styles.tlParams}>{params}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        );
+      })}
+
+      {/* Lifecycle events */}
+      {lifecycleEvents.length > 0 && (
+        <div className={styles.lifecycleSection}>
+          <div className={styles.lifecycleTitle}>Lifecycle</div>
+          {lifecycleEvents.map(({ event, label, params }) => (
+            <div key={event.id} className={styles.tlEvent}>
+              <span className={styles.tlTimestamp}>{formatLocalTime(event.tsUtc)}</span>
+              <div>
+                <div className={styles.tlLabel}>{label}</div>
+                {params && <div className={styles.tlParams}>{params}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1242,7 +1400,7 @@ export default function JobPage() {
 
       {/* Tabs — only show tab bar when more than one tab is visible */}
       {(() => {
-        const showEventsTab = job?.status !== "SUCCEEDED" || hasAdminKey;
+        const showEventsTab = true; // visible to all users (builds transparency)
         const showJsonTab = hasAdminKey;
         const showReportTab = hasV22Data;
         const visibleTabCount = [showReportTab, showJsonTab, showEventsTab].filter(Boolean).length;
@@ -1916,15 +2074,7 @@ export default function JobPage() {
       {/* Events Tab — shown during analysis or for admins */}
       {tab === "events" && (
         <div className={styles.contentCard}>
-          <ul className={styles.eventsList}>
-            {events.map((e) => (
-              <li key={e.id} className={styles.eventItem}>
-                <code className={styles.eventTimestamp}>{e.tsUtc}</code>{" "}
-                <b className={getEventLevelClass(e.level)}>{e.level}</b> — {e.message}
-              </li>
-            ))}
-            {events.length === 0 && <li style={{ color: "var(--text-muted, #666)" }}>No events yet.</li>}
-          </ul>
+          <PhaseTimeline events={events} />
         </div>
       )}
 

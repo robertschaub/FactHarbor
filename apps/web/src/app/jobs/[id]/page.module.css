@@ -1152,34 +1152,181 @@ details[open] > .devWarningSummary::before {
   color: var(--text-primary);
 }
 
-.eventsList {
-  margin: 0;
-  padding-left: 18px;
+.eventLevelInfo    { color: #17a2b8; }
+.eventLevelWarn    { color: #ffc107; }
+.eventLevelError   { color: #dc3545; }
+.eventLevelDefault { color: #6c757d; }
+
+/* ── Analysis Timeline ──────────────────────────────────────────────────── */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 13px;
 }
 
-.eventItem {
+.phaseGroup {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.phaseSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.phaseGroup[open] > .phaseSummary {
+  border-radius: 6px 6px 0 0;
+  border-bottom-color: transparent;
+}
+
+.phaseSummary::-webkit-details-marker { display: none; }
+
+.phaseSummary:hover { background: var(--bg-card, #f1f5f9); }
+
+.phaseChevron {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.phaseIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+.phaseLabel {
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.phaseBadges { display: flex; gap: 4px; margin-left: 4px; }
+
+.phaseBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.5;
+}
+
+.phaseBadgeWarn  { background: #fef3c7; color: #92400e; }
+.phaseBadgeError { background: #fee2e2; color: #991b1b; }
+
+.phaseEvents {
+  border: 1px solid var(--border, #e2e8f0);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  padding: 4px 0;
+  background: var(--bg-card, #fff);
+}
+
+.tlEvent {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 0 10px;
+  padding: 4px 10px;
+  align-items: start;
+}
+
+.tlEvent + .tlEvent { border-top: 1px solid var(--border-subtle, #f1f5f9); }
+.tlEvent.tlWarn     { background: #fffbeb; }
+.tlEvent.tlError    { background: #fef2f2; }
+
+.tlTimestamp {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.tlLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.4;
+}
+
+.tlLabel.tlLabelWarn  { color: #92400e; }
+.tlLabel.tlLabelError { color: #991b1b; }
+
+.tlParams {
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+  margin-top: 1px;
+  line-height: 1.4;
+}
+
+.errorCard {
+  border: 1px solid #fca5a5;
+  border-left: 3px solid #dc3545;
+  border-radius: 6px;
+  background: #fef2f2;
+  padding: 8px 12px;
+}
+
+.errorCardTitle   { font-size: 12px; font-weight: 700; color: #991b1b; }
+.errorCardMessage { font-size: 12px; color: #7f1d1d; margin-top: 2px; }
+
+.stackTraceDetails { margin-top: 6px; }
+
+.stackTraceSummary {
+  font-size: 11px;
+  color: #b91c1c;
+  cursor: pointer;
+  user-select: none;
+}
+
+.stackTraceBody {
+  margin-top: 6px;
+  font-size: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #fff1f2;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  padding: 6px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  color: #7f1d1d;
+}
+
+.lifecycleSection {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.lifecycleTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   margin-bottom: 4px;
 }
 
-.eventTimestamp {
-  font-size: 10px;
-}
-
-.eventLevelInfo {
-  color: #17a2b8;
-}
-
-.eventLevelWarn {
-  color: #ffc107;
-}
-
-.eventLevelError {
-  color: #dc3545;
-}
-
-.eventLevelDefault {
-  color: #6c757d;
+.tlEmpty {
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  padding: 12px 0;
 }
 
 /* Sources Panel */
