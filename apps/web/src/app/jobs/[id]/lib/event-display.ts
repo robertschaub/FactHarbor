@@ -46,6 +46,13 @@ export interface EventDisplay {
    * actually a fully-recovered fallback, not a real user-facing warning).
    */
   overrideLevel?: "info" | "warn";
+  /**
+   * When true, this event's params (e.g. model name from an LLM call) should be
+   * appended to the preceding timeline entry instead of shown as a new row.
+   * Used for LLM call events that directly follow a human-readable step event
+   * for the same operation.
+   */
+  mergeIntoPrevious?: true;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +67,17 @@ const LLM_CALL_PHASE: Partial<Record<string, EventPhase>> = {
   "query generation": "research", "relevance classification": "research",
   "evidence extraction": "research", "preliminary evidence": "understand",
   "evidence applicability": "research",
+  "claim extraction (Pass 1)": "understand", "claim extraction (Pass 2)": "understand",
 };
+
+// LLM call roles that fire immediately after a human-readable step event for the same
+// operation. These are absorbed into the preceding timeline entry (model name appended
+// to params) rather than shown as a separate row.
+const MERGE_INTO_PREVIOUS_ROLES = new Set([
+  "advocate", "self-consistency", "challenger", "reconciler",
+  "validation", "verdict narrative", "auditor", "clustering",
+  "claim extraction (Pass 1)", "claim extraction (Pass 2)",
+]);
 
 function extractSearchProvider(msg: string): string | undefined {
   return msg.match(/Search provider "([^"]+)"/)?.[1];
@@ -113,6 +130,9 @@ export function classifyEvent(level: string, message: string): EventDisplay {
     const model = sepIdx >= 0 ? detail.slice(sepIdx + 3).trim() : undefined;
     const phase: EventPhase = LLM_CALL_PHASE[role] ?? "understand";
     const label = role.charAt(0).toUpperCase() + role.slice(1);
+    if (MERGE_INTO_PREVIOUS_ROLES.has(role)) {
+      return { phase, label, params: model || undefined, mergeIntoPrevious: true };
+    }
     return { phase, label, params: model || undefined };
   }
 

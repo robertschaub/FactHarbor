@@ -105,53 +105,76 @@ describe("classifyEvent", () => {
     expect(d.params).toBe("claude-haiku-4-5-20251001");
   });
 
-  it("classifies LLM call: advocate as verdict phase", () => {
+  it("classifies LLM call: advocate as verdict phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: advocate — claude-sonnet-4-5");
     expect(d.phase).toBe("verdict");
     expect(d.label).toBe("Advocate");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
-  it("classifies LLM call: self-consistency as verdict phase", () => {
+  it("classifies LLM call: self-consistency as verdict phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: self-consistency — claude-sonnet-4-5");
     expect(d.phase).toBe("verdict");
     expect(d.label).toBe("Self-consistency");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
-  it("classifies LLM call: challenger as verdict phase", () => {
+  it("classifies LLM call: challenger as verdict phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: challenger — claude-sonnet-4-5");
     expect(d.phase).toBe("verdict");
     expect(d.label).toBe("Challenger");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
-  it("classifies LLM call: reconciler as verdict phase", () => {
+  it("classifies LLM call: reconciler as verdict phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: reconciler — claude-sonnet-4-5");
     expect(d.phase).toBe("verdict");
     expect(d.label).toBe("Reconciler");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
-  it("classifies LLM call: validation as verdict phase", () => {
+  it("classifies LLM call: validation as verdict phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: validation — claude-sonnet-4-5");
     expect(d.phase).toBe("verdict");
     expect(d.label).toBe("Validation");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
-  it("classifies LLM call: verdict narrative as verdict phase", () => {
+  it("classifies LLM call: verdict narrative as verdict phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: verdict narrative — claude-sonnet-4-5");
     expect(d.phase).toBe("verdict");
     expect(d.label).toBe("Verdict narrative");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
-  it("classifies LLM call: clustering as cluster phase", () => {
+  it("classifies LLM call: clustering as cluster phase, mergeIntoPrevious", () => {
     const d = classifyEvent("info", "LLM call: clustering — claude-sonnet-4-5");
     expect(d.phase).toBe("cluster");
     expect(d.label).toBe("Clustering");
     expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
+  });
+
+  it("classifies LLM call: claim extraction (Pass 1) as understand phase, mergeIntoPrevious", () => {
+    const d = classifyEvent("info", "LLM call: claim extraction (Pass 1) — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Claim extraction (Pass 1)");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+    expect(d.mergeIntoPrevious).toBe(true);
+  });
+
+  it("classifies LLM call: claim extraction (Pass 2) as understand phase, mergeIntoPrevious", () => {
+    const d = classifyEvent("info", "LLM call: claim extraction (Pass 2) — claude-sonnet-4-5");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Claim extraction (Pass 2)");
+    expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
   it("classifies LLM call: query generation as research phase", () => {
@@ -313,6 +336,14 @@ describe("classifyEvent", () => {
   it("classifies TIGERScore", () => {
     const d = classifyEvent("info", "Performing holistic TIGERScore quality evaluation...");
     expect(d.phase).toBe("quality");
+  });
+
+  it("classifies LLM call: auditor as quality phase, mergeIntoPrevious", () => {
+    const d = classifyEvent("info", "LLM call: auditor — claude-sonnet-4-5");
+    expect(d.phase).toBe("quality");
+    expect(d.label).toBe("Auditor");
+    expect(d.params).toBe("claude-sonnet-4-5");
+    expect(d.mergeIntoPrevious).toBe(true);
   });
 
   // ── Done ─────────────────────────────────────────────────────────────────

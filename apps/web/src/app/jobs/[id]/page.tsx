@@ -425,6 +425,14 @@ function buildPhaseGroups(events: EventItem[]): {
       continue;
     }
 
+    // Absorb LLM call events that follow a step event for the same operation:
+    // append the model name to the preceding entry instead of adding a new row.
+    if (d.mergeIntoPrevious && currentGroup && currentGroup.entries.length > 0) {
+      const prev = currentGroup.entries[currentGroup.entries.length - 1];
+      prev.params = [prev.params, d.params].filter(Boolean).join(" · ") || undefined;
+      continue;
+    }
+
     // Group consecutive same-phase events
     if (!currentGroup || currentGroup.phase !== d.phase) {
       currentGroup = { phase: d.phase, entries: [], warnCount: 0, errorCount: 0 };
