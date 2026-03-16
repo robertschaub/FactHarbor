@@ -159,8 +159,9 @@ export async function POST(req: Request) {
         const hasRootFallback = rootDomain !== domain;
 
         // ── Cache check (Phase 1 domain) ─────────────────────────────────────
+        // Any existing entry (even null-score) satisfies "already evaluated" — skip re-evaluation.
         const cachedDomain = existingDomains.get(domain);
-        if (cachedDomain && cachedDomain.score !== null) {
+        if (cachedDomain) {
           results.push({
             domain,
             success: true,
