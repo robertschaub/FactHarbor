@@ -2475,6 +2475,7 @@ const Stage2EvidenceItemSchema = z.object({
     temporal: z.string().optional(),
     geographic: z.string().optional(),
     boundaries: z.string().optional(),
+    analyticalDimension: z.string().optional().catch(undefined),
     additionalDimensions: z.record(z.string()).optional(),
   }),
   probativeValue: z.enum(["high", "medium", "low"]),
@@ -4519,6 +4520,7 @@ export function scopeFingerprint(scope: EvidenceScope): string {
     t: (scope.temporal ?? "").trim().toLowerCase(),
     g: (scope.geographic ?? "").trim().toLowerCase(),
     b: (scope.boundaries ?? "").trim().toLowerCase(),
+    d: (scope.analyticalDimension ?? "").trim().toLowerCase(),
   });
 }
 

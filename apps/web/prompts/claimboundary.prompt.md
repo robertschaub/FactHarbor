@@ -469,7 +469,7 @@ Given a claim and source content, extract evidence items with full metadata incl
 - `statement`: The evidence assertion (fact, finding, data point)
 - `category`: Type of evidence (statistical_data, expert_testimony, case_study, etc.)
 - `claimDirection`: How this relates to the claim ("supports", "contradicts", "contextual")
-- `evidenceScope`: **REQUIRED** — methodology, temporal bounds, geographic/system boundaries
+- `evidenceScope`: **REQUIRED** — methodology, temporal bounds, geographic/system boundaries, analytical dimension
 - `probativeValue`: Quality assessment ("high", "medium", "low")
 - `sourceType`: Source classification (must be one of: peer_reviewed_study, fact_check_report, government_report, legal_document, news_primary, news_secondary, expert_statement, organization_report, other)
 - `sourceUrl`: The URL of the source this evidence came from (copy exactly from the source header)
@@ -481,6 +481,7 @@ Given a claim and source content, extract evidence items with full metadata incl
 
 - Do not assume any particular language. Extract evidence in the source's original language.
 - **EvidenceScope is MANDATORY**: Every item must have `methodology`, `temporal` fields populated. Geographic/system boundaries if applicable.
+- **analyticalDimension**: What specific property or metric this evidence measures. This captures WHAT is being measured, distinct from methodology (HOW it is measured). For example, if a claim has multiple verifiable dimensions (e.g., Property A and Property B), evidence about Property A should have a different `analyticalDimension` than evidence about Property B. Use short, descriptive labels in the source's language.
 - **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
@@ -525,6 +526,7 @@ Return a JSON object:
         "temporal": "string — time period or date",
         "geographic": "string (optional) — location/region",
         "boundaries": "string (optional) — system boundaries",
+        "analyticalDimension": "string (optional) — what property/metric is measured",
         "additionalDimensions": {}
       },
       "probativeValue": "high",
@@ -545,7 +547,7 @@ You are a scope equivalence detector. Your task is to identify EvidenceScopes th
 
 ### Task
 
-You are given a numbered list of EvidenceScopes, each with up to five fields: `methodology`, `temporal`, `geographic`, `boundaries`, and `additionalDimensions`. Identify groups of scopes that describe the **same** analytical window using different surface wording.
+You are given a numbered list of EvidenceScopes, each with up to six fields: `methodology`, `temporal`, `geographic`, `boundaries`, `analyticalDimension`, and `additionalDimensions`. Identify groups of scopes that describe the **same** analytical window using different surface wording.
 
 Return equivalence groups. Every input scope index must appear in exactly one group. Most groups will be singletons (no merge partner found) — this is expected and correct.
 
@@ -562,6 +564,7 @@ Two scopes are **NOT equivalent** (separate groups) when any field describes a g
 - Different geographic regions, even if one contains the other
 - Different methodologies, even if related
 - Different system boundaries, even if using the same methodology
+- Different `analyticalDimension` values — scopes measuring different properties are never equivalent even if methodology is identical
 - One scope has a field value that contradicts the other's value for the same field
 
 ### Edge cases
@@ -631,7 +634,7 @@ You are an analytical clustering engine. Your task is to group EvidenceScopes in
 
 Given the list of unique EvidenceScopes (with evidence items and claim associations), assess the congruence of each pair and cluster them into ClaimBoundaries.
 
-For each pair of EvidenceScopes, assess congruence: Are these scopes measuring the same thing in a compatible way?
+For each pair of EvidenceScopes, assess congruence: Are these scopes measuring the same thing in a compatible way? Pay attention to `analyticalDimension` — scopes measuring different properties (e.g., Property A vs Property B) should generally be in separate boundaries even if their methodology is similar.
 
 - **Congruent** = merge into one ClaimBoundary.
 - **Non-congruent** = separate ClaimBoundaries.
@@ -651,6 +654,7 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 
 **Non-congruent (separate) when:**
 - Fundamentally different methodologies that measure different things
+- Different `analyticalDimension` values — evidence measuring different properties belongs in separate boundaries even when methodology is similar
 - Evidence reaches contradictory conclusions BECAUSE of methodological differences
 - Different normalization/denomination that makes direct comparison misleading
 - Different analytical frameworks applied to the same subject
@@ -678,6 +682,7 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 - **Single evidence item per scope**: Cluster by methodology family similarity; avoid singleton boundaries (merge with closest).
 - **Scopes disagree but NOT because of methodology**: **Merge** — the contradiction is factual, not methodological. The boundary should show internal disagreement via low `internalCoherence`.
 - **Incomplete scope data**: Still cluster using whatever scope data exists. Low-quality scopes are clustered by source type and temporal proximity as secondary signals.
+- **Mega-cluster (>80% of scopes in one group)**: When a single cluster would contain more than 80% of all scopes, check whether `analyticalDimension` values within that cluster point to genuinely different properties being measured. If so, split along dimension boundaries. A single mega-boundary is valid only when the scopes truly measure the same property — not simply because they share a methodology family.
 
 ### Rules
 

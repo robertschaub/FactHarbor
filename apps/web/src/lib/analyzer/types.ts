@@ -251,6 +251,10 @@ export interface EvidenceScope {
   // NEW v2.8 (Phase 2): Source type classification for better reliability calibration
   // This helps the system weight evidence appropriately based on source characteristics
   sourceType?: SourceType;
+  // What property/metric this evidence measures (e.g., "energy conversion efficiency",
+  // "cost per unit distance", "procedural compliance"). Distinct from methodology (how
+  // it was measured). Used by clustering to split mega-groups along analytical dimensions.
+  analyticalDimension?: string;
   // CB pipeline D4: Domain-specific scope data (sample_size, blinding, jurisdiction_level, etc.)
   additionalDimensions?: Record<string, string>;
 }
