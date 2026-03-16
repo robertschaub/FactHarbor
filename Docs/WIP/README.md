@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-03
+**Last Updated**: 2026-03-16
 **Status**: WIP Consolidation #5 complete. Archived 3 files (deployment strategy, UCM defaults, quality regression). 9 active files remain. Primary track: VPS operational; quality stabilization deployed; next focus is evidence quality features and cost reduction.
 
 ---
@@ -82,7 +82,21 @@ For completed work, historical documents, and reference materials, see:
 
 ---
 
-### 4. Report Quality & Validation (4 files)
+### 4. Report Quality & Validation (6 files)
+
+#### Combined Claim and Boundary Quality Remediation Plan (2026-03-16)
+**Status:** 📋 Ready for Review — sequencing plan for two active quality issues
+- **Document:** [Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md](Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md)
+- **Scope:** Unifies the broad-claim plastics regression work and the empty-boundary Stage 3 work into one phased remediation sequence.
+- **Key Finding:** The two issues are complementary, not contradictory. The safe sequence is: low-risk Stage 3 cleanup first, claim-contract tightening second, verdict-integrity containment third, dimension-aware boundary redesign fourth, and research-allocation tuning last.
+- **Next Step:** Team review → approve phase order and choose the verdict-integrity enforcement posture (rerun vs safe downgrade vs degraded-report marking).
+
+#### Plastik Recycling Report Regression Investigation (2026-03-16)
+**Status:** 📋 Ready for Review — root-cause diagnosis complete
+- **Document:** [Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md](Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md)
+- **Scope:** Investigates why job `64c44032d2b84093ae2c97384996aad1` for `Plastik recycling bringt nichts` now produces a weak report compared with stronger earlier runs.
+- **Key Finding:** The regression is primarily semantic and orchestration-driven, not infrastructural: Stage 1 narrows the thesis into easier-to-support subclaims, Gate 1 keeps claims it already judged non-specific, Stage 2 over-allocates budget to those claims, and verdict integrity failures are not currently treated as blocking.
+- **Next Step:** Team review → decide the first containment slice: tighten broad-claim decomposition, tighten Gate 1 retention for vague dimension claims, and downgrade or rerun reports with grounding / structural verdict failures.
 
 #### Report Quality Criteria & Scorecard (2026-03-12)
 **Status:** 📋 Active — Criteria defined, baseline scored
@@ -157,6 +171,8 @@ For completed work, historical documents, and reference materials, see:
 
 | Date | Action | Files |
 |------|--------|-------|
+| 2026-03-16 | Added combined remediation sequence for the plastics regression and empty-boundary quality tracks. | `Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md` |
+| 2026-03-16 | Added review-ready regression investigation for `Plastik recycling bringt nichts` report quality drift. | `Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md` |
 | 2026-03-03 | **Consolidation #5**: Archived 3 files (deployment strategy done, UCM defaults done, quality P0 done). Moved LinkedIn Article to Marketing. Extracted P1/P2 to Backlog. 13→9 files. | See `ARCHIVE/README_ARCHIVE.md` |
 | 2026-03-02 | **Consolidation #4**: Archived 4 files (pre-release readiness Steps 0-12 done, dynamic pipeline removal done, UI texts done, calibration cost policy done). 14→10 files. | See `ARCHIVE/README_ARCHIVE.md` |
 | 2026-03-01 | **Consolidation #3**: Archived 11 files (invite code, quality investigations, fidelity, runtime issues). | See `ARCHIVE/README_ARCHIVE.md` |

@@ -122,6 +122,17 @@ describe("warning-display classification", () => {
     expect(tiger.displaySeverity).toBe("info");
   });
 
+  it("treats boundary evidence concentration telemetry as informational", () => {
+    const result = classifyWarningForDisplay(warning({
+      type: "boundary_evidence_concentration",
+      severity: "warning",
+    }));
+
+    expect(result.isProviderIssue).toBe(false);
+    expect(result.isReportDegrading).toBe(false);
+    expect(result.displaySeverity).toBe("info");
+  });
+
   it("keeps structural/integrity warnings degrading in analysis bucket", () => {
     const structural = classifyWarningForDisplay(warning({
       type: "structural_consistency",

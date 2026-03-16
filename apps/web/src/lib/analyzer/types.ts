@@ -696,7 +696,8 @@ export type AnalysisWarningType =
   | "low_claim_count"                  // D1: Claim decomposition produced fewer claims than minimum after reprompt attempts
   | "evidence_applicability_filter"    // Fix 3: Post-extraction applicability filter removed foreign-jurisdiction evidence
   | "phantom_evidence_stripped"        // Fix 5: Phantom evidence IDs removed from verdict (IDs not in evidence pool)
-  | "phantom_evidence_all_supporting"; // Fix 5: ALL supporting evidence IDs were phantom — verdict has zero evidence backing
+  | "phantom_evidence_all_supporting"  // Fix 5: ALL supporting evidence IDs were phantom — verdict has zero evidence backing
+  | "boundary_evidence_concentration"; // Stage 3: One ClaimAssessmentBoundary contains a dominant share of evidence items
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

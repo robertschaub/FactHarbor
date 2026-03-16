@@ -510,6 +510,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Enable LLM-based scope equivalence detection before boundary clustering (default: true). Merges semantically identical EvidenceScopes that differ only in wording."),
   scopeNormalizationMinScopes: z.number().int().min(2).optional()
     .describe("Minimum number of unique scopes to trigger LLM normalization (default: 5). Below this, skip the LLM call."),
+  boundaryEvidenceConcentrationWarningThreshold: z.number().min(0.5).max(1).optional()
+    .describe("Emit an informational Stage 3 warning when one ClaimAssessmentBoundary exceeds this share of assigned evidence items (default: 0.8)."),
 
   // Stage 4: Verdict
   selfConsistencyMode: z.enum(["full", "disabled"]).optional()
@@ -815,6 +817,9 @@ export const PipelineConfigSchema = z.object({
   if (data.scopeNormalizationMinScopes === undefined) {
     data.scopeNormalizationMinScopes = 5;
   }
+  if (data.boundaryEvidenceConcentrationWarningThreshold === undefined) {
+    data.boundaryEvidenceConcentrationWarningThreshold = 0.8;
+  }
 
   // ClaimBoundary Stage 4 defaults
   if (data.selfConsistencyMode === undefined) {
@@ -1030,6 +1035,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   boundaryCoherenceMinimum: 0.3,
   scopeNormalizationEnabled: true,
   scopeNormalizationMinScopes: 5,
+  boundaryEvidenceConcentrationWarningThreshold: 0.8,
 
   // ClaimBoundary Stage 4 defaults
   selfConsistencyMode: "full",

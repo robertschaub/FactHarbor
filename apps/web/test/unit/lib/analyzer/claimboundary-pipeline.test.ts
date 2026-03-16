@@ -3563,6 +3563,253 @@ describe("Stage 3: clusterBoundaries (integration)", () => {
     // All evidence should still be assigned
     expect(state.evidenceItems.every((e: any) => e.claimBoundaryId)).toBe(true);
   });
+
+  it("prunes zero-evidence boundaries without emitting a tautological single-boundary warning", async () => {
+    const scopeA: EvidenceScope = { name: "Energy", methodology: "Method A", temporal: "2024" };
+    const scopeB: EvidenceScope = { name: "Cost", methodology: "Method B", temporal: "2024" };
+    const items = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        createEvidenceItem({ id: `EV_A${i + 1}`, evidenceScope: scopeA }),
+      ),
+      createEvidenceItem({ id: "EV_B1", evidenceScope: scopeB }),
+    ];
+
+    const state = {
+      evidenceItems: items,
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      warnings: [],
+      llmCalls: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: [
+        {
+          id: "CB_01",
+          name: "First Boundary",
+          shortName: "B1",
+          description: "First test boundary",
+          constituentScopeIndices: [0],
+          internalCoherence: 0.8,
+        },
+        {
+          id: "CB_02",
+          name: "Dominant Boundary",
+          shortName: "B2",
+          description: "Second test boundary",
+          constituentScopeIndices: [0, 1],
+          internalCoherence: 0.8,
+        },
+      ],
+      scopeToBoundaryMapping: [
+        { scopeIndex: 0, boundaryId: "CB_01", rationale: "test" },
+        { scopeIndex: 0, boundaryId: "CB_02", rationale: "duplicate test" },
+        { scopeIndex: 1, boundaryId: "CB_02", rationale: "test" },
+      ],
+      congruenceDecisions: [],
+    });
+
+    const { loadPipelineConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        maxClaimBoundaries: 6,
+        boundaryCoherenceMinimum: 0.3,
+        boundaryEvidenceConcentrationWarningThreshold: 0.8,
+      } as any,
+    } as any);
+
+    const result = await clusterBoundaries(state);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("CB_02");
+    expect(result[0].evidenceCount).toBe(6);
+    expect(state.evidenceItems.every((e: any) => e.claimBoundaryId === "CB_02")).toBe(true);
+    expect(state.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "boundary_evidence_concentration" }),
+      ]),
+    );
+  });
+
+  it("falls back to a single General boundary when evidenceItems is empty", async () => {
+    const state = {
+      evidenceItems: [],
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      warnings: [],
+      llmCalls: 0,
+    } as any;
+
+    const { loadPipelineConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        maxClaimBoundaries: 6,
+        boundaryCoherenceMinimum: 0.3,
+        boundaryEvidenceConcentrationWarningThreshold: 0.8,
+      } as any,
+    } as any);
+
+    const result = await clusterBoundaries(state);
+
+    expect(result).toHaveLength(1);
+    expect(result).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "CB_GENERAL", evidenceCount: 0 }),
+      ]),
+    );
+    expect(state.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "boundary_evidence_concentration" }),
+      ]),
+    );
+  });
+
+  it("emits an informational concentration warning when one of multiple non-empty boundaries dominates evidence share", async () => {
+    const scopeA: EvidenceScope = { name: "Energy", methodology: "Method A", temporal: "2024" };
+    const scopeB: EvidenceScope = { name: "Cost", methodology: "Method B", temporal: "2024" };
+    const items = [
+      ...Array.from({ length: 9 }, (_, i) =>
+        createEvidenceItem({ id: `EV_A${i + 1}`, evidenceScope: scopeA }),
+      ),
+      createEvidenceItem({ id: "EV_B1", evidenceScope: scopeB }),
+    ];
+
+    const state = {
+      evidenceItems: items,
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      warnings: [],
+      llmCalls: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: [
+        {
+          id: "CB_01",
+          name: "Energy Boundary",
+          shortName: "Energy",
+          description: "Energy test boundary",
+          constituentScopeIndices: [0],
+          internalCoherence: 0.8,
+        },
+        {
+          id: "CB_02",
+          name: "Cost Boundary",
+          shortName: "Cost",
+          description: "Cost test boundary",
+          constituentScopeIndices: [1],
+          internalCoherence: 0.8,
+        },
+      ],
+      scopeToBoundaryMapping: [
+        { scopeIndex: 0, boundaryId: "CB_01", rationale: "test" },
+        { scopeIndex: 1, boundaryId: "CB_02", rationale: "test" },
+      ],
+      congruenceDecisions: [],
+    });
+
+    const { loadPipelineConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        maxClaimBoundaries: 6,
+        boundaryCoherenceMinimum: 0.3,
+        boundaryEvidenceConcentrationWarningThreshold: 0.8,
+      } as any,
+    } as any);
+
+    const result = await clusterBoundaries(state);
+
+    expect(result).toHaveLength(2);
+    expect(result).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "CB_01", evidenceCount: 9 }),
+        expect.objectContaining({ id: "CB_02", evidenceCount: 1 }),
+      ]),
+    );
+    expect(state.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "boundary_evidence_concentration",
+          severity: "info",
+          details: expect.objectContaining({
+            boundaryId: "CB_01",
+            evidenceCount: 9,
+            totalEvidence: 10,
+            threshold: 0.8,
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("keeps non-empty boundaries and does not warn when evidence is distributed below threshold", async () => {
+    const scopeA: EvidenceScope = { name: "Energy", methodology: "Method A", temporal: "2024" };
+    const scopeB: EvidenceScope = { name: "Cost", methodology: "Method B", temporal: "2024" };
+    const items = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        createEvidenceItem({ id: `EV_A${i + 1}`, evidenceScope: scopeA }),
+      ),
+      ...Array.from({ length: 2 }, (_, i) =>
+        createEvidenceItem({ id: `EV_B${i + 1}`, evidenceScope: scopeB }),
+      ),
+    ];
+
+    const state = {
+      evidenceItems: items,
+      understanding: { atomicClaims: [createAtomicClaim()] },
+      warnings: [],
+      llmCalls: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      claimBoundaries: [
+        {
+          id: "CB_01",
+          name: "Energy Boundary",
+          shortName: "Energy",
+          description: "Energy test boundary",
+          constituentScopeIndices: [0],
+          internalCoherence: 0.8,
+        },
+        {
+          id: "CB_02",
+          name: "Cost Boundary",
+          shortName: "Cost",
+          description: "Cost test boundary",
+          constituentScopeIndices: [1],
+          internalCoherence: 0.8,
+        },
+      ],
+      scopeToBoundaryMapping: [
+        { scopeIndex: 0, boundaryId: "CB_01", rationale: "test" },
+        { scopeIndex: 1, boundaryId: "CB_02", rationale: "test" },
+      ],
+      congruenceDecisions: [],
+    });
+
+    const { loadPipelineConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        maxClaimBoundaries: 6,
+        boundaryCoherenceMinimum: 0.3,
+        boundaryEvidenceConcentrationWarningThreshold: 0.8,
+      } as any,
+    } as any);
+
+    const result = await clusterBoundaries(state);
+
+    expect(result).toHaveLength(2);
+    expect(result.map((b) => b.id)).toEqual(["CB_01", "CB_02"]);
+    expect(result.map((b) => b.evidenceCount)).toEqual([3, 2]);
+    expect(state.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "boundary_evidence_concentration" }),
+      ]),
+    );
+  });
 });
 
 // ============================================================================

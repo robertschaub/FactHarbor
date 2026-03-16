@@ -5414,3 +5414,145 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** The runner recovery coverage is integration-style rather than a pure unit test because `drainRunnerQueue()` is heavily side-effectful. It still exercises the reviewed branch explicitly.
 **For next agent:** These review gaps are now closed. If future queue behavior changes again, extend `drain-runner-pause.integration.test.ts` rather than starting a parallel harness unless the queue module is first refactored for finer-grained unit seams.
 **Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Plastik Recycling Report Regression Investigation
+**Task:** Investigate why input `Plastik recycling bringt nichts` produced a weak report in job `64c44032d2b84093ae2c97384996aad1` and turn the findings into a review-ready WIP document.
+**Files touched:** `Docs/WIP/Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the regression is real by comparing the investigated job with earlier runs of the same input, especially `cee9b5a7da194f7f85b3200d357bff5c`, which produced a much stronger `MOSTLY-FALSE` result.
+- Identified the primary causes as semantic/orchestration issues rather than infrastructure failure: Stage 1 narrows the thesis into easier-to-support subclaims, Gate 1 keeps claims it already judged non-specific, and Stage 2 allocates search budget in a way that amplifies that decomposition.
+- Documented secondary amplifiers: oversized institutional PDFs dropped by the 10 MB retrieval cap, noisy multi-method boundary clustering, and verdict grounding / structural consistency issues that do not currently downgrade the report.
+- Recommended a phased fix order led by Stage 1/Gate 1 tightening and verdict-integrity containment before broader retrieval and clustering improvements.
+**Open items:** No implementation has been started from this investigation. Team review is needed to choose the first containment slice.
+**Warnings:** The proposed fix direction must remain generic and multilingual. Do not patch this with topic-specific heuristics for plastics, recycling, or German phrasing.
+**For next agent:** Start from the new WIP doc. The highest-value first change is to keep broad rhetorical claims broad during decomposition and to stop shipping reports with grounding / structural verdict failures as normal-quality outputs.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Combined Claim and Boundary Quality Remediation Plan
+**Task:** Turn the two open WIP issues, `Empty_Boundary_Pruning_Plan_2026-03-16.md` and `Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md`, into one combined remediation plan that resolves both without creating new problems.
+**Files touched:** `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Explicitly classified the two issues as complementary: the plastics case is primarily a claim-contract / verdict-quality problem, while the empty-boundary case is primarily an evidence-scope / Stage 3 structure problem.
+- Chose a safe execution sequence: low-risk Stage 3 cleanup first, claim-contract tightening second, verdict-integrity containment third, dimension-aware Stage 3 redesign fourth, and research-allocation tuning last.
+- Kept `analyticalDimension` as the proposed explicit scope field for Stage 3 redesign while preserving the earlier guardrail that `methodology` must retain its original meaning.
+- Required multilingual validation and generic prompt behavior throughout to prevent topic-specific or language-specific regressions.
+**Open items:** Awaiting team review on the phase order and the enforcement posture for verdict-integrity failures.
+**Warnings:** The sequence matters. Implementing dimension-aware clustering before fixing Stage 1/Gate 1 could produce cleaner boundaries around still-bad claim decomposition.
+**For next agent:** Use the combined plan as the main orchestration document. The likely first implementation slice is still Phase A only: empty-boundary pruning plus evidence concentration warning.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Tighten Combined Remediation Plan For Review
+**Task:** Refine the combined claim/boundary remediation plan so it explicitly prefers shipping `Phase B + C` together, resolves sequencing ambiguity, and adds non-regression criteria for the standalone `Phase A` cleanup.
+**Files touched:** `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Made the sequencing internally consistent: `Phase A` cleanup first, `Phase B + C` together second, `Phase D` third, `Phase E` last.
+- Added explicit `Phase A` acceptance criteria so the low-risk cleanup must prove no verdict or evidence-assignment regression before shipping alone.
+- Recorded the preferred rollout posture that claim-contract changes should not ship without verdict-integrity containment.
+- Added shipment conditions for `Phase B + C`, including multilingual validation and one unrelated non-rhetorical regression check.
+**Open items:** Team still needs to choose the exact verdict-integrity enforcement mode for `Phase B + C` (rerun, safe downgrade, degraded-report marking, or combination).
+**Warnings:** If the team weakens `Phase C` too much, shipping `Phase B` with it may still leave degraded reports exposed. Keep the containment threshold reviewable and explicit.
+**For next agent:** The combined plan is now ready for review. Challenge the `Phase B + C` packaging and containment mode, not the high-level sequence.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Fold LLM Expert Review Into Combined Remediation Plan
+**Task:** Incorporate the LLM Expert review corrections into the combined claim/boundary remediation plan so it is ready for another review pass.
+**Files touched:** `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added an explicit prompt-safety guardrail that implementation must use abstract examples only and must not copy plastics/ecology/economics wording from the WIP doc into prompt text.
+- Clarified that the Gate 1 "rescue one" behavior must be LLM-driven, not implemented as deterministic pick-first or centrality-based semantic filtering.
+- Strengthened Phase D by requiring semantic normalization of `analyticalDimension` across languages and clarifying that it is a strong clustering signal, not a hard separator.
+- Changed Phase C from an undifferentiated containment menu into a preferred per-warning-type mapping: rerun for grounding issues, safe downgrade for direction issues, degraded-report marking for structural consistency.
+- Clarified that Phase E must make an explicit design choice between structural-count scheduling and an LLM-assessed evidence-portfolio prioritization step.
+**Open items:** The plan still needs a team decision on whether Phase C should align with or depend on the existing inverse-claim asymmetry verdict-integrity work.
+**Warnings:** Phase E remains the easiest place for hidden deterministic semantic scoring to slip back in. Keep that review bar high when implementation starts.
+**For next agent:** Re-review the combined plan with emphasis on the corrected prompt safety, multilingual `analyticalDimension` handling, and per-warning-type containment mapping.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Fold Code Review Corrections Into Combined Remediation Plan
+**Task:** Incorporate the code-review findings into the combined remediation plan so the technical mechanisms and validation requirements match the current codebase more precisely.
+**Files touched:** `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Phase D now explicitly requires updating `scopeFingerprint()` to include `analyticalDimension`, preventing silent same-fingerprint collisions that would otherwise defeat the whole dimension-split goal.
+- Phase C now distinguishes between enabling existing disabled grounding/direction containment policies and adding a new report-level degraded handling path for `structural_consistency`.
+- Phase B2 now targets the actual Gate 1 mechanism: the dimension-decomposition fidelity exemption and the numeric specificity path, rather than vaguely describing a new rescue behavior that mostly already exists.
+- Phase A validation now distinguishes deterministic outputs from LLM-variant outputs, confirms that empty `CB_GENERAL` should be pruned if it has zero evidence, and requires a negative-control validation case with no empty boundaries.
+- Phase B now explicitly acknowledges the reprompt-loop cost/latency tradeoff from tighter filtering.
+**Open items:** Another review pass is still needed on the revised plan, especially around the proposed structural-consistency handling scope in Phase C.
+**Warnings:** Phase C is now more accurate about current code state, but it also makes the implementation split clearer: grounding/direction are partly config work, structural consistency is not.
+**For next agent:** Re-review the plan with attention to the corrected Gate 1 mechanism description, the explicit `scopeFingerprint()` dependency, and the sharpened Phase A validation requirements.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Fold Lead Architect Corrections Into Combined Remediation Plan
+**Task:** Incorporate the Lead Architect review corrections into the combined remediation plan so Phase B names the real implementation surfaces and Phase C has a decided default containment posture.
+**Files touched:** `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Phase B now explicitly points implementers to the `CLAIM_EXTRACTION_PASS2` ambiguous-claim decomposition guidance and the Gate 1 fidelity path, rather than leaving enforcement location implicit.
+- Defined the one-claim rescue baseline as the existing LLM-produced `impliedClaim`, avoiding a new deterministic re-synthesis rule.
+- Phase C now has a decided default posture: degraded-report marking by default, with safe downgrade additionally appropriate for structural metadata/integrity errors; rerun is no longer the default.
+- Kept Phase B+C coupled, but made the containment decision explicit enough that implementation can proceed without another architecture decision round.
+**Open items:** The exact scope of claim-local safe downgrade for structural integrity issues still needs implementation review when Phase C coding starts.
+**Warnings:** The plan now prefers visibility over automatic rerun. If the team later wants rerun behavior, it should be a separately justified decision rather than a hidden default.
+**For next agent:** Re-review the combined plan mainly for completeness, not direction. The high-level sequence and the B/C implementation posture are now intentionally fixed.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Fold LLM Re-Review Clarifications Into Combined Plan
+**Task:** Incorporate the final LLM Expert re-review clarifications into the combined remediation plan so the remaining implementation-detail gaps are closed before handoff.
+**Files touched:** `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added the missing downstream contract note that the `impliedClaim` rescue path must materialize as a valid `AtomicClaim`, not a raw string, with explicit required fields preserved.
+- Scoped `structural_consistency` handling to a minimal report/output metadata flag first, so `Phase B + C` does not depend on a broader UI redesign.
+- Marked the concentration warning threshold as a UCM-configurable parameter with `0.8` as an initial default, not a hardcoded design constant.
+- Added a practical validation bound for the reprompt-loop side effect of Phase B so cost/latency review is less subjective.
+**Open items:** The exact implementation of the `AtomicClaim` rescue wrapper and the report-level degraded marker remains a coding-time detail, but the plan now constrains both sufficiently for implementation.
+**Warnings:** The reprompt bound is a review default, not a mathematically sacred threshold. If the team changes it, that should be an explicit decision, not silent drift.
+**For next agent:** The combined plan is now aligned with all three review streams. Any further review should focus on final approval, not missing structure.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Implement Phase A Boundary Cleanup
+**Task:** Implement Phase A from the approved combined remediation plan: prune zero-evidence ClaimAssessmentBoundaries after assignment and add a UCM-backed informational concentration warning for Stage 3.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/app/admin/config/page.tsx`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/analyzer/warning-display.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a Stage 3 finalization step in `clusterBoundaries()` so all exit paths share the same post-assignment behavior: evidence assignment, `evidenceCount` recomputation, zero-evidence pruning, and concentration-warning emission.
+- Introduced `boundaryEvidenceConcentrationWarningThreshold` as a pipeline/UCM field with initial default `0.8`, kept in sync across schema defaults, JSON defaults, and the Admin config UI.
+- Registered `boundary_evidence_concentration` as an informational analysis warning so the signal is admin-visible without being treated as a report-degrading user warning.
+- Chose to prune empty `CB_GENERAL` the same as any other zero-evidence boundary; no special-case preservation remains in Phase A.
+- Added one positive and one negative Stage 3 integration-style unit test: duplicate-scope overmerge now prunes the dead boundary and emits the warning, while a balanced two-boundary case remains unchanged and warning-free.
+**Open items:** Phase B + C from the approved plan still remain to be implemented after this Phase A slice is committed/reviewed.
+**Warnings:** The new concentration warning is structural/admin telemetry only; it does not change verdict math. Later Phase D work will still need to revisit Stage 3 semantics more deeply (`analyticalDimension`, `scopeFingerprint`, normalization prompt).
+**For next agent:** Phase A is implemented and validated. Before moving to Phase B + C, review the Stage 3 finalization helper and the new UCM field name for any naming/placement objections, then commit this slice.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Tighten Phase A Boundary Finalization Guards
+**Task:** Address the final low-risk review findings on Phase A by preventing tautological single-boundary concentration warnings and adding a defensive all-empty fallback in Stage 3 finalization.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added a defensive `nonEmptyBoundaries.length === 0` return path in `finalizeClusterBoundaries()` even though it should be unreachable in valid Stage 3 flows.
+- Restricted `boundary_evidence_concentration` emission to cases with more than one non-empty boundary, eliminating tautological warnings on valid single-boundary jobs.
+- Split the Stage 3 test coverage into two explicit behaviors: pruning without warning when only one boundary survives, and concentration telemetry only when multiple non-empty boundaries remain and one truly dominates.
+**Open items:** None for Phase A; the next planned work remains Phase B + C from the approved combined remediation plan.
+**Warnings:** The empty-boundary guard is defensive plumbing only. If it ever triggers in production, that indicates a deeper Stage 3 bug and should be investigated rather than treated as normal behavior.
+**For next agent:** Phase A is now aligned with the final LLM/code review guidance and ready for commit/review as a complete slice.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Validate Phase A on Stored Jobs
+**Task:** Run the approved Phase A validation set against stored job outputs to confirm empty-boundary pruning is a safe no-op on clean cases and fixes the hydrogen trigger case without changing deterministic assignments.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Validated Phase A by deterministic replay on stored Stage 3 outputs rather than rerunning paid end-to-end analyses, because Phase A is structural post-processing and does not change prompts or LLM decisions.
+- Used the approved hydrogen/electric trigger job `09e356e4fdc84673b6bc86d07bbdccff`: pre-fix boundary counts were `[1, 1, 0, 2, 0, 69]`; Phase A replay prunes the two zero-evidence boundaries and leaves the four actually used boundary IDs unchanged (`CB_04`, `CB_08`, `CB_09`, `CB_11`).
+- Used `b13d3492299b48218bb8d0dca99897c1` as the negative control: all six boundaries were already non-empty (`[26, 3, 2, 4, 3, 19]`), so Phase A replay produces no pruning and no concentration warning.
+- Used single-boundary job `b0e49796fd66464da62fca5700201850` as an additional sanity check: one surviving boundary at 100% evidence share now correctly produces no tautological concentration warning.
+**Open items:** If the team wants a full paid rerun on live inputs before commit, that is still possible, but it is not required to validate this deterministic Phase A slice.
+**Warnings:** This validation confirms deterministic Stage 3 behavior only. It does not retest full verdict generation because Phase A does not alter prompts, LLM calls, or verdict aggregation.
+**For next agent:** Phase A now has unit/build validation plus stored-job replay validation. The next logical step is commit/review, then Phase B + C implementation.
+**Learnings:** no

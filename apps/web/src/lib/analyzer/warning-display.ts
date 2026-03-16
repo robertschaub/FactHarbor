@@ -59,6 +59,7 @@ const WARNING_CLASSIFICATION = {
   evidence_applicability_filter: { bucket: "analysis", impact: "informational" },
   phantom_evidence_stripped: { bucket: "analysis", impact: "informational" },
   phantom_evidence_all_supporting: { bucket: "analysis", impact: "degrading" },
+  boundary_evidence_concentration: { bucket: "analysis", impact: "informational" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 
 export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>(

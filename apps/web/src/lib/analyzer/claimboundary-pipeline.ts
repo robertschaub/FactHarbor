@@ -4378,8 +4378,7 @@ export async function clusterBoundaries(
   // If 0 or 1 unique scopes, skip LLM — single boundary
   if (uniqueScopes.length <= 1) {
     const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
-    assignEvidenceToBoundaries(state.evidenceItems, [boundary], uniqueScopes);
-    return [boundary];
+    return finalizeClusterBoundaries(state, [boundary], uniqueScopes, pipelineConfig);
   }
 
   // ------------------------------------------------------------------
@@ -4422,8 +4421,7 @@ export async function clusterBoundaries(
   } catch (err) {
     console.warn("[Stage3] LLM clustering failed, using fallback:", err);
     const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
-    assignEvidenceToBoundaries(state.evidenceItems, [boundary], uniqueScopes);
-    return [boundary];
+    return finalizeClusterBoundaries(state, [boundary], uniqueScopes, pipelineConfig);
   }
 
   // ------------------------------------------------------------------
@@ -4450,8 +4448,7 @@ export async function clusterBoundaries(
   if (boundaries.length === 0) {
     console.warn("[Stage3] All boundaries invalid after filtering — using fallback");
     const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
-    assignEvidenceToBoundaries(state.evidenceItems, [boundary], uniqueScopes);
-    return [boundary];
+    return finalizeClusterBoundaries(state, [boundary], uniqueScopes, pipelineConfig);
   }
 
   // 4b. Validate no duplicate boundary IDs
@@ -4505,16 +4502,7 @@ export async function clusterBoundaries(
   // ------------------------------------------------------------------
   // Step 5: Assign evidence items to boundaries
   // ------------------------------------------------------------------
-  assignEvidenceToBoundaries(state.evidenceItems, boundaries, uniqueScopes);
-
-  // Update evidenceCount per boundary
-  for (const b of boundaries) {
-    b.evidenceCount = state.evidenceItems.filter(
-      (e) => e.claimBoundaryId === b.id,
-    ).length;
-  }
-
-  return boundaries;
+  return finalizeClusterBoundaries(state, boundaries, uniqueScopes, pipelineConfig);
 }
 
 // ============================================================================
@@ -4532,6 +4520,57 @@ export function scopeFingerprint(scope: EvidenceScope): string {
     g: (scope.geographic ?? "").trim().toLowerCase(),
     b: (scope.boundaries ?? "").trim().toLowerCase(),
   });
+}
+
+function finalizeClusterBoundaries(
+  state: Pick<CBResearchState, "evidenceItems" | "warnings">,
+  boundaries: ClaimAssessmentBoundary[],
+  uniqueScopes: UniqueScope[],
+  pipelineConfig: PipelineConfig,
+): ClaimAssessmentBoundary[] {
+  assignEvidenceToBoundaries(state.evidenceItems, boundaries, uniqueScopes);
+
+  for (const boundary of boundaries) {
+    boundary.evidenceCount = state.evidenceItems.filter(
+      (e) => e.claimBoundaryId === boundary.id,
+    ).length;
+  }
+
+  const nonEmptyBoundaries = boundaries.filter((boundary) => boundary.evidenceCount > 0);
+  const totalEvidence = state.evidenceItems.length;
+  const concentrationThreshold =
+    pipelineConfig.boundaryEvidenceConcentrationWarningThreshold ?? 0.8;
+
+  if (nonEmptyBoundaries.length === 0) {
+    return boundaries;
+  }
+
+  if (nonEmptyBoundaries.length > 1 && totalEvidence > 0) {
+    const dominantBoundary = nonEmptyBoundaries.reduce((best, boundary) =>
+      boundary.evidenceCount > best.evidenceCount ? boundary : best,
+    );
+    const evidenceShare = dominantBoundary.evidenceCount / totalEvidence;
+
+    if (evidenceShare > concentrationThreshold) {
+      state.warnings?.push({
+        type: "boundary_evidence_concentration",
+        severity: "info",
+        message:
+          `Boundary ${dominantBoundary.id} contains ${(evidenceShare * 100).toFixed(1)}% ` +
+          `of assigned evidence (${dominantBoundary.evidenceCount}/${totalEvidence}).`,
+        details: {
+          boundaryId: dominantBoundary.id,
+          boundaryName: dominantBoundary.name,
+          evidenceCount: dominantBoundary.evidenceCount,
+          totalEvidence,
+          evidenceShare,
+          threshold: concentrationThreshold,
+        },
+      });
+    }
+  }
+
+  return nonEmptyBoundaries;
 }
 
 /**

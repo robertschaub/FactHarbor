@@ -1846,6 +1846,22 @@ function PipelineConfigForm({
           />
           <div className={styles.formHelp}>Min coherence; below triggers flag</div>
         </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Boundary Evidence Concentration Warning</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.boundaryEvidenceConcentrationWarningThreshold ?? 0.8}
+            min={0.5}
+            max={1}
+            step={0.05}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              updateField("boundaryEvidenceConcentrationWarningThreshold", isNaN(v) ? 0.8 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Info warning if one boundary holds more than this evidence share</div>
+        </div>
       </div>
 
       {/* Stage 4: Verdict */}

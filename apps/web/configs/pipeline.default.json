@@ -134,6 +134,7 @@
   "boundaryCoherenceMinimum": 0.3,
   "scopeNormalizationEnabled": true,
   "scopeNormalizationMinScopes": 5,
+  "boundaryEvidenceConcentrationWarningThreshold": 0.8,
   "selfConsistencyMode": "full",
   "openaiTpmGuardEnabled": true,
   "openaiTpmGuardInputTokenThreshold": 24000,
