@@ -34,6 +34,7 @@ import {
   validateChallengeEvidence,
   enforceBaselessChallengePolicy,
   computeTruthPercentageRange,
+  stripPhantomEvidenceIds,
   DEFAULT_VERDICT_STAGE_CONFIG,
   type LLMCallFn,
   type VerdictStageConfig,
@@ -2905,5 +2906,105 @@ describe("B-7: misleadingness flag in reconciliation", () => {
 
     expect(verdicts[0].misleadingness).toBe("potentially_misleading");
     expect(verdicts[0].misleadingnessReason).toBe("Omits important temporal context");
+  });
+});
+
+// ============================================================================
+// STRIP PHANTOM EVIDENCE IDS (Fix 5)
+// ============================================================================
+
+describe("stripPhantomEvidenceIds", () => {
+  function createVerdictForPhantomTest(
+    overrides: Partial<CBClaimVerdict> = {},
+  ): CBClaimVerdict {
+    return {
+      id: "CV_AC_01",
+      claimId: "AC_01",
+      truthPercentage: 75,
+      verdict: "MOSTLY-TRUE",
+      confidence: 70,
+      reasoning: "Test reasoning",
+      harmPotential: "medium",
+      isContested: false,
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+      contradictingEvidenceIds: ["EV_03"],
+      boundaryFindings: [],
+      consistencyResult: { stable: true, spread: 2, samples: [75, 73], sampleCount: 2 },
+      challengeResponses: [],
+      triangulationScore: { score: 0.8, sourceCount: 3, methodologyCount: 2, temporalCount: 1 },
+      confidenceTier: "HIGH",
+      ...overrides,
+    };
+  }
+
+  it("removes invalid IDs and keeps valid ones", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01" }),
+      createEvidenceItem({ id: "EV_02" }),
+      createEvidenceItem({ id: "EV_03" }),
+    ];
+    const verdict = createVerdictForPhantomTest({
+      supportingEvidenceIds: ["EV_01", "EV_PHANTOM_1"],
+      contradictingEvidenceIds: ["EV_03", "EV_PHANTOM_2"],
+    });
+    const warnings: AnalysisWarning[] = [];
+
+    const result = stripPhantomEvidenceIds([verdict], evidence, warnings);
+
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_03"]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].type).toBe("phantom_evidence_stripped");
+    expect(warnings[0].severity).toBe("info");
+  });
+
+  it("emits warning-level alert when ALL supporting IDs are phantom", () => {
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const verdict = createVerdictForPhantomTest({
+      supportingEvidenceIds: ["EV_PHANTOM_1", "EV_PHANTOM_2"],
+      contradictingEvidenceIds: ["EV_01"],
+    });
+    const warnings: AnalysisWarning[] = [];
+
+    const result = stripPhantomEvidenceIds([verdict], evidence, warnings);
+
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_01"]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].type).toBe("phantom_evidence_all_supporting");
+    expect(warnings[0].severity).toBe("warning");
+  });
+
+  it("does not modify verdicts when all IDs are valid", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01" }),
+      createEvidenceItem({ id: "EV_02" }),
+    ];
+    const verdict = createVerdictForPhantomTest({
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    });
+    const warnings: AnalysisWarning[] = [];
+
+    const result = stripPhantomEvidenceIds([verdict], evidence, warnings);
+
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_02"]);
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("handles empty evidence arrays gracefully", () => {
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const verdict = createVerdictForPhantomTest({
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    const warnings: AnalysisWarning[] = [];
+
+    const result = stripPhantomEvidenceIds([verdict], evidence, warnings);
+
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings).toHaveLength(0);
   });
 });
