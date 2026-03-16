@@ -25,8 +25,3 @@ export function getDomainLookupChain(domain: string): string[] {
   const familyDomain = getFamilyDomain(normalized);
   return familyDomain === normalized ? [normalized] : [normalized, familyDomain];
 }
-
-export function isSubdomainEntry(domain: string): boolean {
-  const normalized = normalizeHostname(domain);
-  return getFamilyDomain(normalized) !== normalized;
-}

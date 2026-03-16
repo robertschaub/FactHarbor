@@ -4,7 +4,6 @@ import {
   extractNormalizedHostname,
   getDomainLookupChain,
   getFamilyDomain,
-  isSubdomainEntry,
   normalizeHostname,
 } from "@/lib/domain-utils";
 
@@ -26,11 +25,7 @@ describe("domain-utils", () => {
 
   it("builds exact-host-first lookup chains", () => {
     expect(getDomainLookupChain("fr.wikipedia.org")).toEqual(["fr.wikipedia.org", "wikipedia.org"]);
+    expect(getDomainLookupChain("sport.bbc.co.uk")).toEqual(["sport.bbc.co.uk", "bbc.co.uk"]);
     expect(getDomainLookupChain("bbc.co.uk")).toEqual(["bbc.co.uk"]);
-  });
-
-  it("detects whether an entry is a subdomain within its family", () => {
-    expect(isSubdomainEntry("fr.wikipedia.org")).toBe(true);
-    expect(isSubdomainEntry("wikipedia.org")).toBe(false);
   });
 });
