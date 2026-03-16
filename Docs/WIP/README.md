@@ -39,6 +39,13 @@ For completed work, historical documents, and reference materials, see:
 - **Scope:** Stage 1 weakens claim assertions (30-43pp variance). Pre-evidence claim extraction issue.
 - **Next Step:** Phase A parallel investigation (multi-agent: LLM Expert, Senior Dev, Lead Architect).
 
+#### Proxy Claim Decomposition Investigation (2026-03-16)
+**Status:** 📋 Ready for Review — implementation plan corrected after deputy review
+- **Document:** [Proxy_Claim_Decomposition_Investigation_2026-03-16.md](Proxy_Claim_Decomposition_Investigation_2026-03-16.md)
+- **Scope:** Ambiguous-claim decomposition is allowing proxy claims such as media portrayal / public discourse to count toward overall verdicts for direct real-world inputs.
+- **Key Finding:** Aggregation semantics already support non-direct exclusion (`thesisRelevance`), but the active ClaimBoundary path neither preserves that signal nor enforces it in its inline Stage 5 weighting block, so proxy claims are counted by default.
+- **Next Step:** Team review → approve the corrected implementation slice: add/preserve `thesisRelevance` in the ClaimBoundary Stage 1 contract, propagate it into verdicts, and enforce weight `0` for non-direct claims inside `aggregateAssessment()`.
+
 #### UCM Config Drift Review (2026-03-05)
 **Status:** 📋 Ready for Review — Phase 1 (alignment) ready to implement, Phase 2 (quality tuning) needs decisions
 - **Document:** [UCM_Config_Drift_Review_2026-03-05.md](UCM_Config_Drift_Review_2026-03-05.md)

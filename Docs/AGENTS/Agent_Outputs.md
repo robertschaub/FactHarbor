@@ -5332,3 +5332,85 @@ esponse.text()/arrayBuffer() direct buffering paths).
 **Warnings:** This change intentionally stays in the display/plumbing layer. It does not reinterpret or re-cluster boundaries semantically, and it does not change the underlying evidence assignments.
 **For next agent:** If further refinement is requested, the next safe step is presentation only: e.g. sorting scope families, showing counts, or exposing constituent scopes more explicitly. Avoid reworking boundary semantics without a separate architecture decision because `boundary.name` is also passed into verdict-stage boundary context.
 **Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Proxy Claim Decomposition Investigation
+**Task:** Investigate why a proxy claim about media/public portrayal was extracted and counted in the overall verdict for job `b0e49796fd66464da62fca5700201850`, and document a review-ready solution.
+**Files touched:** `Docs/WIP/Proxy_Claim_Decomposition_Investigation_2026-03-16.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Confirmed the issue is real: the input `Muslims are more violent than Christians.` produced a central claim about media/public portrayal (`AC_02`) that received a strong positive verdict and materially lifted the overall report.
+- Confirmed the current pipeline has no explicit direct-vs-proxy claim classification in the ClaimBoundary path. Gate 1 checks opinion/specificity/fidelity, but not whether a claim is a representation proxy rather than a direct thesis claim.
+- Confirmed aggregation already supports excluding non-direct claims via `thesisRelevance`, but that signal is not being assigned here, so the proxy claim is counted by default.
+- Recommended a review direction: add an explicit LLM-classified directness / thesis-relevance signal in Stage 1, propagate it, and exclude non-direct claims from Stage 5 aggregation.
+**Open items:** No implementation has been made yet. The team still needs to decide whether to classify directness in Pass 2, Gate 1, or both.
+**Warnings:** A deterministic keyword filter for terms like `perceived` or `portrayed` would violate repository guidance and would be brittle across languages. This must stay LLM-classified.
+**For next agent:** Use the new WIP doc as the review baseline. The critical design decision is whether portrayal/perception claims should be filtered outright or retained as contextual-only claims excluded from the overall verdict.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Proxy Claim Decomposition Plan Finalized For Review
+**Task:** Convert the proxy-claim investigation into an implementation-ready review plan after architecture feedback.
+**Files touched:** `Docs/WIP/Proxy_Claim_Decomposition_Investigation_2026-03-16.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Reframed the WIP doc from investigation-only into a concrete implementation plan with phases for prompt/schema changes, pipeline propagation, aggregation enforcement, and regression coverage.
+- Incorporated the review direction explicitly: use `thesisRelevance` rather than overloading `claimDirection`, keep proxy claims visible, and assign aggregate weight `0` to non-direct claims.
+- Deferred the observed `harmPotential` over-classification issue into a separate follow-up so the first fix stays tightly scoped to the causal bug.
+**Open items:** Awaiting team review/approval before implementation.
+**Warnings:** The WIP doc intentionally proposes LLM-classified directness only. Do not “simplify” this into keyword filtering during implementation.
+**For next agent:** The WIP file is now the implementation baseline. If approved, the smallest reviewable patch is: add `thesisRelevance` to Stage 1 claim output, propagate it into verdicts, and exclude non-direct claims in Stage 5 aggregation.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Proxy Claim Decomposition Plan Corrected After Deputy Review
+**Task:** Update the proxy-claim WIP plan after the Captain Deputy review so the implementation guidance points to the real ClaimBoundary gaps and enforcement location.
+**Files touched:** `Docs/WIP/Proxy_Claim_Decomposition_Investigation_2026-03-16.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Corrected the plan to state that ClaimBoundary still needs explicit `thesisRelevance` support in its own `AtomicClaim`/`CBClaimVerdict` path; similarly named legacy/shared fields elsewhere in the repo do not make this automatic.
+- Made the parser gap explicit: `Pass2AtomicClaimSchema` in `claimboundary-pipeline.ts` must ingest and preserve `thesisRelevance`.
+- Corrected the enforcement description so implementers add the exclusion in `aggregateAssessment()`'s inline Stage 5 weighting block, rather than assuming `aggregation.ts` functions are on the active execution path.
+- Kept `aggregation.ts` in the document as semantic reference only, and left the `harmPotential` concern deferred.
+**Open items:** Awaiting another review pass before implementation starts.
+**Warnings:** The deputy review's "type already exists" note is only partially true at repo level; the active ClaimBoundary `AtomicClaim` path still needs explicit support. Implementers should verify the actual CB interfaces before coding.
+**For next agent:** Use the updated WIP doc as the implementation source of truth. The key implementation touchpoint is `claimboundary-pipeline.ts` around the inline `aggregateAssessment()` weighting block, plus Stage 1 claim parsing/preservation.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Implement Proxy Claim Decomposition Exclusion
+**Task:** Implement the approved fix so proxy/tangential claims stay visible in ClaimBoundary reports but no longer affect the overall verdict.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added `thesisRelevance` to the active ClaimBoundary `AtomicClaim` and `CBClaimVerdict` contracts and ingested it in `Pass2AtomicClaimSchema`.
+- Tightened the Stage 1 prompt so extraction/classification explicitly distinguishes direct thesis claims from proxy claims about portrayal, perception, labeling, or discourse.
+- Propagated `thesisRelevance` from `AtomicClaim` into Stage 4 verdict objects and fallback verdicts.
+- Enforced the exclusion at the actual runtime point: the inline `weightsData` block inside `aggregateAssessment()` now assigns `weight: 0` to non-direct claims while preserving them in `claimVerdicts`.
+- Added focused regression coverage for Pass 2 preservation, verdict propagation, and Stage 5 exclusion behavior.
+**Open items:** No further code changes in this slice. A future UI enhancement may add an explicit badge such as `Contextual / not counted` for tangential claims.
+**Warnings:** This patch does not guarantee the LLM will never emit proxy claims; it ensures they are classified and excluded from aggregate truth when marked non-direct. Prompt quality and model behavior should still be monitored on real jobs.
+**For next agent:** Review the aggregate enforcement in `claimboundary-pipeline.ts` and the new tests first. The intended behavior is backward compatible for old jobs/claims with missing `thesisRelevance` because `undefined` still behaves as direct.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Address Follow-up Review Nits on SR Config and Boundary Display
+**Task:** Address the low-severity follow-up review findings on the SR evaluation search config and boundary-display helper.
+**Files touched:** `apps/web/src/app/api/internal/evaluate-source/route.ts`, `apps/web/src/lib/claim-boundary-display.ts`, `apps/web/test/unit/lib/claim-boundary-display.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Made SR evaluation search `autoMode` explicit as `"accumulate"` with an intent comment so it no longer appears coupled to `DEFAULT_SEARCH_CONFIG.autoMode`.
+- Added the missing `getBoundaryDisplaySubtitle()` test for multi-segment names without a distinct `shortName`.
+- Unified comparison behavior inside `claim-boundary-display.ts` by using one normalized case-insensitive label comparator for both dedupe and subtitle decisions.
+**Open items:** The review note about `sourceTitle` backfill being pipeline-only remains scope-limited and unchanged; SR evaluation uses a separate evidence-pack path and no current UI consumer was updated in this pass.
+**Warnings:** The comparison-helper alignment is a small display-layer behavior cleanup only. It does not change boundary clustering or verdict semantics.
+**For next agent:** If the SR evaluation evidence-pack ever gets a user-facing source-label view, revisit the separate `title`/source-label path there. For now the implemented fixes close the actionable low-severity findings from the review.
+**Learnings:** no
+
+---
+### 2026-03-16 | Senior Developer | Codex (GPT-5) | Close Review Coverage Gaps for Runner Recovery and Non-Direct Aggregation
+**Task:** Address the remaining review findings by adding explicit test coverage for orphaned runner-job recovery and the all-non-direct aggregation fallback.
+**Files touched:** `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Added an integration test for the orphaned RUNNING-job recovery path in `drainRunnerQueue()`: verifies the job is re-queued as `QUEUED`, not failed, picked up in the same drain cycle, and tracked as running afterward.
+- Added a Stage 5 aggregation test for the all-non-direct edge case: when every claim is `tangential`/`irrelevant`, total weight drops to zero and the overall result falls back to `50%`, `0` confidence, `UNVERIFIED`.
+- Kept the runner coverage in the existing pause/drain integration harness rather than creating a separate queue-test scaffold, because that file already owns the side-effect-heavy `drainRunnerQueue()` test setup.
+**Open items:** None for the reviewed findings.
+**Warnings:** The runner recovery coverage is integration-style rather than a pure unit test because `drainRunnerQueue()` is heavily side-effectful. It still exercises the reviewed branch explicitly.
+**For next agent:** These review gaps are now closed. If future queue behavior changes again, extend `drain-runner-pause.integration.test.ts` rather than starting a parallel harness unless the queue module is first refactored for finer-grained unit seams.
+**Learnings:** no
