@@ -201,12 +201,13 @@ describe("classifyEvent", () => {
     expect(d.params).toBe("2/4");
   });
 
-  it("classifies search provider warn with params", () => {
+  it("classifies search provider warn with params and overrideLevel info", () => {
     const d = classifyEvent("warn", 'Search provider "google-cse" error: quota exceeded');
     expect(d.phase).toBe("research");
     expect(d.label).toBe("Search provider error");
     expect(d.params).toContain("google-cse");
     expect(d.params).toContain("quota exceeded");
+    expect(d.overrideLevel).toBe("info");
   });
 
   it("classifies successful search event as info with overrideLevel", () => {

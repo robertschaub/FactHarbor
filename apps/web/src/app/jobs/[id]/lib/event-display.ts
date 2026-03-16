@@ -153,10 +153,13 @@ export function classifyEvent(level: string, message: string): EventDisplay {
   if (msg.startsWith("Search provider")) {
     const provider = extractSearchProvider(msg);
     const err = extractSearchError(msg);
+    // Individual provider errors are operational info — fallback providers typically recover.
+    // Only escalate to warn if the pipeline reports all providers failed (separate event).
     return {
       phase: "research",
       label: "Search provider error",
       params: [provider, err].filter(Boolean).join(" — ") || undefined,
+      overrideLevel: "info",
     };
   }
   if (msg.startsWith("Preliminary search error")) {
