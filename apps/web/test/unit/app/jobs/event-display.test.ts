@@ -132,6 +132,55 @@ describe("classifyEvent", () => {
     expect(d.params).toBe("claude-sonnet-4-5");
   });
 
+  it("classifies LLM call: verdict narrative as verdict phase", () => {
+    const d = classifyEvent("info", "LLM call: verdict narrative — claude-sonnet-4-5");
+    expect(d.phase).toBe("verdict");
+    expect(d.label).toBe("Verdict narrative");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
+  it("classifies LLM call: clustering as cluster phase", () => {
+    const d = classifyEvent("info", "LLM call: clustering — claude-sonnet-4-5");
+    expect(d.phase).toBe("cluster");
+    expect(d.label).toBe("Clustering");
+    expect(d.params).toBe("claude-sonnet-4-5");
+  });
+
+  it("classifies LLM call: query generation as research phase", () => {
+    const d = classifyEvent("info", "LLM call: query generation — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Query generation");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies LLM call: relevance classification as research phase", () => {
+    const d = classifyEvent("info", "LLM call: relevance classification — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Relevance classification");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies LLM call: evidence extraction as research phase", () => {
+    const d = classifyEvent("info", "LLM call: evidence extraction — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Evidence extraction");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies LLM call: preliminary evidence as understand phase", () => {
+    const d = classifyEvent("info", "LLM call: preliminary evidence — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Preliminary evidence");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies LLM call: evidence applicability as research phase", () => {
+    const d = classifyEvent("info", "LLM call: evidence applicability — claude-haiku-4-5-20251001");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Evidence applicability");
+    expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
   // ── Research ─────────────────────────────────────────────────────────────
   it("classifies researching evidence", () => {
     const d = classifyEvent("info", "Researching evidence for claims...");

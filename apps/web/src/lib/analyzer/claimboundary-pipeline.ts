@@ -356,6 +356,7 @@ export async function runClaimBoundaryAnalysis(
     if (initialPipelineConfig.applicabilityFilterEnabled ?? true) {
       checkAbortSignal(input.jobId);
       onEvent("Assessing evidence applicability...", 58);
+      onEvent(`LLM call: evidence applicability — ${getModelForTask("understand", undefined, initialPipelineConfig).modelName}`, -1);
       const beforeApplicability = state.evidenceItems.length;
       const assessed = await assessEvidenceApplicability(
         understanding.atomicClaims,
@@ -1445,6 +1446,7 @@ export async function runPreliminarySearch(
         if (fetchedSources.length === 0) continue;
 
         // Extract evidence from fetched sources using batched LLM call (Haiku)
+        state.onEvent?.(`LLM call: preliminary evidence — ${getModelForTask("extract_evidence", undefined, pipelineConfig).modelName}`, -1);
         const evidence = await extractPreliminaryEvidence(
           claim.statement,
           fetchedSources,
@@ -3086,6 +3088,7 @@ export async function runResearchIteration(
   const evidenceCountBeforeIteration = state.evidenceItems.length;
 
   // 1. Generate search queries via LLM (Haiku)
+  state.onEvent?.(`LLM call: query generation — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
   const queries = await generateResearchQueries(
     targetClaim,
     iterationType,
@@ -3152,6 +3155,7 @@ export async function runResearchIteration(
       if (response.results.length === 0) continue;
 
       // 3. Relevance classification via LLM (Haiku, batched)
+      state.onEvent?.(`LLM call: relevance classification — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
       const relevantSources = await classifyRelevance(
         targetClaim,
         response.results,
@@ -3178,6 +3182,7 @@ export async function runResearchIteration(
       // not during research iteration decisions. Deferring saves 15-25s per new domain.
 
       // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
+      state.onEvent?.(`LLM call: evidence extraction — ${getModelForTask("extract_evidence", undefined, pipelineConfig).modelName}`, -1);
       const rawEvidence = await extractResearchEvidence(
         targetClaim,
         fetchedSources,
@@ -4405,6 +4410,7 @@ export async function clusterBoundaries(
   // ------------------------------------------------------------------
   let boundaries: ClaimAssessmentBoundary[];
   try {
+    state.onEvent?.(`LLM call: clustering — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
     boundaries = await runLLMClustering(
       effectiveScopes,
       state.evidenceItems,
@@ -5598,6 +5604,7 @@ export async function aggregateAssessment(
   // ------------------------------------------------------------------
   let verdictNarrative: VerdictNarrative;
   try {
+    state.onEvent?.(`LLM call: verdict narrative — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
     verdictNarrative = await generateVerdictNarrative(
       weightedTruthPercentage,
       verdictLabel,

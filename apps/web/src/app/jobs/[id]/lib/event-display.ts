@@ -101,8 +101,15 @@ export function classifyEvent(level: string, message: string): EventDisplay {
     const sepIdx = detail.indexOf(" — ");
     const role  = sepIdx >= 0 ? detail.slice(0, sepIdx).trim() : detail;
     const model = sepIdx >= 0 ? detail.slice(sepIdx + 3).trim() : undefined;
-    const verdictRoles = new Set(["advocate", "self-consistency", "challenger", "reconciler", "validation"]);
-    const phase: EventPhase = verdictRoles.has(role) ? "verdict" : "understand";
+    const rolePhase: Partial<Record<string, EventPhase>> = {
+      "advocate": "verdict", "self-consistency": "verdict", "challenger": "verdict",
+      "reconciler": "verdict", "validation": "verdict", "verdict narrative": "verdict",
+      "clustering": "cluster",
+      "query generation": "research", "relevance classification": "research",
+      "evidence extraction": "research", "preliminary evidence": "understand",
+      "evidence applicability": "research",
+    };
+    const phase: EventPhase = rolePhase[role] ?? "understand";
     const label = role.charAt(0).toUpperCase() + role.slice(1);
     return { phase, label, params: model || undefined };
   }
