@@ -16,6 +16,7 @@ import {
   isSystemPaused,
   recordProviderFailure,
 } from "@/lib/provider-health";
+import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 
 vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
   runClaimBoundaryAnalysis: vi.fn(async () => ({ resultJson: { meta: {} } })),
@@ -241,6 +242,75 @@ describe("drainRunnerQueue pause integration", () => {
       expect(console.warn).not.toHaveBeenCalledWith(
         expect.stringContaining("System is PAUSED"),
       );
+    });
+
+    it("re-queues orphaned RUNNING jobs after restart and picks them up in the same drain cycle", async () => {
+      const orphanJobId = "job-orphan-1";
+      vi.mocked(runClaimBoundaryAnalysis).mockImplementation(
+        () => new Promise(() => {}),
+      );
+
+      const putPayloads: Array<{ url: string; body: Record<string, unknown> }> = [];
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+          return new Response(JSON.stringify({
+            jobs: [{
+              jobId: orphanJobId,
+              status: "RUNNING",
+              updatedUtc: new Date(Date.now() - 60_000).toISOString(),
+              progress: 42,
+              pipelineVariant: "claimboundary",
+            }],
+            pagination: { totalPages: 1 },
+          }), { status: 200 });
+        }
+
+        if (method === "GET" && url.endsWith(`/v1/jobs/${orphanJobId}`)) {
+          return new Response(JSON.stringify({
+            jobId: orphanJobId,
+            status: "QUEUED",
+            pipelineVariant: "claimboundary",
+            inputType: "text",
+            inputValue: "test input",
+          }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${orphanJobId}/status`)) {
+          putPayloads.push({
+            url,
+            body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
+          });
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [],
+        runningJobIds: new Set<string>(),
+        isDraining: false,
+        drainRequested: false,
+        watchdogTimer: null,
+      };
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks();
+
+      const qs = (globalThis as any).__fhRunnerQueueState;
+      expect(putPayloads.some((p) => p.body.status === "QUEUED")).toBe(true);
+      expect(putPayloads.some((p) => p.body.status === "FAILED")).toBe(false);
+      expect(qs.runningJobIds.has(orphanJobId)).toBe(true);
+      expect(qs.runningCount).toBe(1);
+      expect(qs.queue).toHaveLength(0);
     });
   });
 });
