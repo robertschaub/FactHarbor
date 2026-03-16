@@ -64,6 +64,7 @@ function createAtomicClaim(overrides: Partial<AtomicClaim> = {}): AtomicClaim {
     harmPotential: "medium",
     isCentral: true as const,
     claimDirection: "supports_thesis",
+    thesisRelevance: "direct",
     keyEntities: ["Entity A"],
     checkWorthiness: "high",
     specificityScore: 0.8,
@@ -235,6 +236,21 @@ describe("advocateVerdict (Step 1)", () => {
       expect.objectContaining({ atomicClaims: claims }),
       expect.objectContaining({ tier: "standard" }),
     );
+  });
+
+  it("should propagate thesisRelevance from AtomicClaim into CBClaimVerdict", async () => {
+    const claims = [createAtomicClaim({ thesisRelevance: "tangential" })];
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const mockLLM = createMockLLM({
+      VERDICT_ADVOCATE: advocateResponse(),
+    });
+
+    const result = await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    expect(result[0].thesisRelevance).toBe("tangential");
   });
 
   it("should trim advocate evidence payload to contract-relevant fields", async () => {

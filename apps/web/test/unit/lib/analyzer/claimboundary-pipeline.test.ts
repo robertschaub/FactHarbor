@@ -88,6 +88,7 @@ function createAtomicClaim(overrides: Partial<AtomicClaim> = {}): AtomicClaim {
     harmPotential: "medium",
     isCentral: true as const,
     claimDirection: "supports_thesis",
+    thesisRelevance: "direct",
     keyEntities: ["Entity A"],
     checkWorthiness: "high",
     specificityScore: 0.8,
@@ -244,6 +245,18 @@ describe("ClaimAssessmentBoundary Pipeline Types", () => {
       for (const dir of directions) {
         const claim = createAtomicClaim({ claimDirection: dir });
         expect(claim.claimDirection).toBe(dir);
+      }
+    });
+
+    it("should support all thesisRelevance values", () => {
+      const relevances: NonNullable<AtomicClaim["thesisRelevance"]>[] = [
+        "direct",
+        "tangential",
+        "irrelevant",
+      ];
+      for (const relevance of relevances) {
+        const claim = createAtomicClaim({ thesisRelevance: relevance });
+        expect(claim.thesisRelevance).toBe(relevance);
       }
     });
   });
@@ -862,6 +875,43 @@ describe("Stage 1: runPass2", () => {
     expect(result.atomicClaims[0].id).toBe("AC_01");
     expect(result.atomicClaims[0].specificityScore).toBe(0.85);
     expect(result.articleThesis).toBe("Overall thesis");
+  });
+
+  it("should preserve thesisRelevance from Pass 2 output", async () => {
+    const pass2Fixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background info",
+      articleThesis: "Overall thesis",
+      atomicClaims: [
+        {
+          id: "AC_01",
+          statement: "Entity A increased metric X by 50% in 2024",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "medium",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          thesisRelevance: "tangential",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.85,
+          groundingQuality: "strong",
+          expectedEvidenceProfile: {
+            methodologies: ["data analysis"],
+            expectedMetrics: ["metric X"],
+            expectedSourceTypes: ["peer_reviewed_study"],
+          },
+        },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass2Fixture);
+
+    const result = await runPass2("test input", [], mockPipelineConfig, "2026-02-17");
+
+    expect(result.atomicClaims[0].thesisRelevance).toBe("tangential");
   });
 
   it("should auto-assign sequential IDs when LLM omits them", async () => {
@@ -4626,6 +4676,142 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     // Range inversion: [70,90] + inverted [10,30] -> aggregate [40,60] with equal weights
     expect(result.truthPercentageRange?.min).toBeCloseTo(40, 1);
     expect(result.truthPercentageRange?.max).toBeCloseTo(60, 1);
+  });
+
+  it("excludes non-direct claims from aggregate truth weighting while keeping them visible", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: { centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 }, derivativeMultiplier: 0.5 },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: { strongAgreementBoost: 0.15, moderateAgreementBoost: 0.05, singleBoundaryPenalty: -0.10 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    const narrativeOutput = {
+      headline: "Proxy exclusion test",
+      evidenceBaseSummary: "2 items",
+      keyFinding: "Tangential claims should remain visible but not affect the aggregate.",
+      limitations: "Test limitations.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01", thesisRelevance: "direct" }),
+      createAtomicClaim({ id: "AC_02", thesisRelevance: "tangential" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 22,
+        confidence: 80,
+        thesisRelevance: "direct",
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createCBClaimVerdict({
+        claimId: "AC_02",
+        truthPercentage: 91,
+        confidence: 80,
+        thesisRelevance: "tangential",
+        supportingEvidenceIds: ["EV_02"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1", "q2"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.claimVerdicts).toHaveLength(2);
+    expect(result.claimVerdicts.find((v) => v.claimId === "AC_02")?.thesisRelevance).toBe("tangential");
+    expect(result.truthPercentage).toBeCloseTo(22, 1);
+  });
+
+  it("falls back to UNVERIFIED when all claims are non-direct and total weight becomes zero", async () => {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: { centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 }, derivativeMultiplier: 0.5 },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: { strongAgreementBoost: 0.15, moderateAgreementBoost: 0.05, singleBoundaryPenalty: -0.10 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    const narrativeOutput = {
+      headline: "All proxy claims test",
+      evidenceBaseSummary: "2 items",
+      keyFinding: "All extracted claims are contextual and excluded from aggregation.",
+      limitations: "Test limitations.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01", thesisRelevance: "tangential" }),
+      createAtomicClaim({ id: "AC_02", thesisRelevance: "irrelevant" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 75,
+        confidence: 80,
+        thesisRelevance: "tangential",
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createCBClaimVerdict({
+        claimId: "AC_02",
+        truthPercentage: 15,
+        confidence: 70,
+        thesisRelevance: "irrelevant",
+        supportingEvidenceIds: ["EV_02"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "contradicts" })],
+      }),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1", "q2"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.truthPercentage).toBe(50);
+    expect(result.confidence).toBe(0);
+    expect(result.verdict).toBe("UNVERIFIED");
   });
 });
 

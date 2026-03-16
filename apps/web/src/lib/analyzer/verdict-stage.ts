@@ -513,6 +513,7 @@ function parseAdvocateVerdict(
     confidenceTier: confidenceToTier(confidence),
     reasoning: String(raw.reasoning ?? ""),
     harmPotential: claim?.harmPotential ?? "medium",
+    thesisRelevance: claim?.thesisRelevance,
     isContested: Boolean(raw.isContested ?? false),
     supportingEvidenceIds: asStringArray(raw.supportingEvidenceIds),
     contradictingEvidenceIds: asStringArray(raw.contradictingEvidenceIds),

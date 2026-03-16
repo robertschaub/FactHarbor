@@ -754,6 +754,9 @@ export interface AtomicClaim {
   harmPotential: "critical" | "high" | "medium" | "low";
   isCentral: true;               // Always true (filtered)
   claimDirection: "supports_thesis" | "contradicts_thesis" | "contextual";
+  /** Relationship to the user's thesis. Non-direct claims may remain visible
+   *  in the report but should not contribute to aggregate truth. */
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
   keyEntities: string[];         // Named entities referenced
   checkWorthiness: "high" | "medium";
   specificityScore: number;      // 0-1, LLM-assessed. ≥0.6 required by Gate 1.
@@ -832,6 +835,8 @@ export interface CBClaimVerdict {
   confidence: number;            // 0-100 (adjusted by self-consistency spread)
   reasoning: string;             // LLM-generated explanation (includes challenge responses)
   harmPotential: "critical" | "high" | "medium" | "low";
+  /** Relationship of the underlying claim to the user's thesis. */
+  thesisRelevance?: "direct" | "tangential" | "irrelevant";
   isContested: boolean;
   supportingEvidenceIds: string[];
   contradictingEvidenceIds: string[];

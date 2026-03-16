@@ -761,6 +761,7 @@ const Pass2AtomicClaimSchema = z.object({
   harmPotential: z.enum(["critical", "high", "medium", "low"]).catch("low"),
   isCentral: z.boolean().catch(false),
   claimDirection: z.enum(["supports_thesis", "contradicts_thesis", "contextual"]).catch("contextual"),
+  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional().catch(undefined),
   keyEntities: z.array(z.string()).catch([]),
   checkWorthiness: z.enum(["high", "medium", "low"]).catch("medium"),
   specificityScore: z.number().catch(0.5),
@@ -1691,7 +1692,7 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
       // Lowercase all known enum fields
       const enumFields = [
         "category", "centrality", "harmPotential", "claimDirection",
-        "checkWorthiness", "groundingQuality",
+        "thesisRelevance", "checkWorthiness", "groundingQuality",
       ];
       for (const field of enumFields) {
         if (typeof normalized[field] === "string") {
@@ -4111,6 +4112,7 @@ function createUnverifiedFallbackVerdict(
     confidenceTier: "INSUFFICIENT" as const,
     reasoning,
     harmPotential: claim.harmPotential,
+    thesisRelevance: claim.thesisRelevance,
     isContested: false,
     supportingEvidenceIds: [],
     contradictingEvidenceIds: [],
@@ -5503,8 +5505,18 @@ export async function aggregateAssessment(
         : {
             min: verdict.truthPercentageRange.min,
             max: verdict.truthPercentageRange.max,
-          }
+        }
       : undefined;
+
+    const thesisRelevance = claim?.thesisRelevance;
+    if (thesisRelevance && thesisRelevance !== "direct") {
+      return {
+        truthPercentage: effectiveTruth,
+        confidence: verdict.confidence,
+        truthPercentageRange: effectiveRange,
+        weight: 0,
+      };
+    }
 
     return {
       truthPercentage: effectiveTruth,
