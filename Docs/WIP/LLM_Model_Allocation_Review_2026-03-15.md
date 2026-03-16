@@ -64,7 +64,7 @@ Strength (budget/standard/premium)
 
 | # | Stage | Function | File:Line | Task key | Strength | Calls/analysis |
 |---|-------|----------|-----------|----------|----------|----------------|
-| 7 | Stage 1 Pass 2 | Extract impliedClaim, roughClaims, backgroundDetails | `claimboundary-pipeline.ts:1782` | `verdict` ⚠️ | standard | 1–4 (retry) |
+| 7 | Stage 1 Pass 2 | Extract impliedClaim, roughClaims, backgroundDetails | `claimboundary-pipeline.ts:1788` | `extract_evidence` ✅ | budget | 1–4 (retry) |
 | 8 | Stage 3 Clustering | LLM-based boundary clustering | `claimboundary-pipeline.ts:4540` | `verdict` | standard | 1 |
 | 9 | Stage 4 Advocate | Initial verdict per claim | `verdict-stage.ts:460` | debateRoles.advocate | standard | 1 per claim |
 | 10 | Stage 4 Self-consistency | Stability sampling | `verdict-stage.ts:574–577` | debateRoles.selfConsistency | standard | 2 per claim |
@@ -73,8 +73,8 @@ Strength (budget/standard/premium)
 | 13 | Stage 5 Explanation | Rubric evaluation | `claimboundary-pipeline.ts:6001` | `verdict` | standard | 1 |
 
 **Per-claim calls (9–11):** advocate(1) + self-consistency(2) + reconciler(1) = 4 Sonnet calls per claim.
-**Per-analysis calls (7, 8, 12, 13):** Pass 2(1–4) + clustering(1) + narrative(1) + explanation(1) = 4–7 Sonnet calls.
-**For 2 claims:** 8 per-claim + 4–7 per-analysis = **~12 Sonnet calls, ~$0.120 (Anthropic)**
+**Per-analysis calls (8, 12, 13):** clustering(1) + narrative(1) + explanation(1) = 3 Sonnet calls. *(Pass 2 moved to extraction tier — see §3.1.)*
+**For 2 claims:** 8 per-claim + 3 per-analysis = **~11 Sonnet calls, ~$0.110 (Anthropic)**
 
 ### 3.3 Debate — cross-provider (challenger only)
 
