@@ -39,6 +39,11 @@
 
 Script improvements, deployment configuration, CI/CD pipeline setup, tooling recommendations
 
+## Tips from Role Learnings
+
+- **Viewer is shared cross-repo.** `xwiki-viewer.html` is identical in FactHarbor and BestWorkplace (`C:\DEV\BestWorkplace`). Changes must be copied to both repos, then both pushed for CI deployment. Only the viewer HTML is shared — build scripts differ.
+- **build_ghpages.py uses exact string patches.** `str.replace()` with exact matching. If you modify lines in the viewer that are patch targets, patches silently fail. After any viewer edit, verify all `html.replace(...)` calls in both repos' `build_ghpages.py` still find their targets. Run `python build_ghpages.py -o /tmp/test` and verify output.
+
 ## Anti-patterns
 
 - Application logic changes (delegate to Senior Developer)

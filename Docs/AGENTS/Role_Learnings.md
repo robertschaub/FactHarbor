@@ -36,23 +36,11 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** When claims are the sole research driver (no AnalysisContext framing), claim quality becomes the single most important pipeline input. A two-pass extraction (quick scan → preliminary search → evidence-grounded re-extraction) costs 3–5 extra Haiku calls but produces significantly more specific, research-ready claims. The preliminary evidence also seeds the main research loop, avoiding redundant re-fetching. This pattern applies whenever an LLM extraction task benefits from real-world grounding rather than relying on parametric knowledge alone.
 **Files:** `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.1
 
-### 2026-02-16 — Make EvidenceScope mandatory at prompt level, not schema level
-**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** tip
-**Learning:** When a downstream architecture depends on metadata quality (e.g., ClaimBoundary clustering depends on EvidenceScope), making fields required in the TypeScript schema is necessary but not sufficient — the LLM must be prompted with source-type-specific examples showing what meaningful scope data looks like even for non-scientific sources. A news article has methodology="journalistic reporting, single-source attribution" and temporal="2025-09 (publication date)". Without these examples, the LLM defaults to empty strings regardless of schema requirements. Combine prompt examples + Zod validation + retry for best results.
-**Files:** `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.2
-
 ### 2026-02-16 — Multi-reviewer brainstorming produces better architecture than solo design
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** useful-pattern
 **Learning:** The LLM debate pattern, triangulation scoring, and self-consistency check were all proposed during a brainstorming round and refined by 3 reviewers (Lead Architect, Lead Developer, Senior Architect). Key improvements came from the Lead Developer (Sonnet over Haiku for self-consistency, scope reduction for per-boundary verdicts, verdict-stage.ts module extraction) and Senior Architect (claim quality gate retry, structural consistency check, derivative validation). The brainstorming → per-idea assessment → convergence workflow produced a richer design than any single reviewer would have achieved. Document brainstorming ideas in a separate file from the main architecture doc to keep the review process clean.
 **Files:** `Docs/WIP/ClaimBoundary_Brainstorming_Ideas_2026-02-16.md`, `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §22
-
-### 2026-02-16 — Categorical vs continuous field design rule saves LLM consistency debates
-**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** useful-pattern
-**Learning:** The D5 field granularity discussion revealed a clean design rule: "Categorical for LLM classification outputs, continuous for LLM assessment outputs." LLMs produce categorical outputs (high/medium/low) more reliably than numeric ones (0.73). Fields used as gate thresholds or formula multipliers should be categorical (the LLM picks a bucket); fields used as direct numeric inputs in formulas (truth%, confidence, specificityScore) should be continuous. Applying this rule upfront — rather than debating each field individually — resolved 6 field granularity decisions in a single pass. Future type design should apply this rule before asking "how many levels."
-**Files:** `Docs/WIP/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` §8.1, §9.1
 
 ### 2026-02-22 — Bias calibration measures consistency, not correctness — distinguish these early
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
@@ -65,12 +53,6 @@ After completing a task, if you discovered something that would help future agen
 **Category:** tip
 **Learning:** The Executive Summary contains 15 prioritized action items with 6 identified quick wins. The D1-D5 plan only scheduled 3 of 15. Cross-referencing a consolidated priority list against any execution plan immediately reveals coverage gaps that would otherwise go unnoticed until later. This takes 15 minutes and prevents scope blindness — especially when a plan was built bottom-up from a specific problem (bias skew) rather than top-down from the full opportunity set.
 **Files:** `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/WIP/Report_Quality_Opportunity_Map_2026-02-22.md` §3
-
-### 2026-02-27 — AGENTS.md abstract-form rule is scoped to analysis prompts, not calibration data
-**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** AGENTS.md §Analysis Prompt Rules states "Prompt examples must be abstract (e.g., 'Entity A did X')". This rule applies specifically to LLM prompts under `apps/web/prompts/` — it prevents teaching-to-the-test in analysis. Calibration fixture data (`test/fixtures/`) is NOT covered by this rule. Abstract claims with placeholders ("Entity A has property P") cannot be web-searched and produce UNVERIFIED on both sides, yielding a misleading CE ≈ 0. Calibration fixtures must use concrete, researchable topics to produce meaningful metrics. This distinction is easy to miss during plan review.
-**Files:** `apps/web/test/fixtures/framing-symmetry-pairs.json`, `AGENTS.md` §Analysis Prompt Rules
 
 ### 2026-02-27 — Post-implementation root-cause analysis is higher leverage than threshold tuning
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
@@ -89,7 +71,7 @@ After completing a task, if you discovered something that would help future agen
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas
 **Role:** Lead Developer  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** useful-pattern
-**Learning:** When reviewing architecture proposals with brainstorming ideas, always cross-check the current codebase for integration points BEFORE writing the assessment. For the ClaimBoundary brainstorming review, discovering that (a) verdict temperature is hardcoded at 0.3 (not configurable), (b) aggregation uses a pluggable multiplicative weight chain, and (c) the current pipeline has 3 verdict paths (which the new pipeline collapses to 1) changed my recommendations materially. Without the cross-check, I would have underestimated Idea E's deterministic-mode conflict and overestimated Idea C's integration effort.
+**Learning:** When reviewing architecture proposals with brainstorming ideas, always cross-check the current codebase for integration points BEFORE writing the assessment. For the ClaimBoundary brainstorming review, discovering that (a) verdict temperature is hardcoded at 0.3 (not configurable), (b) aggregation uses a pluggable multiplicative weight chain, and (c) the current pipeline has 3 verdict paths (which the new pipeline collapses to 1) changed my recommendations materially. Without the cross-check, I would have underestimated Idea E's deterministic-mode conflict and overestimated Idea C's integration effort. (Example originally referenced orchestrated.ts, now removed — principle still applies to any pipeline module.)
 **Files:** `apps/web/src/lib/analyzer/aggregation.ts`, `apps/web/src/lib/analyzer/config.ts` (getDeterministicTemperature), `apps/web/src/lib/analyzer/orchestrated.ts` (verdict generation lines 7948-10710)
 
 ### 2026-02-22 — Calibration tests need a dedicated Vitest config and explicit timeout ownership
@@ -112,23 +94,11 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Do NOT use multi-turn message patterns (adding `assistant` + `user` messages to retry) with `Output.object({ schema })` on Anthropic. The `[system, user, assistant, user]` pattern has not been verified to work correctly with `tool_choice: required` and the synthetic `json` tool. Stick to the safe `[system, user]` pattern and append retry guidance to the user message content. The TypeScript type system also fights the dynamic message array — use `as const` on role literals or inline the messages directly.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (runPass2 retry loop)
 
-### 2026-02-18 — Config threading eliminates global mutation race conditions
-**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** useful-pattern
-**Learning:** Search modules (`search-cache.ts`, `search-circuit-breaker.ts`) used module-level state mutated by `web-search.ts` before each call. With concurrent searches using different configs (e.g., different TTL or circuit breaker thresholds), one call's config could be overwritten mid-flight by another. Fix: add optional config parameters to each function (`cacheConfig?`, `cbConfig?`), pass config from caller, remove global setter calls. This is safer than locks, maintains backward compatibility (callers that don't pass config get module defaults), and makes config flow explicit.
-**Files:** `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/search-circuit-breaker.ts`
-
 ### 2026-02-18 — Circuit breaker HALF_OPEN probe flag must be set at BOTH transition points
 **Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** gotcha
 **Learning:** When adding a `halfOpenProbeInFlight` flag to limit HALF_OPEN to one concurrent probe, the flag must be set when transitioning from OPEN → HALF_OPEN (inside the OPEN block), not just in the HALF_OPEN check block. The first call after timeout goes through the OPEN block, transitions state to HALF_OPEN, and returns `true` — it never hits the HALF_OPEN block. Missing the first transition point means the second concurrent call also enters the HALF_OPEN block with the flag still `false`, defeating the single-probe protection.
 **Files:** `apps/web/src/lib/search-circuit-breaker.ts`
-
-### 2026-02-18 — EnsureCreated() doesn't update schema — delete DB after entity changes
-**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** The API uses `EnsureCreated()` for SQLite, which creates the DB if missing but does NOT add new columns to existing tables. After adding `ParentJobId`, `RetryCount`, `RetriedFromUtc`, `RetryReason` to `JobEntity`, the running DB threw "table Jobs has no column named ParentJobId" on every request (500s on both job creation and listing). Fix: stop API, back up `factharbor.db`, delete it, restart — `EnsureCreated()` rebuilds with the full schema. This is a known EF Core limitation; the project intentionally avoids migrations for POC simplicity.
-**Files:** `apps/api/Data/Entities.cs`, `apps/api/factharbor.db`
 
 ### 2026-02-18 — Complex structured output schemas need retry logic as standard practice
 **Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
@@ -142,12 +112,6 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** In projects with large build artifacts (.next, bin, obj, test-output), a `.geminiignore` file is essential. It prevents the agent from indexing irrelevant files, which reduces noise in directory listings and saves tokens during codebase-wide operations. This is especially important for Next.js and .NET projects where build directories are deep and contains thousands of files.
 **Files:** `.geminiignore`
 
-### 2026-02-24 — Foundational GEMINI.md bridges system instructions with project mandates
-**Role:** Senior Developer  **Agent/Tool:** Gemini CLI
-**Category:** useful-pattern
-**Learning:** Creating a `GEMINI.md` file that references the project's central `AGENTS.md` ensures that the agent prioritizes project-specific engineering standards over its general system defaults from the start of every session. This "thin pointer" pattern maintains a single source of truth while providing tool-specific entry points.
-**Files:** `GEMINI.md`, `AGENTS.md`
-
 ### 2026-02-28 — Use IsolationLevel.Serializable for atomic check-and-increment in SQLite
 **Role:** Senior Developer  **Agent/Tool:** Gemini CLI (pro)
 **Category:** useful-pattern
@@ -160,30 +124,11 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Using `String.prototype.match()` with a global regex to extract sentences (e.g. `/[^.!?]+[.!?]+/g`) silently drops any text that doesn't match the pattern, such as decimal points in numbers (`3.14`) or segments without punctuation. Always prefer `String.prototype.split()` with a capturing group (e.g. `split(/([.!?]+(?:\s+|$))/)`) and recombine the segments. This ensures that 100% of the input text is preserved in the output, even if the heuristic fails to identify a sentence boundary correctly.
 **Files:** `apps/web/src/app/jobs/[id]/components/ExpandableText.tsx`
 
-### 2026-03-05 — Search provider geo params cause language-based evidence bias
-**Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** Passing `lr=lang_de` (language restriction) to Google CSE for a German-language claim causes results to be dominated by one country's domestic sources (Verfassungsschutz, BKA), producing a completely different verdict than the same claim in English (which gets global sources like GTD, Pew). Even `gl` (geography) can bias toward local/censored sources for sensitive topics (e.g., Iran human rights). Solution: never send language or geography params to search providers automatically. Instead, pass `detectedLanguage` and `inferredGeography` to the query generation LLM prompt only — let the LLM write queries in the right language, but let search stay unfiltered.
-**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/prompts/claimboundary.prompt.md`
-
 ### 2026-03-05 — LLM geography inference is unreliable for search gating
 **Role:** Senior Developer  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** gotcha
 **Learning:** Using an LLM to infer geography from claim text and then using that inference to gate search provider parameters is fragile. The LLM can associate input language with a country (German → Germany), infer geography from institutions that are actually international, or from cultural topic associations. If this inference then controls search API parameters (`gl`, `lr`), a wrong guess silently biases the entire evidence base. Keep LLM inference for advisory purposes (query generation) but don't let it control deterministic API parameters.
 **Files:** `apps/web/prompts/claimboundary.prompt.md`
-
-### 2026-03-10 — Automated drift tests protect UCM authoritative defaults
-**Role:** Senior Developer  **Agent/Tool:** Gemini CLI (pro)
-**Category:** useful-pattern
-**Learning:** When using file-backed defaults (`*.default.json`) for UCM, they can easily drift from their TypeScript constant counterparts in `config-schemas.ts`. A recursive comparison test (`config-drift.test.ts`) that fails the build on drift ensures that the JSON remains the authoritative source. This is critical for Admin UI visibility, as the UI relies on JSON schemas/defaults for comparison views. Any new tunable parameter must be explicitly set in both places.
-**Files:** `apps/web/test/unit/lib/config-drift.test.ts`, `apps/web/configs/`, `apps/web/src/lib/config-schemas.ts`
-
-### 2026-03-12 — Always copy the exact generateText call pattern from an existing pipeline call
-**Role:** Senior Developer  **Agent/Tool:** Claude Code (claude-opus-4-6)
-**Category:** gotcha
-**Learning:** The pipeline's `generateText` call has 5 interrelated parts that must all match: (1) system message with `providerOptions: getPromptCachingOptions()`, (2) at least one user message, (3) `output: Output.object({ schema })`, (4) top-level `providerOptions: getStructuredOutputProviderOptions()`, (5) `extractStructuredOutput(result)` with single arg. Getting any one wrong causes a silent runtime failure caught by the fail-open catch block — no build error, no test failure, just a silently ineffective function. The Fix 3 implementation had 5 bugs in its `generateText` call because it used a different pattern (`...spread` instead of nested properties, `rendered` instead of `rendered.content`, missing user message). Always copy-paste from an existing working call and adapt.
-**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (assessEvidenceApplicability)
-
 
 ## Technical Writer
 
@@ -199,13 +144,13 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** High-level project documents like Requirements and User Needs are often the last to be updated during a major architectural pivot (e.g., AnalysisContext → ClaimAssessmentBoundary). Specific documentation sweeps are necessary to bridge the gap between low-level implementation changes and high-level project goals, ensuring that stakeholders see a consistent vision.
 **Files:** `Docs/xwiki-pages/FactHarbor/Requirements/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Requirements/User Needs/WebHome.xwiki`
 
-## LLM Expert
-
-### 2026-02-19 — Anthropic tool calling soft refusal mechanism
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Sonnet 4.6) + Claude Opus 4.6
+### 2026-02-19 — `!important` required to override JS inline styles in media queries
+**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
 **Category:** gotcha
-**Learning:** When `structuredOutputMode: "jsonTool"` is used with Anthropic, the SDK creates a synthetic tool with `tool_choice: required`. For politically sensitive content, the model calls the tool with null/empty args (soft refusal) rather than producing a hard error. Crucially, the SDK silently discards ALL text blocks when `usesJsonResponseTool` is true (`@ai-sdk/anthropic/dist/index.mjs` line 2907) — any refusal message is invisible. The system only sees empty tool arguments. Schema `.catch()` defaults prevent crashes but the quality gate must detect empty fields. Fact-checking framing in the USER message is insufficient to override content policy — it must be in the SYSTEM prompt or the model must be switched (Haiku is less cautious than Sonnet for content policy).
-**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (runPass2), `apps/web/src/lib/analyzer/llm.ts` (getStructuredOutputProviderOptions)
+**Learning:** The viewer's `loadPage()` sets `document.getElementById('fileInfo').style.display = 'flex'` as an inline style. CSS media query rules (e.g. `.file-info{display:none}`) cannot override inline styles without `!important`. Any element whose visibility is toggled by JS must use `!important` in responsive CSS rules, otherwise the media query is silently ignored.
+**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (mobile `@media(max-width:480px)` block)
+
+## LLM Expert
 
 ### 2026-02-19 — Zod .catch() is transparent in JSON Schema generation
 **Role:** LLM Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
@@ -213,36 +158,11 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Zod's `.catch(default)` does NOT affect the JSON Schema generated by `zodToJsonSchema` or the AI SDK's internal schema conversion. The `parseCatchDef` function unwraps `.catch()` and delegates to the inner type. So `z.string().catch("")` produces `{"type": "string"}` — identical to `z.string()`. The `.catch()` only activates during `.safeParse()` / `.parse()`. This makes `.catch()` safe to add as a parse-time safety net without changing what the LLM sees in its tool definition.
 **Files:** `@ai-sdk/provider-utils/dist/index.mjs` (parseCatchDef ~line 851)
 
-### 2026-02-19 — Two-level Zod validation in AI SDK Output.object()
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
-**Category:** gotcha
-**Learning:** `Output.object({ schema })` does its own `schema.safeParse()` on the raw LLM response BEFORE your code runs. If you have `normalizePass2Output()` or other post-processing, it never executes when the SDK-level validation fails. Adding `.catch()` to the schema prevents the SDK from throwing `NoObjectGeneratedError`, letting your normalization + explicit validation run. Without `.catch()`, your normalization code is dead code for the failure case.
-**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Pass2OutputSchema, normalizePass2Output, runPass2)
-
-### 2026-02-13 — Context ID similarity threshold rationale (0.65)
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** tip
-**Learning:** The 0.65 threshold for `oldToNewSimilarityThreshold` is intentionally looser than dedup (0.85) because context refinement often reframes names significantly while preserving analytical scope. Since this is mapping (not merging), a false positive is recoverable — `ensureContextsCoverAssignments` restores original contexts for anything the LLM similarity layer misses. When tuning, tighten toward 0.75 if you see incorrect cross-context remaps in logs; loosen toward 0.55 only if refinement is aggressively rewriting context names.
-**Files:** `apps/web/src/lib/analyzer/orchestrated.ts` (buildOldToNewContextRemap), `apps/web/configs/calculation.default.json`
-
-### 2026-02-13 — One-to-many context splits not covered by Phase 4b
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** When refinement splits one old context into two new ones (e.g., "EU economic policy" → "EU fiscal" + "EU trade"), claims from the old context can only map to one new context (best-match wins). The unmapped claims fall through to `ensureContextsCoverAssignments` which restores the original context — acceptable but suboptimal. A future improvement could detect 1:N splits and distribute claims by sub-topic relevance via an additional LLM call.
-**Files:** `apps/web/src/lib/analyzer/orchestrated.ts` (lines 2152-2167)
-
 ### 2026-02-13 — assessTextSimilarityBatch is the shared workhorse for all semantic similarity
 **Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** useful-pattern
-**Learning:** `assessTextSimilarityBatch()` is reused across context dedup, evidence dedup, frame signal detection, anchor recovery, and now Phase 4b context remap — 14+ call sites. Any prompt or behavioral change to `TEXT_SIMILARITY_BATCH_USER` affects all of these. Always regression-test broadly when modifying this function or its prompt. The 200-char truncation per text is safe for context descriptions (typically <150 chars) but could clip long evidence statements in other call sites.
+**Learning:** `assessTextSimilarityBatch()` is reused across context dedup, evidence dedup, frame signal detection, anchor recovery, and now Phase 4b context remap — 14+ call sites. Any prompt or behavioral change to `TEXT_SIMILARITY_BATCH_USER` affects all of these. Always regression-test broadly when modifying this function or its prompt. The 200-char truncation per text is safe for context descriptions (typically <150 chars) but could clip long evidence statements in other call sites. (Note: many listed call sites were in orchestrated.ts which has been removed. Function now lives in evidence-deduplication.ts. Remaining call sites should be verified.)
 **Files:** `apps/web/src/lib/analyzer/orchestrated.ts` (assessTextSimilarityBatch, line 1995), `apps/web/prompts/orchestrated.prompt.md` (TEXT_SIMILARITY_BATCH_USER)
-
-### 2026-02-20 — Profile presets must define explicit provider intent for intent-stability
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** When debate profiles used `providers: {}` (empty), profile semantics depended on the global `llmProvider` — changing `llmProvider` from `anthropic` to `openai` would silently change what all profile-resolved debate roles used. Fix: profiles must populate all 5 provider fields explicitly. This also simplifies the diversity check: with all providers explicit, no sentinel/global-comparison logic is needed for profile-resolved configs. The sentinel is only needed for the no-profile backward-compatible path where providers are truly `undefined` (inherit global).
-**Files:** `apps/web/src/lib/config-schemas.ts` (DEBATE_PROFILES), `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (checkDebateTierDiversity)
-**Superseded (2026-02-23):** `debateProfile` presets removed entirely. Roles configured directly via `debateModelTiers` + `debateModelProviders`. The intent-stability problem no longer exists because there is no profile indirection layer.
 
 ### 2026-02-20 — Runtime warning emission requires a collector pattern when LLMCallFn contract is fixed
 **Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
@@ -250,29 +170,11 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** `LLMCallFn` returns `Promise<unknown>` — no room for side-channel data like warnings. To surface runtime events (e.g., provider fallback) into `resultJson.analysisWarnings`, pass an `AnalysisWarning[]` array to the factory (`createProductionLLMCall`) by closure. The factory's inner function appends to it. The pipeline threads `state.warnings` through `generateVerdicts` → factory. This avoids changing the `LLMCallFn` contract or verdict-stage's interface while still surfacing structured warnings in the analysis output.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (createProductionLLMCall, generateVerdicts)
 
-### 2026-02-22 — Opus challenger without Opus reconciler creates asymmetric debate
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** Upgrading only the challenger model to a higher tier (e.g., Opus) while keeping the reconciler at Sonnet creates an architectural asymmetry: the reconciler cannot fully evaluate whether the Opus challenger's arguments are valid or specious. The baseless challenge guard (`enforceBaselessChallengePolicy`) catches challenges without evidence backing, but it cannot catch sophisticated-sounding but wrong challenges that cite real evidence misleadingly. If upgrading model tiers in the debate, the reconciler is the higher-value placement — it's the decision-maker. Alternatively, upgrade both roles. Never upgrade only the adversary.
-**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts` (runVerdictStage, enforceBaselessChallengePolicy)
-
 ### 2026-02-22 — Verifiability assessment belongs at extraction (Stage 1), not verdict (Stage 4)
 **Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** tip
 **Learning:** When adding a claim verifiability field (`verifiable | evaluative | predictive | vague`), place it in the Stage 1 extraction prompt, not the verdict prompt. Reasons: (1) saves 30-40 LLM calls per non-verifiable claim by catching it early, (2) avoids anchoring risk — verifiability assessment in the same prompt as truthPercentage can bias the truth% reasoning, (3) enables downstream routing where evaluative claims get different search strategies or verdict presentations. Same implementation effort at either stage, strictly better value at Stage 1.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Stage 1 EXTRACT_CLAIMS), `apps/web/src/lib/analyzer/verdict-stage.ts`
-
-### 2026-02-22 — LLM self-evaluation is unreliable for quality dimensions correlated with generation biases
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** LLM self-evaluation of its own output (e.g., "rate the quality of this narrative") is unreliable for dimensions like clarity, completeness, and logical coherence — precisely the dimensions that matter for explanation quality. The model tends to rate same-family output higher. Better approach: decompose quality into structural checks (evidence citation count, counter-evidence addressed, length bounds) which are deterministic and zero-cost, then add rubric-based LLM eval with explicit scoring dimensions (not open-ended). Treat scores as diagnostic until validated against human evaluation.
-**Files:** N/A (design principle for B-8 and similar post-hoc quality evaluations)
-
-### 2026-02-24 — Required Reading must reference authoritative sources, never archived docs
-**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** Role Required Reading lists must point to authoritative, up-to-date documents — never to `Docs/ARCHIVE/`. Archived docs are historical snapshots that may be stale. When an authoritative xWiki page exists for the same topic, always reference that instead. During the agent knowledge restructuring, we found 8 references to `Docs/ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md` in role files and AGENTS.md, while the xWiki pages (`Pipeline Variants/WebHome.xwiki`, `AKEL Pipeline/WebHome.xwiki`) had comprehensive, up-to-date content (updated 2026-02-22). Tool-specific config files also had stale references to removed code (`orchestrated.ts`) that drifted because they duplicated content rather than pointing to the canonical source. Lesson: thin pointers > partial copies; authoritative xWiki > archived markdown.
-**Files:** `Docs/AGENTS/Roles/*.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules/00-factharbor-rules.md`
 
 ### 2026-02-25 — Hardcoded model fallbacks block UCM configuration
 **Role:** LLM Expert  **Agent/Tool:** Gemini Code Assist
@@ -286,53 +188,17 @@ _(No entries yet)_
 
 ## Code Reviewer
 
-### 2026-02-16 — Cross-check UCM prompt keys against prompt file sections
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** When reviewing code that uses UCM prompt keys (string-based LLM call routing like `llmCall("VERDICT_ADVOCATE", ...)`), always verify that every key referenced in the code has a corresponding section defined in the prompt file. In the CB pipeline review, `VERDICT_GROUNDING_VALIDATION` and `VERDICT_DIRECTION_VALIDATION` were called in verdict-stage.ts Step 5 but had no prompt definitions in claimboundary.prompt.md. This would have been a runtime crash. The prompt file's `requiredSections` frontmatter is the authoritative list — cross-check code call sites against it.
-**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts` (lines 424, 435), `apps/web/prompts/claimboundary.prompt.md`
-
-### 2026-02-16 — Verify default values match the spec at every layer
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** Configuration defaults can diverge across layers. The `mixedConfidenceThreshold` had three different defaults: truth-scale.ts (60), config-schemas.ts CalcConfig (60), and verdict-stage.ts VerdictStageConfig (40, matching the spec). But verdict-stage.ts never passed its value through to `percentageToClaimVerdict()`, so the effective default was 60 — mismatching the spec's 40. When a configurable parameter appears in multiple places, trace the actual call chain to confirm which default actually takes effect at runtime.
-**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/truth-scale.ts`, `apps/web/src/lib/config-schemas.ts`
-
-### 2026-02-17 — Vitest esbuild strips types without checking — ghost imports pass silently
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** After a type rename (ClaimBoundary → ClaimAssessmentBoundary), test files that import the old type name will still pass vitest because esbuild strips type annotations without validation. The project's `tsconfig.json` only includes `src/` — test files are never type-checked by `npm run build` either. This means stale type imports in test files go completely undetected. After any type rename, explicitly grep test files for the old name. Consider adding a `tsc --noEmit -p tsconfig.test.json` step.
-**Files:** `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts:51`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts:40`
-
 ### 2026-02-17 — Check `as any` casts for missing CalcConfig fields
 **Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** tip
 **Learning:** When new pipeline code accesses UCM config with `(calcConfig as any).fieldName`, it usually means the CalcConfig type definition hasn't been updated to include the new field. These casts bypass type safety for analysis-critical parameters (like harmPotentialMultipliers, triangulation config). Flag all `as any` config accesses as type-safety gaps. The fix is to update the CalcConfig Zod schema in config-schemas.ts to include the new fields with proper typing.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (lines 2173, 2187, 2191, 2312)
 
-### 2026-02-18 — Auth utility extraction reduces copy-paste drift
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
-**Category:** tip
-**Learning:** All route files duplicated auth checks with varying quality — some used timingSafeEqual, some used ===. Extracting into a shared `lib/auth.ts` utility ensures consistent timing-safe comparison and reduces copy-paste drift.
-**Files:** `apps/web/src/lib/auth.ts` (new), all route files under `apps/web/src/app/api/`
-
 ### 2026-02-18 — Circuit breaker double-counting causes early trips
 **Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
 **Category:** gotcha
 **Learning:** Circuit breaker `recordFailure()` was called in BOTH `web-search.ts` AND `claimboundary-pipeline.ts` for the same provider error, causing double-counting. With failureThreshold=3, circuits tripped after only 2 real failures. Record failures in exactly one place — the search abstraction layer.
 **Files:** `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
-
-### 2026-02-18 — Module-scoped state resets on HMR in Next.js dev mode
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
-**Category:** gotcha
-**Learning:** In Next.js dev mode, module-scoped Map/Set instances reset on HMR (hot module reload). The abort signals Map in the abort-job route was module-scoped, so cancelled jobs kept running after code changes. Use `globalThis` pattern for any in-memory state that must survive hot reloads. Pattern reference: `getRunnerQueueState()` in `internal-runner-queue.ts`.
-**Files:** `apps/web/src/app/api/internal/abort-job/[id]/id/route.ts`
-
-### 2026-02-18 — New modules need test files to avoid coverage gaps
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.5)
-**Category:** tip
-**Learning:** Three new modules (search-brave.ts, search-cache.ts, search-circuit-breaker.ts) shipped with zero test coverage. When adding new modules, create corresponding test files in the same session to avoid coverage gaps accumulating.
-**Files:** `apps/web/src/lib/search-brave.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/search-circuit-breaker.ts`
 
 ### 2026-02-18 — vi.resetModules() breaks instanceof across module boundaries
 **Role:** Code Reviewer  **Agent/Tool:** Claude Code (Sonnet 4.6)
@@ -364,18 +230,6 @@ _(No entries yet)_
 **Learning:** When multiple agents audit and implement warning severity changes, the most common failure mode is classifying analytical reality (scarce evidence, recency gaps) as system failures, then inflating severity. The fix: audit prompts must require classifying each warning into a category (routine/system-failure/analytical-reality) BEFORE applying the severity litmus test, because category constrains the severity ceiling. Without this ordering, agents repeatedly escalated `insufficient_evidence` to `error`. The reusable audit prompt at `Docs/AGENTS/Audit_Warning_Severity.md` encodes this pattern.
 **Files:** `Docs/AGENTS/Audit_Warning_Severity.md`, `AGENTS.md` (§ Report Quality & Event Communication)
 
-### 2026-03-05 — Display severity floor is a safety net — never remove it
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** The `warning-display.ts` severity floor (degrading warnings promoted from `info` to `warning` minimum) was accidentally removed during a refactor by an implementing agent. This silently allowed real quality issues to be hidden from users. The floor exists as a safety net: even if emission code accidentally sets `info` on a degrading type, the display layer catches it. Always verify the floor survives refactors: `normalizedSeverity === "info" ? "warning" : normalizedSeverity` for degrading types.
-**Files:** `apps/web/src/lib/analyzer/warning-display.ts` (classifyWarningForDisplay)
-
-### 2026-03-05 — Bucket assignment: user-facing meaning, not root cause
-**Role:** Code Reviewer  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** An implementing agent moved `budget_exceeded`, `structural_consistency`, and `verdict_integrity_failure` to the `provider` bucket because their root cause could involve LLM providers. But from the user's perspective, these are analysis quality issues ("the analysis ran out of budget" / "the analysis has structural problems"), not provider issues ("a provider had trouble"). Bucket assignment rule: ask "what does the user see?" not "what caused it internally?"
-**Files:** `apps/web/src/lib/analyzer/warning-display.ts` (WARNING_CLASSIFICATION registry)
-
 ## Security Expert
 
 ### 2026-03-01 — Retry endpoints are a hidden quota bypass vector
@@ -384,31 +238,7 @@ _(No entries yet)_
 **Learning:** `POST /v1/jobs/{jobId}/retry` creates a new job using the original job's invite code but never calls `TryClaimInviteSlotAsync`. Combined with unauthenticated access and public job listing, this gives an attacker 3 free analyses per failed job (MAX_RETRY_DEPTH=3). When reviewing any endpoint that creates jobs, always verify it goes through the invite slot claim path. The cancel endpoint has the same unauth issue but no quota bypass.
 **Files:** `apps/api/Controllers/JobsController.cs` (RetryJob), `apps/api/Services/JobService.cs` (CreateRetryJobAsync)
 
-### 2026-03-01 — Content-Length check is insufficient for SSRF size caps
-**Role:** Security Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** Checking `Content-Length` header before buffering only works when the server sends that header. Chunked transfer-encoded responses (common for dynamic content) have no Content-Length. `response.text()` and `response.arrayBuffer()` buffer the entire body regardless. A streaming byte counter that aborts at the limit is required for robust size enforcement. The existing `maxLength` parameter only slices extracted text after the full response is already in memory.
-**Files:** `apps/web/src/lib/retrieval.ts` (extractTextFromUrl, lines 450-494)
-
-### 2026-03-01 — Cross-check Next.js and .NET auth patterns independently
-**Role:** Security Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** tip
-**Learning:** The Next.js layer had 25+ admin routes all correctly using `checkAdminKey()` with timing-safe comparison, while the .NET layer's `AdminInviteCodesController` used plain `==`. Different tech stacks in the same project can drift on security patterns. Always audit both layers independently — don't assume one layer's security posture applies to the other.
-**Files:** `apps/web/src/lib/auth.ts`, `apps/api/Controllers/AdminInviteCodesController.cs`
-
 ## DevOps Expert
-
-### 2026-02-15 — Viewer is shared between FactHarbor and BestWorkplace
-**Role:** DevOps Expert / xWiki Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** `xwiki-viewer.html` is identical in both FactHarbor and BestWorkplace repos (`C:\DEV\BestWorkplace`). Any change to the viewer must be copied to both repos, then both must be pushed to trigger their respective GitHub Actions gh-pages deployments. The `build_ghpages.py` scripts differ between repos (BestWorkplace has extra image/attachment patches), so only the viewer HTML is shared — the build scripts are independent.
-**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (both repos)
-
-### 2026-02-15 — build_ghpages.py uses exact string patches on the viewer
-**Role:** DevOps Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** `build_ghpages.py` applies changes to the viewer HTML via Python `str.replace()` with exact string matching. If you modify lines in the viewer that are also patch targets, the patches will silently fail (no error, just no replacement). After modifying the viewer, always verify that all `html.replace(...)` calls in both repos' `build_ghpages.py` still find their target strings. BestWorkplace's build script has 2 additional patches (#12, #13 for image rendering) not in FactHarbor's.
-**Files:** `Docs/xwiki-pages/scripts/build_ghpages.py` (both repos), `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html`
 
 ### 2026-02-15 — GitHub OAuth token needs `workflow` scope for pushing workflow files
 **Role:** DevOps Expert  **Agent/Tool:** Claude Code (Opus 4.6)
@@ -416,23 +246,11 @@ _(No entries yet)_
 **Learning:** When creating a new repo and pushing `.github/workflows/` files, the `gh` CLI token may lack the `workflow` scope, causing a push rejection. Workaround: commit and push everything except the workflow file first, then add the workflow in a subsequent commit. Alternatively, re-authenticate with `gh auth login` and grant the `workflow` scope.
 **Files:** `.github/workflows/deploy-docs.yml`
 
-### 2026-02-19 — `!important` required to override JS inline styles in media queries
-**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
-**Category:** gotcha
-**Learning:** The viewer's `loadPage()` sets `document.getElementById('fileInfo').style.display = 'flex'` as an inline style. CSS media query rules (e.g. `.file-info{display:none}`) cannot override inline styles without `!important`. Any element whose visibility is toggled by JS must use `!important` in responsive CSS rules, otherwise the media query is silently ignored.
-**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (mobile `@media(max-width:480px)` block)
-
 ### 2026-02-19 — Cloudflare Worker + KV is the right fit for static-site analytics
 **Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
 **Category:** useful-pattern
 **Learning:** For a GitHub Pages static site needing privacy-preserving page view tracking, a Cloudflare Worker + KV namespace is the minimal viable backend. Free tier handles 100K req/day. KV data is completely independent of the gh-pages branch — `force_orphan: true` deployments do not affect analytics data. The worker can be deployed and updated with `npx wrangler deploy` without touching any application code. Analytics is opt-in via `--analytics-url` build flag, keeping the viewer functional in standalone/local mode.
 **Files:** `Docs/xwiki-pages/analytics/worker.js`, `Docs/xwiki-pages/analytics/wrangler.toml`
-
-### 2026-02-19 — build_ghpages.py patch strings must be kept in sync with viewer edits
-**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
-**Category:** gotcha
-**Learning:** `build_ghpages.py` patches the viewer via exact `str.replace()` matches. When new code is inserted into a patched region of the viewer (e.g., `Analytics.trackPageView(ref)` was inserted between two lines that patch #5 targeted), the patch target string must be updated to include the new line. A silent failure (no error, no replacement) is the symptom — always verify with a test build after any viewer edit that touches a patched region. Run `python build_ghpages.py -o /tmp/test` and grep the output for expected strings.
-**Files:** `Docs/xwiki-pages/scripts/build_ghpages.py` (patches #5, #8, #9, #10, #11, #12), `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html`
 
 ---
 

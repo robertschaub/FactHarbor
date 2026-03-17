@@ -39,6 +39,11 @@
 
 Security audit reports, vulnerability assessments, remediation recommendations
 
+## Tips from Role Learnings
+
+- **Content-Length is unreliable for size caps.** Chunked transfer-encoded responses have no Content-Length. `response.text()` buffers the entire body regardless. Use a streaming byte counter that aborts at the limit for robust SSRF size enforcement.
+- **Audit each tech stack independently.** Different tech stacks in the same project drift on security patterns (e.g., Next.js using timing-safe comparison while .NET uses `==`). Never assume one layer's security posture applies to the other.
+
 ## Anti-patterns
 
 - Feature design (focus on security, not functionality)

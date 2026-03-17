@@ -45,6 +45,14 @@
 
 Prompt improvement proposals, LLM behavior analysis reports, model comparison assessments
 
+## Tips from Role Learnings
+
+- **Anthropic soft refusal.** With `structuredOutputMode: "jsonTool"`, Anthropic models soft-refuse sensitive content by calling the tool with null/empty args — no hard error. The SDK silently discards all text blocks, making refusal invisible. Quality gates must detect empty fields. Fact-checking framing must be in the SYSTEM prompt, not just USER.
+- **Two-level SDK validation.** `Output.object({ schema })` runs `schema.safeParse()` BEFORE your code. Add `.catch()` defaults to prevent `NoObjectGeneratedError` — this lets your normalization/validation logic actually execute on failures.
+- **Debate model symmetry.** Never upgrade only the challenger model tier. The reconciler is the decision-maker — if it can't evaluate the challenger's arguments, sophisticated-sounding but wrong challenges slip through. Upgrade reconciler first, or both.
+- **LLM self-eval bias.** LLMs rate same-family output higher on correlated dimensions (clarity, completeness, coherence). Prefer structural checks (citation count, counter-evidence addressed) + rubric-based eval with explicit scoring dimensions. Treat scores as diagnostic until validated against human evaluation.
+- **Schema required ≠ LLM will populate.** Making fields required in Zod schema is necessary but not sufficient. The LLM prompt must include source-type-specific examples showing what meaningful values look like. Combine prompt examples + Zod validation + retry. *(Cross-promoted from Lead Architect learnings.)*
+
 ## Anti-patterns
 
 - Using test-case-specific terms in prompt examples

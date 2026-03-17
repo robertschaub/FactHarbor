@@ -49,6 +49,10 @@
 
 Updated governance docs, protocol gap analyses, cross-reference consistency audits, tool config synchronization, role definition updates
 
+## Tips from Role Learnings
+
+- **Required Reading must reference authoritative sources.** When maintaining role definitions and Required Reading lists, ensure every referenced document is the authoritative source for that topic — not a summary, copy, or outdated version. Agents loading stale or secondary documents waste context and may follow superseded guidance.
+
 ## Anti-patterns
 
 - Making product or architectural decisions (this role governs agent process, not product direction)

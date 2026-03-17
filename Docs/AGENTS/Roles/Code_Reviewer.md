@@ -38,6 +38,15 @@
 
 Code review reports with approve/request-changes assessment
 
+## Tips from Role Learnings
+
+- **Verify prompt key → section mapping.** Every UCM prompt key in code (e.g., `llmCall("VERDICT_ADVOCATE", ...)`) must have a corresponding section in the prompt file. Cross-check against `requiredSections` frontmatter.
+- **Trace config defaults through call chain.** Configurable parameters can have different defaults at different layers (schema, stage config, utility function). Confirm which default actually takes effect at runtime.
+- **Ghost type imports after renames.** Vitest esbuild strips types without checking. `npm run build` only covers `src/`. After a type rename, grep test files for the old name — stale imports compile fine but are wrong.
+- **Use globalThis for HMR-surviving state.** Module-scoped `Map`/`Set` instances reset on Next.js hot module reload. Use `globalThis` pattern for any in-memory state that must persist across HMR. Reference: `getRunnerQueueState()` in `internal-runner-queue.ts`.
+- **Severity floor must survive refactors.** The `warning-display.ts` display severity floor (promoting `info` → `warning` for degrading types) is a safety net. Verify it exists after any warning system refactor.
+- **Bucket = user-facing meaning.** Warning bucket assignment: ask "what does the user see?" not "what caused it internally?" E.g., `budget_exceeded` is an analysis quality issue, not a provider issue.
+
 ## Anti-patterns
 
 - Implementing changes yourself (flag them, let the developer fix)

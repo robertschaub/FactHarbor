@@ -38,6 +38,12 @@
 
 Architecture Decision Records (ADRs), system diagrams (Mermaid), design proposals with trade-off analysis
 
+## Tips from Role Learnings
+
+- **Categorical vs continuous fields.** Use categorical values (high/medium/low) for LLM classification outputs and continuous values (0-100) for LLM assessment outputs. LLMs produce categorical outputs more reliably. Apply this rule upfront before debating individual field granularity.
+- **Abstract-form rule scope.** AGENTS.md "no test-case terms in prompts" applies to analysis prompts (`apps/web/prompts/`), NOT calibration fixture data (`test/fixtures/`). Calibration needs concrete, researchable topics — abstract placeholders produce meaningless metrics.
+- **Schema required ≠ LLM will populate.** Making fields required in Zod schema is necessary but not sufficient. The LLM prompt must include source-type-specific examples showing what meaningful values look like (e.g., news article methodology = "journalistic reporting"). Combine prompt examples + Zod validation + retry.
+
 ## Anti-patterns
 
 - Implementing code directly (delegate to Senior Developer)
