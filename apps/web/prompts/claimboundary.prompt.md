@@ -480,8 +480,9 @@ Given a claim and source content, extract evidence items with full metadata incl
 ### Rules
 
 - Do not assume any particular language. Extract evidence in the source's original language.
-- **EvidenceScope is MANDATORY**: Every item must have `methodology`, `temporal` fields populated. Geographic/system boundaries if applicable.
-- **analyticalDimension**: What specific property or metric this evidence measures. This captures WHAT is being measured, distinct from methodology (HOW it is measured). For example, if a claim has multiple verifiable dimensions (e.g., Property A and Property B), evidence about Property A should have a different `analyticalDimension` than evidence about Property B. Use short, descriptive labels in the source's language.
+- **EvidenceScope is MANDATORY**: Every item must have `methodology`, `temporal`, and `analyticalDimension` fields populated. Geographic/system boundaries if applicable.
+- **analyticalDimension**: What specific property or metric this evidence measures. This captures WHAT is being measured, distinct from methodology (HOW it is measured). For example, if a claim has multiple verifiable dimensions (e.g., Property A and Property B), evidence about Property A should have a different `analyticalDimension` than evidence about Property B. Use short, descriptive labels in the source's language. When evidence is general and does not target a specific measurable property, use a short generic label in the source's language indicating that the evidence is general rather than property-specific. Prefer terminology already present in the source text itself. Do not invent abstract taxonomy labels.
+- **Implementation note**: `analyticalDimension` is prompt-required but not schema-enforced. The runtime schema still accepts omission and defaults missing values to `undefined`, so this is a behavior nudge rather than a hard contract.
 - **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
@@ -526,7 +527,7 @@ Return a JSON object:
         "temporal": "string — time period or date",
         "geographic": "string (optional) — location/region",
         "boundaries": "string (optional) — system boundaries",
-        "analyticalDimension": "string (optional) — what property/metric is measured",
+        "analyticalDimension": "string (REQUIRED) — what property/metric is measured",
         "additionalDimensions": {}
       },
       "probativeValue": "high",
