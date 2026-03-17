@@ -577,45 +577,24 @@ File naming: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`
 
 ## 5. Global Rules
 
-### 5.1 Terminology Precision
-
-**ALWAYS use correct terms as defined in `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki`:**
-
-| Correct Term | NEVER Use | Meaning |
-|--------------|-----------|---------|
-| ClaimAssessmentBoundary | "AnalysisContext", "Scope" (alone), "Framework", "Context" | Top-level analytical frame |
-| AtomicClaim | "Fact", "Context" | Single verifiable assertion extracted from user input |
-| EvidenceScope | "Context" (for source metadata) | Per-evidence source metadata |
-| EvidenceItem | "Fact" (in new code) | Extracted evidence from source |
-| ArticleFrame | "Context" (for narrative) | Narrative background framing |
-
-### 5.2 Generic Design
-
-- **No hardcoded domain terms** in prompts or code
-- **No test-case terms** in prompt examples
-- **Parameterize** instead of specialize
-- **Abstract examples** using "Entity A", "Event E", "Action X"
-
-### 5.3 Input Neutrality
-
-- Questions and equivalent statements MUST yield identical analysis outcomes
-- LLM-first equivalence: Raw user input passed directly to Stage 1; LLM handles semantic equivalence without deterministic normalization
-- Phrasing (question vs statement) must NOT affect research depth or verdict structure
-- Tolerance: verdict difference <= 4% (due to LLM stochasticity)
-
-### 5.4 Pipeline Integrity
-
-- All stages execute: Understand → Research → Verdict
-- No stage skipping for "easy" cases
-- Every verdict cites supporting evidence
+> The following rules are defined authoritatively in `/AGENTS.md` and apply to all
+> agent work. Read them there — they are not duplicated here to avoid drift.
+>
+> - **Terminology Precision** — AGENTS.md § Terminology table
+> - **Generic Design** — AGENTS.md § Generic by Design
+> - **Input Neutrality** — AGENTS.md § Input Neutrality
+> - **Pipeline Integrity** — AGENTS.md § Pipeline Integrity
 
 ### 5.5 Documentation Sync
 
-After any code change:
-1. Update relevant documentation
-2. Check terminology consistency
-3. Verify cross-references
-4. Update CHANGELOG.md if significant
+After any code change that **adds, removes, or renames** a user-facing concept,
+API endpoint, configuration parameter, or pipeline stage:
+
+1. **Flag it** in your completion output ("For next agent" field): list which docs
+   may need updating and why
+2. **Do not inline doc updates** unless the task explicitly includes documentation
+3. Documentation updates are a separate task — the Captain or Technical Writer
+   will pick them up
 
 ---
 

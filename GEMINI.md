@@ -1,3 +1,5 @@
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-17 -->
+
 # GEMINI.md
 
 > **System Instruction for Gemini Agents (CLI & Code Assist)**

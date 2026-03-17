@@ -1,3 +1,5 @@
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-17 -->
+
 # FactHarbor — Cline Rules
 
 > **Canonical source:** `/AGENTS.md`. This file is a summary. If rules diverge, follow AGENTS.md.

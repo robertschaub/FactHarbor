@@ -2,6 +2,7 @@
 description: FactHarbor core project rules — applies to all files
 alwaysApply: true
 ---
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-17 -->
 
 # FactHarbor — Core Rules
 

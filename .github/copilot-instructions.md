@@ -1,3 +1,5 @@
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-17 -->
+
 # Copilot / AI agent instructions — FactHarbor
 
 > **Canonical source:** `/AGENTS.md`. This file is a summary for inline completions. If rules diverge, follow AGENTS.md.

@@ -631,3 +631,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-17 | Agents Supervisor | Codex (GPT-5) | Phase 3 Cleanup — Remove Redundant Rules
+**Task:** Execute Phase 3 of `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md`: remove duplicated global-rule content from collaboration rules and add sync markers to tool configs.
+**Files touched:** `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules/00-factharbor-rules.md`, `.cursor/rules/factharbor-core.mdc`, `GEMINI.md`.
+**Key decisions:** Replaced `Multi_Agent_Collaboration_Rules.md` §5.1-§5.4 with a single canonical-reference block pointing to `/AGENTS.md` to avoid drift. Rewrote §5.5 to require flagging documentation follow-up in completion outputs instead of forcing inline doc edits. Added dated sync markers only to the five files requested in the task.
+**Open items:** Remaining cleanup-plan phases are still open (`Phase 2`, `Phase 4`, `Phase 5`, `Phase 6`).
+**Warnings:** `GEMINI.md` still contains model-version-specific guidance; that staleness was outside this Phase 3 scope and remains for a later cleanup pass.
+**For next agent:** If later phases touch governance docs again, keep the new `/AGENTS.md` cross-reference pattern in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` and update the sync-marker dates when tool-config summaries are resynced. Documentation follow-up may be needed if any external docs cite the old §5.1-§5.4 text directly.
+**Learnings:** No.
+
+---
