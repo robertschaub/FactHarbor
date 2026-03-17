@@ -6,9 +6,10 @@
 
 ## Project Overview
 
-Two apps:
+Two apps + one tool:
 - `apps/api` — ASP.NET Core API (.NET 8, SQLite). Run: `cd apps/api && dotnet watch run` (port 5000).
 - `apps/web` — Next.js app (UI + analysis pipeline). Run: `cd apps/web && npm run dev` (port 3000).
+- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews.
 
 Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pipeline -> Results back to API.
 

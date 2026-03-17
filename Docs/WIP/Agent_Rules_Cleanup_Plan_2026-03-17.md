@@ -19,8 +19,8 @@ The FactHarbor agent governance ecosystem has grown organically over ~6 weeks of
 - `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` — Collaboration protocol (~730 lines)
 - `Docs/AGENTS/Multi_Agent_Meta_Prompt.md` — Task spawning template (~443 lines)
 - `Docs/AGENTS/Role_Learnings.md` — Agent-contributed tips (~445 lines)
-- `Docs/AGENTS/Agent_Outputs.md` — Rolling completion log (~5,558 lines)
-- `Docs/AGENTS/Handoffs/` — 20 handoff files
+- `Docs/AGENTS/Agent_Outputs.md` — Rolling completion log (~5,500 lines)
+- `Docs/AGENTS/Handoffs/` — 1 active handoff file + README (19 already archived to `Docs/ARCHIVE/Handoffs/`)
 - `Docs/AGENTS/Roles/` — 11 role definition files
 
 ---
@@ -55,7 +55,7 @@ The FactHarbor agent governance ecosystem has grown organically over ~6 weeks of
 | `README.md` | 78 | Index of agent docs | ✅ Good |
 | `Multi_Agent_Collaboration_Rules.md` | 730 | Workflows, roles, templates | ⚠️ Large; terminology table duplicates AGENTS.md; last reviewed 2026-02-10 |
 | `Multi_Agent_Meta_Prompt.md` | 443 | Agent spawning template | ⚠️ Examples reference removed pipelines |
-| `Agent_Outputs.md` | 5,558 | Rolling completion log | ❌ Massively oversized, no archival policy enforced |
+| `Agent_Outputs.md` | ~5,500 | Rolling completion log | ❌ Oversized; existing archival policy lacks thresholds |
 | `Role_Learnings.md` | 445 | Tips/gotchas per role | ⚠️ Growing, needs curation |
 | `Audit_Warning_Severity.md` | 89 | Reusable audit prompt | ✅ Good |
 | `AGENTS_xWiki.md` | 185 | xWiki editing rules | ✅ Good |
@@ -65,11 +65,11 @@ The FactHarbor agent governance ecosystem has grown organically over ~6 weeks of
 | `Role_Code_Review_Agent.md` | 5 | ❌ Dead redirect stub | ❌ Delete |
 | `TECH_WRITER_START_HERE.md` | 5 | ❌ Dead redirect stub | ❌ Delete |
 
-### Handoffs/ (20 files)
+### Handoffs/ (1 active + 19 archived)
 
 | Health | Details |
 |--------|---------|
-| ⚠️ | 20 files spanning 2026-02-18 to 2026-03-16. Oldest are 4 weeks old. No archival has been performed. The Consolidate WIP procedure covers WIP/ but handoffs also need periodic cleanup. |
+| ✅ | Archival already performed. Active folder contains only `2026-03-01_Security_Expert_PreRelease_Review.md` + `README.md`. 19 consumed files already in `Docs/ARCHIVE/Handoffs/`. |
 
 ---
 
@@ -84,14 +84,14 @@ The FactHarbor agent governance ecosystem has grown organically over ~6 weeks of
 | S3 | `Docs/AGENTS/Multi_Agent_Meta_Prompt.md:205` | Example says "Must work with both pipeline modes (Orchestrated, Monolithic Dynamic)" — both removed | MEDIUM |
 | S4 | `Docs/AGENTS/Role_Code_Review_Agent.md` | Dead redirect stub (5 lines, "Moved to Roles/Code_Reviewer.md") | LOW |
 | S5 | `Docs/AGENTS/TECH_WRITER_START_HERE.md` | Dead redirect stub (5 lines, "Moved to Roles/Technical_Writer.md") | LOW |
-| S6 | `Multi_Agent_Collaboration_Rules.md` header | "Last Reviewed: 2026-02-10" — over 5 weeks stale | LOW |
+| S6 | `Multi_Agent_Collaboration_Rules.md` | Both `Date: 2026-02-10` (line 4) and `Last Reviewed: 2026-02-10` (line 730) are 5+ weeks stale. `Multi_Agent_Meta_Prompt.md` also has `Last Reviewed: 2026-02-10` (line 443). | LOW |
 
 ### Category 2: OVERSIZED / ARCHIVAL NEEDED (operational drag — bloats context, slows agents)
 
 | # | File | Issue | Severity |
 |---|------|-------|----------|
-| A1 | `Docs/AGENTS/Agent_Outputs.md` | 5,558 lines. Agents told to "read Agent_Outputs.md" on task start — this wastes massive context. Need archival policy + execute first archive. | HIGH |
-| A2 | `Docs/AGENTS/Handoffs/` | 20 files, oldest 4 weeks. Most are consumed. Need archival pass. | MEDIUM |
+| A1 | `Docs/AGENTS/Agent_Outputs.md` | ~5,500 lines. Agents instructed to "find the most recent relevant entries" on task start, but the file is so large that scanning it wastes context. AGENTS.md says "Captain may archive old entries during Consolidate WIP" but sets no threshold or cadence — need concrete thresholds. | HIGH |
+| A2 | ~~`Docs/AGENTS/Handoffs/`~~ | ~~20 files, oldest 4 weeks.~~ **RESOLVED** — archival already performed. Only 1 active file remains. | ~~MEDIUM~~ N/A |
 | A3 | `Docs/AGENTS/Role_Learnings.md` | 445 lines. Not urgent but Captain should curate: promote best learnings to role files, archive dated ones. | LOW |
 
 ### Category 3: INCONSISTENCIES (agents get conflicting signals)
@@ -114,8 +114,8 @@ The FactHarbor agent governance ecosystem has grown organically over ~6 weeks of
 | # | Gap | Impact | Recommendation |
 |---|-----|--------|----------------|
 | G1 | No `apps/web/AGENTS.md` | Web app is the complex heart of the system. No path-specific guidance for web-only patterns. | **Create** a lean `apps/web/AGENTS.md` covering: pipeline file structure, prompt file conventions, test patterns, key modules. Similar to `apps/api/AGENTS.md`. |
-| G2 | No Agent_Outputs.md archival policy | File grows unbounded. Agents waste context reading 5000+ lines of old entries. | **Add rule** to AGENTS.md: "When Agent_Outputs.md exceeds 200 lines, archive entries older than 2 weeks to `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md`." |
-| G3 | No Handoffs/ archival trigger | Handoff files accumulate. Consolidate WIP covers WIP/ but not Handoffs/. | **Add rule** to AGENTS.md: "During Consolidate WIP, also archive consumed handoff files older than 2 weeks to `Docs/ARCHIVE/`." |
+| G2 | Agent_Outputs.md archival policy lacks thresholds | AGENTS.md already says "Captain may archive old entries during Consolidate WIP" but sets no size/age trigger. File grows unbounded (~5,500 lines). | **Refine existing rule** in AGENTS.md: add concrete thresholds — "When Agent_Outputs.md exceeds 200 lines, archive entries older than 2 weeks to `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md`." |
+| G3 | Handoffs/ archival trigger lacks thresholds | AGENTS.md and `Handoffs/README.md` both say "archive during Consolidate WIP" but set no cadence. (Note: archival *has* been performed — 19 files already in archive — but the trigger was ad-hoc.) | **Refine existing rule** in AGENTS.md: add threshold — "During Consolidate WIP, archive consumed handoff files older than 2 weeks to `Docs/ARCHIVE/Handoffs/`." |
 | G4 | Missing: tool-to-model mapping guidance | AGENTS.md §Tool Strengths Reference lists tools but not which models to use with each. Agents sometimes pick suboptimal model tiers. | **Expand** Tool Strengths Reference table to include recommended model tier per task type. |
 | G5 | `Multi_Agent_Collaboration_Rules.md` §5.5 Documentation Sync is aspirational | "After any code change: update docs" — agents almost never do this automatically. | **Rewrite** to be pragmatic: "After any code change that adds/removes/renames a public-facing concept, flag documentation updates needed in your completion output. Doc updates are a separate task, not a mandatory inline step." |
 
@@ -143,17 +143,17 @@ These fixes prevent agents from following wrong instructions.
 | 1.3 | Fix stale examples in Meta-Prompt (remove Orchestrated/Monolithic Dynamic references) | `Docs/AGENTS/Multi_Agent_Meta_Prompt.md` | 10 min |
 | 1.4 | Delete dead redirect stubs | `Docs/AGENTS/Role_Code_Review_Agent.md`, `Docs/AGENTS/TECH_WRITER_START_HERE.md` | 2 min |
 | 1.5 | Add `tools/vscode-xwiki-preview` to tool configs missing it | `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules/00-factharbor-rules.md` | 5 min |
-| 1.6 | Update "Last Reviewed" date in Multi_Agent_Collaboration_Rules.md | `Multi_Agent_Collaboration_Rules.md` | 1 min |
+| 1.6 | Update stale dates: `Date:` (line 4) and `Last Reviewed:` (line 730) in `Multi_Agent_Collaboration_Rules.md`; `Last Reviewed:` (line 443) in `Multi_Agent_Meta_Prompt.md` | `Multi_Agent_Collaboration_Rules.md`, `Multi_Agent_Meta_Prompt.md` | 2 min |
 
-### Phase 2: Archive & Reduce Bloat (HIGH priority, ~45 min)
+### Phase 2: Archive & Reduce Bloat (HIGH priority, ~30 min)
 
 These actions reduce context waste and improve agent efficiency.
 
 | # | Action | Files | Effort |
 |---|--------|-------|--------|
 | 2.1 | Archive Agent_Outputs.md: move entries older than 2 weeks to `Docs/ARCHIVE/Agent_Outputs_2026-02.md` and `..._2026-03-early.md`. Keep only entries from 2026-03-10 onward in the active file. | `Docs/AGENTS/Agent_Outputs.md`, `Docs/ARCHIVE/` | 20 min |
-| 2.2 | Archive consumed Handoffs: move files from February (2026-02-*) to `Docs/ARCHIVE/Handoffs/`. Keep March files. | `Docs/AGENTS/Handoffs/` | 15 min |
-| 2.3 | Add archival policy rules to AGENTS.md | `AGENTS.md` | 10 min |
+| ~~2.2~~ | ~~Archive consumed Handoffs~~ | **ALREADY DONE** — 19 files already in `Docs/ARCHIVE/Handoffs/`. Only 1 active handoff remains. No action needed. | 0 min |
+| 2.3 | Refine existing archival policy in AGENTS.md — add concrete thresholds (size/age triggers) to the existing "Captain may archive" guidance | `AGENTS.md` | 10 min |
 
 ### Phase 3: Remove Redundancy (MEDIUM priority, ~20 min)
 
@@ -193,7 +193,7 @@ Each prompt is designed for the specific tool's capabilities, context limits, an
 
 ---
 
-### Prompt 1: Claude Code (Sonnet 4.6) — Phase 1 Stale Content Fixes
+### Prompt 1: Claude Code (Mid-Tier) — Phase 1 Stale Content Fixes
 
 ```
 As Agents Supervisor, execute Phase 1 of the Agent Rules Cleanup Plan
@@ -227,8 +227,10 @@ You have 6 tasks — do them all in this session:
    Add "- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews"
    to the project overview section of each file.
 
-1.6 — Edit `Multi_Agent_Collaboration_Rules.md`:
-   Update the footer "Last Reviewed: 2026-02-10" to "Last Reviewed: 2026-03-17"
+1.6 — Update stale dates in governance docs:
+   - `Multi_Agent_Collaboration_Rules.md` line 4: change `**Date:** 2026-02-10` to `**Date:** 2026-03-17`
+   - `Multi_Agent_Collaboration_Rules.md` line 730: change `**Last Reviewed:** 2026-02-10` to `**Last Reviewed:** 2026-03-17`
+   - `Multi_Agent_Meta_Prompt.md` line 443: change `**Last Reviewed:** 2026-02-10` to `**Last Reviewed:** 2026-03-17`
 
 After all edits, run `npm -w apps/web run build` to verify nothing broke.
 Commit with: "chore(agents): fix stale content in agent governance files"
@@ -236,40 +238,42 @@ Commit with: "chore(agents): fix stale content in agent governance files"
 
 ---
 
-### Prompt 2: Claude Code (Sonnet 4.6) — Phase 2 Archive & Reduce Bloat
+### Prompt 2: Claude Code (Mid-Tier) — Phase 2 Archive & Reduce Bloat
 
 ```
 As Agents Supervisor, execute Phase 2 of the Agent Rules Cleanup Plan
 (Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md).
 
 Task 2.1 — Archive old Agent_Outputs.md entries:
-- Read Docs/AGENTS/Agent_Outputs.md
+- Read Docs/AGENTS/Agent_Outputs.md (~5,500 lines)
 - Keep ONLY entries dated 2026-03-10 and newer in the active file
 - Move all older entries to Docs/ARCHIVE/Agent_Outputs_Pre_2026-03-10.md
   with a header: "# Archived Agent Outputs (before 2026-03-10)"
 - Ensure the active file retains its header and format
 
-Task 2.2 — Archive consumed Handoffs:
-- Create Docs/ARCHIVE/Handoffs/ directory if it doesn't exist
-- Move ALL files from Docs/AGENTS/Handoffs/ dated 2026-02-* to Docs/ARCHIVE/Handoffs/
-- Keep files dated 2026-03-* in the active Handoffs folder
-- Update Docs/ARCHIVE/README_ARCHIVE.md with the new archived files
-- Keep Docs/AGENTS/Handoffs/README.md in place
+(Task 2.2 — Handoff archival: SKIP — already done. 19 files in Docs/ARCHIVE/Handoffs/,
+only 1 active handoff remains.)
 
-Task 2.3 — Add archival policy to AGENTS.md:
-- In the Agent Exchange Protocol section, after the "Rules" subsection, add:
+Task 2.3 — Refine existing archival policy in AGENTS.md:
+- AGENTS.md already says (line 377): "Cleanup: During Consolidate WIP (or periodically),
+  the Captain may archive old entries from Agent_Outputs.md and clear processed handoff files."
+- This lacks concrete thresholds. In the Agent Exchange Protocol section, find the
+  existing "Cleanup:" bullet and replace it with a subsection:
 
-### Archival Policy
+### Archival Thresholds
+
+The existing cleanup guidance ("Captain may archive during Consolidate WIP") applies
+with these concrete triggers:
 
 - **Agent_Outputs.md**: When the file exceeds 200 lines, archive entries older
   than 2 weeks to `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md`. The active file
   should contain only recent entries that agents may need for context.
-- **Handoffs/**: During Consolidate WIP (or when Handoffs/ exceeds 15 files),
-  archive consumed handoff files older than 2 weeks to `Docs/ARCHIVE/Handoffs/`.
+- **Handoffs/**: When the active folder exceeds 15 files, archive consumed
+  handoff files older than 2 weeks to `Docs/ARCHIVE/Handoffs/`.
 - **Role_Learnings.md**: Captain curates quarterly. Promote best learnings into
   role files or collaboration rules; archive dated entries.
 
-Commit with: "chore(agents): archive old outputs/handoffs, add archival policy"
+Commit with: "chore(agents): archive old outputs, add archival thresholds"
 ```
 
 ---
@@ -316,7 +320,7 @@ Commit with: "chore(agents): remove duplicated rules, add sync-check markers"
 
 ---
 
-### Prompt 4: Gemini CLI (Gemini 3.0 Pro) — Phase 4 Fill Gaps
+### Prompt 4: Gemini CLI (High-Tier) — Phase 4 Fill Gaps
 
 > **For Gemini CLI.** Leverages Gemini's strong reasoning for creating new content.
 
@@ -353,16 +357,19 @@ version that includes model tier recommendations:
 
 | Task Type | Best Tool | Model Tier | Why |
 |-----------|-----------|------------|-----|
-| Complex architecture, multi-step reasoning | Claude Code | High (Opus) | Deep reasoning, plan mode, autonomous tool use |
-| Standard implementation, bug fixes | Claude Code / Cursor | Mid (Sonnet) | Balanced cost/capability, good for structured work |
-| Fast iteration, parallel tasks | Codex CLI | Mid (GPT-4.1) | Cloud sandbox, reads AGENTS.md natively |
+| Complex architecture, multi-step reasoning | Claude Code | High | Deep reasoning, plan mode, autonomous tool use |
+| Standard implementation, bug fixes | Claude Code / Cursor | Mid | Balanced cost/capability, good for structured work |
+| Fast iteration, parallel tasks | Codex CLI | Mid | Cloud sandbox, reads AGENTS.md natively |
 | Autonomous multi-step workflows | Cline | Mid or Lightweight | Runs commands autonomously, good for bulk operations |
 | Inline code completions | GitHub Copilot | (built-in) | Fast, context-aware, low overhead |
-| Multi-file refactors with preview | Cursor Composer | Mid (Sonnet) | Visual diff, multi-file edits |
+| Multi-file refactors with preview | Cursor Composer | Mid | Visual diff, multi-file edits |
 | Documentation + diagrams | Any agent with TECH_WRITER role | Mid | See Roles/Technical_Writer.md |
-| Deep investigation, consolidation | Claude Code | High (Opus) | Best for reading large context, synthesizing findings |
+| Deep investigation, consolidation | Claude Code | High | Best for reading large context, synthesizing findings |
 | .NET API work | Any agent | Any | Read apps/api/AGENTS.md first |
 | xWiki documentation | Any agent | Any | Read Docs/AGENTS/AGENTS_xWiki.md first |
+
+Note: Use capability tiers (High/Mid/Lightweight) per Multi_Agent_Collaboration_Rules.md §6,
+not specific model versions, to avoid staleness as models evolve.
 
 Task 4.3 — Rewrite §5.5 Documentation Sync in Multi_Agent_Collaboration_Rules.md:
 
@@ -388,7 +395,7 @@ Commit with: "chore(agents): create web AGENTS.md, expand tool reference, fix do
 
 ---
 
-### Prompt 5: Cline (Sonnet or Kimi K2) — Phase 5 Clarity Improvements
+### Prompt 5: Cline (Mid-Tier or Lightweight) — Phase 5 Clarity Improvements
 
 > **For Cline.** Autonomous execution of straightforward edits across multiple files.
 
@@ -479,14 +486,15 @@ Write your report to Docs/WIP/Role_Learnings_Curation_Report_2026-03-17.md
 | Phase | Priority | Effort | Can Parallelize? |
 |-------|----------|--------|-----------------|
 | Phase 1: Fix Stale Content | HIGH | ~30 min | Yes (split across 2 agents) |
-| Phase 2: Archive & Reduce Bloat | HIGH | ~45 min | Partially (2.1 and 2.2 parallel, 2.3 after) |
+| Phase 2: Archive & Reduce Bloat | HIGH | ~30 min | Sequential (2.1 then 2.3; task 2.2 already done) |
 | Phase 3: Remove Redundancy | MEDIUM | ~20 min | Yes (single agent) |
 | Phase 4: Fill Gaps | MEDIUM | ~40 min | Partially (4.1 independent of 4.2/4.3) |
 | Phase 5: Clarity Improvements | LOW | ~30 min | Yes (all tasks independent) |
 | Phase 6: Curate Learnings | LOW | ~30 min | Yes (audit only) |
-| **Total** | | **~3.25 hours** | Phases 1-3 can run in parallel |
+| **Total (sequential)** | | **~3.0 hours** | — |
+| **Total (parallelized)** | | **~2.0 hours** | Phases 1+3 parallel, then 2, then 4+5 parallel, then 6 |
 
-**Recommended execution order:** Phase 1 → Phase 2 → Phase 3 (these fix correctness and reduce bloat). Then Phase 4 → Phase 5 in parallel. Phase 6 whenever the Captain has time.
+**Recommended execution order:** Phase 1 + Phase 3 in parallel → Phase 2 (depends on AGENTS.md edits settling) → Phase 4 + Phase 5 in parallel → Phase 6 whenever the Captain has time.
 
 ---
 
@@ -494,7 +502,10 @@ Write your report to Docs/WIP/Role_Learnings_Curation_Report_2026-03-17.md
 
 | Date | Reviewer Role | Status | Comments |
 |------|---------------|--------|----------|
-| | | | |
+| 2026-03-17 | Agents Supervisor + LLM Expert (Sonnet) | REQUEST_CHANGES | 5 findings: (1) HIGH — handoff inventory stale, archival already done; (2) HIGH — archival policy gap overstated, existing rules need thresholds not new policy; (3) MEDIUM — task 1.6 targeted wrong field; (4) MEDIUM — model-version pinning contradicts tier-based guidance; (5) LOW — quantitative claims slightly off |
+| 2026-03-17 | Agents Supervisor (Opus) | REVISED | All 5 findings addressed: inventory corrected, policy reframed as threshold refinement, task 1.6 fixed to target correct fields, model names replaced with tier labels, handoff task marked done, effort revised |
+| 2026-03-17 | Re-check (Sonnet) | APPROVE with minor fixes | 2 LOW findings: (1) Agent_Outputs line count was tool-dependent (wc vs PowerShell); (2) effort total inconsistent with phase sums. No higher-severity issues remain. |
+| 2026-03-17 | Agents Supervisor (Opus) | FINAL | Line counts rounded to ~5,500 (approximate, avoids tool-dependent drift). Effort table now shows both sequential (3.0h) and parallelized (2.0h) totals. |
 
 ---
 

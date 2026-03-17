@@ -7,7 +7,6 @@ globs: apps/web/**/*.ts,apps/web/**/*.tsx
 
 ## Key Context
 - Main pipeline: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (ClaimAssessmentBoundary, 5-stage default)
-- Alternative pipeline: `apps/web/src/lib/analyzer/monolithic-dynamic.ts`
 - Types: `apps/web/src/lib/analyzer/types.ts`
 - Internal runner route: `apps/web/src/app/api/internal/run-job/route.ts`
 

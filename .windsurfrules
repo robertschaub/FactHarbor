@@ -4,9 +4,10 @@ Full rules in `/AGENTS.md`. Read it for any domain-heavy task (pipeline, prompts
 
 ## Project
 
-POC with two apps:
+Two apps + one tool:
 - `apps/api`: ASP.NET Core (.NET 8) + SQLite. Run: `cd apps/api && dotnet watch run` (port 5000)
 - `apps/web`: Next.js (UI + analysis pipeline). Run: `cd apps/web && npm run dev` (port 3000)
+- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews
 
 Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pipeline -> Results back to API.
 

@@ -10,7 +10,7 @@ alwaysApply: true
 Read `/AGENTS.md` for full project rules, architecture, and domain knowledge.
 
 ## Project Overview
-POC with two apps:
+Two apps + one tool:
 - `apps/api` — ASP.NET Core API (.NET 8, SQLite)
 - `apps/web` — Next.js app (UI + analysis pipeline)
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews

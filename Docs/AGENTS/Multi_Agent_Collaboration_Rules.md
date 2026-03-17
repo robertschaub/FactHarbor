@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
 **Version:** 2.0
-**Date:** 2026-02-10
+**Date:** 2026-03-17
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -156,6 +156,10 @@ For issues requiring deep analysis by a **single investigator** with sequential 
 > **§3.3 vs §3.4:** Use §3.3 when one expert can investigate and the team reviews sequentially. Use §3.4 when you want **independent parallel perspectives** from multiple agents on the same problem.
 
 ### 3.4 Multi-Agent Investigation Workflow
+
+> **Quick summary:** Captain dispatches 2+ agents to investigate independently
+> (each writes to their own spoke file). A consolidator merges findings into
+> the hub document. Captain reviews and approves. Full protocol below.
 
 For complex tasks where the Captain wants multiple agents to independently investigate, propose solutions, and produce a consolidated plan.
 
@@ -727,4 +731,4 @@ Before marking any task complete:
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-02-10
+**Last Reviewed:** 2026-03-17

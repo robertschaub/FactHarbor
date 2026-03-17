@@ -202,7 +202,7 @@ Now proceed with your task as {ROLE}.
 ## Constraints & Context
 - Must not increase per-analysis LLM costs by more than 15%
 - Shadow results should be stored for later analysis
-- Must work with both pipeline modes (Orchestrated, Monolithic Dynamic)
+- Must work with the ClaimAssessmentBoundary pipeline
 
 ---
 
@@ -231,122 +231,7 @@ Now proceed with your task as Lead Architect.
 
 ---
 
-## Example 2: Lead Developer - Review Task
-
-```markdown
-# FactHarbor Task Assignment
-
-## Your Role
-**Role:** Lead Developer
-
----
-
-## Task Information
-**Task Title:** Shadow Mode Architecture Review
-**Area:** Configuration, Pipeline
-**Complexity:** High
-
----
-
-## Goals
-- Review the Shadow Mode architecture proposal
-- Assess implementation feasibility
-- Identify potential issues with the proposed approach
-- Provide concrete feedback for improvement
-
----
-
-## Constraints & Context
-- Focus on implementation complexity and timeline impact
-- Consider testing strategy implications
-- Review consistency with existing codebase patterns
-
----
-
-## Deliverables
-- Review comments added to the architecture document
-- Feasibility assessment with effort estimates
-- List of clarifying questions for architect
-
----
-
-## Workflow Phase
-**Current Phase:** Review Round 1
-**Previous Documents:**
-- Docs/WIP/Shadow_Mode_Architecture.md (Draft by Lead Architect)
-
----
-
-## MANDATORY
-
-Read and follow `/Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
-
----
-
-Now proceed with your task as Lead Developer.
-```
-
----
-
-## Example 3: Senior Developer - Implementation Task
-
-```markdown
-# FactHarbor Task Assignment
-
-## Your Role
-**Role:** Senior Developer
-
----
-
-## Task Information
-**Task Title:** Shadow Mode Core Implementation
-**Area:** Configuration, Pipeline
-**Complexity:** High
-
----
-
-## Goals
-- Implement the approved Shadow Mode architecture
-- Create the shadow result storage mechanism
-- Add shadow execution hooks to the orchestrated pipeline
-- Write unit tests for new functionality
-
----
-
-## Constraints & Context
-- Follow the approved architecture document exactly
-- Maintain backward compatibility
-- Ensure no impact on production pipeline when shadow mode is disabled
-
----
-
-## Deliverables
-- Working implementation in apps/web/src/lib/analyzer/
-- Unit tests with >80% coverage for new code
-- Implementation completion report in WIP folder
-
----
-
-## Workflow Phase
-**Current Phase:** Implementation
-**Previous Documents:**
-- Docs/WIP/Shadow_Mode_Architecture.md (Approved)
-- Docs/WIP/Shadow_Mode_Architecture_Review.md
-
----
-
-## MANDATORY
-
-Read and follow `/Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
-
----
-
-Now proceed with your task as Senior Developer.
-```
-
----
-
-## Example 4: LLM Expert - Investigation Task
+## Example 2: LLM Expert - Investigation Task
 
 ```markdown
 # FactHarbor Task Assignment
@@ -440,4 +325,4 @@ Routine task completions use the Agent Exchange Protocol (`AGENTS.md`), not `_Im
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-02-10
+**Last Reviewed:** 2026-03-17

@@ -4,9 +4,10 @@
 
 ## Project
 
-Two apps:
+Two apps + one tool:
 - `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Controllers/*`.
 - `apps/web` — Next.js (UI + analysis pipeline). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts`.
+- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews.
 
 Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `runClaimBoundaryAnalysis` -> Results back to API.
 
