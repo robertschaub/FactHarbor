@@ -11,17 +11,23 @@
 
 Shipped: Rec-A (Pass 2 → Haiku), Rec-C (getModel literal fix). Pending:
 
-### Rec-B: TIGERScore to Haiku (deferred)
-- Current: TIGERScore evaluation uses Sonnet (verdict tier)
-- Proposed: Switch to Haiku — TIGERScore is a structured rubric scoring task, not deep reasoning
-- Risk: May reduce scoring nuance. Needs quality comparison (run 5 paired TIGERScore evaluations)
-- Estimated saving: ~$0.01/job (small, but TIGERScore runs per-claim)
+### Rec-B: Challenger Cross-Provider Evaluation (deferred)
+- Current: Challenger uses OpenAI (cross-provider debate by design)
+- After Phase A baseline, measure challenger effectiveness: how often does reconciler incorporate challenger counter-arguments?
+- Options: B1 (set challenger to Anthropic, save ~$0.024/analysis), B2 (keep OpenAI but use budget tier ~$0.008 for 2 claims)
+- Decision: keep current default; evaluate empirically first
 
-### Rec-D: Batch Prompts Investigation (deferred)
+### Rec-D: Self-Consistency Rounds Evaluation (deferred)
+- Current: 2 self-consistency rounds per claim (3 total samples). After Phase A baseline, compare spread distributions from 3-sample vs hypothetical 2-sample.
+- If stability signal is equivalent, dropping to 1 round saves ~$0.020/analysis (~9% of LLM cost)
+- Do not change before Phase A baseline is complete
+- Follow-up: if TIGERScore is enabled, reassess its model assignment (currently would use Sonnet)
+
+### Batch API & Prompt Caching (deferred)
 - Anthropic Batch API could reduce cost 50% for non-latency-sensitive calls
 - Applicable to: self-consistency calls (2 per claim), TIGERScore, verdict narrative
 - Requires: Batch API support in AI SDK, queue management, result collection
-- Estimated saving: 15-25% of total LLM cost if all eligible calls batched
+- Target: 20-30% total job cost reduction
 
 ### 16-Slot LLM Call Inventory (reference)
 The review documented all 16 LLM call sites in the pipeline with model, tier, and cost per call.

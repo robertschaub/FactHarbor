@@ -49,6 +49,31 @@ Phase A validated. Phase A+ not triggered. Contingency plans if contamination re
 - Phase C: Boundary formation guardrails (post-clustering filter)
 - These are dormant — activate only if Phase A validation shows regression
 
+## 6. Ambiguous Claim Decomposition — Fix A/B Prompts (approved, not implemented)
+
+**Source:** `ARCHIVE/Ambiguous_Claim_Decomposition_Quality.md`
+
+- **Fix A:** Pass 2 Prompt — allow dimension labels in claim statements with strict constraints (no proper nouns, dates, numbers, regions). Self-check alone is NOT sufficient.
+- **Fix B:** Gate 1 Prompt — context-aware specificity for dimension claims. Dimension claims are expected to be broader; specificity comes from the dimension being independently verifiable.
+- Both approved in Review 1. Not yet implemented. Largely subsumed by Combined Plan Phase B, but the specific prompt guidance may still apply.
+
+## 7. Report Variability — warn_and_cap Integrity Mode (not implemented)
+
+**Source:** `ARCHIVE/Report_Variability_Consolidated_Plan_2026-03-07.md`
+
+Phase 2.1 requires `warn_and_cap` as a third integrity mode:
+- Add `"warn_and_cap"` to `VerdictGroundingPolicy` and `VerdictDirectionPolicy` type unions
+- New `warnAndCapVerdict()`: preserves TP, caps confidence at 55 (MEDIUM tier), emits `verdict_integrity_warning`
+- Register `verdict_integrity_warning` in `warning-display.ts`
+
+## 8. Search Provider Migration (deferred)
+
+**Source:** `ARCHIVE/Report_Variability_Consolidated_Plan_2026-03-07.md` Appendix D
+
+Top candidates for CSE replacement: Serper (evaluate first), Tavily (evaluate second).
+Evaluation criteria: result relevance (30%), domain authority (20%), coverage breadth (15%), verdict impact (20%), latency (5%), cost (10%).
+Migration path: integrate → shadow mode 1 week → promote to P1 → demote CSE → monitor 2 weeks.
+
 ---
 
 ## Related Active Documents
