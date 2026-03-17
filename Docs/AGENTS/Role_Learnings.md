@@ -130,6 +130,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Using an LLM to infer geography from claim text and then using that inference to gate search provider parameters is fragile. The LLM can associate input language with a country (German → Germany), infer geography from institutions that are actually international, or from cultural topic associations. If this inference then controls search API parameters (`gl`, `lr`), a wrong guess silently biases the entire evidence base. Keep LLM inference for advisory purposes (query generation) but don't let it control deterministic API parameters.
 **Files:** `apps/web/prompts/claimboundary.prompt.md`
 
+### 2026-03-17 — `AGENTS.md` is not a safe monorepo root marker
+**Role:** Senior Developer  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** In this repo, path-specific `AGENTS.md` files exist under workspaces like `apps/web/`. Any helper that walks upward and treats `AGENTS.md` as the repo-root marker will stop too early on CI or workspace-local runs. Use root-only markers such as `FactHarbor.sln`, `CLAUDE.md`, or a workspace-root `package.json` with `workspaces` instead.
+**Files:** `apps/web/src/lib/analyzer/debug.ts`, `apps/web/test/unit/lib/analyzer/debug.test.ts`
+
+### 2026-03-17 — Guard paid test scripts at the npm entrypoint, not just in workflows
+**Role:** Senior Developer  **Agent/Tool:** Codex (GPT-5)
+**Category:** useful-pattern
+**Learning:** If paid/live test suites must never run on GitHub Actions but should stay available locally, add a small shared guard script and wrap the npm entrypoints themselves. That prevents accidental workflow wiring from starting expensive runs, while still allowing explicit local execution unchanged.
+**Files:** `apps/web/scripts/assert-local-live-tests.js`, `apps/web/package.json`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

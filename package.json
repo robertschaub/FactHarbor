@@ -11,6 +11,7 @@
   "scripts": {
     "lint": "echo \"(add lint later)\"",
     "test": "npm -w apps/web test",
+    "test:ci": "npm -w apps/web run test:ci",
     "test:llm": "npm -w apps/web run test:llm",
     "promptfoo": "node scripts/promptfoo-sr.js",
     "promptfoo:sr": "node scripts/promptfoo-sr.js sr",

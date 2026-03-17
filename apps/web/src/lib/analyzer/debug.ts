@@ -14,21 +14,32 @@ import * as path from "path";
 // CONFIGURATION
 // ============================================================================
 
-function findRepoRoot(startDir: string): string {
-  // We want a stable repo-root-relative debug log path regardless of the runtime CWD.
-  // In local dev, the Next.js dev server often runs with CWD=apps/web, while scripts/tests
-  // may run with CWD=repo root. Using process.cwd() directly can accidentally point to
-  // "apps/web/apps/web/debug-analyzer.log" and silently drop logs.
+const WEB_PACKAGE_NAME = "@factharbor/web";
+
+function readPackageName(packageJsonPath: string): string | null {
+  try {
+    if (!fs.existsSync(packageJsonPath)) return null;
+    const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8")) as {
+      name?: unknown;
+    };
+    return typeof parsed.name === "string" ? parsed.name : null;
+  } catch {
+    return null;
+  }
+}
+
+function isWebRoot(dir: string): boolean {
+  return readPackageName(path.join(dir, "package.json")) === WEB_PACKAGE_NAME;
+}
+
+function findWebRoot(startDir: string): string {
   let dir = startDir;
   for (let i = 0; i < 10; i++) {
-    try {
-      const hasAgents = fs.existsSync(path.join(dir, "AGENTS.md"));
-      const hasSln = fs.existsSync(path.join(dir, "FactHarbor.sln"));
-      // Use repo-root-specific markers (package.json exists in workspaces too).
-      if (hasAgents || hasSln) return dir;
-    } catch {
-      // ignore
-    }
+    if (isWebRoot(dir)) return dir;
+
+    const nestedWebRoot = path.join(dir, "apps", "web");
+    if (isWebRoot(nestedWebRoot)) return nestedWebRoot;
+
     const parent = path.dirname(dir);
     if (!parent || parent === dir) break;
     dir = parent;
@@ -37,15 +48,15 @@ function findRepoRoot(startDir: string): string {
 }
 
 // Exposed for unit tests (no production usage).
-export function __internalFindRepoRoot(startDir: string): string {
-  return findRepoRoot(startDir);
+export function __internalFindWebRoot(startDir: string): string {
+  return findWebRoot(startDir);
 }
 
-// Write debug log to a stable location that's easy to find (repo-root relative).
+// Write debug log to a stable location that's easy to find (web-workspace relative).
 // Additive override: FH_DEBUG_LOG_PATH can point elsewhere (e.g., custom paths).
 const DEBUG_LOG_PATH =
   process.env.FH_DEBUG_LOG_PATH ||
-  path.join(findRepoRoot(process.cwd()), "apps", "web", "debug-analyzer.log");
+  path.join(findWebRoot(process.cwd()), "debug-analyzer.log");
 
 const DEBUG_LOG_FILE_ENABLED =
   (process.env.FH_DEBUG_LOG_FILE ?? "true").toLowerCase() === "true";

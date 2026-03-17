@@ -641,3 +641,33 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** No.
 
 ---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | CI Tests — Safe Lane + Debug Root Fix
+**Task:** Fix the failing CI test run and harden GitHub Actions so CI does not run tests that make real external API calls.
+**Files touched:** `.github/workflows/ci.yml`, `apps/web/package.json`, `package.json`, `apps/web/src/lib/analyzer/debug.ts`.
+**Key decisions:** Added an explicit `test:ci` script at the repo root and web workspace, and switched the workflow to that named entrypoint instead of the generic `npm test`. Hardened `findRepoRoot()` to detect the monorepo root via `CLAUDE.md`, `FactHarbor.sln`, or a workspace-root `package.json`, avoiding false positives from workspace-local `AGENTS.md`.
+**Open items:** No code follow-up required for this fix. Re-run the GitHub Actions `CI` workflow on the updated branch to confirm the hosted Windows runner now matches local results.
+**Warnings:** `apps/web/src/lib/analyzer/debug.ts` already had a local uncommitted edit when this task started. The fix was applied on top of that change rather than reverting it.
+**For next agent:** If CI test scope changes later, keep the workflow on `npm run test:ci` or another explicitly safe script. Do not point CI at `test:llm`, `test:neutrality`, `test:expensive`, or the claim-boundary integration suite unless the project intentionally accepts live external API calls in CI.
+**Learnings:** yes — appended Senior Developer gotcha about monorepo root detection markers.
+
+---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | Live Test Scripts — Block GitHub Actions
+**Task:** Ensure paid/live API test suites cannot be executed from GitHub Actions while preserving explicit local runs.
+**Files touched:** `apps/web/package.json`, `apps/web/scripts/assert-local-live-tests.js`.
+**Key decisions:** Added a shared script guard keyed on `GITHUB_ACTIONS=true`, then wrapped all live/paid test entrypoints (`test:llm`, `test:neutrality`, `test:expensive`, `test:cb-integration`, `test:calibration:*`). This blocks future workflow misconfiguration at the npm-script layer instead of relying only on workflow discipline.
+**Open items:** None.
+**Warnings:** This is a hard fail on GitHub Actions by design. If a future maintainer intentionally wants hosted live tests, they will need to remove or bypass the guard explicitly rather than reusing these scripts.
+**For next agent:** Keep local explicit runs on these same scripts. If you add another paid/live suite, wrap it with `apps/web/scripts/assert-local-live-tests.js` as well.
+**Learnings:** yes — appended Senior Developer tip about guarding local-only paid test scripts with `GITHUB_ACTIONS`.
+
+---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | Debug Log Path — Resolve Web Workspace Directly
+**Task:** Replace repo-root marker heuristics in debug log path resolution with a more robust approach.
+**Files touched:** `apps/web/src/lib/analyzer/debug.ts`, `apps/web/test/unit/lib/analyzer/debug.test.ts`.
+**Key decisions:** Switched from repo-root detection to direct web-workspace detection using `package.json` identity (`name: "@factharbor/web"`). The resolver now supports both starting from repo root (`apps/web/package.json`) and from inside the workspace itself, and writes directly to `apps/web/debug-analyzer.log`.
+**Open items:** None.
+**Warnings:** This changes the unit-test contract from “find repo root” to “find web root,” which is intentional because the log file belongs to the web workspace, not the monorepo root.
+**For next agent:** If a future caller really needs monorepo-root discovery, implement that separately. Do not overload the debug-log resolver with unrelated root semantics again.
+**Learnings:** no
+
+---
