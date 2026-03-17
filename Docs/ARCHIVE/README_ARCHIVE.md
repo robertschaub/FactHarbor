@@ -2,7 +2,66 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-03-09 (Phase 2.5 review artifacts archived)
+**Last Updated**: 2026-03-17 (WIP Consolidation #6 — 30 WIP + 6 STATUS + 19 Handoffs archived)
+
+---
+
+### WIP Consolidation #6 (2026-03-17)
+
+**Description**: Major cleanup. Archived completed plans, executed investigations, implemented features, and stale status files. Forward-looking fragments extracted to `_fwd` files in WIP.
+
+**WIP files archived** (30):
+
+| File | Reason |
+|------|--------|
+| `Backup_DB_Commit_Compatibility_2026-03-14.md` | Historical analysis, no forward items |
+| `Baseline_Test_Results_Phase1_2026-03-12.md` | Superseded by post-fix state |
+| `Bolsonaro_Report_Variability_Investigation_2026-03-07.md` | Findings absorbed into Scorecard |
+| `Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md` | All work completed (commit `84fa644e`) |
+| `Empty_Boundary_Pruning_Plan_2026-03-16.md` | Subsumed by Combined Plan; Phase A+C shipped |
+| `Job_Events_Readability_Plan_2026-03-16.md` | Implemented; Phase 2 extracted to `_fwd` |
+| `Phase1_Code_Review_2026-03-09.md` | Complete, all follow-ups resolved |
+| `Phase1_Risk_Opportunity_Plan_2026-03-09.md` | Historical risk assessment, all fixes committed |
+| `Phase2_Validation_Checklist.md` | Validation completed |
+| `Phase2_Validation_Plan_2026-03.md` | Complete, production-ready |
+| `Phase2_Validation_Status.md` | Track closed |
+| `Proxy_Claim_Decomposition_Investigation_2026-03-16.md` | Implemented (commit `bb2d3190`) |
+| `Report_Quality_Analysis_2026-03-08.md` | Findings consumed by downstream work |
+| `Report_Quality_Baseline_Test_Plan_2026-03-12.md` | Executed, results captured |
+| `Report_Quality_Deep_Analysis_2026-03-14.md` | Historical data snapshot |
+| `Report_Quality_PhaseA_Search_Stack_Results_2026-03-14.md` | Complete, consumed by Search Accumulation Plan |
+| `Report_Quality_Restoration_Plan_2026-03-14.md` | Strategy executed |
+| `Report_Quality_Worktree_Comparison_Results_2026-03-13.md` | All checkpoints executed |
+| `SR_UCM_Separation_Plan_2026-03-10.md` | Completed |
+| `Search_Accumulation_Restoration_Plan_2026-03-15.md` | Validated, Fix A shipped |
+| `Unique_Article_Inputs_2026-03-14.md` | Data inventory only |
+| `2026-02-27_Inverse_Claim_Asymmetry_Plan.md` | Split: Phase 3 pending → `Quality_Improvement_Pending_fwd.md` |
+| `Alpha_Phase_Acceleration_Plan_2026-02-25.md` | Split: remaining phases → `LLM_Allocation_and_Cost_fwd.md` |
+| `Ambiguous_Claim_Decomposition_Quality.md` | Subsumed by Combined Plan |
+| `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` | Split: Phase B/C contingencies → `Quality_Improvement_Pending_fwd.md` |
+| `LLM_Model_Allocation_Review_2026-03-15.md` | Split: Rec-B/D → `LLM_Allocation_and_Cost_fwd.md` |
+| `Multi-Source_Evidence_Retrieval_Plan.md` | Split: pending phases → `LLM_Allocation_and_Cost_fwd.md` |
+| `Report_Quality_Next_Investigation_Recommendations_2026-03-14.md` | Split: Phase B → `Quality_Improvement_Pending_fwd.md` |
+| `Report_Variability_Consolidated_Plan_2026-03-07.md` | Split: config items → `Quality_Improvement_Pending_fwd.md` |
+| `UCM_Config_Drift_Review_2026-03-05.md` | Split: Phase 2 → `Infrastructure_and_Config_fwd.md` |
+
+**STATUS files archived** (6):
+- `Improvement_Recommendations.md` — v2.6.21, superseded by current Backlog
+- `HISTORY.md` — superseded by Current_Status.md
+- `Pipeline_Execution_Checklist.md` — Phase 1 completed
+- `Decision_Log_D1-D5.md` — all decisions executed
+- `Investigation_Report_Quality_Degradation.md` — F1-F2 resolved
+- `Report_Quality_Investigation_2026-02-27.md` — concluded, 8 fixes applied
+
+**Handoffs archived** (19):
+- 11 February handoffs (all completed agent work)
+- 8 March handoffs (completed investigations, fixes, runbooks)
+- Remaining in Handoffs/: `2026-03-01_Security_Expert_PreRelease_Review.md` (has open findings)
+
+**Forward-looking extracts created** (3 `_fwd` files in WIP):
+- `Quality_Improvement_Pending_fwd.md`
+- `LLM_Allocation_and_Cost_fwd.md`
+- `Infrastructure_and_Config_fwd.md`
 
 ---
 

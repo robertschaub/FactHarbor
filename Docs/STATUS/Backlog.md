@@ -63,7 +63,7 @@ Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be 
 
 ---
 
-## Recently Completed (March 15-16, 2026)
+## Recently Completed (March 15-17, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
@@ -77,6 +77,10 @@ Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be 
 | ✅ **Phase A boundary pruning**: Empty boundaries removed from coverage matrix. Concentration warning fires when >80% evidence in one boundary. | Analyzer / Quality | 2026-03-16 | `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md` |
 | ✅ **Proxy claim exclusion (thesisRelevance)**: Claims with `thesisRelevance: "tangential"/"irrelevant"` get weight=0 in aggregation. | Analyzer / Quality | 2026-03-16 | Commit `bb2d3190` |
 | ✅ **metrics.ts pricing update**: gpt-4.1, gpt-4.1-mini, gemini-2.5-pro/flash, claude-opus-4-6 added. Cost tracking now accurate for all models in model-resolver.ts. | Metrics / Cost | 2026-03-15 | Pre-Phase-A commit |
+| ✅ **Phase C: analyticalDimension**: New field on EvidenceScope capturing what property is measured. Schema, fingerprint, extraction + clustering prompts updated. Needs prompt refinement (Haiku not populating optional field). | Analyzer / Quality | 2026-03-17 | Commit `81314c86`, Combined Plan Phase C |
+| ✅ **SR weighting re-enabled with neutral default**: defaultScore changed 0.45→null→0.5. Weighting active but neutral for unknown sources. | SR / Quality | 2026-03-17 | Commit `381135c2` |
+| ✅ **Analysis Timeline UI**: Structured event display with LLM call merging, model names, search provider info, debate step tracking. | Web UI | 2026-03-16 | Commits `d2b87c08` through `bfa859d4` |
+| ✅ **WIP Consolidation #6**: 30 WIP + 6 STATUS + 19 Handoffs archived. 3 `_fwd` files created. WIP reduced from 40 to 18 files. | Documentation | 2026-03-17 | `Docs/WIP/README.md`, `Docs/ARCHIVE/README_ARCHIVE.md` |
 | ✅ **Config test fixes**: Legacy tier name tests updated to canonical strength names (budget/standard). | Tests / Hygiene | 2026-03-15 | Pre-Phase-A commit |
 
 ---
@@ -262,6 +266,12 @@ Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be 
 | **Triangulation/derivative factor LLM Intelligence review**: Both are deterministic heuristics making analytical judgments about evidence diversity and claim overlap. Should be reviewed under AGENTS.md "LLM Intelligence" mandate. Low-magnitude impact but architecturally non-compliant. | Analyzer / Architecture | low | med | `Docs/WIP/SR_Evidence_Weighting_Investigation_2026-03-16.md` §4.3 |
 | **SR evaluation: Wikipedia scoring**: Wikipedia domains score 38-42% — under-scored because SR evaluation criteria over-weight traditional editorial structures and under-weight crowdsourced quality mechanisms. SR evaluation prompt quality improvement needed. | SR / Quality | low | med | `Docs/WIP/SR_Evidence_Weighting_Investigation_2026-03-16.md` §4.4 |
 | **INTERRUPTED recovery test coverage**: The INTERRUPTED→QUEUED restart path in `internal-runner-queue.ts` has no integration test. The orphaned-RUNNING→QUEUED path is covered. | Runner / Testing | low | low | Code review finding from `db0246fa` |
+| **Phase C: analyticalDimension prompt refinement**: Haiku ignores the optional `analyticalDimension` field. Make it required in the prompt (keep `.catch(undefined)` in Zod). Validate with Hydrogen benchmark. | Analyzer / Quality | med | high | Combined Plan Phase C, commit `81314c86` |
+| **Job Events Phase 2: structured data field**: Add `data: JsonObject` to `JobEventEntity` (C# schema change). Enables machine-readable event metadata alongside human-readable messages. | API / Architecture | low | low | `Docs/WIP/Infrastructure_and_Config_fwd.md` §2 |
+| **Rec-B: TIGERScore to Haiku**: Switch TIGERScore from Sonnet to Haiku. Needs quality comparison (5 paired evaluations). ~$0.01/job saving. | Analyzer / Cost | low | low | `Docs/WIP/LLM_Allocation_and_Cost_fwd.md` §1 |
+| **Rec-D: Batch prompts investigation**: Anthropic Batch API for non-latency-sensitive calls (self-consistency, TIGERScore, narrative). 15-25% LLM cost reduction potential. | Analyzer / Cost | low | med | `Docs/WIP/LLM_Allocation_and_Cost_fwd.md` §1 |
+| **Fact Check API pipeline integration**: Wire Google Fact Check provider into claimboundary research loop (Phases 3.2-3.6 of Multi-Source Retrieval). | Search / Quality | low | med | `Docs/WIP/LLM_Allocation_and_Cost_fwd.md` §2 |
+| **Inverse Claim Asymmetry Phase 3**: Calibration hardening CI gate. Blocks merges when framing-symmetry regression exceeds threshold. Captain decision needed on threshold. | Calibration / Quality | low | med | `Docs/WIP/Quality_Improvement_Pending_fwd.md` §1 |
 | **Multi-challenger cross-provider debate (Phase 2)**: Replace Steps 2+3 with cross-provider debate round (Claude, GPT, Gemini). Deferred pending 4 prerequisite corrections: reconciliation contract update, confidence tier semantics, label alignment, UCM-managed reasoning instructions. | Analyzer / Quality | low | high | [Multi_Agent_Cross_Provider_Debate](../WIP/Multi_Agent_Cross_Provider_Debate_2026-02-27.md) |
 | **Conditional re-reconciliation (B-3 add-on)**: After reconciliation, if self-consistency spread >20pp AND contrarian evidence present, re-run reconciliation once with prompt addendum. UCM-flagged (`reDeliberationEnabled`, default off). Max 1 extra Sonnet call per triggered claim (~10-20% trigger rate). Not Debate V2 — scoped addition to existing topology. | Analyzer / Quality | med | med | [Debate_Iteration_Analysis](../ARCHIVE/Debate_Iteration_Analysis_2026-02-21.md) §5 |
 | **Production-profile calibration baseline v2 run**: Execute full gate with current production challenger provider (`debateModelProviders.challenger=openai`) on framing-symmetry v3.x fixture and publish canonical v2 baseline artifacts/deltas vs v1. | Calibration / Experiment | med | high | [Stammbach §5.3 item 4](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md), [Calibration_Run_Policy.md](Calibration_Run_Policy.md) |

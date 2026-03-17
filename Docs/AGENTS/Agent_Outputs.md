@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-17 | Agents Supervisor | Claude Opus 4.6 | Agent Rules Cleanup Plan
+**Task:** Full audit of agent governance ecosystem (45+ files, ~17,000 lines) and creation of prioritized cleanup plan.
+**Files touched:** `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md` (NEW)
+**Key decisions:** 6-phase plan covering stale content fixes, archival of bloated files, redundancy removal, gap filling, clarity improvements, and learnings curation. Tool-specific prompts for Claude/Codex/Gemini/Cline provided.
+**Open items:** Plan is DRAFT — awaiting Captain review and approval before execution.
+**For next agent:** Read `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md`. Each phase has a ready-to-paste prompt for the appropriate tool. Phases 1-3 are HIGH/MEDIUM priority and can run in parallel.
+
+---
 ### 2026-03-15/16 | Lead Architect | Claude Opus 4.6 | Phase A + Rec-A + Search Accumulation
 **Task:** Implement and validate contamination fixes, model allocation optimization, and search accumulation restoration.
 **Files touched:** `claimboundary-pipeline.ts` (Fix 0-A, Fix 4, Rec-A), `verdict-stage.ts` (Fix 5), `config-schemas.ts` (Fix 4, search autoMode, SerpAPI/Serper config), `pipeline.default.json` (Fix 4), `search.default.json` (autoMode, provider config), `web-search.ts` (accumulation toggle), `types.ts` (warning types), `warning-display.ts` (warning classifications), `metrics.ts` (pricing table), `config-schemas.test.ts` (legacy name fix), `llm.ts` (Rec-C)
