@@ -1741,6 +1741,13 @@ function extractRecordArray(
     }
   }
 
+  // Bare single object (not wrapped in array or keyed container) — wrap it
+  // only if it looks like a verdict record (has claimId or truthPercentage).
+  // This handles LLMs that return {id, claimId, ...} instead of [{id, claimId, ...}].
+  if ("claimId" in obj || "truthPercentage" in obj) {
+    return [obj];
+  }
+
   return null;
 }
 
