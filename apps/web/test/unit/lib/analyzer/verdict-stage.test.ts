@@ -355,6 +355,39 @@ describe("advocateVerdict (Step 1)", () => {
     expect(result[0].claimId).toBe("AC_01");
     expect(result[0].truthPercentage).toBe(75);
   });
+
+  it("should accept a bare single advocate output object when it has claimId and truthPercentage", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const mockLLM = createMockLLM({
+      VERDICT_ADVOCATE: advocateResponse()[0],
+    });
+
+    const result = await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+    expect(result).toHaveLength(1);
+    expect(result[0].claimId).toBe("AC_01");
+    expect(result[0].truthPercentage).toBe(75);
+  });
+
+  it("should reject a bare single advocate output object missing truthPercentage", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    const mockLLM = createMockLLM({
+      VERDICT_ADVOCATE: { claimId: "AC_01" },
+    });
+
+    await expect(
+      advocateVerdict(claims, evidence, boundaries, matrix, mockLLM),
+    ).rejects.toMatchObject({
+      name: "Stage4MalformedShapeError",
+    });
+  });
 });
 
 // ============================================================================

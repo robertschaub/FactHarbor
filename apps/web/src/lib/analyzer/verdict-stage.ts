@@ -1742,9 +1742,10 @@ function extractRecordArray(
   }
 
   // Bare single object (not wrapped in array or keyed container) — wrap it
-  // only if it looks like a verdict record (has claimId or truthPercentage).
-  // This handles LLMs that return {id, claimId, ...} instead of [{id, claimId, ...}].
-  if ("claimId" in obj || "truthPercentage" in obj) {
+  // only if it looks like a real verdict record, not a truncated partial shape.
+  // Require both claimId and truthPercentage so malformed outputs still trigger
+  // the existing retry/fallback paths instead of silently defaulting to 50/50.
+  if ("claimId" in obj && "truthPercentage" in obj) {
     return [obj];
   }
 
