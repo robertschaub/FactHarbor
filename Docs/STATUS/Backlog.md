@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: March 3, 2026 (added community platform backlog item)
+**Last Updated**: March 17, 2026 (added diagram documentation cleanup item)
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -370,6 +370,7 @@ Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be 
 | **Comprehensive testing**: Unit tests (80% coverage), integration tests, E2E tests (Playwright), API tests (xUnit). | Testing / Quality | low | high | Improvements #16 |
 | ~~Analyzer modularization plan~~: COMPLETE — CB pipeline built as separate modules (`claimboundary-pipeline.ts`, `verdict-stage.ts`). | Architecture | ~~low~~ done | low | Implemented in CB |
 | **Auth migration sweep**: 14 admin config routes + 4 others use inline `===` for admin key comparison instead of shared `checkAdminKey` from `auth.ts`. Functionally equivalent for now; timing-unsafe. LOW urgency for POC; HIGH before production exposure. | Security / Architecture | low | high | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) (Code Review entry) |
+| **Diagram page deduplication + include hygiene**: Remove cloned inline diagrams from `Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Meeting UZH/WebHome.xwiki` where they duplicate canonical diagram pages, and migrate reused diagram pages from `.../WebHome.xwiki` includes to canonical single-file `.xwiki` pages where this improves include labels without creating parallel long-lived copies. | Docs / Cleanup | low | med | Captured 2026-03-17 during UZH presentation cleanup |
 | **LLM classification system docs**: Update Analyzer_Pipeline.md (remove pattern-based refs), create LLM_Classification_System.md, update Testing_Guide.md with edge case test examples. ~2-3h. | Docs / Architecture | low | low | [Robustness Proposals](../ARCHIVE/Post-Migration_Robustness_Proposals.md) #5 |
 
 ---

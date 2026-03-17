@@ -1,0 +1,49 @@
+{{mermaid}}
+flowchart LR
+    INPUT(["Your Claim<br/>or Article"]):::io
+    A["Extract<br/>verifiable claims"]:::ai
+    B["Search supporting<br/>and opposing evidence"]:::web
+    Q["Filter quality<br/>and score reliability"]:::ai
+    C["Organize into<br/>evidence-defined boundaries"]:::ai
+
+    subgraph DEBATE ["Structured AI Debate"]
+        direction TB
+        D["Advocate"]:::ai
+        SC["Self-Consistency"]:::ai
+        E["Challenger"]:::ai
+        F["Reconciler"]:::ai
+        V["Validator"]:::ai
+        D --> SC
+        D --> E
+        SC --> F
+        E --> F
+        F --> V
+    end
+
+    subgraph EXTERNAL [" "]
+        direction TB
+        LLM_API["LLM API Calls<br/>Anthropic, OpenAI,<br/>Google, Mistral"]:::api_ai
+        SEARCH_API["Search API Calls<br/>Google CSE, Serper, SerpAPI,<br/>Brave, Wikipedia, Semantic Scholar,<br/>Google Fact Check"]:::api_web
+    end
+
+    INPUT --> A --> B --> Q --> C --> D
+
+    OUTPUT(["Verdict and<br/>Structured Report"]):::io_out
+    V --> OUTPUT
+
+    A -.-> LLM_API
+    Q -.-> LLM_API
+    C -.-> LLM_API
+    DEBATE -.-> LLM_API
+    B -.-> SEARCH_API
+
+    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    style EXTERNAL fill:none,stroke:none,color:#666
+
+    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
+    classDef io fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px,font-size:20px,font-weight:bold
+    classDef io_out fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px,font-size:20px,font-weight:bold
+    classDef api_ai fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
+    classDef api_web fill:#FFF8E1,stroke:#F57F17,color:#E65100,stroke-width:2px
+{{/mermaid}}

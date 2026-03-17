@@ -1,10 +1,11 @@
 = AKEL Analysis Pipeline =
 
 {{mermaid}}
-flowchart TB
+flowchart LR
     INPUT["User Input\n(text or URL)"] --> STAGE1
 
     subgraph STAGE1["1. Extract Claims"]
+        direction TB
         CLAIMS["Extract AtomicClaims\n(Pass 1 + Pass 2)"]
         GATE1{{"Gate 1\nClaim Validation"}}
         FIDELITY["Fidelity & Specificity\nFiltering"]
@@ -14,6 +15,7 @@ flowchart TB
     STAGE1 --> STAGE2
 
     subgraph STAGE2["2. Research Evidence"]
+        direction TB
         QUERY["Generate pro/con\nsearch queries"]
         FETCH["Fetch & parse\nsources"]
         FILTER["Filter evidence\n(probativeValue)"]
@@ -24,6 +26,7 @@ flowchart TB
     STAGE2 --> STAGE3
 
     subgraph STAGE3["3. Cluster Boundaries"]
+        direction TB
         SCOPES["Extract EvidenceScopes\n(methodology, temporal)"]
         CLUSTER["Cluster into emergent\nClaimAssessmentBoundaries"]
         SCOPES --> CLUSTER
@@ -32,6 +35,7 @@ flowchart TB
     STAGE3 --> STAGE4
 
     subgraph STAGE4["4. Generate Verdicts"]
+        direction TB
         DEBATE["LLM Debate Pattern\n(Advocate/Challenger/Reconciler)"]
         CONSISTENCY["Self-consistency\n& grounding check"]
         DEBATE --> CONSISTENCY
@@ -40,6 +44,7 @@ flowchart TB
     STAGE4 --> STAGE5
 
     subgraph STAGE5["5. Aggregate & Report"]
+        direction TB
         TRIANG["Triangulation & Weighted\nAggregation"]
         GATE4{{"Gate 4\nConfidence Tiering"}}
         REPORT["Structured Report\n(Narrative & Findings)"]

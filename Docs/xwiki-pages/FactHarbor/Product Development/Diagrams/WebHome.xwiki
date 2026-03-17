@@ -4,6 +4,11 @@
 Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into the Architecture, Specification, and Planning pages where they are described.
 {{/info}}
 
+== Overview ==
+
+* [[Analysis Pipeline Overview>>FactHarbor.Product Development.Diagrams.Analysis Pipeline Overview]] — High-level pipeline flowchart (claim to verdict)
+* [[AKEL Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail.WebHome]] — Current 5-stage lifecycle
+
 == Architecture ==
 
 * [[System Architecture>>FactHarbor.Product Development.Diagrams.System Architecture.WebHome]] — Two-service architecture (API + Web/Runner)
@@ -50,10 +55,6 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 * [[Monolithic Dynamic Pipeline Internal>>FactHarbor.Product Development.Diagrams.Monolithic Dynamic Pipeline Internal.WebHome]] — Internal Monolithic Dynamic execution flow
 * [[Pipeline Shared Primitives>>FactHarbor.Product Development.Diagrams.Pipeline Shared Primitives.WebHome]] — Shared primitives architecture
 * [[Pipeline Variant Dispatch>>FactHarbor.Product Development.Diagrams.Pipeline Variant Dispatch.WebHome]] — Analysis dispatch and convergence flow
-
-== Overview ==
-
-* [[AKEL Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail.WebHome]] — Current 5-stage lifecycle
 
 == Workflows ==
 

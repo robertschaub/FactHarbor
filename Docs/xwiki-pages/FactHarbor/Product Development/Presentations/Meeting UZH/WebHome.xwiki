@@ -1,0 +1,884 @@
+= FactHarbor =
+
+(% style="font-size: 1.2em; color: #555;" %)
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+
+{{info}}
+**Meeting:** UZH — 18 March 2026
+**Presenter:** Robert Schaub, Founder & Lead Developer of FactHarbor
+{{/info}}
+----
+(((
+(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
+(((
+**Mission:**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+)))
+
+(% class="box warningmessage" %)
+(((
+**Non-profit and Transparent**
+FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+We serve the public interest with full transparency — no paywalls, no hidden algorithms, and no profit motive.
+)))
+----
+
+== FactHarbor Analysis Pipeline ==
+
+A user submits any claim or article, in any language. The system extracts verifiable assertions, researches supporting and opposing evidence from real web sources, runs a structured AI debate, and produces a transparent verdict — every conclusion traceable to its sources.
+
+{{include reference="FactHarbor.Product Development.Diagrams.Analysis Pipeline Overview"/}}
+
+----
+
+== System Overview ==
+
+=== Current (Alpha) ===
+
+{{mermaid}}
+flowchart LR
+    subgraph Client["Client Layer"]
+        BROWSER["Web Browser"]
+    end
+
+    subgraph NextJS["Next.js Web App (port 3000)"]
+        direction TB
+        UI["UI Pages\n/analyze, /jobs, /admin"]
+        FH_API["Proxy API Routes\n/api/fh/*"]
+        INTERNAL["Internal API\n/api/internal/run-job"]
+        AKEL["ClaimAssessmentBoundary Pipeline\nclaimboundary-pipeline.ts"]
+        SHARED["Shared Modules\nevidence-filter, aggregation,\nquality-gates, source-reliability"]
+        CONFIG_DB[("config.db\nUCM Config")]
+        SR_DB[("source-reliability.db\nSR Cache")]
+
+        UI --> FH_API
+        INTERNAL --> AKEL --> SHARED
+        AKEL --> CONFIG_DB
+        SHARED --> SR_DB
+    end
+
+    subgraph DotNet[".NET API (port 5000)"]
+        direction TB
+        CONTROLLERS["Controllers\nAnalyze, Jobs, Health"]
+        SERVICES["Services\nJobService, RunnerClient"]
+        MAIN_DB[("factharbor.db\nJobs & Events")]
+
+        CONTROLLERS --> SERVICES --> MAIN_DB
+    end
+
+    subgraph External["External Services"]
+        direction TB
+        LLM["LLM Providers\nAnthropic, OpenAI, Google, Mistral"]
+        SEARCH["Search Providers\nGoogle CSE, Serper, SerpAPI,\nBrave, Wikipedia, Semantic Scholar,\nGoogle Fact Check"]
+    end
+
+    BROWSER --> UI
+    FH_API --> CONTROLLERS
+    SERVICES -->|"POST /api/internal/run-job\n(with retry + backoff)"| INTERNAL
+    AKEL --> LLM
+    AKEL --> SEARCH
+
+    style NextJS fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style DotNet fill:#e3f2fd,stroke:#1565c0,color:#000
+    style External fill:#fff3e0,stroke:#e65100,color:#000
+{{/mermaid}}
+
+
+=== Future ===
+
+Future architecture once FactHarbor needs stronger scaling, queueing, and service isolation.
+
+{{mermaid}}
+flowchart LR
+    subgraph CLIENT["Clients"]
+        BROWSER2["Web UI / API Clients"]
+    end
+
+    subgraph EDGE["Presentation Layer"]
+        WEB2["Next.js UI + API Gateway"]
+    end
+
+    subgraph CORE["Core Platform Services"]
+        API2[".NET Job API\n(job lifecycle, auth, audit)"]
+        QUEUE["Job Queue / Dispatch"]
+        WORKER["Analysis Worker Service\nClaimAssessmentBoundary pipeline"]
+        SRSVC["Source Reliability Service\nshared evaluation + cache"]
+    end
+
+    subgraph DATA["Data Layer"]
+        JOBDB[("Jobs / Events DB")]
+        CFGDB[("Config Store / UCM DB")]
+        SRCACHE[("SR Cache / Evaluation Store")]
+    end
+
+    subgraph EXT["External Providers"]
+        LLM2["LLM Providers"]
+        SEARCH2["Search Providers"]
+    end
+
+    BROWSER2 --> WEB2 --> API2 --> QUEUE --> WORKER
+    API2 --> JOBDB
+    WEB2 --> CFGDB
+    WORKER --> CFGDB
+    WORKER --> SRSVC
+    SRSVC --> SRCACHE
+    WORKER --> LLM2
+    WORKER --> SEARCH2
+    SRSVC --> LLM2
+    SRSVC --> SEARCH2
+
+    style EDGE fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style CORE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style DATA fill:#fff9c4,stroke:#f9a825,color:#000
+    style EXT fill:#fff3e0,stroke:#e65100,color:#000
+{{/mermaid}}
+
+----
+
+== AKEL (AI Knowledge Extraction Layer) Pipeline ==
+
+
+{{mermaid}}
+flowchart LR
+    LLM_STAGE["LLM API Calls<br/>Claim extraction, evidence scoring,<br/>boundary clustering, debate, reporting"]
+    SEARCH_STAGE["Search API Calls<br/>Provider queries + source fetch rounds"]
+
+    INPUT["User Input\n(text or URL)"] --> STAGE1
+
+    subgraph STAGE1["1. Extract Claims"]
+        direction TB
+        CLAIMS["Extract AtomicClaims\n(Pass 1 + Pass 2)"]
+        GATE1{{"Gate 1\nClaim Validation"}}
+        FIDELITY["Fidelity & Specificity\nFiltering"]
+        CLAIMS --> GATE1 --> FIDELITY
+    end
+
+    STAGE1 --> STAGE2
+
+    subgraph STAGE2["2. Research Evidence"]
+        direction TB
+        QUERY["Generate pro/con\nsearch queries"]
+        FETCH["Fetch & parse\nsources"]
+        FILTER["Filter evidence\n(probativeValue)"]
+        QUERY --> FETCH --> FILTER
+        FILTER -.->|"sufficiency check"| QUERY
+    end
+
+    STAGE2 --> STAGE3
+
+    subgraph STAGE3["3. Cluster Boundaries"]
+        direction TB
+        SCOPES["Extract EvidenceScopes\n(methodology, temporal)"]
+        CLUSTER["Cluster into emergent\nClaimAssessmentBoundaries"]
+        SCOPES --> CLUSTER
+    end
+
+    STAGE3 --> STAGE4
+
+    subgraph STAGE4["4. Generate Verdicts"]
+        direction TB
+        DEBATE2["LLM Debate Pattern\n(Advocate/Challenger/Reconciler)"]
+        STABILITY["Self-consistency\n(stability measurement)"]
+        VALIDATION["Validator checks\n(grounding + direction, advisory)"]
+        DEBATE2 --> STABILITY --> VALIDATION
+    end
+
+    STAGE4 --> STAGE5
+
+    subgraph STAGE5["5. Aggregate & Report"]
+        direction TB
+        TRIANG["Triangulation & Weighted\nAggregation"]
+        GATE4{{"Gate 4\nConfidence Tiering"}}
+        REPORT["Structured Report\n(Narrative & Findings)"]
+        TRIANG --> GATE4 --> REPORT
+    end
+
+    STAGE5 --> RESULT["AnalysisResult\n(schema 3.2.0-cb)"]
+
+    CLAIMS -.-> LLM_STAGE
+    GATE1 -.-> LLM_STAGE
+    QUERY -.-> LLM_STAGE
+    QUERY -.-> SEARCH_STAGE
+    FILTER -.-> LLM_STAGE
+    SCOPES -.-> LLM_STAGE
+    CLUSTER -.-> LLM_STAGE
+    DEBATE2 -.-> LLM_STAGE
+    VALIDATION -.-> LLM_STAGE
+    TRIANG -.-> LLM_STAGE
+
+    style STAGE1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style STAGE2 fill:#fff9c4,stroke:#f57f17,color:#000
+    style STAGE3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style STAGE4 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style STAGE5 fill:#fce4ec,stroke:#c2185b,color:#000
+    style LLM_STAGE fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
+    style SEARCH_STAGE fill:#FFF8E1,stroke:#F57F17,color:#E65100,stroke-width:2px
+{{/mermaid}}
+
+=== Pipeline Stages and Model Tiering ===
+
+|=Stage|=Name|=What Happens|=Model Tier
+|1|**Extract Claims**|Two-pass extraction of atomic claims from input; Gate 1 claim validation|Haiku (budget)
+|2|**Research**|Iterative web search (up to 10 rounds per claim), evidence extraction and deduplication|Haiku (budget) + Web Search
+|3|**Cluster Boundaries**|Group evidence into ClaimAssessmentBoundaries by scope congruence|Haiku (budget)
+|4|**Verdict**|5-step adversarial LLM debate per claim (see below)|Sonnet (standard)
+|5|**Aggregate**|Weighted aggregation with triangulation, narrative generation|Sonnet (standard)
+
+----
+
+== Structured AI Debate ==
+
+Every claim goes through a **adversarial debate**. Different providers argue against each other. An objection only counts as "contested" if it cites specific counter-evidence — unsupported criticism is classified as "doubted" and cannot change a verdict.
+
+{{mermaid}}
+flowchart LR
+    E[Evidence + Boundaries] --> S1[1. Advocate]
+    S1 --> S2[2. Self-Consistency x2]
+    S1 --> S3[3. Adversarial Challenge]
+    S2 --> S4[4. Reconciliation]
+    S3 --> S4
+    S4 --> S5[5. Validation]
+    S5 --> O[Final Verdict]
+
+    subgraph "Parallel Execution"
+        S2
+        S3
+    end
+
+    ANTH["Anthropic API Calls<br/>Advocate, Self-Consistency,<br/>Reconciler, Validator"]
+    OPENAI["OpenAI API Call<br/>Challenger (GPT-4.1)"]
+
+    S1 -.-> ANTH
+    S2 -.-> ANTH
+    S4 -.-> ANTH
+    S5 -.-> ANTH
+    S3 -.-> OPENAI
+
+    style S1 fill:#e8f5e9,stroke:#2e7d32
+    style S2 fill:#e3f2fd,stroke:#1565c0
+    style S3 fill:#fff3e0,stroke:#e65100
+    style S4 fill:#f3e5f5,stroke:#7b1fa2
+    style S5 fill:#fce4ec,stroke:#c2185b
+    style ANTH fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
+    style OPENAI fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
+{{/mermaid}}
+
+=== Debate Roles ===
+
+|=Step|=Role|=Function|=Provider
+|1|**Advocate**|Build the strongest evidence-backed case for the most supported interpretation|Anthropic (Sonnet)
+|2|**Self-Consistency**|Two parallel re-runs at elevated temperature — measures verdict stability|Anthropic (Sonnet)
+|3|**Challenger**|Adversarial challenge from a //different provider// for model diversity|OpenAI (GPT-4.1)
+|4|**Reconciler**|Final verdict integrating challenge insights and stability data|Anthropic (Sonnet)
+|5|**Validator**|Grounding check + direction check (advisory, non-blocking)|Anthropic (Haiku)
+
+=== LLM Call Topology ===
+
+|=Pipeline Part|=Typical Call Pattern
+|**Stage 1: Claim extraction**|Pass 1 scan + Pass 2 evidence-grounded extraction + Gate 1 validation (batched budget-tier calls)
+|**Stage 2: Research**|Repeated Haiku-tier calls for query generation, relevance classification, and evidence extraction across search rounds
+|**Stage 3: Boundary clustering**|Scope normalization plus clustering calls to form ClaimAssessmentBoundaries
+|**Stage 4: Verdict debate**|1 advocate + 2 self-consistency re-runs + 1 challenger + 1 reconciler + 2 lightweight validator checks
+|**Stage 5: Final report**|Aggregation / narrative generation call for the published result
+
+(% class="box infomessage" %)
+(((
+**Cross-provider diversity:** Steps 2 and 3 run in parallel. Using different LLM providers for Advocate vs. Challenger prevents single-model echo-chamber bias — a known weakness in single-provider fact-checking systems.
+)))
+
+----
+
+== Verdict Transparency ==
+
+Verdicts are not binary. The system reports a **7-point scale** with confidence levels, so you know whether a claim is overwhelmingly supported, genuinely mixed, or contradicted — and how confident the system is.
+
+{{mermaid}}
+flowchart LR
+    TRUE["TRUE\n86-100%"]
+    MT["MOSTLY\nTRUE\n72-85%"]
+    LT["LEANING\nTRUE\n58-71%"]
+    MIXED["MIXED /\nUNVERIFIED\n43-57%"]
+    LF["LEANING\nFALSE\n29-42%"]
+    MF["MOSTLY\nFALSE\n15-28%"]
+    FALSE["FALSE\n0-14%"]
+
+    TRUE --- MT --- LT --- MIXED --- LF --- MF --- FALSE
+
+    style TRUE fill:#2e7d32,color:#fff
+    style MT fill:#43a047,color:#fff
+    style LT fill:#66bb6a,color:#000
+    style MIXED fill:#fdd835,color:#000
+    style LF fill:#ff9800,color:#000
+    style MF fill:#e65100,color:#fff
+    style FALSE fill:#b71c1c,color:#fff
+{{/mermaid}}
+
+Each verdict includes: truth percentage, confidence tier (High / Medium / Low / Insufficient evidence), supporting and opposing evidence citations, and a full reasoning narrative.
+
+----
+
+== Evidence Quality: Defence in Depth ==
+
+Every piece of evidence passes through **six layers of quality control** before it can influence a verdict. Two phases: pre-verdict evidence quality filtering and post-verdict verdict quality validation.
+
+{{mermaid}}
+flowchart TB
+    RAW["Raw Evidence\n(from LLM extraction)"]
+
+    subgraph P1["Phase 1: Evidence Quality (Pre-Verdict)"]
+        L1["LLM Prompt Instructions\n(guide extraction quality)"]
+        L2["Deterministic Filter\n(min length, vague phrases, dedup,\ncategory rules, probative scoring)"]
+        L3["Provenance Validation\n(reject synthetic/LLM-generated content)"]
+    end
+
+    subgraph P2["Phase 2: Verdict Quality (Post-Verdict)"]
+        L4["Source Reliability Weighting\n(domain credibility 0.0-1.0)"]
+        L5["Aggregation Pruning\n(tangential, opinion-only,\ncontestation validation)"]
+        L6["Validator Checks\n(grounding + direction,\nwarn-only by default)"]
+    end
+
+    CLEAN["Published Report\n(verdict + warnings)"]
+
+    RAW --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> CLEAN
+
+    style RAW fill:#ffcdd2,stroke:#b71c1c,color:#000
+    style CLEAN fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style P1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style P2 fill:#fff9c4,stroke:#f9a825,color:#000
+    style L1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style L2 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style L3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style L4 fill:#fff9c4,stroke:#f9a825,color:#000
+    style L5 fill:#fff9c4,stroke:#f9a825,color:#000
+    style L6 fill:#fff9c4,stroke:#f9a825,color:#000
+{{/mermaid}}
+
+Source reliability scores are computed per-domain using multi-provider LLM evaluation, with cross-check refinement and persistent caching. A peer-reviewed study carries different weight than a social media post — automatically.
+
+----
+
+== Data Model ==
+
+The pipeline produces a richly structured result. Every entity in the output is typed, linked, and inspectable.
+
+{{mermaid}}
+
+erDiagram
+    INPUT_ARTICLE ||--o{ ATOMIC_CLAIM : "extracts"
+    ATOMIC_CLAIM ||--o{ SEARCH_QUERY : "generates"
+    SEARCH_QUERY }o--o{ SOURCE : "discovers"
+    SOURCE ||--o{ EVIDENCE_ITEM : "yields"
+    EVIDENCE_ITEM |o--o| EVIDENCE_SCOPE : "has"
+    EVIDENCE_SCOPE }o--|| CLAIM_ASSESSMENT_BOUNDARY : "clusters into"
+    EVIDENCE_ITEM }o--|| CLAIM_ASSESSMENT_BOUNDARY : "assigned to"
+    ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : "receives"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites"
+    CB_CLAIM_VERDICT }o--o| CLAIM_ASSESSMENT_BOUNDARY : "scoped by"
+    CB_CLAIM_VERDICT }o--|| OVERALL_ASSESSMENT : "aggregates into"
+    OVERALL_ASSESSMENT ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "presents"
+    CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : "contains"
+    BOUNDARY_FINDING }o--|| CLAIM_ASSESSMENT_BOUNDARY : "per boundary"
+
+    INPUT_ARTICLE {
+        string id_PK
+        string inputType "text or url"
+        string detectedInputType "claim or article"
+        string impliedClaim "LLM-extracted thesis"
+        string riskTier "A B or C"
+    }
+
+    ATOMIC_CLAIM {
+        string id_PK "AC_01 AC_02"
+        string statement "The verifiable assertion"
+        string category "factual evaluative procedural"
+        string centrality "high medium"
+        string harmPotential "critical high medium low"
+        string claimDirection "supports_thesis contradicts_thesis contextual"
+        float specificityScore "0-1 Gate1 min 0.6"
+        json keyEntities "Named entities referenced"
+    }
+
+    SOURCE {
+        string id_PK
+        string url
+        string title
+        float trackRecordScore "0.0-1.0"
+        float trackRecordConfidence "0.0-1.0"
+        string category
+    }
+
+    EVIDENCE_ITEM {
+        string id_PK "EV_001 EV_002"
+        string statement "Extracted evidence text"
+        string category "statistic expert_quote event etc"
+        string claimDirection "supports contradicts neutral"
+        string probativeValue "high medium low"
+        string sourceType "peer_reviewed_study news_primary etc"
+        boolean isDerivative "Cites another source study"
+    }
+
+    EVIDENCE_SCOPE {
+        string name "Short label"
+        string methodology "ISO 14040 EU RED II etc"
+        string temporal "Source data time period"
+        string geographic "Source data geography"
+    }
+
+    CLAIM_ASSESSMENT_BOUNDARY {
+        string id_PK "CB_01 CB_02"
+        string name "Human-readable label"
+        string description "What this boundary represents"
+        string methodology "Dominant methodology"
+        float internalCoherence "0-1 consistency"
+        int evidenceCount
+    }
+
+    CB_CLAIM_VERDICT {
+        string id_PK
+        float truthPercentage "0-100"
+        string verdict "7-point scale label"
+        float confidence "0-100"
+        string reasoning "LLM-generated explanation"
+        boolean isContested
+        json supportingEvidenceIds_FK
+        json contradictingEvidenceIds_FK
+    }
+
+    BOUNDARY_FINDING {
+        string boundaryId_FK
+        float truthPercentage "Per-boundary 0-100"
+        float confidence "Per-boundary 0-100"
+        string evidenceDirection "supports contradicts mixed"
+    }
+
+    OVERALL_ASSESSMENT {
+        float truthPercentage "0-100 weighted"
+        string verdict "7-point scale label"
+        float confidence "0-100 weighted"
+        json verdictNarrative "headline keyFinding limitations"
+        json coverageMatrix "claims x boundaries"
+        json qualityGates "gate1Stats gate4Stats"
+    }
+
+{{/mermaid}}
+
+(% class="box infomessage" %)
+(((
+**Key insight:** A claim can have different truth values in different ClaimAssessmentBoundaries (e.g., a study may be "Mostly True" under one methodology but "Leaning False" under another). The data model captures this nuance via BoundaryFindings, not just a single verdict.
+)))
+
+=== Why This Matters Beyond RAG ===
+
+Classic RAG improves access to external memory, but it does not by itself define how retrieved evidence should be decomposed, compared, validated, and audited. The original RAG paper already frames provenance as an open problem. Schimanski et al.'s ACL 2024 paper sharpens this further: evidence-based QA often fails on **source quality** and **answer attributability**. DIRAS (NAACL 2025) then shows that even //relevance// needs nuanced definitions and calibrated scores beyond shallow semantic matching.
+
+FactHarbor's answer is a typed intermediate representation that constrains what retrieval can mean downstream:
+
+|=RAG Challenge|=FactHarbor Data-Model Guardrail
+|Retrieved passages may mix incompatible methodologies, time windows, or jurisdictions|**EvidenceScope** records methodology, temporal, geographic, source-type, and analytical-dimension metadata on each EvidenceItem
+|A single prompt may blur multiple assertions into one answer|**AtomicClaims** force explicit claim decomposition before verdicting
+|Retrieved evidence may be compared apples-to-oranges|**ClaimAssessmentBoundary** clusters only compatible EvidenceScopes into separate analytical frames
+|Missing coverage is easy to hide inside a fluent answer|**CoverageMatrix** records claims x boundaries evidence distribution explicitly for verdicting, aggregation, and auditability
+|Weak or unstable outputs can be hidden by narrative fluency|**QualityGates**, **confidence tiers**, and **analysisWarnings** surface low-confidence or degraded runs as first-class output
+|Runs are hard to reproduce once prompts/configs change|**Schema versioning** plus **per-job config snapshots** preserve the exact analytical setup used for a result
+
+This is why the data model is central to the research platform claim. Retrieval happens in Stage 2, but the main scientific object is the structured analysis graph built around it: AtomicClaims, EvidenceItems, EvidenceScopes, ClaimAssessmentBoundaries, Verdicts, QualityGates, and supporting analytical artifacts such as the CoverageMatrix.
+
+----
+
+== Key Facts ==
+
+|=Metric|=Value
+|Pipeline stages|5, with 2 mandatory quality gates
+|Debate steps per claim|5 (adversarial, multi-provider)
+|LLM providers|4 integrated (Anthropic + OpenAI active in debate; Google + Mistral available)
+|Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
+|Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
+|LLM calls per analysis|~40-50
+|Test suite|1,199 tests passing (build clean)
+|Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
+|License|Open-source, non-profit, fully transparent
+
+----
+
+== Architecture Roadmap ==
+
+FactHarbor is currently in **Alpha**. The roadmap below mixes completed phases, the current phase, planned scaling work, and longer-term vision.
+
+(% class="box infomessage" %)
+(((
+The next two diagrams are future-oriented. The roadmap shows planned evolution over time; the federation diagram shows a long-term target architecture.
+)))
+
+{{mermaid}}
+flowchart LR
+    subgraph POC["POC (Completed)"]
+        P1["Single host"]
+        P2["3x SQLite\n(factharbor, config, SR)"]
+        P3["Shared secrets"]
+        P4["Manual ops"]
+    end
+
+    subgraph ALPHA["Alpha (Current Phase)"]
+        A1["User auth"]
+        A2["PostgreSQL"]
+        A3["RBAC"]
+        A4["Rate limiting"]
+    end
+
+    subgraph BETA["Beta (Planned)"]
+        B1["Horizontal scaling"]
+        B2["Redis caching"]
+        B3["Prometheus + Grafana"]
+        B4["Moderation tools"]
+    end
+
+    subgraph V1["V1.0 (Planned)"]
+        V1A["Multi-region"]
+        V1B["OpenTelemetry"]
+        V1C["Log aggregation"]
+        V1D["Full DR"]
+    end
+
+    subgraph V2["V2.0+ (Vision)"]
+        V2A["Federation"]
+        V2B["Vector DB"]
+        V2C["Advanced analytics"]
+    end
+
+    POC --> ALPHA --> BETA --> V1 --> V2
+
+    style POC fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style ALPHA fill:#fff9c4,stroke:#f9a825,color:#000
+    style BETA fill:#fff3e0,stroke:#e65100,color:#000
+    style V1 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style V2 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+{{/mermaid}}
+
+=== Target: Federated Network (V2.0+) ===
+
+The long-term vision is a **federated architecture** — independent FactHarbor instances operated by different organizations can synchronize verified claims while maintaining local control and autonomy.
+
+{{mermaid}}
+flowchart TB
+    PROTOCOL{"Shared Federation Protocol\n(no central authority)"}
+
+    subgraph NETWORK["Independent Organizations"]
+        direction LR
+
+        subgraph ORG1["Organization A"]
+            direction TB
+            U1["Local Users"] --> FH1["FactHarbor Instance 1"]
+        end
+
+        subgraph ORG2["Organization B"]
+            direction TB
+            U2["Local Users"] --> FH2["FactHarbor Instance 2"]
+        end
+
+        subgraph ORG3["Organization C"]
+            direction TB
+            U3["Local Users"] --> FH3["FactHarbor Instance 3"]
+        end
+    end
+
+    FH1 -. "claim + verdict sync" .-> PROTOCOL
+    FH2 -. "claim + verdict sync" .-> PROTOCOL
+    FH3 -. "claim + verdict sync" .-> PROTOCOL
+
+    style PROTOCOL fill:#f3e5f5,stroke:#7b1fa2,color:#000,stroke-width:2px
+    style NETWORK fill:#fafafa,stroke:#cfcfcf,color:#000
+    style ORG1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style ORG2 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style ORG3 fill:#fff3e0,stroke:#e65100,color:#000
+
+{{/mermaid}}
+
+(% class="box infomessage" %)
+(((
+**Research opportunity:** The federation layer raises open questions in distributed fact-checking: how to reconcile conflicting verdicts across instances, detect cross-instance contradictions, and maintain quality guarantees in a decentralized network.
+)))
+
+----
+
+== Goals for First Public Release (V1.0) ==
+
+The pipeline works end-to-end today. To move from working prototype to a public service people can rely on, five engineering goals must be met:
+
+|=Goal|=Current State|=V1.0 Target|=Why It Matters
+|**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, PostgreSQL, queue-based job dispatch|A public service must handle hundreds of concurrent users without degradation
+|**Performance**|~3-5 min per single-claim analysis|< 90 seconds for single claims; parallel stage execution|Users will not wait 5 minutes — response time directly affects adoption
+|**Stability**|Operational but manual recovery; circuit breakers for provider failures|Auto-recovery, health monitoring (Prometheus + Grafana), graceful degradation|A public service must run unattended 24/7 without manual intervention
+|**Repeatability**|Same claim can produce different verdicts across runs (LLM stochasticity, live web evidence)|Verdict stability within defined tolerance bands; self-consistency gating; evidence caching|Trust requires that the same claim analysed twice yields substantially the same verdict — users and researchers must be able to reproduce results
+|**Cost Reduction**|~$0.15-0.25 per analysis (model tiering already saves 50-70%)|< $0.05 per analysis through aggressive caching, smaller models where sufficient, evidence reuse|At scale, every analysis costs real money — a non-profit must minimize per-analysis cost to remain sustainable
+
+(% class="box infomessage" %)
+(((
+**Research angle:** Repeatability and cost reduction are open research questions. How do you achieve stable verdicts when evidence changes daily and LLM outputs are stochastic? How do you reduce model costs without degrading analytical quality?
+)))
+
+----
+
+== Target User Groups ==
+
+|=User Group|=How They Use FactHarbor|=Key Need
+|**General Public**|Browse published analyses, explore the evidence landscape — no registration required|Transparent, accessible verdicts they can verify themselves
+|**Journalists & Content Creators**|Fact-check claims before publishing; cite FactHarbor verdicts with full provenance|API access, speed, credibility — evidence chains they can reference in their work
+|**Researchers & Academics**|Filter by verification status, confidence levels, source quality; export data for studies|Audit trails, reproducible results, exportable structured data
+|**Social Media Users**|Quick-check claims before sharing to avoid spreading misinformation|Fast turnaround, clear verdicts, easy to understand
+|**Educators**|Use real-world claim analyses as teaching material for critical thinking and media literacy|Multi-perspective evidence landscapes, not just binary verdicts
+
+(% class="box infomessage" %)
+(((
+**Design principle:** Low barrier to entry — anyone can browse without registration. Submission requires only a free account. Every verdict is fully transparent: cited evidence, source reliability scores, and documented debate reasoning.
+)))
+
+----
+
+== Current Status ==
+
+=== What Works ===
+
+|=Area|=Status|=Details
+|**CB Pipeline (all 5 stages)**|Working|Extract Claims, Research, Cluster Boundaries, Verdict, Aggregate — fully operational end-to-end
+|**Multi-Provider LLM Debate**|Working|Anthropic advocate + OpenAI challenger, self-consistency, reconciler, validator
+|**Quality Gates (Gate 1 + Gate 4)**|Working|Claim validation and confidence tiering with UI panel
+|**UCM Configuration**|Working|100+ tunable parameters, hot-reloadable, Admin UI with comparison/export
+|**Source Reliability v2**|Working|LLM-powered assessment, cache isolation, evidence weighting
+|**Multi-Provider Search**|Working|7 providers integrated (Google CSE + Serper active by default; Brave, SerpAPI available); fallback and accumulation mode
+|**Wikipedia & Semantic Scholar**|API connected, to be integrated|Fully integrated search providers for academic papers and encyclopedic knowledge
+|**LLM Model Tiering**|Working|Haiku (budget) / Sonnet (standard) — 50-70% cost savings
+|**Multilingual Analysis**|Working|DE, EN, FR, PT tested; no English-only logic
+|**Input Neutrality**|Working|"Was X fair?" vs "X was fair" within ±4% tolerance
+|**Test Suite**|Working|1,199 tests passing (build clean)
+|**HTML Report Generation**|Working|Structured reports with evidence citations, per-boundary findings
+
+=== What's Open ===
+
+|=Area|=Status|=What's Needed
+|**User Authentication**|Not started|Currently invite-code only; needs proper user accounts, OAuth, RBAC
+|**Performance**|Needs improvement|~3-5 min per claim; target < 90 seconds via caching and parallel execution
+|**Repeatability**|Partially addressed|Self-consistency gating implemented; evidence caching and tolerance bands needed
+|**Metrics & Observability**|Integrated|MetricsCollector wired into pipeline (per-stage timing, gate stats, evidence counts); production dashboards and alerting not yet set up
+|**Security Hardening**|POC level|SSRF protection, rate limiting, admin endpoint security needed before public release
+|**Database Migration**|Planned|SQLite → PostgreSQL for scalability and concurrent access
+|**Horizontal Scaling**|Not started|Single-host only; needs queue-based job dispatch and worker pool
+|**Claim Caching**|Designed, not built|Every analysis recomputes from scratch; 30-50% savings possible via evidence reuse
+|**Provider Fallback**|Config exists, not wired|If primary LLM provider fails, analysis fails — no automatic failover yet
+
+=== Known Problems & Challenges ===
+
+(% class="box warningmessage" %)
+(((
+**Transparency note:** These are real, active challenges — not theoretical risks. Being open about them is part of FactHarbor's commitment to honesty.
+)))
+
+**Report Stability** — the most significant quality challenge:
+
+Running the same claim twice can produce meaningfully different verdicts. Three compounding factors:
+
+|=Factor|=Cause|=Impact|=Mitigation Status
+|**LLM Stochasticity**|Even at temperature 0, LLM outputs are not fully deterministic|Verdict percentages can shift 5-15pp between runs|Self-consistency check (Step 2) measures stability; high spread reduces confidence
+|**Live Web Evidence**|Evidence changes daily — sources go offline, new articles appear, search rankings shift|Different evidence base → different conclusions|Partially mitigated; evidence caching planned but not built
+|**Claim Decomposition Variance**|The same input text can be decomposed into different AtomicClaims across runs|Different claims → different research → different verdicts|Gate 1 tightening (Phase B) planned; two-pass extraction reduces but doesn't eliminate variance
+
+(% class="box infomessage" %)
+(((
+**Research opportunity:** Report stability is a measurable problem. Defining formal stability metrics, establishing tolerance bands, and designing reproducibility protocols for LLM-based fact-checking systems.
+)))
+
+**Other active challenges:**
+
+|=Problem|=Details
+|**Broad claim over-decomposition**|Rhetorical claims sometimes decomposed too aggressively — weak sub-claims survive Gate 1 and dilute analysis quality
+|**Evidence contamination across jurisdictions**|Foreign political sources can contaminate jurisdiction-specific claims (Phase A fixes shipped, but edge cases remain)
+|**Source reliability evaluation quality**|LLM-based source evaluation is functional but not yet benchmarked against human expert assessments
+|**Cost per analysis**|~$0.15-0.25 is acceptable for Alpha but too high for a free public service at scale
+|**No production dashboards**|Metrics collection is integrated into the pipeline, but no Prometheus/Grafana dashboards or alerting are set up yet
+
+----
+
+== Vision Beyond V1.0 ==
+
+After the first public release, FactHarbor's roadmap includes features driven by user demand and research opportunities:
+
+=== Platform & Integration Architecture ===
+
+The analysis engine is designed as a **headless service** — the pipeline and Public API are the core, with multiple UI integration paths built on top:
+
+|=Integration|=Target|=Description
+|**Public REST API**|V1.0|The foundation — programmatic access for any client. Journalists, researchers, and third-party apps consume verdicts, evidence, and metadata via API
+|**Web Application**|Current|The primary UI — submit claims, browse analyses, explore evidence landscapes
+|**Browser Extensions**|V1.1+|Chrome, Firefox, Safari — right-click any text on any website to fact-check it instantly
+|**Mobile Apps (iOS/Android)**|V1.5+|Native apps with push notifications for tracked claims; on-the-go verification
+|**Embeddable Widgets**|V1.1+|JavaScript widgets for publishers to embed live verdicts directly in their articles
+|**CMS Plugins**|V1.5+|WordPress, Drupal — direct integration into content management workflows
+|**ClaimReview Schema.org**|V1.1+|Structured data so verdicts appear as Google rich snippets in search results
+
+=== Advanced Analysis ===
+
+|=Feature|=Target|=Why
+|**Image & Video Verification**|V1.5+|Reverse image search, EXIF metadata, deepfake detection
+|**Semantic Search (Vector DB)**|V2.0+|Find related claims across the full corpus
+|**Contradiction Network**|V2.0+|Global detection of contradictory claims across analyses
+|**Evidence Reuse & Caching**|V1.1+|Previously gathered evidence accelerates new analyses on related claims
+
+=== Community & Collaboration ===
+
+|=Feature|=Target|=Why
+|**Public Comment Threads**|V2.0+|Community discussion on individual verdicts
+|**Expert Review Workflow**|V1.5+|Domain experts consulted for high-stakes or contested claims
+|**Collaborative Annotation**|V2.0+|Users annotate and discuss evidence together
+|**Team Workspaces**|V1.5+|Shared environments for newsroom or research group fact-checking
+
+=== Federation (V2.0+) ===
+
+|=Feature|=Target|=Why
+|**Claim Synchronization**|V2.0+|Independent instances share verified claims across organizations
+|**Distributed Verdict Consensus**|V2.0+|Cross-node validation while maintaining source attribution
+|**Data Sovereignty per Node**|V2.0+|GDPR compliance per region; each node maintains autonomy
+|**Cross-Node Contradiction Detection**|V2.0+|Identify conflicting verdicts across the federation
+
+=== Source Reliability as a Standalone Service ===
+
+The Source Reliability (SR) module — which evaluates domain credibility using multi-provider LLM assessment — is designed for **extraction as an independent service**. It already has its own database, cache isolation, and UCM configuration. As a standalone API, it could serve:
+
+* **Other fact-checking platforms** — any system that needs domain credibility scores
+* **Newsrooms** — evaluate source trustworthiness before citing
+* **Researchers** — systematic, reproducible media source assessment at scale
+* **Browser extensions** — real-time credibility indicators while browsing
+
+=== Accessibility & Internationalization ===
+
+|=Feature|=Target|=Why
+|**WCAG 2.1 AA Compliance**|Beta+|Screen readers, keyboard navigation, high-contrast modes
+|**Multilingual UI (10+ languages)**|V1.0+|Interface beyond English — matching the multilingual analysis capability
+|**RTL Language Support**|V1.5+|Arabic, Hebrew, and other right-to-left languages
+
+----
+
+== Open-Source Goals: Contributors & Sponsors ==
+
+FactHarbor is a **non-profit, open-source** project. Sustainability depends on building a community and securing institutional support:
+
+=== Contributors ===
+
+|=Goal|=Why
+|**Academic contributors**|Researchers integrate evaluation metrics, benchmark new techniques, publish on the platform
+|**Developer community**|Open-source contributors build browser extensions, API clients, CMS plugins, language support
+|**Fact-checking organizations**|Professional fact-checkers improve analysis quality, contribute domain expertise, validate verdicts
+|**Student projects**|Bachelor/Master theses on specific pipeline components (evidence retrieval, debate patterns, multilingual robustness)
+
+=== Sponsors & Funding ===
+
+|=Goal|=Why
+|**Research grants (Innosuisse, SNSF, EU Horizon)**|Fund postdoc positions and research collaborations — this is the path we are exploring today
+|**Foundation grants**|Media foundations, digital democracy initiatives, press freedom organizations
+|**Institutional partnerships**|Universities, libraries, public broadcasters — credibility and reach
+|**Infrastructure sponsors**|Cloud credits, LLM API credits (Anthropic, OpenAI NPO programs) — the primary operational cost
+
+----
+
+== Why Collaborate: Mutual Benefits ==
+
+A collaboration between FactHarbor and UZH is not one-directional — both sides bring what the other needs.
+
+(% class="box infomessage" %)
+(((
+**Public research references behind this section:** Schimanski et al., ACL 2024 (//Towards Faithful and Robust LLM Specialists for Evidence-Based Question-Answering//); Ni et al., NAACL 2025 (//DIRAS: Efficient LLM Annotation of Document Relevance for Retrieval Augmented Generation//); Tobias Schimanski ACL Anthology author page; Markus Leippold's UZH profile; Elliott Ash's ETH profile.
+)))
+
+=== What FactHarbor Gains ===
+
+|=Benefit|=Why It Matters
+|**Rigorous evaluation methodology**|Tobias brings published metrics for source attribution (ACL 2024) and relevance scoring (DIRAS) — FactHarbor currently evaluates quality informally. Formal benchmarks make the system credible to the academic community.
+|**Research framing**|A UZH partnership would help turn internal quality checks into publishable evaluation questions, benchmark protocols, and ablation studies.
+|**Access to research infrastructure**|Potential access to university compute, datasets, and a broader UZH / ETH-adjacent NLP research network, depending on project structure and collaborators.
+|**Grant vehicle**|Innosuisse or BRIDGE could provide a credible structure for funding research effort around the platform, subject to institutional fit, eligibility, and proposal design.
+|**Publication pipeline**|Joint papers at top venues (ACL, EMNLP, NAACL) create visibility and attract contributors.
+|**Student contributors**|Bachelor/Master thesis projects on specific pipeline components become realistic once the collaboration matures.
+
+=== What Tobias / UZH Could Gain ===
+
+|=Benefit|=Why It Matters
+|**A deployed, operational system**|Unlike most research prototypes, FactHarbor runs end-to-end on real claims today. Research can happen on a live system producing real artifacts, not only synthetic benchmarks.
+|**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval — few equivalent systems exist in production. Each pipeline stage produces inspectable intermediate artifacts, and all analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
+|**Domain-agnostic scope**|Tobias' public publication record includes climate / sustainability retrieval work and evidence-based QA. FactHarbor would let similar evaluation ideas be tested in a broader, general-domain fact-checking setting.
+|**Publishable open problems**|Report stability, evidence quality metrics, cross-provider debate dynamics, and source reliability benchmarking are all concrete topics that could support papers, with system data already being generated.
+|**Industry partnership for grants**|For industry-linked funding schemes, FactHarbor can serve as a concrete implementation partner and real-world validation environment if the project is scoped jointly.
+|**Open-source visibility**|Contributions to an open-source, non-profit project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
+
+(% class="box warningmessage" %)
+(((
+**The key asymmetry:** FactHarbor has a working system that still lacks formal evaluation. Tobias' published work brings evaluation methodology that could be stress-tested on a live, production-scale testbed. Together, that is a strong research fit.
+)))
+
+----
+
+== Research Overlap ==
+
+=== Source Attribution (your ACL 2024 work) ===
+
+Your ACL 2024 //Faithful LLM Specialists// paper formalizes the citation fidelity problem: LLMs cite wrong sources or misrepresent what sources say. FactHarbor addresses this structurally: every verdict traces to specific evidence items with source reliability scores. A post-verdict **grounding check** (Step 5: Validator) exists but currently runs in advisory mode — it flags mismatches without blocking publication. Formalizing and enforcing attribution quality is an open problem where that evaluation framework could directly improve the pipeline.
+
+=== Evidence Quality Scoring (DIRAS, NAACL 2025) ===
+
+Our evidence filter assigns //probativeValue// (high/medium/low) via LLM prompt — a categorical approach. DIRAS shows that explicit relevance definitions per query and continuous calibrated scores significantly improve scoring. Integrating DIRAS-style relevance assessment could strengthen our evidence weighting in verdict aggregation.
+
+=== Multi-Agent Debate (Climinator parallel) ===
+
+FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-advocate line explored in climate fact-checking systems such as Climinator. FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation rules. Unlike domain-specific systems, this architecture is **topic-agnostic** — it works for climate, politics, health, economics, or other domains without modification.
+
+=== Collaboration Opportunities ===
+
+* **Evidence quality metrics** — formalize and benchmark our filtering with your evaluation methodology
+* **Retrieval evaluation** — measure how well our iterative search captures relevant evidence
+* **Source credibility benchmarking** — evaluate our multi-provider reliability scoring
+* **Multi-agent debate architecture** — study and improve the debate pattern itself
+
+----
+
+== Let Me Show You ==
+
+(% class="box successmessage" %)
+(((
+**Live Demo** — Let me demonstrate the system with a live analysis. Pick any claim, in any language.
+)))
+
+----
+
+== Demo Walkthrough Guide ==
+
+=== 1. User Experience: Submit & Explore ===
+
+|=Step|=What to Show|=What to Say
+|**Submit a claim**|Navigate to ##/analyze##, enter a claim (let Tobias choose one), click Analyze|"You can submit any claim in any language. The system accepts free text or URLs."
+|**Job progress**|Show the job status page — stages progressing in real-time|"You can see each pipeline stage as it executes: extraction, research, clustering, debate, aggregation."
+|**Verdict overview**|Show the overall verdict badge, truth percentage, confidence tier|"The verdict is not binary — it shows a 7-point scale with a confidence level. Here we got [verdict] with [confidence] confidence."
+|**Per-claim verdicts**|Expand individual AtomicClaim verdicts|"The system decomposed your input into [N] verifiable claims. Each has its own verdict with cited evidence."
+|**Boundary findings**|Show per-boundary breakdown for a claim|"This claim has different truth values depending on the analytical boundary — [example: methodology X says mostly true, methodology Y says mixed]."
+|**Evidence trail**|Click through to supporting/contradicting evidence items|"Every verdict traces back to specific evidence. You can see the source URL, the extracted statement, its probative value, and the source reliability score."
+|**Quality gates panel**|Show Gate 1 and Gate 4 results|"Two mandatory quality gates — Gate 1 filtered out [N] weak claims, Gate 4 assessed confidence calibration."
+
+=== 2. Admin: Configuration & Control ===
+
+|=Step|=What to Show|=What to Say
+|**Admin dashboard**|Navigate to ##/admin## — show the config overview|"Everything that affects analysis behavior is configurable at runtime — no code changes needed."
+|**Pipeline config**|Open pipeline settings — show model selection, debate roles, temperatures|"You can see which models are assigned to which pipeline stage, and the debate role configuration: Anthropic for advocate, OpenAI for challenger."
+|**Search config**|Show search provider settings, iteration limits, budget controls|"Research intensity is tunable — max iterations, providers, evidence sufficiency thresholds."
+|**Calculation config**|Show aggregation weights, triangulation thresholds, harm potential multipliers|"These parameters control how evidence is weighted, how cross-boundary agreement affects confidence, and how harmful claims get extra scrutiny."
+|**Config comparison**|Show the diff view: current vs. defaults|"The admin can compare running config against defaults to see what has been tuned — full audit trail."
+|**Job history**|Navigate to ##/jobs## — show list of completed analyses with verdicts|"Every analysis is stored with its full config snapshot, so any result can be reproduced with the exact settings used."
+
+=== 3. Source Reliability Database ===
+
+|=Step|=What to Show|=What to Say
+|**SR overview**|Navigate to ##/admin/source-reliability## (or show the SR cache DB)|"Source reliability is a separate subsystem with its own database and evaluation pipeline."
+|**Domain lookup**|Search for a well-known domain (e.g., reuters.com, wikipedia.org)|"Each domain gets a credibility score from 0.0 to 1.0, evaluated by multiple LLM providers with cross-check refinement."
+|**Score breakdown**|Show trackRecordScore, trackRecordConfidence, consensus flag|"The score includes a confidence level — a domain with 2 evaluations has lower confidence than one with 5. Consensus means all evaluators agreed."
+|**Source types**|Show different source type classifications|"Sources are classified by type — peer-reviewed study, government report, news primary, opinion, collaborative reference (Wikipedia). Each type carries different weight in the analysis."
+|**Impact on verdict**|Reference back to the analysis report — show how SR scores affected evidence weighting|"In the report we just saw, this source had a reliability score of [X], which influenced how much weight its evidence carried in the verdict."
+
+----
+
+**Navigation:** [[Presentations>>FactHarbor.Product Development.Presentations.WebHome]] | [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]
