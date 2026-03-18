@@ -1,6 +1,5 @@
 = FactHarbor =
 
-(% style="font-size: 1.2em; color: #555;" %)
 Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
 
 {{info}}
@@ -20,7 +19,7 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 (((
 **Non-profit and Transparent**
 FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
-We serve the public interest with full transparency — no paywalls, no hidden algorithms, and no profit motive.
+We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
 )))
 ----
 
@@ -28,7 +27,52 @@ We serve the public interest with full transparency — no paywalls, no hidden a
 
 A user submits any claim or article, in any language. The system extracts verifiable assertions, researches supporting and opposing evidence from real web sources, runs a structured AI debate, and produces a transparent verdict — every conclusion traceable to its sources.
 
-{{include reference="FactHarbor.Product Development.Diagrams.Analysis Pipeline Overview"/}}
+
+{{mermaid}}
+flowchart TD
+    subgraph MAIN [" "]
+        direction LR
+        INPUT(["Your Claim<br/>or Article"])
+        A["Extract<br/>verifiable claims"]:::ai
+
+        B["Search supporting<br/>and opposing evidence"]:::web
+
+        Q["Filter quality<br/>and score reliability"]:::ai
+        C["Organize into<br/>evidence-defined boundaries"]:::ai
+
+        subgraph DEBATE ["Structured AI Debate"]
+            direction TB
+            D["Advocate"]:::ai
+            SC["Self-Consistency"]:::ai
+            E["Challenger"]:::ai
+            F["Reconciler"]:::ai
+            V["Validator"]:::ai
+            D --> SC & E
+            SC & E --> F --> V
+        end
+
+        OUTPUT(["Verdict and<br/>Structured Report"])
+
+        INPUT --> A --> B --> Q --> C --> DEBATE --> OUTPUT
+    end
+
+    subgraph LEGEND ["Legend"]
+        direction LR
+        L1["AI-powered"]:::ai ~~~ L2["Web and External Sources"]:::web
+    end
+
+    MAIN ~~~ LEGEND
+
+    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    style MAIN fill:none,stroke:none
+    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
+
+    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
+{{/mermaid}}
+
 
 ----
 
@@ -37,13 +81,13 @@ A user submits any claim or article, in any language. The system extracts verifi
 === Current (Alpha) ===
 
 {{mermaid}}
-flowchart LR
+flowchart TB
     subgraph Client["Client Layer"]
         BROWSER["Web Browser"]
     end
 
     subgraph NextJS["Next.js Web App (port 3000)"]
-        direction TB
+        direction LR
         UI["UI Pages\n/analyze, /jobs, /admin"]
         FH_API["Proxy API Routes\n/api/fh/*"]
         INTERNAL["Internal API\n/api/internal/run-job"]
@@ -62,7 +106,7 @@ flowchart LR
         direction TB
         CONTROLLERS["Controllers\nAnalyze, Jobs, Health"]
         SERVICES["Services\nJobService, RunnerClient"]
-        MAIN_DB[("factharbor.db\nJobs & Events")]
+        MAIN_DB[("factharbor.db\nJobs & Events\n(SQLite)")]
 
         CONTROLLERS --> SERVICES --> MAIN_DB
     end
@@ -90,7 +134,7 @@ flowchart LR
 Future architecture once FactHarbor needs stronger scaling, queueing, and service isolation.
 
 {{mermaid}}
-flowchart LR
+flowchart TB
     subgraph CLIENT["Clients"]
         BROWSER2["Web UI / API Clients"]
     end
@@ -100,36 +144,45 @@ flowchart LR
     end
 
     subgraph CORE["Core Platform Services"]
+        direction TB
         API2[".NET Job API\n(job lifecycle, auth, audit)"]
         QUEUE["Job Queue / Dispatch"]
         WORKER["Analysis Worker Service\nClaimAssessmentBoundary pipeline"]
-        SRSVC["Source Reliability Service\nshared evaluation + cache"]
+        API2 --> QUEUE --> WORKER
     end
 
     subgraph DATA["Data Layer"]
-        JOBDB[("Jobs / Events DB")]
+        direction LR
+        JOBDB[("Jobs / Events DB\n(PostgreSQL)")]
         CFGDB[("Config Store / UCM DB")]
-        SRCACHE[("SR Cache / Evaluation Store")]
+    end
+
+    subgraph SRPLATFORM["Source Reliability Platform\n(standalone service — future)"]
+        direction TB
+        SRSVC["Source Reliability Service\nsource evaluation + scoring"]
+        SRCACHE[("SR Cache /\nEvaluation Store")]
+        SRCFG[("SR Config Store")]
+        SRSVC --> SRCACHE
+        SRSVC --> SRCFG
     end
 
     subgraph EXT["External Providers"]
+        direction LR
         LLM2["LLM Providers"]
         SEARCH2["Search Providers"]
     end
 
-    BROWSER2 --> WEB2 --> API2 --> QUEUE --> WORKER
-    API2 --> JOBDB
-    WEB2 --> CFGDB
-    WORKER --> CFGDB
-    WORKER --> SRSVC
-    SRSVC --> SRCACHE
-    WORKER --> LLM2
-    WORKER --> SEARCH2
-    SRSVC --> LLM2
-    SRSVC --> SEARCH2
+    CLIENT --> EDGE --> CORE
+    EDGE -->|"config access"| DATA
+    CORE -->|"jobs, events, config"| DATA
+    CORE -->|"source scores"| SRPLATFORM
+    CORE -->|"LLM + search calls"| EXT
+    SRPLATFORM -->|"provider lookups"| EXT
 
+    style CLIENT fill:#fffde7,stroke:#c0a800,color:#000
     style EDGE fill:#e8f5e9,stroke:#2e7d32,color:#000
     style CORE fill:#e3f2fd,stroke:#1565c0,color:#000
+    style SRPLATFORM fill:#f3e5f5,stroke:#6a1b9a,color:#4a148c,stroke-dasharray:6 4
     style DATA fill:#fff9c4,stroke:#f9a825,color:#000
     style EXT fill:#fff3e0,stroke:#e65100,color:#000
 {{/mermaid}}
@@ -140,90 +193,213 @@ flowchart LR
 
 
 {{mermaid}}
-flowchart LR
-    LLM_STAGE["LLM API Calls<br/>Claim extraction, evidence scoring,<br/>boundary clustering, debate, reporting"]
-    SEARCH_STAGE["Search API Calls<br/>Provider queries + source fetch rounds"]
+flowchart TB
+    INPUT(["User Input\n(text or URL)"])
 
-    INPUT["User Input\n(text or URL)"] --> STAGE1
-
-    subgraph STAGE1["1. Extract Claims"]
+    subgraph PIPELINE[" "]
         direction TB
-        CLAIMS["Extract AtomicClaims\n(Pass 1 + Pass 2)"]
-        GATE1{{"Gate 1\nClaim Validation"}}
-        FIDELITY["Fidelity & Specificity\nFiltering"]
-        CLAIMS --> GATE1 --> FIDELITY
+        subgraph STAGE1["1. Extract Claims"]
+            direction LR
+            PASS1["Pass 1 rough claim scan\n[LLM]"]
+            PRESEARCH["Preliminary web grounding\n[Web Search]"]
+            PASS2["Pass 2 grounded claims\n[LLM]"]
+            CENTRALITY["Centrality filter"]
+            GATE1{{"Gate 1\nClaim Validation\n[LLM]"}}
+            PASS1 --> PRESEARCH --> PASS2 --> CENTRALITY --> GATE1
+        end
+
+        STAGE1 -->|"AtomicClaims"| STAGE2
+
+        subgraph STAGE2["2. Research Evidence"]
+            direction LR
+            QUERY["Generate pro/con\nsearch queries\n[LLM]"]
+            SEARCH["Web search\n[Web Search]"]
+            RELEVANCE["Relevance screening\n[LLM]"]
+            FETCH["Fetch & parse sources\n[Web Search]"]
+            EXTRACT["Extract evidence + scopes\n[LLM]"]
+            FILTER["Filter evidence\n(probativeValue)"]
+            QUERY --> SEARCH --> RELEVANCE --> FETCH --> EXTRACT --> FILTER
+            FILTER -.->|"sufficiency check"| QUERY
+        end
+
+        STAGE2 -->|"EvidenceItems + sources"| STAGE3
+
+        subgraph STAGE3["3. Cluster Boundaries"]
+            direction LR
+            SCOPES["Collect EvidenceScopes\n(methodology, temporal)"]
+            NORMALIZE["Normalize equivalent scopes\n[LLM, optional]"]
+            CLUSTER["Cluster into emergent\nClaimAssessmentBoundaries\n[LLM]"]
+            SCOPES --> NORMALIZE --> CLUSTER
+        end
+
+        STAGE3 -->|"ClaimBoundaries +\nCoverageMatrix"| STAGE4
+
+        subgraph STAGE4["4. Generate Verdicts"]
+            direction LR
+            DEBATE2["LLM Debate Pattern\n[LLM]\n(Advocate/Challenger/Reconciler)"]
+            STABILITY["Self-consistency\n[LLM]\n(stability measurement)"]
+            VALIDATION["Validator checks\n[LLM]\n(grounding + direction, advisory)"]
+            GATE4{{"Gate 4\nConfidence Tiering"}}
+            DEBATE2 --> STABILITY --> VALIDATION --> GATE4
+        end
+
+        STAGE4 -->|"ClaimVerdicts"| STAGE5
+
+        subgraph STAGE5["5. Aggregate & Report"]
+            direction LR
+            TRIANG["Triangulation & Weighted\nAggregation"]
+            REPORT["Structured Report\n[LLM]\n(Narrative & Findings)"]
+            TRIANG --> REPORT
+        end
     end
 
-    STAGE1 --> STAGE2
+    INPUT -->|"Input text / URL content"| STAGE1
+    STAGE5 -->|"OverallAssessment +\nreport"| RESULT(["AnalysisResult\n(schema 3.2.0-cb)"])
 
-    subgraph STAGE2["2. Research Evidence"]
-        direction TB
-        QUERY["Generate pro/con\nsearch queries"]
-        FETCH["Fetch & parse\nsources"]
-        FILTER["Filter evidence\n(probativeValue)"]
-        QUERY --> FETCH --> FILTER
-        FILTER -.->|"sufficiency check"| QUERY
-    end
-
-    STAGE2 --> STAGE3
-
-    subgraph STAGE3["3. Cluster Boundaries"]
-        direction TB
-        SCOPES["Extract EvidenceScopes\n(methodology, temporal)"]
-        CLUSTER["Cluster into emergent\nClaimAssessmentBoundaries"]
-        SCOPES --> CLUSTER
-    end
-
-    STAGE3 --> STAGE4
-
-    subgraph STAGE4["4. Generate Verdicts"]
-        direction TB
-        DEBATE2["LLM Debate Pattern\n(Advocate/Challenger/Reconciler)"]
-        STABILITY["Self-consistency\n(stability measurement)"]
-        VALIDATION["Validator checks\n(grounding + direction, advisory)"]
-        DEBATE2 --> STABILITY --> VALIDATION
-    end
-
-    STAGE4 --> STAGE5
-
-    subgraph STAGE5["5. Aggregate & Report"]
-        direction TB
-        TRIANG["Triangulation & Weighted\nAggregation"]
-        GATE4{{"Gate 4\nConfidence Tiering"}}
-        REPORT["Structured Report\n(Narrative & Findings)"]
-        TRIANG --> GATE4 --> REPORT
-    end
-
-    STAGE5 --> RESULT["AnalysisResult\n(schema 3.2.0-cb)"]
-
-    CLAIMS -.-> LLM_STAGE
-    GATE1 -.-> LLM_STAGE
-    QUERY -.-> LLM_STAGE
-    QUERY -.-> SEARCH_STAGE
-    FILTER -.-> LLM_STAGE
-    SCOPES -.-> LLM_STAGE
-    CLUSTER -.-> LLM_STAGE
-    DEBATE2 -.-> LLM_STAGE
-    VALIDATION -.-> LLM_STAGE
-    TRIANG -.-> LLM_STAGE
-
-    style STAGE1 fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style STAGE2 fill:#fff9c4,stroke:#f57f17,color:#000
-    style STAGE3 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style STAGE4 fill:#f3e5f5,stroke:#7b1fa2,color:#000
-    style STAGE5 fill:#fce4ec,stroke:#c2185b,color:#000
-    style LLM_STAGE fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
-    style SEARCH_STAGE fill:#FFF8E1,stroke:#F57F17,color:#E65100,stroke-width:2px
+    style PIPELINE fill:none,stroke:none
+    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    style RESULT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    style STAGE1 fill:#f3fbf4,stroke:#7cb889,color:#000
+    style STAGE2 fill:#f3fbf4,stroke:#7cb889,color:#000
+    style STAGE3 fill:#f3fbf4,stroke:#7cb889,color:#000
+    style STAGE4 fill:#f3fbf4,stroke:#7cb889,color:#000
+    style STAGE5 fill:#f3fbf4,stroke:#7cb889,color:#000
+    classDef neutralBox fill:#ffcdd2,stroke:#c62828,color:#7f0000,stroke-width:1.8px
+    classDef llmCall fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c,stroke-width:2px
+    classDef searchCall fill:#fff3e0,stroke:#e65100,color:#bf360c,stroke-width:2px
+    class CENTRALITY,FILTER,SCOPES,TRIANG,GATE4 neutralBox
+    class PASS1,PASS2,GATE1,QUERY,RELEVANCE,EXTRACT,NORMALIZE,CLUSTER,DEBATE2,STABILITY,VALIDATION,REPORT llmCall
+    class PRESEARCH,SEARCH,FETCH searchCall
 {{/mermaid}}
 
 === Pipeline Stages and Model Tiering ===
 
 |=Stage|=Name|=What Happens|=Model Tier
-|1|**Extract Claims**|Two-pass extraction of atomic claims from input; Gate 1 claim validation|Haiku (budget)
-|2|**Research**|Iterative web search (up to 10 rounds per claim), evidence extraction and deduplication|Haiku (budget) + Web Search
-|3|**Cluster Boundaries**|Group evidence into ClaimAssessmentBoundaries by scope congruence|Haiku (budget)
+|1|**Extract Claims**|Pass 1 scan, preliminary web grounding, Pass 2 grounded extraction, centrality filter, Gate 1 validation|Budget + Web Search
+|2|**Research**|Iterative query generation, web search, relevance screening, source fetch, evidence extraction, and evidence filtering|Budget + Web Search
+|3|**Cluster Boundaries**|Collect scopes, optionally normalize equivalent scopes, then cluster into ClaimAssessmentBoundaries|Budget + Standard
 |4|**Verdict**|5-step adversarial LLM debate per claim (see below)|Sonnet (standard)
 |5|**Aggregate**|Weighted aggregation with triangulation, narrative generation|Sonnet (standard)
+
+=== LLM Call Topology ===
+
+|=Pipeline Part|=Typical Call Pattern
+|**Stage 1: Claim extraction**|Pass 1 scan + Pass 2 evidence-grounded extraction + Gate 1 validation (batched budget-tier calls)
+|**Stage 2: Research**|Repeated budget-tier calls for query generation, relevance classification, and evidence extraction across search rounds
+|**Stage 3: Boundary clustering**|Scope normalization plus clustering calls to form ClaimAssessmentBoundaries
+|**Stage 4: Verdict debate**|1 advocate + 2 self-consistency re-runs + 1 challenger + 1 reconciler + 2 lightweight validator checks
+|**Stage 5: Final report**|Aggregation / narrative generation call for the published result
+
+=== Loop and Retry Topology ===
+
+The production pipeline contains multiple control-flow loops and retries beyond the simplified sufficiency-check arrow shown above.
+
+{{mermaid}}
+flowchart TB
+    subgraph S1["Stage 1: Claim Extraction Loops"]
+        direction LR
+        P1["Pass 1 scan"]:::llmCall
+        PRE["Preliminary web grounding"]:::searchCall
+        P2["Pass 2 grounded extraction"]:::llmCall
+        P2R["Pass 2 retry / fallback\n(hardcoded retry limit)"]:::llmCall
+        G1["Gate 1 validation"]:::llmCall
+        ENOUGH{"Enough claims\npost-Gate 1?"}:::decision
+        REP["Reprompt Pass 2 + Gate 1\n(UCM-configured attempts)"]:::llmCall
+
+        P1 -->|"rough claims"| PRE -->|"preliminary evidence"| P2 -->|"candidate claims"| G1 -->|"validated claims"| ENOUGH
+        P2 -.->|"soft refusal / schema issue"| P2R -->|"retry context"| P2
+        ENOUGH -->|"No"| REP -->|"guidance + input"| P2
+    end
+
+    subgraph S2["Stage 2: Research Iteration Loops"]
+        direction TB
+        MAIN{"Continue main loop?\n(sufficiency, time,\nbudget, zero-yield)"}:::decision
+        PICK["Pick least-researched claim"]:::neutral
+
+        subgraph ITER["Per-iteration research"]
+            direction LR
+            QGEN["Generate queries"]:::llmCall
+            SEARCH["Web search"]:::searchCall
+            REL["Relevance screening"]:::llmCall
+            FETCH["Fetch sources"]:::searchCall
+            FRETRY["Fetch retry once\n(transient errors)"]:::searchCall
+            EX["Extract evidence + scopes"]:::llmCall
+            CHECK["Scope / derivative checks\n+ evidence filter"]:::neutral
+
+            QGEN -->|"queries"| SEARCH -->|"search results"| REL -->|"relevant URLs"| FETCH -->|"fetched sources"| EX -->|"evidence items + scopes"| CHECK
+            FETCH -.->|"timeout / network / 5xx"| FRETRY -->|"retried fetch"| FETCH
+        end
+
+        CONTRA{"Contradiction\niterations left?"}:::decision
+        CONTRA_RUN["Contradiction iteration\n(pick least-contradicted claim)"]:::searchCall
+        SKEW{"Evidence pool\nskewed?"}:::decision
+        CONTRARIAN["Contrarian retrieval\n(for each claim)"]:::searchCall
+
+        MAIN -->|"Yes"| PICK -->|"target claim"| QGEN
+        CHECK -->|"updated evidence pool"| MAIN
+        MAIN -->|"No"| CONTRA
+        CONTRA -->|"Yes"| CONTRA_RUN -->|"contradicting evidence"| CONTRA
+        CONTRA -->|"No"| SKEW
+        SKEW -->|"Yes"| CONTRARIAN
+    end
+
+    subgraph S3["Stage 3: Boundary Clustering Loops"]
+        direction LR
+        NS{"Normalize scopes?"}:::decision
+        NORM["LLM scope normalization"]:::llmCall
+        CL["LLM clustering"]:::llmCall
+        CAP{"Within max\nboundaries?"}:::decision
+        MERGE["Merge closest boundaries"]:::neutral
+
+        NS -->|"Yes: unique scopes"| NORM -->|"normalized scopes"| CL -->|"candidate boundaries"| CAP
+        NS -->|"No: unique scopes"| CL
+        CAP -->|"No"| MERGE -->|"merged boundaries"| CAP
+    end
+
+    subgraph S4["Stage 4: Verdict Loops"]
+        direction TB
+        ADV["Advocate"]:::llmCall
+
+        subgraph PAR["Parallel branch"]
+            direction LR
+            SC["Self-consistency\n(run2 + run3)"]:::llmCall
+            CH["Challenger"]:::llmCall
+        end
+
+        SCRETRY["Retry failed\nself-consistency run once"]:::llmCall
+        REC["Reconciliation"]:::llmCall
+        VAL["Grounding + direction\nvalidation"]:::llmCall
+        VRETRY["Validation batch\nretry once"]:::llmCall
+        REPAIR["Direction repair\n+ revalidate"]:::llmCall
+
+        ADV -->|"advocate verdicts"| SC
+        ADV -->|"advocate verdicts"| CH
+        SC -.->|"run failure"| SCRETRY -->|"retried run"| SC
+        SC -->|"consistency spread"| REC
+        CH -->|"challenge document"| REC
+        REC -->|"reconciled verdicts"| VAL
+        VAL -.->|"batch failure"| VRETRY -->|"retried validation"| VAL
+        VAL -.->|"direction issue\nand policy enabled"| REPAIR -->|"repaired verdict"| VAL
+    end
+
+    FINAL["Stage 5: Aggregate + report\n(no control-flow loop)"]:::neutral
+
+    ENOUGH -->|"Yes: AtomicClaims"| MAIN
+    SKEW -->|"No: EvidenceItems"| NS
+    CONTRARIAN -->|"expanded evidence pool"| NS
+    CAP -->|"Yes: ClaimBoundaries + CoverageMatrix"| ADV
+    VAL -->|"ClaimVerdicts"| FINAL
+
+    style S1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style S2 fill:#fff9c4,stroke:#f57f17,color:#000
+    style S3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style S4 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style PAR fill:#fafafa,stroke:#d9d9d9,color:#000,stroke-dasharray:5 3
+    classDef llmCall fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c,stroke-width:1.8px
+    classDef searchCall fill:#fff3e0,stroke:#e65100,color:#bf360c,stroke-width:1.8px
+    classDef neutral fill:#f3fbf4,stroke:#7cb889,color:#1f4d2a,stroke-width:1.5px
+    classDef decision fill:#fffde7,stroke:#c0a800,color:#6d4c00,stroke-width:1.5px
+{{/mermaid}}
 
 ----
 
@@ -233,18 +409,27 @@ Every claim goes through a **adversarial debate**. Different providers argue aga
 
 {{mermaid}}
 flowchart LR
-    E[Evidence + Boundaries] --> S1[1. Advocate]
-    S1 --> S2[2. Self-Consistency x2]
-    S1 --> S3[3. Adversarial Challenge]
-    S2 --> S4[4. Reconciliation]
-    S3 --> S4
-    S4 --> S5[5. Validation]
-    S5 --> O[Final Verdict]
+    E[Evidence + Boundaries] --> S1
 
-    subgraph "Parallel Execution"
-        S2
-        S3
+    subgraph INTERNAL["Internal Debate Pipeline"]
+        direction LR
+        S1[1. Advocate]
+        S4[4. Reconciliation]
+        S5[5. Validation]
+
+        subgraph "Parallel Execution"
+            S2[2. Self-Consistency x2]
+            S3[3. Adversarial Challenge]
+        end
+
+        S1 --> S2
+        S1 --> S3
+        S2 --> S4
+        S3 --> S4
     end
+
+    S4 --> S5
+    S5 --> O[Final Verdict]
 
     ANTH["Anthropic API Calls<br/>Advocate, Self-Consistency,<br/>Reconciler, Validator"]
     OPENAI["OpenAI API Call<br/>Challenger (GPT-4.1)"]
@@ -260,6 +445,7 @@ flowchart LR
     style S3 fill:#fff3e0,stroke:#e65100
     style S4 fill:#f3e5f5,stroke:#7b1fa2
     style S5 fill:#fce4ec,stroke:#c2185b
+    style INTERNAL fill:#f9fbff,stroke:#90a4ae,color:#000,stroke-width:1.5px
     style ANTH fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
     style OPENAI fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
 {{/mermaid}}
@@ -272,15 +458,6 @@ flowchart LR
 |3|**Challenger**|Adversarial challenge from a //different provider// for model diversity|OpenAI (GPT-4.1)
 |4|**Reconciler**|Final verdict integrating challenge insights and stability data|Anthropic (Sonnet)
 |5|**Validator**|Grounding check + direction check (advisory, non-blocking)|Anthropic (Haiku)
-
-=== LLM Call Topology ===
-
-|=Pipeline Part|=Typical Call Pattern
-|**Stage 1: Claim extraction**|Pass 1 scan + Pass 2 evidence-grounded extraction + Gate 1 validation (batched budget-tier calls)
-|**Stage 2: Research**|Repeated Haiku-tier calls for query generation, relevance classification, and evidence extraction across search rounds
-|**Stage 3: Boundary clustering**|Scope normalization plus clustering calls to form ClaimAssessmentBoundaries
-|**Stage 4: Verdict debate**|1 advocate + 2 self-consistency re-runs + 1 challenger + 1 reconciler + 2 lightweight validator checks
-|**Stage 5: Final report**|Aggregation / narrative generation call for the published result
 
 (% class="box infomessage" %)
 (((
@@ -323,35 +500,38 @@ Each verdict includes: truth percentage, confidence tier (High / Medium / Low / 
 Every piece of evidence passes through **six layers of quality control** before it can influence a verdict. Two phases: pre-verdict evidence quality filtering and post-verdict verdict quality validation.
 
 {{mermaid}}
-flowchart TB
-    RAW["Raw Evidence\n(from LLM extraction)"]
+flowchart LR
+    RAW["Raw Evidence\n(LLM extraction)"]:::raw
 
-    subgraph P1["Phase 1: Evidence Quality (Pre-Verdict)"]
-        L1["LLM Prompt Instructions\n(guide extraction quality)"]
-        L2["Deterministic Filter\n(min length, vague phrases, dedup,\ncategory rules, probative scoring)"]
-        L3["Provenance Validation\n(reject synthetic/LLM-generated content)"]
+    subgraph P1["Phase 1: Pre-Verdict Quality"]
+        direction LR
+        L1["Prompt Guidance"]:::phase1
+        L2["Deterministic Filter\n(length, dedup, category rules)"]:::phase1
+        L3["Provenance Validation"]:::phase1
+        L1 --> L2 --> L3
     end
 
-    subgraph P2["Phase 2: Verdict Quality (Post-Verdict)"]
-        L4["Source Reliability Weighting\n(domain credibility 0.0-1.0)"]
-        L5["Aggregation Pruning\n(tangential, opinion-only,\ncontestation validation)"]
-        L6["Validator Checks\n(grounding + direction,\nwarn-only by default)"]
+    subgraph P2["Phase 2: Post-Verdict Quality"]
+        direction LR
+        L4["SR Weighting"]:::phase2
+        L5["Aggregation Pruning"]:::phase2
+        L6["Validator Checks"]:::phase2
+        L4 --> L5 --> L6
     end
 
-    CLEAN["Published Report\n(verdict + warnings)"]
+    CLEAN["Published Report\n(verdict + warnings)"]:::clean
 
-    RAW --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> CLEAN
+    RAW --> L1
+    L3 --> L4
+    L6 --> CLEAN
 
-    style RAW fill:#ffcdd2,stroke:#b71c1c,color:#000
-    style CLEAN fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style P1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style P2 fill:#fff9c4,stroke:#f9a825,color:#000
-    style L1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L2 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L3 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style L4 fill:#fff9c4,stroke:#f9a825,color:#000
-    style L5 fill:#fff9c4,stroke:#f9a825,color:#000
-    style L6 fill:#fff9c4,stroke:#f9a825,color:#000
+    classDef raw fill:#f7e8ea,stroke:#cc8f97,color:#5f2a2f,stroke-width:1.5px
+    classDef clean fill:#e8f3e8,stroke:#8cb58f,color:#1f4d2a,stroke-width:1.5px
+    classDef phase1 fill:#f8fbff,stroke:#8fb2e5,color:#284f8f,stroke-width:1.2px
+    classDef phase2 fill:#fffaf0,stroke:#e4bf78,color:#9a5a00,stroke-width:1.2px
+    style P1 fill:#f4f8ff,stroke:#b7cdef,color:#000,stroke-width:1.2px
+    style P2 fill:#fffaf2,stroke:#ecd39b,color:#000,stroke-width:1.2px
+    linkStyle default stroke:#666,stroke-width:1.6px
 {{/mermaid}}
 
 Source reliability scores are computed per-domain using multi-provider LLM evaluation, with cross-check refinement and persistent caching. A peer-reviewed study carries different weight than a social media post — automatically.
@@ -511,39 +691,49 @@ The next two diagrams are future-oriented. The roadmap shows planned evolution o
 )))
 
 {{mermaid}}
-flowchart LR
+flowchart TB
     subgraph POC["POC (Completed)"]
+        direction LR
         P1["Single host"]
         P2["3x SQLite\n(factharbor, config, SR)"]
         P3["Shared secrets"]
         P4["Manual ops"]
+        P1 ~~~ P2 ~~~ P3 ~~~ P4
     end
 
     subgraph ALPHA["Alpha (Current Phase)"]
+        direction LR
         A1["User auth"]
         A2["PostgreSQL"]
         A3["RBAC"]
         A4["Rate limiting"]
+        A1 ~~~ A2 ~~~ A3 ~~~ A4
     end
 
     subgraph BETA["Beta (Planned)"]
+        direction LR
         B1["Horizontal scaling"]
         B2["Redis caching"]
         B3["Prometheus + Grafana"]
         B4["Moderation tools"]
+        B1 ~~~ B2 ~~~ B3 ~~~ B4
     end
 
     subgraph V1["V1.0 (Planned)"]
+        direction LR
         V1A["Multi-region"]
         V1B["OpenTelemetry"]
         V1C["Log aggregation"]
         V1D["Full DR"]
+        V1A ~~~ V1B ~~~ V1C ~~~ V1D
     end
 
     subgraph V2["V2.0+ (Vision)"]
+        direction LR
         V2A["Federation"]
         V2B["Vector DB"]
         V2C["Advanced analytics"]
+        V2A ~~~ V2B ~~~ V2C
     end
 
     POC --> ALPHA --> BETA --> V1 --> V2
@@ -561,7 +751,7 @@ The long-term vision is a **federated architecture** — independent FactHarbor 
 
 {{mermaid}}
 flowchart TB
-    PROTOCOL{"Shared Federation Protocol\n(no central authority)"}
+    PROTOCOL["Shared Federation Protocol\n(no central authority)"]
 
     subgraph NETWORK["Independent Organizations"]
         direction LR
