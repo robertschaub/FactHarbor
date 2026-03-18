@@ -1,23 +1,21 @@
-= FactHarbor Cooperation with UZH/ETH =
+= FactHarbor potential cooperation with UZH/ETH =
 
 {{info}}
-**Meeting:** UZH — 18 March 2026
-**Participants:** Elliott Ash (ETHZ), Tobias Schimanski (UZH), Robert Schaub (FactHarbor)
+**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 18 March 2026
 {{/info}}
 
-== Meeting Goals ==
+== Document Purpose ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**During this hour, we want to:**
-* show clearly what FactHarbor already does well and where the most research-relevant gaps still are
+**Provide information for inspection and discussion:**
+* show what FactHarbor already does well and where the most research-relevant gaps still are
 * test collaboration fit with the UZH / ETH-adjacent research context around **source attribution**, **relevance scoring**, **evaluation**, **reproducibility**, **speed**, and **cost**
-* discuss whether an **Innosuisse-oriented applied innovation path** could realistically anchor the collaboration
+* discuss realistic collaboration and funding paths with UZH / ETH-adjacent research partners
 
-**By the end of the meeting, we want to reach:**
-* a shared view on whether there is a strong collaboration fit
-* a short list of the most promising joint topics
-* agreement on concrete follow-up actions and whether to schedule a follow-up meeting
+**Goal after inspection and discussion:**
+* a shared view on whether there are collaboration fit
+* a list of the most promising joint opportunities and specific topics
 )))
 
 == FactHarbor Organisation ==
@@ -45,15 +43,15 @@ The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/
 
 == Why Collaborate: Mutual Benefits ==
 
-A collaboration between FactHarbor and UZH is not one-directional — both sides bring what the other needs.
+A collaboration between FactHarbor and UZH / ETH-adjacent research partners is not one-directional — both sides bring what the other needs.
 
 === What FactHarbor Gains ===
 
 |=Benefit|=Why It Matters
-|**Rigorous evaluation methodology**|Tobias's ACL 2024 work provides a direct touchpoint on source attribution, while the adjacent UZH/ETH-linked literature referenced here (including DIRAS-style relevance scoring) points to stronger evaluation protocols. FactHarbor currently evaluates quality informally; formal benchmarks would make the system more academically credible.
+|**Rigorous evaluation methodology**|The ACL 2024 source-attribution work and adjacent UZH/ETH-linked literature referenced here (including DIRAS-style relevance scoring) point to stronger evaluation protocols. FactHarbor currently evaluates quality informally; formal benchmarks would make the system more academically credible.
 |**Research framing**|A UZH partnership would help turn internal quality checks into publishable evaluation questions, benchmark protocols, and ablation studies.
 |**Access to research infrastructure**|Potential access to university compute, datasets, and a broader UZH / ETH-adjacent NLP collaboration network for evaluation work, additional expert input, and co-supervised student projects, depending on project structure and collaborators.
-|**Grant vehicle**|Innosuisse or BRIDGE could provide a credible structure for funding research effort around the platform, subject to institutional fit, eligibility, and proposal design.
+|**Grant vehicle**|Different funding routes could support research effort around the platform, depending on partner interest, institutional fit, eligibility, and project framing.
 |**Publication pipeline**|Joint papers at top venues (ACL, EMNLP, NAACL) create visibility and attract contributors.
 |**Student contributors**|Bachelor/Master thesis projects on specific pipeline components become realistic once the collaboration matures.
 
@@ -62,19 +60,19 @@ A collaboration between FactHarbor and UZH is not one-directional — both sides
 **Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and a credible path to grants and publications.
 )))
 
-=== What Tobias / UZH Could Gain ===
+=== What UZH / ETH-Adjacent Research Could Gain ===
 
 |=Benefit|=Why It Matters
 |**A deployed, operational system**|Unlike most research prototypes, FactHarbor runs end-to-end on real claims today. Research can happen on a live system producing real artifacts, not only synthetic benchmarks.
 |**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval — few equivalent systems exist in production. Each pipeline stage produces inspectable intermediate artifacts, and all analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
-|**Domain-agnostic scope**|Tobias's public work touches evidence-based QA and adjacent sustainability / retrieval questions. FactHarbor would provide a broader general-domain setting in which related evaluation ideas could be tested beyond a single topical area.
+|**Domain-agnostic scope**|Current UZH / ETH-adjacent work already touches evidence-based QA, retrieval, and evaluation questions. FactHarbor would provide a broader general-domain setting in which related ideas could be tested beyond a single topical area.
 |**Publishable open problems**|Report stability, evidence quality metrics, cross-provider debate dynamics, and source reliability benchmarking are all concrete topics that could support papers, with system data already being generated.
 |**Industry partnership for grants**|For industry-linked funding schemes, FactHarbor can serve as a concrete implementation partner and real-world validation environment if the project is scoped jointly.
 |**Open-source visibility**|Contributions to an open-source, non-profit project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Summary:** UZH mainly gains a live, modular research testbed with real artifacts, publishable open problems, and a concrete implementation partner for joint projects.
+**Summary:** Research-side partners mainly gain a live, modular research testbed with real artifacts, publishable open problems, and a concrete implementation partner for joint projects.
 )))
 
 ----
@@ -82,7 +80,7 @@ A collaboration between FactHarbor and UZH is not one-directional — both sides
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Most realistic near-term funding path:** At this stage, the strongest option seems to be to explore an **Innosuisse Innovation Project**, with FactHarbor as implementation partner and UZH as research partner around evaluation, benchmarking, and transfer into practice. If that fit is confirmed, the collaboration could later be complemented by co-supervised Bachelor/Master theses, targeted evaluation and benchmarking work, and, where appropriate, later **SNSF**- or **Horizon Europe**-based follow-on projects. As lighter preparatory steps before a full grant proposal, **Innosuisse mentoring** or an **Innovation Cheque** could also help sharpen the framing and de-risk the application.
+**Possible funding and project routes:** At this stage, it makes sense to keep the funding path open. Depending on partner interest and project framing, plausible routes could include applied innovation funding, research grants, Horizon Europe collaborations, co-supervised Bachelor/Master theses, or smaller preparatory evaluation projects. The right vehicle should follow the collaboration shape rather than define it too early.
 )))
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
@@ -1113,7 +1111,7 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-* **Precision / evidence-quality improvement** — formalize and benchmark our filtering with your evaluation methodology
+* **Precision / evidence-quality improvement** — formalize and benchmark our filtering with stronger evaluation methodology and clearer benchmarks
 * **Retrieval evaluation** — measure how well our iterative search captures relevant evidence
 * **Source credibility benchmarking** — evaluate our multi-provider reliability scoring
 * **Speed / latency reduction** — identify where pipeline time can be cut without lowering analytical quality
