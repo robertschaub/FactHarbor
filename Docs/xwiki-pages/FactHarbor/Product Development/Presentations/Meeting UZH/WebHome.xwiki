@@ -1,11 +1,11 @@
-= FactHarbor cooperation with UCH/ETH =
+= FactHarbor Cooperation with UZH/ETH =
 
 {{info}}
 **Meeting:** UZH — 18 March 2026
 **Participants:** Elliott Ash (ETHZ), Tobias Schimanski (UZH), Robert Schaub (FactHarbor)
 {{/info}}
 
-== Meeting Goal ==
+== Meeting Goals ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
@@ -17,10 +17,10 @@
 **By the end of the meeting, we want to reach:**
 * a shared view on whether there is a strong collaboration fit
 * a short list of the most promising joint topics
-* clarity on sensible next steps, such as a follow-up discussion, thesis / evaluation work, and possible project framing
+* agreement on concrete follow-up actions and whether to schedule a follow-up meeting
 )))
 
-= FactHarbor =
+== FactHarbor Organisation ==
 
 Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
 (((
@@ -38,11 +38,51 @@ FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** proje
 We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
 )))
 
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is in preparation and could plausibly be founded and voluntarily registered in the **Handelsregister** within about **3-4 weeks**.
+)))
+
+== Why Collaborate: Mutual Benefits ==
+
+A collaboration between FactHarbor and UZH is not one-directional — both sides bring what the other needs.
+
+=== What FactHarbor Gains ===
+
+|=Benefit|=Why It Matters
+|**Rigorous evaluation methodology**|Tobias's ACL 2024 work provides a direct touchpoint on source attribution, while the adjacent UZH/ETH-linked literature referenced here (including DIRAS-style relevance scoring) points to stronger evaluation protocols. FactHarbor currently evaluates quality informally; formal benchmarks would make the system more academically credible.
+|**Research framing**|A UZH partnership would help turn internal quality checks into publishable evaluation questions, benchmark protocols, and ablation studies.
+|**Access to research infrastructure**|Potential access to university compute, datasets, and a broader UZH / ETH-adjacent NLP collaboration network for evaluation work, additional expert input, and co-supervised student projects, depending on project structure and collaborators.
+|**Grant vehicle**|Innosuisse or BRIDGE could provide a credible structure for funding research effort around the platform, subject to institutional fit, eligibility, and proposal design.
+|**Publication pipeline**|Joint papers at top venues (ACL, EMNLP, NAACL) create visibility and attract contributors.
+|**Student contributors**|Bachelor/Master thesis projects on specific pipeline components become realistic once the collaboration matures.
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and a credible path to grants and publications.
+)))
+
+=== What Tobias / UZH Could Gain ===
+
+|=Benefit|=Why It Matters
+|**A deployed, operational system**|Unlike most research prototypes, FactHarbor runs end-to-end on real claims today. Research can happen on a live system producing real artifacts, not only synthetic benchmarks.
+|**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval — few equivalent systems exist in production. Each pipeline stage produces inspectable intermediate artifacts, and all analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
+|**Domain-agnostic scope**|Tobias's public work touches evidence-based QA and adjacent sustainability / retrieval questions. FactHarbor would provide a broader general-domain setting in which related evaluation ideas could be tested beyond a single topical area.
+|**Publishable open problems**|Report stability, evidence quality metrics, cross-provider debate dynamics, and source reliability benchmarking are all concrete topics that could support papers, with system data already being generated.
+|**Industry partnership for grants**|For industry-linked funding schemes, FactHarbor can serve as a concrete implementation partner and real-world validation environment if the project is scoped jointly.
+|**Open-source visibility**|Contributions to an open-source, non-profit project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Summary:** UZH mainly gains a live, modular research testbed with real artifacts, publishable open problems, and a concrete implementation partner for joint projects.
+)))
+
+----
 == Financing Options ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Possible project vehicle:** We are currently considering and investigating an Innosuisse-based collaboration route, framed as an applied innovation project with clear transfer into practice and a concrete implementation partner. Around that core, co-supervised Bachelor/Master theses, postdoc-scale evaluation work, and later SNSF / BRIDGE / Horizon follow-on projects could extend the research side.
+**Most realistic near-term funding path:** At this stage, the strongest option seems to be to explore an **Innosuisse Innovation Project**, with FactHarbor as implementation partner and UZH as research partner around evaluation, benchmarking, and transfer into practice. If that fit is confirmed, the collaboration could later be complemented by co-supervised Bachelor/Master theses, targeted evaluation and benchmarking work, and, where appropriate, later **SNSF**- or **Horizon Europe**-based follow-on projects. As lighter preparatory steps before a full grant proposal, **Innosuisse mentoring** or an **Innovation Cheque** could also help sharpen the framing and de-risk the application.
 )))
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
@@ -1054,41 +1094,6 @@ FactHarbor is a **non-profit, open-source** project. Sustainability depends on b
 
 ----
 
-== Why Collaborate: Mutual Benefits ==
-
-A collaboration between FactHarbor and UZH is not one-directional — both sides bring what the other needs.
-
-=== What FactHarbor Gains ===
-
-|=Benefit|=Why It Matters
-|**Rigorous evaluation methodology**|Tobias's ACL 2024 work provides a direct touchpoint on source attribution, while the adjacent UZH/ETH-linked literature referenced here (including DIRAS-style relevance scoring) points to stronger evaluation protocols. FactHarbor currently evaluates quality informally; formal benchmarks would make the system more academically credible.
-|**Research framing**|A UZH partnership would help turn internal quality checks into publishable evaluation questions, benchmark protocols, and ablation studies.
-|**Access to research infrastructure**|Potential access to university compute, datasets, and a broader UZH / ETH-adjacent NLP collaboration network for evaluation work, additional expert input, and co-supervised student projects, depending on project structure and collaborators.
-|**Grant vehicle**|Innosuisse or BRIDGE could provide a credible structure for funding research effort around the platform, subject to institutional fit, eligibility, and proposal design.
-|**Publication pipeline**|Joint papers at top venues (ACL, EMNLP, NAACL) create visibility and attract contributors.
-|**Student contributors**|Bachelor/Master thesis projects on specific pipeline components become realistic once the collaboration matures.
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and a credible path to grants and publications.
-)))
-
-=== What Tobias / UZH Could Gain ===
-
-|=Benefit|=Why It Matters
-|**A deployed, operational system**|Unlike most research prototypes, FactHarbor runs end-to-end on real claims today. Research can happen on a live system producing real artifacts, not only synthetic benchmarks.
-|**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval — few equivalent systems exist in production. Each pipeline stage produces inspectable intermediate artifacts, and all analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
-|**Domain-agnostic scope**|Tobias's public work touches evidence-based QA and adjacent sustainability / retrieval questions. FactHarbor would provide a broader general-domain setting in which related evaluation ideas could be tested beyond a single topical area.
-|**Publishable open problems**|Report stability, evidence quality metrics, cross-provider debate dynamics, and source reliability benchmarking are all concrete topics that could support papers, with system data already being generated.
-|**Industry partnership for grants**|For industry-linked funding schemes, FactHarbor can serve as a concrete implementation partner and real-world validation environment if the project is scoped jointly.
-|**Open-source visibility**|Contributions to an open-source, non-profit project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Summary:** UZH mainly gains a live, modular research testbed with real artifacts, publishable open problems, and a concrete implementation partner for joint projects.
-)))
-
-----
 
 == Research Overlap ==
 
