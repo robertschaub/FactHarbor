@@ -61,6 +61,11 @@ These files contain pending items extracted from archived documents during WIP C
 - **Document:** [Infrastructure_and_Config_fwd.md](Infrastructure_and_Config_fwd.md)
 - **Contains:** UCM drift Phase 2, Job Events Phase 2, Search provider investigation
 
+### Bolsonaro Sentencing Evidence Loss Fix Plan (2026-03-18)
+**Status:** COMPLETE — implemented, tested, live-validated
+- **Document:** [2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md](2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md)
+- **Scope:** 5-part fix for Stage 2 jurisdiction classification misclassifying international factual journalism as foreign_reaction, plus structural top-5 fetch ordering bug. Two prior reviews incorporated.
+
 ---
 
 ## Active Investigations & Studies

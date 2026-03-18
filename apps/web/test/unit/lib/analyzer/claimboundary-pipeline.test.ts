@@ -53,6 +53,7 @@ import {
   evaluateExplanationRubric,
   extractDomain,
   assessEvidenceApplicability,
+  selectTopSources,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -2187,6 +2188,226 @@ describe("Stage 2: classifyRelevance — jurisdiction filtering (Fix 1)", () => 
     // With cap at 0.5, the score is capped to 0.5 which is >= 0.4, so it passes
     expect(result).toHaveLength(1);
     expect(result[0].url).toBe("https://example.com/foreign");
+  });
+
+  it("should include originalRank from search results array order", async () => {
+    const claim = createAtomicClaim({ statement: "Country A courts followed due process" });
+    const searchResults = [
+      { url: "https://example.com/first", title: "First Result", snippet: "first" },
+      { url: "https://example.com/second", title: "Second Result", snippet: "second" },
+      { url: "https://example.com/third", title: "Third Result", snippet: "third" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    // LLM returns items in a different order than search results
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/third", relevanceScore: 0.9, jurisdictionMatch: "direct", reasoning: "ok" },
+        { url: "https://example.com/first", relevanceScore: 0.8, jurisdictionMatch: "direct", reasoning: "ok" },
+        { url: "https://example.com/second", relevanceScore: 0.7, jurisdictionMatch: "contextual", reasoning: "ok" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    expect(result).toHaveLength(3);
+    // originalRank reflects position in the original search results array
+    const byUrl = new Map(result.map(r => [r.url, r.originalRank]));
+    expect(byUrl.get("https://example.com/first")).toBe(0);
+    expect(byUrl.get("https://example.com/second")).toBe(1);
+    expect(byUrl.get("https://example.com/third")).toBe(2);
+  });
+
+  it("should sort by relevanceScore desc then originalRank asc for stable top-N selection", async () => {
+    const claim = createAtomicClaim({ statement: "Country A courts followed due process" });
+    // 6 search results — only top 5 should be fetched after sort
+    const searchResults = [
+      { url: "https://example.com/r0", title: "R0", snippet: "s" },
+      { url: "https://example.com/r1", title: "R1", snippet: "s" },
+      { url: "https://example.com/r2", title: "R2", snippet: "s" },
+      { url: "https://example.com/r3", title: "R3", snippet: "s" },
+      { url: "https://example.com/r4", title: "R4", snippet: "s" },
+      { url: "https://example.com/r5", title: "R5", snippet: "s" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    // Two items share score 0.7 — tie-break by originalRank
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/r5", relevanceScore: 0.7, jurisdictionMatch: "direct", reasoning: "ok" },
+        { url: "https://example.com/r0", relevanceScore: 0.9, jurisdictionMatch: "direct", reasoning: "ok" },
+        { url: "https://example.com/r3", relevanceScore: 0.7, jurisdictionMatch: "contextual", reasoning: "ok" },
+        { url: "https://example.com/r1", relevanceScore: 0.85, jurisdictionMatch: "direct", reasoning: "ok" },
+        { url: "https://example.com/r4", relevanceScore: 0.6, jurisdictionMatch: "contextual", reasoning: "ok" },
+        { url: "https://example.com/r2", relevanceScore: 0.5, jurisdictionMatch: "contextual", reasoning: "ok" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    // All 6 pass the 0.4 threshold; the caller uses selectTopSources. Verify originalRank is correct.
+    expect(result).toHaveLength(6);
+
+    // Use the actual production helper (selectTopSources) — NOT an in-test re-implementation
+    const top5 = selectTopSources(result, 5);
+
+    // Expected order: r0 (0.9, rank 0), r1 (0.85, rank 1), r3 (0.7, rank 3), r5 (0.7, rank 5), r4 (0.6, rank 4)
+    // r2 (0.5, rank 2) is dropped as #6
+    expect(top5.map(s => s.url)).toEqual([
+      "https://example.com/r0",  // 0.9, rank 0
+      "https://example.com/r1",  // 0.85, rank 1
+      "https://example.com/r3",  // 0.7, rank 3 (wins tie-break over r5)
+      "https://example.com/r5",  // 0.7, rank 5
+      "https://example.com/r4",  // 0.6, rank 4
+    ]);
+  });
+
+  it("should expose raw and adjusted scores for foreign_reaction items (diagnostics)", async () => {
+    const claim = createAtomicClaim({ statement: "Country A courts followed due process" });
+    const searchResults = [
+      { url: "https://example.com/domestic", title: "Domestic Court", snippet: "court ruling" },
+      { url: "https://example.com/pbs", title: "PBS News: Country A sentencing", snippet: "sentenced to 27 years" },
+      { url: "https://example.com/sanctions", title: "Foreign Gov Sanctions", snippet: "sanctions imposed" },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://example.com/domestic", relevanceScore: 0.9, jurisdictionMatch: "direct", reasoning: "domestic court ruling" },
+        { url: "https://example.com/pbs", relevanceScore: 0.8, jurisdictionMatch: "contextual", reasoning: "foreign media reporting domestic proceedings" },
+        { url: "https://example.com/sanctions", relevanceScore: 0.75, jurisdictionMatch: "foreign_reaction", reasoning: "foreign government sanctions" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    // domestic (direct, 0.9) and PBS (contextual, 0.8) pass; sanctions (foreign_reaction, capped to 0.35) filtered
+    expect(result).toHaveLength(2);
+    expect(result.map(r => r.url)).toContain("https://example.com/domestic");
+    expect(result.map(r => r.url)).toContain("https://example.com/pbs");
+    expect(result.map(r => r.url)).not.toContain("https://example.com/sanctions");
+
+    // PBS (contextual foreign media) must NOT be capped — score preserved
+    const pbs = result.find(r => r.url === "https://example.com/pbs");
+    expect(pbs!.relevanceScore).toBe(0.8);
+  });
+
+  it("should correctly classify: foreign media + domestic proceedings = contextual, not capped", async () => {
+    const claim = createAtomicClaim({ statement: "Country A courts followed due process" });
+    const searchResults = [
+      { url: "https://pbs.org/newshour/world/country-a-sentenced-27-years", title: "Country A sentences leader to 27 years", snippet: "The Supreme Court sentenced..." },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://pbs.org/newshour/world/country-a-sentenced-27-years", relevanceScore: 0.85, jurisdictionMatch: "contextual", reasoning: "Foreign media reporting domestic court sentencing" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    // contextual sources pass without capping
+    expect(result).toHaveLength(1);
+    expect(result[0].relevanceScore).toBe(0.85); // NOT capped to 0.35
+    expect(result[0].originalRank).toBe(0);
+  });
+
+  it("should correctly classify: foreign media + foreign sanctions = foreign_reaction, capped", async () => {
+    const claim = createAtomicClaim({ statement: "Country A courts followed due process" });
+    const searchResults = [
+      { url: "https://reuters.com/us-sanctions-country-a", title: "US imposes sanctions on Country A over coup", snippet: "The State Department announced new sanctions..." },
+    ];
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        { url: "https://reuters.com/us-sanctions-country-a", relevanceScore: 0.8, jurisdictionMatch: "foreign_reaction", reasoning: "Foreign media reporting on US government sanctions against Country A" },
+      ],
+    });
+
+    const result = await classifyRelevance(claim, searchResults, mockPipelineConfig2, "2026-03-12", "BR");
+
+    // foreign_reaction is capped to 0.35, which is below 0.4 threshold — filtered out
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe("selectTopSources — deterministic sort+slice (Fix A call-site logic)", () => {
+  it("should sort by relevanceScore descending", () => {
+    const sources = [
+      { url: "a", relevanceScore: 0.5, originalRank: 0 },
+      { url: "b", relevanceScore: 0.9, originalRank: 1 },
+      { url: "c", relevanceScore: 0.7, originalRank: 2 },
+    ];
+    const result = selectTopSources(sources, 3);
+    expect(result.map(s => s.url)).toEqual(["b", "c", "a"]);
+  });
+
+  it("should use originalRank as stable tie-break when scores are equal", () => {
+    const sources = [
+      { url: "rank5", relevanceScore: 0.7, originalRank: 5 },
+      { url: "rank1", relevanceScore: 0.7, originalRank: 1 },
+      { url: "rank3", relevanceScore: 0.7, originalRank: 3 },
+    ];
+    const result = selectTopSources(sources, 3);
+    // Same score → lower originalRank wins
+    expect(result.map(s => s.url)).toEqual(["rank1", "rank3", "rank5"]);
+  });
+
+  it("should slice to topN after sorting", () => {
+    const sources = [
+      { url: "a", relevanceScore: 0.5, originalRank: 0 },
+      { url: "b", relevanceScore: 0.9, originalRank: 1 },
+      { url: "c", relevanceScore: 0.8, originalRank: 2 },
+      { url: "d", relevanceScore: 0.7, originalRank: 3 },
+      { url: "e", relevanceScore: 0.6, originalRank: 4 },
+      { url: "f", relevanceScore: 0.95, originalRank: 5 },
+    ];
+    const result = selectTopSources(sources, 3);
+    // Top 3 by score: f (0.95), b (0.9), c (0.8) — "a" at 0.5 is excluded
+    expect(result).toHaveLength(3);
+    expect(result.map(s => s.url)).toEqual(["f", "b", "c"]);
+  });
+
+  it("should not mutate the original array", () => {
+    const sources = [
+      { url: "a", relevanceScore: 0.5, originalRank: 0 },
+      { url: "b", relevanceScore: 0.9, originalRank: 1 },
+    ];
+    const originalOrder = sources.map(s => s.url);
+    selectTopSources(sources, 2);
+    expect(sources.map(s => s.url)).toEqual(originalOrder);
+  });
+
+  it("should handle topN larger than source count gracefully", () => {
+    const sources = [
+      { url: "a", relevanceScore: 0.8, originalRank: 0 },
+      { url: "b", relevanceScore: 0.6, originalRank: 1 },
+    ];
+    const result = selectTopSources(sources, 10);
+    expect(result).toHaveLength(2);
+    expect(result.map(s => s.url)).toEqual(["a", "b"]);
+  });
+
+  it("should produce deterministic results across repeated calls with equal scores", () => {
+    const sources = [
+      { url: "r0", relevanceScore: 0.7, originalRank: 0 },
+      { url: "r1", relevanceScore: 0.7, originalRank: 1 },
+      { url: "r2", relevanceScore: 0.7, originalRank: 2 },
+      { url: "r3", relevanceScore: 0.9, originalRank: 3 },
+    ];
+    // Run multiple times to verify determinism
+    const results = Array.from({ length: 5 }, () => selectTopSources(sources, 3));
+    const expected = ["r3", "r0", "r1"]; // 0.9 first, then tie-break by rank
+    for (const result of results) {
+      expect(result.map(s => s.url)).toEqual(expected);
+    }
   });
 });
 

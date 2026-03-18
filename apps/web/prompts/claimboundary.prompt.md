@@ -421,6 +421,11 @@ A result is **not relevant** if:
   - **direct**: Evidence produced by institutions, courts, agencies, or researchers within the claim's jurisdiction. Score normally.
   - **contextual**: Evidence about the jurisdiction from neutral external observers (international NGOs, academic comparative studies, foreign media reporting on the jurisdiction's events). Score normally but note as external.
   - **foreign_reaction**: Evidence produced by foreign governments, foreign legislative bodies, or foreign executive actions ABOUT the claim's jurisdiction (sanctions, diplomatic statements, foreign congressional resolutions, foreign State Department reports). These are political reactions, not evidence about the claim's substance. Score at most 0.3.
+  - **Key distinction — classify by evidence substance, not publisher nationality:**
+    - Foreign news coverage of domestic events in the claim's jurisdiction (court proceedings, sentencing, agency actions, locally produced data) is "contextual." Example: BBC article titled "Country A sentences leader to 27 years" → contextual (foreign media, domestic court event).
+    - Foreign news coverage whose substantive evidence is a foreign government action about the jurisdiction (sanctions, executive orders, diplomatic statements, foreign legislative resolutions, State Department positions) is "foreign_reaction." Example: Reuters article titled "US imposes sanctions on Country A over coup" → foreign_reaction (the substance is US government action).
+    - State media, government press offices, and official government publications are not "neutral external observers" — classify by the issuing authority.
+    - Infer category from the likely substantive evidence in the result's title/snippet, not merely the publisher's nationality or the page wrapper.
   - When `${inferredGeography}` is provided and not "null", use it as a signal for the claim's jurisdiction. When it is "null", infer jurisdiction from the claim text if possible.
   - For claims without clear jurisdiction (e.g., scientific claims, global phenomena), all sources are "direct" — do not apply jurisdiction filtering.
 

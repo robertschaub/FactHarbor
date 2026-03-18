@@ -1576,6 +1576,22 @@ function PipelineConfigForm({
           />
           <div className={styles.formHelp}>Max relevance score for foreign-reaction sources (below 0.4 = auto-reject). Set to 1.0 to disable.</div>
         </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Top-N Sources Per Iteration</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.relevanceTopNFetch ?? 5}
+            min={1}
+            max={20}
+            step={1}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              updateField("relevanceTopNFetch", isNaN(v) ? 5 : v);
+            }}
+          />
+          <div className={styles.formHelp}>Max sources fetched per search iteration after relevance classification. Increase during evidence-loss investigations.</div>
+        </div>
       </div>
 
       {/* Retrieval */}

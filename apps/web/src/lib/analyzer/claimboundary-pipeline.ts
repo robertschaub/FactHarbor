@@ -3168,9 +3168,16 @@ export async function runResearchIteration(
 
       if (relevantSources.length === 0) continue;
 
-      // 4. Fetch top sources
+      // 4. Fetch top sources — sorted by relevance score desc, original search rank asc (tie-break)
+      const topN = pipelineConfig.relevanceTopNFetch ?? 5;
+      const selectedForFetch = selectTopSources(relevantSources, topN);
+      debugLog(`[Stage2] Fetching top ${selectedForFetch.length} of ${relevantSources.length} relevant sources (topN=${topN})`, selectedForFetch.map((s) => ({
+        url: s.url.slice(0, 100),
+        score: s.relevanceScore,
+        rank: s.originalRank,
+      })));
       const fetchedSources = await fetchSources(
-        relevantSources.slice(0, 5),
+        selectedForFetch,
         queryObj.query,
         state,
         pipelineConfig,
@@ -3418,6 +3425,19 @@ export async function generateResearchQueries(
 }
 
 /**
+ * Select top N sources by relevance score (desc), with original search rank as tie-break (asc).
+ * Extracted as a named export so the sort+slice logic is directly testable.
+ */
+export function selectTopSources<T extends { relevanceScore: number; originalRank: number }>(
+  sources: T[],
+  topN: number,
+): T[] {
+  return [...sources]
+    .sort((a, b) => b.relevanceScore - a.relevanceScore || a.originalRank - b.originalRank)
+    .slice(0, topN);
+}
+
+/**
  * Classify search results for relevance to a claim using LLM (Haiku, batched).
  * Uses RELEVANCE_CLASSIFICATION UCM prompt.
  */
@@ -3427,7 +3447,7 @@ export async function classifyRelevance(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   inferredGeography?: string | null,
-): Promise<Array<{ url: string; relevanceScore: number }>> {
+): Promise<Array<{ url: string; relevanceScore: number; originalRank: number }>> {
   const rendered = await loadAndRenderSection("claimboundary", "RELEVANCE_CLASSIFICATION", {
     currentDate,
     claim: claim.statement,
@@ -3440,7 +3460,7 @@ export async function classifyRelevance(
   });
   if (!rendered) {
     // Fallback: accept all results with neutral score
-    return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+    return searchResults.map((r, i) => ({ url: r.url, relevanceScore: 0.5, originalRank: i }));
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
@@ -3484,22 +3504,48 @@ export async function classifyRelevance(
         errorMessage: "Stage 2 relevance classification returned no structured output",
         timestamp: new Date(),
       });
-      return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+      return searchResults.map((r, i) => ({ url: r.url, relevanceScore: 0.5, originalRank: i }));
     }
 
     const validated = RelevanceClassificationOutputSchema.parse(parsed);
+
+    // Build URL→originalRank map from the search results array order
+    const urlToRank = new Map(searchResults.map((r, i) => [r.url, i]));
 
     // Cap foreign_reaction scores before applying the relevance threshold.
     // This ensures foreign government actions (sanctions, EOs, congressional statements)
     // are filtered out while contextual evidence (academic studies, NGO reports) passes.
     const foreignCap = pipelineConfig.foreignJurisdictionRelevanceCap ?? 0.35;
     const adjustedSources = validated.relevantSources.map((s) => {
-      if (s.jurisdictionMatch === "foreign_reaction") {
-        return { ...s, relevanceScore: Math.min(s.relevanceScore, foreignCap) };
-      }
-      return s;
+      const rawScore = s.relevanceScore;
+      const adjusted = s.jurisdictionMatch === "foreign_reaction"
+        ? { ...s, relevanceScore: Math.min(s.relevanceScore, foreignCap) }
+        : s;
+      const originalRank = urlToRank.get(s.url) ?? searchResults.length;
+      return { ...adjusted, rawScore, originalRank };
     });
+
+    // Diagnostics: log every classified result (admin-only via debugLog)
+    debugLog(`[Stage2] Relevance classification: ${adjustedSources.length} results for "${claim.statement.slice(0, 60)}"`, adjustedSources.map((s) => ({
+      rank: s.originalRank,
+      url: s.url.slice(0, 80),
+      raw: s.rawScore,
+      adjusted: s.relevanceScore,
+      jurisdiction: s.jurisdictionMatch,
+      reasoning: s.reasoning.slice(0, 80),
+    })));
+
     const relevantSources = adjustedSources.filter((s) => s.relevanceScore >= 0.4);
+
+    // Diagnostics: log discard summary
+    const discarded = adjustedSources.filter((s) => s.relevanceScore < 0.4);
+    if (discarded.length > 0) {
+      const cappedCount = discarded.filter((s) => s.jurisdictionMatch === "foreign_reaction").length;
+      const belowThreshold = discarded.length - cappedCount;
+      debugLog(`[Stage2] Discarded ${discarded.length} items: ${cappedCount} capped (foreign_reaction), ${belowThreshold} below threshold (0.4)`,
+        discarded.map((s) => ({ url: s.url.slice(0, 80), raw: s.rawScore, adjusted: s.relevanceScore, jurisdiction: s.jurisdictionMatch })),
+      );
+    }
 
     recordLLMCall({
       taskType: "research",
@@ -3515,7 +3561,7 @@ export async function classifyRelevance(
       timestamp: new Date(),
     });
 
-    // Filter to minimum relevance score of 0.4
+    // Filter to minimum relevance score of 0.4, return with originalRank for stable sort at call site
     return relevantSources;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -3534,7 +3580,7 @@ export async function classifyRelevance(
       timestamp: new Date(),
     });
     console.warn("[Stage2] Relevance classification failed, accepting all results:", err);
-    return searchResults.map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+    return searchResults.map((r, i) => ({ url: r.url, relevanceScore: 0.5, originalRank: i }));
   }
 }
 

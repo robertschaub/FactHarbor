@@ -273,3 +273,15 @@ When the Captain reviews and promotes learnings, record it here:
 | Date | Entries Reviewed | Promoted to Registry | Discarded | Notes |
 |------|-----------------|---------------------|-----------|-------|
 | _(none yet)_ | | | | |
+
+### 2026-03-18 — Contrastive prompting prevents LLM over-generalization in classification tasks
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** useful-pattern
+**Learning:** When a classification prompt defines categories that share surface features (e.g., "foreign media reporting domestic events" vs. "foreign government reactions"), lightweight models (Haiku) over-generalize without concrete contrastive examples. Adding paired examples showing the boundary ("BBC reporting Brazilian sentencing → contextual" vs. "Reuters reporting US sanctions → foreign_reaction") plus the rule "classify by evidence substance, not publisher nationality" eliminated misclassification. The APPLICABILITY_ASSESSMENT prompt had this pattern; RELEVANCE_CLASSIFICATION didn't — fixing the asymmetry resolved the issue. Always check that classification prompts at different pipeline stages use consistent guidance quality.
+**Files:** `apps/web/prompts/claimboundary.prompt.md` (RELEVANCE_CLASSIFICATION, APPLICABILITY_ASSESSMENT)
+
+### 2026-03-18 — LLM output ordering is not a ranking signal
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** When an LLM returns a list of classified items with scores, the emission order is not guaranteed to match the scores. Using `.slice(0, N)` on unsorted LLM output silently drops high-scored items that happen to appear later in the response. Always sort by the LLM-assigned score (with a stable tie-break like original input rank) before truncating. This is a structural bug class — any pipeline that takes "top N from LLM list" without sorting is vulnerable.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (classifyRelevance call site)
