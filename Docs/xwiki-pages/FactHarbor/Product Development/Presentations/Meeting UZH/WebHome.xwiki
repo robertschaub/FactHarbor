@@ -1,12 +1,28 @@
-= FactHarbor =
-
-Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+= FactHarbor cooperation with UCH/ETH =
 
 {{info}}
 **Meeting:** UZH — 18 March 2026
-**Presenter:** Robert Schaub, Founder & Lead Developer of FactHarbor
+**Participants:** Elliott Ash (ETHZ), Tobias Schimanski (UZH), Robert Schaub (FactHarbor)
 {{/info}}
-----
+
+== Meeting Goal ==
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**During this hour, we want to:**
+* show clearly what FactHarbor already does well and where the most research-relevant gaps still are
+* test collaboration fit with the UZH / ETH-adjacent research context around **source attribution**, **relevance scoring**, **evaluation**, **reproducibility**, **speed**, and **cost**
+* discuss whether an **Innosuisse-oriented applied innovation path** could realistically anchor the collaboration
+
+**By the end of the meeting, we want to reach:**
+* a shared view on whether there is a strong collaboration fit
+* a short list of the most promising joint topics
+* clarity on sensible next steps, such as a follow-up discussion, thesis / evaluation work, and possible project framing
+)))
+
+= FactHarbor =
+
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
 (((
 (% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
 (((
@@ -20,6 +36,18 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 **Non-profit and Transparent**
 FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
 We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
+)))
+
+== Financing Options ==
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Possible project vehicle:** We are currently considering and investigating an Innosuisse-based collaboration route, framed as an applied innovation project with clear transfer into practice and a concrete implementation partner. Around that core, co-supervised Bachelor/Master theses, postdoc-scale evaluation work, and later SNSF / BRIDGE / Horizon follow-on projects could extend the research side.
+)))
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Released operation needs separate financing:** Research funding can support development, evaluation, and transfer work, but long-term public operation of a released service needs its own sustainability model. Plausible options include institutional partnerships, public-interest foundation grants, professional service / API contracts, community support, and infrastructure sponsors such as cloud or LLM-credit programmes.
 )))
 ----
 
@@ -505,17 +533,17 @@ flowchart LR
 
     subgraph P1["Phase 1: Pre-Verdict Quality"]
         direction LR
-        L1["Prompt Guidance"]:::phase1
-        L2["Deterministic Filter\n(length, dedup, category rules)"]:::phase1
-        L3["Provenance Validation"]:::phase1
+        L1["1. Prompt Guidance"]:::phase1
+        L2["2. Deterministic Filter\n(length, dedup, category rules)"]:::det
+        L3["3. Provenance Validation"]:::det
         L1 --> L2 --> L3
     end
 
     subgraph P2["Phase 2: Post-Verdict Quality"]
         direction LR
-        L4["SR Weighting"]:::phase2
-        L5["Aggregation Pruning"]:::phase2
-        L6["Validator Checks"]:::phase2
+        L4["4. SR Weighting"]:::det
+        L5["5. Aggregation Pruning"]:::det
+        L6["6. Validator Checks"]:::det
         L4 --> L5 --> L6
     end
 
@@ -528,11 +556,19 @@ flowchart LR
     classDef raw fill:#f7e8ea,stroke:#cc8f97,color:#5f2a2f,stroke-width:1.5px
     classDef clean fill:#e8f3e8,stroke:#8cb58f,color:#1f4d2a,stroke-width:1.5px
     classDef phase1 fill:#f8fbff,stroke:#8fb2e5,color:#284f8f,stroke-width:1.2px
-    classDef phase2 fill:#fffaf0,stroke:#e4bf78,color:#9a5a00,stroke-width:1.2px
+    classDef det fill:#fdeaea,stroke:#d08b8b,color:#8a2c2c,stroke-width:1.2px
     style P1 fill:#f4f8ff,stroke:#b7cdef,color:#000,stroke-width:1.2px
     style P2 fill:#fffaf2,stroke:#ecd39b,color:#000,stroke-width:1.2px
     linkStyle default stroke:#666,stroke-width:1.6px
 {{/mermaid}}
+
+|=Step|=Type|=What happens
+|**1. Prompt Guidance**|LLM-guided (quality constraints are expressed in the extraction prompt)|The extraction prompt already pushes the model toward source-grounded, specific, non-hand-wavy evidence instead of vague commentary or unsupported paraphrase.
+|**2. Deterministic Filter**|Deterministic|Low-quality evidence is removed with structural pass/fail checks rather than one single score formula: e.g. statementLength < minLength, probativeValue == low, missing URL/excerpt, or statistic without digits. Monitoring formula: falsePositiveRate = highProbativeFiltered / filtered.
+|**3. Provenance Validation**|Deterministic|Evidence must remain tied to a real fetched source and valid URL provenance; synthetic or broken provenance paths are rejected before verdicting. There is no single numeric formula here: it is deterministic pass/fail validation of source linkage and provenance integrity.
+|**4. SR Weighting**|Hybrid (LLM-generated source scores, deterministic weighting formula)|Each source domain gets a credibility score from the Source Reliability subsystem, then the deterministic weighting step applies formulas such as adjustedTruth = 50 + (originalTruth - 50) * avgWeight and adjustedConfidence = confidence * (0.5 + avgWeight / 2).
+|**5. Aggregation Pruning**|Deterministic|Before the final report is produced, tangential or low-value evidence is pruned with threshold logic rather than an LLM judgment: direct claims are always kept, but tangential claims must satisfy evidenceCount >= minEvidence (default 2), and can optionally be required to include at least one medium/high-quality evidence item.
+|**6. Validator Checks**|Hybrid (LLM-based validation plus deterministic warning/report logic)|Post-verdict checks look for grounding problems, direction mismatches, and other consistency issues. There is no single universal formula for this row, but deterministic enforcement logic is applied where needed, for example confidence penalties or warning thresholds after the LLM-based validation step.
 
 Source reliability scores are computed per-domain using multi-provider LLM evaluation, with cross-check refinement and persistent caching. A peer-reviewed study carries different weight than a social media post — automatically.
 
@@ -545,26 +581,27 @@ The pipeline produces a richly structured result. Every entity in the output is 
 {{mermaid}}
 
 erDiagram
-    INPUT_ARTICLE ||--o{ ATOMIC_CLAIM : "extracts"
+    CB_CLAIM_UNDERSTANDING ||--o{ ATOMIC_CLAIM : "contains"
     ATOMIC_CLAIM ||--o{ SEARCH_QUERY : "generates"
-    SEARCH_QUERY }o--o{ SOURCE : "discovers"
+    SEARCH_QUERY }o--o{ SOURCE : "retrieves"
     SOURCE ||--o{ EVIDENCE_ITEM : "yields"
-    EVIDENCE_ITEM |o--o| EVIDENCE_SCOPE : "has"
+    EVIDENCE_ITEM }o--o| EVIDENCE_SCOPE : "may include"
     EVIDENCE_SCOPE }o--|| CLAIM_ASSESSMENT_BOUNDARY : "clusters into"
-    EVIDENCE_ITEM }o--|| CLAIM_ASSESSMENT_BOUNDARY : "assigned to"
-    ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : "receives"
+    EVIDENCE_ITEM }o--o| CLAIM_ASSESSMENT_BOUNDARY : "may be assigned to"
+    ATOMIC_CLAIM ||--o| CB_CLAIM_VERDICT : "receives"
     CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites"
-    CB_CLAIM_VERDICT }o--o| CLAIM_ASSESSMENT_BOUNDARY : "scoped by"
     CB_CLAIM_VERDICT }o--|| OVERALL_ASSESSMENT : "aggregates into"
-    OVERALL_ASSESSMENT ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "presents"
+    OVERALL_ASSESSMENT ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "includes"
+    OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : "includes"
+    COVERAGE_MATRIX }o--o{ ATOMIC_CLAIM : "rows"
+    COVERAGE_MATRIX }o--o{ CLAIM_ASSESSMENT_BOUNDARY : "columns"
     CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : "contains"
     BOUNDARY_FINDING }o--|| CLAIM_ASSESSMENT_BOUNDARY : "per boundary"
 
-    INPUT_ARTICLE {
-        string id_PK
-        string inputType "text or url"
-        string detectedInputType "claim or article"
+    CB_CLAIM_UNDERSTANDING {
+        string detectedInputType "claim question article"
         string impliedClaim "LLM-extracted thesis"
+        string backgroundDetails
         string riskTier "A B or C"
     }
 
@@ -575,50 +612,69 @@ erDiagram
         string centrality "high medium"
         string harmPotential "critical high medium low"
         string claimDirection "supports_thesis contradicts_thesis contextual"
+        string thesisRelevance "direct tangential irrelevant"
         float specificityScore "0-1 Gate1 min 0.6"
         json keyEntities "Named entities referenced"
+    }
+
+    SEARCH_QUERY {
+        string query
+        int iteration
+        string searchProvider
+        int resultsCount
     }
 
     SOURCE {
         string id_PK
         string url
         string title
-        float trackRecordScore "0.0-1.0"
-        float trackRecordConfidence "0.0-1.0"
+        float trackRecordScore "0.0-1.0 or null"
+        float trackRecordConfidence "0.0-1.0 or null"
         string category
+        boolean fetchSuccess
     }
 
     EVIDENCE_ITEM {
         string id_PK "EV_001 EV_002"
         string statement "Extracted evidence text"
+        string sourceId_FK
         string category "statistic expert_quote event etc"
         string claimDirection "supports contradicts neutral"
         string probativeValue "high medium low"
         string sourceType "peer_reviewed_study news_primary etc"
+        string sourceAuthority "primary secondary opinion"
         boolean isDerivative "Cites another source study"
     }
 
     EVIDENCE_SCOPE {
         string name "Short label"
         string methodology "ISO 14040 EU RED II etc"
+        string boundaries "Included excluded scope"
         string temporal "Source data time period"
         string geographic "Source data geography"
+        string analyticalDimension "What property is measured"
     }
 
     CLAIM_ASSESSMENT_BOUNDARY {
         string id_PK "CB_01 CB_02"
         string name "Human-readable label"
+        string shortName "Short label"
         string description "What this boundary represents"
         string methodology "Dominant methodology"
+        string boundaries "Dominant scope boundaries"
+        string temporal "Dominant temporal scope"
+        string geographic "Dominant geographic scope"
         float internalCoherence "0-1 consistency"
         int evidenceCount
     }
 
     CB_CLAIM_VERDICT {
         string id_PK
+        string claimId_FK
         float truthPercentage "0-100"
         string verdict "7-point scale label"
         float confidence "0-100"
+        string confidenceTier "HIGH MEDIUM LOW INSUFFICIENT"
         string reasoning "LLM-generated explanation"
         boolean isContested
         json supportingEvidenceIds_FK
@@ -627,9 +683,17 @@ erDiagram
 
     BOUNDARY_FINDING {
         string boundaryId_FK
+        string boundaryName
         float truthPercentage "Per-boundary 0-100"
         float confidence "Per-boundary 0-100"
-        string evidenceDirection "supports contradicts mixed"
+        string evidenceDirection "supports contradicts mixed neutral"
+        int evidenceCount
+    }
+
+    COVERAGE_MATRIX {
+        json claims "AtomicClaim ids rows"
+        json boundaries "Boundary ids columns"
+        json counts "evidence counts matrix"
     }
 
     OVERALL_ASSESSMENT {
@@ -637,15 +701,54 @@ erDiagram
         string verdict "7-point scale label"
         float confidence "0-100 weighted"
         json verdictNarrative "headline keyFinding limitations"
-        json coverageMatrix "claims x boundaries"
+        boolean hasMultipleBoundaries
         json qualityGates "gate1Stats gate4Stats"
     }
 
 {{/mermaid}}
 
+The original ER diagram above stays authoritative. The styled copy below only emphasizes the core analytical entities visually.
+
+{{mermaid}}
+flowchart TB
+    UNDER["CB Claim Understanding"]
+    AC["Atomic Claim"]
+    SQ["Search Query"]
+    SRC["Source"]
+    EI["Evidence Item"]
+    ES["Evidence Scope"]
+    CAB["Claim Assessment Boundary"]
+    CV["CB Claim Verdict"]
+    BF["Boundary Finding"]
+    CM["Coverage Matrix"]
+    OA["Overall Assessment"]
+
+    UNDER -->|"contains"| AC
+    AC -->|"generates"| SQ
+    SQ -->|"discovers"| SRC
+    SRC -->|"yields"| EI
+    EI -->|"has"| ES
+    ES -->|"clusters into"| CAB
+    EI -->|"assigned to"| CAB
+    AC -->|"receives"| CV
+    CV -->|"cites"| EI
+    CV -->|"aggregates into"| OA
+    OA -->|"presents"| CAB
+    OA -->|"includes"| CM
+    CM -->|"rows"| AC
+    CM -->|"columns"| CAB
+    CV -->|"contains"| BF
+    BF -->|"per boundary"| CAB
+
+    classDef core fill:#e8f3e8,stroke:#7aa57f,stroke-width:3px,color:#1f4d2a
+    classDef aux fill:#f8fbff,stroke:#9fb4d9,stroke-width:1.4px,color:#27456b
+    class AC,SRC,EI,ES,CAB core
+    class UNDER,SQ,CV,BF,CM,OA aux
+{{/mermaid}}
+
 (% class="box infomessage" %)
 (((
-**Key insight:** A claim can have different truth values in different ClaimAssessmentBoundaries (e.g., a study may be "Mostly True" under one methodology but "Leaning False" under another). The data model captures this nuance via BoundaryFindings, not just a single verdict.
+**Key insight:** A claim can have different truth values in different ClaimAssessmentBoundaries (e.g., a study may be "Mostly True" under one methodology but "Leaning False" under another). The data model captures this nuance via BoundaryFindings.
 )))
 
 === Why This Matters Beyond RAG ===
@@ -687,63 +790,28 @@ FactHarbor is currently in **Alpha**. The roadmap below mixes completed phases, 
 
 (% class="box infomessage" %)
 (((
-The next two diagrams are future-oriented. The roadmap shows planned evolution over time; the federation diagram shows a long-term target architecture.
+The roadmap below combines core platform work with the most important missing user-facing, integration, and cooperation-oriented capabilities. The federation diagram remains as the long-term architecture target.
 )))
 
-{{mermaid}}
-flowchart TB
-    subgraph POC["POC (Completed)"]
-        direction LR
-        P1["Single host"]
-        P2["3x SQLite\n(factharbor, config, SR)"]
-        P3["Shared secrets"]
-        P4["Manual ops"]
-        P1 ~~~ P2 ~~~ P3 ~~~ P4
-    end
+=== Core Platform Roadmap ===
 
-    subgraph ALPHA["Alpha (Current Phase)"]
-        direction LR
-        A1["User auth"]
-        A2["PostgreSQL"]
-        A3["RBAC"]
-        A4["Rate limiting"]
-        A1 ~~~ A2 ~~~ A3 ~~~ A4
-    end
+|=Phase|=Status|=Core platform milestones
+|**POC**|Completed|Single host; 3x SQLite (factharbor, config, SR); shared secrets; manual ops
+|**Alpha**|Current|Invite-code access; rate limiting; prod + test VPS; pre-release hardening
+|**Beta**|Planned|User authentication; Access-Control; PostgreSQL; horizontal scaling; monitoring dashboards
+|**V1.0**|Planned|Public REST API; OpenTelemetry; log aggregation; disaster recovery
+|**V2.0+**|Vision|Federation; semantic similarity search; distributed consensus
 
-    subgraph BETA["Beta (Planned)"]
-        direction LR
-        B1["Horizontal scaling"]
-        B2["Redis caching"]
-        B3["Prometheus + Grafana"]
-        B4["Moderation tools"]
-        B1 ~~~ B2 ~~~ B3 ~~~ B4
-    end
+=== Highest-Value Missing Product Features ===
 
-    subgraph V1["V1.0 (Planned)"]
-        direction LR
-        V1A["Multi-region"]
-        V1B["OpenTelemetry"]
-        V1C["Log aggregation"]
-        V1D["Full DR"]
-        V1A ~~~ V1B ~~~ V1C ~~~ V1D
-    end
-
-    subgraph V2["V2.0+ (Vision)"]
-        direction LR
-        V2A["Federation"]
-        V2B["Vector DB"]
-        V2C["Advanced analytics"]
-        V2A ~~~ V2B ~~~ V2C
-    end
-
-    POC --> ALPHA --> BETA --> V1 --> V2
-
-    style POC fill:#c8e6c9,stroke:#2e7d32,color:#000
-    style ALPHA fill:#fff9c4,stroke:#f9a825,color:#000
-    style BETA fill:#fff3e0,stroke:#e65100,color:#000
-    style V1 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style V2 fill:#f3e5f5,stroke:#7b1fa2,color:#000
-{{/mermaid}}
+|=Area|=Most important missing capabilities|=Likely target
+|**Reader experience**|Summary-first claim pages; stronger archive search/filtering; fast social-media check flow|Beta / V1.0
+|**Reader engagement**|Save/follow claims; alerts on verdict changes; feedback/challenge workflow; share/cite/export|V1.0 / V1.5+
+|**In-context verification**|In-article claim highlighting; browser extension for fact-checking while browsing|V1.1+ / V1.5+
+|**Platform integrations**|Embeddable widgets; ClaimReview markup; CMS plugins; mobile apps|V1.1+ / V1.5+
+|**Professional workflows**|API clients / SDKs; team workspaces; expert review workflow|V1.0 / V1.5+
+|**Cooperation features**|Collaborative annotation; comparative fact-check view; shared benchmarks and evaluation datasets|V1.5+ / V2.0+
+|**Federated cooperation**|Claim synchronization; cross-node contradiction detection; distributed verdict agreement|V2.0+
 
 === Target: Federated Network (V2.0+) ===
 
@@ -784,7 +852,7 @@ flowchart TB
 
 {{/mermaid}}
 
-(% class="box infomessage" %)
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **Research opportunity:** The federation layer raises open questions in distributed fact-checking: how to reconcile conflicting verdicts across instances, detect cross-instance contradictions, and maintain quality guarantees in a decentralized network.
 )))
@@ -802,9 +870,9 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 |**Repeatability**|Same claim can produce different verdicts across runs (LLM stochasticity, live web evidence)|Verdict stability within defined tolerance bands; self-consistency gating; evidence caching|Trust requires that the same claim analysed twice yields substantially the same verdict — users and researchers must be able to reproduce results
 |**Cost Reduction**|~$0.15-0.25 per analysis (model tiering already saves 50-70%)|< $0.05 per analysis through aggressive caching, smaller models where sufficient, evidence reuse|At scale, every analysis costs real money — a non-profit must minimize per-analysis cost to remain sustainable
 
-(% class="box infomessage" %)
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Research angle:** Repeatability and cost reduction are open research questions. How do you achieve stable verdicts when evidence changes daily and LLM outputs are stochastic? How do you reduce model costs without degrading analytical quality?
+**Research angle:** Speed, repeatability, precision, and cost reduction are open research questions. How do you deliver faster analyses, achieve stable verdicts when evidence changes daily and LLM outputs are stochastic, improve analytical precision, and reduce model costs without degrading quality?
 )))
 
 ----
@@ -850,7 +918,7 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 |**Performance**|Needs improvement|~3-5 min per claim; target < 90 seconds via caching and parallel execution
 |**Repeatability**|Partially addressed|Self-consistency gating implemented; evidence caching and tolerance bands needed
 |**Metrics & Observability**|Integrated|MetricsCollector wired into pipeline (per-stage timing, gate stats, evidence counts); production dashboards and alerting not yet set up
-|**Security Hardening**|POC level|SSRF protection, rate limiting, admin endpoint security needed before public release
+|**Security Hardening**|Partially done|SSRF DNS-rebinding hardening, cost quotas, and final auth cleanup needed before public release
 |**Database Migration**|Planned|SQLite → PostgreSQL for scalability and concurrent access
 |**Horizontal Scaling**|Not started|Single-host only; needs queue-based job dispatch and worker pool
 |**Claim Caching**|Designed, not built|Every analysis recomputes from scratch; 30-50% savings possible via evidence reuse
@@ -872,7 +940,7 @@ Running the same claim twice can produce meaningfully different verdicts. Three 
 |**Live Web Evidence**|Evidence changes daily — sources go offline, new articles appear, search rankings shift|Different evidence base → different conclusions|Partially mitigated; evidence caching planned but not built
 |**Claim Decomposition Variance**|The same input text can be decomposed into different AtomicClaims across runs|Different claims → different research → different verdicts|Gate 1 tightening (Phase B) planned; two-pass extraction reduces but doesn't eliminate variance
 
-(% class="box infomessage" %)
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **Research opportunity:** Report stability is a measurable problem. Defining formal stability metrics, establishing tolerance bands, and designing reproducibility protocols for LLM-based fact-checking systems.
 )))
@@ -921,6 +989,11 @@ The analysis engine is designed as a **headless service** — the pipeline and P
 |**Collaborative Annotation**|V2.0+|Users annotate and discuss evidence together
 |**Team Workspaces**|V1.5+|Shared environments for newsroom or research group fact-checking
 
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Cooperation value:** This layer enables shared work on claims: expert input, joint annotation, and team-based fact-checking workflows.
+)))
+
 === Federation (V2.0+) ===
 
 |=Feature|=Target|=Why
@@ -928,6 +1001,11 @@ The analysis engine is designed as a **headless service** — the pipeline and P
 |**Distributed Verdict Consensus**|V2.0+|Cross-node validation while maintaining source attribution
 |**Data Sovereignty per Node**|V2.0+|GDPR compliance per region; each node maintains autonomy
 |**Cross-Node Contradiction Detection**|V2.0+|Identify conflicting verdicts across the federation
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Cooperation value:** Federation lets independent organizations collaborate on verified claims while preserving local control, attribution, and regional autonomy.
+)))
 
 === Source Reliability as a Standalone Service ===
 
@@ -959,13 +1037,20 @@ FactHarbor is a **non-profit, open-source** project. Sustainability depends on b
 |**Fact-checking organizations**|Professional fact-checkers improve analysis quality, contribute domain expertise, validate verdicts
 |**Student projects**|Bachelor/Master theses on specific pipeline components (evidence retrieval, debate patterns, multilingual robustness)
 
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Cooperation value:** Contributors strengthen the platform through research, engineering, professional validation, and student project work.
+)))
+
 === Sponsors & Funding ===
 
 |=Goal|=Why
-|**Research grants (Innosuisse, SNSF, EU Horizon)**|Fund postdoc positions and research collaborations — this is the path we are exploring today
-|**Foundation grants**|Media foundations, digital democracy initiatives, press freedom organizations
-|**Institutional partnerships**|Universities, libraries, public broadcasters — credibility and reach
-|**Infrastructure sponsors**|Cloud credits, LLM API credits (Anthropic, OpenAI NPO programs) — the primary operational cost
+|**Research grants (Innosuisse, SNSF, BRIDGE, Horizon Europe)**|Best fit for research, evaluation, translational work, theses, and postdoc-scale collaboration
+|**Foundation grants**|Public-interest support for media literacy, democracy, transparency, and public-service rollout
+|**Institutional partnerships**|Universities, libraries, and public broadcasters can contribute credibility, reach, and operational backing
+|**Professional service / API contracts**|Newsrooms, research teams, or institutions can help finance released operation where higher-volume or supported usage is needed
+|**Community support**|Donations or membership-style support can help sustain open public availability if governance permits
+|**Infrastructure sponsors**|Cloud credits and LLM API credits address a large share of operating cost directly
 
 ----
 
@@ -973,43 +1058,43 @@ FactHarbor is a **non-profit, open-source** project. Sustainability depends on b
 
 A collaboration between FactHarbor and UZH is not one-directional — both sides bring what the other needs.
 
-(% class="box infomessage" %)
-(((
-**Public research references behind this section:** Schimanski et al., ACL 2024 (//Towards Faithful and Robust LLM Specialists for Evidence-Based Question-Answering//); Ni et al., NAACL 2025 (//DIRAS: Efficient LLM Annotation of Document Relevance for Retrieval Augmented Generation//); Tobias Schimanski ACL Anthology author page; Markus Leippold's UZH profile; Elliott Ash's ETH profile.
-)))
-
 === What FactHarbor Gains ===
 
 |=Benefit|=Why It Matters
-|**Rigorous evaluation methodology**|Tobias brings published metrics for source attribution (ACL 2024) and relevance scoring (DIRAS) — FactHarbor currently evaluates quality informally. Formal benchmarks make the system credible to the academic community.
+|**Rigorous evaluation methodology**|Tobias's ACL 2024 work provides a direct touchpoint on source attribution, while the adjacent UZH/ETH-linked literature referenced here (including DIRAS-style relevance scoring) points to stronger evaluation protocols. FactHarbor currently evaluates quality informally; formal benchmarks would make the system more academically credible.
 |**Research framing**|A UZH partnership would help turn internal quality checks into publishable evaluation questions, benchmark protocols, and ablation studies.
-|**Access to research infrastructure**|Potential access to university compute, datasets, and a broader UZH / ETH-adjacent NLP research network, depending on project structure and collaborators.
+|**Access to research infrastructure**|Potential access to university compute, datasets, and a broader UZH / ETH-adjacent NLP collaboration network for evaluation work, additional expert input, and co-supervised student projects, depending on project structure and collaborators.
 |**Grant vehicle**|Innosuisse or BRIDGE could provide a credible structure for funding research effort around the platform, subject to institutional fit, eligibility, and proposal design.
 |**Publication pipeline**|Joint papers at top venues (ACL, EMNLP, NAACL) create visibility and attract contributors.
 |**Student contributors**|Bachelor/Master thesis projects on specific pipeline components become realistic once the collaboration matures.
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and a credible path to grants and publications.
+)))
 
 === What Tobias / UZH Could Gain ===
 
 |=Benefit|=Why It Matters
 |**A deployed, operational system**|Unlike most research prototypes, FactHarbor runs end-to-end on real claims today. Research can happen on a live system producing real artifacts, not only synthetic benchmarks.
 |**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval — few equivalent systems exist in production. Each pipeline stage produces inspectable intermediate artifacts, and all analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
-|**Domain-agnostic scope**|Tobias' public publication record includes climate / sustainability retrieval work and evidence-based QA. FactHarbor would let similar evaluation ideas be tested in a broader, general-domain fact-checking setting.
+|**Domain-agnostic scope**|Tobias's public work touches evidence-based QA and adjacent sustainability / retrieval questions. FactHarbor would provide a broader general-domain setting in which related evaluation ideas could be tested beyond a single topical area.
 |**Publishable open problems**|Report stability, evidence quality metrics, cross-provider debate dynamics, and source reliability benchmarking are all concrete topics that could support papers, with system data already being generated.
 |**Industry partnership for grants**|For industry-linked funding schemes, FactHarbor can serve as a concrete implementation partner and real-world validation environment if the project is scoped jointly.
 |**Open-source visibility**|Contributions to an open-source, non-profit project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
 
-(% class="box warningmessage" %)
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**The key asymmetry:** FactHarbor has a working system that still lacks formal evaluation. Tobias' published work brings evaluation methodology that could be stress-tested on a live, production-scale testbed. Together, that is a strong research fit.
+**Summary:** UZH mainly gains a live, modular research testbed with real artifacts, publishable open problems, and a concrete implementation partner for joint projects.
 )))
 
 ----
 
 == Research Overlap ==
 
-=== Source Attribution (your ACL 2024 work) ===
+=== Source Attribution (ACL 2024 touchpoint) ===
 
-Your ACL 2024 //Faithful LLM Specialists// paper formalizes the citation fidelity problem: LLMs cite wrong sources or misrepresent what sources say. FactHarbor addresses this structurally: every verdict traces to specific evidence items with source reliability scores. A post-verdict **grounding check** (Step 5: Validator) exists but currently runs in advisory mode — it flags mismatches without blocking publication. Formalizing and enforcing attribution quality is an open problem where that evaluation framework could directly improve the pipeline.
+The ACL 2024 //Faithful LLM Specialists// paper provides a direct touchpoint on citation fidelity and source attribution: LLMs can cite the wrong sources or misrepresent what sources say. FactHarbor addresses related concerns structurally: every verdict traces to specific evidence items with source reliability scores. A post-verdict **grounding check** (Step 5: Validator) exists but currently runs in advisory mode — it flags mismatches without blocking publication. Tightening attribution evaluation and enforcement is therefore a plausible collaboration area, not something already solved.
 
 === Evidence Quality Scoring (DIRAS, NAACL 2025) ===
 
@@ -1021,10 +1106,16 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 
 === Collaboration Opportunities ===
 
-* **Evidence quality metrics** — formalize and benchmark our filtering with your evaluation methodology
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+* **Precision / evidence-quality improvement** — formalize and benchmark our filtering with your evaluation methodology
 * **Retrieval evaluation** — measure how well our iterative search captures relevant evidence
 * **Source credibility benchmarking** — evaluate our multi-provider reliability scoring
+* **Speed / latency reduction** — identify where pipeline time can be cut without lowering analytical quality
+* **Reproducibility / stability protocols** — define tolerance bands, repeatability metrics, and evaluation procedures
+* **Cost reduction** — optimize model tiering, caching, and reuse without sacrificing quality
 * **Multi-agent debate architecture** — study and improve the debate pattern itself
+)))
 
 ----
 
@@ -1041,33 +1132,30 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 
 === 1. User Experience: Submit & Explore ===
 
-|=Step|=What to Show|=What to Say
-|**Submit a claim**|Navigate to ##/analyze##, enter a claim (let Tobias choose one), click Analyze|"You can submit any claim in any language. The system accepts free text or URLs."
-|**Job progress**|Show the job status page — stages progressing in real-time|"You can see each pipeline stage as it executes: extraction, research, clustering, debate, aggregation."
-|**Verdict overview**|Show the overall verdict badge, truth percentage, confidence tier|"The verdict is not binary — it shows a 7-point scale with a confidence level. Here we got [verdict] with [confidence] confidence."
-|**Per-claim verdicts**|Expand individual AtomicClaim verdicts|"The system decomposed your input into [N] verifiable claims. Each has its own verdict with cited evidence."
-|**Boundary findings**|Show per-boundary breakdown for a claim|"This claim has different truth values depending on the analytical boundary — [example: methodology X says mostly true, methodology Y says mixed]."
-|**Evidence trail**|Click through to supporting/contradicting evidence items|"Every verdict traces back to specific evidence. You can see the source URL, the extracted statement, its probative value, and the source reliability score."
-|**Quality gates panel**|Show Gate 1 and Gate 4 results|"Two mandatory quality gates — Gate 1 filtered out [N] weak claims, Gate 4 assessed confidence calibration."
+* **Submit a claim**
+* **Job progress**
+* **Verdict overview**
+* **Per-claim verdicts**
+* **Boundary findings**
+* **Evidence trail**
+* **Quality gates panel**
 
 === 2. Admin: Configuration & Control ===
 
-|=Step|=What to Show|=What to Say
-|**Admin dashboard**|Navigate to ##/admin## — show the config overview|"Everything that affects analysis behavior is configurable at runtime — no code changes needed."
-|**Pipeline config**|Open pipeline settings — show model selection, debate roles, temperatures|"You can see which models are assigned to which pipeline stage, and the debate role configuration: Anthropic for advocate, OpenAI for challenger."
-|**Search config**|Show search provider settings, iteration limits, budget controls|"Research intensity is tunable — max iterations, providers, evidence sufficiency thresholds."
-|**Calculation config**|Show aggregation weights, triangulation thresholds, harm potential multipliers|"These parameters control how evidence is weighted, how cross-boundary agreement affects confidence, and how harmful claims get extra scrutiny."
-|**Config comparison**|Show the diff view: current vs. defaults|"The admin can compare running config against defaults to see what has been tuned — full audit trail."
-|**Job history**|Navigate to ##/jobs## — show list of completed analyses with verdicts|"Every analysis is stored with its full config snapshot, so any result can be reproduced with the exact settings used."
+* **Admin dashboard**
+* **Pipeline config**
+* **Search config**
+* **Calculation config**
+* **Config comparison**
+* **Job history**
 
 === 3. Source Reliability Database ===
 
-|=Step|=What to Show|=What to Say
-|**SR overview**|Navigate to ##/admin/source-reliability## (or show the SR cache DB)|"Source reliability is a separate subsystem with its own database and evaluation pipeline."
-|**Domain lookup**|Search for a well-known domain (e.g., reuters.com, wikipedia.org)|"Each domain gets a credibility score from 0.0 to 1.0, evaluated by multiple LLM providers with cross-check refinement."
-|**Score breakdown**|Show trackRecordScore, trackRecordConfidence, consensus flag|"The score includes a confidence level — a domain with 2 evaluations has lower confidence than one with 5. Consensus means all evaluators agreed."
-|**Source types**|Show different source type classifications|"Sources are classified by type — peer-reviewed study, government report, news primary, opinion, collaborative reference (Wikipedia). Each type carries different weight in the analysis."
-|**Impact on verdict**|Reference back to the analysis report — show how SR scores affected evidence weighting|"In the report we just saw, this source had a reliability score of [X], which influenced how much weight its evidence carried in the verdict."
+* **SR overview**
+* **Domain lookup**
+* **Score breakdown**
+* **Source types**
+* **Impact on verdict**
 
 ----
 
