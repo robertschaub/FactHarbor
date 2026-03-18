@@ -8,7 +8,7 @@ This page describes **planned production capabilities** that are not yet impleme
 
 {{include reference="FactHarbor.Product Development.Diagrams.Architecture Roadmap.WebHome"/}}
 
-//Green = current POC. Yellow = Alpha (next). Orange = Beta. Blue = V1.0. Purple = V2.0+. Each phase builds on the previous.//
+//Green = completed POC. Yellow = current Alpha. Orange = planned Beta. Blue = planned V1.0. Purple = V2.0+ vision. Each phase builds on the previous.//
 
 == Planned Automated Systems ==
 
@@ -83,11 +83,8 @@ This page describes **planned production capabilities** that are not yet impleme
 == Security Roadmap ==
 
 |= Capability |= Phase |= Description
-| User authentication | Alpha | Secure login with password hashing
-| RBAC | Alpha | Reader, User, Admin, Moderator roles
-| Rate limiting | Alpha | Per-user and per-IP throttling
-| SSRF protection | Alpha | Sanitize URLs before fetching
-| CORS tightening | Alpha | Restrict allowed origins
+| User authentication | Beta | Secure login with password hashing
+| RBAC | Beta | Reader, User, Admin, Moderator roles
 | Audit logging | Beta | Track all significant changes
 | API keys | Beta | Programmatic access tokens
 | Abuse prevention | Beta | Automated detection and ban mechanisms
@@ -119,7 +116,7 @@ This page describes **planned production capabilities** that are not yet impleme
 Each technology addition has a specific trigger — do not add prematurely:
 
 |= Technology |= Trigger |= Current Status
-| **PostgreSQL** | Multiple users / shared state needed | Planned (Alpha)
+| **PostgreSQL** | Multiple users / shared state needed | Planned (Beta)
 | **Redis** | Multi-instance deployment needed | Planned (Beta)
 | **Elasticsearch** | PostgreSQL search consistently > 500ms | Not needed yet
 | **TimescaleDB** | Metrics queries consistently > 1s | Not needed yet

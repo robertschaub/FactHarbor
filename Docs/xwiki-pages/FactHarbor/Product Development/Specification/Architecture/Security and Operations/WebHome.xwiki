@@ -6,13 +6,15 @@ This page documents FactHarbor's current security model, deployment topology, us
 
 {{include reference="FactHarbor.Product Development.Diagrams.Security Model.WebHome"/}}
 
-//Green = implemented in current POC. Yellow = planned for Alpha/Beta. Blue = always active regardless of deployment phase. The current security model protects internal endpoints with shared secrets; full user authentication is planned for Alpha.//
+//Green = implemented in the current system. Yellow = planned for Beta. Blue = always active regardless of deployment phase. The current security model includes shared-secret protection, invite-code gating, and public-endpoint rate limiting; full user authentication is planned for Beta.//
 
 === Current Protections ===
 
 |= Protection |= Scope |= Mechanism
 | Runner route | ##/api/internal/run-job## | ##x-runner-key## header must match ##FH_INTERNAL_RUNNER_KEY## env var
 | Admin endpoints | System health POST, config changes | ##X-Admin-Key## header must match ##FH_ADMIN_KEY## env var
+| Public analysis access | Analyze/status endpoints | Fixed-window IP rate limiting + invite-code quotas for limited public access
+| URL fetching | Source retrieval | SSRF protection with DNS checks, private-IP blocking, redirect/size/time limits
 | Secret comparison | All key validations | Timing-safe comparison (prevents timing attacks)
 | Input validation | All API inputs, all configs | Zod schema validation
 | SQL injection | All database access | Parameterised queries (EF Core + better-sqlite3)
@@ -21,9 +23,9 @@ This page documents FactHarbor's current security model, deployment topology, us
 
 * **User authentication** — Login, registration, session management
 * **RBAC** — Role-based access control (Reader, User, Admin, Moderator)
-* **SSRF protection** — Sanitise URLs before fetching (prevent internal network access)
-* **Rate limiting** — Per-user and per-IP request throttling
-* **CORS tightening** — Restrict allowed origins in production
+* **SSRF DNS-rebinding hardening** — Validate resolved IPs at connection time, not only before fetch
+* **Cost quotas** — Per-job and per-day limits before broader public exposure
+* **Auth migration sweep** — Replace remaining inline admin-key checks with the shared validation path
 * **Audit logging** — Track all significant administrative actions
 
 == Deployment Topology ==
@@ -53,17 +55,17 @@ cd apps/web && npm run dev
 
 {{include reference="FactHarbor.Product Development.Diagrams.Role-Based Access Control.WebHome"/}}
 
-//Two roles are currently implemented: anonymous Reader (view only) and UCM Admin (configuration management via admin key). Registered User and Moderator roles are planned for Alpha/Beta.//
+//Two roles are currently implemented: anonymous Reader (view only) and UCM Admin (configuration management via admin key). Registered User and Moderator roles are planned for Beta.//
 
 |= Role |= Status |= Capabilities
 | **Reader** | Implemented | View published analyses and reports
 | **UCM Admin** | Implemented | Change pipeline/search/calculation configs, resume/pause system, view system health
-| **Registered User** | Planned (Alpha) | Submit articles/claims for analysis, view own job history
+| **Registered User** | Planned (Beta) | Submit articles/claims for analysis, view own job history
 | **Moderator** | Planned (Beta) | Review flagged content, manage user access, investigate abuse
 
 == Monitoring and Observability ==
 
-=== Current (POC) ===
+=== Current (Alpha) ===
 
 |= Capability |= Status |= Mechanism
 | System health endpoint | Implemented | ##GET /api/fh/system-health## — provider circuit state, pause status

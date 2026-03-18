@@ -671,3 +671,43 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | Review LLM Triangulation Assessment Plan
+**Task:** Review `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` against the current ClaimAssessmentBoundary implementation.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Flagged four issues before implementation approval: the plan relies on a new `findingSummary` signal without scheduling Stage 4 contract changes, the `generateText` example omits required structured-output plumbing used elsewhere in the repo, the rollout defaults the feature on for existing configs before the plan's own regression gate runs, and the proposed factor-only derivation can mislabel the existing `conflicted` triangulation UI state.
+**Open items:** Revise the plan before implementation. No code changes were made.
+**Warnings:** Current code exposes per-boundary TP/confidence/direction/count only; there is no boundary-level textual summary field today. Structured-output calls in this repo also require prompt-caching/provider options plus `extractStructuredOutput(...)`.
+**For next agent:** Re-check §3/§7/§9 for missing Stage 4 prompt/type work, §7.1 for the exact Anthropic `Output.object` pattern, §5.3/§13 for rollout gating, and §4.2.1 for whether `conflicted` remains structurally derived instead of factor-derived.
+**Learnings:** no
+
+---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | Re-review LLM Triangulation Assessment Plan v4
+**Task:** Re-review the corrected `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` after the v4 fixes.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the original 2 High + 2 Medium findings are substantively fixed. Flagged remaining document-consistency issues in stale snippets: §7.1's example uses `recordLLMCall()` without importing it, and §7.3 still reflects v3 semantics (`default true`, `llmCall` argument, `info` fallback comment) despite the v4 staged-rollout and silent-fallback decisions.
+**Open items:** Clean up the stale v3 references in the implementation snippets and resolved-questions/review-log text before coding from the document.
+**Warnings:** The corrected architecture is sound, but the stale code snippets are implementation traps because they contradict the updated decisions in the same file.
+**For next agent:** If implementing from this plan, trust the v4 decisions in §3-§5/§13/§14, not the stale snippet details in §7.3 or the outdated v3 historical text in §16/Review Log.
+**Learnings:** no
+
+---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | Review March 17 Change Set
+**Task:** Review the March 17, 2026 changes in git history plus current uncommitted docs for bugs, regressions, and missing tests.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Flagged two code-review findings: the new `extractRecordArray()` bare-object tolerance in `verdict-stage.ts` is too permissive and can silently convert malformed LLM outputs into default 50/50 verdict records, and the prompt change making `analyticalDimension` effectively mandatory increases scope-fragmentation risk because that field feeds the deterministic scope fingerprint while normalization only kicks in once enough scopes accumulate.
+**Open items:** Tighten the verdict-shape acceptance condition and add a focused regression test. Reassess the `analyticalDimension` prompt guidance against the current scope-fingerprinting behavior before relying on it broadly.
+**Warnings:** Most other March 17 changes looked safe. The CI/test-entrypoint changes and debug-path fix were not the risky parts in this review.
+**For next agent:** If you touch `verdict-stage.ts`, keep malformed-shape detection strict enough that retries/fallbacks still trigger. If you iterate on `analyticalDimension`, remember it participates directly in `scopeFingerprint()` and small runs may never reach scope normalization.
+**Learnings:** no
+
+---
+### 2026-03-17 | Senior Developer | Codex (GPT-5) | Fix March 17 Review Findings
+**Task:** Implement the two March 17 review fixes: tighten bare-object verdict parsing and remove prompt pressure to invent generic `analyticalDimension` labels.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `apps/web/prompts/claimboundary.prompt.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Restricted bare single-object verdict acceptance to objects containing both `claimId` and `truthPercentage`, so malformed partial objects still hit the existing malformed-shape path. Updated the extraction prompt so `analyticalDimension` is included only for distinct measurable properties and omitted for broad/general evidence, avoiding prompt-induced scope fragmentation.
+**Open items:** Prompt changes were not reseeded into UCM in this task; do that when you want runtime prompt storage updated.
+**Warnings:** The prompt fix is wording-only and has no direct unit test coverage. Runtime behavior changes only after prompt reseeding / UCM update.
+**For next agent:** If another parser-relaxation change is proposed in `verdict-stage.ts`, keep the malformed-output retry/fallback behavior as the source of truth. If `analyticalDimension` is revisited, evaluate it together with `scopeFingerprint()` and Stage 3 normalization thresholds.
+**Learnings:** no
+
+---

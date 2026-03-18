@@ -2,18 +2,20 @@
 
 {{mermaid}}
 flowchart TB
-    subgraph Implemented["Implemented (POC)"]
+    subgraph Implemented["Implemented (Current)"]
         RUNNER_KEY["Runner Route Protection\n/api/internal/run-job\nrequires x-runner-key header"]
         ADMIN_KEY["Admin API Protection\nPOST endpoints\nrequire X-Admin-Key header"]
+        RATE_LIMIT["Rate Limiting\nPer-IP limiter + invite-code quotas\nfor limited public access"]
+        SSRF["SSRF Protection\nURL fetching\nsanitisation"]
         TIMING["Timing-Safe Comparison\nfor secret validation"]
         HEALTH_AUTH["System Health Auth\nresume/pause require admin key\nin production"]
     end
 
-    subgraph Planned["Planned (Alpha/Beta)"]
+    subgraph Planned["Planned (Beta)"]
         USER_AUTH["User Authentication\nLogin, registration,\npassword hashing"]
         RBAC["Role-Based Access Control\nReader, User, Admin,\nModerator roles"]
-        RATE_LIMIT["Rate Limiting\nPer-user and per-IP\nquota enforcement"]
-        SSRF["SSRF Protection\nURL fetching\nsanitisation"]
+        COST_QUOTAS["Cost Quotas\nPer-job and per-day\nbudget enforcement"]
+        AUDIT["Audit Logging\nAdministrative and\nsecurity-relevant actions"]
     end
 
     subgraph Always["Always Active"]

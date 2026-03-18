@@ -2,38 +2,38 @@
 
 {{mermaid}}
 flowchart LR
-    subgraph POC["POC (Current)"]
+    subgraph POC["POC (Completed)"]
         P1["Single host"]
         P2["3x SQLite\n(factharbor, config, SR)"]
         P3["Shared secrets"]
         P4["Manual ops"]
     end
 
-    subgraph ALPHA["Alpha"]
-        A1["User auth"]
-        A2["PostgreSQL"]
-        A3["RBAC"]
-        A4["Rate limiting"]
+    subgraph ALPHA["Alpha (Current)"]
+        A1["Invite-code access"]
+        A2["Rate limiting"]
+        A3["Prod + test VPS"]
+        A4["Pre-release hardening"]
     end
 
-    subgraph BETA["Beta"]
-        B1["Horizontal scaling"]
-        B2["Redis caching"]
-        B3["Prometheus + Grafana"]
-        B4["Moderation tools"]
+    subgraph BETA["Beta (Planned)"]
+        B1["User auth + RBAC"]
+        B2["PostgreSQL"]
+        B3["Horizontal scaling"]
+        B4["Monitoring dashboards"]
     end
 
-    subgraph V1["V1.0"]
-        V1A["Multi-region"]
+    subgraph V1["V1.0 (Planned)"]
+        V1A["Public REST API"]
         V1B["OpenTelemetry"]
         V1C["Log aggregation"]
-        V1D["Full DR"]
+        V1D["Disaster recovery"]
     end
 
-    subgraph V2["V2.0+"]
+    subgraph V2["V2.0+ (Vision)"]
         V2A["Federation"]
-        V2B["Vector DB"]
-        V2C["Advanced analytics"]
+        V2B["Semantic similarity search"]
+        V2C["Distributed consensus"]
     end
 
     POC --> ALPHA --> BETA --> V1 --> V2

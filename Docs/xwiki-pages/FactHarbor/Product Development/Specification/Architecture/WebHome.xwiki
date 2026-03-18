@@ -88,10 +88,10 @@ Includes: ClaimAssessmentBoundary Pipeline internals, Pipeline Variants, Verdict
 == Project Status ==
 
 |= Phase |= Status |= Description
-| **Alpha** | Current | Single-instance deployment, SQLite storage, core AKEL pipeline with 2 variants, 800+ unit tests
-| **Alpha+** | Planned | User accounts, PostgreSQL migration, quality gate closure
-| **Beta** | Planned | Multi-instance, monitoring, Shadow Mode (self-learning prompt optimisation)
-| **V1.0** | Vision | Federation (multi-instance sync), full automation, public API
+| **Alpha** | Current | Invite-code limited testing, rate limiting, VPS deployment, core AKEL pipeline
+| **Beta** | Planned | User accounts, PostgreSQL migration, production hardening, monitoring
+| **V1.0** | Planned | Public launch, public API, observability, disaster recovery
+| **V2.0+** | Vision | Federation, semantic search, cross-node analysis
 
 == Related ==
 
