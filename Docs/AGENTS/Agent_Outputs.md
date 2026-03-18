@@ -691,6 +691,36 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-18 | Technical Writer | Codex (GPT-5) | Generate Editable UZH PowerPoint Deck
+**Task:** Create a real `.pptx` deck for the UZH meeting from the source content instead of printing the rendered xWiki page.
+**Files touched:** `Docs/WIP/generate_meeting_uzh_pptx.js`, `Docs/WIP/Meeting_UZH_full_deck_2026-03-18.pptx`, `Docs/WIP/package.json`, `Docs/WIP/package-lock.json`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Switched from page-capture output to an editable PowerPoint built with `PptxGenJS`. The deck is source-driven and structured as presentation slides: meeting goals, collaboration fit, research value, pipeline, current gaps, funding shape, collaboration opportunities, and next steps.
+**Open items:** The deck has been generated successfully, but I did not manually inspect slide-by-slide visual balance in PowerPoint itself. A next pass can refine wording density or add diagrams if needed.
+**Warnings:** This deck is a curated presentation artifact, not a literal one-to-one export of every xWiki section. `pptxgenjs` was installed locally under `Docs/WIP` to support generation.
+**For next agent:** Regenerate with `node Docs/WIP/generate_meeting_uzh_pptx.js`. If the UZH page changes materially, update the content arrays in that script rather than editing the `.pptx` binary directly in-repo.
+**Learnings:** no
+
+---
+### 2026-03-18 | Technical Writer | Codex (GPT-5) | Generate Full-Page UZH PDF
+**Task:** Produce a faithful full-page PDF of the rendered `Meeting UZH` xWiki page, in addition to the shorter slide deck.
+**Files touched:** `Docs/WIP/Meeting_UZH_fullpage_2026-03-18.pdf`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Used the local xWiki viewer (`viewer-impl/xwiki-viewer.html`) plus Chrome headless print-to-PDF instead of recreating the page in another format, because the user wanted the full page "exactly" and PDF preserves that better than PowerPoint here.
+**Open items:** I verified the PDF file exists, but I did not manually inspect every page break or diagram render in the printed PDF.
+**Warnings:** The output depends on the local viewer rendering and Chrome print behavior. If the page content changes, regenerate the PDF rather than treating it as source-of-truth documentation.
+**For next agent:** To regenerate: start `Docs/xwiki-pages/viewer-impl/Open-XWikiViewer.ps1`, then print `http://localhost:8471/xwiki-viewer.html?page=Product%20Development.Presentations.Meeting%20UZH.WebHome` with Chrome headless to a PDF file.
+**Learnings:** no
+
+---
+### 2026-03-18 | Technical Writer | Codex (GPT-5) | Generate Short UZH PDF Deck
+**Task:** Create a shorter, cleaner slide deck for the UZH meeting and render it to PDF from the current repo materials.
+**Files touched:** `Docs/WIP/Meeting_UZH_short_deck_2026-03-18.md`, `Docs/WIP/meeting-uzh-short-theme.css`, `Docs/WIP/Meeting_UZH_short_deck_2026-03-18.pdf`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Used a Marp-based markdown deck instead of trying to export the full xWiki page directly, because the user asked for a shorter cleaner version. Grounded the deck in the current UZH presentation plus meeting-prep and Innosuisse docs, and framed funding around the most realistic near-term path: Innosuisse Innovation Project first, lighter preparatory options second, later SNSF/Horizon follow-ons only where fit exists.
+**Open items:** The PDF was rendered successfully, but I did not do a human visual slide-by-slide review of the final PDF. If the user wants, the next pass should trim or re-order slides after seeing the actual deck.
+**Warnings:** This generated deck is a presentation artifact, not an authoritative replacement for the xWiki page. If the source presentation changes materially, regenerate the PDF from the markdown source or update the markdown first.
+**For next agent:** The generated files are in `Docs/WIP/`. To re-render after edits, run `npx @marp-team/marp-cli 'Docs/WIP/Meeting_UZH_short_deck_2026-03-18.md' --theme-set 'Docs/WIP/meeting-uzh-short-theme.css' --pdf --allow-local-files --browserPath 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' -o 'Docs/WIP/Meeting_UZH_short_deck_2026-03-18.pdf'`.
+**Learnings:** no
+
+---
 ### 2026-03-17 | Senior Developer | Codex (GPT-5) | Review March 17 Change Set
 **Task:** Review the March 17, 2026 changes in git history plus current uncommitted docs for bugs, regressions, and missing tests.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`
@@ -711,3 +741,37 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-18 | Product Strategist | Codex (GPT-5) | Draft Innosuisse Concept for Live Audio/Video Fact-Checking
+**Task:** Investigate current official Innosuisse application requirements and draft a project concept around real-time live fact-checking of audio and video after the Tobias meeting.
+**Files touched:** `Docs/WIP/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Reframed the opportunity away from “apply existing Tobias/UZH/ETH research to current FactHarbor” and toward a stronger innovation story: evidence-based, real-time, multimodal fact-checking for audio/video streams. Grounded the draft in official Innosuisse guidance for innovation projects with implementation partner, the innovation-project checklist, innovation cheque, mentoring, and the current implementing provisions.
+**Open items:** The draft is a strong pre-draft / concept note, not yet an Innolink-ready submission. It still needs a named Swiss research partner, a tighter exploitation plan, a realistic project budget, and more concrete benchmark datasets / pilot partners.
+**Warnings:** For a full Innosuisse filing, the weakest parts today are likely partner setup, quantified market validation, and data/evaluation specifics for live multimodal fact-checking. The novelty argument is much stronger than the original Tobias-centered cooperation angle, but it must still be evidenced against competitors.
+**For next agent:** If this is continued, turn the current draft into an Innolink-structured application skeleton with explicit field headings and a first-pass budget/work package table. Keep the framing broad around UZH/ETH or other Swiss research partners; do not revert to a Tobias-person-specific collaboration story.
+**Learnings:** no
+
+---
+### 2026-03-18 | Product Strategist | Codex (GPT-5) | Reshape LiveCheck Draft into Innosuisse-Style Application Text
+**Task:** Rework the live audio/video fact-checking concept into a more submission-like draft for `Innovationsprojekte mit Umsetzungspartner`, grounded in the official German checklist and requirements.
+**Files touched:** `Docs/WIP/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Did not pretend to have a public full sample application where none was credibly available. Instead, structured the new draft around the official checklist categories: innovative solution, project value, project planning, ICT/AI specifics, competition, sustainability, and risks. Kept the partner framing open around a Swiss research institution and removed person-specific dependence.
+**Open items:** The new version is much closer to an Innolink-ready narrative, but still lacks partner names, LOIs, market sizing, financial projections, budget tables, and a formal IPR/FTO assessment.
+**Warnings:** The strongest likely reviewer pressure points remain market validation, concrete implementation-partner economics, and proof that the project is innovation with transfer potential rather than only a research agenda.
+**For next agent:** Best next step is a `v2` that mirrors the final Innolink field order even more tightly and adds placeholders/tables for budget, partner roles, LOIs, and measurable KPIs by work package.
+**Learnings:** no
+
+---
+
+---
+### 2026-03-18 | LLM Expert | Claude Opus 4.6 | Bolsonaro Sentencing Evidence Loss Fix
+**Task:** Investigate and fix the disappearance of 27-year sentencing evidence from Bolsonaro trial reports after Phase A jurisdiction filtering.
+**Files touched:** `claimboundary-pipeline.ts` (Fix A sort + Fix B diagnostics + originalRank threading), `claimboundary.prompt.md` (Fix C contrastive rule), `config-schemas.ts` (relevanceTopNFetch), `pipeline.default.json` (relevanceTopNFetch), `claimboundary-pipeline.test.ts` (6 new tests)
+**Key decisions:**
+- Root cause was two compounding issues: (1) RELEVANCE_CLASSIFICATION prompt lacked concrete examples distinguishing foreign media reporting domestic events from foreign government reactions, causing Haiku to misclassify PBS/BBC as foreign_reaction; (2) top-5 fetch used unsorted LLM-emitted order, silently dropping high-scored sources.
+- Fix A: Stable sort (score desc, originalRank asc tie-break) before top-N fetch. Promoted `relevanceTopNFetch` to UCM config (default 5).
+- Fix B: debugLog inside classifyRelevance for every result (rank, url, raw/adjusted score, jurisdictionMatch, reasoning) + discard summary. No API change.
+- Fix C: Contrastive prompt rule with concrete examples (BBC domestic event → contextual; Reuters foreign sanctions → foreign_reaction). Explicitly preserves foreign_reaction for government actions. State media exclusion added.
+- Three reviews incorporated before implementation (Code Reviewer, Senior Developer, LLM Expert/Senior Developer).
+**Open items:** None. All fixes verified via live validation (job 91e018df).
+**Warnings:** Prompt changes require `npm run reseed:prompts` — auto-reseed only runs on `postbuild`, not `dev`.
+**For next agent:** The `relevanceTopNFetch` UCM parameter can be tuned in Admin UI if future evidence-loss issues arise (bump to 8 during investigation). debugLog in `debug-analyzer.log` now shows full Stage 2 classification diagnostics — check there first for any jurisdiction filtering issues.
