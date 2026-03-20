@@ -419,7 +419,7 @@ Truth% (Bolsonaro EN representative)
 | Claim families analyzed | 4 (Hydrogen, Bolsonaro EN, Bolsonaro PT, Plastik) |
 | Most stable family | Hydrogen (16pp spread) |
 | Least stable family | Plastik (46pp spread) |
-| Highest-priority open quality task | **Plastik / broad-evaluative English follow-up on `main`** |
+| Highest-priority open quality task | **Plastik / downstream retrieval-verdict stabilization on `main` after Stage 1 contract fix** |
 
 ---
 
@@ -452,16 +452,17 @@ These answers remain historically important, but they should now be read alongsi
 - Legacy SR weighting is now **disabled by default**
 - `defaultScore=0.5` and `search.cache.enabled=true` are restored on `main`
 - Stage 4.5 exists and is validated, but remains **off by default**
-- B1 improved Plastik DE/PT claim extraction, but **Plastik EN is still unresolved**
+- B1 plus the new claim-contract validator materially improved the Plastik family structurally: **broad evaluative predicate preservation is now working across DE / EN / FR on current `main`**
+- The remaining Plastik problem is now **downstream of Stage 1 claim extraction**: verdict direction still varies even when claim structure is now contract-faithful
 
 **Recommended next actions from this document:**
-1. **Investigate English Plastik on `main`** — why does the broad evaluative claim still land `LEANING-TRUE` after the B1 improvement?
+1. **Investigate downstream Plastik instability on `main`** — with claim-contract preservation now fixed, the next focus should be search framing, evidence allocation, and verdict aggregation for broad evaluative claims.
 2. **Restore config provenance for CB jobs** — still required for future investigations
 3. **Warning severity calibration**
 4. **Optional:** frozen-retrieval A/B harness for Stage 4.5
-5. **Do not broaden old-worktree submissions yet** — first finish the running multilingual `main` Plastik checks
+5. **Do not reopen Stage 1 decomposition as the primary Plastik blocker** unless new evidence shows the validator regressed; the latest validation run indicates Stage 1 structure is no longer the main problem
 
-**Decision state:** The old SR-weighting policy decision is no longer the active blocker on `main`, because legacy weighting has already been turned off there. The next real decision is whether to focus the next quality cycle on Plastik multilingual stabilization or on auditability / validation infrastructure.
+**Decision state:** The old SR-weighting policy decision is no longer the active blocker on `main`, because legacy weighting has already been turned off there. The broad-claim contract stabilizer has now been implemented and structurally validated. The next real decision is whether to spend the next quality cycle on downstream Plastik stability (retrieval / evidence / verdict path) or on auditability / validation infrastructure.
 
 ---
 
@@ -550,3 +551,289 @@ Keep the existing priorities, but sharpen **Phase B**:
 - The next Plastik-quality task should explicitly target **English broad evaluative claims** and verify that the B1 predicate-preservation behavior generalizes across languages.
 - Finish evaluating the already-running multilingual `main` jobs before submitting more legacy-lane comparisons.
 - Do **not** use `FH_best_monolithic_canonical` as a “best” quality reference for Plastik. Use `main` historical ClaimBoundary runs and the Feb 27 / Mar 5-9 false-direction Plastik artifacts instead.
+
+---
+
+## 10.2 Addendum (2026-03-20, later) — Newest Local Main-Lane Reruns
+
+Additional local jobs completed on `main` after the first Mar 20 addendum. These newer same-stack reruns materially change the Plastik conclusion.
+
+### Newest relevant `main` jobs
+
+| Family | Job | Input | Verdict |
+|---|---|---|---|
+| Plastik DE | `dbc65a0d...` | `Plastik recycling bringt nichts` | `23 / 78 / MOSTLY-FALSE` |
+| Plastik EN | `27fabab8...` | `Plastic recycling is pointless` | `63 / 67 / LEANING-TRUE` |
+| Plastik DE | `acb8f733...` | `Plastik recycling bringt nichts` | `57 / 69 / MIXED` |
+| Plastik DE | `10bca602...` | `Plastik recycling bringt nichts` | `66 / 72 / LEANING-TRUE` |
+| Plastik DE technical failure | `56ab80b1...` | `Plastik recycling bringt nichts` | `50 / 0 / UNVERIFIED` (verdict JSON parse failure; exclude from semantic evaluation) |
+| Bolsonaro PT | `13d653ae...` | TSE/STF process-conformity variant | `77 / 72 / MOSTLY-TRUE` |
+| Bolsonaro PT | `87d0310e...` | TSE/STF process-conformity variant | `70 / 74 / LEANING-TRUE` |
+| Bolsonaro EN | `6983f205...` | TSE/STF process-conformity variant | `67 / 71 / LEANING-TRUE` |
+| Bolsonaro DE | `33690e8a...` | TSE/STF process-conformity variant | `58 / 56 / LEANING-TRUE` |
+
+### What these newest jobs show
+
+1. **The earlier “only English remains problematic” conclusion is no longer strong enough.**
+
+   After the first multilingual checkpoint, it looked as if DE/PT/FR/ES had stabilized into the false neighborhood while EN stayed too positive. The newest `main` reruns show that this is too optimistic:
+   - DE `dbc65a0d...` = `MOSTLY-FALSE`
+   - DE `acb8f733...` = `MIXED`
+   - DE `10bca602...` = `LEANING-TRUE`
+
+   This spread happened on the same current stack (`main`, post-B1, legacy SR weighting off). So the residual Plastik problem is **not just language neutrality anymore**; it is a broader instability in how current ClaimBoundary handles broad evaluative claims.
+
+2. **B1 improved the family, but it is not consistently binding the claim contract.**
+
+   The newest DE runs show three different claim-shape qualities:
+   - `dbc65a0d...` stays close to the intended contract:  
+     `... bringt in wirtschaftlicher Hinsicht nichts`  
+     `... bringt in ökologischer Hinsicht nichts`
+   - `acb8f733...` is partially faithful but still drifts into a proxy frame on `AC_03`:  
+     `... bringt nichts in Bezug auf die Reduktion der Kunststoffproduktion und des Kunststoffverbrauchs`
+   - `10bca602...` regresses further into predicate substitution:  
+     `Plastikrecycling ist in Bezug auf die Umweltauswirkungen unwirksam`  
+     `... wirtschaftliche Rentabilität unwirksam`  
+     `... technische Machbarkeit unwirksam`
+
+   This means the prompt-only B1 fix is **directionally helpful but not yet robust**. The no-proxy / predicate-preservation instruction is being followed in some runs and bypassed in others.
+
+3. **Search-query drift still tracks claim drift.**
+
+   The better DE run (`dbc65a0d...`) kept the original broad evaluative predicate more intact and still produced a false-direction verdict. The weaker runs (`acb8f733...`, `10bca602...`) show queries that drift toward narrower proxy framings such as:
+   - effectiveness / environmental impact
+   - economic viability / profitability
+   - production-reduction substitution
+
+   The EN rerun `27fabab8...` remains the clearest version of this pattern, with claims like:
+   - `ineffective in terms of environmental impact`
+   - `pointless in terms of economic viability`
+   - `pointless in terms of technical feasibility`
+
+   So the failure is now best described as **claim-contract drift cascading into search framing and evidence allocation**.
+
+4. **The technical failure on `56ab80b1...` should not be counted as semantic family variance.**
+
+   That run fell back to `UNVERIFIED` because verdict JSON parsing failed for all 3 claims despite an otherwise evidence-rich run. This was a pipeline robustness issue, not a claim-quality finding. The local code now includes a Verdict JSON recovery hardening fix, so future comparison runs should treat `56ab80b1...` as a technical outlier rather than evidence about Plastik semantics.
+
+5. **Bolsonaro is still variant-sensitive, but not in crisis.**
+
+   The newest local Bolsonaro runs remain in the same broad verdict neighborhood:
+   - PT process-conformity: `70-77 true`
+   - EN process-conformity: `67 true`
+   - DE process-conformity: `58 true`
+
+   This is still meaningfully better than the Mar 18-19 trough, and the main analytical caution remains the same as before: **do not mix different Bolsonaro input variants when assessing variance**.
+
+### Updated conclusion after the newest local reruns
+
+- **Hydrogen:** still healthy and not the current blocker.
+- **Bolsonaro:** still variant-sensitive, but current local runs are broadly consistent and no longer the top quality emergency.
+- **Plastik:** still the dominant open quality problem. The newest local reruns show that the current system can still swing from `MOSTLY-FALSE` to `LEANING-TRUE` on the same broad evaluative input even on the same stack.
+
+The best current description is:
+
+> B1 improved the Plastik family materially, but current ClaimBoundary still lacks a robust mechanism for preserving broad evaluative claim contracts through extraction, query generation, and verdicting. English remains the worst case, but the newest German reruns prove the residual instability is broader than English alone.
+
+### Revised next steps after the newest local runs
+
+1. **Promote Plastik from “English follow-up” to “broad evaluative contract stabilization.”**
+   The next task should compare `dbc65a0d...`, `acb8f733...`, `10bca602...`, and `27fabab8...` directly on:
+   - extracted claims
+   - search queries
+   - boundary concentration
+   - evidence support vs contradiction balance
+   - verdict grounding / direction warnings
+
+2. **Do not add deterministic claim-shape rules.**
+   Per repository policy, if a stronger guard is needed, it should be an **LLM-based contract check or reprompt gate**, not heuristic keyword logic.
+
+3. **Treat `56ab80b1...` as a separate reliability bug track, not as Plastik semantics.**
+   The parse-failure fix is now in code. Re-run future comparisons on the patched stack before using them as family evidence.
+
+4. **Keep config provenance high on the backlog, but it is not the immediate blocker.**
+   The current blocker is now semantic stability of broad evaluative claims on `main`.
+
+---
+
+## 10.3 Addendum (2026-03-20, latest) — Diagnostic Batch Results
+
+I submitted a targeted diagnostic batch on current `main` to distinguish:
+- exact-repeat run variance
+- paraphrase sensitivity
+- language-control behavior
+
+### Diagnostic jobs submitted on current `main`
+
+| Type | Job | Input | Verdict |
+|---|---|---|---|
+| DE repeat | `bc54d4e3...` | `Plastik recycling bringt nichts` | `26 / 77 / MOSTLY-FALSE` |
+| DE repeat | `51e2e208...` | `Plastik recycling bringt nichts` | `44 / 63 / MIXED` |
+| EN repeat | `9a3278ac...` | `Plastic recycling is pointless` | `61 / 71 / LEANING-TRUE` |
+| EN repeat | `3708ecf9...` | `Plastic recycling is pointless` | `79 / 83 / MOSTLY-TRUE` |
+| DE paraphrase | `a4de538a...` | `Plastikrecycling bringt keinen Nutzen.` | `35 / 68 / LEANING-FALSE` |
+| EN paraphrase | `fe13550a...` | `Plastic recycling brings no real benefit.` | `41 / 73 / LEANING-FALSE` |
+| FR control | `aa7a558a...` | `Le recyclage du plastique ne sert à rien` | `36 / 73 / LEANING-FALSE` |
+
+### What this diagnostic batch proves
+
+1. **Exact repeats on the same stack are still highly unstable.**
+
+   On the identical current `main` code/config:
+   - DE exact runs now span at least:
+     - `23 / 78 / MOSTLY-FALSE` (`dbc65a0d...`)
+     - `26 / 77 / MOSTLY-FALSE` (`bc54d4e3...`)
+     - `44 / 63 / MIXED` (`51e2e208...`)
+     - `57 / 69 / MIXED` (`acb8f733...`)
+     - `66 / 72 / LEANING-TRUE` (`10bca602...`)
+   - EN exact runs now span at least:
+     - `61 / 71 / LEANING-TRUE` (`9a3278ac...`)
+     - `63 / 67 / LEANING-TRUE` (`27fabab8...`)
+     - `79 / 83 / MOSTLY-TRUE` (`3708ecf9...`)
+
+   This is too wide to treat as ordinary acceptable run noise. The residual Plastik problem on `main` is a genuine stability issue.
+
+2. **Paraphrase sensitivity is now clearly visible.**
+
+   The near-paraphrases land meaningfully lower and more plausibly:
+   - DE paraphrase `bringt keinen Nutzen` -> `35 / 68 / LEANING-FALSE`
+   - EN paraphrase `brings no real benefit` -> `41 / 73 / LEANING-FALSE`
+
+   In other words, the current system handles the paraphrased “no benefit” framing better than the exact colloquial “pointless / bringt nichts” framing. That is a strong signal that the remaining issue is not just generic retrieval noise; it is tied to how the pipeline interprets and operationalizes a specific broad evaluative predicate family.
+
+3. **The FR control stayed in the false neighborhood.**
+
+   FR exact control:
+   - previous `23fe4e57...` -> `35 / 69 / LEANING-FALSE`
+   - new `aa7a558a...` -> `36 / 73 / LEANING-FALSE`
+
+   This makes the comparison sharper:
+   - FR looks relatively stable
+   - EN exact remains the strongest positive outlier
+   - DE exact is still volatile even though it now often lands in the false neighborhood
+
+4. **The core failure is now best described as claim-contract drift around colloquial absolutist evaluative predicates.**
+
+   Exact `DE` / `EN` runs still drift into narrower proxies such as:
+   - effectiveness
+   - economic viability
+   - technical feasibility
+   - waste-diversion rates
+   - material-cycle closure
+
+   The better runs stay closer to the original “benefit / usefulness” semantic frame; the worse runs operationalize the claim as a bundle of narrower proxy claims, some of which are partly true. That proxy drift then cascades into search framing and verdict direction.
+
+5. **No second diagnostic batch is required right now.**
+
+   The evidence is now specific enough to guide implementation:
+   - the problem is real on current `main`
+   - it is larger for exact colloquial DE/EN phrasings than for nearby paraphrases
+   - it is not equally severe in FR
+
+### Updated conclusion after the diagnostic batch
+
+The remaining Plastik quality problem is **not** best summarized as:
+- “just English”
+- “just retrieval variance”
+- or “still the original German decomposition bug”
+
+It is now better summarized as:
+
+> Current ClaimBoundary still lacks a robust LLM-based guardrail for broad colloquial absolutist evaluative predicates like `bringt nichts` / `is pointless`. Without that guardrail, the system inconsistently rewrites the original claim into narrower effectiveness / feasibility / viability proxies, which then drives unstable search behavior and unstable verdicts.
+
+### Updated recommended next step
+
+The next fix is **not another Stage 1 claim-shape change by default**. The claim-contract validator has now been implemented and structurally validated; it removed proxy drift in the latest multilingual validation set.
+
+The next practical focus should therefore be:
+- search-query framing under broad evaluative claims
+- support vs contradiction evidence allocation
+- verdict grounding / direction consistency under stable claim shapes
+
+---
+
+## 10.4 Addendum (2026-03-20, final) — Claim-Contract Validator Implemented and Validated
+
+After the diagnostic batch established that exact colloquial evaluative inputs were still drifting into proxy claims, a new LLM-based **claim-contract validation / reprompt** step was added after Pass 2 and before Gate 1.
+
+### What changed
+
+The new validator:
+- runs after each Pass 2 extraction
+- checks whether extracted claims still preserve the original evaluative meaning
+- allows neutral dimension qualification
+- requests a single Pass 2 retry when material proxy drift is detected
+- fails open on technical error
+
+Implementation status:
+- Prompt section added: `CLAIM_CONTRACT_VALIDATION`
+- UCM config added: `claimContractValidation.enabled`, `claimContractValidation.maxRetries`
+- Pipeline wiring added in Stage 1
+- Tests and build: green
+
+### Validation run set
+
+Five targeted validation runs were executed on current `main`:
+
+| # | Input | Verdict | Truth | Conf | Predicate preserved? |
+|---|---|---|---|---|---|
+| 1 | DE `Plastik recycling bringt nichts` | `MIXED` | `43` | `65` | yes |
+| 2 | EN `Plastic recycling is pointless` | `MIXED` | `54` | `72` | yes |
+| 3 | DE `Plastikrecycling bringt keinen Nutzen` | `LEANING-FALSE` | `39` | `76` | yes |
+| 4 | EN `Plastic recycling brings no real benefit` | `MOSTLY-TRUE` | `74` | `64` | yes |
+| 5 | FR `Le recyclage du plastique ne sert à rien` | `LEANING-TRUE` | `69` | `68` | yes |
+
+### What this validation proves
+
+1. **The claim-contract fix is structurally successful.**
+
+   Predicate preservation was clean in all 5/5 validation runs:
+   - DE: `bringt nichts in Bezug auf ...`
+   - EN: `is pointless in terms of ...`
+   - DE paraphrase: `bringt keinen Nutzen in Bezug auf ...`
+   - EN paraphrase: `brings no real benefit in terms of ...`
+   - FR: `ne sert à rien en termes de ...`
+
+   Most importantly, the previously observed proxy drifts are gone from this validation set:
+   - no replacement by `is ineffective`
+   - no replacement by `is not viable`
+   - no replacement by `does not contribute`
+
+2. **The primary Plastik blocker has moved downstream.**
+
+   The verdict direction still varies from `LEANING-FALSE` to `MOSTLY-TRUE`, but it now does so **with contract-faithful claim structures**.
+
+   That means the system is no longer primarily failing because Stage 1 is asking the wrong question. The remaining spread is now more likely driven by:
+   - search-query framing
+   - evidence mix / evidence balance
+   - boundary concentration
+   - verdict grounding / direction behavior
+
+3. **The right next investigation target has changed.**
+
+   Before this validator, the correct priority was:
+   - fix broad-claim contract drift
+
+   After this validator, the correct priority is:
+   - explain why verdict direction still varies so widely **after** the claim contract has been preserved
+
+### Updated conclusion after implementation
+
+The current state is now:
+
+> Broad evaluative claim-contract preservation for Plastik-like inputs has been materially fixed on current `main`. The remaining instability is now downstream of Stage 1 extraction and should be investigated in search, evidence allocation, and verdict behavior rather than treated as another claim-decomposition failure by default.
+
+### Recommended next actions after this validation
+
+1. **Shift Plastik investigation focus downstream.**
+   Compare the five validator-era runs on:
+   - search queries
+   - evidence balance
+   - boundary concentration
+   - verdict grounding / direction warnings
+
+2. **Do not immediately add more Stage 1 prompt complexity.**
+   The new validator achieved the structural objective. Another Stage 1 tweak now risks mixing layers again.
+
+3. **Preserve the validator as the new baseline behavior.**
+   Future Plastik or broad-claim tests should be interpreted against the new claim-contract-stable baseline, not against the pre-validator runs.
