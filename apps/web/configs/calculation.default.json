@@ -109,6 +109,10 @@
     "supplementalRepromptMaxAttempts": 2,
     "shortSimpleInputMaxChars": 60
   },
+  "claimContractValidation": {
+    "enabled": true,
+    "maxRetries": 1
+  },
   "contextSimilarity": {
     "nameWeight": 0.35,
     "primaryMetadataWeight": 0.3,

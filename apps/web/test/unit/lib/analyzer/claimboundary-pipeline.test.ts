@@ -4236,6 +4236,31 @@ describe("Stage 4: createProductionLLMCall", () => {
     expect(result).toEqual({ verdicts: [1, 2, 3] });
   });
 
+  it("should extract embedded JSON from prose responses", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({
+      text: 'Result follows: {"verdicts":[1,2,3],"notes":"ok"} Thanks.',
+    } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {});
+    expect(result).toEqual({ verdicts: [1, 2, 3], notes: "ok" });
+  });
+
+  it("should repair truncated JSON responses when possible", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({
+      text: '{"verdictSummary":{"answer":65},"claimVerdicts":[{"claimId":"AC_01","truthPercentage":72},{"claimId":"AC_02","truthPer',
+    } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {});
+    expect(result).toEqual({
+      verdictSummary: { answer: 65 },
+      claimVerdicts: [{ claimId: "AC_01", truthPercentage: 72 }],
+    });
+  });
+
   it("should throw when response is not valid JSON", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
     mockGenerateText.mockResolvedValue({ text: "This is not JSON at all" } as any);
@@ -6034,6 +6059,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -6102,6 +6128,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -6169,6 +6196,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 3, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -6262,6 +6290,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -6333,6 +6362,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -6394,6 +6424,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],

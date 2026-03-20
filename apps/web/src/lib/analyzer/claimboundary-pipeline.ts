@@ -74,6 +74,7 @@ import {
   getPromptCachingOptions,
   type ModelTask,
 } from "./llm";
+import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
 import { normalizeScopeEquivalence, repointEvidenceScopes } from "./scope-normalization";
 import {
@@ -987,6 +988,79 @@ export async function extractClaims(
   state.llmCalls++;
 
   // ------------------------------------------------------------------
+  // Claim Contract Validation — detect proxy drift before Gate 1
+  // Runs after every Pass 2, triggers a single retry if material drift.
+  // Fail-open: if validation fails or is disabled, original Pass 2 stands.
+  // ------------------------------------------------------------------
+  let activePass2 = pass2;
+  const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
+  const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
+
+  if (contractValidationEnabled) {
+    state.onEvent?.("Validating claim contract fidelity...", 24);
+    state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+
+    const contractResult = await validateClaimContract(
+      pass2.atomicClaims as unknown as AtomicClaim[],
+      state.originalInput,
+      pass2.impliedClaim ?? "",
+      pass2.articleThesis ?? "",
+      pass2.inputClassification ?? "single_atomic_claim",
+      pipelineConfig,
+    );
+    state.llmCalls++;
+
+    if (contractResult && contractResult.inputAssessment.rePromptRequired && contractMaxRetries > 0) {
+      // Build corrective guidance from failing claims
+      const failingClaims = contractResult.claims
+        .filter((c) => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material");
+      const failingReasons = failingClaims
+        .map((c) => `${c.claimId}: ${c.reasoning}`)
+        .join("; ");
+
+      const contractGuidance =
+        `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
+        `${contractResult.inputAssessment.summary}. ` +
+        `Specific issues: ${failingReasons}. ` +
+        `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
+        `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate.`;
+
+      console.info(
+        `[Stage1] Claim contract validation detected material drift (${failingClaims.length} claim(s)). ` +
+        `Retrying Pass 2 with corrective guidance.`
+      );
+
+      try {
+        state.onEvent?.("Retrying Pass 2 with claim contract guidance...", 24);
+        const retryPass2 = await runPass2(
+          state.originalInput,
+          preliminaryEvidence,
+          pipelineConfig,
+          currentDate,
+          state,
+          contractGuidance,
+          pass1.inferredGeography,
+          pass1.detectedLanguage,
+        );
+        state.llmCalls++;
+        activePass2 = retryPass2;
+
+        console.info(
+          `[Stage1] Claim contract retry produced ${retryPass2.atomicClaims.length} claim(s).`
+        );
+      } catch (retryErr) {
+        // Retry failure is non-fatal — keep original Pass 2 output
+        console.warn("[Stage1] Claim contract retry failed (non-fatal):", retryErr);
+      }
+    } else if (contractResult) {
+      console.info(
+        `[Stage1] Claim contract validation passed: ${contractResult.inputAssessment.summary}`
+      );
+    }
+    // undefined contractResult = fail-open, original Pass 2 stands
+  }
+
+  // ------------------------------------------------------------------
   // Centrality filter — effective max is f(input length)
   // ------------------------------------------------------------------
   const centralityThreshold = pipelineConfig.centralityThreshold ?? "medium";
@@ -999,7 +1073,7 @@ export async function extractClaims(
   );
 
   const filteredClaims = filterByCentrality(
-    pass2.atomicClaims as unknown as AtomicClaim[],
+    activePass2.atomicClaims as unknown as AtomicClaim[],
     centralityThreshold,
     effectiveMax,
   );
@@ -1015,8 +1089,8 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   // Use LLM's explicit inputClassification when available (Phase 2.2);
   // fall back to structural heuristic for backward compat with pre-2.2 prompts.
-  const isDimensionInput = pass2.inputClassification === "ambiguous_single_claim"
-    || (pass2.inputClassification === "single_atomic_claim"  // pre-2.2 fallback
+  const isDimensionInput = activePass2.inputClassification === "ambiguous_single_claim"
+    || (activePass2.inputClassification === "single_atomic_claim"  // pre-2.2 fallback
         && filteredClaims.length > 1
         && filteredClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
   if (isDimensionInput) {
@@ -1037,7 +1111,7 @@ export async function extractClaims(
     state.originalInput,
   );
   state.llmCalls++;
-  let bestPass2 = pass2;
+  let bestPass2 = activePass2;
 
   // ------------------------------------------------------------------
   // D1 Commit 2: Reprompt loop — retry Pass 2 if post-Gate-1 claim count
@@ -1056,7 +1130,7 @@ export async function extractClaims(
     // Track best result across attempts (initial + retries)
     let bestPostGate1Count = gate1Result.filteredClaims.length;
     let bestGate1Result = gate1Result;
-    let bestAttemptPass2 = pass2;
+    let bestAttemptPass2 = activePass2;
 
     for (let attempt = 1; attempt <= maxRepromptAttempts; attempt++) {
       state.onEvent?.(`Extracting claims: reprompt attempt ${attempt}/${maxRepromptAttempts}...`, 24);
@@ -2193,6 +2267,180 @@ export function detectInputType(input: string): "claim" | "article" {
   // Long inputs (>= 200 chars) are typically articles
   if (trimmed.length < 200) return "claim";
   return "article";
+}
+
+// ============================================================================
+// CLAIM CONTRACT VALIDATION — LLM-based check for proxy drift / meaning shift
+// ============================================================================
+
+export const ClaimContractOutputSchema = z.object({
+  inputAssessment: z.object({
+    preservesOriginalClaimContract: z.boolean(),
+    rePromptRequired: z.boolean(),
+    summary: z.string().catch(""),
+  }),
+  claims: z.array(z.object({
+    claimId: z.string(),
+    preservesEvaluativeMeaning: z.boolean(),
+    usesNeutralDimensionQualifier: z.boolean(),
+    proxyDriftSeverity: z.enum(["none", "mild", "material"]).catch("none"),
+    recommendedAction: z.enum(["keep", "retry"]).catch("keep"),
+    reasoning: z.string().catch(""),
+  })),
+});
+
+export type ClaimContractValidationResult = z.infer<typeof ClaimContractOutputSchema>;
+
+/**
+ * Validate extracted claims against the original input's claim contract.
+ * Uses an LLM call to detect proxy drift where claims substitute a narrower
+ * predicate for the user's original evaluative meaning.
+ *
+ * Returns undefined on any failure — the caller treats undefined as fail-open (accept claims).
+ */
+async function validateClaimContract(
+  claims: AtomicClaim[],
+  originalInput: string,
+  impliedClaim: string,
+  articleThesis: string,
+  inputClassification: string,
+  pipelineConfig: PipelineConfig,
+): Promise<ClaimContractValidationResult | undefined> {
+  if (claims.length === 0) return undefined;
+
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const expectedClaimIds = new Set(claims.map((c) => c.id));
+  const llmCallStartedAt = Date.now();
+
+  try {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", {
+      analysisInput: originalInput,
+      inputClassification,
+      impliedClaim,
+      articleThesis,
+      atomicClaimsJson: JSON.stringify(
+        claims.map((c) => ({ claimId: c.id, statement: c.statement, category: c.category })),
+        null,
+        2,
+      ),
+    });
+
+    if (!rendered) {
+      recordLLMCall({
+        taskType: "other",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Claim contract validation prompt section could not be loaded",
+        timestamp: new Date(),
+      });
+      return undefined;
+    }
+
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user" as const,
+          content: `Validate claim contract fidelity for ${claims.length} extracted claim(s).`,
+        },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: ClaimContractOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "other",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Claim contract validation returned no structured output",
+        timestamp: new Date(),
+      });
+      return undefined;
+    }
+
+    const validated = ClaimContractOutputSchema.parse(parsed);
+
+    // Enforce batch contract: LLM must return exactly the requested claimIds
+    const returnedClaimIds = new Set(validated.claims.map((c) => c.claimId));
+    const contractViolation =
+      returnedClaimIds.size !== expectedClaimIds.size ||
+      [...expectedClaimIds].some((id) => !returnedClaimIds.has(id));
+
+    if (contractViolation) {
+      recordLLMCall({
+        taskType: "other",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: `Claim contract validation batch contract violated: expected [${[...expectedClaimIds].join(",")}], got [${[...returnedClaimIds].join(",")}]`,
+        timestamp: new Date(),
+      });
+      return undefined;
+    }
+
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    return validated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: `Claim contract validation failed: ${errorMessage}`,
+      timestamp: new Date(),
+    });
+    return undefined;
+  }
 }
 
 /**
@@ -5514,11 +5762,26 @@ export function createProductionLLMCall(
     try {
       return JSON.parse(text);
     } catch (parseError) {
-      // Try extracting JSON from markdown code blocks
+      // Recover common LLM formatting issues before failing the whole verdict stage.
       const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch?.[1]) {
-        return JSON.parse(jsonMatch[1].trim());
+        try {
+          return JSON.parse(jsonMatch[1].trim());
+        } catch {
+          // Continue to shared recovery helpers below.
+        }
       }
+
+      const embeddedObject = tryParseFirstJsonObject(text);
+      if (embeddedObject) {
+        return embeddedObject;
+      }
+
+      const repairedObject = repairTruncatedJson(text);
+      if (repairedObject) {
+        return repairedObject;
+      }
+
       throw toError(
         `Stage 4: Failed to parse LLM response as JSON for prompt "${promptKey}"`,
         {

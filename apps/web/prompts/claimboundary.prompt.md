@@ -14,9 +14,14 @@ variables:
   - maxConfidenceDelta
   - unknownDominanceThreshold
   - reasoningMaxChars
+  - inputClassification
+  - impliedClaim
+  - articleThesis
+  - atomicClaimsJson
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_EXTRACTION_PASS2"
+  - "CLAIM_CONTRACT_VALIDATION"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
   - "RELEVANCE_CLASSIFICATION"
@@ -262,6 +267,105 @@ Notes:
 - `retainedEvidence`: IDs of high-quality preliminary evidence items that should be kept in the evidence pool (avoiding redundant re-extraction in Stage 2).
 - Only include claims where `centrality` is "high" or "medium" in the final output. Drop "low" centrality claims.
 - `specificityScore`: 0.0–1.0. Claims below 0.6 should be flagged for potential decomposition.
+
+---
+
+## CLAIM_CONTRACT_VALIDATION
+
+You are a claim-contract validator. Your task is to check whether extracted atomic claims still preserve the ORIGINAL MEANING of the user's input.
+
+### Task
+
+Assess whether the extracted claims preserve the user's original claim contract.
+
+Focus especially on cases where the input uses a broad evaluative predicate and the extracted claims decompose that predicate into dimensions.
+
+For each claim, determine:
+- whether it preserves the original evaluative meaning
+- whether any added dimension qualifier is neutral
+- whether the claim drifts into a narrower proxy predicate that was not explicit in the input
+
+Then decide whether the extraction should be accepted as-is or whether Pass 2 should be retried.
+
+### Rules
+
+1. **Meaning preservation first.**
+   The extracted claims must still answer the same real-world proposition as the original input.
+
+2. **Dimension qualification is allowed.**
+   A claim may narrow a broad evaluative predicate by adding a neutral dimension qualifier such as "in terms of [dimension]" when that dimension is a natural reading of the input.
+
+3. **Proxy drift is not allowed unless explicit in the input.**
+   Fail a claim if it replaces the user's broad evaluative predicate with a narrower proxy predicate that was not explicit in the input.
+   Examples of proxy drift classes include:
+   - effectiveness / inefficiency
+   - feasibility / viability
+   - profitability / cost-effectiveness
+   - contribution / non-contribution
+   - technical process success or failure
+
+4. **Do not judge truth.**
+   You are not deciding whether the claim is correct. You are only deciding whether the extracted claims still mean what the user said.
+
+5. **No evidence-derived narrowing.**
+   Do not allow extracted claims to become narrower just because preliminary evidence suggests a convenient measurable proxy.
+
+6. **Whole-set coherence matters.**
+   Even if each claim is individually plausible, require a retry if the set as a whole no longer preserves the user's original claim contract.
+
+7. **Multilingual semantics.**
+   Preserve meaning regardless of language. Do not assume English wording patterns.
+
+8. **Be conservative about retries.**
+   Request a retry only when the contract drift is material enough that downstream search and verdicting would likely analyze a different proposition.
+
+### Input
+
+Original input:
+`${analysisInput}`
+
+Input classification:
+`${inputClassification}`
+
+Implied claim:
+`${impliedClaim}`
+
+Article thesis:
+`${articleThesis}`
+
+Atomic claims:
+${atomicClaimsJson}
+
+### Output
+
+Return a JSON object:
+```json
+{
+  "inputAssessment": {
+    "preservesOriginalClaimContract": true,
+    "rePromptRequired": false,
+    "summary": "short explanation"
+  },
+  "claims": [
+    {
+      "claimId": "AC_01",
+      "preservesEvaluativeMeaning": true,
+      "usesNeutralDimensionQualifier": true,
+      "proxyDriftSeverity": "none",
+      "recommendedAction": "keep",
+      "reasoning": "short explanation"
+    }
+  ]
+}
+```
+
+Field constraints:
+- `claimId`: must match the input claim ID exactly.
+- `preservesEvaluativeMeaning`: does this claim preserve the original evaluative meaning?
+- `usesNeutralDimensionQualifier`: does any added qualifier stay neutral (not narrowing)?
+- `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` only when the claim analyzes a substantially different proposition.
+- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` only for material drift.
+- `reasoning`: max 120 characters. Why this assessment.
 
 ---
 

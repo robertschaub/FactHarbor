@@ -1413,6 +1413,11 @@ export const CalcConfigSchema = z.object({
     shortSimpleInputMaxChars: z.number().int().min(20).max(200),
   }).optional(),
 
+  claimContractValidation: z.object({
+    enabled: z.boolean(),
+    maxRetries: z.number().int().min(0).max(3),
+  }).optional(),
+
   contextSimilarity: z.object({
     nameWeight: z.number().min(0).max(1),
     primaryMetadataWeight: z.number().min(0).max(1),
@@ -1716,6 +1721,10 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     minDirectClaimsPerContext: 2,
     supplementalRepromptMaxAttempts: 2,
     shortSimpleInputMaxChars: 60,
+  },
+  claimContractValidation: {
+    enabled: true,
+    maxRetries: 1,
   },
   contextSimilarity: {
     nameWeight: 0.35,
