@@ -1,6 +1,60 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-19 | Lead Architect | Claude Code (Opus 4.6) | Refactoring Plan — Planning Complete, Awaiting Execution
+**Task:** Create comprehensive refactoring plan for monolithic code, dead code, and clone cleanup. Coordinate 3 reviews (Code Reviewer, Lead Developer, Senior Architect).
+**Files touched:** `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` (authoritative plan), `Docs/WIP/2026-03-18_Review_CodeReviewer.md`, `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`, `Docs/WIP/2026-03-18_Review_Architect.md`
+**Key decisions:** 7 work streams. WS-1 dead code (~4,200 lines). WS-2 pipeline decomposition (8 modules). WS-3 evaluate-source (5 modules + request-scoped config). WS-4 search provider shared utilities. WS-5/6 UI component extraction. WS-7 deferred.
+**Open items:** Execution blocked by Captain — wait until current work is closed. Architect's Rec-3 (import direction lint), Rec-4 (barrel re-export phase-out), Rec-5 (stage type aliases) are post-execution follow-ups.
+**Warnings:** Line counts are approximate (files have been edited since initial measurement). WS-3/5/6 are Medium-High effort, not Medium. `pipeline-utils.ts` and `aggregation-stage.ts` need monitoring guardrails.
+**For next agent:** Read `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` (the plan) + all 3 review files. Start with WS-1 (dead code removal — near-zero risk). One commit per step, build + test after each.
+
+---
+### 2026-03-19 | Lead Architect | Claude Code (Opus 4.6) | Refactoring Plan Architectural Review
+**Task:** Architectural review of `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` focusing on module cohesion, dependency direction, barrel re-exports, state threading, naming, and missing concerns.
+**Files touched:** `Docs/WIP/2026-03-18_Review_Architect.md`
+**Key decisions:** Approved plan. WS-2 module boundaries represent true bounded responsibilities (stage-per-module). Dependency graph is clean with no circular risks. Barrel re-exports are correct for migration but should be removed in a follow-up phase. CBResearchState pass-by-reference is acceptable now but should get stage input/output type aliases for future evolution. Naming conventions are consistent.
+**Open items:** (1) Verify `pipeline-utils.ts` functions actually have 2+ stage consumers. (2) Add import direction lint/test after WS-2. (3) Phase 2 barrel re-export removal within 2 weeks. (4) Stage input/output type aliases in `types.ts`.
+**Warnings:** `pipeline-utils.ts` and `aggregation-stage.ts` are the two modules most likely to erode their cohesion over time. Concrete admission criteria and split triggers are defined in the review.
+**For next agent:** Read `Docs/WIP/2026-03-18_Review_Architect.md` for 9 recommendations (Rec-1 through Rec-9). High-priority items: Rec-1 (utils admission criteria), Rec-3 (import direction enforcement), Rec-4 (barrel re-export phase-out), Rec-8 (no Zod schemas in orchestrator).
+
+---
+### 2026-03-19 | Lead Developer | GitHub Copilot (GPT-5.4) | Refactoring Plan Practicality Review
+**Task:** Review `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` for practicality and implementation quality as Lead Developer, with emphasis on WS-2 through WS-6 and effort realism.
+**Files touched:** `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Endorsed the overall plan direction but recommended tighter module seams: keep `claimboundary-pipeline.ts` as a thin orchestrator, keep `pipeline-utils.ts` small, and watch `aggregation-stage.ts` for re-monolith risk. Strongly recommended replacing SR route mutable globals with a request-scoped config/context object rather than raw parameter threading. Confirmed shared utilities are the right level for search providers, but rejected an adapter/interface layer. Recommended following the existing jobs-page extraction convention more closely (flat components/hooks/utils/lib; only light grouping when justified).
+**Open items:** Captain / implementer should decide whether to keep the extracted jobs-page component tree flat or introduce limited grouping (`verdict`, `evidence`, `events`/`report`, `shared`). If WS-2 extraction causes `aggregation-stage.ts` to exceed ~900 lines, split narrative or quality helpers into a second module rather than accepting a new monolith.
+**Warnings:** Current plan line counts are somewhat stale relative to the repo (`claimboundary-pipeline.ts` 5692, `evaluate-source/route.ts` 2615, `jobs/[id]/page.tsx` 3466, `admin/config/page.tsx` 4580). WS-3, WS-5, and likely WS-6 are slightly more effortful than currently labeled because the real cost is coupling preservation, not raw line movement.
+**For next agent:** Start with `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`. The most important implementation guidance is: use request-scoped SR config/context, keep search-provider utilities narrow, and do not introduce vague UI folders like `analysis/` unless there is a stronger structural reason.
+
+---
+### 2026-03-19 | LLM Expert + Senior Developer | Claude Code (Opus 4.6) | Stage 4.5 SR Calibration — LLM Integration + Control-Set Validation
+**Task:** Implement prompt-backed LLM integration for Stage 4.5 source-reliability calibration (`confidence_only` mode), validate with 5-claim control set.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md` (SR_CALIBRATION section + frontmatter), `apps/web/src/lib/analyzer/source-reliability-calibration.ts` (LLM call, Zod schema, serialization, batch-contract enforcement), `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (async callsite + onEvent), `apps/web/src/lib/analyzer/types.ts` (TSDoc for mode enum), `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts` (bounded_truth_and_confidence guard test).
+**Key decisions:**
+- Prompt approved with 9 rules: portfolio-level only, no hardcoded thresholds, batch contract, three concern types mapped to internal warning types.
+- `callSRCalibrationLLM` is a separate async export; `calibrateVerdictsWithSourceReliability` stays sync — preserves test compatibility.
+- `bounded_truth_and_confidence` mode is functionally identical to `confidence_only` until a dedicated truth-delta prompt is implemented (documented with three reasons: verdict-label risk, double-counting, no separate evaluation contract).
+- Hardening: `loadAndRenderSection` inside try/catch, batch-contract enforcement (claimId set validation).
+**Open items:**
+- Feature remains behind `sourceReliabilityCalibrationEnabled=false` default.
+- Optional next step: frozen-retrieval A/B harness to isolate Stage 4.5 effect from search variance.
+- `bounded_truth_and_confidence` truth-delta prompt is a future phase requiring separate design + validation.
+- `trackRecordConfidence`/`trackRecordConsensus` not yet serialized to LLM (token-budget decision for Haiku).
+**Warnings:** Control-set results show large report-level shifts (Iran 62→80, Bolsonaro single 51→75) that are NOT attributable to Stage 4.5 alone — retrieval variance confounds. Claim-level deltas were moderate (-10 to +8). Do not interpret these runs as isolated quality gains from Stage 4.5.
+**For next agent:** Stage 4.5 is feature-complete and experimentally validated. Config is reset to baseline (`30c48302`). To enable: set `sourceReliabilityCalibrationEnabled=true` + `sourceReliabilityCalibrationMode="confidence_only"` in UCM. For the A/B harness: freeze evidence/source sets from a baseline run, replay with Stage 4.5 on/off, diff per-claim raw vs calibrated confidence.
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | Independent Report Quality Investigation
+**Task:** Independently investigate report-quality evolution from ClaimAssessmentBoundary launch through the March 19 jobs, covering DB history, HTML reports, live config drift, git history, and scorecard application.
+**Files touched:** `Docs/WIP/2026-03-19_Independent_Report_Quality_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Role_Learnings.md`
+**Key decisions:** Verified that the major post-Mar-12 quality drop is driven primarily by SR weighting being wired into verdict aggregation (`9550eb26`), not by the smaller residual `defaultScore=0.45` config drift. Confirmed current live config materially differs from defaults on `sourceReliability.defaultScore`, `search.cache.enabled`, and disabled integrity policies. Confirmed ClaimBoundary config provenance is broken for current jobs because the main runner path does not pass `jobId` into config loading, leaving `config_usage` and `job_config_snapshots` unusable for March attribution.
+**Open items:** Captain / implementer should decide whether to test `evidenceWeightingEnabled=false` or a softer weighting function before smaller config cleanups. Stage 1 / Gate 1 remediation for broad rhetorical claims remains unimplemented.
+**Warnings:** The report intentionally disagrees with the earlier claim that `0.45` drift alone explains a 10-18pp drop; sampled real-job math supports a much smaller direct effect. Missing per-job config provenance limits certainty for fine-grained attribution within March 12-19.
+**For next agent:** Start with `Docs/WIP/2026-03-19_Independent_Report_Quality_Investigation.md`. If implementing follow-ups, inspect `9550eb26`, `8460b624`, `5243d678`, `b0f3becb`, and the active config in `apps/web/config.db`. For auditability fixes, inspect config loading at startup in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` and usage recording in `apps/web/src/lib/config-loader.ts`.
+**Learnings:** yes — appended a Senior Developer gotcha about config provenance for current ClaimBoundary jobs.
+
+---
 ### 2026-03-17 | Agents Supervisor | Claude Opus 4.6 | Agent Rules Cleanup Plan
 **Task:** Full audit of agent governance ecosystem (45+ files, ~17,000 lines) and creation of prioritized cleanup plan.
 **Files touched:** `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md` (NEW)
@@ -775,3 +829,133 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** None. All fixes verified via live validation (job 91e018df).
 **Warnings:** Prompt changes require `npm run reseed:prompts` — auto-reseed only runs on `postbuild`, not `dev`.
 **For next agent:** The `relevanceTopNFetch` UCM parameter can be tuned in Admin UI if future evidence-loss issues arise (bump to 8 during investigation). debugLog in `debug-analyzer.log` now shows full Stage 2 classification diagnostics — check there first for any jurisdiction filtering issues.
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | SR Weighting Disable Experiment
+**Task:** Execute a reversible live experiment disabling `evidenceWeightingEnabled` for a control set of repeated claims, compare the unweighted outputs against today’s weighted baselines, then restore the original pipeline config.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Ran the experiment through the live local stack instead of editing SQLite directly. Captured the active pipeline hash, saved and activated a temporary pipeline config with `evidenceWeightingEnabled=false`, submitted five control claims (Iran, Bolsonaro EN single, Bolsonaro EN various, Hydrogen, Plastik), restored the original pipeline hash as soon as the last intended control run entered `RUNNING`, and cancelled an extra queued Iran rerun created to work around a runner-queue anomaly. Results supported the independent investigation: Iran recovered strongly (`65-68` weighted today to `82 / 75 / MOSTLY-TRUE` unweighted), Bolsonaro various improved from `51 / 45 / MIXED` to `64 / 65 / LEANING-TRUE`, Hydrogen stayed directionally stable but became more decisive (`15 / 60` to `19 / 84`), and Plastik remained poor despite confidence recovery (`53 / 44 / UNVERIFIED` to `59 / 53 / LEANING-TRUE`).
+**Open items:** If this is taken forward, the next step should be a deliberate decision on whether to keep SR weighting disabled temporarily or redesign the weighting formula before re-enabling it. The queued-run anomaly for one Iran job was not root-caused in this task.
+**Warnings:** This was not a perfectly pure A/B because live search caching remains disabled, so retrieval variance still exists between repeated runs. Even with that caveat, the Iran control result is large enough to be decision-relevant. The temporary config was restored to the original active hash `30c48302...` after the experiment runs had loaded.
+**For next agent:** Use experiment jobs `74fa5bb1` (Iran), `ea4ffd66` (Bolsonaro EN single), `e9425b74` (Bolsonaro EN various), `17c164f9` (Hydrogen), and `c812635d` (Plastik) for deeper diffing against today’s weighted baselines `48bd10db` / `d54a97a5`, `9a01b324`, `9768a899`, `a1a38508`, and `27754124`. If you need a cleaner follow-up experiment, enable search cache first or run against captured search results.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | SR LLM Calibration Plan
+**Task:** Draft a concrete implementation plan for replacing deterministic SR verdict weighting with an LLM-mediated calibration step that uses richer SR details.
+**Files touched:** `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Recommended replacing the current `applyEvidenceWeighting()` verdict-compression formula with a new Stage 4.5 SR calibration pass inserted in `claimboundary-pipeline.ts` after raw verdict generation and before aggregation. Proposed a separate `source-reliability-calibration.ts` module, a bounded structured output schema, symmetry across supporting and contradicting evidence, UCM-backed calibration controls, and a conservative rollout that starts with confidence-only adjustment while `evidenceWeightingEnabled` remains off. Identified the concrete integration points in `claimboundary-pipeline.ts`, `source-reliability.ts`, `types.ts`, `config-schemas.ts`, `warning-display.ts`, and optionally the text-analysis prompt/service plumbing.
+**Open items:** Human approval is still needed before prompt work under `apps/web/prompts/`. Implementation has not started; this is a design/plan artifact only.
+**Warnings:** Do not implement this as another blunt numeric multiplier or support-only penalty. The plan intentionally avoids direct truth compression toward 50 and recommends keeping the old weighting path disabled during rollout.
+**For next agent:** Start by implementing the plumbing for Stage 4.5 in `confidence_only` mode and leave truth adjustment off behind config. If you choose a new prompt profile instead of a ClaimBoundary section, update prompt profile registration and seeding accordingly.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | SR LLM Calibration Plan Review Integration
+**Task:** Incorporate LLM Expert review feedback into the SR calibration plan before any implementation starts.
+**Files touched:** `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Locked the recommended model tier to Haiku/understand strength, made the anti-double-counting scope explicit by requiring the prompt to assess source-portfolio imbalances rather than re-evaluate evidence, added token budget guardrails (5 sources per side per claim, truncated reasoning, ~2000 token target), made raw verdict preservation mandatory (`rawTruthPercentage` and `rawConfidence`), added the Plastik false-positive caveat for confidence-only rollout, and documented an explicit plumbing-first implementation order that can proceed before prompt approval.
+**Open items:** Prompt approval is still required before adding prompt text. The plan is now specific enough to start plumbing implementation, but no code has been changed yet.
+**Warnings:** The highest implementation risk remains double-counting source quality already implicit in verdict debate. Treat SR calibration as portfolio-level trust adjustment only.
+**For next agent:** You can start steps 1-4 from the plan now: types/config, module skeleton, pipeline wiring, and tests. Keep the LLM call stubbed until prompt approval lands.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 SR Calibration Plumbing
+**Task:** Implement the non-prompt plumbing for Stage 4.5 source-reliability calibration in `apps/web`, keeping the new path feature-flagged and off by default.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/configs/calculation.default.json`, `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/index.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added Stage 4.5 metadata types to preserve `rawTruthPercentage` and `rawConfidence`, registered SR calibration warning types, introduced UCM-backed pipeline and calculation settings for calibration mode/strength/bounds/token caps, implemented a new `source-reliability-calibration.ts` module that builds bounded support/contradiction source portfolios and can apply clamped calibration outputs, and wired `claimboundary-pipeline.ts` so Stage 4.5 takes precedence when enabled while the legacy `applyEvidenceWeighting()` path remains as fallback. The new path does not call any prompt yet; if enabled without LLM results, it returns unchanged verdicts with calibration metadata plus informational warnings.
+**Open items:** Prompt content and the actual LLM call are still unimplemented by design. Richer SR detail fields such as bias indicators and rationale are not yet threaded into runtime source objects, so the current request shape carries placeholders for that future data.
+**Warnings:** Because prompt work is not in place, enabling `sourceReliabilityCalibrationEnabled=true` today will not improve quality; it will annotate verdicts and emit `source_reliability_calibration_skipped`. Legacy SR weighting is still available and still on by default unless you explicitly disable it or enable Stage 4.5 instead.
+**For next agent:** The next implementation step is prompt-approved LLM integration inside `source-reliability-calibration.ts`, followed by a small live control-set validation. Safe verification for this plumbing pass already succeeded with `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts test/unit/lib/config-drift.test.ts` and `npm -w apps/web run build`.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 Follow-up Review Fixes
+**Task:** Address the post-implementation review findings for Stage 4.5 by removing warning duplication risk and extending unit coverage.
+**Files touched:** `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the deterministic preflight `source_reliability_unknown_dominance` check because it still provides useful diagnostics before prompt-backed calibration exists, but made warning emission idempotent with a `pushWarningOnce()` helper so LLM-returned warning types cannot duplicate the same claim-level warning. Added unit coverage for lower-bound clamping, multi-claim batch result mapping, and the no-duplicate unknown-dominance case.
+**Open items:** The placeholder `truncateText(undefined, ...)` remains intentionally inert until richer SR cache fields are threaded into runtime source objects.
+**Warnings:** This pass did not change runtime feature behavior; Stage 4.5 is still non-prompt plumbing only.
+**For next agent:** If you later thread richer SR details into `FetchedSource` or a parallel runtime structure, replace the placeholder `reasoningShort` population in `source-reliability-calibration.ts` rather than layering more stub logic around it. Verification for this pass: `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts`.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 Low-Finding Cleanup
+**Task:** Address two low-severity review findings in the Stage 4.5 SR calibration scaffolding.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Clarified in code and in the `source_reliability_calibration_skipped` warning text that enabling Stage 4.5 intentionally bypasses the legacy `applyEvidenceWeighting()` branch even before prompt-backed calibration exists. Also changed `supportPortfolio.totalEvidenceItems` / `contradictionPortfolio.totalEvidenceItems` to count only evidence IDs that actually resolve to `EvidenceItem` records, avoiding metadata drift if phantom IDs ever slip through.
+**Open items:** No behavior change beyond clearer diagnostics and more accurate metadata. Prompt-backed LLM calibration is still the next substantive step.
+**Warnings:** Admins who enable Stage 4.5 before prompt implementation will now get a more explicit informational warning, but the path remains a no-op for verdict calibration.
+**For next agent:** No extra follow-up needed for these findings. Verification for this pass: `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts`.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 Confidence-Only Control Set
+**Task:** Run the approved 5-claim live control set with Stage 4.5 enabled in `confidence_only` mode, legacy SR weighting disabled, then restore the original pipeline config and compare the outputs to the March 19 weighted baselines.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Activated a temporary pipeline config hash `f4fdb4d1...` with `sourceReliabilityCalibrationEnabled=true`, `sourceReliabilityCalibrationMode="confidence_only"`, `sourceReliabilityCalibrationStrength="budget"`, and `evidenceWeightingEnabled=false`; submitted the five control claims through the live local stack; waited for all five jobs to finish; then restored the original active pipeline hash `30c48302...`. All jobs succeeded: Iran `61e7f517...`, Bolsonaro EN single `16abf05f...`, Bolsonaro EN various `b9014b46...`, Hydrogen `3aa1994c...`, Plastik `0ae6b012...`. Claim-level metadata confirmed the intended behavior: Stage 4.5 applied only confidence deltas (truth deltas stayed `0`) and surfaced explanatory notes plus SR warnings. Largest observed claim-level confidence deltas were `+8` / `+7` / `-5` on Bolsonaro various and `-10` / `-8` on Hydrogen.
+**Open items:** The overall report-level shifts still include retrieval/run-to-run variance, so the experiment is not a pure causal measure of Stage 4.5 alone. If a cleaner A/B is needed, repeat against frozen retrieval or cached source sets.
+**Warnings:** Do not interpret the Plastik overall change (`53 / 44 / UNVERIFIED` baseline to `41 / 62 / LEANING-FALSE` in this run) as a quality win; the claim-family decomposition/retrieval issues remain. Top-level report JSON does not carry SR calibration metadata; it is stored per claim under `claimVerdicts[].sourceReliabilityCalibration`.
+**For next agent:** Use the control jobs above for detailed diffs against baselines `48bd10db...` / `d54a97a5...`, `9a01b324...`, `9768a899...`, `a1a38508...`, and `27754124...`. The key readout is not just overall truth/confidence but the claim-level `rawConfidence`, `confidenceDelta`, `applied`, and `notes` fields inside `resultJson.claimVerdicts`.
+**Learnings:** no
+
+---
+### 2026-03-19 | Senior Developer | Codex (GPT-5) | B1 Predicate-Preservation Smoke Test
+**Task:** Run a small live smoke test after the B1 ClaimExtraction prompt change to check for regressions on nearby claim families before wider rollout.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Ran four live jobs against the current default pipeline hash `f53444a7...` (legacy evidence weighting off, Stage 4.5 off): Hydrogen `aef80732...`, Bolsonaro EN various `a60ee28b...`, single-atomic control `9f4dfe1c...`, and a Portuguese broad evaluative claim `927842bc...`. The single-atomic control stayed clean (one faithful claim, `TRUE 100 / 98`). Hydrogen and Bolsonaro various did not show obvious decomposition regressions from the B1 change, though their normal run-to-run variance remains. The multilingual broad evaluative case still showed partial predicate drift: instead of preserving the original broad predicate from `A reciclagem de plástico não serve para nada`, Stage 1 produced narrower technical/economic/environmental viability claims, including one environmental-contribution formulation that looks closer to a proxy/mechanism claim than to direct predicate preservation.
+**Open items:** B1 appears strong enough for the German Plastik case, but multilingual broad-evaluative robustness is not fully solved. The Portuguese smoke-test output suggests the prompt may still allow semantic narrowing from broad evaluative predicates into viability/contribution proxies.
+**Warnings:** This smoke test used expensive live runs; do not expand it casually. The Portuguese case is the main caution signal from this pass. It is not evidence of a broad regression, but it is enough to justify a narrow follow-up prompt refinement if multilingual broad-evaluative claims matter.
+**For next agent:** If you refine B1 further, target the multilingual broad-evaluative edge specifically: prevent replacements like `not useful` -> `not viable` / `does not contribute significantly` unless that narrower meaning is explicit in the input. Reference smoke-test jobs `aef80732...`, `a60ee28b...`, `9f4dfe1c...`, and `927842bc...` for before/after comparisons.
+**Learnings:** no
+
+---
+### 2026-03-20 | Senior Developer | Codex (GPT-5) | Stage 4.5 Review-Finding Cleanup
+**Task:** Address the March 20 code-review findings on the Stage 4.5 SR calibration implementation.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/index.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Removed the double request-construction at the pipeline callsite by building the Stage 4.5 calibration request once in `claimboundary-pipeline.ts`, passing that request into `callSRCalibrationLLM()`, and applying results with `applySourceReliabilityCalibrationResults()`. Added missing `recordLLMCall()` coverage for prompt-load failures so a missing or misconfigured `SR_CALIBRATION` section no longer fails silently in metrics. Extended SR calibration metadata to preserve `rawTruthDelta` and `rawConfidenceDelta` alongside the bounded applied deltas, so out-of-range LLM outputs remain diagnosable even though runtime application still clamps safely. Added a TODO above the `truncateText(undefined, ...)` placeholder, and documented in the analyzer barrel that `callSRCalibrationLLM` is intentionally not re-exported because it is pipeline-internal orchestration.
+**Open items:** The review note about `evidenceWeightingEnabled=false` on defaults vs existing live `config.db` instances remains an operational caveat, not a code bug. Existing deployments still need explicit reseed/activation to pick up the new default.
+**Warnings:** This pass does not change Stage 4.5 default rollout; it remains feature-flagged off by default. `bounded_truth_and_confidence` is still future-facing for prompt-backed runs because the current `SR_CALIBRATION` prompt only returns `confidenceDelta`.
+**For next agent:** If you later extend the Stage 4.5 prompt to emit `truthDelta`, preserve the new raw-vs-bounded metadata pattern so prompt quality can be monitored without weakening runtime clamps. Verification for this cleanup: `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts` and `npm -w apps/web run build`.
+**Learnings:** no
+
+---
+### 2026-03-20 | Senior Developer | Codex (GPT-5) | Three-Worktree Quality Snapshot Comparison
+**Task:** Compare live jobs and active configs across `main` (`:3000`), `FH_best_monolithic_canonical` (`:3001`), and `FH-quality_window_start` (`:3002`) against the earlier SR/B1 quality findings.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Treated the three lanes as separate quality baselines rather than assuming they were directly comparable. Confirmed `main` is current ClaimBoundary with legacy evidence weighting off, Stage 4.5 off, and the new B1 prompt hash active. Confirmed `FH_best_monolithic_canonical` is not ClaimBoundary at all for these runs — it is returning `pipelineVariant: orchestrated`, so its outputs are architecture-comparison data, not direct confirmation/refutation of the current ClaimBoundary findings. Confirmed `FH-quality_window_start` is an older March 12 ClaimBoundary lane without the new Stage 4.5/B1 config surface and with older contestation weighting, plus visible operational instability (multiple FAILED jobs and a backed-up queue). Main Plastik claim extraction now preserves the broad evaluative predicate in German and Portuguese (`... bringt nichts / não serve para nada em termos de ...`), while `quality_window_start` still decomposes into narrow mechanistic/statistical claims — strong evidence that B1 is live and meaningful on `main`.
+**Open items:** The still-running `main` Portuguese Bolsonaro rerun `c58ca013...` had not finished at snapshot time. `quality_window_start` still had five queued cross-language comparison jobs and one unrelated RUNNING job, so that lane is not done producing comparison data.
+**Warnings:** New evidence shows Plastik is still not multilingual-stable even on `main`. German and Portuguese moved into the false neighborhood (`3878d81b...` MOSTLY-FALSE 23.9 / 71.5; `1711e065...` LEANING-FALSE 34.1 / 71.4), but the new English rerun on `main` still landed `5362b092...` LEANING-TRUE 61 / 78.8 with partially proxy-style claims. `FH_best_monolithic_canonical` is also internally inconsistent on Plastik across languages (DE 73 true, EN 41 false, PT 60 true), so it should not be treated as a “best” reference for that family.
+**For next agent:** Use this snapshot to avoid false conclusions: (1) `main` confirms the earlier finding that legacy weighting removal plus B1 improved Hydrogen stability and Plastik DE/PT, but Plastik EN is still unresolved; (2) `quality_window_start` mainly confirms the pre-fix failure mode and should not be used as a fairness benchmark until its queued jobs finish; (3) `FH_best_monolithic_canonical` can only be used for high-level historical contrast because it is running orchestrated, not current ClaimBoundary. Relevant jobs: main `3878d81b...`, `1711e065...`, `5362b092...`, `2ab24b61...`, `cb54a1a2...`, `40760987...`; orchestrated `3dd39693...`, `c483dcad...`, `e99f74d2...`, `437451bd...`, `70c8e11d...`, `ebfefb9f...`, `d78ed0b3...`; older ClaimBoundary `04d5e294...`, `c447dd88...`, `07b94fa9...`, `684d5aeb...`.
+**Learnings:** no
+
+---
+### 2026-03-20 | Senior Developer | Codex (GPT-5) | Report Quality Investigation Addendum Update
+**Task:** Fold the Mar 20 three-worktree comparison findings into the overarching report-quality investigation document.
+**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated the existing master investigation document instead of creating another parallel report. Added a dated addendum section documenting the live comparison across `main`, `FH_best_monolithic_canonical`, and `FH-quality_window_start`, and updated the WIP index entry so the new findings are discoverable. The addendum makes three points explicit: `main` confirms B1 is materially real on Plastik DE/PT, `FH_best_monolithic_canonical` is not a valid current-pipeline benchmark because it is running orchestrated, and `quality_window_start` still exhibits the original pre-fix Plastik failure mode.
+**Open items:** The Mar 20 addendum captures the state at snapshot time; `main` Portuguese Bolsonaro rerun `c58ca013...` and several `quality_window_start` queued jobs may still finish later and could add more comparison data.
+**Warnings:** The new addendum materially changes the Plastik status interpretation: B1 improved the German/PT broad-claim path, but Plastik is still not multilingual-stable because the new English Plastik rerun on `main` remained `LEANING-TRUE`.
+**For next agent:** If you continue the quality investigation, use the new addendum in `2026-03-19_Report_Quality_Evolution_Investigation.md` as the source of truth for Mar 20 cross-worktree findings. The next most useful follow-up is a targeted English Plastik claim-shape / evidence-allocation investigation on `main`, not another broad worktree comparison.
+**Learnings:** no
+
+---
+### 2026-03-20 | Senior Developer | Codex (GPT-5) | Report Quality Master Doc Refresh
+**Task:** Make the master report-quality investigation document current, readable, and decision-ready by removing obsolete status claims and separating historical findings from the current `main` state.
+**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Reframed the document so Mar 19 findings are explicitly historical and Mar 20 `main` state is explicit and current. Replaced obsolete live-drift language (`defaultScore=0.45`, `search.cache.enabled=false`) with verified current `main` config status (`defaultScore=0.5`, cache on, legacy SR weighting off, Stage 4.5 off by default). Updated recommendations so the document no longer treats SR-weighting disable as a pending Captain decision; the leading open task is now Plastik multilingual stabilization on `main`, especially English broad-evaluative claims. Kept the historical evidence and scorecard material because it is still relevant for future investigations.
+**Open items:** The document is now current as of the Mar 20 refresh. It will need another addendum if the queued / follow-up quality-window jobs or the next English Plastik investigation materially change the picture.
+**Warnings:** The doc still contains historical Mar 19 scorecard sections and historical trajectory tables by design. They are now labeled as historical, but future editors should preserve that distinction instead of deleting the context.
+**For next agent:** Use `2026-03-19_Report_Quality_Evolution_Investigation.md` as the single master quality-investigation basis. The highest-value next follow-up from this refresh is not another broad quality sweep; it is a targeted investigation of why English Plastik on `main` still lands in the true direction while DE/PT moved back into the false neighborhood.
+**Learnings:** no
+
+---
+### 2026-03-20 | Senior Developer | Codex (GPT-5) | Report Refresh With External Verdict Framing
+**Task:** Tighten the master quality-investigation document's statements about expected Plastik verdicts using stronger external evidence, and update the plan / next steps based on newly completed old-worktree jobs.
+**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced loose "right direction" wording with a more defensible statement: for the absolute claim `Plastic recycling is pointless`, strong OECD / EPA / EEA evidence supports a system that underperforms badly but is not literally zero-benefit, so a claim-faithful report should usually not land in `LEANING-TRUE`; the semantically more plausible verdict neighborhood is `MIXED` to `LEANING-FALSE`, sometimes `MOSTLY-FALSE`. Updated the recommendation stack accordingly: first finish the already-running multilingual `main` Plastik checks, then compare EN against DE/PT on claim shape, queries, and evidence allocation. Also incorporated the newer Mar 20 old-worktree completions (`quality_window_start` EN/DE Plastik, `best_monolithic_canonical` EN Plastik), which did not reveal a better baseline than `main`. Removed stale Phase A-open references from the report and updated the WIP index so it no longer claims SR weighting is re-enabled.
+**Open items:** The running `main` multilingual Plastik jobs (`79da62d9...`, `23fe4e57...`, `67de4ed4...`) still need evaluation once finished. If they converge toward the same verdict neighborhood as DE/PT, the remaining issue becomes specifically EN; if they diverge too, B1 still has a broader multilingual generalization gap.
+**Warnings:** The external sources improve the normative framing for the absolute Plastik claim, but they do not by themselves define a single "ground truth verdict." They support rejecting repeated `LEANING-TRUE` outputs as a quality signal for this wording, not as a mathematically certain universal label.
+**For next agent:** Use the refreshed Section 6 and Addendum 10.1 in `2026-03-19_Report_Quality_Evolution_Investigation.md` as the current decision basis. Do not schedule more broad old-worktree submissions before the active `main` multilingual Plastik set finishes.
+**Learnings:** no

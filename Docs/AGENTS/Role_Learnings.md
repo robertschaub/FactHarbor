@@ -142,6 +142,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** If paid/live test suites must never run on GitHub Actions but should stay available locally, add a small shared guard script and wrap the npm entrypoints themselves. That prevents accidental workflow wiring from starting expensive runs, while still allowing explicit local execution unchanged.
 **Files:** `apps/web/scripts/assert-local-live-tests.js`, `apps/web/package.json`
 
+### 2026-03-19 — ClaimBoundary config provenance is currently missing for real jobs
+**Role:** Senior Developer  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** Do not assume `apps/web/config.db` can tell you which pipeline/search/calc config a current ClaimBoundary job used. In the live runner path, `runClaimBoundaryAnalysis()` loads config with `loadPipelineConfig("default")` / `loadSearchConfig("default")` / `loadCalcConfig("default")` and never passes `jobId`, so `config_usage` is not recorded for those jobs. `job_config_snapshots` can also look populated while being stale and unrelated to the current API DB. For March 2026 quality investigations, you have to combine active-config history, git history, and result content instead of relying on those audit tables.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/config-loader.ts`, `apps/web/config.db`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

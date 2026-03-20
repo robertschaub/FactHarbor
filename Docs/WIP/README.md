@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-17
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 18 active files remain. Primary track: quality improvement (Combined Remediation Plan Phases B-E), SR weighting calibration, Phase C analyticalDimension validation.
+**Last Updated**: 2026-03-20
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 18 active files remain. Primary track: quality improvement on `main`, especially Plastik multilingual stabilization and auditability hardening.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A contamination fixes shipped + validated. Rec-A (Pass 2 → Haiku) shipped. Search accumulation restored. SR evidence weighting re-enabled with neutral default (0.5). Phase C (analyticalDimension) shipped, needs prompt refinement. Next: Combined Plan Phase B (claim decomposition), SR evaluation prompt quality.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. Next: Combined Plan Phase B follow-up for Plastik multilingual stabilization on `main`, plus config provenance repair.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -34,9 +34,9 @@ For completed work, historical documents, and reference materials, see:
 - **Document:** [Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md](Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md)
 
 ### SR Evidence Weighting Investigation (2026-03-16)
-**Status:** Fix shipped (defaultScore 0.45→null→0.5), weighting re-enabled
+**Status:** Historical reference — core finding superseded by Mar 19/20 investigation refresh
 - **Document:** [SR_Evidence_Weighting_Investigation_2026-03-16.md](SR_Evidence_Weighting_Investigation_2026-03-16.md)
-- **Key finding:** SR evaluation underscores legitimate sources (Wikipedia 38-42%). Weighting formula compresses TP toward 50%. Fixed with neutral 0.5 default. Full TP input map documented.
+- **Key finding:** SR evaluation exposed that the weighting formula compresses TP toward 50%. Later investigation established that `applyEvidenceWeighting()` itself was the dominant harmful lever; legacy weighting is now default-off on `main`.
 
 ### Gate 1 Investigation (2026-03-09)
 **Status:** Pending Captain decisions (D1-D4)
@@ -65,6 +65,15 @@ These files contain pending items extracted from archived documents during WIP C
 **Status:** COMPLETE — implemented, tested, live-validated
 - **Document:** [2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md](2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md)
 - **Scope:** 5-part fix for Stage 2 jurisdiction classification misclassifying international factual journalism as foreign_reaction, plus structural top-5 fetch ordering bug. Two prior reviews incorporated.
+
+### Report Quality Evolution Investigation (2026-03-19)
+**Status:** Complete — independent review incorporated, Mar 20 refresh + addendum; current basis for quality decisions
+- **Document:** [2026-03-19_Report_Quality_Evolution_Investigation.md](2026-03-19_Report_Quality_Evolution_Investigation.md)
+- **Independent review:** [2026-03-19_Independent_Report_Quality_Investigation.md](2026-03-19_Independent_Report_Quality_Investigation.md)
+- **Scope:** 246 jobs, 22+ HTML reports, ~120 commits, live UCM audited. Two rounds + independent verification, then a Mar 20 live comparison across `main`, `FH_best_monolithic_canonical`, and `FH-quality_window_start`.
+- **Key finding (corrected):** The dominant quality lever is `applyEvidenceWeighting()` itself (5-21pp compression), not the `defaultScore=0.45` drift (~1pp). Iran is the control case. Plastik is a claim decomposition problem, not infrastructure.
+- **New addendum finding:** `main` confirms B1 improved Plastik claim extraction in DE/PT, but the family is still not multilingual-stable because the EN Plastik rerun remained `LEANING-TRUE`, while newer old-worktree reruns did not provide a better baseline.
+- **Current decision state:** Legacy SR weighting is already off on `main`. The next practical focus is Plastik multilingual stabilization on `main`, starting with the already-running DE/FR/ES checks and then English-specific evidence/query comparison.
 
 ---
 
