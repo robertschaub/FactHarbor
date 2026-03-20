@@ -1,5 +1,5 @@
 param(
-    [string]$ApiUrls = "https://localhost:5001;http://localhost:5000",
+    [string]$ApiUrls = "http://localhost:5000",
     [int]$WebPort = 3000,
     [string]$ApiDbPath = "",
     [string]$RunnerBaseUrl = "",
