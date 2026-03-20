@@ -45,6 +45,7 @@ export function isBudgetModel(modelName: string): boolean {
   const budgetModels = [
     'claude-3-5-haiku',
     'claude-3-haiku',
+    'claude-haiku',    // New naming: claude-haiku-4-5-20251001
     'gpt-3.5-turbo',
     'gpt-4o-mini',
     'gemini-1.5-flash',

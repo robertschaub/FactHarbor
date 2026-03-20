@@ -60,6 +60,10 @@ const WARNING_CLASSIFICATION = {
   phantom_evidence_stripped: { bucket: "analysis", impact: "informational" },
   phantom_evidence_all_supporting: { bucket: "analysis", impact: "degrading" },
   boundary_evidence_concentration: { bucket: "analysis", impact: "informational" },
+  source_reliability_support_concern: { bucket: "analysis", impact: "informational" },
+  source_reliability_contradiction_concern: { bucket: "analysis", impact: "informational" },
+  source_reliability_unknown_dominance: { bucket: "analysis", impact: "informational" },
+  source_reliability_calibration_skipped: { bucket: "analysis", impact: "informational" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 
 export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>(

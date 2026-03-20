@@ -29,6 +29,15 @@
   "sourceReliability": {
     "defaultScore": 0.5
   },
+  "sourceReliabilityCalibration": {
+    "truthDeltaMax": 5,
+    "confidenceDeltaMax": 15,
+    "maxSourcesPerSide": 5,
+    "reasoningMaxChars": 100,
+    "targetMaxInputTokens": 2000,
+    "minKnownSourcesPerSide": 1,
+    "unknownDominanceThreshold": 0.75
+  },
   "qualityGates": {
     "gate1OpinionThreshold": 0.7,
     "gate1SpecificityThreshold": 0.3,

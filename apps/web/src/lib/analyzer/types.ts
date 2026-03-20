@@ -701,7 +701,11 @@ export type AnalysisWarningType =
   | "evidence_applicability_filter"    // Fix 3: Post-extraction applicability filter removed foreign-jurisdiction evidence
   | "phantom_evidence_stripped"        // Fix 5: Phantom evidence IDs removed from verdict (IDs not in evidence pool)
   | "phantom_evidence_all_supporting"  // Fix 5: ALL supporting evidence IDs were phantom — verdict has zero evidence backing
-  | "boundary_evidence_concentration"; // Stage 3: One ClaimAssessmentBoundary contains a dominant share of evidence items
+  | "boundary_evidence_concentration"  // Stage 3: One ClaimAssessmentBoundary contains a dominant share of evidence items
+  | "source_reliability_support_concern"      // Stage 4.5: Supporting-source portfolio shows a reliability concern
+  | "source_reliability_contradiction_concern" // Stage 4.5: Contradicting-source portfolio shows a reliability concern
+  | "source_reliability_unknown_dominance"    // Stage 4.5: Too much of a source portfolio is unknown/unrated
+  | "source_reliability_calibration_skipped"; // Stage 4.5: Calibration enabled but skipped or returned no adjustment
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
@@ -823,6 +827,69 @@ export interface BoundaryFinding {
 }
 
 /**
+ * Stage 4.5 calibration mode.
+ *
+ * - **"confidence_only"** (Phase 1, current): LLM adjusts confidence only.
+ *   Lower risk — changes confidence tier but not verdict labels.
+ *
+ * - **"bounded_truth_and_confidence"** (future phase, NOT production-ready):
+ *   Plumbing exists for truth deltas, but the SR_CALIBRATION prompt does not
+ *   request truthDelta. Selecting this mode is functionally identical to
+ *   "confidence_only" — truth deltas are always 0. Truth adjustment is
+ *   deliberately deactivated because it:
+ *   1. Can shift verdict labels (e.g., LEANING-TRUE → MIXED).
+ *   2. Risks double-counting source quality already evaluated in the debate.
+ *   3. Lacks a separately validated prompt and evaluation contract.
+ *   Enable only after a dedicated truth-delta prompt, evaluation, and
+ *   control-set validation are complete.
+ */
+export type SourceReliabilityCalibrationMode =
+  | "off"
+  | "confidence_only"
+  | "bounded_truth_and_confidence";
+
+export interface SourceReliabilityCalibrationSourceSummary {
+  sourceId: string;
+  domain: string | null;
+  sourceType?: SourceType;
+  probativeValue?: "high" | "medium" | "low";
+  claimDirection: "supports" | "contradicts";
+  evidenceCount: number;
+  evidenceIds: string[];
+  trackRecordScore: number | null;
+  trackRecordConfidence: number | null;
+  trackRecordConsensus: boolean | null;
+  reasoningShort?: string;
+  category?: string | null;
+  biasIndicator?: string | null;
+  identifiedEntity?: string | null;
+}
+
+export interface SourceReliabilityCalibrationPortfolioSummary {
+  totalEvidenceItems: number;
+  selectedSourceCount: number;
+  knownSourceCount: number;
+  unknownSourceCount: number;
+  unknownShare: number;
+  topSources: SourceReliabilityCalibrationSourceSummary[];
+}
+
+export interface SourceReliabilityCalibrationMetadata {
+  mode: SourceReliabilityCalibrationMode;
+  applied: boolean;
+  llmStatus: "not_requested" | "no_result" | "applied";
+  rawTruthPercentage: number;
+  rawConfidence: number;
+  rawTruthDelta: number;
+  rawConfidenceDelta: number;
+  truthDelta: number;
+  confidenceDelta: number;
+  supportPortfolio: SourceReliabilityCalibrationPortfolioSummary;
+  contradictionPortfolio: SourceReliabilityCalibrationPortfolioSummary;
+  notes?: string[];
+}
+
+/**
  * CBClaimVerdict: Verdict for a single claim in the ClaimAssessmentBoundary pipeline.
  * One per claim, not per-boundary. Boundary-specific nuance in boundaryFindings[].
  *
@@ -857,6 +924,8 @@ export interface CBClaimVerdict {
   misleadingness?: "not_misleading" | "potentially_misleading" | "highly_misleading";
   /** B-7: Reason for misleadingness assessment (empty when not_misleading). */
   misleadingnessReason?: string;
+  /** Stage 4.5: Source-reliability calibration metadata for raw-vs-calibrated diagnostics. */
+  sourceReliabilityCalibration?: SourceReliabilityCalibrationMetadata;
 }
 
 /**

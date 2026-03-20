@@ -48,6 +48,11 @@ import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
 import { filterByProbativeValue } from "./evidence-filter";
 import { prefetchSourceReliability, getTrackRecordData, applyEvidenceWeighting } from "./source-reliability";
+import {
+  applySourceReliabilityCalibrationResults,
+  buildSourceReliabilityCalibrationInput,
+  callSRCalibrationLLM,
+} from "./source-reliability-calibration";
 import { percentageToArticleVerdict } from "./truth-scale";
 import { debugLog } from "./debug";
 
@@ -528,12 +533,48 @@ export async function runClaimBoundaryAnalysis(
     // Record Gate 4 stats after verdicts (before SR weighting — captures raw confidence)
     recordGate4Stats(claimVerdicts);
 
-    // Apply SR evidence weighting: adjust truthPercentage and confidence based on the
-    // track record scores of each verdict's supporting sources. Only runs when UCM flag
-    // evidenceWeightingEnabled is true (default) AND at least one source has a score
-    // (i.e. SR prefetch succeeded for at least one domain).
-    if ((initialPipelineConfig.evidenceWeightingEnabled ?? true) &&
+    const srCalibrationMode = initialPipelineConfig.sourceReliabilityCalibrationMode ?? "off";
+    const srCalibrationEnabled =
+      (initialPipelineConfig.sourceReliabilityCalibrationEnabled ?? false) &&
+      srCalibrationMode !== "off";
+
+    if (srCalibrationEnabled) {
+      // Stage 4.5: LLM-backed source-reliability calibration.
+      // Calls the LLM to assess source portfolios, then applies bounded confidence adjustments.
+      // On LLM failure, gracefully degrades to metadata-only (no adjustment, skipped warning).
+      onEvent("Calibrating source reliability...", 82);
+      const calibrationRequest = buildSourceReliabilityCalibrationInput(
+        claimVerdicts,
+        state.evidenceItems,
+        state.sources,
+        initialCalcConfig,
+        initialPipelineConfig,
+      );
+      const srResults = await callSRCalibrationLLM(
+        calibrationRequest,
+        initialCalcConfig,
+        initialPipelineConfig,
+      );
+      const calibration = applySourceReliabilityCalibrationResults(
+        claimVerdicts,
+        calibrationRequest,
+        initialCalcConfig,
+        srResults,
+      );
+      if (!srResults) {
+        calibration.warnings.push({
+          type: "source_reliability_calibration_skipped",
+          severity: "info",
+          message: "Source-reliability calibration is enabled but no calibration result is available yet. Legacy SR weighting is intentionally skipped while Stage 4.5 is enabled.",
+          details: { mode: calibrationRequest.mode },
+        });
+      }
+      claimVerdicts = calibration.verdicts;
+      state.warnings.push(...calibration.warnings);
+    } else if ((initialPipelineConfig.evidenceWeightingEnabled ?? true) &&
         state.sources.some((s) => s.trackRecordScore !== null)) {
+      // Legacy SR weighting path: preserved as fallback until Stage 4.5 prompt-backed
+      // calibration is implemented and validated.
       const unknownSourceScore = initialCalcConfig.sourceReliability?.defaultScore ?? null;
       claimVerdicts = applyEvidenceWeighting(
         claimVerdicts,

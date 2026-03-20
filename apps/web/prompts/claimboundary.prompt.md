@@ -10,6 +10,10 @@ variables:
   - atomicityGuidance
   - scopes
   - inferredGeography
+  - claimsJson
+  - maxConfidenceDelta
+  - unknownDominanceThreshold
+  - reasoningMaxChars
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_EXTRACTION_PASS2"
@@ -30,6 +34,7 @@ requiredSections:
   - "EXPLANATION_RUBRIC"
   - "TIGER_SCORE_EVAL"
   - "APPLICABILITY_ASSESSMENT"
+  - "SR_CALIBRATION"
 ---
 
 ## CLAIM_EXTRACTION_PASS1
@@ -143,6 +148,8 @@ If `verifiability` assessment is requested (via configuration), also assess how 
   - The **backup self-check** still applies: "Could I have identified these interpretation dimensions without reading preliminary evidence?" If not, remove the dimension.
   - Do not expand with geographic qualifiers, time windows, or study-specific framing not in the input.
   - **Dimension labels in claim statements:** Each dimension claim's `statement` MAY include a brief neutral phrase identifying the interpretation dimension (e.g., "in terms of [dimension]"). Without these labels, dimension claims are indistinguishable restatements that cannot pass downstream specificity validation. Constraints on dimension labels — they must: (1) contain no proper nouns, dates, numbers, regions, or dataset/source names; (2) use short, neutral phrasing; (3) pass the backup self-check (identifiable from the input wording alone, not from preliminary evidence). The label describes a natural semantic reading of the ambiguous predicate, not a finding from research.
+  - **Predicate preservation:** When decomposing a broad evaluative predicate (for example, "is useless", "does not work", "brings nothing"), each dimension claim must preserve the ORIGINAL EVALUATIVE MEANING and append only a neutral dimension qualifier. Preferred form: "[Subject] [same evaluative predicate] in terms of [dimension]". Do NOT replace the predicate with a specific mechanism, causal chain, proxy metric, or comparative assertion unless that narrower claim is already explicit in the input. Dimension decomposition specifies WHAT is being evaluated, not HOW or WHY it succeeds or fails. Mechanisms and causal details must emerge from Stage 2 evidence, not be injected into claim content.
+  - **No proxy rephrasing:** Do NOT restate a broad evaluative predicate as a feasibility, contribution, efficiency, performance, or cost-effectiveness claim unless that narrower framing is already explicit in the input. For a broad evaluative predicate, the dimension claim must keep the same evaluative meaning and vary only the dimension qualifier. Bad pattern: replacing the user's predicate with "is not viable", "does not contribute", "is inefficient", or similar proxy formulations. Good pattern: preserve the user's broad evaluative meaning and specify only the evaluative dimension.
   - Do not decompose a direct real-world predicate into proxy claims about media representation, portrayal, labeling, discourse, or public perception unless the user's input itself explicitly asks about those representational phenomena.
   - **Dimension independence test:** Before finalizing dimension claims, verify each pair is independently falsifiable: if dimension A is true and dimension B is false, both verdicts must be coherent. If two dimensions would require the same evidence body to assess, merge them. A well-formed decomposition of "Entity A is more [AMBIGUOUS_TRAIT] than Entity B" yields dimensions like: → Observable behavioral incidents of [trait] (verified by behavioral/event-count data) → Institutionally documented [trait]-adjacent acts (verified by administrative records) → Attitudinal disposition toward [trait] (verified by survey or opinion research). Each requires a distinct evidence type and can independently be true or false. If your proposed dimensions would all be assessed with the same kind of evidence, collapse them.
 - If the input is a **question** (e.g., "Was X fair?", "Did Y happen?"):
@@ -1402,3 +1409,54 @@ Return a JSON object:
   ]
 }
 ```
+
+---
+
+## SR_CALIBRATION
+
+You are a source-reliability calibrator. Given a batch of claims with pre-computed verdicts and their supporting/contradicting source portfolios, assess whether the source reliability pattern warrants adjusting verdict confidence.
+
+### Task
+
+For each claim, compare the reliability profiles of the supporting vs contradicting source portfolios. Output a confidence adjustment integer bounded by [-${maxConfidenceDelta}, +${maxConfidenceDelta}].
+
+### Rules
+
+1. **Portfolio-level only.** Do not re-evaluate evidence quality or re-judge the verdict. Assess only whether the sources' track records justify more or less confidence in the existing verdict direction.
+2. **Track record scores** (0.0–1.0) are pre-computed evaluations of each source domain. Trust them as given. If score is `null`, treat the source as unknown. Do not infer reliability from `sourceType` alone.
+3. **Adjustment direction:**
+   - Supporting sources consistently MORE reliable than contradicting sources → positive `confidenceDelta` (increase confidence in the verdict).
+   - Contradicting sources consistently MORE reliable than supporting sources → negative `confidenceDelta` (decrease confidence).
+   - Similar reliability profiles, or mostly unknown sources → `confidenceDelta` near 0.
+4. **Source diversity.** Multiple independent reliable sources (distinct domains) are a stronger signal than one domain with many evidence items.
+5. **Unknown source share.** When `unknownShare` exceeds ${unknownDominanceThreshold} on either side, include `"unknown_dominance"` in concerns. This is informational only and must NOT bias `confidenceDelta`.
+6. **Delta magnitude.** Larger deltas require a clear, asymmetric reliability pattern across multiple independent domains. Mixed or ambiguous patterns should stay near 0.
+7. **Empty portfolios.** If one side has zero sources, the other side's reliability cannot shift confidence — return 0.
+8. **Directional concerns.** If one side's portfolio shows a notable reliability weakness (low scores, few known sources), include `"support_reliability_concern"` or `"contradiction_reliability_concern"` as appropriate. These are informational diagnostics.
+9. **Batch contract.** Return exactly one result per input claim, in the same order, with matching `claimId` values. No extra entries, no omitted claims.
+
+### Input
+
+${claimsJson}
+
+### Output
+
+Return a JSON object with a `claims` array. One entry per input claim:
+```json
+{
+  "claims": [
+    {
+      "claimId": "AC_01",
+      "confidenceDelta": 0,
+      "concerns": [],
+      "reasoning": "brief explanation"
+    }
+  ]
+}
+```
+
+Field constraints:
+- `claimId`: must match the input claim ID exactly.
+- `confidenceDelta`: integer in [-${maxConfidenceDelta}, +${maxConfidenceDelta}]. Use 0 when the signal is ambiguous or insufficient.
+- `concerns`: array of strings from `["support_reliability_concern", "contradiction_reliability_concern", "unknown_dominance"]`. Empty array if no concerns.
+- `reasoning`: max ${reasoningMaxChars} characters. Summarize the key reliability pattern that drove the delta.

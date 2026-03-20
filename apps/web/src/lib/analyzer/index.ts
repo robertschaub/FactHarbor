@@ -112,6 +112,20 @@ export {
 
 export type { PrefetchResult, CachedReliabilityData, SourceReliabilityData } from "./source-reliability";
 
+export type {
+  SourceReliabilityCalibrationBatchInput,
+  SourceReliabilityCalibrationClaimInput,
+  SourceReliabilityCalibrationClaimResult,
+  SourceReliabilityCalibrationRunResult,
+} from "./source-reliability-calibration";
+export {
+  buildSourceReliabilityCalibrationInput,
+  applySourceReliabilityCalibrationResults,
+  calibrateVerdictsWithSourceReliability,
+} from "./source-reliability-calibration";
+// callSRCalibrationLLM is intentionally not barrel-exported because it is
+// pipeline-internal orchestration around the Stage 4.5 prompt call.
+
 // ============================================================================
 // EVIDENCE FILTER EXPORTS (Phase 1.5 Layer 2)
 // ============================================================================
@@ -161,4 +175,3 @@ export type { RawEvidenceItem } from "./evidence-normalization";
 
 export { RecencyAssessor } from "./evidence-recency";
 export type { RecencyValidationResult, RecencyPenaltyResult } from "./evidence-recency";
-

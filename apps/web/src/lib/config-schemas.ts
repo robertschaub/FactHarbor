@@ -410,7 +410,13 @@ export const PipelineConfigSchema = z.object({
   applicabilityFilterEnabled: z.boolean().optional()
     .describe("Enable post-extraction applicability assessment to filter foreign-jurisdiction evidence (default: true)"),
   evidenceWeightingEnabled: z.boolean().optional()
-    .describe("Enable SR-based evidence weighting that adjusts truth% and confidence based on source track-record scores (default: true)"),
+    .describe("Enable legacy SR-based evidence weighting that adjusts truth% and confidence based on source track-record scores (default: false — replaced by Stage 4.5 SR calibration)"),
+  sourceReliabilityCalibrationEnabled: z.boolean().optional()
+    .describe("Enable Stage 4.5 source-reliability calibration after raw verdict generation (default: false)"),
+  sourceReliabilityCalibrationMode: z.enum(["off", "confidence_only", "bounded_truth_and_confidence"]).optional()
+    .describe("Stage 4.5 source-reliability calibration mode (default: off)"),
+  sourceReliabilityCalibrationStrength: z.enum(["budget", "standard", "premium"]).optional()
+    .describe("Model strength for Stage 4.5 source-reliability calibration (default: budget)"),
 
   // === Budget Controls ===
   // Note: maxTokensPerCall is a low-level safety limit for individual LLM calls.
@@ -701,6 +707,15 @@ export const PipelineConfigSchema = z.object({
   if (data.searchAdaptiveFallbackMaxQueries === undefined) {
     data.searchAdaptiveFallbackMaxQueries = 2;
   }
+  if (data.sourceReliabilityCalibrationEnabled === undefined) {
+    data.sourceReliabilityCalibrationEnabled = false;
+  }
+  if (data.sourceReliabilityCalibrationMode === undefined) {
+    data.sourceReliabilityCalibrationMode = "off";
+  }
+  if (data.sourceReliabilityCalibrationStrength === undefined) {
+    data.sourceReliabilityCalibrationStrength = "budget";
+  }
   if (data.searchMaxResultsCriticism === undefined) {
     data.searchMaxResultsCriticism = 8;
   }
@@ -978,7 +993,10 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   foreignJurisdictionRelevanceCap: 0.35,
   relevanceTopNFetch: 5,
   applicabilityFilterEnabled: true,
-  evidenceWeightingEnabled: true,
+  evidenceWeightingEnabled: false,
+  sourceReliabilityCalibrationEnabled: false,
+  sourceReliabilityCalibrationMode: "off",
+  sourceReliabilityCalibrationStrength: "budget",
 
   // Budget controls — v2.11.1: reduced from v2.8.2 highs for cost optimization
   verdictBatchSize: 5,
@@ -1301,6 +1319,16 @@ export const CalcConfigSchema = z.object({
     consensusThreshold: z.number().min(0).max(1).optional(),
   }),
 
+  sourceReliabilityCalibration: z.object({
+    truthDeltaMax: z.number().int().min(0).max(20),
+    confidenceDeltaMax: z.number().int().min(0).max(30),
+    maxSourcesPerSide: z.number().int().min(1).max(10),
+    reasoningMaxChars: z.number().int().min(20).max(300),
+    targetMaxInputTokens: z.number().int().min(500).max(4000),
+    minKnownSourcesPerSide: z.number().int().min(0).max(5),
+    unknownDominanceThreshold: z.number().min(0).max(1),
+  }).optional(),
+
   qualityGates: z
     .object({
       gate1OpinionThreshold: z.number().min(0).max(1),
@@ -1607,6 +1635,15 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     // Previously 0.45 which biased unknown toward below-average.
     // null would exclude unknowns entirely.
     defaultScore: 0.5,
+  },
+  sourceReliabilityCalibration: {
+    truthDeltaMax: 5,
+    confidenceDeltaMax: 15,
+    maxSourcesPerSide: 5,
+    reasoningMaxChars: 100,
+    targetMaxInputTokens: 2000,
+    minKnownSourcesPerSide: 1,
+    unknownDominanceThreshold: 0.75,
   },
   qualityGates: {
     gate1OpinionThreshold: 0.7,
