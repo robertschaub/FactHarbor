@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getClientIp } from "@/lib/auth";
+import { checkAdminKey, getClientIp } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -26,6 +26,11 @@ export async function GET(request: Request, context: RouteContext) {
   upstreamHeaders["x-forwarded-for"] = getClientIp(request);
   const forwardedProto = request.headers.get("x-forwarded-proto");
   if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
+  // Forward admin key so the API returns admin-only fields (e.g. gitCommitHash).
+  if (checkAdminKey(request)) {
+    const adminKey = (request as any).headers?.get?.("x-admin-key") ?? null;
+    if (adminKey) upstreamHeaders["X-Admin-Key"] = adminKey;
+  }
 
   const res = await fetch(upstreamUrl, {
     method: "GET",

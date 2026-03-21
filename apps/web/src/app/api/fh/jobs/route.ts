@@ -22,9 +22,12 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get("page") || "1";
     const pageSize = searchParams.get("pageSize") || "50";
     const q = searchParams.get("q");
+    const gitHash = searchParams.get("gitHash");
 
     const upstreamParams = new URLSearchParams({ page, pageSize });
     if (q) upstreamParams.set("q", q);
+    // gitHash is admin-only; the backend enforces this, but only forward when admin key present.
+    if (gitHash && checkAdminKey(request)) upstreamParams.set("gitHash", gitHash);
     const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs?${upstreamParams}`;
     // Always forward client IP so the API can rate-limit by real IP (not proxy IP).
     const upstreamHeaders: Record<string, string> = {};

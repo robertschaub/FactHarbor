@@ -124,6 +124,7 @@ builder.Services.AddDbContext<FhDbContext>(opt =>
 });
 
 builder.Services.AddScoped<JobService>();
+builder.Services.AddSingleton(FactHarbor.Api.Helpers.AppBuildInfo.Resolve());
 
 // Configure HttpClient for RunnerClient with resilient settings
 var runnerTimeoutMinutes = builder.Configuration.GetValue("Runner:TimeoutMinutes", 5);
@@ -142,6 +143,28 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FhDbContext>();
     db.Database.Migrate();
+
+    // Schema patch: add GitCommitHash column to existing databases that pre-date this column.
+    // New databases get it automatically via EF schema creation.
+    var dbConn = db.Database.GetDbConnection();
+    var wasOpen = dbConn.State == System.Data.ConnectionState.Open;
+    if (!wasOpen) dbConn.Open();
+    try
+    {
+        using var checkCmd = dbConn.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Jobs') WHERE name = 'GitCommitHash'";
+        var colExists = (long)(checkCmd.ExecuteScalar() ?? 0L) > 0;
+        if (!colExists)
+        {
+            using var alterCmd = dbConn.CreateCommand();
+            alterCmd.CommandText = "ALTER TABLE Jobs ADD COLUMN GitCommitHash TEXT";
+            alterCmd.ExecuteNonQuery();
+        }
+    }
+    finally
+    {
+        if (!wasOpen) dbConn.Close();
+    }
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
     // QUEUED jobs are left as-is — they were never started and the runner will pick

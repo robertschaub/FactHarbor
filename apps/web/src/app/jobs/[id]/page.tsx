@@ -82,6 +82,8 @@ type Job = {
   reportMarkdown: string | null;
   pipelineVariant?: string;
   isHidden?: boolean;
+  /** Admin-only: git commit hash of the deployed code that ran this job */
+  gitCommitHash?: string | null;
 };
 
 type EventItem = { id: number; tsUtc: string; level: string; message: string };
@@ -847,7 +849,10 @@ export default function JobPage() {
       /\b50[23]\b|NetworkError|Failed to fetch|ECONNREFUSED/.test(msg);
 
     const load = async () => {
-      const res = await fetch(`/api/fh/jobs/${jobId}`, { cache: "no-store" });
+      const fetchHeaders: Record<string, string> = {};
+      const adminKey = typeof window !== "undefined" ? sessionStorage.getItem("fh_admin_key") : null;
+      if (adminKey) fetchHeaders["X-Admin-Key"] = adminKey;
+      const res = await fetch(`/api/fh/jobs/${jobId}`, { cache: "no-store", headers: fetchHeaders });
       if (!res.ok) {
         if (res.status === 429) {
           let message = `Rate limit reached. Retrying automatically in ${Math.round(DETAIL_RATE_LIMIT_BACKOFF_MS / 1000)} seconds.`;
@@ -1764,6 +1769,19 @@ export default function JobPage() {
                         {warningDiagnosticsPanel}
                         {hasAdminKey && job && (
                           <div className={styles.adminPanelStack}>
+                            {job.gitCommitHash && (
+                              <div style={{ padding: "10px 14px", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13 }}>
+                                <span style={{ fontWeight: 600, color: "var(--text-secondary)", marginRight: 8 }}>Git commit:</span>
+                                <code style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>{job.gitCommitHash}</code>
+                                <a
+                                  href={`/jobs?gitHash=${encodeURIComponent(job.gitCommitHash)}`}
+                                  style={{ marginLeft: 12, fontSize: 12, color: "var(--text-link, #2563eb)", textDecoration: "none" }}
+                                  title="Find all jobs that ran on this commit"
+                                >
+                                  Find jobs with this hash →
+                                </a>
+                              </div>
+                            )}
                             <PromptViewer jobId={job.jobId} />
                             <ConfigViewer jobId={job.jobId} />
                           </div>

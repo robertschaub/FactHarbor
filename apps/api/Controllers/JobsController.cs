@@ -27,13 +27,19 @@ public sealed class JobsController : ControllerBase
 
     [HttpGet]
     [EnableRateLimiting("ReadPerIp")]
-    public async Task<IActionResult> List(int? page = null, int? pageSize = null, string? q = null)
+    public async Task<IActionResult> List(int? page = null, int? pageSize = null, string? q = null, string? gitHash = null)
     {
         // Admins always see hidden reports (visually marked); non-admins never do.
         var isAdmin = AuthHelper.IsAdminKeyValid(Request);
 
         var actualPage = page ?? 1;
         var actualPageSize = pageSize ?? 50;
+
+        // gitHash filter is admin-only; validate to hex chars only to prevent surprises.
+        var gitHashFilter = isAdmin && !string.IsNullOrWhiteSpace(gitHash)
+            ? new string(gitHash.Trim().ToLowerInvariant().Where(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')).ToArray())
+            : null;
+        if (gitHashFilter is { Length: 0 }) gitHashFilter = null;
 
         int totalCount;
         List<JobEntity> items;
@@ -44,8 +50,8 @@ public sealed class JobsController : ControllerBase
         }
         else
         {
-            totalCount = await _jobs.CountJobsAsync(includeHidden: isAdmin);
-            items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize, includeHidden: isAdmin);
+            totalCount = await _jobs.CountJobsAsync(includeHidden: isAdmin, gitHash: gitHashFilter);
+            items = await _jobs.ListJobsAsync((actualPage - 1) * actualPageSize, actualPageSize, includeHidden: isAdmin, gitHash: gitHashFilter);
         }
 
         return Ok(new
@@ -63,7 +69,9 @@ public sealed class JobsController : ControllerBase
                 verdictLabel = j.VerdictLabel,
                 truthPercentage = j.TruthPercentage,
                 confidence = j.Confidence,
-                isHidden = j.IsHidden
+                isHidden = j.IsHidden,
+                // Admin-only: enables cross-job queries like "which jobs ran on hash X?"
+                gitCommitHash = isAdmin ? j.GitCommitHash : null
             }),
             pagination = new
             {
@@ -88,6 +96,8 @@ public sealed class JobsController : ControllerBase
             try { resultObj = JsonSerializer.Deserialize<object>(j.ResultJson); } catch { }
         }
 
+        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+
         return Ok(new
         {
             jobId = j.JobId,
@@ -103,6 +113,8 @@ public sealed class JobsController : ControllerBase
             truthPercentage = j.TruthPercentage,
             confidence = j.Confidence,
             isHidden = j.IsHidden,
+            // Admin-only diagnostic fields
+            gitCommitHash = isAdmin ? j.GitCommitHash : null,
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });

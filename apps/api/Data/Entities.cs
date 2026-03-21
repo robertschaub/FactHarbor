@@ -55,6 +55,13 @@ public sealed class JobEntity
     /// <summary>When the prompt was loaded from file for this analysis</summary>
     public DateTime? PromptLoadedUtc { get; set; }
 
+    /// <summary>
+    /// Git commit hash of the deployed code at job creation time.
+    /// Allows admins to trace any job back to the exact code version that ran it.
+    /// Populated from GIT_COMMIT env var (CI/CD) or `git rev-parse HEAD` (local dev).
+    /// </summary>
+    public string? GitCommitHash { get; set; }
+
     // Stored outputs
     public string? ResultJson { get; set; }
     public string? ReportMarkdown { get; set; }

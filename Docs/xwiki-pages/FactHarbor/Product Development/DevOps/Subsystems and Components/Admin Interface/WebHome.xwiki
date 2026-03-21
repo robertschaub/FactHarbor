@@ -13,6 +13,7 @@ The FactHarbor Admin GUI provides web-based interfaces for administrators to:
 | **Unified Configuration** | ##/admin/config## | Manage all configuration types with version history
 | **Source Reliability** | ##/admin/source-reliability## | View/manage cached source reliability scores
 | **Test Config** | ##/admin/test-config## | Validate API keys and service connectivity
+| **Job Audit & Debugging** | ##/admin## | Config snapshot viewer + commit hash tracer
 
 ----
 
@@ -232,6 +233,84 @@ GET /api/admin/test-config
   "timestamp": "2026-01-03T12:00:00.000Z"
 }
 {{/code}}
+
+== Job Commit Tracing ==
+
+Every job records the git commit hash of the deployed code that ran it. This lets admins answer two operational questions:
+
+* //Which version of the code ran this job?// — look at a single job's commit hash
+* //Which jobs ran before/after a specific deploy?// — search by commit hash to list all matching jobs
+
+=== How It Works ===
+
+At API startup, the system resolves the current commit hash:
+
+1. **##GIT_COMMIT## env var** — set by CI/CD at deployment (preferred for production)
+2. **##git rev-parse HEAD##** — fallback for local development (3-second timeout; silently skipped if git is unavailable)
+3. **##null##** — if neither is available (hash is absent on the job record)
+
+The resolved hash is stored on every ##Job## row at creation time (column ##GitCommitHash##). Retry jobs capture the hash of the code that ran the retry, which may differ from the original job's hash — useful for spotting "this retry ran on a different build."
+
+=== Find a Job's Commit Hash ===
+
+**Via the UI (Job Detail page):**
+
+1. Navigate to the job: ##/jobs/{jobId}##
+2. Scroll to the //Quality// section at the bottom of the Report tab
+3. The //Git commit// row appears in the admin panel (only visible when logged in as admin)
+4. Click **Find jobs with this hash →** to immediately list all jobs that ran the same commit
+
+**Via the API:**
+
+{{code language="bash"}}
+curl -H "X-Admin-Key: <your-key>" http://localhost:5000/v1/jobs/<jobId>
+# Response includes: "gitCommitHash": "56ed040b4f7d3850..."
+{{/code}}
+
+Jobs created before this feature was deployed will have ##gitCommitHash: null##.
+
+=== List Jobs by Commit Hash ===
+
+**Via the Admin page:**
+
+1. Navigate to ##/admin##
+2. In the **Job Audit & Debugging** section, find the **Commit Hash Tracer**
+3. Enter the full hash or any prefix (e.g. ##56ed040b##)
+4. Click **Find Jobs** — results show job ID, status, creation time, and input preview
+5. Click any row to open that job's detail page
+
+**Via the API:**
+
+{{code language="bash"}}
+# Full hash
+curl -H "X-Admin-Key: <key>" "http://localhost:5000/v1/jobs?gitHash=56ed040b4f7d3850289ccaae"
+
+# Prefix search (returns all jobs whose hash starts with this prefix)
+curl -H "X-Admin-Key: <key>" "http://localhost:5000/v1/jobs?gitHash=56ed040b"
+{{/code}}
+
+The ##gitHash## filter is admin-only (ignored without a valid ##X-Admin-Key##). It accepts lowercase hex characters and matches on prefix, so you can use an abbreviated hash from ##git log --oneline##.
+
+=== Deployment Setup ===
+
+For production, set the ##GIT_COMMIT## environment variable at deployment time:
+
+{{code language="bash"}}
+# Example: inject at Docker build
+docker build --build-arg GIT_COMMIT=$(git rev-parse HEAD) .
+
+# Example: set in the process environment (systemd, Kubernetes, etc.)
+GIT_COMMIT=56ed040b4f7d3850289ccaae dotnet run
+{{/code}}
+
+Without ##GIT_COMMIT##, the API falls back to running ##git## at startup. This works in local dev but may return ##null## in production containers where git is not installed.
+
+=== Troubleshooting ===
+
+|= Symptom |= Likely Cause |= Fix
+| ##gitCommitHash## is ##null## on all jobs | ##GIT_COMMIT## not set and ##git## unavailable at startup | Set ##GIT_COMMIT## env var in the deployment environment
+| ##gitCommitHash## missing from API response | Caller is not an admin | Include ##X-Admin-Key## header in the request
+| Old jobs all show ##null## | Feature was added after those jobs ran | Expected — backfill is not automatic; ##null## means "recorded before this feature shipped"
 
 == Security Notes ==
 

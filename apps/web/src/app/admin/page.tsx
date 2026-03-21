@@ -15,6 +15,14 @@ import { readDefaultPipelineVariant, writeDefaultPipelineVariant } from "@/lib/p
 import toast from "react-hot-toast";
 import { useAdminAuth } from "./admin-auth-context";
 
+type CommitJobResult = {
+  jobId: string;
+  status: string;
+  createdUtc: string;
+  inputPreview: string | null;
+  gitCommitHash: string | null;
+};
+
 type ProviderHealth = {
   state: string;
   consecutiveFailures: number;
@@ -37,6 +45,11 @@ export default function AdminPage() {
   const [health, setHealth] = useState<HealthState | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
   const [healthAction, setHealthAction] = useState<"resume" | "pause" | null>(null);
+  const [gitHashInput, setGitHashInput] = useState("");
+  const [commitJobs, setCommitJobs] = useState<CommitJobResult[]>([]);
+  const [commitSearching, setCommitSearching] = useState(false);
+  const [commitSearchError, setCommitSearchError] = useState<string | null>(null);
+  const [commitSearchDone, setCommitSearchDone] = useState(false);
   const { adminKey } = useAdminAuth();
   const router = useRouter();
 
@@ -132,6 +145,28 @@ export default function AdminPage() {
       );
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleCommitSearch = async () => {
+    const hash = gitHashInput.trim();
+    if (!hash) { toast.error("Enter a git commit hash (full or prefix)"); return; }
+    setCommitSearching(true);
+    setCommitSearchError(null);
+    setCommitSearchDone(false);
+    try {
+      const params = new URLSearchParams({ gitHash: hash, pageSize: "500", page: "1" });
+      const res = await fetch(`/api/fh/jobs?${params}`, {
+        headers: { "X-Admin-Key": adminKey ?? "" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setCommitJobs((data.jobs ?? []) as CommitJobResult[]);
+      setCommitSearchDone(true);
+    } catch (err: any) {
+      setCommitSearchError(err.message ?? "Search failed");
+    } finally {
+      setCommitSearching(false);
     }
   };
 
@@ -369,6 +404,95 @@ export default function AdminPage() {
             <br />
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Enter a job ID above or navigate directly via URL</span>
           </p>
+
+          {/* Commit Hash Tracer */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleCommitSearch(); }}
+            style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}
+          >
+            <input
+              type="text"
+              value={gitHashInput}
+              onChange={(e) => { setGitHashInput(e.target.value); setCommitSearchDone(false); }}
+              placeholder="Git commit hash (full or prefix)"
+              aria-label="Git commit hash"
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                fontSize: 14,
+                fontFamily: "monospace",
+              }}
+            />
+            <button
+              type="submit"
+              className={styles.btnSecondary}
+              style={{ padding: "10px 12px" }}
+              disabled={commitSearching}
+            >
+              {commitSearching ? "⏳" : "🔍"} Find Jobs
+            </button>
+          </form>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-4px" }}>
+            List all job IDs that ran on a specific git commit. Supports full hash or prefix (e.g. <code>56ed040b</code>).
+          </p>
+
+          {commitSearchError && (
+            <div style={{ padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, color: "#dc2626", fontSize: 13 }}>
+              {commitSearchError}
+            </div>
+          )}
+
+          {commitSearchDone && (
+            <div style={{ border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
+              <div style={{ padding: "8px 12px", background: "var(--bg-surface)", borderBottom: "1px solid var(--border)", fontWeight: 600 }}>
+                {commitJobs.length === 0
+                  ? `No jobs found for hash: ${gitHashInput}`
+                  : `${commitJobs.length} job${commitJobs.length !== 1 ? "s" : ""} on commit ${gitHashInput.slice(0, 8)}`}
+              </div>
+              {commitJobs.length > 0 && (
+                <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                  {commitJobs.map((j) => (
+                    <a
+                      key={j.jobId}
+                      href={`/jobs/${j.jobId}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "8px 12px",
+                        borderBottom: "1px solid var(--border)",
+                        textDecoration: "none",
+                        color: "inherit",
+                      }}
+                    >
+                      <code style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-secondary)", minWidth: 80 }}>
+                        {j.jobId.slice(0, 8)}…
+                      </code>
+                      <span style={{
+                        padding: "1px 6px",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: j.status === "SUCCEEDED" ? "#dcfce7" : j.status === "FAILED" ? "#fef2f2" : "#f1f5f9",
+                        color: j.status === "SUCCEEDED" ? "#166534" : j.status === "FAILED" ? "#dc2626" : "#475569",
+                      }}>
+                        {j.status}
+                      </span>
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-primary)", fontSize: 12 }}>
+                        {j.inputPreview ?? "(no preview)"}
+                      </span>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {new Date(j.createdUtc).toLocaleString()}
+                      </span>
+                      <span style={{ fontSize: 12, color: "var(--text-link, #2563eb)" }}>→</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

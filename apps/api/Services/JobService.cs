@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FactHarbor.Api.Data;
+using FactHarbor.Api.Helpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,11 +10,13 @@ public sealed class JobService
 {
     private readonly FhDbContext _db;
     private readonly ILogger<JobService> _log;
+    private readonly AppBuildInfo _buildInfo;
 
-    public JobService(FhDbContext db, ILogger<JobService> log)
+    public JobService(FhDbContext db, ILogger<JobService> log, AppBuildInfo buildInfo)
     {
         _db = db;
         _log = log;
+        _buildInfo = buildInfo;
     }
 
     public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "claimboundary", string? inviteCode = null)
@@ -28,6 +31,7 @@ public sealed class JobService
             InputPreview = MakePreview(inputType, inputValue),
             PipelineVariant = pipelineVariant,
             InviteCode = inviteCode,
+            GitCommitHash = _buildInfo.GitCommitHash,
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };
@@ -42,17 +46,21 @@ public sealed class JobService
     public async Task<JobEntity?> GetJobAsync(string jobId)
         => await _db.Jobs.FirstOrDefaultAsync(x => x.JobId == jobId);
 
-    public async Task<List<JobEntity>> ListJobsAsync(int skip = 0, int take = 1000, bool includeHidden = false)
+    public async Task<List<JobEntity>> ListJobsAsync(int skip = 0, int take = 1000, bool includeHidden = false, string? gitHash = null)
     {
         var q = _db.Jobs.AsQueryable();
         if (!includeHidden) q = q.Where(x => !x.IsHidden);
+        if (!string.IsNullOrWhiteSpace(gitHash))
+            q = q.Where(x => x.GitCommitHash != null && x.GitCommitHash.StartsWith(gitHash));
         return await q.OrderByDescending(x => x.CreatedUtc).Skip(skip).Take(take).ToListAsync();
     }
 
-    public async Task<int> CountJobsAsync(bool includeHidden = false)
+    public async Task<int> CountJobsAsync(bool includeHidden = false, string? gitHash = null)
     {
         var q = _db.Jobs.AsQueryable();
         if (!includeHidden) q = q.Where(x => !x.IsHidden);
+        if (!string.IsNullOrWhiteSpace(gitHash))
+            q = q.Where(x => x.GitCommitHash != null && x.GitCommitHash.StartsWith(gitHash));
         return await q.CountAsync();
     }
 
@@ -486,6 +494,7 @@ public sealed class JobService
             RetriedFromUtc = DateTime.UtcNow,
             RetryReason = retryReason,
             InviteCode = originalJob.InviteCode,  // Preserve for audit trail
+            GitCommitHash = _buildInfo.GitCommitHash,  // Current deploy hash (may differ from original job's hash)
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };
