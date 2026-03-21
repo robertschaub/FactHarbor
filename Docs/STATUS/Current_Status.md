@@ -1,9 +1,22 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-16
+**Last Updated**: 2026-03-21
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Phase 2 validation complete (production-ready). MT-1/MT-2/MT-3 structural pipeline fixes implemented. 1199 tests passing (build clean). Cross-provider debate active (OpenAI challenger). Phase 1 integrity policies **disabled** (both `verdictGroundingPolicy` and `verdictDirectionPolicy` set to `disabled` in active UCM config as of 2026-03-05; `warn_and_cap` mode planned for Phase 2 — see `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`). Phase 1 UCM config containment changes (sufficiency gate, search provider narrowing) **pending** — apply via Admin UI before next production run.
+**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Phase 2 validation complete (production-ready). MT-1/MT-2/MT-3 structural pipeline fixes implemented. Cross-provider debate active (OpenAI challenger). Stage 1 broad-claim contract preservation is now materially fixed via a post-Pass-2 claim-contract validator. `verdictDirectionPolicy` is re-enabled as `retry_once_then_safe_downgrade`; `verdictGroundingPolicy` remains `disabled`. The primary open quality issue is now downstream Plastik-family variability in Stage 2/4 (search framing, evidence balance, verdict direction), not claim decomposition.
+
+---
+
+## Recent Changes (2026-03-20/21)
+
+**Plastik quality stabilization + auditability improvements:**
+- ✅ **Stage 1 claim-contract validator**: New `CLAIM_CONTRACT_VALIDATION` step runs after Pass 2 and before Gate 1, with one retry and fail-open behavior. This materially fixed broad evaluative predicate drift for the targeted failure mode.
+- ✅ **Predicate preservation validated**: Validator-era multilingual checks preserved the original evaluative predicate across DE/EN/FR broad-claim runs; remaining spread is downstream of Stage 1.
+- ✅ **Legacy SR weighting disabled by default**: `evidenceWeightingEnabled` remains off by default; Stage 4.5 SR calibration stays feature-flagged.
+- ✅ **Direction repair re-enabled**: `verdictDirectionPolicy` now defaults to `retry_once_then_safe_downgrade`. Controlled A1 validation showed no overcorrection and reduced Plastik-family spread materially.
+- ✅ **Stage 2 prompt refinements prepared**: `EXTRACT_EVIDENCE` and `GENERATE_QUERIES` now carry generic broad-evaluative claim guidance to reduce evidence-direction ambiguity and strengthen contradiction iterations.
+- ✅ **Job git-hash traceability**: Jobs now record the deployed git commit hash, and admin tooling can trace all jobs that ran on a given commit.
+- ⏳ **Open quality focus**: Remaining Plastik-family instability is now treated as a downstream problem (search framing / evidence allocation / verdict behavior), not a Stage 1 decomposition problem.
 
 ---
 

@@ -112,7 +112,7 @@
   },
   "calibrationInverseGateAction": "warn",
   "verdictGroundingPolicy": "disabled",
-  "verdictDirectionPolicy": "disabled",
+  "verdictDirectionPolicy": "retry_once_then_safe_downgrade",
   "queryStrategyMode": "pro_con",
   "perClaimQueryBudget": 8,
   "boundaryClusteringTemperature": 0.05,

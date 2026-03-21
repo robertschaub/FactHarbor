@@ -892,7 +892,7 @@ export const PipelineConfigSchema = z.object({
     data.verdictGroundingPolicy = "disabled";
   }
   if (data.verdictDirectionPolicy === undefined) {
-    data.verdictDirectionPolicy = "disabled";
+    data.verdictDirectionPolicy = "retry_once_then_safe_downgrade";
   }
   if (data.openaiTpmGuardEnabled === undefined) {
     data.openaiTpmGuardEnabled = true;
@@ -1022,7 +1022,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   },
   calibrationInverseGateAction: "warn",
   verdictGroundingPolicy: "disabled",
-  verdictDirectionPolicy: "disabled",
+  verdictDirectionPolicy: "retry_once_then_safe_downgrade",
   queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,
   boundaryClusteringTemperature: 0.05,

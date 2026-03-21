@@ -354,7 +354,7 @@ describe("PipelineConfigSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.verdictGroundingPolicy).toBe("disabled");
-      expect(result.data.verdictDirectionPolicy).toBe("disabled");
+      expect(result.data.verdictDirectionPolicy).toBe("retry_once_then_safe_downgrade");
     }
   });
 
@@ -691,7 +691,7 @@ describe("Default Config Values", () => {
       const effectiveDefaults = PipelineConfigSchema.parse({ ...DEFAULT_PIPELINE_CONFIG });
       expect(effectiveDefaults.challengerTemperature).toBe(0.3);
       expect(effectiveDefaults.verdictGroundingPolicy).toBe("disabled");
-      expect(effectiveDefaults.verdictDirectionPolicy).toBe("disabled");
+      expect(effectiveDefaults.verdictDirectionPolicy).toBe("retry_once_then_safe_downgrade");
       expect(DEFAULT_PIPELINE_CONFIG.enforceBudgets).toBe(false);
       expect(DEFAULT_PIPELINE_CONFIG.claimAnnotationMode).toBe("verifiability_and_misleadingness");
       expect(DEFAULT_PIPELINE_CONFIG.tigerScoreMode).toBe("off");

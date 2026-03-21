@@ -1,6 +1,22 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-20 | Senior Developer | Claude Code (Sonnet 4.6) | Plastik A1 Experiment + verdictDirectionPolicy Promoted
+**Task:** Execute A1 experiment (verdictDirectionPolicy via UCM), evaluate results, promote to permanent default.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-20_A1_Experiment_Results.md`, `apps/web/src/lib/config-schemas.ts` (default changed), `apps/web/configs/pipeline.default.json` (default changed), `apps/web/test/unit/lib/config-schemas.test.ts` (2 assertions updated).
+**Key decisions:** Policy promoted — no overcorrection, correctly fired on Run3 (skewed evidence). Run4/5 improvements came from retrieval balance, not direction repair. 1365 tests passing.
+**Open items:** B1/B2 (EXTRACT_EVIDENCE + GENERATE_QUERIES prompt improvements) are the next structural fixes. Need Captain approval before implementation. Boundary concentration (CB_34: 92.3%) is a secondary signal worth monitoring.
+**For next agent:** Read `2026-03-20_A1_Experiment_Results.md` + `2026-03-20_Implementation_Brief_Plastik_Stage2_Fix.md`. Prompt B1/B2 changes require explicit Captain approval before touching `claimboundary.prompt.md`.
+
+---
+### 2026-03-20 | Senior Developer | Claude Code (Sonnet 4.6) | Plastik Downstream Instability Analysis + Implementation Brief
+**Task:** Investigate downstream verdict spread after Stage 1 contract fix. Write implementation brief for next agent.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-20_Senior_Developer_Plastik_Downstream_Instability_Analysis.md`, `Docs/AGENTS/Handoffs/2026-03-20_Implementation_Brief_Plastik_Stage2_Fix.md`
+**Key decisions:** Stage 2 retrieval is primary driver. Stage 4 direction policy is experiment only (not permanent default). Captain reprioritized: A1 as controlled UCM experiment, B1/B2 (prompt work) as actual root-cause fixes.
+**Open items:** A1 experiment needs to be run and evaluated (done). B1/B2 prompt changes need formal Captain approval before implementation.
+**For next agent:** See A1 results handoff (above).
+
+---
 ### 2026-03-19 | Lead Architect | Claude Code (Opus 4.6) | Refactoring Plan — Planning Complete, Awaiting Execution
 **Task:** Create comprehensive refactoring plan for monolithic code, dead code, and clone cleanup. Coordinate 3 reviews (Code Reviewer, Lead Developer, Senior Architect).
 **Files touched:** `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` (authoritative plan), `Docs/WIP/2026-03-18_Review_CodeReviewer.md`, `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`, `Docs/WIP/2026-03-18_Review_Architect.md`

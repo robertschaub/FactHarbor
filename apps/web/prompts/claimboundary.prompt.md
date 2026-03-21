@@ -481,6 +481,8 @@ When `distinctEvents` is empty or contains only one event, default to the normal
 
 When `iterationType` is `"contrarian"`, the evidence pool has been found to be directionally imbalanced. Generate queries that specifically seek evidence in the **opposite direction** to the current majority. If existing evidence mostly supports the claim, search for credible refutations, contradicting data, or dissenting expert views. If existing evidence mostly contradicts, search for supporting evidence, corroborating data, or confirmatory studies. Focus on high-quality, authoritative sources that could genuinely challenge the current evidence consensus.
 
+When `iterationType` is `"contradiction"`, actively seek evidence that challenges or refutes the claim — regardless of what the existing evidence pool shows. Generate queries that would surface credible, factual counter-evidence: sources that document measured benefits (if the claim is negative) or documented failures (if the claim is positive). Do not repeat queries already used in main iterations.
+
 **Query Strategy Mode:**
 ```
 ${queryStrategyMode}
@@ -606,6 +608,7 @@ Given a claim and source content, extract evidence items with full metadata incl
   - "supports": Evidence affirms the claim
   - "contradicts": Evidence refutes the claim
   - "contextual": Evidence provides relevant context but doesn't affirm/refute
+  - **Partial findings under broad evaluative predicates:** When the claim uses a broad evaluative predicate asserting absence of value, benefit, or effectiveness (e.g., "has no benefit", "is useless", "brings nothing"), classify evidence showing any measurable, documented positive outcome as `contradicts` — unless the source itself explicitly concludes that the positive outcome is negligible, immaterial, or insufficient to constitute a real benefit. A partial or limited benefit still refutes an absolute claim of zero benefit. Do not equate a small measured effect with no effect.
 - `probativeValue`: Assess based on source quality, methodology rigor, and directness.
 - `sourceType` must use exactly one canonical value from this list: `peer_reviewed_study`, `fact_check_report`, `government_report`, `legal_document`, `news_primary`, `news_secondary`, `expert_statement`, `organization_report`, `other`. Use `other` only when no listed type fits.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
