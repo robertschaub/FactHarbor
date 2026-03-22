@@ -1149,3 +1149,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not cite the removed Mar 20 localhost addenda as current proof. The clean Mar 22 batch shows that stronger live claims such as “Bolsonaro is recovered” or “Plastik Stage 1 is materially fixed and the problem is purely downstream” are not established strongly enough by reliable live evidence.
 **For next agent:** Use the updated `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md` as the current source of truth. For live localhost work, require post-restart jobs with matching `gitCommitHash` before drawing conclusions.
 **Learnings:** no
+
+---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | ClaimBoundary Config Provenance Repair
+**Task:** Restore reliable per-job config provenance for normal ClaimBoundary jobs and verify it on a fresh restarted localhost job.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Threaded `jobId` through existing ClaimBoundary config loads, added one startup prompt provenance load plus SR provenance capture, and persisted a full startup snapshot without refactoring prompt-loader internals. Verified after clean restart with fresh job `68c9e85ad5fc44a58e0f7749312a5872`: `/api/fh/jobs/[id]/configs` returned five config types and `/api/admin/quality/job/[id]/config` returned a full snapshot. Logged the detailed handoff separately.
+**Open items:** Next planned execution item is WS-1 dead-code cleanup from the Mar-22 execution plan.
+**Warnings:** The verification job’s `gitCommitHash` still reflected the last committed hash because the fix was verified pre-commit. The proof for this task is the restored config usage + snapshot rows, not the hash.
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md` if you need the exact implementation/verification details. Config provenance is no longer the blocker for future localhost analysis.
+**Learnings:** no

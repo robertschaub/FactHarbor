@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** Draft for review
+**Status:** In progress — Priority 0 closed, Priority 1 completed on 2026-03-22; next step is WS-1
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -36,6 +36,7 @@ What is settled:
 - **`verdictDirectionPolicy` remains active** as `retry_once_then_safe_downgrade`.
 - **Phase 2 v1 and v2 are both closed as failed experiments** and `crossLinguisticQueryEnabled` is now off again in live UCM.
 - **Hydrogen and Bolsonaro controls are clean** on the current stack.
+- **Config provenance repair is now complete for ClaimBoundary jobs.** Fresh jobs now record per-job usage for pipeline, search, calculation, prompt, and SR configs, and the job config snapshot endpoint is populated again.
 
 What remains open:
 - The Plastik family still shows a large remaining spread (~47pp).
@@ -96,6 +97,12 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - Verify with one fresh job that config provenance is actually visible and attributable.
 
 **Why second:** This is a small, high-leverage infrastructure fix that reduces friction for all later quality and architecture work.
+
+**Status update (2026-03-22):**
+- Completed.
+- Verified on fresh job `68c9e85ad5fc44a58e0f7749312a5872` after clean restart:
+  - `/api/fh/jobs/[id]/configs` returned five config types (`pipeline`, `search`, `calculation`, `prompt`, `sr`)
+  - `/api/admin/quality/job/[id]/config` returned a full snapshot
 
 **Done when:**
 - A fresh job can be traced to the effective config state that actually ran it.
@@ -204,6 +211,10 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 1. Close the Plastik limitation and update the governing docs
 2. Complete config provenance repair
 3. Execute WS-1 dead code removal
+
+**Progress update (2026-03-22):**
+- Steps 1 and 2 are complete
+- Step 3 is the next execution item
 
 ### Week 2
 

@@ -654,6 +654,26 @@ vi.mock("@/lib/config-loader", () => ({
   loadPipelineConfig: vi.fn(() => ({ config: {} })),
   loadSearchConfig: vi.fn(() => ({ config: {} })),
   loadCalcConfig: vi.fn(() => ({ config: { mixedConfidenceThreshold: 40 } })),
+  loadPromptConfig: vi.fn(() => ({ content: "mock prompt", contentHash: "__PROMPT__", fromCache: false, seededFromFile: false })),
+}));
+
+vi.mock("@/lib/config-storage", () => ({
+  getConfig: vi.fn(() => ({
+    config: { enabled: true, confidenceThreshold: 0.8 } as any,
+    contentHash: "__SR__",
+    fromCache: false,
+    fromDefault: false,
+    overrides: [],
+  })),
+}));
+
+vi.mock("@/lib/config-snapshots", () => ({
+  captureConfigSnapshotAsync: vi.fn(async () => {}),
+  getSRConfigSummary: vi.fn(() => ({
+    enabled: true,
+    defaultScore: 0.5,
+    confidenceThreshold: 0.8,
+  })),
 }));
 
 vi.mock("@/lib/web-search", () => ({
@@ -705,12 +725,19 @@ import { extractStructuredOutput } from "@/lib/analyzer/llm";
 import { loadAndRenderSection } from "@/lib/analyzer/prompt-loader";
 import { searchWebWithProvider } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
+import { loadPromptConfig } from "@/lib/config-loader";
+import { getConfig } from "@/lib/config-storage";
+import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 
 const mockGenerateText = vi.mocked(generateText);
 const mockExtractOutput = vi.mocked(extractStructuredOutput);
 const mockLoadSection = vi.mocked(loadAndRenderSection);
 const mockSearch = vi.mocked(searchWebWithProvider);
 const mockFetchUrl = vi.mocked(extractTextFromUrl);
+const mockLoadPromptConfig = vi.mocked(loadPromptConfig);
+const mockGetConfig = vi.mocked(getConfig);
+const mockCaptureConfigSnapshotAsync = vi.mocked(captureConfigSnapshotAsync);
+const mockGetSRConfigSummary = vi.mocked(getSRConfigSummary);
 
 describe("Stage 1: runPass1", () => {
   beforeEach(() => {
@@ -4546,8 +4573,8 @@ describe("Stage 4: generateVerdicts (wiring)", () => {
 
     const result = await generateVerdicts(claims, evidence, boundaries, coverageMatrix, mockLLMCall);
 
-    expect(loadPipelineConfig).toHaveBeenCalledWith("default");
-    expect(loadCalcConfig).toHaveBeenCalledWith("default");
+    expect(loadPipelineConfig).toHaveBeenCalledWith("default", undefined);
+    expect(loadCalcConfig).toHaveBeenCalledWith("default", undefined);
     expect(mockLLMCall).toHaveBeenCalled();
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
@@ -6644,6 +6671,73 @@ describe("M2: evaluateExplanationRubric error handling", () => {
 describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("records startup config provenance with jobId for claimboundary jobs", async () => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { pdfParseTimeoutMs: 60000 } as any,
+      contentHash: "__TEST_PIPELINE__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST_SEARCH__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: { mixedConfidenceThreshold: 40, sourceReliability: { defaultScore: 0.5 } } as any,
+      contentHash: "__TEST_CALC__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    } as any);
+    mockLoadPromptConfig.mockResolvedValue({
+      content: "mock prompt",
+      contentHash: "__PROMPT__",
+      fromCache: false,
+      seededFromFile: false,
+    } as any);
+    mockGetConfig.mockResolvedValue({
+      config: { enabled: true, confidenceThreshold: 0.8 } as any,
+      contentHash: "__SR__",
+      fromCache: false,
+      fromDefault: false,
+      overrides: [],
+    } as any);
+    mockGetSRConfigSummary.mockReturnValue({
+      enabled: true,
+      defaultScore: 0.5,
+      confidenceThreshold: 0.8,
+    });
+
+    try {
+      await runClaimBoundaryAnalysis({
+        jobId: "job-123",
+        inputValue: "Entity A increased output by 15% in 2024",
+        inputType: "text",
+      });
+    } catch {
+      // Expected to fail later because downstream prompt/LLM mocks are intentionally incomplete.
+    }
+
+    expect(loadPipelineConfig).toHaveBeenCalledWith("default", "job-123");
+    expect(loadSearchConfig).toHaveBeenCalledWith("default", "job-123");
+    expect(loadCalcConfig).toHaveBeenCalledWith("default", "job-123");
+    expect(mockLoadPromptConfig).toHaveBeenCalledWith("claimboundary", "job-123");
+    expect(mockGetConfig).toHaveBeenCalledWith("sr", "default", { jobId: "job-123" });
+    expect(mockCaptureConfigSnapshotAsync).toHaveBeenCalledWith(
+      "job-123",
+      expect.objectContaining({ pdfParseTimeoutMs: 60000 }),
+      expect.any(Object),
+      expect.objectContaining({ enabled: true, confidenceThreshold: 0.8 }),
+    );
   });
 
   it("should fetch URL content and pass extracted text (not the URL) to the LLM", async () => {

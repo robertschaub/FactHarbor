@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-03-22
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, while near-term execution focus shifts to config provenance, low-risk refactoring, and selected speed/cost improvements.
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair is now complete, and near-term execution focus shifts to WS-1 / WS-2 refactoring plus selected low-risk speed/cost improvements.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments, while the near-term execution focus shifts to config provenance repair, behavior-preserving cleanup, and low-risk optimization; any Phase 2 v3 work is deferred to a future architecture track.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair has now been completed and live-verified, so the near-term execution focus shifts to behavior-preserving cleanup and low-risk optimization; any Phase 2 v3 work is deferred to a future architecture track.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -20,7 +20,7 @@ For completed work, historical documents, and reference materials, see:
 ## Active Quality Plans (governing current work)
 
 ### Next 1-2 Weeks Execution Plan (2026-03-22)
-**Status:** Draft — ready for review
+**Status:** In progress — Priority 0 closed, Priority 1 completed; next step is WS-1
 - **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
 - **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
 - **Role:** This is the **governing near-term execution plan**. Use it first when deciding what to do next.

@@ -83,9 +83,11 @@ import {
 } from "@/lib/claim-boundary-display";
 
 // Config loading
-import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
+import { loadPipelineConfig, loadSearchConfig, loadCalcConfig, loadPromptConfig } from "@/lib/config-loader";
 import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
 import type { LLMProviderType } from "@/lib/analyzer/types";
+import { getConfig } from "@/lib/config-storage";
+import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 
 // Metrics integration
 import {
@@ -139,13 +141,31 @@ export async function runClaimBoundaryAnalysis(
 
   // Load configs once at start to capture provider metadata
   const [pipelineResult, searchResult, calcResult] = await Promise.all([
-    loadPipelineConfig("default"),
-    loadSearchConfig("default"),
-    loadCalcConfig("default"),
+    loadPipelineConfig("default", input.jobId),
+    loadSearchConfig("default", input.jobId),
+    loadCalcConfig("default", input.jobId),
   ]);
   const initialPipelineConfig = pipelineResult.config;
   const initialSearchConfig = searchResult.config;
   const initialCalcConfig = calcResult.config;
+
+  // Record prompt + SR usage once at startup and persist a full resolved snapshot
+  // for the job. This restores per-job provenance without changing analysis logic.
+  if (input.jobId) {
+    await Promise.all([
+      loadPromptConfig("claimboundary", input.jobId),
+      getConfig("sr", "default", { jobId: input.jobId }),
+    ]).then(([, srConfigResult]) => {
+      void captureConfigSnapshotAsync(
+        input.jobId!,
+        initialPipelineConfig,
+        initialSearchConfig,
+        getSRConfigSummary(srConfigResult.config, initialCalcConfig),
+      );
+    }).catch((err) => {
+      console.warn(`[Pipeline] Failed to capture startup config provenance for job ${input.jobId}:`, err);
+    });
+  }
 
   // Initialize metrics collection for this job after config load to capture runtime providers
   if (input.jobId) {
@@ -210,6 +230,7 @@ export async function runClaimBoundaryAnalysis(
 
     // Initialize research state
     const state: CBResearchState = {
+      jobId: input.jobId,
       originalInput: analysisText,
       inputType: input.inputType,
       pipelineStartMs: Date.now(),
@@ -477,6 +498,7 @@ export async function runClaimBoundaryAnalysis(
           recordRuntimeModelUsage,
           roleTraceRecorder,
           onEvent,
+          input.jobId,
         );
       } catch (verdictError: unknown) {
         const errorMessage = verdictError instanceof Error
@@ -932,9 +954,9 @@ export async function extractClaims(
 ): Promise<CBClaimUnderstanding> {
   // Load pipeline + search + calc configs from UCM
   const [pipelineResult, searchResult, calcResult] = await Promise.all([
-    loadPipelineConfig("default"),
-    loadSearchConfig("default"),
-    loadCalcConfig("default"),
+    loadPipelineConfig("default", state.jobId),
+    loadSearchConfig("default", state.jobId),
+    loadCalcConfig("default", state.jobId),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
@@ -2793,9 +2815,10 @@ export async function researchEvidence(
   state: CBResearchState,
   jobId?: string
 ): Promise<void> {
+  const effectiveJobId = jobId ?? state.jobId;
   const [pipelineResult, searchResult] = await Promise.all([
-    loadPipelineConfig("default"),
-    loadSearchConfig("default"),
+    loadPipelineConfig("default", effectiveJobId),
+    loadSearchConfig("default", effectiveJobId),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
@@ -4695,7 +4718,7 @@ export async function clusterBoundaries(
   state: CBResearchState
 ): Promise<ClaimAssessmentBoundary[]> {
   const [pipelineResult] = await Promise.all([
-    loadPipelineConfig("default"),
+    loadPipelineConfig("default", state.jobId),
   ]);
   const pipelineConfig = pipelineResult.config;
 
@@ -5319,11 +5342,12 @@ export async function generateVerdicts(
   modelUsageRecorder?: (provider: string, modelName: string) => void,
   roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void,
   onEvent?: (message: string, progress: number) => void,
+  jobId?: string,
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
-    loadPipelineConfig("default"),
-    loadCalcConfig("default"),
+    loadPipelineConfig("default", jobId),
+    loadCalcConfig("default", jobId),
   ]);
   const pipelineConfig = pipelineResult.config;
   const calcConfig = calcResult.config;
@@ -5823,8 +5847,8 @@ export async function aggregateAssessment(
   state: CBResearchState
 ): Promise<OverallAssessment> {
   const [pipelineResult, calcResult] = await Promise.all([
-    loadPipelineConfig("default"),
-    loadCalcConfig("default"),
+    loadPipelineConfig("default", state.jobId),
+    loadCalcConfig("default", state.jobId),
   ]);
   const pipelineConfig = pipelineResult.config;
   const calcConfig = calcResult.config;
