@@ -58,6 +58,38 @@ export default function AdminPage() {
     setDefaultPipeline(readDefaultPipelineVariant());
   }, []);
 
+  // Auto-populate commit hash tracer from URL param (?gitHash=...).
+  // Using window.location.search avoids the Next.js useSearchParams Suspense requirement.
+  // Depends on [adminKey]: on first render adminKey is null (not yet read from sessionStorage),
+  // so the guard below silently exits. The effect re-runs once adminKey resolves, at which
+  // point hash is re-read from the URL, so the auto-search fires correctly. This means the
+  // search is delayed one render cycle — intentional and harmless for this use case.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = new URLSearchParams(window.location.search).get("gitHash");
+    if (!hash || !adminKey) return;
+    setGitHashInput(hash);
+    // Kick off the search immediately with the URL-supplied value.
+    const doSearch = async () => {
+      setCommitSearching(true);
+      setCommitSearchError(null);
+      try {
+        const params = new URLSearchParams({ gitHash: hash, pageSize: "500", page: "1" });
+        const res = await fetch(`/api/fh/jobs?${params}`, { headers: { "X-Admin-Key": adminKey } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setCommitJobs((data.jobs ?? []) as CommitJobResult[]);
+        setCommitSearchDone(true);
+      } catch (err: any) {
+        setCommitSearchError(err.message ?? "Search failed");
+      } finally {
+        setCommitSearching(false);
+      }
+    };
+    doSearch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminKey]);
+
   // Poll system health
   useEffect(() => {
     let mounted = true;

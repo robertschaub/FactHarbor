@@ -35,11 +35,12 @@ public sealed class JobsController : ControllerBase
         var actualPage = page ?? 1;
         var actualPageSize = pageSize ?? 50;
 
-        // gitHash filter is admin-only; validate to hex chars only to prevent surprises.
+        // gitHash filter is admin-only; validate to hex chars and enforce a 7-char minimum
+        // (matching AppBuildInfo.IsValidHash) to prevent accidentally broad prefix matches.
         var gitHashFilter = isAdmin && !string.IsNullOrWhiteSpace(gitHash)
             ? new string(gitHash.Trim().ToLowerInvariant().Where(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')).ToArray())
             : null;
-        if (gitHashFilter is { Length: 0 }) gitHashFilter = null;
+        if (gitHashFilter is { Length: < 7 }) gitHashFilter = null;
 
         int totalCount;
         List<JobEntity> items;

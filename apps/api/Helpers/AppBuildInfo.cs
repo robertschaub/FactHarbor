@@ -43,15 +43,22 @@ public sealed record AppBuildInfo(string? GitCommitHash)
             {
                 // Read stdout on a background thread so the WaitForExit timeout is effective.
                 var readTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-                if (proc.WaitForExit(3000) && readTask.IsCompletedSuccessfully)
+                if (proc.WaitForExit(3000))
                 {
-                    var hash = readTask.Result.Trim().ToLowerInvariant();
-                    if (IsValidHash(hash))
-                        return new AppBuildInfo(hash);
+                    // Process exited — give the read task a moment to drain any remaining
+                    // buffered output. In practice it completes immediately after exit,
+                    // but Wait() makes the drain definitive rather than a race check.
+                    readTask.Wait(500);
+                    if (readTask.IsCompletedSuccessfully)
+                    {
+                        var hash = readTask.Result.Trim().ToLowerInvariant();
+                        if (IsValidHash(hash))
+                            return new AppBuildInfo(hash);
+                    }
                 }
                 else
                 {
-                    // Timed out or read failed — kill the process to avoid zombies.
+                    // Timed out — kill the process to avoid zombies.
                     try { proc.Kill(); } catch { }
                 }
             }

@@ -28,7 +28,7 @@ export async function GET(request: Request, context: RouteContext) {
   if (forwardedProto) upstreamHeaders["x-forwarded-proto"] = forwardedProto;
   // Forward admin key so the API returns admin-only fields (e.g. gitCommitHash).
   if (checkAdminKey(request)) {
-    const adminKey = (request as any).headers?.get?.("x-admin-key") ?? null;
+    const adminKey = request.headers.get("x-admin-key");
     if (adminKey) upstreamHeaders["X-Admin-Key"] = adminKey;
   }
 

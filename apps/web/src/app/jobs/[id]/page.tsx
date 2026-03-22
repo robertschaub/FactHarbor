@@ -1179,6 +1179,14 @@ export default function JobPage() {
       <div className={styles.metaInlineRow}>
         <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.length > 10 ? `${job.jobId.slice(0, 10)}...` : job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
         <span className={styles.metaInlineItem}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></span>
+        {hasAdminKey && job.gitCommitHash && (
+          <span className={styles.metaInlineItem}>
+            <b>Commit:</b>{" "}
+            <code title={job.gitCommitHash}>{job.gitCommitHash.slice(0, 8)}</code>
+            <CopyButton text={job.gitCommitHash} title="Copy full commit hash" className={styles.metaCopyButton} />
+            <a href={`/admin?gitHash=${encodeURIComponent(job.gitCommitHash)}`} style={{ marginLeft: 6, fontSize: 11, color: "var(--text-link, #2563eb)", textDecoration: "none" }} title="Find all jobs on this commit">↗</a>
+          </span>
+        )}
         {hasV22Data && (
           <span className={styles.metaInlineItem}><b>Schema:</b> <code>{schemaVersion}</code></span>
         )}
@@ -1774,7 +1782,7 @@ export default function JobPage() {
                                 <span style={{ fontWeight: 600, color: "var(--text-secondary)", marginRight: 8 }}>Git commit:</span>
                                 <code style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>{job.gitCommitHash}</code>
                                 <a
-                                  href={`/jobs?gitHash=${encodeURIComponent(job.gitCommitHash)}`}
+                                  href={`/admin?gitHash=${encodeURIComponent(job.gitCommitHash)}`}
                                   style={{ marginLeft: 12, fontSize: 12, color: "var(--text-link, #2563eb)", textDecoration: "none" }}
                                   title="Find all jobs that ran on this commit"
                                 >
