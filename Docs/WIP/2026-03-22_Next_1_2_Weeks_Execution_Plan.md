@@ -35,7 +35,8 @@ What is settled:
 - **Stage 1 broad-claim contract preservation is materially fixed.**
 - **`verdictDirectionPolicy` remains active** as `retry_once_then_safe_downgrade`.
 - **Phase 2 v1 and v2 are both closed as failed experiments** and `crossLinguisticQueryEnabled` is now off again in live UCM.
-- **Hydrogen and Bolsonaro controls are clean** on the current stack.
+- **Hydrogen is a stable control on the current stack.**
+- **Bolsonaro is not currently revalidated.** The clean Mar 22 fair/legal run landed `UNVERIFIED (44 / 24)`, so this family must not be used as a positive benchmark until a fresh clean mini-series confirms recovery.
 - **Config provenance repair is now complete for ClaimBoundary jobs.** Fresh jobs now record per-job usage for pipeline, search, calculation, prompt, and SR configs, and the job config snapshot endpoint is populated again.
 
 What remains open:
