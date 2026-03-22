@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-5 complete except optional P1-B; Phase 2 v3 design brief is ready for review/prioritization
+**Status:** In progress — Priorities 0-5 complete except optional P1-B; an additional low-risk WS-2 slice is complete; Phase 2 v3 design brief has been reviewed and tightened
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -161,6 +161,9 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - Extracted a new leaf module `pipeline-utils.ts` from `claimboundary-pipeline.ts`.
 - Scope kept intentionally narrow: only pure helper functions and re-exports, no stage logic moved.
 - Verification: targeted ClaimBoundary test suite green (`291/291`) and web build green.
+- Second slice completed.
+- Extracted Stage 3 boundary clustering into `boundary-clustering-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
+- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1329/1329`).
 
 ---
 
@@ -243,10 +246,12 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 3. Start Phase 2 v3 as a design-only architecture brief
 
 **Progress update (2026-03-22):**
-- Step 1 is complete (leaf helper extraction only; no stage extraction yet)
+- Step 1 is complete:
+  - leaf helper extraction (`pipeline-utils.ts`)
+  - isolated Stage 3 extraction (`boundary-clustering-stage.ts`)
 - Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
 - Step 3 is complete (Phase 2 v3 design-only brief written; no implementation reopened)
-- Next execution item: review/prioritize the v3 brief or continue with separately approved non-Plastik work
+- Next execution item: optional `P1-B`, or another separately approved non-Plastik refactor slice if that is still the preferred direction
 
 ---
 

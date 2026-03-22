@@ -1208,3 +1208,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The verification job’s `gitCommitHash` still reflected the last committed hash because the fix was verified pre-commit. The proof for this task is the restored config usage + snapshot rows, not the hash.
 **For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md` if you need the exact implementation/verification details. Config provenance is no longer the blocker for future localhost analysis.
 **Learnings:** no
+
+---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | WS-2 Stage 3 Boundary Clustering Extraction
+**Task:** Continue the approved low-risk WS-2 decomposition work by extracting Stage 3 boundary clustering out of `claimboundary-pipeline.ts` without changing analysis behavior.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/boundary-clustering-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Moved the Stage 3 boundary clustering code into a dedicated `boundary-clustering-stage.ts` module and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface so existing tests/imports continue to resolve through the main pipeline module. While extracting, I initially tightened the Stage 3 schema too much; after targeted test failures I restored the original fail-open parsing behavior (`congruenceDecisions.congruent`, raw `internalCoherence` parse, clamp during mapping) to preserve current semantics exactly.
+**Open items:** No immediate follow-up is required for this slice. Optional `P1-B` remains deferred, and any further WS-2 work should be taken as a separate approved slice rather than bundled into this commit.
+**Warnings:** The extraction is intentionally structural only. Do not treat `boundary-clustering-stage.ts` as a new independent stage contract; `claimboundary-pipeline.ts` still owns orchestration and remains the public import surface.
+**For next agent:** This slice is verified and ready to commit. If WS-2 continues later, prefer another isolated module boundary of similar size and keep tests importing through `claimboundary-pipeline.ts` unless there is an explicit decision to change the public analyzer surface.
+**Learnings:** no
